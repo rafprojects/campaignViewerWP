@@ -62,10 +62,57 @@ This guide covers styling practices to ensure the gallery works well both as a s
 
 ---
 
+## Shadow DOM vs iframe (pros/cons + security)
+
+### Shadow DOM
+
+#### Shadow DOM pros
+
+- Strong CSS isolation while staying in the same DOM tree.
+- Easier data access (same JS context) and no cross-window messaging.
+- Better performance than iframes for complex UIs.
+
+#### Shadow DOM cons
+
+- Not a hard boundary: JS can still reach out of the shadow tree.
+- Theming requires explicit CSS variable wiring into the shadow root.
+- Some third‑party libraries may not fully support shadow DOM styling.
+
+#### Shadow DOM security considerations
+
+- Not a sandbox: scripts still run in the host page context.
+- Protect against XSS in the embed code as you would any SPA.
+- Avoid leaking sensitive data into the DOM (same as normal SPA).
+
+### iframe
+
+#### iframe pros
+
+- Maximum isolation from host CSS/JS.
+- Clear boundary for layout and global resets.
+- Enables strict sandboxing if needed.
+
+#### iframe cons
+
+- More integration work (sizing, resizing, communication).
+- Cross‑window messaging needed for coordination.
+- Performance overhead for heavy iframe content.
+
+#### iframe security considerations
+
+- Use `sandbox` to restrict capabilities when possible.
+- Avoid `allow-same-origin` unless required.
+- Validate `postMessage` origins and payloads.
+- Ensure content security policy (CSP) is configured for embedded context.
+
+---
+
 ## Current Implementation Notes
 
 - Root scoping is enabled via `.wp-super-gallery` wrapper.
 - Global styles are applied only inside this wrapper.
 - CSS Modules are used for all components.
+- Shadow DOM rendering is enabled with inline style injection.
+- Shadow DOM can be toggled off by adding `?shadow=0` to the URL or setting `window.__USE_SHADOW_DOM__ = false` before initialization.
 
 Document updated: January 15, 2026.
