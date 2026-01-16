@@ -1,6 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@use './tokens';
+
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -9,9 +11,15 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0f172a;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
-* {
-  box-sizing: border-box;
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
 }

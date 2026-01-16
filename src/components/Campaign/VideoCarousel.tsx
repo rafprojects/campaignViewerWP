@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import type { MediaItem } from '@/types';
+import styles from './VideoCarousel.module.scss';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
@@ -24,19 +25,18 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
   const currentVideo = videos[currentIndex];
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-        <Play className="w-5 h-5" />
+    <div className={styles.section}>
+      <h3 className={styles.heading}>
+        <Play className={styles.icon} />
         Videos ({videos.length})
       </h3>
 
-      <div className="relative">
+      <div className={styles.playerWrapper}>
         {/* Main Video Display */}
-        <div className="relative aspect-video bg-slate-900 rounded-xl overflow-hidden">
+        <div className={styles.videoFrame}>
           {isPlaying ? (
             <iframe
               src={`${currentVideo.url}?autoplay=1`}
-              className="absolute inset-0 w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
@@ -45,19 +45,19 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               key={currentIndex}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="relative w-full h-full"
+              className={styles.poster}
             >
               <img
                 src={currentVideo.thumbnail}
                 alt={currentVideo.caption}
-                className="w-full h-full object-cover"
+                className={styles.posterImage}
               />
               <button
                 onClick={() => setIsPlaying(true)}
-                className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/50 transition-colors group"
+                className={styles.playOverlay}
               >
-                <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play className="w-10 h-10 text-slate-900 ml-1" fill="currentColor" />
+                <div className={styles.playButton}>
+                  <Play className={styles.playIcon} fill="currentColor" />
                 </div>
               </button>
             </motion.div>
@@ -69,26 +69,26 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
           <>
             <button
               onClick={prevVideo}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors"
+              className={`${styles.navButton} ${styles.navButtonLeft}`}
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className={styles.navIcon} />
             </button>
             <button
               onClick={nextVideo}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors"
+              className={`${styles.navButton} ${styles.navButtonRight}`}
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className={styles.navIcon} />
             </button>
           </>
         )}
       </div>
 
       {/* Caption */}
-      <p className="text-slate-400 text-center">{currentVideo.caption}</p>
+      <p className={styles.caption}>{currentVideo.caption}</p>
 
       {/* Thumbnail Strip */}
       {videos.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className={styles.thumbnailStrip}>
           {videos.map((video, index) => (
             <button
               key={video.id}
@@ -96,16 +96,14 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
                 setCurrentIndex(index);
                 setIsPlaying(false);
               }}
-              className={`flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                index === currentIndex
-                  ? 'border-blue-500 scale-105'
-                  : 'border-transparent opacity-60 hover:opacity-100'
+              className={`${styles.thumbnailButton} ${
+                index === currentIndex ? styles.thumbnailButtonActive : ''
               }`}
             >
               <img
                 src={video.thumbnail}
                 alt={video.caption}
-                className="w-full h-full object-cover"
+                className={styles.thumbnailImage}
               />
             </button>
           ))}

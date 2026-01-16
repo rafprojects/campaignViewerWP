@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Lock, Eye } from 'lucide-react';
 import type { Campaign } from '@/types';
+import styles from './CampaignCard.module.scss';
 
 interface CampaignCardProps {
   campaign: Campaign;
@@ -18,45 +19,41 @@ export function CampaignCard({ campaign, hasAccess, onClick }: CampaignCardProps
       whileHover={{ scale: hasAccess ? 1.03 : 1.01, y: hasAccess ? -5 : 0 }}
       whileTap={{ scale: hasAccess ? 0.98 : 1 }}
       onClick={hasAccess ? onClick : undefined}
-      className={`relative overflow-hidden rounded-2xl bg-slate-800 shadow-xl cursor-pointer group ${
-        !hasAccess ? 'cursor-not-allowed opacity-75' : ''
-      }`}
+      className={`${styles.card} ${!hasAccess ? styles.cardLocked : ''}`}
       style={{
         borderLeft: `4px solid ${campaign.company.brandColor}`,
       }}
     >
       {/* Thumbnail */}
-      <div className="relative h-48 overflow-hidden">
+      <div className={styles.thumbnail}>
         <img
           src={campaign.thumbnail}
           alt={campaign.title}
-          className={`w-full h-full object-cover transition-transform duration-500 ${
-            hasAccess ? 'group-hover:scale-110' : 'filter grayscale'
-          }`}
+          className={`${styles.thumbnailImage} ${!hasAccess ? styles.thumbnailImageLocked : ''}`}
         />
         
         {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+        <div className={styles.overlayGradient} />
         
         {/* Lock overlay for inaccessible cards */}
         {!hasAccess && (
-          <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
-            <div className="bg-slate-800/90 rounded-full p-4">
-              <Lock className="w-8 h-8 text-slate-400" />
+          <div className={styles.lockOverlay}>
+            <div className={styles.lockIcon}>
+              <Lock className={styles.lockIconSvg} />
             </div>
           </div>
         )}
 
         {/* Access indicator */}
         {hasAccess && (
-          <div className="absolute top-3 right-3 bg-green-500/90 rounded-full p-2">
-            <Eye className="w-4 h-4 text-white" />
+          <div className={styles.accessBadge}>
+            <Eye className={styles.accessIcon} />
           </div>
         )}
 
         {/* Company badge */}
         <div
-          className="absolute top-3 left-3 px-3 py-1 rounded-full text-sm font-medium text-white flex items-center gap-2"
+          className={styles.companyBadge}
           style={{ backgroundColor: campaign.company.brandColor }}
         >
           <span>{campaign.company.logo}</span>
@@ -65,20 +62,20 @@ export function CampaignCard({ campaign, hasAccess, onClick }: CampaignCardProps
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+      <div className={styles.content}>
+        <h3 className={styles.title}>
           {campaign.title}
         </h3>
-        <p className="text-slate-400 text-sm line-clamp-2 mb-4">
+        <p className={styles.description}>
           {campaign.description}
         </p>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-2">
+        <div className={styles.tags}>
           {campaign.tags.map((tag) => (
             <span
               key={tag}
-              className="px-2 py-1 bg-slate-700 text-slate-300 text-xs rounded-md"
+              className={styles.tag}
             >
               #{tag}
             </span>
@@ -86,7 +83,7 @@ export function CampaignCard({ campaign, hasAccess, onClick }: CampaignCardProps
         </div>
 
         {/* Media count */}
-        <div className="flex items-center gap-4 mt-4 text-slate-500 text-sm">
+        <div className={styles.mediaStats}>
           <span>🎬 {campaign.videos.length} videos</span>
           <span>🖼️ {campaign.images.length} images</span>
         </div>
@@ -95,7 +92,7 @@ export function CampaignCard({ campaign, hasAccess, onClick }: CampaignCardProps
       {/* Hover effect border */}
       {hasAccess && (
         <motion.div
-          className="absolute inset-0 rounded-2xl pointer-events-none"
+          className={styles.hoverBorder}
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 1 }}
           style={{
