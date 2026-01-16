@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# production
+build/
+dist/
+
+# misc
+.DS_Store
+.env
+.env.local
+.env.*.local
+
+# testing
+coverage/
+
+# editors
+.vscode/
+.idea/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# lockfiles
+*.lock
