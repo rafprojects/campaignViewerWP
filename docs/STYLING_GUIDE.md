@@ -111,6 +111,7 @@ This guide covers styling practices to ensure the gallery works well both as a s
 
 - Root scoping is enabled via `.wp-super-gallery` wrapper.
 - Global styles are applied only inside this wrapper.
+- CSS variables are scoped to `.wp-super-gallery`.
 - CSS Modules are used for all components.
 - Shadow DOM rendering is enabled with inline style injection.
 - Shadow DOM can be toggled off by adding `?shadow=0` to the URL or setting `window.__USE_SHADOW_DOM__ = false` before initialization.
