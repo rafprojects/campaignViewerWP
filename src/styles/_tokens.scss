@@ -18,4 +18,9 @@
 
   --shadow-card: 0 20px 45px rgba(0, 0, 0, 0.35);
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  --z-base: 1;
+  --z-header: 40;
+  --z-overlay: 80;
+  --z-modal: 100;
 }
