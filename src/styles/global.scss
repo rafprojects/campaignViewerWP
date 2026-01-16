@@ -22,3 +22,21 @@
 .wp-super-gallery button {
   font: inherit;
 }
+
+.wp-super-gallery__container {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.wp-super-gallery--compact .wp-super-gallery__container {
+  max-width: 64rem;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .wp-super-gallery__container {
+    padding: 0 2rem;
+  }
+}

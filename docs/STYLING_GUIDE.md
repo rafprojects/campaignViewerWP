@@ -44,6 +44,8 @@ This guide covers styling practices to ensure the gallery works well both as a s
 **Implementation:** Centralize container sizing in a single wrapper class.
 **Benefit:** Consistent layout at different embed widths.
 
+**Variant:** Use `.wp-super-gallery--compact` on the root wrapper to reduce the max-width and horizontal padding for narrow embeds.
+
 ## 7) Consider Shadow DOM for isolation (optional)
 
 **Why:** Some WordPress sites use aggressive CSS that still leaks in.

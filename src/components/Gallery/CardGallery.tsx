@@ -30,7 +30,7 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
     <div className={styles.gallery}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.headerInner}>
+        <div className={`${styles.headerInner} wp-super-gallery__container`}>
           <div className={styles.headerContent}>
             <div>
               <h1 className={styles.headerTitle}>Campaign Gallery</h1>
@@ -72,7 +72,7 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
       </header>
 
       {/* Gallery Grid */}
-      <main className={styles.main}>
+      <main className={`${styles.main} wp-super-gallery__container`}>
         <motion.div
           layout
           className={styles.grid}
