@@ -39,6 +39,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               src={`${currentVideo.url}?autoplay=1`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              title={`Video player: ${currentVideo.caption}`}
             />
           ) : (
             <motion.div
