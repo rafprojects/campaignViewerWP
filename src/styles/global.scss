@@ -1,0 +1,42 @@
+@use './tokens';
+
+.wp-super-gallery {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.wp-super-gallery * {
+  box-sizing: border-box;
+}
+
+.wp-super-gallery img {
+  display: block;
+  max-width: 100%;
+}
+
+.wp-super-gallery button {
+  font: inherit;
+}
+
+.wp-super-gallery__container {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.wp-super-gallery--compact .wp-super-gallery__container {
+  max-width: 64rem;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .wp-super-gallery__container {
+    padding: 0 2rem;
+  }
+}
