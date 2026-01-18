@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import './styles/global.scss'
 import { shadowStyles } from './shadowStyles'
 
 const host = document.getElementById('root')
@@ -29,6 +28,10 @@ if (useShadowDom) {
     </StrictMode>,
   )
 } else {
+  // Import global styles only when Shadow DOM is disabled
+  // (Shadow DOM already includes these via shadowStyles)
+  import('./styles/global.scss')
+  
   createRoot(host).render(
     <StrictMode>
       <App />
