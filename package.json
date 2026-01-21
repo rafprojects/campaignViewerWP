@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:wp": "npm run build && node scripts/copy-wp-assets.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
