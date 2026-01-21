@@ -16,14 +16,20 @@ export interface Campaign {
   videos: MediaItem[];
   images: MediaItem[];
   tags: string[];
-  createdAt: Date;
-  isPublic: boolean;
+  status: 'draft' | 'active' | 'archived';
+  visibility: 'public' | 'private';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MediaItem {
   id: string;
   type: 'video' | 'image';
+  source: 'upload' | 'external';
   url: string;
+  embedUrl?: string;
+  provider?: 'youtube' | 'vimeo' | 'rumble' | 'bitchute' | 'odysee' | 'other';
+  attachmentId?: number;
   thumbnail?: string;
   caption?: string;
   order: number;
@@ -34,4 +40,12 @@ export interface User {
   email: string;
   role: 'viewer' | 'admin';
   permissions: string[]; // Array of campaign IDs user can access
+}
+
+export interface CampaignAccessGrant {
+  userId: string;
+  campaignId: string;
+  source: 'company' | 'campaign';
+  grantedAt: string;
+  revokedAt?: string;
 }

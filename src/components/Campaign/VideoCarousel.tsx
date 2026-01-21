@@ -35,8 +35,8 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
         {/* Main Video Display */}
         <div className={styles.videoFrame}>
           {isPlaying ? (
-            <iframe
-              src={`${currentVideo.url}?autoplay=1`}
+              <iframe
+                src={`${currentVideo.embedUrl ?? currentVideo.url}?autoplay=1`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               title={`Video player: ${currentVideo.caption}`}
