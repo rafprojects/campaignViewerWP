@@ -69,7 +69,9 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_media'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => function () {
+                    return is_user_logged_in();
+                },
             ],
             [
                 'methods' => 'POST',
