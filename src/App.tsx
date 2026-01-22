@@ -82,6 +82,7 @@ function AppContent({
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [localAccessMode, setLocalAccessMode] = useState<'lock' | 'hide'>(() => {
     const stored = localStorage.getItem(ACCESS_MODE_STORAGE_KEY);
     if (stored === 'hide' || stored === 'lock') {
@@ -90,6 +91,14 @@ function AppContent({
     return accessMode;
   });
   const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    if (!actionMessage) return;
+    const timer = window.setTimeout(() => {
+      setActionMessage(null);
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [actionMessage]);
 
   useEffect(() => {
     localStorage.setItem(ACCESS_MODE_STORAGE_KEY, localAccessMode);
@@ -172,30 +181,66 @@ function AppContent({
   }, [loadCampaigns]);
 
   const handleEditCampaign = async (campaign: Campaign) => {
+    if (!isAdmin) {
+      setActionMessage({ type: 'error', text: 'Admin permissions required.' });
+      return;
+    }
     const nextTitle = window.prompt('Update campaign title:', campaign.title);
     if (nextTitle === null) return;
     const nextDescription = window.prompt('Update campaign description:', campaign.description ?? '');
     if (nextDescription === null) return;
 
-    await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}`,
-      {
-        title: nextTitle,
-        description: nextDescription,
-      },
-    );
+    try {
+      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}`,
+        {
+          title: nextTitle,
+          description: nextDescription,
+        },
+      );
 
-    await loadCampaigns();
+      setActionMessage({ type: 'success', text: 'Campaign updated.' });
+      await loadCampaigns();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        setActionMessage({ type: 'error', text: 'Admin permissions required.' });
+      } else if (err instanceof ApiError && err.status === 401) {
+        void logout();
+        setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
+      } else {
+        setActionMessage({ type: 'error', text: 'Failed to update campaign.' });
+      }
+    }
   };
 
   const handleArchiveCampaign = async (campaign: Campaign) => {
+    if (!isAdmin) {
+      setActionMessage({ type: 'error', text: 'Admin permissions required.' });
+      return;
+    }
     const confirmed = window.confirm('Archive this campaign?');
     if (!confirmed) return;
 
-    await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/archive`, {});
-    await loadCampaigns();
+    try {
+      await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/archive`, {});
+      setActionMessage({ type: 'success', text: 'Campaign archived.' });
+      await loadCampaigns();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        setActionMessage({ type: 'error', text: 'Admin permissions required.' });
+      } else if (err instanceof ApiError && err.status === 401) {
+        void logout();
+        setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
+      } else {
+        setActionMessage({ type: 'error', text: 'Failed to archive campaign.' });
+      }
+    }
   };
 
   const handleAddExternalMedia = async (campaign: Campaign) => {
+    if (!isAdmin) {
+      setActionMessage({ type: 'error', text: 'Admin permissions required.' });
+      return;
+    }
     const type = window.prompt('Media type (video or image):', 'video');
     if (!type || (type !== 'video' && type !== 'image')) return;
 
@@ -207,16 +252,28 @@ function AppContent({
 
     const order = campaign.videos.length + campaign.images.length + 1;
 
-    await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/media`, {
-      type,
-      source: 'external',
-      url,
-      caption: caption || undefined,
-      thumbnail: thumbnail || undefined,
-      order,
-    });
+    try {
+      await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/media`, {
+        type,
+        source: 'external',
+        url,
+        caption: caption || undefined,
+        thumbnail: thumbnail || undefined,
+        order,
+      });
 
-    await loadCampaigns();
+      setActionMessage({ type: 'success', text: 'Media added.' });
+      await loadCampaigns();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        setActionMessage({ type: 'error', text: 'Admin permissions required.' });
+      } else if (err instanceof ApiError && err.status === 401) {
+        void logout();
+        setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
+      } else {
+        setActionMessage({ type: 'error', text: 'Failed to add media.' });
+      }
+    }
   };
 
   return (
@@ -224,8 +281,13 @@ function AppContent({
       {hasProvider && !isAuthenticated && isReady && (
         <LoginForm onSubmit={handleLogin} />
       )}
+      {actionMessage && (
+        <div className={`wp-super-gallery__banner wp-super-gallery__banner--${actionMessage.type}`}>
+          {actionMessage.text}
+        </div>
+      )}
       {error && (
-        <div className="wp-super-gallery__error">{error}</div>
+        <div className="wp-super-gallery__banner wp-super-gallery__banner--error">{error}</div>
       )}
       {isLoading ? (
         <div className="wp-super-gallery__loading">Loading campaigns...</div>
