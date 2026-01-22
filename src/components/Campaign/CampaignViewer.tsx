@@ -70,7 +70,7 @@ export function CampaignViewer({ campaign, onClose }: CampaignViewerProps) {
             <div className={styles.meta}>
               <span className={styles.metaItem}>
                 <Calendar className={styles.metaIcon} />
-                {campaign.createdAt.toLocaleDateString('en-US', {
+                {new Date(campaign.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -118,10 +118,10 @@ export function CampaignViewer({ campaign, onClose }: CampaignViewerProps) {
             </div>
             <div className={styles.statsCard}>
               <div className={styles.statsValue}>
-                {campaign.isPublic ? '🌐' : '🔒'}
+                {campaign.visibility === 'public' ? '🌐' : '🔒'}
               </div>
               <div className={styles.statsLabel}>
-                {campaign.isPublic ? 'Public' : 'Private'}
+                {campaign.visibility === 'public' ? 'Public' : 'Private'}
               </div>
             </div>
           </div>
