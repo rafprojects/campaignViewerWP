@@ -65,6 +65,8 @@ const buildCompany = (companyId: string): Company => {
   };
 };
 
+const ACCESS_MODE_STORAGE_KEY = 'wpsg_access_mode';
+
 function AppContent({
   hasProvider,
   apiBaseUrl,
@@ -80,8 +82,18 @@ function AppContent({
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [localAccessMode, setLocalAccessMode] = useState<'lock' | 'hide'>(accessMode);
+  const [localAccessMode, setLocalAccessMode] = useState<'lock' | 'hide'>(() => {
+    const stored = localStorage.getItem(ACCESS_MODE_STORAGE_KEY);
+    if (stored === 'hide' || stored === 'lock') {
+      return stored;
+    }
+    return accessMode;
+  });
   const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    localStorage.setItem(ACCESS_MODE_STORAGE_KEY, localAccessMode);
+  }, [localAccessMode]);
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password);
