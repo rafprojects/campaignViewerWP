@@ -118,15 +118,15 @@ class WPSG_REST {
     }
 
     /**
-     * Check if current user can view campaigns.
-     * Returns true if user is admin, false otherwise (will filter by visibility in list_campaigns).
+     * Permission callback for list_campaigns endpoint.
+     * Always returns true to allow the endpoint to be called.
+     * Access filtering is performed within list_campaigns() based on visibility and grants.
+     * This approach allows public campaigns to be visible to unauthenticated users
+     * while still protecting private/unlisted campaigns.
      */
     public static function can_view_campaigns() {
-        // Admins can always view all campaigns
-        if (current_user_can('manage_options')) {
-            return true;
-        }
-        // Non-admins can view campaigns (filtered by visibility and access grants)
+        // Allow all users to call the list endpoint
+        // The list_campaigns method filters results based on access permissions
         return true;
     }
 
@@ -217,11 +217,11 @@ class WPSG_REST {
         $page = max(1, intval($request->get_param('page')));
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
 
+        // Fetch all matching campaigns (without pagination) to properly filter by access
         $args = [
             'post_type' => 'wpsg_campaign',
             'post_status' => 'publish',
-            'paged' => $page,
-            'posts_per_page' => $per_page,
+            'posts_per_page' => -1, // Get all posts, we'll paginate after filtering
             's' => $search,
         ];
 
@@ -278,14 +278,22 @@ class WPSG_REST {
             return self::user_has_campaign_access($post->ID, $current_user_id);
         });
         
-        $items = array_map([self::class, 'format_campaign'], array_values($filtered_posts));
+        $filtered_posts = array_values($filtered_posts);
+        $total = count($filtered_posts);
+        $total_pages = (int) ceil($total / $per_page);
+        
+        // Apply pagination after filtering
+        $offset = ($page - 1) * $per_page;
+        $paginated_posts = array_slice($filtered_posts, $offset, $per_page);
+        
+        $items = array_map([self::class, 'format_campaign'], $paginated_posts);
 
         return new WP_REST_Response([
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => count($filtered_posts),
-            'totalPages' => (int) ceil(count($filtered_posts) / $per_page),
+            'total' => $total,
+            'totalPages' => $total_pages,
         ], 200);
     }
 
