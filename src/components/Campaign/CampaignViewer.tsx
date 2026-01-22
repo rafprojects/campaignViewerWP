@@ -7,10 +7,11 @@ import styles from './CampaignViewer.module.scss';
 
 interface CampaignViewerProps {
   campaign: Campaign;
+  hasAccess: boolean;
   onClose: () => void;
 }
 
-export function CampaignViewer({ campaign, onClose }: CampaignViewerProps) {
+export function CampaignViewer({ campaign, hasAccess, onClose }: CampaignViewerProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -92,13 +93,19 @@ export function CampaignViewer({ campaign, onClose }: CampaignViewerProps) {
             <p className={styles.description}>{campaign.description}</p>
           </div>
 
+          {!hasAccess && (
+            <div className={styles.accessNotice}>
+              <p>This campaign is private. Sign in or request access to view media.</p>
+            </div>
+          )}
+
           {/* Videos Section */}
-          {campaign.videos.length > 0 && (
+          {hasAccess && campaign.videos.length > 0 && (
             <VideoCarousel videos={campaign.videos} />
           )}
 
           {/* Images Section */}
-          {campaign.images.length > 0 && (
+          {hasAccess && campaign.images.length > 0 && (
             <ImageCarousel images={campaign.images} />
           )}
 

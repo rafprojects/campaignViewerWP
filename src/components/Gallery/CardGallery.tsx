@@ -16,15 +16,15 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
 
   const companies = [...new Set(campaigns.map((c) => c.company.name))];
 
-  const filteredCampaigns = campaigns.filter((campaign) => {
-    if (filter === 'all') return true;
-    if (filter === 'accessible') return userPermissions.includes(campaign.id) || campaign.visibility === 'public';
-    return campaign.company.name === filter;
-  });
-
   const hasAccess = (campaignId: string, visibility: 'public' | 'private') => {
     return visibility === 'public' || userPermissions.includes(campaignId);
   };
+
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    if (filter === 'all') return true;
+    if (filter === 'accessible') return hasAccess(campaign.id, campaign.visibility);
+    return campaign.company.name === filter;
+  });
 
   return (
     <div className={styles.gallery}>
@@ -101,6 +101,7 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
         {selectedCampaign && (
           <CampaignViewer
             campaign={selectedCampaign}
+            hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
             onClose={() => setSelectedCampaign(null)}
           />
         )}
