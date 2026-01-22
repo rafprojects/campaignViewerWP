@@ -172,14 +172,23 @@ class WPSG_REST {
         }
 
         $query = new WP_Query($args);
-        $items = array_map([self::class, 'format_campaign'], $query->posts);
+        
+        // Filter campaigns based on visibility and access grants
+        $current_user_id = get_current_user_id();
+        $filtered_items = [];
+        
+        foreach ($query->posts as $post) {
+            if (self::user_can_access_campaign($post->ID, $current_user_id)) {
+                $filtered_items[] = self::format_campaign($post);
+            }
+        }
 
         return new WP_REST_Response([
-            'items' => $items,
+            'items' => $filtered_items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => (int) $query->found_posts,
-            'totalPages' => (int) $query->max_num_pages,
+            'total' => count($filtered_items),
+            'totalPages' => count($filtered_items) > 0 ? (int) ceil(count($filtered_items) / $per_page) : 0,
         ], 200);
     }
 
@@ -538,6 +547,59 @@ class WPSG_REST {
     private static function campaign_exists($post_id) {
         $post = get_post($post_id);
         return $post && $post->post_type === 'wpsg_campaign';
+    }
+
+    /**
+     * Check if a user has access to view a campaign based on visibility and access grants.
+     *
+     * @param int $campaign_id The campaign post ID.
+     * @param int $user_id The user ID (0 for unauthenticated users).
+     * @return bool True if the user can access the campaign, false otherwise.
+     */
+    private static function user_can_access_campaign($campaign_id, $user_id = 0) {
+        // Admins can access all campaigns
+        if ($user_id > 0 && current_user_can('manage_options')) {
+            return true;
+        }
+
+        $visibility = get_post_meta($campaign_id, 'visibility', true) ?: 'private';
+
+        // Public campaigns are accessible to everyone
+        if ($visibility === 'public') {
+            return true;
+        }
+
+        // Private campaigns require authentication and access grants
+        if ($user_id === 0) {
+            return false;
+        }
+
+        // Check if user has been granted access
+        $company_term = self::get_company_term($campaign_id);
+        $company_grants = $company_term ? get_term_meta($company_term->term_id, 'access_grants', true) : [];
+        $campaign_grants = get_post_meta($campaign_id, 'access_grants', true);
+        $overrides = get_post_meta($campaign_id, 'access_overrides', true);
+
+        $company_grants = is_array($company_grants) ? $company_grants : [];
+        $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+        $overrides = is_array($overrides) ? $overrides : [];
+
+        // Check if user is explicitly denied
+        foreach ($overrides as $override) {
+            if (intval($override['userId'] ?? 0) === $user_id && ($override['action'] ?? '') === 'deny') {
+                return false;
+            }
+        }
+
+        // Check if user has a grant (either company-level or campaign-level)
+        $all_grants = array_merge($company_grants, $campaign_grants);
+        foreach ($all_grants as $grant) {
+            if (intval($grant['userId'] ?? 0) === $user_id) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function format_campaign($post) {
