@@ -49,6 +49,12 @@ export function CardGallery({
     return hasAccess(campaign.id, campaign.visibility);
   });
 
+  const accessibleCount = campaigns.filter((campaign) =>
+    hasAccess(campaign.id, campaign.visibility),
+  ).length;
+  const hiddenCount = Math.max(0, campaigns.length - accessibleCount);
+  const showHiddenNotice = accessMode === 'hide' && filter === 'all' && hiddenCount > 0;
+
   return (
     <div className={styles.gallery}>
       {/* Header */}
@@ -90,6 +96,12 @@ export function CardGallery({
                 </button>
               ))}
             </div>
+
+            {showHiddenNotice && (
+              <div className={styles.accessNotice}>
+                {hiddenCount} campaign{hiddenCount === 1 ? '' : 's'} hidden by access mode.
+              </div>
+            )}
 
             {isAdmin && (
               <div className={styles.adminControls}>
@@ -138,7 +150,13 @@ export function CardGallery({
 
         {filteredCampaigns.length === 0 && (
           <div className={styles.emptyState}>
-            <p>No campaigns found matching your filter.</p>
+            {filter === 'accessible' ? (
+              <p>No accessible campaigns yet.</p>
+            ) : accessMode === 'hide' ? (
+              <p>No accessible campaigns found. Switch to Lock mode to view locked cards.</p>
+            ) : (
+              <p>No campaigns found matching your filter.</p>
+            )}
           </div>
         )}
       </main>

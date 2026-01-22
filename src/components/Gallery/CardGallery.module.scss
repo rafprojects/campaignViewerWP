@@ -116,6 +116,16 @@
   color: #ffffff;
 }
 
+.accessNotice {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .main {
   padding: 2rem 0;
 }
