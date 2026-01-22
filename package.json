@@ -36,6 +36,7 @@
     "globals": "^15.14.0",
     "jsdom": "^25.0.1",
     "sass": "^1.77.8",
+    "sass-embedded": "^1.77.8",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.4.1",

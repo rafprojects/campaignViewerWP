@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CardGallery } from './CardGallery';
 import type { Campaign, Company, MediaItem } from '@/types';
