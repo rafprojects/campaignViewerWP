@@ -187,14 +187,8 @@ class WPSG_REST {
             if ($visibility === 'private') {
                 // Will need to filter by permission after query
                 $args['posts_per_page'] = -1; // Need all to filter properly
-            } elseif (empty($visibility)) {
-                // No visibility filter - show only public campaigns to non-admin
-                $meta_query[] = [
-                    'key' => 'visibility',
-                    'value' => 'public',
-                ];
             } else {
-                // Visibility is explicitly 'public'
+                // No visibility filter or explicitly 'public' - show only public campaigns to non-admin
                 $meta_query[] = [
                     'key' => 'visibility',
                     'value' => 'public',
