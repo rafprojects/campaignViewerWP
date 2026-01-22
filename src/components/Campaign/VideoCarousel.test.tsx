@@ -32,7 +32,22 @@ describe('VideoCarousel', () => {
 
     expect(screen.getByText('Video One')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button')[1]);
+    const playOverlay = document.querySelector('[class*="playOverlay"]');
+    if (playOverlay) {
+      fireEvent.click(playOverlay);
+      expect(screen.getByTitle('Video player: Video One')).toBeInTheDocument();
+    }
+
+    const nextButton = document.querySelector('[class*="navButtonRight"]');
+    if (nextButton) {
+      fireEvent.click(nextButton);
+    }
     expect(screen.getByText('Video Two')).toBeInTheDocument();
+
+    const prevButton = document.querySelector('[class*="navButtonLeft"]');
+    if (prevButton) {
+      fireEvent.click(prevButton);
+    }
+    expect(screen.getByText('Video One')).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CardGallery } from './CardGallery';
 import type { Campaign, Company, MediaItem } from '@/types';
@@ -82,5 +82,37 @@ describe('CardGallery', () => {
 
     expect(screen.getByText('Private Campaign')).toBeInTheDocument();
     expect(screen.getByText('Public Campaign')).toBeInTheDocument();
+  });
+
+  it('toggles access mode when admin clicks Hide', () => {
+    const onAccessModeChange = vi.fn();
+
+    render(
+      <CardGallery
+        campaigns={[buildCampaign('1', 'Public Campaign', 'public')]}
+        userPermissions={[]}
+        isAdmin
+        accessMode="lock"
+        onAccessModeChange={onAccessModeChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    expect(onAccessModeChange).toHaveBeenCalledWith('hide');
+  });
+
+  it('shows hidden access notice in hide mode', () => {
+    render(
+      <CardGallery
+        campaigns={[
+          buildCampaign('1', 'Public Campaign', 'public'),
+          buildCampaign('2', 'Private Campaign', 'private'),
+        ]}
+        userPermissions={[]}
+        accessMode="hide"
+      />,
+    );
+
+    expect(screen.getByText(/hidden by access mode/i)).toBeInTheDocument();
   });
 });

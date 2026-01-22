@@ -27,6 +27,7 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/test/**',
+        '**/*.test.{ts,tsx}',
         'src/**/*.d.ts',
         'src/services/auth/AuthProvider.ts',
         'src/main.tsx',

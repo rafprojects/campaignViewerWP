@@ -65,4 +65,27 @@ describe('ApiClient', () => {
     await expect(client.get('/wp-json/wp-super-gallery/v1/campaigns')).rejects.toBeInstanceOf(ApiError);
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
+
+  it('supports put and delete requests', async () => {
+    const response: FetchResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    };
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(response);
+
+    const client = new ApiClient({ baseUrl });
+    await client.put('/wp-json/wp-super-gallery/v1/campaigns/1', { title: 'Update' });
+    await client.delete('/wp-json/wp-super-gallery/v1/campaigns/1');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns/1`,
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns/1`,
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
 });
