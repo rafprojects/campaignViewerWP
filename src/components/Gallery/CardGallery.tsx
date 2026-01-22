@@ -11,6 +11,9 @@ interface CardGalleryProps {
   accessMode?: 'lock' | 'hide';
   isAdmin?: boolean;
   onAccessModeChange?: (mode: 'lock' | 'hide') => void;
+  onEditCampaign?: (campaign: Campaign) => void;
+  onArchiveCampaign?: (campaign: Campaign) => void;
+  onAddExternalMedia?: (campaign: Campaign) => void;
 }
 
 export function CardGallery({
@@ -19,6 +22,9 @@ export function CardGallery({
   accessMode = 'lock',
   isAdmin = false,
   onAccessModeChange,
+  onEditCampaign,
+  onArchiveCampaign,
+  onAddExternalMedia,
 }: CardGalleryProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<string>('all');
@@ -143,6 +149,10 @@ export function CardGallery({
           <CampaignViewer
             campaign={selectedCampaign}
             hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
+            isAdmin={isAdmin}
+            onEditCampaign={onEditCampaign}
+            onArchiveCampaign={onArchiveCampaign}
+            onAddExternalMedia={onAddExternalMedia}
             onClose={() => setSelectedCampaign(null)}
           />
         )}

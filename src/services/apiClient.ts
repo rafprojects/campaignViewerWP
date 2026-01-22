@@ -52,6 +52,23 @@ export class ApiClient {
     });
     return this.handleResponse<T>(response);
   }
+
+  async put<T>(path: string, body: unknown): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: await this.getHeaders(),
+      body: JSON.stringify(body),
+    });
+    return this.handleResponse<T>(response);
+  }
+
+  async delete<T>(path: string): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'DELETE',
+      headers: await this.getHeaders(),
+    });
+    return this.handleResponse<T>(response);
+  }
 }
 
 export class ApiError extends Error {

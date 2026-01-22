@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
@@ -104,84 +104,120 @@ function AppContent({
     [apiBaseUrl, authProvider],
   );
 
-  useEffect(() => {
+  const loadCampaigns = useCallback(async () => {
     if (!isReady) return;
 
-    let isMounted = true;
+    setIsLoading(true);
+    setError(null);
 
-    const loadCampaigns = async () => {
-      setIsLoading(true);
-      setError(null);
+    try {
+      const response = await apiClient.get<ApiCampaignResponse>(
+        '/wp-json/wp-super-gallery/v1/campaigns',
+      );
+      const items = response.items ?? [];
 
-      try {
-        const response = await apiClient.get<ApiCampaignResponse>(
-          '/wp-json/wp-super-gallery/v1/campaigns',
-        );
-        const items = response.items ?? [];
-
-        const mapped = await Promise.all(
-          items.map(async (item) => {
-            let mediaItems: MediaItem[] = [];
-            if (isAuthenticated) {
-              try {
-                mediaItems = await apiClient.get<MediaItem[]>(
-                  `/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`,
-                );
-              } catch {
-                mediaItems = [];
-              }
+      const mapped = await Promise.all(
+        items.map(async (item) => {
+          let mediaItems: MediaItem[] = [];
+          if (isAuthenticated) {
+            try {
+              mediaItems = await apiClient.get<MediaItem[]>(
+                `/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`,
+              );
+            } catch {
+              mediaItems = [];
             }
-
-            const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE;
-            const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE;
-            const orderedMedia = [...mediaItems]
-              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-              .map((media) => ({
-                ...media,
-                thumbnail: media.thumbnail || thumbnail,
-                caption: media.caption || 'Campaign media',
-              }));
-            const videos = orderedMedia.filter((media) => media.type === 'video');
-            const images = orderedMedia.filter((media) => media.type === 'image');
-            const company = buildCompany(item.companyId);
-
-            return {
-              ...item,
-              companyId: item.companyId,
-              company,
-              thumbnail,
-              coverImage,
-              videos,
-              images,
-            } as Campaign;
-          }),
-        );
-
-        if (isMounted) {
-          setCampaigns(mapped);
-        }
-      } catch (err) {
-        if (isMounted) {
-          if (err instanceof ApiError && err.status === 401) {
-            void logout();
-            setError('Session expired. Please sign in again.');
-          } else {
-            setError(err instanceof Error ? err.message : 'Failed to load campaigns');
           }
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+
+          const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE;
+          const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE;
+          const orderedMedia = [...mediaItems]
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((media) => ({
+              ...media,
+              thumbnail: media.thumbnail || thumbnail,
+              caption: media.caption || 'Campaign media',
+            }));
+          const videos = orderedMedia.filter((media) => media.type === 'video');
+          const images = orderedMedia.filter((media) => media.type === 'image');
+          const company = buildCompany(item.companyId);
+
+          return {
+            ...item,
+            companyId: item.companyId,
+            company,
+            thumbnail,
+            coverImage,
+            videos,
+            images,
+          } as Campaign;
+        }),
+      );
+
+      setCampaigns(mapped);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        void logout();
+        setError('Session expired. Please sign in again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to load campaigns');
       }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient, isAuthenticated, isReady, logout]);
 
-    loadCampaigns();
+  useEffect(() => {
+    void loadCampaigns();
+  }, [loadCampaigns]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [apiClient, isAuthenticated, isReady]);
+  const handleEditCampaign = async (campaign: Campaign) => {
+    const nextTitle = window.prompt('Update campaign title:', campaign.title);
+    if (nextTitle === null) return;
+    const nextDescription = window.prompt('Update campaign description:', campaign.description ?? '');
+    if (nextDescription === null) return;
+
+    await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}`,
+      {
+        title: nextTitle,
+        description: nextDescription,
+      },
+    );
+
+    await loadCampaigns();
+  };
+
+  const handleArchiveCampaign = async (campaign: Campaign) => {
+    const confirmed = window.confirm('Archive this campaign?');
+    if (!confirmed) return;
+
+    await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/archive`, {});
+    await loadCampaigns();
+  };
+
+  const handleAddExternalMedia = async (campaign: Campaign) => {
+    const type = window.prompt('Media type (video or image):', 'video');
+    if (!type || (type !== 'video' && type !== 'image')) return;
+
+    const url = window.prompt('External media URL (https://...):');
+    if (!url) return;
+
+    const caption = window.prompt('Caption (optional):', '');
+    const thumbnail = window.prompt('Thumbnail URL (optional):', '') ?? '';
+
+    const order = campaign.videos.length + campaign.images.length + 1;
+
+    await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/media`, {
+      type,
+      source: 'external',
+      url,
+      caption: caption || undefined,
+      thumbnail: thumbnail || undefined,
+      order,
+    });
+
+    await loadCampaigns();
+  };
 
   return (
     <div className="wp-super-gallery">
@@ -200,6 +236,9 @@ function AppContent({
           accessMode={localAccessMode}
           isAdmin={isAdmin}
           onAccessModeChange={setLocalAccessMode}
+          onEditCampaign={handleEditCampaign}
+          onArchiveCampaign={handleArchiveCampaign}
+          onAddExternalMedia={handleAddExternalMedia}
         />
       )}
     </div>
