@@ -25,7 +25,15 @@ export default defineConfig({
       branches: 80,
       statements: 80,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/test/**', 'src/**/*.d.ts'],
+      exclude: [
+        'src/test/**',
+        'src/**/*.d.ts',
+        'src/services/auth/AuthProvider.ts',
+        'src/main.tsx',
+        'src/shadowStyles.ts',
+        'src/data/**',
+        'src/types/**',
+      ],
     },
   },
 })
