@@ -254,6 +254,11 @@ class WPSG_REST {
         $source = sanitize_text_field($request->get_param('source'));
         $caption = sanitize_text_field($request->get_param('caption'));
         $order = intval($request->get_param('order'));
+        if ($order < 0) {
+            $order = 0;
+        } elseif ($order > 1000000) {
+            $order = 1000000;
+        }
         $thumbnail = esc_url_raw($request->get_param('thumbnail'));
 
         if (!in_array($type, ['video', 'image'], true)) {
