@@ -11,6 +11,16 @@ class WPSG_Embed {
         add_shortcode('super-gallery', [self::class, 'render_shortcode']);
     }
 
+    /**
+     * Get the manifest data with caching.
+     * 
+     * Reads and parses the manifest.json file from the assets directory.
+     * The result is cached in a static property to avoid repeated file I/O
+     * operations when multiple shortcodes are rendered on the same page.
+     * 
+     * @return array The parsed manifest data, or an empty array if the file
+     *               doesn't exist, can't be read, or contains invalid JSON.
+     */
     private static function get_manifest() {
         if (self::$manifest_cache !== null) {
             return self::$manifest_cache;
@@ -18,7 +28,7 @@ class WPSG_Embed {
 
         $manifest_path = WPSG_PLUGIN_DIR . 'assets/manifest.json';
         if (file_exists($manifest_path)) {
-            $content = @file_get_contents($manifest_path);
+            $content = file_get_contents($manifest_path);
             if ($content !== false) {
                 $manifest = json_decode($content, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($manifest)) {
