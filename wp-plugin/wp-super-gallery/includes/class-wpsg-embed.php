@@ -18,11 +18,17 @@ class WPSG_Embed {
 
         $manifest_path = WPSG_PLUGIN_DIR . 'assets/manifest.json';
         if (file_exists($manifest_path)) {
-            self::$manifest_cache = json_decode(file_get_contents($manifest_path), true);
-        } else {
-            self::$manifest_cache = [];
+            $content = @file_get_contents($manifest_path);
+            if ($content !== false) {
+                $manifest = json_decode($content, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($manifest)) {
+                    self::$manifest_cache = $manifest;
+                    return self::$manifest_cache;
+                }
+            }
         }
 
+        self::$manifest_cache = [];
         return self::$manifest_cache;
     }
 
