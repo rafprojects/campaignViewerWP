@@ -30,14 +30,18 @@ export class ApiClient {
     return headers;
   }
 
+  private async handleResponse<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+      throw new ApiError('Request failed', response.status);
+    }
+    return response.json() as Promise<T>;
+  }
+
   async get<T>(path: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       headers: await this.getHeaders(),
     });
-    if (!response.ok) {
-      throw new Error('Request failed');
-    }
-    return response.json() as Promise<T>;
+    return this.handleResponse<T>(response);
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
@@ -46,9 +50,15 @@ export class ApiClient {
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
     });
-    if (!response.ok) {
-      throw new Error('Request failed');
-    }
-    return response.json() as Promise<T>;
+    return this.handleResponse<T>(response);
+  }
+}
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
   }
 }
