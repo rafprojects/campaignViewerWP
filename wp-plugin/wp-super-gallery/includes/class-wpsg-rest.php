@@ -161,12 +161,13 @@ class WPSG_REST {
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
 
         $current_user_id = get_current_user_id();
+        $is_admin = current_user_can('manage_options');
 
-        // Fetch more posts than requested to account for filtering
         $args = [
             'post_type' => 'wpsg_campaign',
             'post_status' => 'publish',
-            'posts_per_page' => -1, // Get all posts to filter by permission
+            'paged' => $page,
+            'posts_per_page' => $per_page,
             's' => $search,
         ];
 
@@ -177,7 +178,38 @@ class WPSG_REST {
                 'value' => $status,
             ];
         }
-        // Remove visibility from meta_query - we'll filter by permission instead
+
+        // For non-admin users, only query public campaigns by default
+        // Private campaigns will require additional permission checks
+        if (!$is_admin) {
+            // If visibility filter is explicitly set to 'private', we need to check access grants
+            // Otherwise, just query public campaigns
+            if ($visibility === 'private') {
+                // Will need to filter by permission after query
+                $args['posts_per_page'] = -1; // Need all to filter properly
+            } elseif (empty($visibility)) {
+                // No visibility filter - show only public campaigns to non-admin
+                $meta_query[] = [
+                    'key' => 'visibility',
+                    'value' => 'public',
+                ];
+            } else {
+                // Visibility is explicitly 'public'
+                $meta_query[] = [
+                    'key' => 'visibility',
+                    'value' => 'public',
+                ];
+            }
+        } else {
+            // Admin can see all, apply visibility filter if provided
+            if (!empty($visibility)) {
+                $meta_query[] = [
+                    'key' => 'visibility',
+                    'value' => $visibility,
+                ];
+            }
+        }
+
         if (!empty($meta_query)) {
             $args['meta_query'] = $meta_query;
         }
@@ -194,35 +226,38 @@ class WPSG_REST {
 
         $query = new WP_Query($args);
         
-        // Filter posts based on user permissions
-        $accessible_posts = array_filter($query->posts, function($post) use ($current_user_id) {
-            return self::user_can_access_campaign($post->ID, $current_user_id);
-        });
-
-        // Apply visibility filter after permission check (if requested)
-        if (!empty($visibility)) {
-            $accessible_posts = array_filter($accessible_posts, function($post) use ($visibility) {
-                $post_visibility = get_post_meta($post->ID, 'visibility', true) ?: 'private';
-                return $post_visibility === $visibility;
+        // For non-admin users requesting private campaigns, filter by access
+        if (!$is_admin && $visibility === 'private') {
+            $accessible_posts = array_filter($query->posts, function($post) use ($current_user_id) {
+                return self::user_can_access_campaign($post->ID, $current_user_id);
             });
+            $accessible_posts = array_values($accessible_posts);
+            
+            // Re-calculate pagination after filtering
+            $total = count($accessible_posts);
+            $total_pages = ceil($total / $per_page);
+            $offset = ($page - 1) * $per_page;
+            $items = array_slice($accessible_posts, $offset, $per_page);
+            $items = array_map([self::class, 'format_campaign'], $items);
+
+            return new WP_REST_Response([
+                'items' => $items,
+                'page' => $page,
+                'perPage' => $per_page,
+                'total' => $total,
+                'totalPages' => $total_pages,
+            ], 200);
         }
 
-        // Reset array keys
-        $accessible_posts = array_values($accessible_posts);
-        
-        // Calculate pagination
-        $total = count($accessible_posts);
-        $total_pages = ceil($total / $per_page);
-        $offset = ($page - 1) * $per_page;
-        $items = array_slice($accessible_posts, $offset, $per_page);
-        $items = array_map([self::class, 'format_campaign'], $items);
+        // For admin or public campaigns, use standard pagination
+        $items = array_map([self::class, 'format_campaign'], $query->posts);
 
         return new WP_REST_Response([
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => $total,
-            'totalPages' => $total_pages,
+            'total' => (int) $query->found_posts,
+            'totalPages' => (int) $query->max_num_pages,
         ], 200);
     }
 
