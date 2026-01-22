@@ -17,8 +17,12 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     setIsSubmitting(true);
     try {
       await onSubmit(email, password);
-    } catch {
-      setError('Login failed. Check your credentials.');
+    } catch (err) {
+      if (err instanceof Error && err.message) {
+        setError(err.message);
+      } else {
+        setError('Login failed. Check your credentials.');
+      }
     } finally {
       setIsSubmitting(false);
     }

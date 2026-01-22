@@ -3,15 +3,18 @@ import type { AuthProvider } from '@/services/auth/AuthProvider';
 export interface ApiClientOptions {
   baseUrl: string;
   authProvider?: AuthProvider;
+  onUnauthorized?: () => void;
 }
 
 export class ApiClient {
   private baseUrl: string;
   private authProvider?: AuthProvider;
+  private onUnauthorized?: () => void;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
     this.authProvider = options.authProvider;
+    this.onUnauthorized = options.onUnauthorized;
   }
 
   private async getHeaders(extra?: HeadersInit): Promise<Record<string, string>> {
@@ -32,6 +35,9 @@ export class ApiClient {
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
+      if (response.status === 401) {
+        this.onUnauthorized?.();
+      }
       throw new ApiError('Request failed', response.status);
     }
     return response.json() as Promise<T>;

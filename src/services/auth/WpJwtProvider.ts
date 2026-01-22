@@ -20,6 +20,15 @@ export class WpJwtProvider implements AuthProvider {
     if (!token) {
       return null;
     }
+    if (this.isTokenExpired(token)) {
+      await this.logout();
+      return null;
+    }
+    const isValid = await this.validateToken(token);
+    if (!isValid) {
+      await this.logout();
+      return null;
+    }
     return { accessToken: token };
   }
 
@@ -30,11 +39,14 @@ export class WpJwtProvider implements AuthProvider {
       body: JSON.stringify({ username: email, password }),
     });
 
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error('Authentication failed');
+      const message =
+        typeof data?.message === 'string' && data.message.trim().length > 0
+          ? data.message
+          : 'Authentication failed';
+      throw new Error(message);
     }
-
-    const data = await response.json();
     const token = data?.token ?? '';
     if (!token) {
       throw new Error('Missing token in response');
@@ -49,7 +61,7 @@ export class WpJwtProvider implements AuthProvider {
     };
     localStorage.setItem(USER_KEY, JSON.stringify(user));
 
-    return { accessToken: token };
+    return { accessToken: token, expiresAt: this.getTokenExpiryIso(token) ?? undefined };
   }
 
   async logout(): Promise<void> {
@@ -59,7 +71,29 @@ export class WpJwtProvider implements AuthProvider {
   }
 
   async getAccessToken(): Promise<string | null> {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) {
+      return null;
+    }
+    if (this.isTokenExpired(token)) {
+      await this.logout();
+      return null;
+    }
+    return token;
+  }
+
+  private async validateToken(token: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/wp-json/jwt-auth/v1/token/validate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 
   async getUser(): Promise<AuthUser | null> {
@@ -114,5 +148,44 @@ export class WpJwtProvider implements AuthProvider {
     }
     localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(permissions));
     return permissions;
+  }
+
+  private isTokenExpired(token: string): boolean {
+    const exp = this.getTokenExpiry(token);
+    if (!exp) {
+      return false;
+    }
+    return Date.now() >= exp * 1000;
+  }
+
+  private getTokenExpiryIso(token: string): string | null {
+    const exp = this.getTokenExpiry(token);
+    if (!exp) {
+      return null;
+    }
+    return new Date(exp * 1000).toISOString();
+  }
+
+  private getTokenExpiry(token: string): number | null {
+    const payload = this.decodeJwtPayload(token);
+    if (!payload || typeof payload.exp !== 'number') {
+      return null;
+    }
+    return payload.exp;
+  }
+
+  private decodeJwtPayload(token: string): { exp?: number } | null {
+    const parts = token.split('.');
+    if (parts.length < 2) {
+      return null;
+    }
+    try {
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+      const json = atob(padded);
+      return JSON.parse(json) as { exp?: number };
+    } catch {
+      return null;
+    }
   }
 }

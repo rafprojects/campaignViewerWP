@@ -108,9 +108,14 @@ function AppContent({
     await login(email, password);
   };
 
+  const handleUnauthorized = useCallback(() => {
+    void logout();
+    setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
+  }, [logout]);
+
   const apiClient = useMemo(
-    () => new ApiClient({ baseUrl: apiBaseUrl, authProvider }),
-    [apiBaseUrl, authProvider],
+    () => new ApiClient({ baseUrl: apiBaseUrl, authProvider, onUnauthorized: handleUnauthorized }),
+    [apiBaseUrl, authProvider, handleUnauthorized],
   );
 
   const loadCampaigns = useCallback(async () => {
@@ -166,7 +171,6 @@ function AppContent({
       setCampaigns(mapped);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        void logout();
         setError('Session expired. Please sign in again.');
       } else {
         setError(err instanceof Error ? err.message : 'Failed to load campaigns');
@@ -203,9 +207,6 @@ function AppContent({
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setActionMessage({ type: 'error', text: 'Admin permissions required.' });
-      } else if (err instanceof ApiError && err.status === 401) {
-        void logout();
-        setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
       } else {
         setActionMessage({ type: 'error', text: 'Failed to update campaign.' });
       }
@@ -227,9 +228,6 @@ function AppContent({
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setActionMessage({ type: 'error', text: 'Admin permissions required.' });
-      } else if (err instanceof ApiError && err.status === 401) {
-        void logout();
-        setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
       } else {
         setActionMessage({ type: 'error', text: 'Failed to archive campaign.' });
       }
@@ -267,9 +265,6 @@ function AppContent({
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setActionMessage({ type: 'error', text: 'Admin permissions required.' });
-      } else if (err instanceof ApiError && err.status === 401) {
-        void logout();
-        setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
       } else {
         setActionMessage({ type: 'error', text: 'Failed to add media.' });
       }
