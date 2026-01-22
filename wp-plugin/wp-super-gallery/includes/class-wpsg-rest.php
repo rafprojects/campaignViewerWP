@@ -100,6 +100,57 @@ class WPSG_REST {
         return current_user_can('manage_options');
     }
 
+    private static function user_can_access_campaign($post_id, $user_id = null) {
+        // Admins can access everything
+        if (current_user_can('manage_options')) {
+            return true;
+        }
+
+        $visibility = get_post_meta($post_id, 'visibility', true);
+        
+        // Public campaigns are accessible to everyone
+        if ($visibility === 'public') {
+            return true;
+        }
+
+        // Private campaigns require authentication and explicit access
+        if ($user_id === null) {
+            $user_id = get_current_user_id();
+        }
+
+        // Unauthenticated users cannot access private campaigns
+        if ($user_id <= 0) {
+            return false;
+        }
+
+        // Check if user has explicit access grant
+        $company_term = self::get_company_term($post_id);
+        $company_grants = $company_term ? get_term_meta($company_term->term_id, 'access_grants', true) : [];
+        $campaign_grants = get_post_meta($post_id, 'access_grants', true);
+        $overrides = get_post_meta($post_id, 'access_overrides', true);
+
+        $company_grants = is_array($company_grants) ? $company_grants : [];
+        $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+        $overrides = is_array($overrides) ? $overrides : [];
+
+        // Check for deny override
+        foreach ($overrides as $override) {
+            if (intval($override['userId'] ?? 0) === $user_id && ($override['action'] ?? '') === 'deny') {
+                return false;
+            }
+        }
+
+        // Check for explicit grant in company or campaign
+        $all_grants = array_merge($company_grants, $campaign_grants);
+        foreach ($all_grants as $grant) {
+            if (intval($grant['userId'] ?? 0) === $user_id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function list_campaigns() {
         $request = func_get_arg(0);
         $status = sanitize_text_field($request->get_param('status'));
@@ -109,11 +160,13 @@ class WPSG_REST {
         $page = max(1, intval($request->get_param('page')));
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
 
+        $current_user_id = get_current_user_id();
+
+        // Fetch more posts than requested to account for filtering
         $args = [
             'post_type' => 'wpsg_campaign',
             'post_status' => 'publish',
-            'paged' => $page,
-            'posts_per_page' => $per_page,
+            'posts_per_page' => -1, // Get all posts to filter by permission
             's' => $search,
         ];
 
@@ -124,12 +177,7 @@ class WPSG_REST {
                 'value' => $status,
             ];
         }
-        if (!empty($visibility)) {
-            $meta_query[] = [
-                'key' => 'visibility',
-                'value' => $visibility,
-            ];
-        }
+        // Remove visibility from meta_query - we'll filter by permission instead
         if (!empty($meta_query)) {
             $args['meta_query'] = $meta_query;
         }
@@ -145,14 +193,36 @@ class WPSG_REST {
         }
 
         $query = new WP_Query($args);
-        $items = array_map([self::class, 'format_campaign'], $query->posts);
+        
+        // Filter posts based on user permissions
+        $accessible_posts = array_filter($query->posts, function($post) use ($current_user_id) {
+            return self::user_can_access_campaign($post->ID, $current_user_id);
+        });
+
+        // Apply visibility filter after permission check (if requested)
+        if (!empty($visibility)) {
+            $accessible_posts = array_filter($accessible_posts, function($post) use ($visibility) {
+                $post_visibility = get_post_meta($post->ID, 'visibility', true) ?: 'private';
+                return $post_visibility === $visibility;
+            });
+        }
+
+        // Reset array keys
+        $accessible_posts = array_values($accessible_posts);
+        
+        // Calculate pagination
+        $total = count($accessible_posts);
+        $total_pages = ceil($total / $per_page);
+        $offset = ($page - 1) * $per_page;
+        $items = array_slice($accessible_posts, $offset, $per_page);
+        $items = array_map([self::class, 'format_campaign'], $items);
 
         return new WP_REST_Response([
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => (int) $query->found_posts,
-            'totalPages' => (int) $query->max_num_pages,
+            'total' => $total,
+            'totalPages' => $total_pages,
         ], 200);
     }
 
@@ -187,6 +257,11 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        // Check if user has permission to access this campaign
+        if (!self::user_can_access_campaign($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
         }
 
@@ -236,6 +311,11 @@ class WPSG_REST {
         $request = func_get_arg(0);
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        // Check if user has permission to access this campaign
+        if (!self::user_can_access_campaign($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
         }
 
