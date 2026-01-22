@@ -8,9 +8,10 @@ import styles from './CardGallery.module.scss';
 interface CardGalleryProps {
   campaigns: Campaign[];
   userPermissions: string[];
+  accessMode?: 'lock' | 'hide';
 }
 
-export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
+export function CardGallery({ campaigns, userPermissions, accessMode = 'lock' }: CardGalleryProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
@@ -24,6 +25,14 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
     if (filter === 'all') return true;
     if (filter === 'accessible') return hasAccess(campaign.id, campaign.visibility);
     return campaign.company.name === filter;
+  }).filter((campaign) => {
+    if (accessMode !== 'hide') {
+      return true;
+    }
+    if (filter === 'accessible') {
+      return true;
+    }
+    return hasAccess(campaign.id, campaign.visibility);
   });
 
   return (

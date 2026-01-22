@@ -69,10 +69,12 @@ function AppContent({
   hasProvider,
   apiBaseUrl,
   authProvider,
+  accessMode,
 }: {
   hasProvider: boolean;
   apiBaseUrl: string;
   authProvider?: AuthProviderInterface;
+  accessMode: 'lock' | 'hide';
 }) {
   const { permissions, isAuthenticated, isReady, login, logout } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -181,21 +183,32 @@ function AppContent({
         <CardGallery
           campaigns={campaigns}
           userPermissions={permissions}
+          accessMode={accessMode}
         />
       )}
     </div>
   );
 }
 
-function App() {
+interface AppProps {
+  accessMode?: 'lock' | 'hide';
+}
+
+function App({ accessMode }: AppProps) {
   const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
   const provider = useMemo(() => getAuthProvider(apiBaseUrl), [apiBaseUrl]);
   const hasProvider = Boolean(provider);
   const fallbackPermissions = hasProvider ? [] : [];
+  const resolvedAccessMode = accessMode ?? window.__WPSG_ACCESS_MODE__ ?? 'lock';
 
   return (
     <AuthProvider provider={provider} fallbackPermissions={fallbackPermissions}>
-      <AppContent hasProvider={hasProvider} apiBaseUrl={apiBaseUrl} authProvider={provider} />
+      <AppContent
+        hasProvider={hasProvider}
+        apiBaseUrl={apiBaseUrl}
+        authProvider={provider}
+        accessMode={resolvedAccessMode}
+      />
     </AuthProvider>
   );
 }
