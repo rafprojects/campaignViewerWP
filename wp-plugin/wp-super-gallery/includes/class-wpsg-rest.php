@@ -4,13 +4,30 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * WPSG REST API Endpoints
+ * 
+ * This class implements the REST API for campaign management with integrated
+ * access control. See class-wpsg-cpt.php for detailed security model documentation.
+ * 
+ * PERMISSION CALLBACKS:
+ * - can_view_campaigns: Allows all users to call list endpoint (results filtered by access)
+ * - can_view_campaign: Checks individual campaign access based on visibility/grants
+ * - require_admin: Requires 'manage_options' capability for write operations
+ * 
+ * ACCESS CONTROL FLOW:
+ * 1. Public visibility campaigns: Accessible to everyone
+ * 2. Private/unlisted campaigns: Require explicit access grants
+ * 3. Access grants checked in order: deny overrides, campaign grants, company grants
+ * 4. Admins bypass all checks and have full access
+ */
 class WPSG_REST {
     public static function register_routes() {
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaigns'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [self::class, 'can_view_campaigns'],
             ],
             [
                 'methods' => 'POST',
@@ -23,7 +40,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_campaign'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [self::class, 'can_view_campaign'],
             ],
             [
                 'methods' => 'PUT',
@@ -44,7 +61,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_media'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [self::class, 'can_view_campaign'],
             ],
             [
                 'methods' => 'POST',
@@ -100,6 +117,97 @@ class WPSG_REST {
         return current_user_can('manage_options');
     }
 
+    /**
+     * Check if current user can view campaigns.
+     * Returns true if user is admin, false otherwise (will filter by visibility in list_campaigns).
+     */
+    public static function can_view_campaigns() {
+        // Admins can always view all campaigns
+        if (current_user_can('manage_options')) {
+            return true;
+        }
+        // Non-admins can view campaigns (filtered by visibility and access grants)
+        return true;
+    }
+
+    /**
+     * Check if current user can view a specific campaign.
+     * Enforces visibility and access grant rules.
+     */
+    public static function can_view_campaign($request) {
+        $post_id = intval($request->get_param('id'));
+        return self::check_campaign_access($post_id);
+    }
+
+    /**
+     * Check if current user has access to view a campaign.
+     * Respects visibility settings and access grants.
+     */
+    private static function check_campaign_access($post_id) {
+        // Admins can always view all campaigns
+        if (current_user_can('manage_options')) {
+            return true;
+        }
+
+        $post = get_post($post_id);
+        if (!$post || $post->post_type !== 'wpsg_campaign') {
+            return false;
+        }
+
+        $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';
+
+        // Public campaigns are viewable by everyone
+        if ($visibility === 'public') {
+            return true;
+        }
+
+        // For private/unlisted campaigns, check access grants
+        $current_user_id = get_current_user_id();
+        if ($current_user_id === 0) {
+            return false; // Not logged in
+        }
+
+        // Check if user has explicit access
+        return self::user_has_campaign_access($post_id, $current_user_id);
+    }
+
+    /**
+     * Check if a specific user has been granted access to a campaign.
+     */
+    private static function user_has_campaign_access($post_id, $user_id) {
+        // Check for deny overrides first
+        $overrides = get_post_meta($post_id, 'access_overrides', true);
+        $overrides = is_array($overrides) ? $overrides : [];
+        foreach ($overrides as $override) {
+            if (intval($override['userId'] ?? 0) === $user_id && ($override['action'] ?? '') === 'deny') {
+                return false;
+            }
+        }
+
+        // Check campaign-level grants
+        $campaign_grants = get_post_meta($post_id, 'access_grants', true);
+        $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+        foreach ($campaign_grants as $grant) {
+            if (intval($grant['userId'] ?? 0) === $user_id) {
+                return true;
+            }
+        }
+
+        // Check company-level grants
+        $company_term = self::get_company_term($post_id);
+        if ($company_term) {
+            $company_grants = get_term_meta($company_term->term_id, 'access_grants', true);
+            $company_grants = is_array($company_grants) ? $company_grants : [];
+            foreach ($company_grants as $grant) {
+                if (intval($grant['userId'] ?? 0) === $user_id) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public static function list_campaigns() {
         $request = func_get_arg(0);
         $status = sanitize_text_field($request->get_param('status'));
@@ -145,14 +253,39 @@ class WPSG_REST {
         }
 
         $query = new WP_Query($args);
-        $items = array_map([self::class, 'format_campaign'], $query->posts);
+        
+        // Filter campaigns based on access permissions
+        $is_admin = current_user_can('manage_options');
+        $current_user_id = get_current_user_id();
+        
+        $filtered_posts = array_filter($query->posts, function($post) use ($is_admin, $current_user_id) {
+            if ($is_admin) {
+                return true; // Admins see all campaigns
+            }
+            
+            $visibility = get_post_meta($post->ID, 'visibility', true) ?: 'private';
+            
+            // Public campaigns are visible to everyone
+            if ($visibility === 'public') {
+                return true;
+            }
+            
+            // For private/unlisted, check if user has access
+            if ($current_user_id === 0) {
+                return false; // Not logged in
+            }
+            
+            return self::user_has_campaign_access($post->ID, $current_user_id);
+        });
+        
+        $items = array_map([self::class, 'format_campaign'], array_values($filtered_posts));
 
         return new WP_REST_Response([
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => (int) $query->found_posts,
-            'totalPages' => (int) $query->max_num_pages,
+            'total' => count($filtered_posts),
+            'totalPages' => (int) ceil(count($filtered_posts) / $per_page),
         ], 200);
     }
 
@@ -188,6 +321,11 @@ class WPSG_REST {
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        // Check if user has access to view this campaign
+        if (!self::check_campaign_access($post_id)) {
+            return new WP_REST_Response(['message' => 'Access denied'], 403);
         }
 
         return new WP_REST_Response(self::format_campaign($post), 200);
@@ -237,6 +375,11 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        // Check if user has access to view this campaign's media
+        if (!self::check_campaign_access($post_id)) {
+            return new WP_REST_Response(['message' => 'Access denied'], 403);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
