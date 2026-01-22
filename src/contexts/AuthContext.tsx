@@ -37,8 +37,8 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
       try {
         const session = await provider.init();
         if (session?.accessToken) {
-          const nextUser = await provider.getUser();
           const nextPermissions = await provider.getPermissions();
+          const nextUser = await provider.getUser();
           if (isMounted) {
             setUser(nextUser);
             setPermissions(nextPermissions);
@@ -64,8 +64,8 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
       throw new Error('No auth provider configured');
     }
     const session = await provider.login(email, password);
-    const nextUser = await provider.getUser();
     const nextPermissions = await provider.getPermissions();
+    const nextUser = await provider.getUser();
     setUser(nextUser);
     setPermissions(nextPermissions);
     return session;

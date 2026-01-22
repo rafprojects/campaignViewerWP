@@ -9,9 +9,17 @@ interface CardGalleryProps {
   campaigns: Campaign[];
   userPermissions: string[];
   accessMode?: 'lock' | 'hide';
+  isAdmin?: boolean;
+  onAccessModeChange?: (mode: 'lock' | 'hide') => void;
 }
 
-export function CardGallery({ campaigns, userPermissions, accessMode = 'lock' }: CardGalleryProps) {
+export function CardGallery({
+  campaigns,
+  userPermissions,
+  accessMode = 'lock',
+  isAdmin = false,
+  onAccessModeChange,
+}: CardGalleryProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
@@ -76,6 +84,30 @@ export function CardGallery({ campaigns, userPermissions, accessMode = 'lock' }:
                 </button>
               ))}
             </div>
+
+            {isAdmin && (
+              <div className={styles.adminControls}>
+                <span className={styles.adminLabel}>Access mode</span>
+                <div className={styles.modeToggle}>
+                  <button
+                    onClick={() => onAccessModeChange?.('lock')}
+                    className={`${styles.modeButton} ${
+                      accessMode === 'lock' ? styles.modeButtonActive : ''
+                    }`}
+                  >
+                    Lock
+                  </button>
+                  <button
+                    onClick={() => onAccessModeChange?.('hide')}
+                    className={`${styles.modeButton} ${
+                      accessMode === 'hide' ? styles.modeButtonActive : ''
+                    }`}
+                  >
+                    Hide
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>

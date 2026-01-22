@@ -99,6 +99,19 @@ export class WpJwtProvider implements AuthProvider {
 
     const data = await response.json();
     const permissions = Array.isArray(data?.campaignIds) ? data.campaignIds : [];
+    const isAdmin = Boolean(data?.isAdmin);
+
+    if (isAdmin) {
+      const raw = localStorage.getItem(USER_KEY);
+      if (raw) {
+        try {
+          const user = JSON.parse(raw) as AuthUser;
+          localStorage.setItem(USER_KEY, JSON.stringify({ ...user, role: 'admin' }));
+        } catch {
+          // no-op
+        }
+      }
+    }
     localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(permissions));
     return permissions;
   }

@@ -76,10 +76,12 @@ function AppContent({
   authProvider?: AuthProviderInterface;
   accessMode: 'lock' | 'hide';
 }) {
-  const { permissions, isAuthenticated, isReady, login, logout } = useAuth();
+  const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [localAccessMode, setLocalAccessMode] = useState<'lock' | 'hide'>(accessMode);
+  const isAdmin = user?.role === 'admin';
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password);
@@ -183,7 +185,9 @@ function AppContent({
         <CardGallery
           campaigns={campaigns}
           userPermissions={permissions}
-          accessMode={accessMode}
+          accessMode={localAccessMode}
+          isAdmin={isAdmin}
+          onAccessModeChange={setLocalAccessMode}
         />
       )}
     </div>
