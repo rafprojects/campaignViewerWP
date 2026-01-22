@@ -442,22 +442,22 @@ class WPSG_REST {
         $media_items = is_array($media_items) ? $media_items : [];
         $updated = false;
 
-        foreach ($media_items as &$item) {
-            if (($item['id'] ?? '') === $media_id) {
+        foreach ($media_items as &$media_item) {
+            if (($media_item['id'] ?? '') === $media_id) {
                 if (!is_null($request->get_param('caption'))) {
-                    $item['caption'] = sanitize_text_field($request->get_param('caption'));
+                    $media_item['caption'] = sanitize_text_field($request->get_param('caption'));
                 }
                 if (!is_null($request->get_param('order'))) {
-                    $item['order'] = intval($request->get_param('order'));
+                    $media_item['order'] = intval($request->get_param('order'));
                 }
                 if (!is_null($request->get_param('thumbnail'))) {
-                    $item['thumbnail'] = esc_url_raw($request->get_param('thumbnail'));
+                    $media_item['thumbnail'] = esc_url_raw($request->get_param('thumbnail'));
                 }
                 $updated = true;
                 break;
             }
         }
-        unset($item);
+        unset($media_item);
 
         if (!$updated) {
             return new WP_REST_Response(['message' => 'Media not found'], 404);
