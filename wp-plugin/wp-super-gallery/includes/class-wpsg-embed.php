@@ -50,10 +50,6 @@ class WPSG_Embed {
 
         $auth_provider = apply_filters('wpsg_auth_provider', 'wp-jwt');
         $api_base = apply_filters('wpsg_api_base', home_url());
-        $inline_config = 'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';';
-        $inline_config .= 'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';';
-        wp_add_inline_script('wp-super-gallery-app', $inline_config, 'before');
-
         $manifest = self::get_manifest();
         $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
         if ($entry && !empty($entry['css'])) {
