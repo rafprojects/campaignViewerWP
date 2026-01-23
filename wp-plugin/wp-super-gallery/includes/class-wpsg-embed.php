@@ -52,6 +52,12 @@ class WPSG_Embed {
 
         wp_enqueue_script('wp-super-gallery-app');
 
+        $auth_provider = apply_filters('wpsg_auth_provider', 'wp-jwt');
+        $api_base = apply_filters('wpsg_api_base', home_url());
+        $inline_config = 'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';';
+        $inline_config .= 'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';';
+        wp_add_inline_script('wp-super-gallery-app', $inline_config, 'before');
+
         $manifest_path = WPSG_PLUGIN_DIR . 'assets/manifest.json';
         $manifest_alt_path = WPSG_PLUGIN_DIR . 'assets/.vite/manifest.json';
         $resolved_manifest_path = file_exists($manifest_path) ? $manifest_path : $manifest_alt_path;
@@ -73,6 +79,11 @@ class WPSG_Embed {
             'company' => $atts['company'],
         ]));
 
-        return '<div class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '"></div>';
+        $config_script = '<script>' .
+            'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';' .
+            'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';' .
+            '</script>';
+
+        return $config_script . '<div class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '"></div>';
     }
 }

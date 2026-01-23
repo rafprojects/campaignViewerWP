@@ -184,22 +184,26 @@ class WPSG_REST {
         }
 
         $user_id = get_current_user_id();
-        if (!$user_id && empty($visibility)) {
-            $meta_query[] = [
-                'key' => 'visibility',
-                'value' => 'public',
-            ];
-            $args['meta_query'] = $meta_query;
+        if (!current_user_can('manage_options')) {
+            if (!$user_id) {
+                $meta_query[] = [
+                    'key' => 'visibility',
+                    'value' => 'public',
+                ];
+                $args['meta_query'] = $meta_query;
+            } else {
+                $accessible_ids = self::get_accessible_campaign_ids($user_id);
+                if (empty($accessible_ids)) {
+                    $accessible_ids = [0];
+                } else {
+                    $accessible_ids = array_map('intval', $accessible_ids);
+                }
+                $args['post__in'] = $accessible_ids;
+            }
         }
 
         $query = new WP_Query($args);
         $items = array_map([self::class, 'format_campaign'], $query->posts);
-
-        if ($user_id && !current_user_can('manage_options')) {
-            $items = array_values(array_filter($items, function ($item) use ($user_id) {
-                return self::can_view_campaign(intval($item['id']), $user_id);
-            }));
-        }
 
         return new WP_REST_Response([
             'items' => $items,
@@ -233,6 +237,7 @@ class WPSG_REST {
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
 
+        self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
 
@@ -277,6 +282,7 @@ class WPSG_REST {
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
 
+        self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 200);
     }
 
@@ -288,6 +294,7 @@ class WPSG_REST {
         }
 
         update_post_meta($post_id, 'status', 'archived');
+        self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
 
@@ -456,6 +463,7 @@ class WPSG_REST {
             }
         }
 
+        self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access updated'], 200);
     }
 
@@ -491,6 +499,7 @@ class WPSG_REST {
         }));
         update_post_meta($post_id, 'access_overrides', $overrides);
 
+        self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
     }
 
@@ -618,19 +627,57 @@ class WPSG_REST {
     }
 
     private static function get_accessible_campaign_ids($user_id) {
-        $query = new WP_Query([
-            'post_type' => 'wpsg_campaign',
-            'post_status' => 'publish',
-            'posts_per_page' => -1,
-        ]);
-
-        $campaign_ids = [];
-        foreach ($query->posts as $post) {
-            if (self::can_view_campaign($post->ID, $user_id)) {
-                $campaign_ids[] = (string) $post->ID;
-            }
+        $sanitized_user_id = absint($user_id);
+        $cache_key = 'wpsg_accessible_campaigns_' . $sanitized_user_id;
+        $cached = get_transient($cache_key);
+        if (false !== $cached && is_array($cached)) {
+            return $cached;
         }
+
+        $per_page = max(1, intval(apply_filters('wpsg_permissions_page_size', 200)));
+        $page = 1;
+        $campaign_ids = [];
+
+        do {
+            $query = new WP_Query([
+                'post_type' => 'wpsg_campaign',
+                'post_status' => 'publish',
+                'posts_per_page' => $per_page,
+                'paged' => $page,
+                'fields' => 'ids',
+                'no_found_rows' => true,
+            ]);
+
+            foreach ($query->posts as $post_id) {
+                if (self::can_view_campaign($post_id, $user_id)) {
+                    $campaign_ids[] = (string) $post_id;
+                }
+            }
+
+            $page += 1;
+        } while (count($query->posts) === $per_page);
+
+        $ttl = max(1, intval(apply_filters('wpsg_permissions_cache_ttl', 15 * MINUTE_IN_SECONDS)));
+        set_transient($cache_key, $campaign_ids, $ttl);
         return $campaign_ids;
+    }
+
+    private static function clear_accessible_campaigns_cache() {
+        global $wpdb;
+
+        $prefix = $wpdb->esc_like('_transient_wpsg_accessible_campaigns_') . '%';
+        $sql = $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $prefix
+        );
+        $wpdb->query($sql);
+
+        $timeout_prefix = $wpdb->esc_like('_transient_timeout_wpsg_accessible_campaigns_') . '%';
+        $timeout_sql = $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $timeout_prefix
+        );
+        $wpdb->query($timeout_sql);
     }
 
     private static function get_campaign_deny_ids($post_id) {
