@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { AuthProvider, AuthSession, AuthUser } from '@/services/auth/AuthProvider';
 
 interface AuthContextValue {
@@ -59,7 +59,7 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
     };
   }, [provider]);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     if (!provider) {
       throw new Error('No auth provider configured');
     }
@@ -69,15 +69,15 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
     setUser(nextUser);
     setPermissions(nextPermissions);
     return session;
-  };
+  }, [provider]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     if (provider) {
       await provider.logout();
     }
     setUser(null);
     setPermissions(fallbackPermissions);
-  };
+  }, [fallbackPermissions, provider]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -88,7 +88,7 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
       login,
       logout,
     }),
-    [user, permissions, isReady],
+    [user, permissions, isReady, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
