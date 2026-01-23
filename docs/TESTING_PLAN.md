@@ -74,6 +74,39 @@ This document defines the testing strategy, implementation tracking, and manual 
 
 This is the primary checklist for QA on a local WordPress install. It should be used for every release and can be expanded over time.
 
+### Manual QA Setup (Start-to-finish)
+
+1. Install dependencies.
+
+   - `npm install`
+
+1. Build the SPA and copy assets into the plugin bundle.
+
+   - `npm run build:wp`
+   - This runs `npm run build` and copies `dist/` into `wp-plugin/wp-super-gallery/assets/`.
+
+1. Sync the plugin into your local WordPress install.
+
+   - If you have a local WP install, copy the plugin folder into `wp-content/plugins/`.
+   - Example (adjust the path to your WP install):
+     - `cp -r wp-plugin/wp-super-gallery /path/to/wordpress/wp-content/plugins/wp-super-gallery`
+   - If a previous copy exists, remove it first to avoid stale assets:
+     - `rm -rf /path/to/wordpress/wp-content/plugins/wp-super-gallery`
+
+1. Activate the plugin in WordPress Admin.
+
+   - Go to **Plugins** → **WP Super Gallery** → **Activate**.
+
+1. Ensure JWT auth is configured.
+
+   - Follow [docs/WP_JWT_SETUP.md](docs/WP_JWT_SETUP.md) and confirm permalinks are **Post name**.
+
+1. Create a test page and embed the widget.
+
+   - Add the shortcode provided by the plugin and publish the page.
+
+1. Open the page in a browser and proceed with the checklist below.
+
 ### Prerequisites
 
 - WordPress installed locally (e.g., LocalWP, Docker, or MAMP).
@@ -155,6 +188,147 @@ This is the primary checklist for QA on a local WordPress install. It should be 
   - [ ] User is logged out and prompted to re-auth.
 - [ ] CORS failures show a clear error banner.
 - [ ] Unauthorized API calls trigger logout and banner.
+
+---
+
+## REST API Manual Testing
+
+Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with your WordPress site URL (e.g. `http://localhost:8888`) and `$TOKEN` with a valid JWT for an admin user.
+
+### Path Variables & Query Parameters
+
+This section documents all path variables and query parameters used by the REST API endpoints.
+
+#### Campaigns (Parameters)
+
+- `GET /campaigns`
+  - Query params:
+    - `status`: Optional campaign status filter (e.g. `active`, `archived`).
+    - `visibility`: Optional visibility filter (`public` or `private`).
+    - `company`: Optional company slug for `wpsg_company` taxonomy.
+    - `search`: Optional keyword search across title/description.
+    - `page`: Optional 1-based page index (default `1`).
+    - `per_page`: Optional page size (default `10`, max `50`).
+- `GET /campaigns/{id}`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+- `POST /campaigns`
+  - No path vars or query params.
+- `PUT /campaigns/{id}`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+- `POST /campaigns/{id}/archive`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+
+#### Media (Parameters)
+
+- `GET /campaigns/{id}/media`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+- `POST /campaigns/{id}/media`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+- `PUT /campaigns/{id}/media/{mediaId}`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+    - `mediaId`: Media identifier (string, typically WordPress attachment ID or external media ID).
+- `DELETE /campaigns/{id}/media/{mediaId}`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+    - `mediaId`: Media identifier (string, typically WordPress attachment ID or external media ID).
+
+#### Access Grants (Parameters)
+
+- `GET /campaigns/{id}/access`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+- `POST /campaigns/{id}/access`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+- `DELETE /campaigns/{id}/access/{userId}`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
+    - `userId`: WordPress user ID (numeric).
+
+#### Uploads (Parameters)
+
+- `POST /media/upload`
+  - No path vars or query params.
+
+#### Auth + Permissions (Parameters)
+
+- `POST /jwt-auth/v1/token/validate`
+  - No path vars or query params (uses `Authorization: Bearer` header).
+- `GET /permissions`
+  - No path vars or query params (uses `Authorization: Bearer` header).
+
+### Auth + Permissions
+
+- Validate token:
+  - `curl -X POST "$BASE_URL/wp-json/jwt-auth/v1/token/validate" -H "Authorization: Bearer $TOKEN"`
+- Permissions (requires auth):
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/permissions" -H "Authorization: Bearer $TOKEN"`
+
+### Campaigns (query + add)
+
+- Query campaigns (public):
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns"`
+- Query campaigns with filters:
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns?status=active&visibility=public&company=acme&search=summer&page=1&per_page=10"`
+- Add campaign (admin required):
+  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"title":"Winter Drop","description":"Seasonal campaign","company":"acme","status":"active","visibility":"private"}'`
+
+### Campaign Details + Admin Actions
+
+- Get campaign by id:
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123"`
+- Update campaign (admin required):
+  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"title":"Updated Title","description":"Updated description"}'`
+- Archive campaign (admin required):
+  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/archive" -H "Authorization: Bearer $TOKEN"`
+
+### Media
+
+- List media (requires auth):
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media" -H "Authorization: Bearer $TOKEN"`
+- Add media (admin required):
+  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"type":"video","source":"external","url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","caption":"Main Video","order":1}'`
+- Update media (admin required):
+  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/v1" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"caption":"Updated caption","order":2}'`
+- Delete media (admin required):
+  - `curl -X DELETE "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/v1" -H "Authorization: Bearer $TOKEN"`
+
+### Access Grants
+
+- List access grants (admin required):
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access" -H "Authorization: Bearer $TOKEN"`
+- Grant access (admin required):
+  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"userId":42,"source":"campaign"}'`
+- Revoke access (admin required):
+  - `curl -X DELETE "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access/42" -H "Authorization: Bearer $TOKEN"`
+
+### Uploads
+
+- Upload media (admin required):
+  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/media/upload" \
+    -H "Authorization: Bearer $TOKEN" \
+    -F "file=@/path/to/file.jpg"`
 
 ---
 
