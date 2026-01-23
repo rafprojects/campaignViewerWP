@@ -200,6 +200,9 @@ class WPSG_REST {
                 if (empty($accessible_ids)) {
                     // User has no accessible campaigns, return empty result
                     $accessible_ids = [0];
+                } else {
+                    // Convert string IDs to integers for post__in parameter
+                    $accessible_ids = array_map('intval', $accessible_ids);
                 }
                 $args['post__in'] = $accessible_ids;
             }
