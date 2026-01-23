@@ -4,6 +4,7 @@ import cardGalleryStyles from './components/Gallery/CardGallery.module.scss?inli
 import videoCarouselStyles from './components/Campaign/VideoCarousel.module.scss?inline';
 import imageCarouselStyles from './components/Campaign/ImageCarousel.module.scss?inline';
 import campaignViewerStyles from './components/Campaign/CampaignViewer.module.scss?inline';
+import loginFormStyles from './components/Auth/LoginForm.module.scss?inline';
 
 export const shadowStyles = [
   globalStyles,
@@ -12,4 +13,5 @@ export const shadowStyles = [
   videoCarouselStyles,
   imageCarouselStyles,
   campaignViewerStyles,
+  loginFormStyles,
 ].join('\n');

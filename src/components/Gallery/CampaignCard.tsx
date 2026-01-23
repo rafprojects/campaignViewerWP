@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Eye } from 'lucide-react';
 import type { Campaign } from '@/types';
@@ -9,21 +10,23 @@ interface CampaignCardProps {
   onClick: () => void;
 }
 
-export function CampaignCard({ campaign, hasAccess, onClick }: CampaignCardProps) {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={{ scale: hasAccess ? 1.03 : 1.01, y: hasAccess ? -5 : 0 }}
-      whileTap={{ scale: hasAccess ? 0.98 : 1 }}
-      onClick={hasAccess ? onClick : undefined}
-      className={`${styles.card} ${!hasAccess ? styles.cardLocked : ''}`}
-      style={{
-        borderLeft: `4px solid ${campaign.company.brandColor}`,
-      }}
-    >
+export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
+  ({ campaign, hasAccess, onClick }, ref) => {
+    return (
+      <motion.div
+        ref={ref}
+        layout
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        whileHover={{ scale: hasAccess ? 1.03 : 1.01, y: hasAccess ? -5 : 0 }}
+        whileTap={{ scale: hasAccess ? 0.98 : 1 }}
+        onClick={hasAccess ? onClick : undefined}
+        className={`${styles.card} ${!hasAccess ? styles.cardLocked : ''}`}
+        style={{
+          borderLeft: `4px solid ${campaign.company.brandColor}`,
+        }}
+      >
       {/* Thumbnail */}
       <div className={styles.thumbnail}>
         <img
@@ -90,16 +93,19 @@ export function CampaignCard({ campaign, hasAccess, onClick }: CampaignCardProps
       </div>
 
       {/* Hover effect border */}
-      {hasAccess && (
-        <motion.div
-          className={styles.hoverBorder}
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: 1 }}
-          style={{
-            border: `2px solid ${campaign.company.brandColor}`,
-          }}
-        />
-      )}
-    </motion.div>
-  );
-}
+        {hasAccess && (
+          <motion.div
+            className={styles.hoverBorder}
+            initial={{ opacity: 0 }}
+            whileHover={{ opacity: 1 }}
+            style={{
+              border: `2px solid ${campaign.company.brandColor}`,
+            }}
+          />
+        )}
+      </motion.div>
+    );
+  },
+);
+
+CampaignCard.displayName = 'CampaignCard';

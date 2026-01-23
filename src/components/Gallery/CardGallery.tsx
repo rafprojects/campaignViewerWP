@@ -8,23 +8,52 @@ import styles from './CardGallery.module.scss';
 interface CardGalleryProps {
   campaigns: Campaign[];
   userPermissions: string[];
+  accessMode?: 'lock' | 'hide';
+  isAdmin?: boolean;
+  onAccessModeChange?: (mode: 'lock' | 'hide') => void;
+  onEditCampaign?: (campaign: Campaign) => void;
+  onArchiveCampaign?: (campaign: Campaign) => void;
+  onAddExternalMedia?: (campaign: Campaign) => void;
 }
 
-export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
+export function CardGallery({
+  campaigns,
+  userPermissions,
+  accessMode = 'lock',
+  isAdmin = false,
+  onAccessModeChange,
+  onEditCampaign,
+  onArchiveCampaign,
+  onAddExternalMedia,
+}: CardGalleryProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
   const companies = [...new Set(campaigns.map((c) => c.company.name))];
 
-  const filteredCampaigns = campaigns.filter((campaign) => {
-    if (filter === 'all') return true;
-    if (filter === 'accessible') return userPermissions.includes(campaign.id) || campaign.visibility === 'public';
-    return campaign.company.name === filter;
-  });
-
   const hasAccess = (campaignId: string, visibility: 'public' | 'private') => {
     return visibility === 'public' || userPermissions.includes(campaignId);
   };
+
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    if (filter === 'all') return true;
+    if (filter === 'accessible') return hasAccess(campaign.id, campaign.visibility);
+    return campaign.company.name === filter;
+  }).filter((campaign) => {
+    if (accessMode !== 'hide') {
+      return true;
+    }
+    if (filter === 'accessible') {
+      return true;
+    }
+    return hasAccess(campaign.id, campaign.visibility);
+  });
+
+  const accessibleCount = campaigns.filter((campaign) =>
+    hasAccess(campaign.id, campaign.visibility),
+  ).length;
+  const hiddenCount = Math.max(0, campaigns.length - accessibleCount);
+  const showHiddenNotice = accessMode === 'hide' && filter === 'all' && hiddenCount > 0;
 
   return (
     <div className={styles.gallery}>
@@ -67,6 +96,36 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
                 </button>
               ))}
             </div>
+
+            {showHiddenNotice && (
+              <div className={styles.accessNotice}>
+                {hiddenCount} campaign{hiddenCount === 1 ? '' : 's'} hidden by access mode.
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className={styles.adminControls}>
+                <span className={styles.adminLabel}>Access mode</span>
+                <div className={styles.modeToggle}>
+                  <button
+                    onClick={() => onAccessModeChange?.('lock')}
+                    className={`${styles.modeButton} ${
+                      accessMode === 'lock' ? styles.modeButtonActive : ''
+                    }`}
+                  >
+                    Lock
+                  </button>
+                  <button
+                    onClick={() => onAccessModeChange?.('hide')}
+                    className={`${styles.modeButton} ${
+                      accessMode === 'hide' ? styles.modeButtonActive : ''
+                    }`}
+                  >
+                    Hide
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -91,7 +150,13 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
 
         {filteredCampaigns.length === 0 && (
           <div className={styles.emptyState}>
-            <p>No campaigns found matching your filter.</p>
+            {filter === 'accessible' ? (
+              <p>No accessible campaigns yet.</p>
+            ) : accessMode === 'hide' ? (
+              <p>No accessible campaigns found. Switch to Lock mode to view locked cards.</p>
+            ) : (
+              <p>No campaigns found matching your filter.</p>
+            )}
           </div>
         )}
       </main>
@@ -101,6 +166,11 @@ export function CardGallery({ campaigns, userPermissions }: CardGalleryProps) {
         {selectedCampaign && (
           <CampaignViewer
             campaign={selectedCampaign}
+            hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
+            isAdmin={isAdmin}
+            onEditCampaign={onEditCampaign}
+            onArchiveCampaign={onArchiveCampaign}
+            onAddExternalMedia={onAddExternalMedia}
             onClose={() => setSelectedCampaign(null)}
           />
         )}
