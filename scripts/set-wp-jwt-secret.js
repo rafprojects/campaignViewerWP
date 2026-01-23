@@ -10,6 +10,13 @@ if (!secretArg) {
 }
 
 const secret = secretArg.trim();
+if (!secret) {
+  console.error('JWT secret must be a non-empty string.');
+  process.exit(1);
+}
+
+const escapePhpString = (value) => value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+const escapedSecret = escapePhpString(secret);
 const configPath = configArg
   ? path.resolve(configArg)
   : path.resolve(process.cwd(), 'wp-config.php');
@@ -24,16 +31,16 @@ const defineRegex = /define\(\s*['"]JWT_AUTH_SECRET_KEY['"]\s*,\s*['"][^'"]*['"]
 
 let updated = contents;
 if (defineRegex.test(contents)) {
-  updated = contents.replace(defineRegex, `define('JWT_AUTH_SECRET_KEY', '${secret}');`);
+  updated = contents.replace(defineRegex, `define('JWT_AUTH_SECRET_KEY', '${escapedSecret}');`);
 } else {
   const anchor = /\/\* That's all, stop editing! Happy publishing\. \*\//;
   if (anchor.test(contents)) {
     updated = contents.replace(
       anchor,
-      `define('JWT_AUTH_SECRET_KEY', '${secret}');\n\n$&`
+      `define('JWT_AUTH_SECRET_KEY', '${escapedSecret}');\n\n$&`
     );
   } else {
-    updated = `${contents.trim()}\n\ndefine('JWT_AUTH_SECRET_KEY', '${secret}');\n`;
+    updated = `${contents.trim()}\n\ndefine('JWT_AUTH_SECRET_KEY', '${escapedSecret}');\n`;
   }
 }
 
