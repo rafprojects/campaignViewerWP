@@ -121,10 +121,22 @@ class WPSG_REST {
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
+
+        register_rest_route('wp-super-gallery/v1', '/permissions', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_permissions'],
+                'permission_callback' => [self::class, 'require_authenticated'],
+            ],
+        ]);
     }
 
     public static function require_admin() {
         return current_user_can('manage_options');
+    }
+
+    public static function require_authenticated() {
+        return is_user_logged_in();
     }
 
     public static function list_campaigns() {
@@ -171,15 +183,30 @@ class WPSG_REST {
             ];
         }
 
+        $user_id = get_current_user_id();
+        if (!$user_id && empty($visibility)) {
+            $meta_query[] = [
+                'key' => 'visibility',
+                'value' => 'public',
+            ];
+            $args['meta_query'] = $meta_query;
+        }
+
         $query = new WP_Query($args);
         $items = array_map([self::class, 'format_campaign'], $query->posts);
+
+        if ($user_id && !current_user_can('manage_options')) {
+            $items = array_values(array_filter($items, function ($item) use ($user_id) {
+                return self::can_view_campaign(intval($item['id']), $user_id);
+            }));
+        }
 
         return new WP_REST_Response([
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => (int) $query->found_posts,
-            'totalPages' => (int) $query->max_num_pages,
+            'total' => count($items),
+            'totalPages' => 1,
         ], 200);
     }
 
@@ -215,6 +242,11 @@ class WPSG_REST {
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $user_id = get_current_user_id();
+        if (!self::can_view_campaign($post_id, $user_id)) {
+            return new WP_REST_Response(['message' => 'Forbidden'], 403);
         }
 
         return new WP_REST_Response(self::format_campaign($post), 200);
@@ -264,6 +296,11 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $user_id = get_current_user_id();
+        if (!self::can_view_campaign($post_id, $user_id)) {
+            return new WP_REST_Response(['message' => 'Forbidden'], 403);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -535,9 +572,86 @@ class WPSG_REST {
         ], 201);
     }
 
+    public static function list_permissions() {
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            return new WP_REST_Response(['campaignIds' => [], 'isAdmin' => false], 200);
+        }
+
+        $campaign_ids = self::get_accessible_campaign_ids($user_id);
+        $is_admin = current_user_can('manage_options');
+        return new WP_REST_Response(['campaignIds' => $campaign_ids, 'isAdmin' => $is_admin], 200);
+    }
+
     private static function campaign_exists($post_id) {
         $post = get_post($post_id);
         return $post && $post->post_type === 'wpsg_campaign';
+    }
+
+    private static function can_view_campaign($post_id, $user_id) {
+        if ($user_id && current_user_can('manage_options')) {
+            return true;
+        }
+
+        $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';
+        if ($visibility === 'public') {
+            return true;
+        }
+
+        if (!$user_id) {
+            return false;
+        }
+
+        $deny_user_ids = self::get_campaign_deny_ids($post_id);
+        if (in_array($user_id, $deny_user_ids, true)) {
+            return false;
+        }
+
+        $grants = self::get_effective_grants($post_id);
+        foreach ($grants as $entry) {
+            if (intval($entry['userId'] ?? 0) === $user_id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function get_accessible_campaign_ids($user_id) {
+        $query = new WP_Query([
+            'post_type' => 'wpsg_campaign',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+        ]);
+
+        $campaign_ids = [];
+        foreach ($query->posts as $post) {
+            if (self::can_view_campaign($post->ID, $user_id)) {
+                $campaign_ids[] = (string) $post->ID;
+            }
+        }
+        return $campaign_ids;
+    }
+
+    private static function get_campaign_deny_ids($post_id) {
+        $overrides = get_post_meta($post_id, 'access_overrides', true);
+        $overrides = is_array($overrides) ? $overrides : [];
+        return array_map(function ($entry) {
+            return intval($entry['userId'] ?? 0);
+        }, array_filter($overrides, function ($entry) {
+            return ($entry['action'] ?? '') === 'deny';
+        }));
+    }
+
+    private static function get_effective_grants($post_id) {
+        $company_term = self::get_company_term($post_id);
+        $company_grants = $company_term ? get_term_meta($company_term->term_id, 'access_grants', true) : [];
+        $campaign_grants = get_post_meta($post_id, 'access_grants', true);
+
+        $company_grants = is_array($company_grants) ? $company_grants : [];
+        $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+
+        return array_values(array_merge($company_grants, $campaign_grants));
     }
 
     private static function format_campaign($post) {

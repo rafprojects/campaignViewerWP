@@ -12,10 +12,12 @@ class WPSG_Embed {
     public static function register_assets() {
         $handle = 'wp-super-gallery-app';
         $manifest_path = WPSG_PLUGIN_DIR . 'assets/manifest.json';
+        $manifest_alt_path = WPSG_PLUGIN_DIR . 'assets/.vite/manifest.json';
         $base_url = WPSG_PLUGIN_URL . 'assets/';
+        $resolved_manifest_path = file_exists($manifest_path) ? $manifest_path : $manifest_alt_path;
 
-        if (file_exists($manifest_path)) {
-            $manifest = json_decode(file_get_contents($manifest_path), true);
+        if (file_exists($resolved_manifest_path)) {
+            $manifest = json_decode(file_get_contents($resolved_manifest_path), true);
             $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
 
             if ($entry && isset($entry['file'])) {
@@ -51,8 +53,10 @@ class WPSG_Embed {
         wp_enqueue_script('wp-super-gallery-app');
 
         $manifest_path = WPSG_PLUGIN_DIR . 'assets/manifest.json';
-        if (file_exists($manifest_path)) {
-            $manifest = json_decode(file_get_contents($manifest_path), true);
+        $manifest_alt_path = WPSG_PLUGIN_DIR . 'assets/.vite/manifest.json';
+        $resolved_manifest_path = file_exists($manifest_path) ? $manifest_path : $manifest_alt_path;
+        if (file_exists($resolved_manifest_path)) {
+            $manifest = json_decode(file_get_contents($resolved_manifest_path), true);
             $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
             if ($entry && !empty($entry['css'])) {
                 foreach ($entry['css'] as $index => $css_file) {
