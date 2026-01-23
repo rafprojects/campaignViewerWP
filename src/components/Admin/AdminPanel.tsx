@@ -497,15 +497,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <h2>Admin Panel</h2>
           <p className={styles.subtitle}>Manage campaigns, media, and access control.</p>
         </div>
-        <button type="button" className={styles.secondaryButton} onClick={onClose}>
+        <button type="button" className={styles.backButton} onClick={onClose}>
           Back to Gallery
         </button>
       </header>
 
-      <div className={styles.tabs}>
+      <div className={styles.tabs} role="tablist" aria-label="Admin panels">
         <button
           type="button"
           className={activeTab === 'campaigns' ? styles.tabActive : styles.tab}
+          role="tab"
+          aria-selected={activeTab === 'campaigns'}
           onClick={() => setActiveTab('campaigns')}
         >
           Campaigns
@@ -513,6 +515,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <button
           type="button"
           className={activeTab === 'media' ? styles.tabActive : styles.tab}
+          role="tab"
+          aria-selected={activeTab === 'media'}
           onClick={() => setActiveTab('media')}
         >
           Media
@@ -520,6 +524,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <button
           type="button"
           className={activeTab === 'access' ? styles.tabActive : styles.tab}
+          role="tab"
+          aria-selected={activeTab === 'access'}
           onClick={() => setActiveTab('access')}
         >
           Access
@@ -527,6 +533,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <button
           type="button"
           className={activeTab === 'audit' ? styles.tabActive : styles.tab}
+          role="tab"
+          aria-selected={activeTab === 'audit'}
           onClick={() => setActiveTab('audit')}
         >
           Audit
