@@ -205,8 +205,8 @@ class WPSG_REST {
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => count($items),
-            'totalPages' => 1,
+            'total' => (int) $query->found_posts,
+            'totalPages' => (int) $query->max_num_pages,
         ], 200);
     }
 
