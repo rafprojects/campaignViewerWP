@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CardGallery } from './components/Gallery/CardGallery';
+import { AdminPanel } from './components/Admin/AdminPanel';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
@@ -83,6 +84,7 @@ function AppContent({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [localAccessMode, setLocalAccessMode] = useState<'lock' | 'hide'>(() => {
     const stored = localStorage.getItem(ACCESS_MODE_STORAGE_KEY);
     if (stored === 'hide' || stored === 'lock') {
@@ -271,6 +273,10 @@ function AppContent({
     }
   };
 
+  const handleAdminNotify = useCallback((message: { type: 'error' | 'success'; text: string }) => {
+    setActionMessage(message);
+  }, []);
+
   return (
     <div className="wp-super-gallery">
       {hasProvider && !isAuthenticated && isReady && (
@@ -280,6 +286,15 @@ function AppContent({
         <div className="wp-super-gallery__authbar">
           <div className="wp-super-gallery__container wp-super-gallery__authbar-inner">
             <span>Signed in as {user.email}</span>
+            {isAdmin && (
+              <button
+                type="button"
+                className="wp-super-gallery__authbar-button"
+                onClick={() => setIsAdminPanelOpen(true)}
+              >
+                Admin Panel
+              </button>
+            )}
             <button
               type="button"
               className="wp-super-gallery__authbar-button"
@@ -298,7 +313,16 @@ function AppContent({
       {error && (
         <div className="wp-super-gallery__banner wp-super-gallery__banner--error">{error}</div>
       )}
-      {isLoading ? (
+      {isAdminPanelOpen ? (
+        <div className="wp-super-gallery__container">
+          <AdminPanel
+            apiClient={apiClient}
+            onClose={() => setIsAdminPanelOpen(false)}
+            onCampaignsUpdated={() => void loadCampaigns()}
+            onNotify={handleAdminNotify}
+          />
+        </div>
+      ) : isLoading ? (
         <div className="wp-super-gallery__loading">Loading campaigns...</div>
       ) : (
         <CardGallery
