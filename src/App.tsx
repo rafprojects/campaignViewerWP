@@ -276,6 +276,20 @@ function AppContent({
       {hasProvider && !isAuthenticated && isReady && (
         <LoginForm onSubmit={handleLogin} />
       )}
+      {isAuthenticated && user && (
+        <div className="wp-super-gallery__authbar">
+          <div className="wp-super-gallery__container wp-super-gallery__authbar-inner">
+            <span>Signed in as {user.email}</span>
+            <button
+              type="button"
+              className="wp-super-gallery__authbar-button"
+              onClick={() => void logout()}
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
       {actionMessage && (
         <div className={`wp-super-gallery__banner wp-super-gallery__banner--${actionMessage.type}`}>
           {actionMessage.text}
