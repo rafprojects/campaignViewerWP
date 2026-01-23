@@ -628,8 +628,11 @@ class WPSG_REST {
     }
 
     private static function get_accessible_campaign_ids($user_id) {
+        // Sanitize user_id for use in cache key
+        $sanitized_user_id = absint($user_id);
+        
         // Try to get cached results
-        $cache_key = 'wpsg_accessible_campaigns_' . $user_id;
+        $cache_key = 'wpsg_accessible_campaigns_' . $sanitized_user_id;
         $cached = get_transient($cache_key);
         if (false !== $cached && is_array($cached)) {
             return $cached;
@@ -659,13 +662,21 @@ class WPSG_REST {
     /**
      * Clear cached accessible campaign IDs for all users.
      * Called when campaigns are created, updated, or deleted.
+     * 
+     * Note: We clear all user caches because any campaign change could affect
+     * multiple users' accessible campaign lists (e.g., visibility changes,
+     * permission grants/denies).
      */
     private static function clear_accessible_campaigns_cache() {
         global $wpdb;
         $wpdb->query(
-            "DELETE FROM {$wpdb->options} 
-             WHERE option_name LIKE '_transient_wpsg_accessible_campaigns_%' 
-             OR option_name LIKE '_transient_timeout_wpsg_accessible_campaigns_%'"
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options} 
+                 WHERE option_name LIKE %s 
+                 OR option_name LIKE %s",
+                $wpdb->esc_like('_transient_wpsg_accessible_campaigns_') . '%',
+                $wpdb->esc_like('_transient_timeout_wpsg_accessible_campaigns_') . '%'
+            )
         );
     }
 
