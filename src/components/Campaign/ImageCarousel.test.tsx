@@ -31,23 +31,23 @@ describe('ImageCarousel', () => {
     const imageTwoThumb = screen.getAllByAltText('Image Two')[0];
     fireEvent.click(imageTwoThumb);
     expect(screen.getByText('Image Two')).toBeInTheDocument();
-    
-      const nextButton = document.querySelector('[class*="navButtonRight"]');
-      if (nextButton) {
-        fireEvent.click(nextButton);
-        expect(screen.getByText('Image One')).toBeInTheDocument();
-      }
-    
-      const prevButton = document.querySelector('[class*="navButtonLeft"]');
-      if (prevButton) {
-        fireEvent.click(prevButton);
-        expect(screen.getByText('Image Two')).toBeInTheDocument();
-      }
-    
-      const zoomButton = document.querySelector('[class*="zoomButton"]');
-      if (zoomButton) {
-        fireEvent.click(zoomButton);
-      }
+
+    const nextButton = document.querySelector('[class*="navButtonRight"]');
+    if (nextButton) {
+      fireEvent.click(nextButton);
+      expect(screen.getByText('Image One')).toBeInTheDocument();
+    }
+
+    const prevButton = document.querySelector('[class*="navButtonLeft"]');
+    if (prevButton) {
+      fireEvent.click(prevButton);
+      expect(screen.getByText('Image Two')).toBeInTheDocument();
+    }
+
+    const zoomButton = document.querySelector('[class*="zoomButton"]');
+    if (zoomButton) {
+      fireEvent.click(zoomButton);
+    }
 
     const imageOne = screen.getAllByAltText('Image One')[0];
     fireEvent.click(imageOne);
