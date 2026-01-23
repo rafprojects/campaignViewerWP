@@ -233,6 +233,9 @@ class WPSG_REST {
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
 
+        // Clear cache when a new campaign is created
+        self::clear_accessible_campaigns_cache();
+
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
 
@@ -277,6 +280,9 @@ class WPSG_REST {
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
 
+        // Clear cache when a campaign is updated
+        self::clear_accessible_campaigns_cache();
+
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 200);
     }
 
@@ -288,6 +294,10 @@ class WPSG_REST {
         }
 
         update_post_meta($post_id, 'status', 'archived');
+
+        // Clear cache when a campaign is archived
+        self::clear_accessible_campaigns_cache();
+
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
 
@@ -618,19 +628,45 @@ class WPSG_REST {
     }
 
     private static function get_accessible_campaign_ids($user_id) {
+        // Try to get cached results
+        $cache_key = 'wpsg_accessible_campaigns_' . $user_id;
+        $cached = get_transient($cache_key);
+        if (false !== $cached && is_array($cached)) {
+            return $cached;
+        }
+
+        // Query all campaigns if not cached
         $query = new WP_Query([
             'post_type' => 'wpsg_campaign',
             'post_status' => 'publish',
             'posts_per_page' => -1,
+            'fields' => 'ids', // Only get IDs for better performance
         ]);
 
         $campaign_ids = [];
-        foreach ($query->posts as $post) {
-            if (self::can_view_campaign($post->ID, $user_id)) {
-                $campaign_ids[] = (string) $post->ID;
+        foreach ($query->posts as $post_id) {
+            if (self::can_view_campaign($post_id, $user_id)) {
+                $campaign_ids[] = (string) $post_id;
             }
         }
+
+        // Cache for 15 minutes
+        set_transient($cache_key, $campaign_ids, 15 * MINUTE_IN_SECONDS);
+
         return $campaign_ids;
+    }
+
+    /**
+     * Clear cached accessible campaign IDs for all users.
+     * Called when campaigns are created, updated, or deleted.
+     */
+    private static function clear_accessible_campaigns_cache() {
+        global $wpdb;
+        $wpdb->query(
+            "DELETE FROM {$wpdb->options} 
+             WHERE option_name LIKE '_transient_wpsg_accessible_campaigns_%' 
+             OR option_name LIKE '_transient_timeout_wpsg_accessible_campaigns_%'"
+        );
     }
 
     private static function get_campaign_deny_ids($post_id) {
