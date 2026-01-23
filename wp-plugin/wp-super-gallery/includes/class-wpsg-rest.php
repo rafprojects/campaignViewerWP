@@ -199,6 +199,9 @@ class WPSG_REST {
                     $accessible_ids = array_map('intval', $accessible_ids);
                 }
                 $args['post__in'] = $accessible_ids;
+                        if (!preg_match('/^[a-zA-Z0-9_-]{11}$/', $video_id)) {
+                            return new WP_Error('invalid_url', 'Invalid YouTube video ID format');
+                        }
             }
         }
 
@@ -209,8 +212,11 @@ class WPSG_REST {
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
-            'total' => count($items),
-            'totalPages' => 1,
+            'total' => (int) $query->found_posts,
+                        if (!preg_match('/^[0-9]+$/', $video_id)) {
+                            return new WP_Error('invalid_url', 'Invalid Vimeo video ID format');
+                        }
+            'totalPages' => (int) $query->max_num_pages,
         ], 200);
     }
 
@@ -221,6 +227,9 @@ class WPSG_REST {
 
         if (empty($title)) {
             return new WP_REST_Response(['message' => 'Title is required'], 400);
+                        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $slug)) {
+                            return new WP_Error('invalid_url', 'Invalid Rumble video ID format');
+                        }
         }
 
         $post_id = wp_insert_post([
@@ -233,6 +242,9 @@ class WPSG_REST {
         if (is_wp_error($post_id)) {
             return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
         }
+                        if (!preg_match('/^[a-zA-Z0-9]+$/', $video_id)) {
+                            return new WP_Error('invalid_url', 'Invalid BitChute video ID format');
+                        }
 
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
@@ -252,6 +264,9 @@ class WPSG_REST {
         $user_id = get_current_user_id();
         if (!self::can_view_campaign($post_id, $user_id)) {
             return new WP_REST_Response(['message' => 'Forbidden'], 403);
+                        if (!preg_match('/^[a-zA-Z0-9_:-]+$/', $embed_slug)) {
+                            return new WP_Error('invalid_url', 'Invalid Odysee video ID format');
+                        }
         }
 
         return new WP_REST_Response(self::format_campaign($post), 200);
@@ -811,6 +826,9 @@ class WPSG_REST {
             if (!$video_id) {
                 return new WP_Error('invalid_url', 'Invalid YouTube URL');
             }
+            if (!preg_match('/^[a-zA-Z0-9_-]{11}$/', $video_id)) {
+                return new WP_Error('invalid_url', 'Invalid YouTube video ID format');
+            }
             return [
                 'provider' => 'youtube',
                 'url' => $url,
@@ -823,6 +841,9 @@ class WPSG_REST {
             if (!$video_id) {
                 return new WP_Error('invalid_url', 'Invalid Vimeo URL');
             }
+            if (!preg_match('/^[0-9]+$/', $video_id)) {
+                return new WP_Error('invalid_url', 'Invalid Vimeo video ID format');
+            }
             return [
                 'provider' => 'vimeo',
                 'url' => $url,
@@ -834,6 +855,9 @@ class WPSG_REST {
             $slug = trim($path, '/');
             if (!$slug) {
                 return new WP_Error('invalid_url', 'Invalid Rumble URL');
+            }
+            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $slug)) {
+                return new WP_Error('invalid_url', 'Invalid Rumble video ID format');
             }
             return [
                 'provider' => 'rumble',
@@ -848,6 +872,9 @@ class WPSG_REST {
                 return new WP_Error('invalid_url', 'Invalid BitChute URL');
             }
             $video_id = $matches[1];
+            if (!preg_match('/^[a-zA-Z0-9]+$/', $video_id)) {
+                return new WP_Error('invalid_url', 'Invalid BitChute video ID format');
+            }
             return [
                 'provider' => 'bitchute',
                 'url' => $url,
@@ -865,16 +892,16 @@ class WPSG_REST {
                 }
                 $parts = explode('/', $slug);
                 $embed_slug = end($parts);
-                return [
-                    'provider' => 'odysee',
-                    'url' => $url,
-                    'embedUrl' => 'https://odysee.com/$/embed/' . esc_attr($embed_slug),
-                ];
+            } else {
+                $embed_slug = $matches[1];
+            }
+            if (!preg_match('/^[a-zA-Z0-9_:-]+$/', $embed_slug)) {
+                return new WP_Error('invalid_url', 'Invalid Odysee video ID format');
             }
             return [
                 'provider' => 'odysee',
                 'url' => $url,
-                'embedUrl' => $url,
+                'embedUrl' => 'https://odysee.com/$/embed/' . esc_attr($embed_slug),
             ];
         }
 

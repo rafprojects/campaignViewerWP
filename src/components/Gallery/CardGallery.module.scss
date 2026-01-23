@@ -102,17 +102,17 @@
 }
 
 .filterButtonActiveAll {
-  background: #2563eb;
+  background: var(--color-filter-all);
   color: #ffffff;
 }
 
 .filterButtonActiveAccessible {
-  background: #16a34a;
+  background: var(--color-filter-accessible);
   color: #ffffff;
 }
 
 .filterButtonActiveCompany {
-  background: #7c3aed;
+  background: var(--color-filter-company);
   color: #ffffff;
 }
 

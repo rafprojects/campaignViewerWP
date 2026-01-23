@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import './styles/global.scss'
 import { shadowStyles } from './shadowStyles'
 
 type MountProps = Record<string, unknown>
@@ -52,6 +51,7 @@ if (rootHost) {
   if (useShadowDom) {
     mountWithShadow(rootHost, props)
   } else {
+    import('./styles/global.scss')
     mountDefault(rootHost, props)
   }
 } else {
@@ -61,6 +61,7 @@ if (rootHost) {
     if (useShadowDom) {
       mountWithShadow(node, props)
     } else {
+      import('./styles/global.scss')
       mountDefault(node, props)
     }
   })
