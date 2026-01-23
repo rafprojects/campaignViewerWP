@@ -3,7 +3,7 @@ import type { ApiClient } from '@/services/apiClient';
 import type { Campaign, CampaignAccessGrant, MediaItem } from '@/types';
 import styles from './AdminPanel.module.scss';
 
-type AdminTab = 'campaigns' | 'media' | 'access';
+type AdminTab = 'campaigns' | 'media' | 'access' | 'audit';
 
 type AdminCampaign = Pick<Campaign, 'id' | 'title' | 'description' | 'status' | 'visibility' | 'createdAt' | 'updatedAt'> & {
   companyId: string;
@@ -17,6 +17,14 @@ interface ApiCampaignResponse {
 interface UploadResponse {
   attachmentId: number;
   url: string;
+}
+
+interface AuditEntry {
+  id: string;
+  action: string;
+  details: Record<string, unknown>;
+  userId: number;
+  createdAt: string;
 }
 
 interface AdminPanelProps {
@@ -65,6 +73,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     source: 'campaign' as CampaignAccessGrant['source'],
     action: 'grant' as 'grant' | 'deny',
   });
+  const [auditCampaignId, setAuditCampaignId] = useState<string>('');
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
 
   const loadCampaigns = useCallback(async () => {
     setIsLoading(true);
@@ -103,6 +115,12 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [activeTab, accessCampaignId, campaigns]);
 
+  useEffect(() => {
+    if (activeTab === 'audit' && !auditCampaignId && campaigns.length > 0) {
+      setAuditCampaignId(campaigns[0].id);
+    }
+  }, [activeTab, auditCampaignId, campaigns]);
+
   const loadMedia = useCallback(async (campaignId: string) => {
     if (!campaignId) return;
     setMediaLoading(true);
@@ -140,11 +158,31 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [apiClient]);
 
+  const loadAudit = useCallback(async (campaignId: string) => {
+    if (!campaignId) return;
+    setAuditLoading(true);
+    setAuditError(null);
+    try {
+      const response = await apiClient.get<AuditEntry[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`);
+      setAuditEntries(response ?? []);
+    } catch (err) {
+      setAuditError(err instanceof Error ? err.message : 'Failed to load audit trail');
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [apiClient]);
+
   useEffect(() => {
     if (activeTab === 'access' && accessCampaignId) {
       void loadAccess(accessCampaignId);
     }
   }, [activeTab, accessCampaignId, loadAccess]);
+
+  useEffect(() => {
+    if (activeTab === 'audit' && auditCampaignId) {
+      void loadAudit(auditCampaignId);
+    }
+  }, [activeTab, auditCampaignId, loadAudit]);
 
   useEffect(() => {
     if (accessForm.source === 'company' && accessForm.action !== 'grant') {
@@ -434,6 +472,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           onClick={() => setActiveTab('access')}
         >
           Access
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'audit' ? styles.tabActive : styles.tab}
+          onClick={() => setActiveTab('audit')}
+        >
+          Audit
         </button>
       </div>
 
@@ -763,6 +808,61 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {activeTab === 'audit' && (
+        <div className={styles.content}>
+          <div className={styles.panelCard}>
+            <div className={styles.sectionHeader}>
+              <h3>Audit Trail</h3>
+              <select
+                value={auditCampaignId}
+                onChange={(event) => setAuditCampaignId(event.target.value)}
+                className={styles.selectInline}
+              >
+                <option value="" disabled>
+                  Select campaign
+                </option>
+                {campaigns.map((campaign) => (
+                  <option key={campaign.id} value={campaign.id}>
+                    {campaign.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {auditLoading ? (
+              <p className={styles.muted}>Loading audit trail...</p>
+            ) : auditError ? (
+              <p className={styles.error}>{auditError}</p>
+            ) : auditEntries.length === 0 ? (
+              <p className={styles.muted}>No audit entries yet.</p>
+            ) : (
+              <div className={styles.auditList}>
+                <div className={styles.auditRowHeader}>
+                  <span>When</span>
+                  <span>Action</span>
+                  <span>User</span>
+                  <span>Details</span>
+                </div>
+                {auditEntries
+                  .slice()
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .map((entry) => (
+                    <div key={entry.id} className={styles.auditRow}>
+                      <span>{entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '—'}</span>
+                      <span className={styles.badgeSecondary}>{entry.action}</span>
+                      <span>{entry.userId || '—'}</span>
+                      <span className={styles.auditDetails}>
+                        {Object.keys(entry.details ?? {}).length > 0
+                          ? JSON.stringify(entry.details)
+                          : '—'}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </section>

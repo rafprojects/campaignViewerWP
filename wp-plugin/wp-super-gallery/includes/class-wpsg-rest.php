@@ -114,6 +114,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/audit', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_audit'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/media/upload', [
             [
                 'methods' => 'POST',
@@ -236,6 +244,9 @@ class WPSG_REST {
 
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
+        self::add_audit_entry($post_id, 'campaign.created', [
+            'title' => $title,
+        ]);
 
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
@@ -285,6 +296,12 @@ class WPSG_REST {
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
 
+        self::add_audit_entry($post_id, 'campaign.updated', [
+            'title' => $title,
+            'visibility' => $request->get_param('visibility'),
+            'status' => $request->get_param('status'),
+        ]);
+
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 200);
     }
@@ -297,6 +314,7 @@ class WPSG_REST {
         }
 
         update_post_meta($post_id, 'status', 'archived');
+        self::add_audit_entry($post_id, 'campaign.archived', []);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
@@ -379,6 +397,15 @@ class WPSG_REST {
         }
         $media_items[] = $media_item;
         update_post_meta($post_id, 'media_items', $media_items);
+
+        self::add_audit_entry($post_id, 'media.created', [
+            'mediaId' => $media_item['id'],
+            'type' => $media_item['type'],
+            'source' => $media_item['source'],
+            'provider' => $media_item['provider'] ?? '',
+            'url' => $media_item['url'] ?? '',
+            'attachmentId' => $media_item['attachmentId'] ?? 0,
+        ]);
 
         return new WP_REST_Response($media_item, 201);
     }
@@ -466,6 +493,13 @@ class WPSG_REST {
             }
         }
 
+        $audit_action = $source === 'company' ? 'access.company.granted' : ($action === 'deny' ? 'access.denied' : 'access.granted');
+        self::add_audit_entry($post_id, $audit_action, [
+            'userId' => $user_id,
+            'source' => $source,
+            'action' => $action,
+        ]);
+
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access updated'], 200);
     }
@@ -502,6 +536,9 @@ class WPSG_REST {
         }));
         update_post_meta($post_id, 'access_overrides', $overrides);
 
+        self::add_audit_entry($post_id, 'access.revoked', [
+            'userId' => $user_id,
+        ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
     }
@@ -540,6 +577,9 @@ class WPSG_REST {
         }
 
         update_post_meta($post_id, 'media_items', $media_items);
+        self::add_audit_entry($post_id, 'media.updated', [
+            'mediaId' => $media_id,
+        ]);
         return new WP_REST_Response(['message' => 'Media updated'], 200);
     }
 
@@ -558,7 +598,23 @@ class WPSG_REST {
         }));
         update_post_meta($post_id, 'media_items', $media_items);
 
+        self::add_audit_entry($post_id, 'media.deleted', [
+            'mediaId' => $media_id,
+        ]);
+
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
+    }
+
+    public static function list_audit() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $entries = get_post_meta($post_id, 'audit_log', true);
+        $entries = is_array($entries) ? $entries : [];
+        return new WP_REST_Response($entries, 200);
     }
 
     public static function upload_media() {
@@ -788,6 +844,47 @@ class WPSG_REST {
         });
         $filtered[] = $entry;
         return array_values($filtered);
+    }
+
+    private static function add_audit_entry($post_id, $action, $details) {
+        $entries = get_post_meta($post_id, 'audit_log', true);
+        $entries = is_array($entries) ? $entries : [];
+        $entries[] = [
+            'id' => uniqid('audit_', true),
+            'action' => sanitize_text_field($action),
+            'details' => self::sanitize_audit_details($details),
+            'userId' => get_current_user_id(),
+            'createdAt' => gmdate('c'),
+        ];
+
+        if (count($entries) > 200) {
+            $entries = array_slice($entries, -200);
+        }
+
+        update_post_meta($post_id, 'audit_log', $entries);
+    }
+
+    private static function sanitize_audit_details($details) {
+        if (!is_array($details)) {
+            return [];
+        }
+
+        $sanitized = [];
+        foreach ($details as $key => $value) {
+            $safe_key = sanitize_text_field($key);
+            if (is_array($value)) {
+                $sanitized[$safe_key] = self::sanitize_audit_details($value);
+            } elseif (is_numeric($value)) {
+                $sanitized[$safe_key] = $value + 0;
+            } elseif (is_bool($value)) {
+                $sanitized[$safe_key] = (bool) $value;
+            } elseif (is_string($value)) {
+                $sanitized[$safe_key] = sanitize_text_field($value);
+            } else {
+                $sanitized[$safe_key] = '';
+            }
+        }
+        return $sanitized;
     }
 
     private static function normalize_external_media($url) {

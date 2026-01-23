@@ -272,6 +272,38 @@
   font-size: 0.85rem;
 }
 
+.auditList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.auditRowHeader,
+.auditRow {
+  display: grid;
+  grid-template-columns: 0.9fr 0.9fr 0.5fr 1.4fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.auditRowHeader {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  letter-spacing: 0.08em;
+}
+
+.auditRow {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.auditDetails {
+  font-family: 'SFMono-Regular', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  font-size: 0.8rem;
+  word-break: break-word;
+}
+
 .primaryButton {
   background: var(--color-accent);
   color: #ffffff;
@@ -315,6 +347,11 @@
 
   .accessRowHeader,
   .accessRow {
+    grid-template-columns: 1fr;
+  }
+
+  .auditRowHeader,
+  .auditRow {
     grid-template-columns: 1fr;
   }
 }
