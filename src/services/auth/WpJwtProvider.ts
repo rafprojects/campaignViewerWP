@@ -77,20 +77,6 @@ export class WpJwtProvider implements AuthProvider {
     return token;
   }
 
-  private async validateToken(token: string): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.apiBaseUrl}/wp-json/jwt-auth/v1/token/validate`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
-
   async getUser(): Promise<AuthUser | null> {
     return this.user;
   }
