@@ -184,22 +184,29 @@ class WPSG_REST {
         }
 
         $user_id = get_current_user_id();
-        if (!$user_id && empty($visibility)) {
-            $meta_query[] = [
-                'key' => 'visibility',
-                'value' => 'public',
-            ];
-            $args['meta_query'] = $meta_query;
+        
+        // Apply database-level filtering based on user permissions
+        if (!current_user_can('manage_options')) {
+            if (!$user_id && empty($visibility)) {
+                // Anonymous users: filter to public campaigns only
+                $meta_query[] = [
+                    'key' => 'visibility',
+                    'value' => 'public',
+                ];
+                $args['meta_query'] = $meta_query;
+            } elseif ($user_id && empty($visibility)) {
+                // Authenticated non-admin users: filter to accessible campaigns
+                $accessible_ids = self::get_accessible_campaign_ids($user_id);
+                if (empty($accessible_ids)) {
+                    // User has no accessible campaigns, return empty result
+                    $accessible_ids = [0];
+                }
+                $args['post__in'] = $accessible_ids;
+            }
         }
 
         $query = new WP_Query($args);
         $items = array_map([self::class, 'format_campaign'], $query->posts);
-
-        if ($user_id && !current_user_can('manage_options')) {
-            $items = array_values(array_filter($items, function ($item) use ($user_id) {
-                return self::can_view_campaign(intval($item['id']), $user_id);
-            }));
-        }
 
         return new WP_REST_Response([
             'items' => $items,
