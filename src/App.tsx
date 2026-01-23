@@ -178,7 +178,7 @@ function AppContent({
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient, isAuthenticated, isReady, logout]);
+  }, [apiClient, isAuthenticated, isReady]);
 
   useEffect(() => {
     void loadCampaigns();
