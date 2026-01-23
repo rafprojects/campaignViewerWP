@@ -43,6 +43,8 @@ const emptyForm = {
   tags: '',
 };
 
+const companySlugPattern = /^[a-z0-9_-]+$/i;
+
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('campaigns');
   const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
@@ -50,6 +52,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [error, setError] = useState<string | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
   const [formState, setFormState] = useState({ ...emptyForm });
+  const [campaignErrors, setCampaignErrors] = useState<{ title?: string; company?: string }>({});
   const [mediaCampaignId, setMediaCampaignId] = useState<string>('');
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -64,6 +67,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     order: '',
     file: null as File | null,
   });
+  const [mediaFormError, setMediaFormError] = useState<string | null>(null);
   const [accessCampaignId, setAccessCampaignId] = useState<string>('');
   const [accessEntries, setAccessEntries] = useState<CampaignAccessGrant[]>([]);
   const [accessLoading, setAccessLoading] = useState(false);
@@ -73,6 +77,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     source: 'campaign' as CampaignAccessGrant['source'],
     action: 'grant' as 'grant' | 'deny',
   });
+  const [accessFormError, setAccessFormError] = useState<string | null>(null);
   const [auditCampaignId, setAuditCampaignId] = useState<string>('');
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -192,6 +197,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const handleEdit = (campaign: AdminCampaign) => {
     setEditingCampaign(campaign);
+    setCampaignErrors({});
     setFormState({
       title: campaign.title ?? '',
       description: campaign.description ?? '',
@@ -204,11 +210,24 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const handleCreate = () => {
     setEditingCampaign(null);
+    setCampaignErrors({});
     setFormState({ ...emptyForm });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const nextErrors: { title?: string; company?: string } = {};
+    if (!formState.title.trim()) {
+      nextErrors.title = 'Title is required.';
+    }
+    if (formState.company && !companySlugPattern.test(formState.company)) {
+      nextErrors.company = 'Company slug can only include letters, numbers, underscores, and dashes.';
+    }
+    setCampaignErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     const payload = {
       title: formState.title,
       description: formState.description,
@@ -346,19 +365,47 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     return Math.max(...mediaItems.map((item) => item.order ?? 0)) + 1;
   }, [mediaItems]);
 
+  const isCampaignFormValid = formState.title.trim().length > 0
+    && (!formState.company || companySlugPattern.test(formState.company));
+
   const handleMediaSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!mediaCampaignId) return;
+    if (!mediaCampaignId) {
+      setMediaFormError('Select a campaign first.');
+      return;
+    }
 
-    const orderValue = mediaForm.order ? Number(mediaForm.order) : nextMediaOrder;
+    setMediaFormError(null);
+    if (mediaForm.source === 'external') {
+      if (!mediaForm.url.trim()) {
+        setMediaFormError('Provide a media URL.');
+        return;
+      }
+      try {
+        const parsed = new URL(mediaForm.url);
+        if (parsed.protocol !== 'https:') {
+          setMediaFormError('Media URL must use HTTPS.');
+          return;
+        }
+      } catch {
+        setMediaFormError('Media URL is invalid.');
+        return;
+      }
+    }
+    if (mediaForm.source === 'upload' && !mediaForm.file) {
+      setMediaFormError('Select a file to upload.');
+      return;
+    }
+    const orderValue = mediaForm.order ? Math.max(0, Number(mediaForm.order)) : nextMediaOrder;
     try {
       if (mediaForm.source === 'upload') {
-        if (!mediaForm.file) {
-          onNotify({ type: 'error', text: 'Select a file to upload.' });
+        const file = mediaForm.file;
+        if (!file) {
+          setMediaFormError('Select a file to upload.');
           return;
         }
         const formData = new FormData();
-        formData.append('file', mediaForm.file);
+        formData.append('file', file);
         const upload = await apiClient.postForm<UploadResponse>(
           '/wp-json/wp-super-gallery/v1/media/upload',
           formData,
@@ -404,10 +451,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const handleAccessSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!accessCampaignId) return;
+    if (!accessCampaignId) {
+      setAccessFormError('Select a campaign first.');
+      return;
+    }
+    setAccessFormError(null);
     const userId = Number(accessForm.userId);
     if (!userId) {
-      onNotify({ type: 'error', text: 'Enter a valid user ID.' });
+      setAccessFormError('Enter a valid user ID.');
       return;
     }
     try {
@@ -490,10 +541,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             <label>
               Title
               <input
+                className={campaignErrors.title ? styles.inputError : undefined}
                 value={formState.title}
-                onChange={(event) => setFormState((prev) => ({ ...prev, title: event.target.value }))}
+                onChange={(event) => {
+                  setFormState((prev) => ({ ...prev, title: event.target.value }));
+                  if (campaignErrors.title) {
+                    setCampaignErrors((prev) => ({ ...prev, title: undefined }));
+                  }
+                }}
                 required
               />
+              {campaignErrors.title && <span className={styles.fieldError}>{campaignErrors.title}</span>}
             </label>
             <label>
               Description
@@ -507,9 +565,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               <label>
                 Company Slug
                 <input
+                  className={campaignErrors.company ? styles.inputError : undefined}
                   value={formState.company}
-                  onChange={(event) => setFormState((prev) => ({ ...prev, company: event.target.value }))}
+                  onChange={(event) => {
+                    setFormState((prev) => ({ ...prev, company: event.target.value }));
+                    if (campaignErrors.company) {
+                      setCampaignErrors((prev) => ({ ...prev, company: undefined }));
+                    }
+                  }}
                 />
+                {campaignErrors.company && <span className={styles.fieldError}>{campaignErrors.company}</span>}
               </label>
               <label>
                 Status
@@ -541,7 +606,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               />
             </label>
             <div className={styles.formActions}>
-              <button type="submit" className={styles.primaryButton}>
+              <button type="submit" className={styles.primaryButton} disabled={!isCampaignFormValid}>
                 {editingCampaign ? 'Save Changes' : 'Create Campaign'}
               </button>
               {editingCampaign && (
@@ -561,7 +626,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               <h3>Campaign Media</h3>
               <select
                 value={mediaCampaignId}
-                onChange={(event) => setMediaCampaignId(event.target.value)}
+                onChange={(event) => {
+                  setMediaCampaignId(event.target.value);
+                  if (mediaFormError) setMediaFormError(null);
+                }}
                 className={styles.selectInline}
               >
                 <option value="" disabled>
@@ -657,7 +725,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 Source
                 <select
                   value={mediaForm.source}
-                  onChange={(event) => setMediaForm((prev) => ({ ...prev, source: event.target.value as MediaItem['source'] }))}
+                  onChange={(event) => {
+                    setMediaForm((prev) => ({ ...prev, source: event.target.value as MediaItem['source'] }));
+                    if (mediaFormError) setMediaFormError(null);
+                  }}
                 >
                   <option value="external">External</option>
                   <option value="upload">Upload</option>
@@ -678,7 +749,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 Media URL
                 <input
                   value={mediaForm.url}
-                  onChange={(event) => setMediaForm((prev) => ({ ...prev, url: event.target.value }))}
+                  onChange={(event) => {
+                    setMediaForm((prev) => ({ ...prev, url: event.target.value }));
+                    if (mediaFormError) setMediaFormError(null);
+                  }}
                   placeholder="https://..."
                   required
                 />
@@ -689,7 +763,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 <input
                   type="file"
                   accept={mediaForm.type === 'image' ? 'image/*' : 'video/*'}
-                  onChange={(event) => setMediaForm((prev) => ({ ...prev, file: event.target.files?.[0] ?? null }))}
+                  onChange={(event) => {
+                    setMediaForm((prev) => ({ ...prev, file: event.target.files?.[0] ?? null }));
+                    if (mediaFormError) setMediaFormError(null);
+                  }}
                   required
                 />
               </label>
@@ -709,10 +786,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               />
             </label>
             <div className={styles.formActions}>
-              <button type="submit" className={styles.primaryButton}>
+              <button type="submit" className={styles.primaryButton} disabled={!mediaCampaignId}>
                 Add Media
               </button>
             </div>
+            {mediaFormError && <p className={styles.error}>{mediaFormError}</p>}
           </form>
         </div>
       )}
@@ -724,7 +802,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               <h3>Campaign Access</h3>
               <select
                 value={accessCampaignId}
-                onChange={(event) => setAccessCampaignId(event.target.value)}
+                onChange={(event) => {
+                  setAccessCampaignId(event.target.value);
+                  if (accessFormError) setAccessFormError(null);
+                }}
                 className={styles.selectInline}
               >
                 <option value="" disabled>
@@ -776,7 +857,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 User ID
                 <input
                   value={accessForm.userId}
-                  onChange={(event) => setAccessForm((prev) => ({ ...prev, userId: event.target.value }))}
+                  onChange={(event) => {
+                    setAccessForm((prev) => ({ ...prev, userId: event.target.value }));
+                    if (accessFormError) setAccessFormError(null);
+                  }}
                   required
                 />
               </label>
@@ -803,10 +887,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               </label>
             </div>
             <div className={styles.formActions}>
-              <button type="submit" className={styles.primaryButton}>
+              <button type="submit" className={styles.primaryButton} disabled={!accessCampaignId}>
                 Apply Access
               </button>
             </div>
+            {accessFormError && <p className={styles.error}>{accessFormError}</p>}
           </form>
         </div>
       )}

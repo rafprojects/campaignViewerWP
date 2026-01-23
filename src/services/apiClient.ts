@@ -42,7 +42,18 @@ export class ApiClient {
       if (response.status === 401) {
         this.onUnauthorized?.();
       }
-      throw new ApiError('Request failed', response.status);
+
+      let errorMessage = 'Request failed';
+      try {
+        const data = await response.json();
+        if (data?.message) {
+          errorMessage = data.message;
+        }
+      } catch {
+        // ignore parse errors
+      }
+
+      throw new ApiError(errorMessage, response.status);
     }
     return response.json() as Promise<T>;
   }

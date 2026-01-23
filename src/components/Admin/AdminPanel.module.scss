@@ -169,6 +169,16 @@
   color: var(--color-text);
 }
 
+.inputError {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.35);
+}
+
+.fieldError {
+  color: #f87171;
+  font-size: 0.8rem;
+}
+
 .formRow {
   display: grid;
   gap: 1rem;
@@ -307,6 +317,11 @@
 .primaryButton {
   background: var(--color-accent);
   color: #ffffff;
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .secondaryButton {
