@@ -26,35 +26,34 @@ describe('WpJwtProvider', () => {
     localStorage.clear();
   });
 
-  it('clears expired token on init', async () => {
-    const expiredToken = buildToken(Math.floor(Date.now() / 1000) - 60);
-    localStorage.setItem('wpsg_access_token', expiredToken);
-
+  it('returns null on init (no persistent storage)', async () => {
     const provider = new WpJwtProvider({ apiBaseUrl });
     const session = await provider.init();
 
     expect(session).toBeNull();
-    expect(localStorage.getItem('wpsg_access_token')).toBeNull();
   });
 
-  it('returns token when valid and not expired', async () => {
-    const validToken = buildToken(Math.floor(Date.now() / 1000) + 60 * 60);
-    localStorage.setItem('wpsg_access_token', validToken);
-
+  it('stores and returns token after login', async () => {
+    const mockToken = buildToken(Math.floor(Date.now() / 1000) + 60 * 60);
+    
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({}),
+      json: async () => ({
+        token: mockToken,
+        user_id: '123',
+        user_email: 'test@example.com',
+      }),
     });
 
     const provider = new WpJwtProvider({ apiBaseUrl });
-    const session = await provider.init();
+    const session = await provider.login('test@example.com', 'password');
 
-    expect(session?.accessToken).toBe(validToken);
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${apiBaseUrl}/wp-json/jwt-auth/v1/token/validate`,
-      expect.objectContaining({ method: 'POST' }),
-    );
+    expect(session.accessToken).toBe(mockToken);
+    
+    // Verify token is stored in memory and can be retrieved
+    const token = await provider.getAccessToken();
+    expect(token).toBe(mockToken);
   });
 
   it('surfaces login error message from API', async () => {
@@ -70,26 +69,38 @@ describe('WpJwtProvider', () => {
   });
 
   it('marks user as admin when permissions response indicates admin', async () => {
-    localStorage.setItem('wpsg_access_token', buildToken(Math.floor(Date.now() / 1000) + 3600));
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'test@example.com', role: 'viewer' }));
+    const mockToken = buildToken(Math.floor(Date.now() / 1000) + 3600);
+    
+    // First, log in to store token and user
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        token: mockToken,
+        user_id: '1',
+        user_email: 'test@example.com',
+      }),
+    });
 
-    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    const provider = new WpJwtProvider({ apiBaseUrl });
+    await provider.login('test@example.com', 'password');
+
+    // Now mock the permissions response
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       status: 200,
       json: async () => ({ campaignIds: ['1'], isAdmin: true }),
     });
 
-    const provider = new WpJwtProvider({ apiBaseUrl });
     const permissions = await provider.getPermissions();
 
     expect(permissions).toEqual(['1']);
-    const updatedUser = JSON.parse(localStorage.getItem('wpsg_user') ?? '{}');
-    expect(updatedUser.role).toBe('admin');
+    const user = await provider.getUser();
+    expect(user?.role).toBe('admin');
   });
 
-  it('returns empty permissions when cached value is invalid', async () => {
-    localStorage.setItem('wpsg_permissions', '{bad-json');
-
+  it('returns empty permissions when cached value is invalid (not applicable for in-memory)', async () => {
+    // In-memory storage doesn't have JSON parsing issues
     const provider = new WpJwtProvider({ apiBaseUrl });
     const permissions = await provider.getPermissions();
 
@@ -103,9 +114,8 @@ describe('WpJwtProvider', () => {
     expect(permissions).toEqual([]);
   });
 
-  it('returns null user for invalid stored JSON', async () => {
-    localStorage.setItem('wpsg_user', '{bad');
-
+  it('returns null user for invalid stored JSON (not applicable for in-memory)', async () => {
+    // In-memory storage doesn't have JSON parsing issues
     const provider = new WpJwtProvider({ apiBaseUrl });
     const user = await provider.getUser();
 
@@ -114,64 +124,117 @@ describe('WpJwtProvider', () => {
 
   it('clears access token when expired on getAccessToken', async () => {
     const expiredToken = buildToken(Math.floor(Date.now() / 1000) - 10);
-    localStorage.setItem('wpsg_access_token', expiredToken);
+    
+    // Mock login with expired token (should be rejected)
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        token: expiredToken,
+        user_id: '123',
+        user_email: 'test@example.com',
+      }),
+    });
 
     const provider = new WpJwtProvider({ apiBaseUrl });
+    
+    // Login should fail because token is expired
+    await expect(provider.login('test@example.com', 'password')).rejects.toThrow('Received token is already expired');
+    
     const token = await provider.getAccessToken();
-
     expect(token).toBeNull();
-    expect(localStorage.getItem('wpsg_access_token')).toBeNull();
   });
 
   it('returns cached permissions without calling fetch', async () => {
-    localStorage.setItem('wpsg_permissions', JSON.stringify(['cached']));
+    const mockToken = buildToken(Math.floor(Date.now() / 1000) + 3600);
+    
+    // First, log in
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        token: mockToken,
+        user_id: '123',
+        user_email: 'test@example.com',
+      }),
+    });
 
     const provider = new WpJwtProvider({ apiBaseUrl });
-    const permissions = await provider.getPermissions();
+    await provider.login('test@example.com', 'password');
 
-    expect(permissions).toEqual(['cached']);
+    // Mock permissions response
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ campaignIds: ['cached'], isAdmin: false }),
+    });
+
+    // First call fetches from API
+    const permissions1 = await provider.getPermissions();
+    expect(permissions1).toEqual(['cached']);
+    
+    // Clear fetch mock
+    vi.clearAllMocks();
+    
+    // Second call should use cached value
+    const permissions2 = await provider.getPermissions();
+    expect(permissions2).toEqual(['cached']);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it('returns empty permissions when permissions request fails', async () => {
     const token = buildToken(Math.floor(Date.now() / 1000) + 3600);
-    localStorage.setItem('wpsg_access_token', token);
+    
+    // First, log in
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        token,
+        user_id: '123',
+        user_email: 'test@example.com',
+      }),
+    });
 
-    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    const provider = new WpJwtProvider({ apiBaseUrl });
+    await provider.login('test@example.com', 'password');
+
+    // Mock failed permissions request
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: false,
       status: 500,
       json: async () => ({}),
     });
 
-    const provider = new WpJwtProvider({ apiBaseUrl });
     const permissions = await provider.getPermissions();
 
     expect(permissions).toEqual([]);
   });
 
   it('keeps token when payload is not decodable', async () => {
-    localStorage.setItem('wpsg_access_token', 'bad.token');
+    // Mock login with a malformed token
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        token: 'bad.token',
+        user_id: '123',
+        user_email: 'test@example.com',
+      }),
+    });
 
     const provider = new WpJwtProvider({ apiBaseUrl });
+    await provider.login('test@example.com', 'password');
+    
     const token = await provider.getAccessToken();
-
+    // Token with non-decodable payload has no expiry, so it's kept
     expect(token).toBe('bad.token');
   });
 
-  it('clears token when validate endpoint rejects it', async () => {
-    const token = buildToken(Math.floor(Date.now() / 1000) + 3600);
-    localStorage.setItem('wpsg_access_token', token);
-
-    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: false,
-      status: 403,
-      json: async () => ({}),
-    });
-
+  it('init always returns null (no persistent storage)', async () => {
     const provider = new WpJwtProvider({ apiBaseUrl });
     const session = await provider.init();
 
     expect(session).toBeNull();
-    expect(localStorage.getItem('wpsg_access_token')).toBeNull();
   });
 });
