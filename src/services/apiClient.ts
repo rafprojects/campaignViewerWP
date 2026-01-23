@@ -18,18 +18,22 @@ export class ApiClient {
   }
 
   private async getHeaders(extra?: HeadersInit): Promise<Record<string, string>> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+    const headers: Record<string, string> = await this.getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    return {
+      ...headers,
       ...(extra as Record<string, string> | undefined),
     };
+  }
 
+  private async getAuthHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
     if (this.authProvider) {
       const token = await this.authProvider.getAccessToken();
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
     }
-
     return headers;
   }
 
@@ -55,6 +59,15 @@ export class ApiClient {
       method: 'POST',
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
+    });
+    return this.handleResponse<T>(response);
+  }
+
+  async postForm<T>(path: string, formData: FormData): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: await this.getAuthHeaders(),
+      body: formData,
     });
     return this.handleResponse<T>(response);
   }

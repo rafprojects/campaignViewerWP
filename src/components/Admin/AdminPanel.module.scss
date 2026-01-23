@@ -44,6 +44,33 @@
   gap: 2rem;
 }
 
+.panelCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 1rem;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.selectInline {
+  min-width: 220px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
 .tableWrap {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
@@ -164,6 +191,87 @@
   cursor: pointer;
 }
 
+.mediaList {
+  display: grid;
+  gap: 1rem;
+}
+
+.mediaRow {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--color-border);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+
+.mediaTitle {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.mediaLink {
+  color: var(--color-accent);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.mediaThumb {
+  margin-top: 0.75rem;
+  max-width: 220px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.mediaControls {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mediaControls label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.mediaControls input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.accessList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.accessRowHeader,
+.accessRow {
+  display: grid;
+  grid-template-columns: 0.6fr 0.6fr 1fr 0.6fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.accessRowHeader {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  letter-spacing: 0.08em;
+}
+
+.accessRow {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.mutedSmall {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
 .primaryButton {
   background: var(--color-accent);
   color: #ffffff;
@@ -198,6 +306,15 @@
 @media (max-width: 960px) {
   .tableRowHeader,
   .tableRow {
+    grid-template-columns: 1fr;
+  }
+
+  .mediaRow {
+    grid-template-columns: 1fr;
+  }
+
+  .accessRowHeader,
+  .accessRow {
     grid-template-columns: 1fr;
   }
 }
