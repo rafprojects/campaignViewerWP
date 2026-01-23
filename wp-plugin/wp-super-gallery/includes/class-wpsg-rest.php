@@ -199,9 +199,6 @@ class WPSG_REST {
                     $accessible_ids = array_map('intval', $accessible_ids);
                 }
                 $args['post__in'] = $accessible_ids;
-                        if (!preg_match('/^[a-zA-Z0-9_-]{11}$/', $video_id)) {
-                            return new WP_Error('invalid_url', 'Invalid YouTube video ID format');
-                        }
             }
         }
 
@@ -213,9 +210,6 @@ class WPSG_REST {
             'page' => $page,
             'perPage' => $per_page,
             'total' => (int) $query->found_posts,
-                        if (!preg_match('/^[0-9]+$/', $video_id)) {
-                            return new WP_Error('invalid_url', 'Invalid Vimeo video ID format');
-                        }
             'totalPages' => (int) $query->max_num_pages,
         ], 200);
     }
@@ -227,9 +221,6 @@ class WPSG_REST {
 
         if (empty($title)) {
             return new WP_REST_Response(['message' => 'Title is required'], 400);
-                        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $slug)) {
-                            return new WP_Error('invalid_url', 'Invalid Rumble video ID format');
-                        }
         }
 
         $post_id = wp_insert_post([
@@ -242,9 +233,6 @@ class WPSG_REST {
         if (is_wp_error($post_id)) {
             return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
         }
-                        if (!preg_match('/^[a-zA-Z0-9]+$/', $video_id)) {
-                            return new WP_Error('invalid_url', 'Invalid BitChute video ID format');
-                        }
 
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
