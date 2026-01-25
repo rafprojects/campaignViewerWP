@@ -44,16 +44,23 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       // Auto-fetch oEmbed metadata for external items missing thumbnail or title
       const needs = sorted.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));
       if (needs.length > 0) {
-        console.log('MediaTab: fetching oEmbed for', needs.length, 'items');
         try {
           await Promise.all(
             needs.map(async (it) => {
               try {
                 const data = await apiClient.get<any>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(it.url)}`);
                 if (data) {
+                  const nextThumb = it.thumbnail || data.thumbnail_url;
+                  const nextCaption = it.caption || data.title || '';
                   setMedia((prev) =>
-                    prev.map((p) => (p.id === it.id ? { ...p, thumbnail: p.thumbnail || data.thumbnail_url || p.thumbnail, caption: p.caption || data.title || '' } : p)),
+                    prev.map((p) => (p.id === it.id ? { ...p, thumbnail: nextThumb ?? p.thumbnail, caption: nextCaption } : p)),
                   );
+                  if (nextThumb || nextCaption) {
+                    await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${it.id}`, {
+                      thumbnail: nextThumb,
+                      caption: nextCaption,
+                    });
+                  }
                 }
               } catch (e) {
                 console.warn('oEmbed fetch failed for', it.url, e);
