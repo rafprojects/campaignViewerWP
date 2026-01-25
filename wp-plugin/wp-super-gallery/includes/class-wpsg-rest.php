@@ -95,6 +95,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/reorder', [
+            [
+                'methods' => 'PUT',
+                'callback' => [self::class, 'reorder_media'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access', [
             [
                 'methods' => 'GET',
@@ -593,6 +601,59 @@ class WPSG_REST {
             'mediaId' => $media_id,
         ]);
         return new WP_REST_Response(['message' => 'Media updated'], 200);
+    }
+
+    public static function reorder_media() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $items = $request->get_param('items');
+        if (!is_array($items)) {
+            return new WP_REST_Response(['message' => 'items must be an array'], 400);
+        }
+
+        $order_map = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $id = sanitize_text_field($item['id'] ?? '');
+            $order = intval($item['order'] ?? 0);
+            if (!$id) {
+                continue;
+            }
+            if ($order < 0) {
+                $order = 0;
+            } elseif ($order > 1000000) {
+                $order = 1000000;
+            }
+            $order_map[$id] = $order;
+        }
+
+        if (empty($order_map)) {
+            return new WP_REST_Response(['message' => 'No valid items provided'], 400);
+        }
+
+        $media_items = get_post_meta($post_id, 'media_items', true);
+        $media_items = is_array($media_items) ? $media_items : [];
+
+        foreach ($media_items as &$media_item) {
+            $id = $media_item['id'] ?? '';
+            if ($id && array_key_exists($id, $order_map)) {
+                $media_item['order'] = $order_map[$id];
+            }
+        }
+        unset($media_item);
+
+        update_post_meta($post_id, 'media_items', $media_items);
+        self::add_audit_entry($post_id, 'media.reordered', [
+            'count' => count($order_map),
+        ]);
+
+        return new WP_REST_Response(['message' => 'Media reordered'], 200);
     }
 
     public static function delete_media() {

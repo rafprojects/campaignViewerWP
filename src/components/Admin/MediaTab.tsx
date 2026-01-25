@@ -18,6 +18,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const dropRef = useRef<HTMLDivElement | null>(null);
   const [externalUrl, setExternalUrl] = useState('');
   const [externalPreview, setExternalPreview] = useState<any | null>(null);
+  const [externalLoading, setExternalLoading] = useState(false);
+  const [externalError, setExternalError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   const [editingCaption, setEditingCaption] = useState('');
@@ -128,6 +130,10 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
   async function handleAddExternal() {
     if (!externalUrl) return;
+    if (!isValidExternalUrl(externalUrl)) {
+      showNotification({ title: 'Invalid URL', message: 'Please enter a valid https URL.', color: 'red' });
+      return;
+    }
     try {
       const payload: any = {
         type: externalPreview?.type ?? 'video',
@@ -151,7 +157,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
   async function handleFetchOEmbed() {
     if (!externalUrl) return;
+    if (!isValidExternalUrl(externalUrl)) {
+      setExternalError('Please enter a valid https URL.');
+      return;
+    }
     try {
+      setExternalLoading(true);
+      setExternalError(null);
       // 1) Try plugin server-side oEmbed proxy to avoid CORS and provider restrictions
       try {
         const data = await apiClient.get<any>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
@@ -212,7 +224,19 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       throw new Error('All oEmbed attempts failed');
     } catch (err) {
       console.error(err);
+      setExternalError((err as Error).message);
       showNotification({ title: 'Preview failed', message: (err as Error).message, color: 'red' });
+    } finally {
+      setExternalLoading(false);
+    }
+  }
+
+  function isValidExternalUrl(value: string) {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:';
+    } catch {
+      return false;
     }
   }
 
@@ -369,9 +393,14 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
           <Text fw={600}>Or add external URL</Text>
           <Group>
-            <TextInput value={externalUrl} onChange={(e) => setExternalUrl(e.currentTarget.value)} placeholder="https://youtube.com/..." />
-            <Button onClick={handleFetchOEmbed}>Preview</Button>
-            <Button onClick={handleAddExternal}>Add</Button>
+            <TextInput
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.currentTarget.value)}
+              placeholder="https://youtube.com/..."
+              error={externalError}
+            />
+            <Button onClick={handleFetchOEmbed} loading={externalLoading}>Preview</Button>
+            <Button onClick={handleAddExternal} disabled={!externalUrl}>Add</Button>
           </Group>
 
           {externalPreview && (
