@@ -73,6 +73,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [accessCampaignId, setAccessCampaignId] = useState<string>('');
   const [accessEntries, setAccessEntries] = useState<CampaignAccessGrant[]>([]);
   const [accessLoading, setAccessLoading] = useState(false);
+  const [accessUserId, setAccessUserId] = useState('');
+  const [accessSource, setAccessSource] = useState<'company' | 'campaign'>('campaign');
+  const [accessAction, setAccessAction] = useState<'grant' | 'deny'>('grant');
+  const [accessSaving, setAccessSaving] = useState(false);
 
   const [auditCampaignId, setAuditCampaignId] = useState<string>('');
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
@@ -137,6 +141,45 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       void loadAccess(accessCampaignId);
     }
   }, [activeTab, accessCampaignId, loadAccess]);
+
+  const handleGrantAccess = async () => {
+    if (!accessCampaignId) return;
+    if (!accessUserId) {
+      onNotify({ type: 'error', text: 'User ID is required.' });
+      return;
+    }
+
+    setAccessSaving(true);
+    try {
+      await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access`, {
+        userId: Number.isNaN(Number(accessUserId)) ? accessUserId : Number(accessUserId),
+        source: accessSource,
+        action: accessSource === 'company' ? 'grant' : accessAction,
+      });
+      onNotify({ type: 'success', text: 'Access updated.' });
+      setAccessUserId('');
+      setAccessAction('grant');
+      await loadAccess(accessCampaignId);
+    } catch (err) {
+      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update access.' });
+    } finally {
+      setAccessSaving(false);
+    }
+  };
+
+  const handleRevokeAccess = async (entry: CampaignAccessGrant) => {
+    if (!accessCampaignId) return;
+    setAccessSaving(true);
+    try {
+      await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access/${entry.userId}`);
+      onNotify({ type: 'success', text: 'Access revoked.' });
+      await loadAccess(accessCampaignId);
+    } catch (err) {
+      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to revoke access.' });
+    } finally {
+      setAccessSaving(false);
+    }
+  };
 
   // Load audit when campaign selected
   const loadAudit = useCallback(async (campaignId: string) => {
@@ -259,9 +302,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Table.Td>{a.userId}</Table.Td>
         <Table.Td><Badge variant="light">{a.source}</Badge></Table.Td>
         <Table.Td>{a.grantedAt ? new Date(a.grantedAt).toLocaleString() : '—'}</Table.Td>
+        <Table.Td>
+          <ActionIcon color="red" variant="light" onClick={() => handleRevokeAccess(a)}>
+            <IconTrash size={16} />
+          </ActionIcon>
+        </Table.Td>
       </Table.Tr>
     ));
-  }, [accessEntries]);
+  }, [accessEntries, handleRevokeAccess]);
 
   const auditRows = useMemo(() => {
     return auditEntries
@@ -371,6 +419,44 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               style={{ minWidth: 200 }}
             />
           </Group>
+          <Card shadow="sm" withBorder mb="md">
+            <Stack gap="sm">
+              <Text fw={600}>Grant access</Text>
+              <Group grow align="flex-end">
+                <TextInput
+                  label="User ID"
+                  placeholder="e.g. 42"
+                  value={accessUserId}
+                  onChange={(e) => setAccessUserId(e.currentTarget.value)}
+                />
+                <Select
+                  label="Source"
+                  data={[
+                    { value: 'campaign', label: 'Campaign' },
+                    { value: 'company', label: 'Company' },
+                  ]}
+                  value={accessSource}
+                  onChange={(v) => setAccessSource((v as 'company' | 'campaign') ?? 'campaign')}
+                />
+                <Select
+                  label="Action"
+                  data={[
+                    { value: 'grant', label: 'Grant' },
+                    { value: 'deny', label: 'Deny' },
+                  ]}
+                  value={accessAction}
+                  onChange={(v) => setAccessAction((v as 'grant' | 'deny') ?? 'grant')}
+                  disabled={accessSource === 'company'}
+                />
+                <Button onClick={handleGrantAccess} loading={accessSaving}>Apply</Button>
+              </Group>
+              {accessSource === 'company' && (
+                <Text size="xs" c="dimmed">
+                  Company grants apply across all campaigns in the company.
+                </Text>
+              )}
+            </Stack>
+          </Card>
           {accessLoading ? (
             <Center><Loader /></Center>
           ) : accessEntries.length === 0 ? (
@@ -383,6 +469,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                     <Table.Th>User ID</Table.Th>
                     <Table.Th>Source</Table.Th>
                     <Table.Th>Granted</Table.Th>
+                    <Table.Th>Actions</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>{accessRows}</Table.Tbody>
