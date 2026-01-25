@@ -125,13 +125,9 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   async function handleFetchOEmbed() {
     if (!externalUrl) return;
     try {
-      console.log('MediaTab: handleFetchOEmbed', externalUrl);
-      showNotification({ title: 'Fetching preview', message: 'Attempting to load preview...', loading: true });
       // 1) Try plugin server-side oEmbed proxy to avoid CORS and provider restrictions
       try {
-        console.log('MediaTab: calling server oembed proxy');
         const data = await apiClient.get<any>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
-        console.log('MediaTab: server oembed response', data);
         if (data) {
           setExternalPreview(data);
           showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
