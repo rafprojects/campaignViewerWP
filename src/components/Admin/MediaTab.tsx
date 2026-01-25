@@ -362,9 +362,9 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                   </div>
                   <Group gap="xs">
                     <Button variant="subtle" onClick={() => openEdit(item)}>Edit</Button>
-                    <Button variant="subtle" onClick={() => moveItem(item, 'up')}>↑</Button>
-                    <Button variant="subtle" onClick={() => moveItem(item, 'down')}>↓</Button>
-                    <Button variant="subtle" color="red" leftSection={<IconTrash size={16} />} onClick={() => handleDelete(item)} />
+                    <Button variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</Button>
+                    <Button variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</Button>
+                    <Button variant="subtle" color="red" leftSection={<IconTrash size={16} />} onClick={() => handleDelete(item)} aria-label="Delete media" />
                   </Group>
                 </Group>
               </Card>

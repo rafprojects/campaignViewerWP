@@ -88,4 +88,21 @@ describe('ApiClient', () => {
       expect.objectContaining({ method: 'DELETE' }),
     );
   });
+
+  it('exposes baseUrl and auth headers', async () => {
+    const authProvider: AuthProvider = {
+      init: vi.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
+      getAccessToken: vi.fn().mockResolvedValue('token-456'),
+      getUser: vi.fn(),
+      getPermissions: vi.fn(),
+    };
+
+    const client = new ApiClient({ baseUrl, authProvider });
+    expect(client.getBaseUrl()).toBe(baseUrl);
+
+    const headers = await client.getAuthHeaders();
+    expect(headers).toEqual({ Authorization: 'Bearer token-456' });
+  });
 });

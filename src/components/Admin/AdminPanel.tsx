@@ -303,7 +303,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Table.Td><Badge variant="light">{a.source}</Badge></Table.Td>
         <Table.Td>{a.grantedAt ? new Date(a.grantedAt).toLocaleString() : '—'}</Table.Td>
         <Table.Td>
-          <ActionIcon color="red" variant="light" onClick={() => handleRevokeAccess(a)}>
+          <ActionIcon color="red" variant="light" onClick={() => handleRevokeAccess(a)} aria-label="Revoke access">
             <IconTrash size={16} />
           </ActionIcon>
         </Table.Td>
