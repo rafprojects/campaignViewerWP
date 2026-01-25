@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
-import type { Campaign, CampaignAccessGrant, MediaItem } from '@/types';
+import type { Campaign, CampaignAccessGrant } from '@/types';
 import {
   Tabs,
   Button,
@@ -22,6 +22,7 @@ import {
   Box,
 } from '@mantine/core';
 import { IconPlus, IconTrash, IconEdit, IconArrowLeft } from '@tabler/icons-react';
+import MediaTab from './MediaTab';
 
 type AdminCampaign = Pick<Campaign, 'id' | 'title' | 'description' | 'status' | 'visibility' | 'createdAt' | 'updatedAt'> & {
   companyId: string;
@@ -67,8 +68,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [isSavingCampaign, setIsSavingCampaign] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState<string>('');
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
-  const [mediaLoading, setMediaLoading] = useState(false);
+  
 
   const [accessCampaignId, setAccessCampaignId] = useState<string>('');
   const [accessEntries, setAccessEntries] = useState<CampaignAccessGrant[]>([]);
@@ -116,25 +116,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [activeTab, auditCampaignId, campaigns]);
 
-  // Load media when campaign selected
-  const loadMedia = useCallback(async (campaignId: string) => {
-    if (!campaignId) return;
-    setMediaLoading(true);
-    try {
-      const response = await apiClient.get<MediaItem[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`);
-      setMediaItems(response ?? []);
-    } catch {
-      setMediaItems([]);
-    } finally {
-      setMediaLoading(false);
-    }
-  }, [apiClient]);
-
-  useEffect(() => {
-    if (activeTab === 'media' && mediaCampaignId) {
-      void loadMedia(mediaCampaignId);
-    }
-  }, [activeTab, loadMedia, mediaCampaignId]);
+  
 
   // Load access when campaign selected
   const loadAccess = useCallback(async (campaignId: string) => {
@@ -269,18 +251,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     ));
   }, [campaigns]);
 
-  const mediaRows = useMemo(() => {
-    return mediaItems.map((m) => (
-      <Table.Tr key={m.id}>
-        <Table.Td>{m.type}</Table.Td>
-        <Table.Td>{m.source}</Table.Td>
-        <Table.Td>
-          <Text size="xs" lineClamp={1}>{m.url}</Text>
-        </Table.Td>
-        <Table.Td>{m.order ?? 0}</Table.Td>
-      </Table.Tr>
-    ));
-  }, [mediaItems]);
+  
 
   const accessRows = useMemo(() => {
     return accessEntries.map((a) => (
@@ -386,25 +357,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               style={{ minWidth: 200 }}
             />
           </Group>
-          {mediaLoading ? (
-            <Center><Loader /></Center>
-          ) : mediaItems.length === 0 ? (
-            <Text c="dimmed">No media items yet.</Text>
-          ) : (
-            <ScrollArea>
-              <Table verticalSpacing="sm">
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Type</Table.Th>
-                    <Table.Th>Source</Table.Th>
-                    <Table.Th>URL</Table.Th>
-                    <Table.Th>Order</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>{mediaRows}</Table.Tbody>
-              </Table>
-            </ScrollArea>
-          )}
+          <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} />
         </Tabs.Panel>
 
         <Tabs.Panel value="access" pt="md">

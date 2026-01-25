@@ -4,6 +4,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+require_once __DIR__ . '/class-wpsg-oembed-providers.php';
+
 class WPSG_REST {
     public static function register_routes() {
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
@@ -135,6 +137,16 @@ class WPSG_REST {
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_permissions'],
                 'permission_callback' => [self::class, 'require_authenticated'],
+            ],
+        ]);
+
+        // Allow oEmbed proxy as public endpoint to avoid auth/cors issues for previews.
+        // If you prefer restricting this, change permission_callback accordingly.
+        register_rest_route('wp-super-gallery/v1', '/oembed', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'proxy_oembed'],
+                'permission_callback' => '__return_true',
             ],
         ]);
     }
@@ -640,6 +652,41 @@ class WPSG_REST {
         ], 201);
     }
 
+    public static function proxy_oembed() {
+        $request = func_get_arg(0);
+        $url = esc_url_raw($request->get_param('url'));
+        if (empty($url)) {
+            return new WP_REST_Response(['message' => 'url is required'], 400);
+        }
+
+        $parsed = wp_parse_url($url);
+
+        $cache_key = 'wpsg_oembed_' . md5($url);
+        $cached = get_transient($cache_key);
+        if (false !== $cached && is_array($cached)) {
+            // Ignore cached error payloads (e.g., from noembed)
+            if (!empty($cached['error'])) {
+                $cached = false;
+            }
+        }
+        if (false !== $cached && is_array($cached)) {
+            return new WP_REST_Response($cached, 200);
+        }
+
+        $attempts = [];
+        $result = WPSG_OEmbed_Providers::fetch($url, $parsed, $attempts);
+        if (is_array($result) && !empty($result)) {
+            set_transient($cache_key, $result, 6 * HOUR_IN_SECONDS);
+            return new WP_REST_Response($result, 200);
+        }
+
+        return new WP_REST_Response([
+            'message' => 'Unable to fetch oEmbed',
+            'attempts' => $attempts,
+        ], 502);
+    }
+
+
     public static function list_permissions() {
         $user_id = get_current_user_id();
         if (!$user_id) {
@@ -938,16 +985,26 @@ class WPSG_REST {
 
         if ($host === 'rumble.com' || $host === 'www.rumble.com') {
             $slug = trim($path, '/');
+            // Rumble share URLs often end with .html — strip that before validating
+            $slug = preg_replace('/\.html$/i', '', $slug);
             if (!$slug) {
                 return new WP_Error('invalid_url', 'Invalid Rumble URL');
             }
-            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $slug)) {
+
+            // The canonical Rumble video identifier is the first slug segment (e.g. "v72ksce" from "v72ksce-...")
+            $parts = explode('-', $slug);
+            $video_id = $parts[0] ?? $slug;
+            if (!preg_match('/^v[0-9a-zA-Z]+$/i', $video_id)) {
                 return new WP_Error('invalid_url', 'Invalid Rumble video ID format');
             }
+
+            // Use the compact embed path that Rumble expects (video id only)
+            $embed_url = 'https://rumble.com/embed/' . esc_attr($video_id) . '/';
+
             return [
                 'provider' => 'rumble',
                 'url' => $url,
-                'embedUrl' => 'https://rumble.com/embed/' . esc_attr($slug),
+                'embedUrl' => $embed_url,
             ];
         }
 
