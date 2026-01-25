@@ -3,7 +3,7 @@ import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, FileButton, L
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconUpload, IconTrash } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
-import type { MediaItem } from '../../api/media';
+import type { MediaItem, UploadResponse } from '../../api/media';
 
 type Props = { campaignId: string; apiClient: ApiClient };
 
@@ -73,15 +73,42 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   async function handleUpload() {
     if (!selectedFile) return;
     setUploading(true);
+    setUploadProgress(0);
     try {
       // upload using authenticated form POST (no progress via ApiClient.postForm)
       const form = new FormData();
       form.append('file', selectedFile);
-      const res = await apiClient.postForm<{ attachmentId: string; url: string; thumbnail?: string; mimeType?: string }>(`/wp-json/wp-super-gallery/v1/media/upload`, form);
+      const uploadUrl = `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`;
+      const authHeaders = await apiClient.getAuthHeaders();
+      const res = await new Promise<UploadResponse>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        Object.entries(authHeaders).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
+        xhr.responseType = 'json';
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.response as UploadResponse);
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        if (xhr.upload) {
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setUploadProgress(Math.round((e.loaded / e.total) * 100));
+            }
+          };
+        }
+        xhr.send(form);
+      });
       const newMedia = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, {
         type: res.mimeType?.startsWith('image') ? 'image' : 'video',
         source: 'upload',
         provider: 'wordpress',
+        attachmentId: res.attachmentId,
         url: res.url,
         thumbnail: res.thumbnail ?? res.url,
         caption: selectedFile.name,
