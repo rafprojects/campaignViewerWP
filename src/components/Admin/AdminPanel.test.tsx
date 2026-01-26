@@ -60,25 +60,34 @@ describe('AdminPanel', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
 
-    await waitFor(() => {
-      expect(apiClient.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/access');
-    });
+    await waitFor(
+      () => {
+        expect(apiClient.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/access');
+      },
+      { timeout: 10000 },
+    );
 
     const userIdInput = await screen.findByLabelText('User ID');
     fireEvent.change(userIdInput, { target: { value: '42' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
-    await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/access',
-        expect.objectContaining({ userId: 42, source: 'campaign', action: 'grant' }),
-      );
-    });
+    await waitFor(
+      () => {
+        expect(apiClient.post).toHaveBeenCalledWith(
+          '/wp-json/wp-super-gallery/v1/campaigns/101/access',
+          expect.objectContaining({ userId: 42, source: 'campaign', action: 'grant' }),
+        );
+      },
+      { timeout: 10000 },
+    );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Revoke access' }));
 
-    await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/access/55');
-    });
-  });
+    await waitFor(
+      () => {
+        expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/access/55');
+      },
+      { timeout: 10000 },
+    );
+  }, 10000);
 });

@@ -171,64 +171,16 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
     try {
       setExternalLoading(true);
       setExternalError(null);
-      // 1) Try plugin server-side oEmbed proxy to avoid CORS and provider restrictions
-      try {
-        const data = await apiClient.get<any>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
-        if (data) {
-          setExternalPreview(data);
-          showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
-          return;
-        }
-      } catch (serverErr) {
-        console.warn('Server-side oEmbed failed, falling back to provider endpoints', serverErr);
-      }
-
-      // 2) Provider-specific oEmbed endpoints (may be CORS-restricted)
-      const tryFetch = async (url: string) => {
-        const res = await fetch(url, { method: 'GET' });
-        if (!res.ok) throw new Error(`Fetch failed ${res.status}`);
-        return res.json();
-      };
-
-      // YouTube
-      if (/youtube\.com|youtu\.be/.test(externalUrl)) {
-        try {
-          const y = `https://www.youtube.com/oembed?url=${encodeURIComponent(externalUrl)}&format=json`;
-          const data = await tryFetch(y);
-          console.log('YouTube oEmbed data', data);
-          setExternalPreview(data);
-          showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
-          return;
-        } catch (e) {
-          console.warn('YouTube oEmbed failed', e);
-        }
-      }
-
-      // Vimeo
-      if (/vimeo\.com/.test(externalUrl)) {
-        try {
-          const v = `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(externalUrl)}`;
-          const data = await tryFetch(v);
-          setExternalPreview(data);
-          showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
-          return;
-        } catch (e) {
-          console.warn('Vimeo oEmbed failed', e);
-        }
-      }
-
-      // 3) Public fallback: noembed.com (supports many providers)
-      try {
-        const n = `https://noembed.com/embed?url=${encodeURIComponent(externalUrl)}`;
-        const data = await tryFetch(n);
+      // Rely on server-side proxy to avoid CORS/provider restrictions.
+      // The server implements provider handlers and caching; if it cannot
+      // fetch a preview it will return a non-200 or error payload.
+      const data = await apiClient.get<any>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
+      if (data) {
         setExternalPreview(data);
         showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
-        return;
-      } catch (e) {
-        console.warn('noembed fallback failed', e);
+      } else {
+        throw new Error('No preview available');
       }
-
-      throw new Error('All oEmbed attempts failed');
     } catch (err) {
       console.error(err);
       setExternalError((err as Error).message);
