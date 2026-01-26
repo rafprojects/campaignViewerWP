@@ -640,6 +640,15 @@ class WPSG_REST {
         $media_items = get_post_meta($post_id, 'media_items', true);
         $media_items = is_array($media_items) ? $media_items : [];
 
+        // Validate that all provided IDs belong to this campaign's media items.
+        $existing_ids = array_map(function ($m) { return $m['id'] ?? ''; }, $media_items);
+        $invalid = array_values(array_filter(array_keys($order_map), function ($id) use ($existing_ids) {
+            return !in_array($id, $existing_ids, true);
+        }));
+        if (!empty($invalid)) {
+            return new WP_REST_Response(['message' => 'Invalid media id(s) provided', 'invalid' => $invalid], 400);
+        }
+
         foreach ($media_items as &$media_item) {
             $id = $media_item['id'] ?? '';
             if ($id && array_key_exists($id, $order_map)) {
