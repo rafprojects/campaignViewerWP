@@ -30,6 +30,29 @@ This document consolidates the Testing Plan and Manual QA steps for WP Super Gal
 - `npm run test:watch`
 - `npm run test:coverage`
 
+### PHP Unit Tests (WordPress plugin)
+
+These tests validate server-side behavior in the WordPress plugin (REST endpoints, helpers, caching). They use the WordPress PHPUnit harness and run inside a WP test environment.
+
+- What they are:
+  - Unit/integration tests for `wp-plugin/wp-super-gallery/includes/*` PHP classes and functions.
+  - Validate REST responses, transient caching, and provider logic (oEmbed proxy, normalization).
+
+- How to run:
+  - Ensure you have the WordPress PHPUnit test environment set up (see WordPress testing docs).
+  - From the plugin directory, run the WP test runner configured for your environment. Example (project-specific):
+
+```bash
+# from repo root
+cd wp-plugin/wp-super-gallery
+# run WP PHPUnit (environment dependent)
+phpunit -c phpunit.xml.dist
+```
+
+Notes:
+- These tests require a WordPress test fixture; they cannot be run with `npm run test` (frontend) and are executed separately in CI when PHP/WP tests are configured.
+- We added `wp-plugin/wp-super-gallery/tests/test-proxy-oembed.php` to assert `proxy_oembed()` behaviors (missing URL returns 400; cached payloads returned).
+
 **Targets**
 - Project-level average coverage ≥ 80%.
 - Focus on `src/components`, `src/services`, and `src/contexts`.
@@ -344,6 +367,10 @@ Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with 
 
 - oEmbed preview (public endpoint — no Authorization required):
   - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ"`
+  
+  - Caching behavior:
+    - Successful oEmbed responses are cached for 6 hours.
+    - Error/failure responses are cached for 5 minutes to avoid repeated immediate retries against external providers.
 
 ---
 

@@ -725,26 +725,54 @@ class WPSG_REST {
         $cache_key = 'wpsg_oembed_' . md5($url);
         $cached = get_transient($cache_key);
         if (false !== $cached && is_array($cached)) {
-            // Ignore cached error payloads (e.g., from noembed)
-            if (!empty($cached['error'])) {
-                $cached = false;
+            // If we cached a previous error result include its status if present.
+            $cached_status = isset($cached['_wpsg_status']) ? intval($cached['_wpsg_status']) : 200;
+            // Remove internal status marker before returning to clients.
+            $out = $cached;
+            if (isset($out['_wpsg_status'])) {
+                unset($out['_wpsg_status']);
             }
-        }
-        if (false !== $cached && is_array($cached)) {
-            return new WP_REST_Response($cached, 200);
+            return new WP_REST_Response($out, $cached_status);
         }
 
         $attempts = [];
         $result = WPSG_OEmbed_Providers::fetch($url, $parsed, $attempts);
         if (is_array($result) && !empty($result)) {
+            // If provider returned an error payload, cache it for a short TTL
+            // to avoid hammering external services on repeated requests.
+            if (!empty($result['error'])) {
+                $error_payload = $result;
+                $error_payload['_wpsg_status'] = 502;
+                // Log and metric: record repeated oEmbed failures
+                error_log('WPSG oEmbed failure for ' . $url . ': ' . json_encode($attempts));
+                do_action('wpsg_oembed_failure', $url, $attempts);
+                $count = intval(get_option('wpsg_oembed_failure_count', 0));
+                update_option('wpsg_oembed_failure_count', $count + 1);
+                set_transient($cache_key, $error_payload, 5 * MINUTE_IN_SECONDS);
+                return new WP_REST_Response($result, 502);
+            }
+
+            // Successful fetch: cache for longer TTL
             set_transient($cache_key, $result, 6 * HOUR_IN_SECONDS);
             return new WP_REST_Response($result, 200);
         }
 
-        return new WP_REST_Response([
+        // Cache generic failure to avoid repeated immediate retries
+        $fallback = [
             'message' => 'Unable to fetch oEmbed',
             'attempts' => $attempts,
-        ], 502);
+        ];
+        $fallback['_wpsg_status'] = 502;
+        // Log and metric: record generic fallback cache
+        error_log('WPSG oEmbed fallback cached for ' . $url . ': ' . json_encode($attempts));
+        do_action('wpsg_oembed_failure', $url, $attempts);
+        $count = intval(get_option('wpsg_oembed_failure_count', 0));
+        update_option('wpsg_oembed_failure_count', $count + 1);
+        set_transient($cache_key, $fallback, 5 * MINUTE_IN_SECONDS);
+        // Do not expose internal cache metadata to clients.
+        $out_fallback = $fallback;
+        unset($out_fallback['_wpsg_status']);
+        return new WP_REST_Response($out_fallback, 502);
     }
 
 

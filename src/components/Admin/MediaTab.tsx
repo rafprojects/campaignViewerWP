@@ -103,7 +103,27 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
             reject(new Error(`Upload failed: ${xhr.status}`));
           }
         };
-        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.onerror = () => {
+          try {
+            const detailsParts: string[] = [
+              `status=${xhr.status}`,
+              `readyState=${xhr.readyState}`,
+            ];
+            if (xhr.statusText) {
+              detailsParts.push(`statusText=${xhr.statusText}`);
+            }
+            // Attempt to capture any response text if available
+            try {
+              if (xhr.responseText) {
+                detailsParts.push(`response=${xhr.responseText.substring(0,200)}`);
+              }
+            } catch {}
+            const details = detailsParts.join(', ');
+            reject(new Error(`Upload failed (network/CORS). Details: ${details}`));
+          } catch (e) {
+            reject(new Error('Upload failed'));
+          }
+        };
         if (xhr.upload) {
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {

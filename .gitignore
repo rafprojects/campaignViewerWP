@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # lockfiles
 *.lock
+
+# builds
+wp-plugin/wp-super-gallery/assets/
