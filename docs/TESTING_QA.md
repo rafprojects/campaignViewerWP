@@ -1,6 +1,6 @@
-# Testing Plan & Tracking
+# Testing + QA Guide (Unified)
 
-This document defines the testing strategy, implementation tracking, and manual QA procedures for WP Super Gallery. It is intended to be expanded as the test suite grows.
+This document consolidates the Testing Plan and Manual QA steps for WP Super Gallery. It includes automated test guidance and a release checklist for manual QA in WordPress, plus an updated REST API manual test suite.
 
 ---
 
@@ -8,63 +8,52 @@ This document defines the testing strategy, implementation tracking, and manual 
 
 - Ensure correctness of UI logic, permissions, and auth flows.
 - Provide repeatable automated coverage for regressions.
-- Provide comprehensive manual QA steps for WordPress embeds and REST behavior.
+- Provide comprehensive manual QA steps for WordPress embeds, REST behavior, and admin workflows.
 
 ---
 
-## Unit Testing (Target: 80%+ Average Coverage)
+## Automated Testing
 
-### Scope
+### Unit Testing (Target: 80%+ Average Coverage)
 
+**Scope**
 - Component rendering logic (gating, empty states, banners).
 - Auth utilities and token handling (expiry/validation).
 - API client behaviors (401 handling).
 
-### E2E Tooling
-
+**Tooling**
 - Vitest
 - Testing Library (React + jest-dom)
 
-### Coverage Targets
-
-- Project-level average coverage ≥ 80%.
-- Focus on `src/components`, `src/services`, and `src/contexts`.
-
-### E2E Commands
-
+**Commands**
 - `npm run test`
 - `npm run test:watch`
 - `npm run test:coverage`
 
-### Tracking
-
-- Add tests alongside component files where possible.
-- For complex flows, create focused spec files in `src/components/**` or `src/services/**`.
+**Targets**
+- Project-level average coverage ≥ 80%.
+- Focus on `src/components`, `src/services`, and `src/contexts`.
 
 ---
 
 ## Integration / E2E Testing
 
-### Approach (recommended)
-
+**Approach (recommended)**
 - Playwright for browser automation.
 - Two modes:
   1) **Mocked API mode** for reliable CI tests (mock `/wp-json/wp-super-gallery/v1/*`).
   2) **Live WP mode** for full end-to-end validation against a local WordPress instance.
 
-### Tooling
-
+**Tooling**
 - `@playwright/test`
 
-### Commands
-
+**Command**
 - `npm run test:e2e`
 
-### Recommended E2E Coverage
-
+**Recommended Coverage**
 - Public campaign rendering (no auth).
 - Hide vs lock behavior (access mode).
-- Login flow (JWT) with `token` and `permissions` endpoints.
+- Login flow (JWT) with `token/validate` and `permissions` endpoints.
 - Admin-only actions (edit/archive/media add) gated and behavior on 403/401.
 - External media embed rendering.
 
@@ -72,46 +61,40 @@ This document defines the testing strategy, implementation tracking, and manual 
 
 ## Manual QA (Local WordPress)
 
-This is the primary checklist for QA on a local WordPress install. It should be used for every release and can be expanded over time.
+This is the primary checklist for QA on a local WordPress install. Use it for every release.
 
-### Manual QA Setup (Start-to-finish)
+### Setup (Start-to-finish)
 
 1. Install dependencies.
-
    - `npm install`
 
-1. Build the SPA and copy assets into the plugin bundle.
-
+2. Build the SPA and copy assets into the plugin bundle.
    - `npm run build:wp`
-   - This runs `npm run build` and copies `dist/` into `wp-plugin/wp-super-gallery/assets/`.
+   - Copies `dist/` into `wp-plugin/wp-super-gallery/assets/`.
 
-1. Sync the plugin into your local WordPress install.
-
-   - If you have a local WP install, copy the plugin folder into `wp-content/plugins/`.
-   - Example (adjust the path to your WP install):
+3. Sync the plugin into your local WordPress install.
+   - Copy plugin folder into `wp-content/plugins/`.
+   - Example (adjust path):
      - `cp -r wp-plugin/wp-super-gallery /path/to/wordpress/wp-content/plugins/wp-super-gallery`
-   - If a previous copy exists, remove it first to avoid stale assets:
+   - Remove previous copy first to avoid stale assets:
      - `rm -rf /path/to/wordpress/wp-content/plugins/wp-super-gallery`
 
-1. Activate the plugin in WordPress Admin.
+4. Activate the plugin in WordPress Admin.
+   - **Plugins** → **WP Super Gallery** → **Activate**.
 
-   - Go to **Plugins** → **WP Super Gallery** → **Activate**.
-
-1. Ensure JWT auth is configured.
-
+5. Ensure JWT auth is configured.
    - Follow [docs/WP_JWT_SETUP.md](docs/WP_JWT_SETUP.md) and confirm permalinks are **Post name**.
 
-1. Create a test page and embed the widget.
-
+6. Create a test page and embed the widget.
    - Add the shortcode provided by the plugin and publish the page.
 
-1. Open the page in a browser and proceed with the checklist below.
+7. Open the page in a browser and proceed with the checklist below.
 
 ### Prerequisites
 
-- WordPress installed locally (e.g., LocalWP, Docker, or MAMP).
+- Local WordPress install (LocalWP/Docker/MAMP).
 - WP Super Gallery plugin installed and activated.
-- JWT auth plugin installed and configured (see [docs/WP_JWT_SETUP.md](docs/WP_JWT_SETUP.md)).
+- JWT auth plugin installed and configured.
 - Permalinks set to **Post name**.
 - CORS and Apache/htaccess configured for JWT.
 
@@ -120,12 +103,12 @@ This is the primary checklist for QA on a local WordPress install. It should be 
 1. Create at least 3 campaigns:
    - 1 public campaign
    - 2 private campaigns
-2. Assign campaigns to at least 2 companies (taxonomy: `wpsg_company`).
-3. Add tags, cover images, and thumbnails for each campaign.
+2. Assign campaigns to at least 2 companies (`wpsg_company` taxonomy).
+3. Add tags, cover images, and thumbnails.
 4. Add media items:
    - At least one external video (YouTube/Vimeo)
-   - At least one external video (Rumble/BitChute/Odysee)
-   - At least one uploaded image and video using the WP Media Library
+   - At least one external video (Rumble/BitChute/Odysee if available)
+   - At least one uploaded image and video using the upload flow
 5. Configure access grants:
    - One user with access to only one private campaign
    - One user with access to both private campaigns
@@ -155,24 +138,31 @@ This is the primary checklist for QA on a local WordPress install. It should be 
 - [ ] Open a private campaign **with access**:
   - [ ] Media renders correctly.
 
-### Media Validation
+### Media Validation (Admin Panel)
 
-- [ ] External URLs normalize to embed URLs (YouTube/Vimeo/etc).
-- [ ] Bad URLs are rejected with an error.
-- [ ] Media order is respected.
-- [ ] Missing thumbnails fall back to campaign thumbnail.
-
-### Admin Actions (REST)
-
-- [ ] Edit campaign title/description via UI:
-  - [ ] Changes persist in WP and UI refreshes.
-- [ ] Archive campaign:
-  - [ ] Status is updated in WP.
-  - [ ] Campaign disappears from public list if archived.
+- [ ] Upload image/video:
+  - [ ] Progress updates and completed media appears.
+  - [ ] Thumbnail defaults to uploaded asset.
 - [ ] Add external media:
-  - [ ] New media appears in the campaign viewer.
-- [ ] Verify 403 behavior:
-  - [ ] Admin actions show an error when executed as viewer.
+  - [ ] URL validation rejects non-https URLs.
+  - [ ] Preview loads from server oEmbed proxy.
+  - [ ] Item appears in campaign with caption + thumbnail.
+- [ ] Edit media:
+  - [ ] Caption updates persist.
+  - [ ] Thumbnail URL updates persist.
+- [ ] Reorder media:
+  - [ ] Drag/reorder buttons update order on refresh.
+- [ ] Delete media:
+  - [ ] Confirmation prompt and removal persists.
+
+### Access Manager (Admin Panel)
+
+- [ ] Grant access:
+  - [ ] Campaign access grant persists in Access list.
+- [ ] Deny access:
+  - [ ] Deny entry appears and overrides grants where applicable.
+- [ ] Revoke access:
+  - [ ] Entry removal persists and access is updated.
 
 ### Embed & Shadow DOM
 
@@ -191,20 +181,18 @@ This is the primary checklist for QA on a local WordPress install. It should be 
 
 ---
 
-## REST API Manual Testing
+## REST API Manual Testing (Updated)
 
 Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with your WordPress site URL (e.g. `http://localhost:8888`) and `$TOKEN` with a valid JWT for an admin user.
 
 ### Path Variables & Query Parameters
 
-This section documents all path variables and query parameters used by the REST API endpoints.
-
 #### Campaigns (Parameters)
 
 - `GET /campaigns`
   - Query params:
-    - `status`: Optional campaign status filter (e.g. `active`, `archived`).
-    - `visibility`: Optional visibility filter (`public` or `private`).
+    - `status`: Optional campaign status filter (`active`, `archived`).
+    - `visibility`: Optional visibility filter (`public`, `private`).
     - `company`: Optional company slug for `wpsg_company` taxonomy.
     - `search`: Optional keyword search across title/description.
     - `page`: Optional 1-based page index (default `1`).
@@ -232,11 +220,14 @@ This section documents all path variables and query parameters used by the REST 
 - `PUT /campaigns/{id}/media/{mediaId}`
   - Path vars:
     - `id`: Campaign ID (numeric).
-    - `mediaId`: Media identifier (string, typically WordPress attachment ID or external media ID).
+    - `mediaId`: Media identifier (string).
 - `DELETE /campaigns/{id}/media/{mediaId}`
   - Path vars:
     - `id`: Campaign ID (numeric).
-    - `mediaId`: Media identifier (string, typically WordPress attachment ID or external media ID).
+    - `mediaId`: Media identifier (string).
+- `PUT /campaigns/{id}/media/reorder`
+  - Path vars:
+    - `id`: Campaign ID (numeric).
 
 #### Access Grants (Parameters)
 
@@ -256,12 +247,18 @@ This section documents all path variables and query parameters used by the REST 
 - `POST /media/upload`
   - No path vars or query params.
 
+#### oEmbed Proxy (Parameters)
+
+- `GET /oembed`
+  - Query params:
+    - `url`: External URL to preview (https only).
+
 #### Auth + Permissions (Parameters)
 
 - `POST /jwt-auth/v1/token/validate`
-  - No path vars or query params (uses `Authorization: Bearer` header).
+  - Uses `Authorization: Bearer` header.
 - `GET /permissions`
-  - No path vars or query params (uses `Authorization: Bearer` header).
+  - Uses `Authorization: Bearer` header.
 
 ### Auth + Permissions
 
@@ -294,6 +291,9 @@ This section documents all path variables and query parameters used by the REST 
 - Archive campaign (admin required):
   - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/archive" -H "Authorization: Bearer $TOKEN"`
 
+- List campaign audit (admin required):
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/audit" -H "Authorization: Bearer $TOKEN"`
+
 ### Media
 
 - List media (requires auth):
@@ -304,12 +304,17 @@ This section documents all path variables and query parameters used by the REST 
     -H "Content-Type: application/json" \
     -d '{"type":"video","source":"external","url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","caption":"Main Video","order":1}'`
 - Update media (admin required):
-  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/v1" \
+  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/{mediaId}" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Updated caption","order":2}'`
 - Delete media (admin required):
-  - `curl -X DELETE "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/v1" -H "Authorization: Bearer $TOKEN"`
+  - `curl -X DELETE "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/{mediaId}" -H "Authorization: Bearer $TOKEN"`
+- Reorder media (admin required):
+  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/reorder" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"items":[{"id":"m1","order":1},{"id":"m2","order":2}]}'`
 
 ### Access Grants
 
@@ -319,7 +324,12 @@ This section documents all path variables and query parameters used by the REST 
   - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"userId":42,"source":"campaign"}'`
+    -d '{"userId":42,"source":"campaign","action":"grant"}'`
+- Deny access (admin required):
+  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"userId":42,"source":"campaign","action":"deny"}'`
 - Revoke access (admin required):
   - `curl -X DELETE "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access/42" -H "Authorization: Bearer $TOKEN"`
 
@@ -330,11 +340,16 @@ This section documents all path variables and query parameters used by the REST 
     -H "Authorization: Bearer $TOKEN" \
     -F "file=@/path/to/file.jpg"`
 
+### oEmbed Proxy
+
+- oEmbed preview (public endpoint — no Authorization required):
+  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ"`
+
 ---
 
 ## Tracking Status
 
-- **Unit tests:** In progress (foundation added).
-- **E2E tests:** In progress (Playwright scaffolding).
-- **Manual QA:** Checklist drafted (expand as new features are added).
+- **Unit tests:** Complete (coverage ≥ 80%).
+- **E2E tests:** Complete for core media flows.
+- **Manual QA:** Required for each release (checklist above).
 
