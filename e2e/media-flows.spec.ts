@@ -64,6 +64,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
   });
 
   const mediaItems: any[] = [];
+  let lastReorderItems: any[] = [];
 
   await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media', async (route) => {
     const method = route.request().method();
@@ -99,6 +100,18 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
   });
 
   await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder', async (route) => {
+    try {
+      const body = route.request().postDataJSON();
+      const items = Array.isArray(body?.items) ? body.items : [];
+      if (items.length) {
+        lastReorderItems = items;
+        const orderMap = new Map(items.map((it: any) => [it.id, it.order]));
+        mediaItems.sort((a, b) => (orderMap.get(a.id) ?? a.order) - (orderMap.get(b.id) ?? b.order));
+        mediaItems.forEach((it, i) => { it.order = i + 1; });
+      }
+    } catch (e) {
+      // ignore
+    }
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
@@ -161,6 +174,11 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
   if (await downButtons.count()) {
     await downButtons.first().click();
   }
+
+  // Verify reorder succeeded: expect success notification and that the
+  // server received an items array for reordering.
+  await expect(page.getByText('Reordered')).toBeVisible();
+  expect(lastReorderItems.length).toBeGreaterThan(0);
 
   // Delete flow
   await page.getByRole('button', { name: 'Delete media' }).first().click();
