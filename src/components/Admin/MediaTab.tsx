@@ -258,20 +258,38 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   }
 
   async function moveItem(item: MediaItem, direction: 'up' | 'down') {
+    // Prevent concurrent reorder operations
+    if ((moveItem as any).__running) return;
+    (moveItem as any).__running = true;
+
+    const prev = media.slice();
     const idx = media.findIndex((m) => m.id === item.id);
-    if (idx === -1) return;
+    if (idx === -1) {
+      (moveItem as any).__running = false;
+      return;
+    }
+
     const newMedia = media.slice();
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newMedia.length) return;
+    if (swapIdx < 0 || swapIdx >= newMedia.length) {
+      (moveItem as any).__running = false;
+      return;
+    }
     const temp = newMedia[swapIdx];
     newMedia[swapIdx] = newMedia[idx];
     newMedia[idx] = temp;
     const itemsToSend = newMedia.map((it, i) => ({ id: it.id, order: i + 1 }));
+
     try {
       await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
       setMedia(newMedia.map((it, i) => ({ ...it, order: i + 1 })));
+      showNotification({ title: 'Reordered', message: 'Media order updated.' });
     } catch (err) {
+      // Roll back local state to previous order
+      setMedia(prev);
       showNotification({ title: 'Reorder failed', message: (err as Error).message, color: 'red' });
+    } finally {
+      (moveItem as any).__running = false;
     }
   }
 
