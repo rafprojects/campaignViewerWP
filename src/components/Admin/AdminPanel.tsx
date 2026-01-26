@@ -148,11 +148,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       onNotify({ type: 'error', text: 'User ID is required.' });
       return;
     }
+    const parsedUserId = Number(accessUserId);
+    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+      onNotify({ type: 'error', text: 'User ID must be a positive numeric value.' });
+      return;
+    }
 
     setAccessSaving(true);
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access`, {
-        userId: Number.isNaN(Number(accessUserId)) ? accessUserId : Number(accessUserId),
+        userId: parsedUserId,
         source: accessSource,
         action: accessSource === 'company' ? 'grant' : accessAction,
       });
