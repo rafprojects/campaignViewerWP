@@ -82,7 +82,7 @@ class WPSG_REST {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+)', [
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_.-]+)', [
             [
                 'methods' => 'PUT',
                 'callback' => [self::class, 'update_media'],

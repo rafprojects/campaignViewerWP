@@ -24,6 +24,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   const [editingCaption, setEditingCaption] = useState('');
   const [editingThumbnail, setEditingThumbnail] = useState<string | undefined>(undefined);
+  const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     void fetchMedia();
@@ -247,14 +248,20 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   }, [selectedFile]);
 
   async function handleDelete(item: MediaItem) {
-    if (!confirm('Delete this media?')) return;
+    setDeleteItem(item);
+  }
+
+  async function confirmDelete() {
+    if (!deleteItem) return;
     try {
-      await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${item.id}`);
-      setMedia((m) => m.filter((x) => x.id !== item.id));
+      await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
+      setMedia((m) => m.filter((x) => x.id !== deleteItem.id));
       showNotification({ title: 'Deleted', message: 'Media removed.' });
     } catch (err) {
       console.error(err);
       showNotification({ title: 'Delete failed', message: (err as Error).message, color: 'red' });
+    } finally {
+      setDeleteItem(null);
     }
   }
 
@@ -434,6 +441,16 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button onClick={saveEdit}>Save</Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal opened={!!deleteItem} onClose={() => setDeleteItem(null)} title="Delete Media" size="sm">
+        <Stack>
+          <Text>Are you sure you want to delete this media item? This action cannot be undone.</Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setDeleteItem(null)}>Cancel</Button>
+            <Button color="red" onClick={confirmDelete}>Delete</Button>
           </Group>
         </Stack>
       </Modal>

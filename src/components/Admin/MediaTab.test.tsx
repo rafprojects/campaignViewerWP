@@ -87,6 +87,12 @@ describe('MediaTab', () => {
     });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete media' })[1]);
+    // Wait for the delete confirmation modal to appear
+    await waitFor(() => {
+      expect(screen.getByText('Delete Media')).toBeInTheDocument();
+    });
+    // Confirm deletion in the modal
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await waitFor(() => {
       expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/media/m1');
     });

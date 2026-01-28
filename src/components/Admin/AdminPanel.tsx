@@ -323,7 +323,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       .map((e) => (
         <Table.Tr key={e.id}>
           <Table.Td>{new Date(e.createdAt).toLocaleString()}</Table.Td>
-          <Table.Td><Badge variant="light">{e.action}</Badge></Table.Td>
+          <Table.Td>
+            <Text size="sm" style={{ wordBreak: 'break-all' }}>
+              {e.action}
+            </Text>
+          </Table.Td>
           <Table.Td>{e.userId || '—'}</Table.Td>
           <Table.Td>
             <Text size="xs" lineClamp={1}>
@@ -503,10 +507,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               <Table verticalSpacing="sm">
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>When</Table.Th>
-                    <Table.Th>Action</Table.Th>
-                    <Table.Th>User</Table.Th>
-                    <Table.Th>Details</Table.Th>
+                    <Table.Th miw={140}>When</Table.Th>
+                    <Table.Th miw={160}>Action</Table.Th>
+                    <Table.Th miw={80}>User</Table.Th>
+                    <Table.Th miw={200}>Details</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>{auditRows}</Table.Tbody>
