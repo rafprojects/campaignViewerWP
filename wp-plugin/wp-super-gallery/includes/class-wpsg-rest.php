@@ -731,6 +731,44 @@ class WPSG_REST {
 
         $parsed = wp_parse_url($url);
 
+        // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
+        $host = isset($parsed['host']) ? $parsed['host'] : '';
+        $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : '';
+        if (empty($host)) {
+            return new WP_REST_Response(['message' => 'Invalid oEmbed URL host'], 400);
+        }
+
+        if ($scheme !== 'https') {
+            return new WP_REST_Response(['message' => 'Only HTTPS oEmbed URLs are allowed'], 400);
+        }
+
+        // Allowlist of well-known oEmbed providers (allows subdomains).
+        $allowlist = [
+            'youtube.com', 'youtu.be', 'vimeo.com', 'twitter.com', 'x.com', 'instagram.com',
+            'soundcloud.com', 'flickr.com', 'dailymotion.com'
+        ];
+
+        $allowed = false;
+        foreach ($allowlist as $a) {
+            if ($host === $a || substr($host, -strlen('.' . $a)) === '.' . $a) {
+                $allowed = true;
+                break;
+            }
+        }
+
+        if (!$allowed) {
+            // Resolve host and ensure it doesn't resolve to private/internal IP ranges.
+            $ips = gethostbynamel($host);
+            if ($ips === false || !is_array($ips) || count($ips) === 0) {
+                return new WP_REST_Response(['message' => 'Unable to resolve host for oEmbed URL'], 400);
+            }
+            foreach ($ips as $ip) {
+                if (self::is_private_ip($ip)) {
+                    return new WP_REST_Response(['message' => 'oEmbed host resolves to a private or disallowed IP'], 400);
+                }
+            }
+        }
+
         $cache_key = 'wpsg_oembed_' . md5($url);
         $cached = get_transient($cache_key);
         if (false !== $cached && is_array($cached)) {
@@ -799,6 +837,45 @@ class WPSG_REST {
     private static function campaign_exists($post_id) {
         $post = get_post($post_id);
         return $post && $post->post_type === 'wpsg_campaign';
+    }
+
+    private static function is_private_ip($ip) {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $long = sprintf('%u', ip2long($ip));
+            $ranges = [
+                ['10.0.0.0', '10.255.255.255'],
+                ['172.16.0.0', '172.31.255.255'],
+                ['192.168.0.0', '192.168.255.255'],
+                ['127.0.0.0', '127.255.255.255'],
+                ['169.254.0.0', '169.254.255.255'],
+            ];
+            foreach ($ranges as $r) {
+                $from = sprintf('%u', ip2long($r[0]));
+                $to = sprintf('%u', ip2long($r[1]));
+                if ($long >= $from && $long <= $to) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            $lower = strtolower($ip);
+            if ($lower === '::1') {
+                return true;
+            }
+            // Unique local addresses fc00::/7 (fc or fd)
+            if (strpos($lower, 'fc') === 0 || strpos($lower, 'fd') === 0) {
+                return true;
+            }
+            // Link-local fe80::/10 (starts with fe80-febf) - simple prefix checks
+            if (strpos($lower, 'fe80') === 0 || strpos($lower, 'fe8') === 0 || strpos($lower, 'fe9') === 0 || strpos($lower, 'fea') === 0 || strpos($lower, 'feb') === 0) {
+                return true;
+            }
+            return false;
+        }
+
+        return false;
     }
 
     private static function can_view_campaign($post_id, $user_id) {

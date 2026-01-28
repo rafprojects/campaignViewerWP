@@ -339,6 +339,9 @@ Track functional UX improvements that are not pure styling.
   - QoL: thumbnail fetching for upload + external links.
   - QoL: title metadata fetching for linked videos (where supported).
 
+- **Consolidate media API usage:** replace ad-hoc `src/api/media.ts` helper usage with `ApiClient` (or pass `authHeaders`) and remove unused legacy helpers (Phase 6).
+- **Deprecate/remove standalone media helpers:** review exported helpers in `src/api/media.ts` and either remove or mark deprecated if all call-sites now use `ApiClient` (Phase 6).
+
 ### Phase 7: Polish + Production Readiness
 
 - Error handling, analytics, performance, accessibility.

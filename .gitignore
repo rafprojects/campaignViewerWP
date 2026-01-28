@@ -30,3 +30,14 @@ pnpm-debug.log*
 
 # builds
 wp-plugin/wp-super-gallery/assets/
+wp-plugin/wp-super-gallery/vendor/
+wp-plugin/wp-super-gallery/.circleci/
+wp-plugin/wp-super-gallery/.phpunit.result.cache
+
+# executables
+wp-plugin/wp-super-gallery/phpunit
+phpunit
+
+# backups
+1BAK/
+*.bak
