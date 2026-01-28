@@ -277,19 +277,19 @@ All endpoints are served from the WordPress REST namespace:
 
 ### Phase 3: Admin Panel (full CRUD)
 
-**Status:** In progress (core CRUD and admin views complete; some workflows still pending).
+**Status:** ✅ **COMPLETE** (January 28, 2026)
 
-**Completed in Phase 3 so far:**
+**Completed in Phase 3:**
 
 - Campaign CRUD implemented in Admin Panel.
 - Media, access, and audit endpoints wired in the WP plugin.
 - Mantine-based Admin Panel UI with tabs, tables, forms, and archive modal.
+- Full media management workflows (add/edit/delete, upload/external).
+- Access management workflows (grant/deny/revoke).
+- Manual QA testing passed.
+- Version bump to 0.2.0.
 
-**Remaining in Phase 3:**
-
-- Reintroduce full media management workflows in Mantine UI (add/edit/delete, upload/external).
-- Reintroduce access management workflows in Mantine UI (grant/deny/revoke).
-- User + role management UX (if required for v1).
+**Deploy packaging moved to Phase 7** (additional development phases still pending).
 
 ### Phase 4: Main UI Mantine Migration
 
