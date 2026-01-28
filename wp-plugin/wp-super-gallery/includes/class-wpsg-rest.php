@@ -745,7 +745,7 @@ class WPSG_REST {
         // Allowlist of well-known oEmbed providers (allows subdomains).
         $allowlist = [
             'youtube.com', 'youtu.be', 'vimeo.com', 'twitter.com', 'x.com', 'instagram.com',
-            'soundcloud.com', 'flickr.com', 'dailymotion.com'
+            'soundcloud.com', 'flickr.com', 'dailymotion.com', 'noembed.com', 'rumble.com', 'odysee.com'
         ];
 
         $allowed = false;
