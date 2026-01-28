@@ -91,7 +91,7 @@ class WPSG_OEmbed_Providers {
             'timeout' => 6,
             'headers' => [
                 'Accept' => 'text/html',
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.109 Safari/537.36',
             ],
         ]);
         $html_code = wp_remote_retrieve_response_code($html_resp);
@@ -131,7 +131,7 @@ class WPSG_OEmbed_Providers {
                 'timeout' => 6,
                 'headers' => [
                     'Accept' => 'text/html',
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.109 Safari/537.36',
                 ],
             ]);
             $code = wp_remote_retrieve_response_code($resp);
