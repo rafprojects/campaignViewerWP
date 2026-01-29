@@ -3,10 +3,7 @@ import mantineNotificationsStyles from '@mantine/notifications/styles.css?inline
 import globalStyles from './styles/global.scss?inline';
 import campaignCardStyles from './components/Gallery/CampaignCard.module.scss?inline';
 import cardGalleryStyles from './components/Gallery/CardGallery.module.scss?inline';
-import videoCarouselStyles from './components/Campaign/VideoCarousel.module.scss?inline';
-import imageCarouselStyles from './components/Campaign/ImageCarousel.module.scss?inline';
 import campaignViewerStyles from './components/Campaign/CampaignViewer.module.scss?inline';
-import loginFormStyles from './components/Auth/LoginForm.module.scss?inline';
 
 export const shadowStyles = [
   mantineCoreStyles,
@@ -14,8 +11,5 @@ export const shadowStyles = [
   globalStyles,
   campaignCardStyles,
   cardGalleryStyles,
-  videoCarouselStyles,
-  imageCarouselStyles,
   campaignViewerStyles,
-  loginFormStyles,
 ].join('\n');

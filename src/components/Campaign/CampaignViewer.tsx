@@ -1,9 +1,8 @@
-import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
+import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box } from '@mantine/core';
 import { VideoCarousel } from './VideoCarousel';
 import { ImageCarousel } from './ImageCarousel';
 import type { Campaign } from '@/types';
-import styles from './CampaignViewer.module.scss';
 
 interface CampaignViewerProps {
   campaign: Campaign;
@@ -25,90 +24,108 @@ export function CampaignViewer({
   onClose,
 }: CampaignViewerProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className={styles.overlay}
+    <Modal
+      opened={true}
+      onClose={onClose}
+      fullScreen
+      padding={0}
+      withCloseButton={false}
+      transitionProps={{ transition: 'fade', duration: 200 }}
+      styles={{
+        content: { overflow: 'auto' },
+      }}
     >
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className={styles.backdrop}
-        onClick={onClose}
-      />
+      {/* Cover Image Header */}
+      <Box pos="relative" h={320} component="div">
+        <Image 
+          src={campaign.coverImage}
+          alt={campaign.title}
+          h={320}
+          fit="cover"
+        />
+        
+        {/* Overlay gradient */}
+        <Box
+          pos="absolute"
+          inset={0}
+          style={{
+            background: 'linear-gradient(to top, rgba(30, 41, 59, 1) 0%, rgba(30, 41, 59, 0.6) 45%, transparent 80%)',
+            pointerEvents: 'none'
+          }}
+        />
 
-      {/* Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 50, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 50, scale: 0.95 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className={styles.modal}
-      >
-        {/* Cover Image Header */}
-        <div className={styles.cover}>
-          <img
-            src={campaign.coverImage}
-            alt={campaign.title}
-            className={styles.coverImage}
-          />
-          <div className={styles.coverOverlay} />
+        {/* Back button */}
+        <Button
+          pos="absolute"
+          top={16}
+          left={16}
+          leftSection={<ArrowLeft size={20} />}
+          onClick={onClose}
+          variant="light"
+          color="dark"
+          radius="xl"
+        >
+          Back to Gallery
+        </Button>
 
-          {/* Back button */}
-          <button
-            onClick={onClose}
-            className={styles.backButton}
-          >
-            <ArrowLeft className={styles.backIcon} />
-            <span>Back to Gallery</span>
-          </button>
-
-          {/* Company badge */}
-          <div
-            className={styles.companyBadge}
-            style={{ backgroundColor: campaign.company.brandColor }}
-          >
-            <span className={styles.companyLogo}>{campaign.company.logo}</span>
+        {/* Company badge */}
+        <Badge
+          pos="absolute"
+          top={16}
+          right={16}
+          style={{ backgroundColor: campaign.company.brandColor }}
+          size="lg"
+        >
+          <Group gap={8}>
+            <span>{campaign.company.logo}</span>
             <span>{campaign.company.name}</span>
-          </div>
+          </Group>
+        </Badge>
 
-          {/* Title overlay */}
-          <div className={styles.titleWrap}>
-            <h1 className={styles.title}>
-              {campaign.title}
-            </h1>
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>
-                <Calendar className={styles.metaIcon} />
+        {/* Title and meta overlay */}
+        <Box pos="absolute" bottom={0} left={0} right={0} p="lg">
+          <Title order={1} size="h1" c="white" mb="sm">
+            {campaign.title}
+          </Title>
+          <Group gap="lg">
+            <Group gap={4}>
+              <Calendar size={16} color="#cbd5e1" />
+              <Text size="sm" c="gray.4">
                 {new Date(campaign.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
                 })}
-              </span>
-              <span className={styles.metaItem}>
-                <Tag className={styles.metaIcon} />
+              </Text>
+            </Group>
+            <Group gap={4}>
+              <Tag size={16} color="#cbd5e1" />
+              <Text size="sm" c="gray.4">
                 {campaign.tags.join(', ')}
-              </span>
-            </div>
-          </div>
-        </div>
+              </Text>
+            </Group>
+          </Group>
+        </Box>
+      </Box>
 
-        {/* Content */}
-        <div className={styles.content}>
+      {/* Content */}
+      <Box p="xl" style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
+        <Stack gap="xl">
           {/* Description */}
-          <div>
-            <h2 className={styles.sectionTitle}>About this Campaign</h2>
-            <p className={styles.description}>{campaign.description}</p>
-          </div>
+          <Box>
+            <Title order={2} size="h4" mb="sm">About this Campaign</Title>
+            <Text c="dimmed" lh={1.6}>
+              {campaign.description}
+            </Text>
+          </Box>
 
+          {/* Access notice */}
           {!hasAccess && (
-            <div className={styles.accessNotice}>
-              <p>This campaign is private. Sign in or request access to view media.</p>
-            </div>
+            <Paper p="md" radius="md" bg="red.9" withBorder>
+              <Text size="sm" fw={600}>
+                This campaign is private. Sign in or request access to view media.
+              </Text>
+            </Paper>
           )}
 
           {/* Videos Section */}
@@ -122,66 +139,70 @@ export function CampaignViewer({
           )}
 
           {/* Campaign Stats */}
-          <div className={styles.statsGrid}>
-            <div className={styles.statsCard}>
-              <div className={styles.statsValue}>{campaign.videos.length}</div>
-              <div className={styles.statsLabel}>Videos</div>
-            </div>
-            <div className={styles.statsCard}>
-              <div className={styles.statsValue}>{campaign.images.length}</div>
-              <div className={styles.statsLabel}>Images</div>
-            </div>
-            <div className={styles.statsCard}>
-              <div className={styles.statsValue}>{campaign.tags.length}</div>
-              <div className={styles.statsLabel}>Tags</div>
-            </div>
-            <div className={styles.statsCard}>
-              <div className={styles.statsValue}>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" py="md" style={{ borderTopWidth: 1, borderTopColor: 'var(--color-border)' }}>
+            <Paper p="md" radius="md" withBorder ta="center">
+              <Text size="xl" fw={700} c="white">{campaign.videos.length}</Text>
+              <Text size="sm" c="dimmed">Videos</Text>
+            </Paper>
+            <Paper p="md" radius="md" withBorder ta="center">
+              <Text size="xl" fw={700} c="white">{campaign.images.length}</Text>
+              <Text size="sm" c="dimmed">Images</Text>
+            </Paper>
+            <Paper p="md" radius="md" withBorder ta="center">
+              <Text size="xl" fw={700} c="white">{campaign.tags.length}</Text>
+              <Text size="sm" c="dimmed">Tags</Text>
+            </Paper>
+            <Paper p="md" radius="md" withBorder ta="center">
+              <Text size="xl" fw={700} c="white">
                 {campaign.visibility === 'public' ? '🌐' : '🔒'}
-              </div>
-              <div className={styles.statsLabel}>
+              </Text>
+              <Text size="sm" c="dimmed">
                 {campaign.visibility === 'public' ? 'Public' : 'Private'}
-              </div>
-            </div>
-          </div>
+              </Text>
+            </Paper>
+          </SimpleGrid>
 
-          <div className={styles.adminSection}>
-            <h3 className={styles.adminTitle}>Admin Actions</h3>
-            <p className={styles.adminSubtitle}>
-              Manage this campaign. Admin access is required.
-            </p>
-            <div className={styles.adminActions}>
-              <button
-                type="button"
-                className={styles.adminButton}
-                disabled={!isAdmin}
-                onClick={() => onEditCampaign?.(campaign)}
-              >
-                Edit Campaign
-              </button>
-              <button
-                type="button"
-                className={styles.adminButton}
-                disabled={!isAdmin}
-                onClick={() => onAddExternalMedia?.(campaign)}
-              >
-                Manage Media
-              </button>
-              <button
-                type="button"
-                className={styles.adminButtonDanger}
-                disabled={!isAdmin}
-                onClick={() => onArchiveCampaign?.(campaign)}
-              >
-                Archive Campaign
-              </button>
-            </div>
-            {!isAdmin && (
-              <p className={styles.adminHint}>Admin permissions required.</p>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+          {/* Admin Section */}
+          <Paper p="lg" radius="md" withBorder bg="dark.8">
+            <Stack gap="md">
+              <Box>
+                <Title order={3} size="h5" mb={4}>Admin Actions</Title>
+                <Text size="sm" c="dimmed">
+                  Manage this campaign. Admin access is required.
+                </Text>
+              </Box>
+              
+              <Group gap="md">
+                <Button
+                  disabled={!isAdmin}
+                  onClick={() => onEditCampaign?.(campaign)}
+                >
+                  Edit Campaign
+                </Button>
+                <Button
+                  disabled={!isAdmin}
+                  onClick={() => onAddExternalMedia?.(campaign)}
+                >
+                  Manage Media
+                </Button>
+                <Button
+                  color="red"
+                  disabled={!isAdmin}
+                  onClick={() => onArchiveCampaign?.(campaign)}
+                >
+                  Archive Campaign
+                </Button>
+              </Group>
+
+              {!isAdmin && (
+                <Text size="sm" c="red.4">
+                  Admin permissions required.
+                </Text>
+              )}
+            </Stack>
+          </Paper>
+        </Stack>
+      </Box>
+    </Modal>
   );
 }

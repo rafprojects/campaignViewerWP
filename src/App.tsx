@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Container, Group, Button, Alert, Loader, Center, Stack } from '@mantine/core';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { AdminPanel } from './components/Admin/AdminPanel';
 import { AuthProvider } from './contexts/AuthContext';
@@ -283,47 +284,55 @@ function AppContent({
         <LoginForm onSubmit={handleLogin} />
       )}
       {isAuthenticated && user && (
-        <div className="wp-super-gallery__authbar">
-          <div className="wp-super-gallery__container wp-super-gallery__authbar-inner">
+        <Container size="xl" py="sm">
+          <Group justify="space-between" wrap="wrap">
             <span>Signed in as {user.email}</span>
-            {isAdmin && (
-              <button
-                type="button"
-                className="wp-super-gallery__authbar-button"
-                onClick={() => setIsAdminPanelOpen(true)}
+            <Group gap="sm">
+              {isAdmin && (
+                <Button
+                  variant="default"
+                  onClick={() => setIsAdminPanelOpen(true)}
+                >
+                  Admin Panel
+                </Button>
+              )}
+              <Button
+                variant="subtle"
+                onClick={() => void logout()}
               >
-                Admin Panel
-              </button>
-            )}
-            <button
-              type="button"
-              className="wp-super-gallery__authbar-button"
-              onClick={() => void logout()}
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
+                Sign out
+              </Button>
+            </Group>
+          </Group>
+        </Container>
       )}
       {actionMessage && (
-        <div className={`wp-super-gallery__banner wp-super-gallery__banner--${actionMessage.type}`}>
-          {actionMessage.text}
-        </div>
+        <Container size="xl" py="sm">
+          <Alert color={actionMessage.type === 'error' ? 'red' : 'green'}>
+            {actionMessage.text}
+          </Alert>
+        </Container>
       )}
       {error && (
-        <div className="wp-super-gallery__banner wp-super-gallery__banner--error">{error}</div>
+        <Container size="xl" py="sm">
+          <Alert color="red">{error}</Alert>
+        </Container>
       )}
       {isAdminPanelOpen ? (
-        <div className="wp-super-gallery__container">
+        <Container size="xl" py="xl">
           <AdminPanel
             apiClient={apiClient}
             onClose={() => setIsAdminPanelOpen(false)}
             onCampaignsUpdated={() => void loadCampaigns()}
             onNotify={handleAdminNotify}
           />
-        </div>
+        </Container>
       ) : isLoading ? (
-        <div className="wp-super-gallery__loading">Loading campaigns...</div>
+        <Center py={120}>
+          <Stack align="center">
+            <Loader />
+          </Stack>
+        </Center>
       ) : (
         <CardGallery
           campaigns={campaigns}

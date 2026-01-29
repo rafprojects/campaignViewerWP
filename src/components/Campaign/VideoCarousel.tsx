@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
-import styles from './VideoCarousel.module.scss';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
@@ -25,91 +25,115 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
   const currentVideo = videos[currentIndex];
 
   return (
-    <div className={styles.section}>
-      <h3 className={styles.heading}>
-        <Play className={styles.icon} />
-        Videos ({videos.length})
-      </h3>
+    <Stack gap="md">
+      <Title order={3} size="h5">
+        <Group gap={8} component="span">
+          <Play size={18} />
+          Videos ({videos.length})
+        </Group>
+      </Title>
 
-      <div className={styles.playerWrapper}>
-        {/* Main Video Display */}
-        <div className={styles.videoFrame}>
+      {/* Player wrapper */}
+      <Box pos="relative">
+        <AspectRatio ratio={16 / 9}>
           {isPlaying ? (
-              <iframe
-                src={`${currentVideo.embedUrl ?? currentVideo.url}?autoplay=1`}
+            <iframe
+              src={`${currentVideo.embedUrl ?? currentVideo.url}?autoplay=1`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               title={`Video player: ${currentVideo.caption}`}
+              style={{ width: '100%', height: '100%', border: 'none' }}
             />
           ) : (
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={styles.poster}
-            >
-              <img
+            <motion.div key={currentIndex} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Image
                 src={currentVideo.thumbnail}
                 alt={currentVideo.caption}
-                className={styles.posterImage}
-              />
-              <button
+                h="100%"
+                fit="cover"
+                style={{ cursor: 'pointer' }}
                 onClick={() => setIsPlaying(true)}
-                className={styles.playOverlay}
+              />
+              <ActionIcon
+                pos="absolute"
+                top="50%"
+                left="50%"
+                style={{
+                  transform: 'translate(-50%, -50%)',
+                }}
+                size="xl"
+                radius="xl"
+                onClick={() => setIsPlaying(true)}
               >
-                <div className={styles.playButton}>
-                  <Play className={styles.playIcon} fill="currentColor" />
-                </div>
-              </button>
+                <Play size={32} fill="currentColor" />
+              </ActionIcon>
             </motion.div>
           )}
-        </div>
+        </AspectRatio>
 
         {/* Navigation Arrows */}
         {videos.length > 1 && (
           <>
-            <button
+            <ActionIcon
+              pos="absolute"
+              top="50%"
+              left={8}
+              style={{ transform: 'translateY(-50%)' }}
               onClick={prevVideo}
-              className={`${styles.navButton} ${styles.navButtonLeft}`}
+              variant="light"
+              size="lg"
             >
-              <ChevronLeft className={styles.navIcon} />
-            </button>
-            <button
+              <ChevronLeft size={24} />
+            </ActionIcon>
+            <ActionIcon
+              pos="absolute"
+              top="50%"
+              right={8}
+              style={{ transform: 'translateY(-50%)' }}
               onClick={nextVideo}
-              className={`${styles.navButton} ${styles.navButtonRight}`}
+              variant="light"
+              size="lg"
             >
-              <ChevronRight className={styles.navIcon} />
-            </button>
+              <ChevronRight size={24} />
+            </ActionIcon>
           </>
         )}
-      </div>
+      </Box>
 
       {/* Caption */}
-      <p className={styles.caption}>{currentVideo.caption}</p>
+      <Text size="sm" c="dimmed">
+        {currentVideo.caption}
+      </Text>
 
       {/* Thumbnail Strip */}
       {videos.length > 1 && (
-        <div className={styles.thumbnailStrip}>
+        <Group gap={6}>
           {videos.map((video, index) => (
-            <button
+            <ActionIcon
               key={video.id}
               onClick={() => {
                 setCurrentIndex(index);
                 setIsPlaying(false);
               }}
-              className={`${styles.thumbnailButton} ${
-                index === currentIndex ? styles.thumbnailButtonActive : ''
-              }`}
+              variant={index === currentIndex ? 'light' : 'subtle'}
+              size="lg"
+              p={0}
+              style={{
+                border: index === currentIndex ? '2px solid var(--mantine-color-blue-5)' : 'none',
+                overflow: 'hidden',
+              }}
             >
-              <img
+              <Image
                 src={video.thumbnail}
                 alt={video.caption}
-                className={styles.thumbnailImage}
+                w={60}
+                h={45}
+                fit="cover"
               />
-            </button>
+            </ActionIcon>
           ))}
-        </div>
+        </Group>
       )}
-    </div>
+    </Stack>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center } from '@mantine/core';
 import { CampaignCard } from './CampaignCard';
 import { CampaignViewer } from '@/components/Campaign/CampaignViewer';
 import type { Campaign } from '@/types';
@@ -56,110 +57,89 @@ export function CardGallery({
   const showHiddenNotice = accessMode === 'hide' && filter === 'all' && hiddenCount > 0;
 
   return (
-    <div className={styles.gallery}>
+    <Box className={styles.gallery}>
       {/* Header */}
-      <header className={styles.header}>
-        <div className={`${styles.headerInner} wp-super-gallery__container`}>
-          <div className={styles.headerContent}>
-            <div>
-              <h1 className={styles.headerTitle}>Campaign Gallery</h1>
-              <p className={styles.headerSubtitle}>Browse and access your campaign media</p>
-            </div>
-            
+      <Box component="header" className={styles.header}>
+        <Container size="xl" py="md">
+          <Stack gap="lg">
+            {/* Title and subtitle */}
+            <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+              <Stack gap={0}>
+                <Title order={1} size="h3" c="white">Campaign Gallery</Title>
+                <Text c="dimmed" size="sm">Browse and access your campaign media</Text>
+              </Stack>
+
+              {/* Admin controls */}
+              {isAdmin && (
+                <Group gap="sm" align="center">
+                  <Text size="xs" fw={600} tt="uppercase" c="gray.3">Access mode</Text>
+                  <SegmentedControl
+                    value={accessMode}
+                    onChange={(v) => onAccessModeChange?.(v as 'lock' | 'hide')}
+                    data={[
+                      { label: 'Lock', value: 'lock' },
+                      { label: 'Hide', value: 'hide' },
+                    ]}
+                    size="xs"
+                  />
+                </Group>
+              )}
+            </Group>
+
             {/* Filter tabs */}
-            <div className={styles.filters}>
-              <button
-                onClick={() => setFilter('all')}
-                className={`${styles.filterButton} ${
-                  filter === 'all' ? styles.filterButtonActiveAll : ''
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setFilter('accessible')}
-                className={`${styles.filterButton} ${
-                  filter === 'accessible' ? styles.filterButtonActiveAccessible : ''
-                }`}
-              >
-                My Access
-              </button>
-              {companies.map((company) => (
-                <button
-                  key={company}
-                  onClick={() => setFilter(company)}
-                  className={`${styles.filterButton} ${
-                    filter === company ? styles.filterButtonActiveCompany : ''
-                  }`}
-                >
-                  {company}
-                </button>
-              ))}
-            </div>
+            <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} defaultValue="all">
+              <Tabs.List>
+                <Tabs.Tab value="all">All</Tabs.Tab>
+                <Tabs.Tab value="accessible">My Access</Tabs.Tab>
+                {companies.map((company) => (
+                  <Tabs.Tab key={company} value={company}>
+                    {company}
+                  </Tabs.Tab>
+                ))}
+              </Tabs.List>
+            </Tabs>
 
+            {/* Hidden notice */}
             {showHiddenNotice && (
-              <div className={styles.accessNotice}>
+              <Alert color="yellow" title="Access mode active">
                 {hiddenCount} campaign{hiddenCount === 1 ? '' : 's'} hidden by access mode.
-              </div>
+              </Alert>
             )}
-
-            {isAdmin && (
-              <div className={styles.adminControls}>
-                <span className={styles.adminLabel}>Access mode</span>
-                <div className={styles.modeToggle}>
-                  <button
-                    onClick={() => onAccessModeChange?.('lock')}
-                    className={`${styles.modeButton} ${
-                      accessMode === 'lock' ? styles.modeButtonActive : ''
-                    }`}
-                  >
-                    Lock
-                  </button>
-                  <button
-                    onClick={() => onAccessModeChange?.('hide')}
-                    className={`${styles.modeButton} ${
-                      accessMode === 'hide' ? styles.modeButtonActive : ''
-                    }`}
-                  >
-                    Hide
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+          </Stack>
+        </Container>
+      </Box>
 
       {/* Gallery Grid */}
-      <main className={`${styles.main} wp-super-gallery__container`}>
-        <motion.div
-          layout
-          className={styles.grid}
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredCampaigns.map((campaign) => (
-              <CampaignCard
-                key={campaign.id}
-                campaign={campaign}
-                hasAccess={hasAccess(campaign.id, campaign.visibility)}
-                onClick={() => setSelectedCampaign(campaign)}
-              />
-            ))}
-          </AnimatePresence>
+      <Container size="xl" component="main" py="xl">
+        <motion.div layout>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+            <AnimatePresence mode="popLayout">
+              {filteredCampaigns.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  hasAccess={hasAccess(campaign.id, campaign.visibility)}
+                  onClick={() => setSelectedCampaign(campaign)}
+                />
+              ))}
+            </AnimatePresence>
+          </SimpleGrid>
         </motion.div>
 
         {filteredCampaigns.length === 0 && (
-          <div className={styles.emptyState}>
-            {filter === 'accessible' ? (
-              <p>No accessible campaigns yet.</p>
-            ) : accessMode === 'hide' ? (
-              <p>No accessible campaigns found. Switch to Lock mode to view locked cards.</p>
-            ) : (
-              <p>No campaigns found matching your filter.</p>
-            )}
-          </div>
+          <Center py={80}>
+            <Stack align="center">
+              <Text size="lg" c="dimmed">
+                {filter === 'accessible'
+                  ? 'No accessible campaigns yet.'
+                  : accessMode === 'hide'
+                    ? 'No accessible campaigns found. Switch to Lock mode to view locked cards.'
+                    : 'No campaigns found matching your filter.'}
+              </Text>
+            </Stack>
+          </Center>
         )}
-      </main>
+      </Container>
 
       {/* Campaign Viewer Modal */}
       <AnimatePresence>
@@ -175,6 +155,6 @@ export function CardGallery({
           />
         )}
       </AnimatePresence>
-    </div>
+    </Box>
   );
 }

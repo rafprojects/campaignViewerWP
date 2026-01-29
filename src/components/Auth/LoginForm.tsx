@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import styles from './LoginForm.module.scss';
+import { TextInput, PasswordInput, Button, Paper, Title, Text, Stack, Alert } from '@mantine/core';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
@@ -29,37 +29,51 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
   };
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Sign in</h2>
-        <p className={styles.subtitle}>Access private campaigns with your WordPress account.</p>
-      </div>
+    <Paper
+      p="xl"
+      radius="md"
+      withBorder
+      component="form"
+      onSubmit={handleSubmit}
+      maw={26 * 16}
+      mx="auto"
+      my="xl"
+    >
+      <Stack gap="lg">
+        <Stack gap="xs">
+          <Title order={2} size="h4">Sign in</Title>
+          <Text c="dimmed" size="sm">
+            Access private campaigns with your WordPress account.
+          </Text>
+        </Stack>
 
-      <label className={styles.field}>
-        <span>Email</span>
-        <input
+        <TextInput
+          label="Email"
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
+          placeholder="you@example.com"
         />
-      </label>
 
-      <label className={styles.field}>
-        <span>Password</span>
-        <input
-          type="password"
+        <PasswordInput
+          label="Password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           required
+          placeholder="Enter your password"
         />
-      </label>
 
-      {error && <p className={styles.error}>{error}</p>}
+        {error && (
+          <Alert color="red" title="Error">
+            {error}
+          </Alert>
+        )}
 
-      <button className={styles.submit} type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Signing in...' : 'Sign in'}
-      </button>
-    </form>
+        <Button type="submit" loading={isSubmitting} fullWidth>
+          {isSubmitting ? 'Signing in...' : 'Sign in'}
+        </Button>
+      </Stack>
+    </Paper>
   );
 }
