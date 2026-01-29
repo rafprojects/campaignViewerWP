@@ -765,11 +765,40 @@ class WPSG_REST {
 
         if (!$allowed) {
             // Resolve host and ensure it doesn't resolve to private/internal IP ranges.
-            $ips = gethostbynamel($host);
-            if ($ips === false || !is_array($ips) || count($ips) === 0) {
-                return new WP_REST_Response(['message' => 'Unable to resolve host for oEmbed URL'], 400);
+            // Check both IPv4 (A) and IPv6 (AAAA) records to prevent SSRF bypass.
+            $ips_to_check = [];
+
+            // If host is already an IP address, check it directly
+            if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6)) {
+                $ips_to_check[] = $host;
+            } else {
+                // For hostnames, try DNS resolution first (includes IPv6 support)
+                $dns_records = dns_get_record($host, DNS_A | DNS_AAAA);
+                if ($dns_records !== false && is_array($dns_records) && count($dns_records) > 0) {
+                    foreach ($dns_records as $record) {
+                        if (isset($record['ip'])) {
+                            $ips_to_check[] = $record['ip']; // IPv4
+                        }
+                        if (isset($record['ipv6'])) {
+                            $ips_to_check[] = $record['ipv6']; // IPv6
+                        }
+                    }
+                }
+
+                // Fallback to gethostbynamel() for IPv4 if DNS resolution failed
+                if (empty($ips_to_check)) {
+                    $ipv4_ips = gethostbynamel($host);
+                    if ($ipv4_ips !== false && is_array($ipv4_ips)) {
+                        $ips_to_check = array_merge($ips_to_check, $ipv4_ips);
+                    }
+                }
+
+                if (empty($ips_to_check)) {
+                    return new WP_REST_Response(['message' => 'Unable to resolve host for oEmbed URL'], 400);
+                }
             }
-            foreach ($ips as $ip) {
+
+            foreach ($ips_to_check as $ip) {
                 if (self::is_private_ip($ip)) {
                     return new WP_REST_Response(['message' => 'oEmbed host resolves to a private or disallowed IP'], 400);
                 }
