@@ -1,0 +1,11 @@
+{
+    "require": {
+        "yoast/phpunit-polyfills": "^2.0",
+        "phpunit/phpunit": "^9.0"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3"
+        }
+    }
+}

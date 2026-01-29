@@ -1,7 +1,7 @@
 {
   "name": "wp-super-gallery",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,13 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mantine/core": "^7.17.8",
+    "@mantine/hooks": "^7.17.8",
+    "@mantine/modals": "^7.17.8",
+    "@mantine/notifications": "^7.17.8",
+    "@tabler/icons-react": "^3.36.1",
     "framer-motion": "^11.15.0",
     "lucide-react": "^0.469.0",
     "react": "^18.3.1",

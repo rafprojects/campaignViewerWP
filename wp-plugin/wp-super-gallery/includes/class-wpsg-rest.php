@@ -4,6 +4,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+require_once __DIR__ . '/class-wpsg-oembed-providers.php';
+
 class WPSG_REST {
     public static function register_routes() {
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
@@ -80,7 +82,7 @@ class WPSG_REST {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+)', [
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', [
             [
                 'methods' => 'PUT',
                 'callback' => [self::class, 'update_media'],
@@ -89,6 +91,14 @@ class WPSG_REST {
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'delete_media'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/reorder', [
+            [
+                'methods' => 'PUT',
+                'callback' => [self::class, 'reorder_media'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -114,6 +124,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/audit', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_audit'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/media/upload', [
             [
                 'methods' => 'POST',
@@ -127,6 +145,23 @@ class WPSG_REST {
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_permissions'],
                 'permission_callback' => [self::class, 'require_authenticated'],
+            ],
+        ]);
+
+        // Allow oEmbed proxy as public endpoint to avoid auth/cors issues for previews.
+        // If you prefer restricting this, change permission_callback accordingly.
+        //
+        // SECURITY NOTE: This endpoint is publicly accessible (permission_callback: '__return_true')
+        // which could allow anyone to use your server as a proxy for fetching external content.
+        // While SSRF mitigations are in place (HTTPS requirement, IP blocking, allowlist), this could
+        // still be abused for reconnaissance or as a component in attack chains. Consider requiring
+        // authentication for this endpoint or implementing rate limiting to prevent abuse. If public
+        // access is intentional for preview functionality, document this security tradeoff prominently.
+        register_rest_route('wp-super-gallery/v1', '/oembed', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'proxy_oembed'],
+                'permission_callback' => '__return_true',
             ],
         ]);
     }
@@ -199,9 +234,6 @@ class WPSG_REST {
                     $accessible_ids = array_map('intval', $accessible_ids);
                 }
                 $args['post__in'] = $accessible_ids;
-                        if (!preg_match('/^[a-zA-Z0-9_-]{11}$/', $video_id)) {
-                            return new WP_Error('invalid_url', 'Invalid YouTube video ID format');
-                        }
             }
         }
 
@@ -213,9 +245,6 @@ class WPSG_REST {
             'page' => $page,
             'perPage' => $per_page,
             'total' => (int) $query->found_posts,
-                        if (!preg_match('/^[0-9]+$/', $video_id)) {
-                            return new WP_Error('invalid_url', 'Invalid Vimeo video ID format');
-                        }
             'totalPages' => (int) $query->max_num_pages,
         ], 200);
     }
@@ -227,9 +256,6 @@ class WPSG_REST {
 
         if (empty($title)) {
             return new WP_REST_Response(['message' => 'Title is required'], 400);
-                        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $slug)) {
-                            return new WP_Error('invalid_url', 'Invalid Rumble video ID format');
-                        }
         }
 
         $post_id = wp_insert_post([
@@ -242,12 +268,12 @@ class WPSG_REST {
         if (is_wp_error($post_id)) {
             return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
         }
-                        if (!preg_match('/^[a-zA-Z0-9]+$/', $video_id)) {
-                            return new WP_Error('invalid_url', 'Invalid BitChute video ID format');
-                        }
 
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
+        self::add_audit_entry($post_id, 'campaign.created', [
+            'title' => $title,
+        ]);
 
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
@@ -297,6 +323,12 @@ class WPSG_REST {
         self::apply_campaign_meta($post_id, $request);
         self::assign_company($post_id, $request->get_param('company'));
 
+        self::add_audit_entry($post_id, 'campaign.updated', [
+            'title' => $title,
+            'visibility' => $request->get_param('visibility'),
+            'status' => $request->get_param('status'),
+        ]);
+
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 200);
     }
@@ -309,6 +341,7 @@ class WPSG_REST {
         }
 
         update_post_meta($post_id, 'status', 'archived');
+        self::add_audit_entry($post_id, 'campaign.archived', []);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
@@ -391,6 +424,15 @@ class WPSG_REST {
         }
         $media_items[] = $media_item;
         update_post_meta($post_id, 'media_items', $media_items);
+
+        self::add_audit_entry($post_id, 'media.created', [
+            'mediaId' => $media_item['id'],
+            'type' => $media_item['type'],
+            'source' => $media_item['source'],
+            'provider' => $media_item['provider'] ?? '',
+            'url' => $media_item['url'] ?? '',
+            'attachmentId' => $media_item['attachmentId'] ?? 0,
+        ]);
 
         return new WP_REST_Response($media_item, 201);
     }
@@ -478,6 +520,13 @@ class WPSG_REST {
             }
         }
 
+        $audit_action = $source === 'company' ? 'access.company.granted' : ($action === 'deny' ? 'access.denied' : 'access.granted');
+        self::add_audit_entry($post_id, $audit_action, [
+            'userId' => $user_id,
+            'source' => $source,
+            'action' => $action,
+        ]);
+
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access updated'], 200);
     }
@@ -514,6 +563,9 @@ class WPSG_REST {
         }));
         update_post_meta($post_id, 'access_overrides', $overrides);
 
+        self::add_audit_entry($post_id, 'access.revoked', [
+            'userId' => $user_id,
+        ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
     }
@@ -552,7 +604,72 @@ class WPSG_REST {
         }
 
         update_post_meta($post_id, 'media_items', $media_items);
+        self::add_audit_entry($post_id, 'media.updated', [
+            'mediaId' => $media_id,
+        ]);
         return new WP_REST_Response(['message' => 'Media updated'], 200);
+    }
+
+    public static function reorder_media() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $items = $request->get_param('items');
+        if (!is_array($items)) {
+            return new WP_REST_Response(['message' => 'items must be an array'], 400);
+        }
+
+        $order_map = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $id = sanitize_text_field($item['id'] ?? '');
+            $order = intval($item['order'] ?? 0);
+            if (!$id) {
+                continue;
+            }
+            if ($order < 0) {
+                $order = 0;
+            } elseif ($order > 1000000) {
+                $order = 1000000;
+            }
+            $order_map[$id] = $order;
+        }
+
+        if (empty($order_map)) {
+            return new WP_REST_Response(['message' => 'No valid items provided'], 400);
+        }
+
+        $media_items = get_post_meta($post_id, 'media_items', true);
+        $media_items = is_array($media_items) ? $media_items : [];
+
+        // Validate that all provided IDs belong to this campaign's media items.
+        $existing_ids = array_map(function ($m) { return $m['id'] ?? ''; }, $media_items);
+        $invalid = array_values(array_filter(array_keys($order_map), function ($id) use ($existing_ids) {
+            return !in_array($id, $existing_ids, true);
+        }));
+        if (!empty($invalid)) {
+            return new WP_REST_Response(['message' => 'Invalid media id(s) provided', 'invalid' => $invalid], 400);
+        }
+
+        foreach ($media_items as &$media_item) {
+            $id = $media_item['id'] ?? '';
+            if ($id && array_key_exists($id, $order_map)) {
+                $media_item['order'] = $order_map[$id];
+            }
+        }
+        unset($media_item);
+
+        update_post_meta($post_id, 'media_items', $media_items);
+        self::add_audit_entry($post_id, 'media.reordered', [
+            'count' => count($order_map),
+        ]);
+
+        return new WP_REST_Response(['message' => 'Media reordered'], 200);
     }
 
     public static function delete_media() {
@@ -570,7 +687,23 @@ class WPSG_REST {
         }));
         update_post_meta($post_id, 'media_items', $media_items);
 
+        self::add_audit_entry($post_id, 'media.deleted', [
+            'mediaId' => $media_id,
+        ]);
+
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
+    }
+
+    public static function list_audit() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $entries = get_post_meta($post_id, 'audit_log', true);
+        $entries = is_array($entries) ? $entries : [];
+        return new WP_REST_Response($entries, 200);
     }
 
     public static function upload_media() {
@@ -596,6 +729,136 @@ class WPSG_REST {
         ], 201);
     }
 
+    public static function proxy_oembed() {
+        $request = func_get_arg(0);
+        $url = esc_url_raw($request->get_param('url'));
+        if (empty($url)) {
+            return new WP_REST_Response(['message' => 'url is required'], 400);
+        }
+
+        $parsed = wp_parse_url($url);
+
+        // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
+        $host = isset($parsed['host']) ? $parsed['host'] : '';
+        $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : '';
+        if (empty($host)) {
+            return new WP_REST_Response(['message' => 'Invalid oEmbed URL host'], 400);
+        }
+
+        if ($scheme !== 'https') {
+            return new WP_REST_Response(['message' => 'Only HTTPS oEmbed URLs are allowed'], 400);
+        }
+
+        // Allowlist of well-known oEmbed providers (allows subdomains).
+        $allowlist = [
+            'youtube.com', 'youtu.be', 'vimeo.com', 'twitter.com', 'x.com', 'instagram.com',
+            'soundcloud.com', 'flickr.com', 'dailymotion.com', 'noembed.com', 'rumble.com', 'odysee.com'
+        ];
+
+        $allowed = false;
+        foreach ($allowlist as $a) {
+            if ($host === $a || substr($host, -strlen('.' . $a)) === '.' . $a) {
+                $allowed = true;
+                break;
+            }
+        }
+
+        if (!$allowed) {
+            // Resolve host and ensure it doesn't resolve to private/internal IP ranges.
+            // Check both IPv4 (A) and IPv6 (AAAA) records to prevent SSRF bypass.
+            $ips_to_check = [];
+
+            // If host is already an IP address, check it directly
+            if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6)) {
+                $ips_to_check[] = $host;
+            } else {
+                // For hostnames, try DNS resolution first (includes IPv6 support)
+                $dns_records = dns_get_record($host, DNS_A | DNS_AAAA);
+                if ($dns_records !== false && is_array($dns_records) && count($dns_records) > 0) {
+                    foreach ($dns_records as $record) {
+                        if (isset($record['ip'])) {
+                            $ips_to_check[] = $record['ip']; // IPv4
+                        }
+                        if (isset($record['ipv6'])) {
+                            $ips_to_check[] = $record['ipv6']; // IPv6
+                        }
+                    }
+                }
+
+                // Fallback to gethostbynamel() for IPv4 if DNS resolution failed
+                if (empty($ips_to_check)) {
+                    $ipv4_ips = gethostbynamel($host);
+                    if ($ipv4_ips !== false && is_array($ipv4_ips)) {
+                        $ips_to_check = array_merge($ips_to_check, $ipv4_ips);
+                    }
+                }
+
+                if (empty($ips_to_check)) {
+                    return new WP_REST_Response(['message' => 'Unable to resolve host for oEmbed URL'], 400);
+                }
+            }
+
+            foreach ($ips_to_check as $ip) {
+                if (self::is_private_ip($ip)) {
+                    return new WP_REST_Response(['message' => 'oEmbed host resolves to a private or disallowed IP'], 400);
+                }
+            }
+        }
+
+        $cache_key = 'wpsg_oembed_' . md5($url);
+        $cached = get_transient($cache_key);
+        if (false !== $cached && is_array($cached)) {
+            // If we cached a previous error result include its status if present.
+            $cached_status = isset($cached['_wpsg_status']) ? intval($cached['_wpsg_status']) : 200;
+            // Remove internal status marker before returning to clients.
+            $out = $cached;
+            if (isset($out['_wpsg_status'])) {
+                unset($out['_wpsg_status']);
+            }
+            return new WP_REST_Response($out, $cached_status);
+        }
+
+        $attempts = [];
+        $result = WPSG_OEmbed_Providers::fetch($url, $parsed, $attempts);
+        if (is_array($result) && !empty($result)) {
+            // If provider returned an error payload, cache it for a short TTL
+            // to avoid hammering external services on repeated requests.
+            if (!empty($result['error'])) {
+                $error_payload = $result;
+                $error_payload['_wpsg_status'] = 502;
+                // Log and metric: record repeated oEmbed failures
+                error_log('WPSG oEmbed failure for ' . $url . ': ' . json_encode($attempts));
+                do_action('wpsg_oembed_failure', $url, $attempts);
+                $count = intval(get_option('wpsg_oembed_failure_count', 0));
+                update_option('wpsg_oembed_failure_count', $count + 1);
+                set_transient($cache_key, $error_payload, 5 * MINUTE_IN_SECONDS);
+                return new WP_REST_Response($result, 502);
+            }
+
+            // Successful fetch: cache for longer TTL
+            set_transient($cache_key, $result, 6 * HOUR_IN_SECONDS);
+            return new WP_REST_Response($result, 200);
+        }
+
+        // Cache generic failure to avoid repeated immediate retries
+        $fallback = [
+            'message' => 'Unable to fetch oEmbed',
+            'attempts' => $attempts,
+        ];
+        $fallback['_wpsg_status'] = 502;
+        // Log and metric: record generic fallback cache
+        error_log('WPSG oEmbed fallback cached for ' . $url . ': ' . json_encode($attempts));
+        do_action('wpsg_oembed_failure', $url, $attempts);
+        $count = intval(get_option('wpsg_oembed_failure_count', 0));
+        update_option('wpsg_oembed_failure_count', $count + 1);
+        set_transient($cache_key, $fallback, 5 * MINUTE_IN_SECONDS);
+        // Do not expose internal cache metadata to clients.
+        $out_fallback = $fallback;
+        unset($out_fallback['_wpsg_status']);
+        return new WP_REST_Response($out_fallback, 502);
+    }
+
+
     public static function list_permissions() {
         $user_id = get_current_user_id();
         if (!$user_id) {
@@ -610,6 +873,45 @@ class WPSG_REST {
     private static function campaign_exists($post_id) {
         $post = get_post($post_id);
         return $post && $post->post_type === 'wpsg_campaign';
+    }
+
+    private static function is_private_ip($ip) {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $long = sprintf('%u', ip2long($ip));
+            $ranges = [
+                ['10.0.0.0', '10.255.255.255'],
+                ['172.16.0.0', '172.31.255.255'],
+                ['192.168.0.0', '192.168.255.255'],
+                ['127.0.0.0', '127.255.255.255'],
+                ['169.254.0.0', '169.254.255.255'],
+            ];
+            foreach ($ranges as $r) {
+                $from = sprintf('%u', ip2long($r[0]));
+                $to = sprintf('%u', ip2long($r[1]));
+                if ($long >= $from && $long <= $to) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            $lower = strtolower($ip);
+            if ($lower === '::1') {
+                return true;
+            }
+            // Unique local addresses fc00::/7 (fc or fd)
+            if (strpos($lower, 'fc') === 0 || strpos($lower, 'fd') === 0) {
+                return true;
+            }
+            // Link-local fe80::/10 (starts with fe80-febf) - simple prefix checks
+            if (strpos($lower, 'fe80') === 0 || strpos($lower, 'fe8') === 0 || strpos($lower, 'fe9') === 0 || strpos($lower, 'fea') === 0 || strpos($lower, 'feb') === 0) {
+                return true;
+            }
+            return false;
+        }
+
+        return false;
     }
 
     private static function can_view_campaign($post_id, $user_id) {
@@ -802,6 +1104,47 @@ class WPSG_REST {
         return array_values($filtered);
     }
 
+    private static function add_audit_entry($post_id, $action, $details) {
+        $entries = get_post_meta($post_id, 'audit_log', true);
+        $entries = is_array($entries) ? $entries : [];
+        $entries[] = [
+            'id' => uniqid('audit_', true),
+            'action' => sanitize_text_field($action),
+            'details' => self::sanitize_audit_details($details),
+            'userId' => get_current_user_id(),
+            'createdAt' => gmdate('c'),
+        ];
+
+        if (count($entries) > 200) {
+            $entries = array_slice($entries, -200);
+        }
+
+        update_post_meta($post_id, 'audit_log', $entries);
+    }
+
+    private static function sanitize_audit_details($details) {
+        if (!is_array($details)) {
+            return [];
+        }
+
+        $sanitized = [];
+        foreach ($details as $key => $value) {
+            $safe_key = sanitize_text_field($key);
+            if (is_array($value)) {
+                $sanitized[$safe_key] = self::sanitize_audit_details($value);
+            } elseif (is_numeric($value)) {
+                $sanitized[$safe_key] = $value + 0;
+            } elseif (is_bool($value)) {
+                $sanitized[$safe_key] = (bool) $value;
+            } elseif (is_string($value)) {
+                $sanitized[$safe_key] = sanitize_text_field($value);
+            } else {
+                $sanitized[$safe_key] = '';
+            }
+        }
+        return $sanitized;
+    }
+
     private static function normalize_external_media($url) {
         if (empty($url)) {
             return new WP_Error('invalid_url', 'URL is required');
@@ -853,16 +1196,26 @@ class WPSG_REST {
 
         if ($host === 'rumble.com' || $host === 'www.rumble.com') {
             $slug = trim($path, '/');
+            // Rumble share URLs often end with .html — strip that before validating
+            $slug = preg_replace('/\.html$/i', '', $slug);
             if (!$slug) {
                 return new WP_Error('invalid_url', 'Invalid Rumble URL');
             }
-            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $slug)) {
+
+            // The canonical Rumble video identifier is the first slug segment (e.g. "v72ksce" from "v72ksce-...")
+            $parts = explode('-', $slug);
+            $video_id = $parts[0] ?? $slug;
+            if (!preg_match('/^v[0-9a-zA-Z]+$/i', $video_id)) {
                 return new WP_Error('invalid_url', 'Invalid Rumble video ID format');
             }
+
+            // Use the compact embed path that Rumble expects (video id only)
+            $embed_url = 'https://rumble.com/embed/' . esc_attr($video_id) . '/';
+
             return [
                 'provider' => 'rumble',
                 'url' => $url,
-                'embedUrl' => 'https://rumble.com/embed/' . esc_attr($slug),
+                'embedUrl' => $embed_url,
             ];
         }
 

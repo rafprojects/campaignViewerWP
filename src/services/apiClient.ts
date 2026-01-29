@@ -18,19 +18,31 @@ export class ApiClient {
   }
 
   private async getHeaders(extra?: HeadersInit): Promise<Record<string, string>> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+    const headers: Record<string, string> = await this.buildAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    return {
+      ...headers,
       ...(extra as Record<string, string> | undefined),
     };
+  }
 
+  private async buildAuthHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
     if (this.authProvider) {
       const token = await this.authProvider.getAccessToken();
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
     }
-
     return headers;
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  async getAuthHeaders(): Promise<Record<string, string>> {
+    return this.buildAuthHeaders();
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
@@ -38,7 +50,18 @@ export class ApiClient {
       if (response.status === 401) {
         this.onUnauthorized?.();
       }
-      throw new ApiError('Request failed', response.status);
+
+      let errorMessage = 'Request failed';
+      try {
+        const data = await response.json();
+        if (data?.message) {
+          errorMessage = data.message;
+        }
+      } catch {
+        // ignore parse errors
+      }
+
+      throw new ApiError(errorMessage, response.status);
     }
     return response.json() as Promise<T>;
   }
@@ -55,6 +78,15 @@ export class ApiClient {
       method: 'POST',
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
+    });
+    return this.handleResponse<T>(response);
+  }
+
+  async postForm<T>(path: string, formData: FormData): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: await this.buildAuthHeaders(),
+      body: formData,
     });
     return this.handleResponse<T>(response);
   }
