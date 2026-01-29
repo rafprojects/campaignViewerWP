@@ -150,6 +150,13 @@ class WPSG_REST {
 
         // Allow oEmbed proxy as public endpoint to avoid auth/cors issues for previews.
         // If you prefer restricting this, change permission_callback accordingly.
+        //
+        // SECURITY NOTE: This endpoint is publicly accessible (permission_callback: '__return_true')
+        // which could allow anyone to use your server as a proxy for fetching external content.
+        // While SSRF mitigations are in place (HTTPS requirement, IP blocking, allowlist), this could
+        // still be abused for reconnaissance or as a component in attack chains. Consider requiring
+        // authentication for this endpoint or implementing rate limiting to prevent abuse. If public
+        // access is intentional for preview functionality, document this security tradeoff prominently.
         register_rest_route('wp-super-gallery/v1', '/oembed', [
             [
                 'methods' => 'GET',
