@@ -293,9 +293,12 @@ All endpoints are served from the WordPress REST namespace:
 
 ### Phase 4: Main UI Mantine Migration
 
-- Assess feasibility and scope for migrating the main UI to Mantine.
 - Implement the main UI migration once scope is confirmed.
 - Track component-by-component steps in [docs/MANTINE_MAIN_UI_ASSESSMENT.md](docs/MANTINE_MAIN_UI_ASSESSMENT.md).
+
+**Completed in Phase 5 so far:**
+
+- Assess feasibility and scope for migrating the main UI to Mantine.
 
 ### Phase 5: WordPress Integration
 
@@ -331,6 +334,7 @@ Track functional UX improvements that are not pure styling.
 - **Plugin PHP tests:** add and maintain PHPUnit tests for `includes/` logic (proxy_oembed, normalizers, cache behavior) and run these in CI (Phase 6).
 - **Admin metric & alerting:** provide a simple admin metric panel and `do_action('wpsg_oembed_failure', $url, $attempts)` integration hook for external monitoring systems (Phase 6).
 - **Logging / metrics:** ensure oEmbed failures log via `error_log()` and provide an opt-in integration point for external metrics (e.g., StatsD/Prometheus) (Phase 6).
+- **oEmbed rate limiting:** implement rate limiting for the public oEmbed proxy endpoint to prevent abuse while maintaining preview functionality (Phase 6).
 
 - **Admin Panel → Media tab:**
   - Add create/edit/delete media associations per campaign.
@@ -341,6 +345,8 @@ Track functional UX improvements that are not pure styling.
 
 - **Consolidate media API usage:** replace ad-hoc `src/api/media.ts` helper usage with `ApiClient` (or pass `authHeaders`) and remove unused legacy helpers (Phase 6).
 - **Deprecate/remove standalone media helpers:** review exported helpers in `src/api/media.ts` and either remove or mark deprecated if all call-sites now use `ApiClient` (Phase 6).
+
+- **Improved IPv6 parsing and validation:** enhance the `is_private_ip()` method in `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` to properly handle IPv6 address formats, including compressed notation (::), full IPv6 ranges (link-local fe80::/10, unique local fc00::/7), and additional private/reserved ranges for comprehensive SSRF protection (Phase 6).
 
 ### Phase 7: Polish + Production Readiness
 

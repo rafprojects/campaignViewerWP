@@ -5,6 +5,7 @@ import { shadowStyles } from './shadowStyles'
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
+import { theme } from './theme'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 
@@ -27,7 +28,7 @@ const parseProps = (node: Element): MountProps => {
 const renderApp = (mountNode: Element, props: MountProps) => {
   createRoot(mountNode).render(
     <StrictMode>
-      <MantineProvider>
+      <MantineProvider theme={theme}>
         <Notifications />
         <ModalsProvider>
           <App {...props} />
