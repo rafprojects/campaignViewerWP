@@ -25,6 +25,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const [editingCaption, setEditingCaption] = useState('');
   const [editingThumbnail, setEditingThumbnail] = useState<string | undefined>(undefined);
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
+  const reorderingRef = useRef(false);
 
   useEffect(() => {
     void fetchMedia();
@@ -285,21 +286,21 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   }
 
   async function moveItem(item: MediaItem, direction: 'up' | 'down') {
-    // Prevent concurrent reorder operations
-    if ((moveItem as any).__running) return;
-    (moveItem as any).__running = true;
+    // Prevent concurrent reorder operations using stable ref-based guard
+    if (reorderingRef.current) return;
+    reorderingRef.current = true;
 
     const prev = media.slice();
     const idx = media.findIndex((m) => m.id === item.id);
     if (idx === -1) {
-      (moveItem as any).__running = false;
+      reorderingRef.current = false;
       return;
     }
 
     const newMedia = media.slice();
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= newMedia.length) {
-      (moveItem as any).__running = false;
+      reorderingRef.current = false;
       return;
     }
     const temp = newMedia[swapIdx];
@@ -316,7 +317,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       setMedia(prev);
       showNotification({ title: 'Reorder failed', message: (err as Error).message, color: 'red' });
     } finally {
-      (moveItem as any).__running = false;
+      reorderingRef.current = false;
     }
   }
 
