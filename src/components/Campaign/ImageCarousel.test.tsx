@@ -32,10 +32,27 @@ describe('ImageCarousel', () => {
     fireEvent.click(imageTwoThumb);
     expect(screen.getByText('Image Two')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByLabelText('Next image'));
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Image Two')[0]).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByLabelText('Previous image'));
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Image One')[0]).toBeInTheDocument();
+    });
+
     const imageOne = screen.getAllByAltText('Image One')[0];
     fireEvent.click(imageOne);
     await waitFor(() => {
       expect(document.body.getAttribute('data-scroll-locked')).toBe('1');
+    });
+    fireEvent.click(screen.getByLabelText('Next image (lightbox)'));
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Image Two')[0]).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByLabelText('Previous image (lightbox)'));
+    await waitFor(() => {
+      expect(screen.getAllByAltText('Image One')[0]).toBeInTheDocument();
     });
     fireEvent.click(screen.getByLabelText(/close lightbox/i));
     await waitFor(() => {

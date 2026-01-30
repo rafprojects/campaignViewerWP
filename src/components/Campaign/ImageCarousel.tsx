@@ -63,6 +63,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           onClick={() => setIsLightboxOpen(true)}
           size="lg"
           variant="light"
+          aria-label="Open lightbox"
         >
           <ZoomIn size={20} />
         </ActionIcon>
@@ -78,6 +79,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
               onClick={prevImage}
               variant="light"
               size="lg"
+              aria-label="Previous image"
             >
               <ChevronLeft size={24} />
             </ActionIcon>
@@ -89,6 +91,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
               onClick={nextImage}
               variant="light"
               size="lg"
+              aria-label="Next image"
             >
               <ChevronRight size={24} />
             </ActionIcon>
@@ -192,6 +195,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 }}
                 variant="light"
                 size="xl"
+                aria-label="Previous image (lightbox)"
               >
                 <ChevronLeft size={32} />
               </ActionIcon>
@@ -206,6 +210,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 }}
                 variant="light"
                 size="xl"
+                aria-label="Next image (lightbox)"
               >
                 <ChevronRight size={32} />
               </ActionIcon>

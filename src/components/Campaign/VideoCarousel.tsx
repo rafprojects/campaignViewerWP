@@ -64,6 +64,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
                 size="xl"
                 radius="xl"
                 onClick={() => setIsPlaying(true)}
+                aria-label="Play video"
               >
                 <Play size={32} fill="currentColor" />
               </ActionIcon>
@@ -82,6 +83,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               onClick={prevVideo}
               variant="light"
               size="lg"
+              aria-label="Previous video"
             >
               <ChevronLeft size={24} />
             </ActionIcon>
@@ -93,6 +95,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               onClick={nextVideo}
               variant="light"
               size="lg"
+              aria-label="Next video"
             >
               <ChevronRight size={24} />
             </ActionIcon>
