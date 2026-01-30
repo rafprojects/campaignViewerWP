@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '../../test/test-utils';
 import { CardGallery } from './CardGallery';
 import type { Campaign, Company, MediaItem } from '@/types';
 
@@ -97,7 +97,7 @@ describe('CardGallery', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    fireEvent.click(screen.getByRole('radio', { name: /hide/i }));
     expect(onAccessModeChange).toHaveBeenCalledWith('hide');
   });
 

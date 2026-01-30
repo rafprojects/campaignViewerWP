@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '../../test/test-utils';
 import { CampaignViewer } from './CampaignViewer';
 import type { Campaign, Company, MediaItem } from '@/types';
 

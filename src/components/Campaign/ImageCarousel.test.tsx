@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { ImageCarousel } from './ImageCarousel';
 import type { MediaItem } from '@/types';
 
@@ -32,32 +32,14 @@ describe('ImageCarousel', () => {
     fireEvent.click(imageTwoThumb);
     expect(screen.getByText('Image Two')).toBeInTheDocument();
 
-    const nextButton = document.querySelector('[class*="navButtonRight"]');
-    if (nextButton) {
-      fireEvent.click(nextButton);
-      expect(screen.getByText('Image One')).toBeInTheDocument();
-    }
-
-    const prevButton = document.querySelector('[class*="navButtonLeft"]');
-    if (prevButton) {
-      fireEvent.click(prevButton);
-      expect(screen.getByText('Image Two')).toBeInTheDocument();
-    }
-
-    const zoomButton = document.querySelector('[class*="zoomButton"]');
-    if (zoomButton) {
-      fireEvent.click(zoomButton);
-    }
-
     const imageOne = screen.getAllByAltText('Image One')[0];
     fireEvent.click(imageOne);
-    const lightbox = document.querySelector('[class*="lightbox"]');
-    expect(lightbox).toBeTruthy();
-    if (lightbox) {
-      fireEvent.click(lightbox);
-    }
     await waitFor(() => {
-      expect(document.querySelector('[class*="lightbox"]')).toBeNull();
+      expect(document.body.getAttribute('data-scroll-locked')).toBe('1');
+    });
+    fireEvent.click(screen.getByLabelText(/close lightbox/i));
+    await waitFor(() => {
+      expect(document.body.getAttribute('data-scroll-locked')).toBeNull();
     });
   });
 });

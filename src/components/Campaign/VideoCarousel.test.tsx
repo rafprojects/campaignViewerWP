@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '../../test/test-utils';
 import { VideoCarousel } from './VideoCarousel';
 import type { MediaItem } from '@/types';
 
@@ -32,22 +32,13 @@ describe('VideoCarousel', () => {
 
     expect(screen.getByText('Video One')).toBeInTheDocument();
 
-    const playOverlay = document.querySelector('[class*="playOverlay"]');
-    if (playOverlay) {
-      fireEvent.click(playOverlay);
-      expect(screen.getByTitle('Video player: Video One')).toBeInTheDocument();
-    }
+    fireEvent.click(screen.getAllByAltText('Video One')[0]);
+    expect(screen.getByTitle('Video player: Video One')).toBeInTheDocument();
 
-    const nextButton = document.querySelector('[class*="navButtonRight"]');
-    if (nextButton) {
-      fireEvent.click(nextButton);
-    }
+    fireEvent.click(screen.getAllByAltText('Video Two')[0]);
     expect(screen.getByText('Video Two')).toBeInTheDocument();
 
-    const prevButton = document.querySelector('[class*="navButtonLeft"]');
-    if (prevButton) {
-      fireEvent.click(prevButton);
-    }
+    fireEvent.click(screen.getAllByAltText('Video One')[0]);
     expect(screen.getByText('Video One')).toBeInTheDocument();
   });
 });

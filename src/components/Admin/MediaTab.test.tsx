@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MantineProvider } from '@mantine/core';
+import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import MediaTab from './MediaTab';
 
 vi.mock('@mantine/notifications', () => ({
@@ -36,9 +35,6 @@ describe('MediaTab', () => {
     apiClient.delete.mockReset();
   });
 
-  const renderWithMantine = (ui: React.ReactElement) =>
-    render(<MantineProvider>{ui}</MantineProvider>);
-
   it('renders media items and supports edit/delete/reorder', async () => {
     apiClient.get.mockResolvedValueOnce([
       {
@@ -62,7 +58,7 @@ describe('MediaTab', () => {
     ]);
     apiClient.put.mockResolvedValue({ id: 'm1', caption: 'Updated', thumbnail: 'https://example.com/1.jpg' });
 
-    renderWithMantine(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
     expect(await screen.findByText('Item One')).toBeInTheDocument();
 
@@ -113,7 +109,7 @@ describe('MediaTab', () => {
 
     apiClient.put.mockResolvedValue({});
 
-    renderWithMantine(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
