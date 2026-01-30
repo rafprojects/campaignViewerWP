@@ -173,6 +173,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             onClick={() => setIsLightboxOpen(false)}
             size="lg"
             variant="light"
+            aria-label="Close lightbox"
           >
             <X size={24} />
           </ActionIcon>

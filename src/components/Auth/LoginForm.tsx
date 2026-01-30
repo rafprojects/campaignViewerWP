@@ -1,22 +1,30 @@
 import { useState } from 'react';
 import { TextInput, PasswordInput, Button, Paper, Title, Text, Stack, Alert } from '@mantine/core';
+import { useForm } from '@mantine/form';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
 }
 
 export function LoginForm({ onSubmit }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const form = useForm({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validate: {
+      email: (value: string) => (/^\S+@\S+\.\S+$/.test(value) ? null : 'Enter a valid email'),
+      password: (value: string) => (value.trim().length >= 6 ? null : 'Password must be at least 6 characters'),
+    },
+  });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = form.onSubmit(async (values) => {
     setError(null);
     setIsSubmitting(true);
     try {
-      await onSubmit(email, password);
+      await onSubmit(values.email, values.password);
     } catch (err) {
       if (err instanceof Error && err.message) {
         setError(err.message);
@@ -26,7 +34,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  });
 
   return (
     <Paper
@@ -50,18 +58,16 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
         <TextInput
           label="Email"
           type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
           placeholder="you@example.com"
+          required
+          {...form.getInputProps('email')}
         />
 
         <PasswordInput
           label="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
           placeholder="Enter your password"
+          required
+          {...form.getInputProps('password')}
         />
 
         {error && (

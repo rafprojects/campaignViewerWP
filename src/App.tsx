@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Container, Group, Button, Alert, Loader, Center, Stack } from '@mantine/core';
+import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { AdminPanel } from './components/Admin/AdminPanel';
 import { AuthProvider } from './contexts/AuthContext';
@@ -85,13 +86,12 @@ function AppContent({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const [localAccessMode, setLocalAccessMode] = useState<'lock' | 'hide'>(() => {
-    const stored = localStorage.getItem(ACCESS_MODE_STORAGE_KEY);
-    if (stored === 'hide' || stored === 'lock') {
-      return stored;
-    }
-    return accessMode;
+  const [isAdminPanelOpen, { open: openAdminPanel, close: closeAdminPanel }] = useDisclosure(false);
+  const [localAccessMode, setLocalAccessMode] = useLocalStorage<'lock' | 'hide'>({
+    key: ACCESS_MODE_STORAGE_KEY,
+    defaultValue: accessMode,
+    getInitialValueInEffect: false,
+    deserialize: (value) => (value === 'hide' || value === 'lock' ? value : accessMode),
   });
   const isAdmin = user?.role === 'admin';
 
@@ -102,10 +102,6 @@ function AppContent({
     }, 4000);
     return () => window.clearTimeout(timer);
   }, [actionMessage]);
-
-  useEffect(() => {
-    localStorage.setItem(ACCESS_MODE_STORAGE_KEY, localAccessMode);
-  }, [localAccessMode]);
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password);
@@ -291,7 +287,7 @@ function AppContent({
               {isAdmin && (
                 <Button
                   variant="default"
-                  onClick={() => setIsAdminPanelOpen(true)}
+                  onClick={openAdminPanel}
                 >
                   Admin Panel
                 </Button>
@@ -322,7 +318,7 @@ function AppContent({
         <Container size="xl" py="xl">
           <AdminPanel
             apiClient={apiClient}
-            onClose={() => setIsAdminPanelOpen(false)}
+            onClose={closeAdminPanel}
             onCampaignsUpdated={() => void loadCampaigns()}
             onNotify={handleAdminNotify}
           />
