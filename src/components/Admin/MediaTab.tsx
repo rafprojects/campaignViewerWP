@@ -50,9 +50,20 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
     setLoading(true);
     try {
-      const items = await apiClient.get<MediaItem[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`);
+      const response = await apiClient.get<
+        MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number; total?: number } }
+      >(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`);
+      const items = Array.isArray(response) ? response : (response.items ?? []);
       const sorted = items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       setMedia(sorted);
+
+      const typesUpdated = !Array.isArray(response) ? response.meta?.typesUpdated ?? 0 : 0;
+      if (typesUpdated > 0) {
+        showNotification({
+          title: 'Media types corrected',
+          message: `Updated ${typesUpdated} media item${typesUpdated === 1 ? '' : 's'} automatically.`,
+        });
+      }
 
       // Auto-fetch oEmbed metadata for external items missing thumbnail or title
       const needs = sorted.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));

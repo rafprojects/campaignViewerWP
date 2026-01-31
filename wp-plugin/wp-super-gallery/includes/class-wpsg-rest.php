@@ -402,7 +402,13 @@ class WPSG_REST {
             ]);
         }
 
-        return new WP_REST_Response($media_items, 200);
+        return new WP_REST_Response([
+            'items' => $media_items,
+            'meta' => [
+                'typesUpdated' => $updated_count,
+                'total' => count($media_items),
+            ],
+        ], 200);
     }
 
     public static function create_media() {

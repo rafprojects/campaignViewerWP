@@ -135,9 +135,12 @@ function AppContent({
           let mediaItems: MediaItem[] = [];
           if (isAuthenticated) {
             try {
-              mediaItems = await apiClient.get<MediaItem[]>(
-                `/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`,
-              );
+              const mediaResponse = await apiClient.get<
+                MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
+              >(`/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`);
+              mediaItems = Array.isArray(mediaResponse)
+                ? mediaResponse
+                : (mediaResponse.items ?? []);
             } catch {
               mediaItems = [];
             }
