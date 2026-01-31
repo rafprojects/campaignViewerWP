@@ -84,6 +84,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
+  const [campaignFormOpen, setCampaignFormOpen] = useState(false);
 
   const loadCampaigns = useCallback(async () => {
     setIsLoading(true);
@@ -217,9 +218,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       visibility: campaign.visibility ?? 'private',
       tags: (campaign.tags ?? []).join(', '),
     });
+    setCampaignFormOpen(true);
   };
 
   const handleCreate = () => {
+    setEditingCampaign(null);
+    setFormState({ ...emptyForm });
+    setCampaignFormOpen(true);
+  };
+
+  const closeCampaignForm = () => {
+    setCampaignFormOpen(false);
     setEditingCampaign(null);
     setFormState({ ...emptyForm });
   };
@@ -242,8 +251,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         await apiClient.post('/wp-json/wp-super-gallery/v1/campaigns', payload);
         onNotify({ type: 'success', text: 'Campaign created.' });
       }
-      setEditingCampaign(null);
-      setFormState({ ...emptyForm });
+      closeCampaignForm();
       await loadCampaigns();
       onCampaignsUpdated();
     } catch (err) {
@@ -382,27 +390,73 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               </Table>
             </ScrollArea>
           )}
-
-          <Card shadow="sm" mt="md" p="md">
-            <Stack gap="sm">
-              <Text fw={700}>{editingCampaign ? 'Edit Campaign' : 'Create Campaign'}</Text>
-              <TextInput label="Title" value={formState.title} onChange={(e) => setFormState((s) => ({ ...s, title: e.currentTarget.value }))} />
-              <Textarea label="Description" value={formState.description} onChange={(e) => setFormState((s) => ({ ...s, description: e.currentTarget.value }))} />
-              <Group grow>
-                <TextInput label="Company Slug" value={formState.company} onChange={(e) => setFormState((s) => ({ ...s, company: e.currentTarget.value }))} />
-                <Select label="Status" data={[{ value: 'draft', label: 'Draft' }, { value: 'active', label: 'Active' }, { value: 'archived', label: 'Archived' }]} value={formState.status} onChange={(v) => setFormState((s) => ({ ...s, status: (v ?? 'draft') as Campaign['status'] }))} />
-                <Select label="Visibility" data={[{ value: 'private', label: 'Private' }, { value: 'public', label: 'Public' }]} value={formState.visibility} onChange={(v) => setFormState((s) => ({ ...s, visibility: (v ?? 'private') as Campaign['visibility'] }))} />
-              </Group>
-              <TextInput label="Tags (comma separated)" value={formState.tags} onChange={(e) => setFormState((s) => ({ ...s, tags: e.currentTarget.value }))} />
-              <Group justify="flex-end">
-                {editingCampaign && (
-                  <Button variant="default" onClick={handleCreate}>Cancel</Button>
-                )}
-                <Button onClick={saveCampaign} loading={isSavingCampaign}>{editingCampaign ? 'Save Changes' : 'Create Campaign'}</Button>
-              </Group>
-            </Stack>
-          </Card>
         </Tabs.Panel>
+
+        {/* Campaign Form Modal */}
+        <Modal
+          opened={campaignFormOpen}
+          onClose={closeCampaignForm}
+          title={editingCampaign ? 'Edit Campaign' : 'New Campaign'}
+          size="lg"
+        >
+          <Stack gap="sm">
+            <TextInput
+              label="Title"
+              placeholder="Campaign title"
+              value={formState.title}
+              onChange={(e) => setFormState((s) => ({ ...s, title: e.currentTarget.value }))}
+            />
+            <Textarea
+              label="Description"
+              placeholder="Campaign description"
+              value={formState.description}
+              onChange={(e) => setFormState((s) => ({ ...s, description: e.currentTarget.value }))}
+              minRows={3}
+            />
+            <Group grow>
+              <TextInput
+                label="Company Slug"
+                placeholder="company-id"
+                value={formState.company}
+                onChange={(e) => setFormState((s) => ({ ...s, company: e.currentTarget.value }))}
+              />
+              <Select
+                label="Status"
+                data={[
+                  { value: 'draft', label: 'Draft' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'archived', label: 'Archived' },
+                ]}
+                value={formState.status}
+                onChange={(v) => setFormState((s) => ({ ...s, status: (v ?? 'draft') as Campaign['status'] }))}
+              />
+              <Select
+                label="Visibility"
+                data={[
+                  { value: 'private', label: 'Private' },
+                  { value: 'public', label: 'Public' },
+                ]}
+                value={formState.visibility}
+                onChange={(v) => setFormState((s) => ({ ...s, visibility: (v ?? 'private') as Campaign['visibility'] }))}
+              />
+            </Group>
+            <TextInput
+              label="Tags"
+              placeholder="tag1, tag2, tag3"
+              description="Comma separated list of tags"
+              value={formState.tags}
+              onChange={(e) => setFormState((s) => ({ ...s, tags: e.currentTarget.value }))}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="default" onClick={closeCampaignForm}>
+                Cancel
+              </Button>
+              <Button onClick={saveCampaign} loading={isSavingCampaign}>
+                {editingCampaign ? 'Save Changes' : 'Create Campaign'}
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
 
         <Tabs.Panel value="media" pt="md">
           <Group mb="md" justify="space-between">
