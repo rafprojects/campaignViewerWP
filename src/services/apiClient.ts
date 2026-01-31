@@ -107,6 +107,41 @@ export class ApiClient {
     });
     return this.handleResponse<T>(response);
   }
+
+  // Settings API methods
+  async getSettings(): Promise<SettingsResponse> {
+    return this.get<SettingsResponse>('/wp-json/wp-super-gallery/v1/settings');
+  }
+
+  async updateSettings(settings: SettingsUpdateRequest): Promise<SettingsResponse> {
+    return this.post<SettingsResponse>('/wp-json/wp-super-gallery/v1/settings', settings);
+  }
+
+  async testConnection(): Promise<{ success: boolean; message: string }> {
+    return this.get<{ success: boolean; message: string }>('/wp-json/wp-super-gallery/v1/campaigns');
+  }
+}
+
+export interface SettingsResponse {
+  authProvider?: string;
+  apiBase?: string;
+  theme?: string;
+  galleryLayout?: string;
+  itemsPerPage?: number;
+  enableLightbox?: boolean;
+  enableAnimations?: boolean;
+  cacheTtl?: number;
+}
+
+export interface SettingsUpdateRequest {
+  authProvider?: string;
+  apiBase?: string;
+  theme?: string;
+  galleryLayout?: string;
+  itemsPerPage?: number;
+  enableLightbox?: boolean;
+  enableAnimations?: boolean;
+  cacheTtl?: number;
 }
 
 export class ApiError extends Error {

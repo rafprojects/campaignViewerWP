@@ -164,6 +164,21 @@ class WPSG_REST {
             ],
         ]);
 
+        // Public endpoint to get display settings (no auth required for frontend).
+        // POST requires admin permission to update settings.
+        register_rest_route('wp-super-gallery/v1', '/settings', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_public_settings'],
+                'permission_callback' => '__return_true',
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'update_settings'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // Allow oEmbed proxy as public endpoint to avoid auth/cors issues for previews.
         // If you prefer restricting this, change permission_callback accordingly.
         //
@@ -1041,6 +1056,119 @@ class WPSG_REST {
         $campaign_ids = self::get_accessible_campaign_ids($user_id);
         $is_admin = current_user_can('manage_options');
         return new WP_REST_Response(['campaignIds' => $campaign_ids, 'isAdmin' => $is_admin], 200);
+    }
+
+    /**
+     * Get public display settings for frontend consumption.
+     * Admins get all settings; non-admins get display settings only.
+     *
+     * @return WP_REST_Response Settings data.
+     */
+    public static function get_public_settings() {
+        // Use WPSG_Settings if available, otherwise return defaults.
+        if (class_exists('WPSG_Settings')) {
+            $settings = WPSG_Settings::get_settings();
+        } else {
+            $settings = [
+                'auth_provider'     => 'wp-jwt',
+                'api_base'          => '',
+                'theme'             => 'dark',
+                'gallery_layout'    => 'grid',
+                'items_per_page'    => 12,
+                'enable_lightbox'   => true,
+                'enable_animations' => true,
+                'cache_ttl'         => 3600,
+            ];
+        }
+
+        // Admins get full settings; others get display settings only.
+        if (current_user_can('manage_options')) {
+            return new WP_REST_Response([
+                'authProvider'     => $settings['auth_provider'] ?? 'wp-jwt',
+                'apiBase'          => $settings['api_base'] ?? '',
+                'theme'            => $settings['theme'] ?? 'dark',
+                'galleryLayout'    => $settings['gallery_layout'] ?? 'grid',
+                'itemsPerPage'     => $settings['items_per_page'] ?? 12,
+                'enableLightbox'   => $settings['enable_lightbox'] ?? true,
+                'enableAnimations' => $settings['enable_animations'] ?? true,
+                'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
+            ], 200);
+        }
+
+        // Public users only see display-related settings.
+        $public_settings = [
+            'theme'            => $settings['theme'] ?? 'dark',
+            'galleryLayout'    => $settings['gallery_layout'] ?? 'grid',
+            'itemsPerPage'     => $settings['items_per_page'] ?? 12,
+            'enableLightbox'   => $settings['enable_lightbox'] ?? true,
+            'enableAnimations' => $settings['enable_animations'] ?? true,
+        ];
+
+        return new WP_REST_Response($public_settings, 200);
+    }
+
+    /**
+     * Update settings (admin only).
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response Updated settings.
+     */
+    public static function update_settings($request) {
+        if (!class_exists('WPSG_Settings')) {
+            return new WP_REST_Response(['error' => 'Settings not available'], 500);
+        }
+
+        $body = $request->get_json_params();
+
+        // Map camelCase from frontend to snake_case for PHP.
+        $input = [];
+
+        if (isset($body['authProvider'])) {
+            $input['auth_provider'] = sanitize_text_field($body['authProvider']);
+        }
+        if (isset($body['apiBase'])) {
+            $input['api_base'] = esc_url_raw($body['apiBase']);
+        }
+        if (isset($body['theme'])) {
+            $input['theme'] = sanitize_text_field($body['theme']);
+        }
+        if (isset($body['galleryLayout'])) {
+            $input['gallery_layout'] = sanitize_text_field($body['galleryLayout']);
+        }
+        if (isset($body['itemsPerPage'])) {
+            $input['items_per_page'] = intval($body['itemsPerPage']);
+        }
+        if (isset($body['enableLightbox'])) {
+            $input['enable_lightbox'] = (bool) $body['enableLightbox'];
+        }
+        if (isset($body['enableAnimations'])) {
+            $input['enable_animations'] = (bool) $body['enableAnimations'];
+        }
+        if (isset($body['cacheTtl'])) {
+            $input['cache_ttl'] = intval($body['cacheTtl']);
+        }
+
+        // Use WPSG_Settings sanitization.
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+
+        // Merge with existing settings.
+        $current = WPSG_Settings::get_settings();
+        $merged = array_merge($current, $sanitized);
+
+        // Save to WordPress options.
+        update_option(WPSG_Settings::OPTION_NAME, $merged);
+
+        // Return updated settings in frontend format.
+        return new WP_REST_Response([
+            'authProvider'     => $merged['auth_provider'],
+            'apiBase'          => $merged['api_base'],
+            'theme'            => $merged['theme'],
+            'galleryLayout'    => $merged['gallery_layout'],
+            'itemsPerPage'     => $merged['items_per_page'],
+            'enableLightbox'   => $merged['enable_lightbox'],
+            'enableAnimations' => $merged['enable_animations'],
+            'cacheTtl'         => $merged['cache_ttl'],
+        ], 200);
     }
 
     private static function campaign_exists($post_id) {

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Container, Group, Button, Alert, Loader, Center, Stack } from '@mantine/core';
+import { Container, Group, Button, Alert, Loader, Center, Stack, ActionIcon, Tooltip } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
+import { IconSettings } from '@tabler/icons-react';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { AdminPanel } from './components/Admin/AdminPanel';
+import { SettingsPanel } from './components/Admin/SettingsPanel';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
@@ -88,6 +90,7 @@ function AppContent({
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [isAdminPanelOpen, { open: openAdminPanel, close: closeAdminPanel }] = useDisclosure(false);
+  const [isSettingsOpen, { open: openSettings, close: closeSettings }] = useDisclosure(false);
   const [localAccessMode, setLocalAccessMode] = useLocalStorage<'lock' | 'hide'>({
     key: ACCESS_MODE_STORAGE_KEY,
     defaultValue: accessMode,
@@ -289,12 +292,24 @@ function AppContent({
             <span>Signed in as {user.email}</span>
             <Group gap="sm">
               {isAdmin && (
-                <Button
-                  variant="default"
-                  onClick={openAdminPanel}
-                >
-                  Admin Panel
-                </Button>
+                <>
+                  <Button
+                    variant="default"
+                    onClick={openAdminPanel}
+                  >
+                    Admin Panel
+                  </Button>
+                  <Tooltip label="Settings">
+                    <ActionIcon
+                      variant="default"
+                      size="lg"
+                      onClick={openSettings}
+                      aria-label="Settings"
+                    >
+                      <IconSettings size={20} />
+                    </ActionIcon>
+                  </Tooltip>
+                </>
               )}
               <Button
                 variant="subtle"
@@ -318,7 +333,15 @@ function AppContent({
           <Alert color="red">{error}</Alert>
         </Container>
       )}
-      {isAdminPanelOpen ? (
+      {isSettingsOpen ? (
+        <Container size="xl" py="xl">
+          <SettingsPanel
+            apiClient={apiClient}
+            onClose={closeSettings}
+            onNotify={handleAdminNotify}
+          />
+        </Container>
+      ) : isAdminPanelOpen ? (
         <Container size="xl" py="xl">
           <AdminPanel
             apiClient={apiClient}
