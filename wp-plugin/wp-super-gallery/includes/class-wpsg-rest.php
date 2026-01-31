@@ -82,19 +82,7 @@ class WPSG_REST {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', [
-            [
-                'methods' => 'PUT',
-                'callback' => [self::class, 'update_media'],
-                'permission_callback' => [self::class, 'require_admin'],
-            ],
-            [
-                'methods' => 'DELETE',
-                'callback' => [self::class, 'delete_media'],
-                'permission_callback' => [self::class, 'require_admin'],
-            ],
-        ]);
-
+        // Register specific sub-routes BEFORE the generic mediaId route to avoid pattern conflicts
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/reorder', [
             [
                 'methods' => 'PUT',
@@ -107,6 +95,20 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'rescan_media_types'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // Generic mediaId route must come AFTER specific sub-routes
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', [
+            [
+                'methods' => 'PUT',
+                'callback' => [self::class, 'update_media'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'delete_media'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);

@@ -403,7 +403,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                       />
                     </div>
                   ) : (
-                    <Image src={item.thumbnail ?? item.url} alt={item.caption} height={160} />
+                    <Image
+                      src={item.thumbnail ?? item.url}
+                      alt={item.caption}
+                      h={160}
+                      fit="cover"
+                      fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23374151' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
+                    />
                   )}
                 </Card.Section>
                 <Group justify="space-between" mt="sm">
@@ -443,7 +449,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
             {previewUrl && (
               <Group mt="sm">
-                <Image src={previewUrl} alt="preview" height={140} />
+                <Image src={previewUrl} alt="preview" h={140} fit="cover" radius="sm" />
               </Group>
             )}
 
@@ -479,7 +485,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                   </div>
                 ) : (
                   <Group>
-                    {externalPreview.thumbnail_url && <Image src={externalPreview.thumbnail_url} height={100} />}
+                    {externalPreview.thumbnail_url && <Image src={externalPreview.thumbnail_url} h={100} fit="cover" radius="sm" />}
                     <div>
                       <Text fw={700}>{externalPreview.title}</Text>
                       <Text size="sm" c="dimmed">{externalPreview.provider_name}</Text>
