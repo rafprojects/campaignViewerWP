@@ -1176,15 +1176,42 @@ class WPSG_REST {
         return $post && $post->post_type === 'wpsg_campaign';
     }
 
+    /**
+     * Check if an IP address is private/reserved (SSRF protection).
+     *
+     * Handles both IPv4 and IPv6 addresses, including:
+     * - IPv4 private ranges (10.x, 172.16-31.x, 192.168.x)
+     * - IPv4 loopback (127.x)
+     * - IPv4 link-local (169.254.x)
+     * - IPv6 loopback (::1)
+     * - IPv6 unique local (fc00::/7)
+     * - IPv6 link-local (fe80::/10)
+     * - IPv6-mapped IPv4 (::ffff:x.x.x.x)
+     * - IPv6 documentation (2001:db8::/32)
+     * - IPv6 discard (100::/64)
+     *
+     * @param string $ip The IP address to check.
+     * @return bool True if the IP is private/reserved, false otherwise.
+     */
     private static function is_private_ip($ip) {
+        // Normalize the IP - remove brackets if present (common in URL parsing)
+        $ip = trim($ip, '[]');
+
+        // Check IPv4 first
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $long = sprintf('%u', ip2long($ip));
             $ranges = [
-                ['10.0.0.0', '10.255.255.255'],
-                ['172.16.0.0', '172.31.255.255'],
-                ['192.168.0.0', '192.168.255.255'],
-                ['127.0.0.0', '127.255.255.255'],
-                ['169.254.0.0', '169.254.255.255'],
+                ['10.0.0.0', '10.255.255.255'],         // Private (RFC 1918)
+                ['172.16.0.0', '172.31.255.255'],       // Private (RFC 1918)
+                ['192.168.0.0', '192.168.255.255'],     // Private (RFC 1918)
+                ['127.0.0.0', '127.255.255.255'],       // Loopback (RFC 1122)
+                ['169.254.0.0', '169.254.255.255'],     // Link-local (RFC 3927)
+                ['0.0.0.0', '0.255.255.255'],           // "This" network (RFC 1122)
+                ['100.64.0.0', '100.127.255.255'],      // Shared address space (RFC 6598)
+                ['192.0.0.0', '192.0.0.255'],           // IETF Protocol Assignments (RFC 6890)
+                ['192.0.2.0', '192.0.2.255'],           // TEST-NET-1 (RFC 5737)
+                ['198.51.100.0', '198.51.100.255'],     // TEST-NET-2 (RFC 5737)
+                ['203.0.113.0', '203.0.113.255'],       // TEST-NET-3 (RFC 5737)
             ];
             foreach ($ranges as $r) {
                 $from = sprintf('%u', ip2long($r[0]));
@@ -1196,23 +1223,103 @@ class WPSG_REST {
             return false;
         }
 
+        // Check IPv6
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            $lower = strtolower($ip);
-            if ($lower === '::1') {
+            // Expand the IPv6 address to full notation for consistent checking
+            $expanded = self::expand_ipv6($ip);
+            if (!$expanded) {
+                // Invalid IPv6 - treat as private for safety
                 return true;
             }
-            // Unique local addresses fc00::/7 (fc or fd)
-            if (strpos($lower, 'fc') === 0 || strpos($lower, 'fd') === 0) {
+
+            $lower = strtolower($expanded);
+
+            // Loopback (::1)
+            if ($lower === '0000:0000:0000:0000:0000:0000:0000:0001') {
                 return true;
             }
-            // Link-local fe80::/10 (starts with fe80-febf) - simple prefix checks
-            if (strpos($lower, 'fe80') === 0 || strpos($lower, 'fe8') === 0 || strpos($lower, 'fe9') === 0 || strpos($lower, 'fea') === 0 || strpos($lower, 'feb') === 0) {
+
+            // Unspecified (::)
+            if ($lower === '0000:0000:0000:0000:0000:0000:0000:0000') {
                 return true;
             }
+
+            // IPv4-mapped IPv6 (::ffff:x.x.x.x) - check the embedded IPv4
+            if (substr($lower, 0, 30) === '0000:0000:0000:0000:0000:ffff:') {
+                $ipv4_hex = substr($lower, 30);
+                $parts = explode(':', $ipv4_hex);
+                if (count($parts) === 2) {
+                    $oct1 = hexdec(substr($parts[0], 0, 2));
+                    $oct2 = hexdec(substr($parts[0], 2, 2));
+                    $oct3 = hexdec(substr($parts[1], 0, 2));
+                    $oct4 = hexdec(substr($parts[1], 2, 2));
+                    $ipv4 = "$oct1.$oct2.$oct3.$oct4";
+                    return self::is_private_ip($ipv4);
+                }
+            }
+
+            // Get the first 16 bits (first group) for prefix checking
+            $first_group = substr($lower, 0, 4);
+            $first_byte = hexdec(substr($first_group, 0, 2));
+
+            // Unique local addresses fc00::/7 (fc00-fdff)
+            if ($first_byte >= 0xfc && $first_byte <= 0xfd) {
+                return true;
+            }
+
+            // Link-local fe80::/10 (fe80-febf)
+            if ($first_byte === 0xfe) {
+                $second_nibble = hexdec(substr($first_group, 2, 1));
+                // fe80-febf: second nibble is 8, 9, a, or b
+                if ($second_nibble >= 0x8 && $second_nibble <= 0xb) {
+                    return true;
+                }
+            }
+
+            // Documentation 2001:db8::/32
+            if (substr($lower, 0, 9) === '2001:0db8') {
+                return true;
+            }
+
+            // Discard prefix 100::/64
+            if (substr($lower, 0, 4) === '0100' && substr($lower, 0, 19) === '0100:0000:0000:0000') {
+                return true;
+            }
+
+            // Multicast ff00::/8
+            if ($first_byte === 0xff) {
+                return true;
+            }
+
             return false;
         }
 
-        return false;
+        // If we can't validate the IP format, treat as private for safety
+        return true;
+    }
+
+    /**
+     * Expand an IPv6 address to full notation (8 groups of 4 hex digits).
+     *
+     * @param string $ip The IPv6 address to expand.
+     * @return string|false The expanded address or false on failure.
+     */
+    private static function expand_ipv6($ip) {
+        // Use inet_pton and inet_ntop to normalize, then expand
+        $packed = @inet_pton($ip);
+        if ($packed === false) {
+            return false;
+        }
+
+        // Convert to hex string
+        $hex = bin2hex($packed);
+        if (strlen($hex) !== 32) {
+            return false;
+        }
+
+        // Format as 8 groups of 4 hex digits
+        $groups = str_split($hex, 4);
+        return implode(':', $groups);
     }
 
     private static function can_view_campaign($post_id, $user_id) {

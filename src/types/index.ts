@@ -24,7 +24,7 @@ export interface Campaign {
 
 export interface MediaItem {
   id: string;
-  type: 'video' | 'image';
+  type: 'video' | 'image' | 'other';
   source: 'upload' | 'external';
   url: string;
   embedUrl?: string;
@@ -32,7 +32,7 @@ export interface MediaItem {
   attachmentId?: number;
   thumbnail?: string;
   caption?: string;
-  order: number;
+  order?: number;
 }
 
 export interface User {
@@ -48,4 +48,14 @@ export interface CampaignAccessGrant {
   source: 'company' | 'campaign';
   grantedAt: string;
   revokedAt?: string;
+}
+
+/**
+ * Response from media upload endpoint
+ */
+export interface UploadResponse {
+  attachmentId: string;
+  url: string;
+  thumbnail?: string;
+  mimeType?: string;
 }

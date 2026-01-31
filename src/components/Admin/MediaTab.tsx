@@ -3,7 +3,7 @@ import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, FileButton, L
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconUpload, IconTrash, IconRefresh } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
-import type { MediaItem, UploadResponse } from '../../api/media';
+import type { MediaItem, UploadResponse } from '@/types';
 
 type Props = { campaignId: string; apiClient: ApiClient };
 
