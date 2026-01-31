@@ -112,12 +112,23 @@ describe('App', () => {
 
   it('executes admin actions with prompts', async () => {
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    localStorage.setItem('wpsg_access_token', 'token');
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const method = (init?.method ?? 'GET').toUpperCase();
+
+      // Handle login request
+      if (url.includes('/wp-json/jwt-auth/v1/token') && method === 'POST') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            token: 'mock-jwt-token',
+            user_id: '1',
+            user_email: 'admin@example.com',
+          }),
+        } as Response;
+      }
 
       if (url.includes('/wp-json/jwt-auth/v1/token/validate')) {
         return { ok: true, status: 200, json: async () => ({}) } as Response;
@@ -162,9 +173,21 @@ describe('App', () => {
 
     render(<App />);
 
+    // Wait for login form to appear
+    const emailInput = await screen.findByRole('textbox', { name: /email/i });
+    const passwordInput = screen.getByLabelText(/password/i);
+    const signInButton = screen.getByRole('button', { name: /sign in/i });
+
+    // Perform login
+    fireEvent.change(emailInput, { target: { value: 'admin@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password' } });
+    fireEvent.click(signInButton);
+
+    // Wait for campaigns to load and click on the card
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
+    // Now perform admin actions
     fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign' }));
     fireEvent.click(screen.getByRole('button', { name: 'Manage Media' }));
     fireEvent.click(screen.getByRole('button', { name: 'Archive Campaign' }));

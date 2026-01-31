@@ -4,32 +4,20 @@ interface WpJwtProviderOptions {
   apiBaseUrl: string;
 }
 
-const ACCESS_TOKEN_KEY = 'wpsg_access_token';
-const USER_KEY = 'wpsg_user';
-const PERMISSIONS_KEY = 'wpsg_permissions';
-
 export class WpJwtProvider implements AuthProvider {
   private apiBaseUrl: string;
+  private accessToken: string | null = null;
+  private user: AuthUser | null = null;
+  private permissions: string[] | null = null;
 
   constructor(options: WpJwtProviderOptions) {
     this.apiBaseUrl = options.apiBaseUrl.replace(/\/$/, '');
   }
 
   async init(): Promise<AuthSession | null> {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (!token) {
-      return null;
-    }
-    if (this.isTokenExpired(token)) {
-      await this.logout();
-      return null;
-    }
-    const isValid = await this.validateToken(token);
-    if (!isValid) {
-      await this.logout();
-      return null;
-    }
-    return { accessToken: token };
+    // No persistent storage - tokens are only kept in memory
+    // User must re-authenticate on page refresh for security
+    return null;
   }
 
   async login(email: string, password: string): Promise<AuthSession> {
@@ -52,29 +40,36 @@ export class WpJwtProvider implements AuthProvider {
       throw new Error('Missing token in response');
     }
 
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    // Validate token before storing
+    if (this.isTokenExpired(token)) {
+      throw new Error('Received token is already expired');
+    }
+
+    // Store in memory only
+    this.accessToken = token;
 
     const user: AuthUser = {
       id: String(data?.user_id ?? ''),
       email: data?.user_email ?? email,
       role: 'viewer',
     };
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    this.user = user;
 
     return { accessToken: token, expiresAt: this.getTokenExpiryIso(token) ?? undefined };
   }
 
   async logout(): Promise<void> {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(PERMISSIONS_KEY);
+    this.accessToken = null;
+    this.user = null;
+    this.permissions = null;
   }
 
   async getAccessToken(): Promise<string | null> {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const token = this.accessToken;
     if (!token) {
       return null;
     }
+    // Validate token hasn't expired before returning
     if (this.isTokenExpired(token)) {
       await this.logout();
       return null;
@@ -82,38 +77,14 @@ export class WpJwtProvider implements AuthProvider {
     return token;
   }
 
-  private async validateToken(token: string): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.apiBaseUrl}/wp-json/jwt-auth/v1/token/validate`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
-
   async getUser(): Promise<AuthUser | null> {
-    const raw = localStorage.getItem(USER_KEY);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as AuthUser;
-    } catch {
-      return null;
-    }
+    return this.user;
   }
 
   async getPermissions(): Promise<string[]> {
-    const cached = localStorage.getItem(PERMISSIONS_KEY);
-    if (cached) {
-      try {
-        return JSON.parse(cached) as string[];
-      } catch {
-        return [];
-      }
+    // Return cached permissions if available
+    if (this.permissions !== null) {
+      return this.permissions;
     }
 
     const token = await this.getAccessToken();
@@ -135,18 +106,12 @@ export class WpJwtProvider implements AuthProvider {
     const permissions = Array.isArray(data?.campaignIds) ? data.campaignIds : [];
     const isAdmin = Boolean(data?.isAdmin);
 
-    if (isAdmin) {
-      const raw = localStorage.getItem(USER_KEY);
-      if (raw) {
-        try {
-          const user = JSON.parse(raw) as AuthUser;
-          localStorage.setItem(USER_KEY, JSON.stringify({ ...user, role: 'admin' }));
-        } catch {
-          // no-op
-        }
-      }
+    // Update user role if admin
+    if (isAdmin && this.user) {
+      this.user = { ...this.user, role: 'admin' };
     }
-    localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(permissions));
+
+    this.permissions = permissions;
     return permissions;
   }
 
