@@ -15,14 +15,27 @@ const MotionDiv = motion.div;
 
 export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick }, ref) => {
+    const cardVariants = {
+      initial: { opacity: 0, scale: 0.9 },
+      rest: { opacity: 1, scale: 1, y: 0 },
+      hover: { opacity: 1, scale: hasAccess ? 1.03 : 1.01, y: hasAccess ? -5 : 0 },
+    };
+
+    const borderVariants = {
+      initial: { opacity: 0 },
+      rest: { opacity: 0 },
+      hover: { opacity: 1 },
+    };
+
     return (
       <MotionDiv
         ref={ref}
         layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        whileHover={{ scale: hasAccess ? 1.03 : 1.01, y: hasAccess ? -5 : 0 }}
+        variants={cardVariants}
+        initial="initial"
+        animate="rest"
+        exit="initial"
+        whileHover={hasAccess ? 'hover' : 'rest'}
         whileTap={{ scale: hasAccess ? 0.98 : 1 }}
         onClick={hasAccess ? onClick : undefined}
         style={{
@@ -36,6 +49,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
           radius="md"
           withBorder
           style={{
+            position: 'relative',
             borderLeft: `4px solid ${campaign.company.brandColor}`,
           }}
         >
@@ -145,8 +159,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
           {/* Hover border effect */}
           {hasAccess && (
             <motion.div
-              initial={{ opacity: 0 }}
-              whileHover={{ opacity: 1 }}
+              variants={borderVariants}
               style={{
                 position: 'absolute',
                 inset: 0,

@@ -87,7 +87,7 @@ export function CardGallery({
             </Group>
 
             {/* Filter tabs */}
-            <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} defaultValue="all">
+            <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')}>
               <Tabs.List>
                 <Tabs.Tab value="all">All</Tabs.Tab>
                 <Tabs.Tab value="accessible">My Access</Tabs.Tab>
