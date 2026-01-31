@@ -21,7 +21,7 @@ import {
   ActionIcon,
   Box,
 } from '@mantine/core';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh } from '@tabler/icons-react';
 import MediaTab from './MediaTab';
 
 type AdminCampaign = Pick<Campaign, 'id' | 'title' | 'description' | 'status' | 'visibility' | 'createdAt' | 'updatedAt'> & {
@@ -83,6 +83,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [auditLoading, setAuditLoading] = useState(false);
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
+  const [rescanAllLoading, setRescanAllLoading] = useState(false);
 
   const loadCampaigns = useCallback(async () => {
     setIsLoading(true);
@@ -404,7 +405,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.Panel>
 
         <Tabs.Panel value="media" pt="md">
-          <Group mb="md">
+          <Group mb="md" justify="space-between">
             <Select
               label="Campaign"
               placeholder="Select campaign"
@@ -413,6 +414,33 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               onChange={(v) => setMediaCampaignId(v ?? '')}
               style={{ minWidth: 200 }}
             />
+            <Button
+              variant="outline"
+              leftSection={<IconRefresh size={18} />}
+              loading={rescanAllLoading}
+              onClick={async () => {
+                setRescanAllLoading(true);
+                try {
+                  const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
+                    '/wp-json/wp-super-gallery/v1/media/rescan-all',
+                    {},
+                  );
+                  onNotify({
+                    type: 'success',
+                    text: result.media_updated > 0
+                      ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
+                      : 'All media types are correct.',
+                  });
+                  onCampaignsUpdated();
+                } catch (err) {
+                  onNotify({ type: 'error', text: (err as Error).message });
+                } finally {
+                  setRescanAllLoading(false);
+                }
+              }}
+            >
+              Rescan All Campaigns
+            </Button>
           </Group>
           <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} />
         </Tabs.Panel>

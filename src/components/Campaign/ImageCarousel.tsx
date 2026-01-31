@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Image, X, ZoomIn } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
+import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
 import type { MediaItem } from '@/types';
-import styles from './ImageCarousel.module.scss';
 
 interface ImageCarouselProps {
   images: MediaItem[];
@@ -23,143 +23,219 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   const currentImage = images[currentIndex];
 
   return (
-    <div className={styles.section}>
-      <h3 className={styles.heading}>
-        <Image className={styles.icon} />
-        Images ({images.length})
-      </h3>
+    <Stack gap="md">
+      <Title order={3} size="h5">
+        <Group gap={8} component="span">
+          <ImageIcon size={18} />
+          Images ({images.length})
+        </Group>
+      </Title>
 
-      <div className={styles.viewer}>
-        {/* Main Image Display */}
-        <div className={styles.imageFrame}>
+      {/* Image viewer */}
+      <Box pos="relative">
+        <AspectRatio ratio={16 / 9}>
           <AnimatePresence mode="wait">
-            <motion.img
+            <motion.div
               key={currentIndex}
-              src={currentImage.url}
-              alt={currentImage.caption}
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.3 }}
-              className={styles.mainImage}
-              onClick={() => setIsLightboxOpen(true)}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Image
+                src={currentImage.url}
+                alt={currentImage.caption}
+                fit="contain"
+                h="100%"
+                style={{ cursor: 'zoom-in' }}
+                onClick={() => setIsLightboxOpen(true)}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </AspectRatio>
+
+        {/* Zoom button */}
+        <ActionIcon
+          pos="absolute"
+          bottom={12}
+          right={12}
+          onClick={() => setIsLightboxOpen(true)}
+          size="lg"
+          variant="light"
+          aria-label="Open lightbox"
+        >
+          <ZoomIn size={20} />
+        </ActionIcon>
+
+        {/* Navigation Arrows */}
+        {images.length > 1 && (
+          <>
+            <ActionIcon
+              pos="absolute"
+              top="50%"
+              left={8}
+              style={{ transform: 'translateY(-50%)' }}
+              onClick={prevImage}
+              variant="light"
+              size="lg"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={24} />
+            </ActionIcon>
+            <ActionIcon
+              pos="absolute"
+              top="50%"
+              right={8}
+              style={{ transform: 'translateY(-50%)' }}
+              onClick={nextImage}
+              variant="light"
+              size="lg"
+              aria-label="Next image"
+            >
+              <ChevronRight size={24} />
+            </ActionIcon>
+          </>
+        )}
+
+        {/* Image counter */}
+        <Badge pos="absolute" bottom={12} left={12}>
+          {currentIndex + 1} / {images.length}
+        </Badge>
+      </Box>
+
+      {/* Caption */}
+      <Text size="sm" c="dimmed">
+        {currentImage.caption}
+      </Text>
+
+      {/* Thumbnail Strip */}
+      <Group gap={6}>
+        {images.map((image, index) => (
+          <ActionIcon
+            key={image.id}
+            onClick={() => setCurrentIndex(index)}
+            variant={index === currentIndex ? 'light' : 'subtle'}
+            size="lg"
+            p={0}
+            style={{
+              border: index === currentIndex ? '2px solid var(--mantine-color-blue-5)' : 'none',
+              overflow: 'hidden',
+            }}
+          >
+            <Image
+              src={image.url}
+              alt={image.caption}
+              w={60}
+              h={60}
+              fit="cover"
             />
+          </ActionIcon>
+        ))}
+      </Group>
+
+      {/* Lightbox Modal */}
+      <Modal
+        opened={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        fullScreen
+        padding={0}
+        withCloseButton={false}
+        transitionProps={{ duration: 0 }}
+        styles={{
+          content: { background: 'rgba(0, 0, 0, 0.95)', overflow: 'hidden' },
+        }}
+      >
+        <Box h="100vh" pos="relative" component="div">
+          <AnimatePresence>
+            {isLightboxOpen && (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Image
+                  src={currentImage.url}
+                  alt={currentImage.caption}
+                  fit="contain"
+                  h="100%"
+                  w="100%"
+                />
+              </motion.div>
+            )}
           </AnimatePresence>
 
-          {/* Zoom button */}
-          <button
-            onClick={() => setIsLightboxOpen(true)}
-            className={styles.zoomButton}
+          {/* Close button */}
+          <ActionIcon
+            pos="absolute"
+            top={16}
+            right={16}
+            onClick={() => setIsLightboxOpen(false)}
+            size="lg"
+            variant="light"
+            aria-label="Close lightbox"
           >
-            <ZoomIn className={styles.iconSmall} />
-          </button>
+            <X size={24} />
+          </ActionIcon>
 
-          {/* Navigation Arrows */}
+          {/* Navigation arrows */}
           {images.length > 1 && (
             <>
-              <button
-                onClick={prevImage}
-                className={`${styles.navButton} ${styles.navButtonLeft}`}
+              <ActionIcon
+                pos="absolute"
+                top="50%"
+                left={16}
+                style={{ transform: 'translateY(-50%)' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                variant="light"
+                size="xl"
+                aria-label="Previous image (lightbox)"
               >
-                <ChevronLeft className={styles.navIcon} />
-              </button>
-              <button
-                onClick={nextImage}
-                className={`${styles.navButton} ${styles.navButtonRight}`}
+                <ChevronLeft size={32} />
+              </ActionIcon>
+              <ActionIcon
+                pos="absolute"
+                top="50%"
+                right={16}
+                style={{ transform: 'translateY(-50%)' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                variant="light"
+                size="xl"
+                aria-label="Next image (lightbox)"
               >
-                <ChevronRight className={styles.navIcon} />
-              </button>
+                <ChevronRight size={32} />
+              </ActionIcon>
             </>
           )}
 
-          {/* Image counter */}
-          <div className={styles.counter}>
-            {currentIndex + 1} / {images.length}
-          </div>
-        </div>
-      </div>
-
-      {/* Caption */}
-      <p className={styles.caption}>{currentImage.caption}</p>
-
-      {/* Thumbnail Strip */}
-      <div className={styles.thumbnailStrip}>
-        {images.map((image, index) => (
-          <button
-            key={image.id}
-            onClick={() => setCurrentIndex(index)}
-            className={`${styles.thumbnailButton} ${
-              index === currentIndex ? styles.thumbnailButtonActive : ''
-            }`}
-          >
-            <img
-              src={image.url}
-              alt={image.caption}
-              className={styles.thumbnailImage}
-            />
-          </button>
-        ))}
-      </div>
-
-      {/* Lightbox */}
-      <AnimatePresence>
-        {isLightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={styles.lightbox}
-            onClick={() => setIsLightboxOpen(false)}
-          >
-            <button
-              onClick={() => setIsLightboxOpen(false)}
-              className={styles.lightboxClose}
-            >
-              <X className={styles.lightboxIcon} />
-            </button>
-
-            <motion.img
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              src={currentImage.url}
-              alt={currentImage.caption}
-              className={styles.lightboxImage}
-              onClick={(e) => e.stopPropagation()}
-            />
-
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    prevImage();
-                  }}
-                  className={`${styles.lightboxNavButton} ${styles.lightboxNavLeft}`}
-                >
-                  <ChevronLeft className={styles.lightboxNavIcon} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    nextImage();
-                  }}
-                  className={`${styles.lightboxNavButton} ${styles.lightboxNavRight}`}
-                >
-                  <ChevronRight className={styles.lightboxNavIcon} />
-                </button>
-              </>
-            )}
-
-            <div className={styles.lightboxCaption}>
-              <p className={styles.lightboxCaptionTitle}>{currentImage.caption}</p>
-              <p className={styles.lightboxCaptionMeta}>
+          {/* Caption and counter */}
+          <Box pos="absolute" bottom={0} left={0} right={0} p="lg">
+            <Stack gap="xs">
+              <Text size="lg" fw={600} c="white">
+                {currentImage.caption}
+              </Text>
+              <Text size="sm" c="gray.4">
                 {currentIndex + 1} / {images.length}
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+              </Text>
+            </Stack>
+          </Box>
+        </Box>
+      </Modal>
+    </Stack>
   );
 }

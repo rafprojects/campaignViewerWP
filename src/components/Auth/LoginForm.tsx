@@ -1,22 +1,30 @@
 import { useState } from 'react';
-import styles from './LoginForm.module.scss';
+import { TextInput, PasswordInput, Button, Paper, Title, Text, Stack, Alert } from '@mantine/core';
+import { useForm } from '@mantine/form';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
 }
 
 export function LoginForm({ onSubmit }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const form = useForm({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validate: {
+      email: (value: string) => (/^\S+@\S+\.\S+$/.test(value) ? null : 'Enter a valid email'),
+      password: (value: string) => (value.trim().length >= 6 ? null : 'Password must be at least 6 characters'),
+    },
+  });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = form.onSubmit(async (values) => {
     setError(null);
     setIsSubmitting(true);
     try {
-      await onSubmit(email, password);
+      await onSubmit(values.email, values.password);
     } catch (err) {
       if (err instanceof Error && err.message) {
         setError(err.message);
@@ -26,40 +34,52 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  });
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Sign in</h2>
-        <p className={styles.subtitle}>Access private campaigns with your WordPress account.</p>
-      </div>
+    <Paper
+      p="xl"
+      radius="md"
+      withBorder
+      component="form"
+      onSubmit={handleSubmit}
+      maw={26 * 16}
+      mx="auto"
+      my="xl"
+    >
+      <Stack gap="lg">
+        <Stack gap="xs">
+          <Title order={2} size="h4">Sign in</Title>
+          <Text c="dimmed" size="sm">
+            Access private campaigns with your WordPress account.
+          </Text>
+        </Stack>
 
-      <label className={styles.field}>
-        <span>Email</span>
-        <input
+        <TextInput
+          label="Email"
           type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@example.com"
           required
+          {...form.getInputProps('email')}
         />
-      </label>
 
-      <label className={styles.field}>
-        <span>Password</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+        <PasswordInput
+          label="Password"
+          placeholder="Enter your password"
           required
+          {...form.getInputProps('password')}
         />
-      </label>
 
-      {error && <p className={styles.error}>{error}</p>}
+        {error && (
+          <Alert color="red" title="Error">
+            {error}
+          </Alert>
+        )}
 
-      <button className={styles.submit} type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Signing in...' : 'Sign in'}
-      </button>
-    </form>
+        <Button type="submit" loading={isSubmitting} fullWidth>
+          {isSubmitting ? 'Signing in...' : 'Sign in'}
+        </Button>
+      </Stack>
+    </Paper>
   );
 }

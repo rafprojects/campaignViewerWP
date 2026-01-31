@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '../../test/test-utils';
 import { LoginForm } from './LoginForm';
 
 describe('LoginForm', () => {
@@ -8,10 +8,10 @@ describe('LoginForm', () => {
 
     render(<LoginForm onSubmit={onSubmit} />);
 
-    fireEvent.change(screen.getByLabelText('Email'), {
+    fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'test@example.com' },
     });
-    fireEvent.change(screen.getByLabelText('Password'), {
+    fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: 'bad-pass' },
     });
 

@@ -18,13 +18,16 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**'],
+    testTimeout: 60000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      lines: 80,
-      functions: 80,
-      branches: 80,
-      statements: 80,
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/test/**',

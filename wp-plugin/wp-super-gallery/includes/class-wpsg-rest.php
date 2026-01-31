@@ -103,6 +103,22 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/rescan', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'rescan_media_types'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/media/rescan-all', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'rescan_all_media_types'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access', [
             [
                 'methods' => 'GET',
@@ -359,7 +375,40 @@ class WPSG_REST {
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
-        return new WP_REST_Response($media_items ?: [], 200);
+        $media_items = is_array($media_items) ? $media_items : [];
+
+        // Normalize legacy media types on read for accuracy
+        $updated_count = 0;
+        foreach ($media_items as &$media_item) {
+            $url = $media_item['url'] ?? '';
+            $current_type = $media_item['type'] ?? '';
+            $inferred_type = self::infer_media_type_from_url($url);
+
+            if (!empty($media_item['embedUrl'])) {
+                $inferred_type = 'video';
+            }
+
+            if ($inferred_type && $inferred_type !== $current_type) {
+                $media_item['type'] = $inferred_type;
+                $updated_count++;
+            }
+        }
+        unset($media_item);
+
+        if ($updated_count > 0) {
+            update_post_meta($post_id, 'media_items', $media_items);
+            self::add_audit_entry($post_id, 'media.types_rescanned', [
+                'updated' => $updated_count,
+            ]);
+        }
+
+        return new WP_REST_Response([
+            'items' => $media_items,
+            'meta' => [
+                'typesUpdated' => $updated_count,
+                'total' => count($media_items),
+            ],
+        ], 200);
     }
 
     public static function create_media() {
@@ -670,6 +719,130 @@ class WPSG_REST {
         ]);
 
         return new WP_REST_Response(['message' => 'Media reordered'], 200);
+    }
+
+    /**
+     * Infer media type from URL (file extension or known video providers).
+     */
+    private static function infer_media_type_from_url($url) {
+        $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'];
+        $video_extensions = ['mp4', 'webm', 'ogg', 'avi', 'mov', 'mkv', 'wmv', 'flv'];
+        
+        // Parse the URL and get the path extension
+        $parsed = wp_parse_url($url);
+        $path = isset($parsed['path']) ? strtolower($parsed['path']) : '';
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        
+        if (in_array($extension, $image_extensions, true)) {
+            return 'image';
+        }
+        if (in_array($extension, $video_extensions, true)) {
+            return 'video';
+        }
+        
+        // Check for known video providers in the URL
+        $video_providers = ['youtube.com', 'youtu.be', 'vimeo.com', 'rumble.com', 'bitchute.com', 'odysee.com', 'dailymotion.com'];
+        $host = isset($parsed['host']) ? strtolower($parsed['host']) : '';
+        foreach ($video_providers as $provider) {
+            if (strpos($host, $provider) !== false) {
+                return 'video';
+            }
+        }
+        
+        // Default: keep existing type or assume video for external
+        return null;
+    }
+
+    /**
+     * Rescan and fix media types for a single campaign.
+     */
+    public static function rescan_media_types() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $media_items = get_post_meta($post_id, 'media_items', true);
+        if (!is_array($media_items) || empty($media_items)) {
+            return new WP_REST_Response(['message' => 'No media items to scan', 'updated' => 0], 200);
+        }
+
+        $updated_count = 0;
+        foreach ($media_items as &$media_item) {
+            $url = $media_item['url'] ?? '';
+            $current_type = $media_item['type'] ?? '';
+            $inferred_type = self::infer_media_type_from_url($url);
+            
+            if ($inferred_type && $inferred_type !== $current_type) {
+                $media_item['type'] = $inferred_type;
+                $updated_count++;
+            }
+        }
+        unset($media_item);
+
+        if ($updated_count > 0) {
+            update_post_meta($post_id, 'media_items', $media_items);
+            self::add_audit_entry($post_id, 'media.types_rescanned', [
+                'updated' => $updated_count,
+            ]);
+        }
+
+        return new WP_REST_Response([
+            'message' => $updated_count > 0 ? 'Media types updated' : 'No changes needed',
+            'updated' => $updated_count,
+            'total' => count($media_items),
+        ], 200);
+    }
+
+    /**
+     * Rescan and fix media types for ALL campaigns.
+     */
+    public static function rescan_all_media_types() {
+        $campaigns = get_posts([
+            'post_type' => WPSG_CPT::POST_TYPE,
+            'posts_per_page' => -1,
+            'post_status' => ['publish', 'draft', 'private'],
+        ]);
+
+        $total_updated = 0;
+        $campaigns_updated = 0;
+
+        foreach ($campaigns as $campaign) {
+            $media_items = get_post_meta($campaign->ID, 'media_items', true);
+            if (!is_array($media_items) || empty($media_items)) {
+                continue;
+            }
+
+            $updated_count = 0;
+            foreach ($media_items as &$media_item) {
+                $url = $media_item['url'] ?? '';
+                $current_type = $media_item['type'] ?? '';
+                $inferred_type = self::infer_media_type_from_url($url);
+                
+                if ($inferred_type && $inferred_type !== $current_type) {
+                    $media_item['type'] = $inferred_type;
+                    $updated_count++;
+                }
+            }
+            unset($media_item);
+
+            if ($updated_count > 0) {
+                update_post_meta($campaign->ID, 'media_items', $media_items);
+                self::add_audit_entry($campaign->ID, 'media.types_rescanned', [
+                    'updated' => $updated_count,
+                ]);
+                $total_updated += $updated_count;
+                $campaigns_updated++;
+            }
+        }
+
+        return new WP_REST_Response([
+            'message' => $total_updated > 0 ? 'Media types updated' : 'No changes needed',
+            'campaigns_scanned' => count($campaigns),
+            'campaigns_updated' => $campaigns_updated,
+            'media_updated' => $total_updated,
+        ], 200);
     }
 
     public static function delete_media() {

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Container, Group, Button, Alert, Loader, Center, Stack } from '@mantine/core';
+import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { AdminPanel } from './components/Admin/AdminPanel';
 import { AuthProvider } from './contexts/AuthContext';
@@ -26,6 +28,7 @@ interface ApiCampaignResponse {
 
 const FALLBACK_IMAGE =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="%23f0f0f0"/><stop offset="1" stop-color="%23d9d9d9"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="24" fill="%23999">WP Super Gallery</text></svg>';
+
 
 const COMPANY_THEME: Record<string, Pick<Company, 'name' | 'logo' | 'brandColor'>> = {
   nike: { name: 'Nike', logo: '🏃', brandColor: '#FF6B00' },
@@ -84,13 +87,12 @@ function AppContent({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const [localAccessMode, setLocalAccessMode] = useState<'lock' | 'hide'>(() => {
-    const stored = localStorage.getItem(ACCESS_MODE_STORAGE_KEY);
-    if (stored === 'hide' || stored === 'lock') {
-      return stored;
-    }
-    return accessMode;
+  const [isAdminPanelOpen, { open: openAdminPanel, close: closeAdminPanel }] = useDisclosure(false);
+  const [localAccessMode, setLocalAccessMode] = useLocalStorage<'lock' | 'hide'>({
+    key: ACCESS_MODE_STORAGE_KEY,
+    defaultValue: accessMode,
+    getInitialValueInEffect: false,
+    deserialize: (value) => (value === 'hide' || value === 'lock' ? value : accessMode),
   });
   const isAdmin = user?.role === 'admin';
 
@@ -101,10 +103,6 @@ function AppContent({
     }, 4000);
     return () => window.clearTimeout(timer);
   }, [actionMessage]);
-
-  useEffect(() => {
-    localStorage.setItem(ACCESS_MODE_STORAGE_KEY, localAccessMode);
-  }, [localAccessMode]);
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password);
@@ -137,9 +135,12 @@ function AppContent({
           let mediaItems: MediaItem[] = [];
           if (isAuthenticated) {
             try {
-              mediaItems = await apiClient.get<MediaItem[]>(
-                `/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`,
-              );
+              const mediaResponse = await apiClient.get<
+                MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
+              >(`/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`);
+              mediaItems = Array.isArray(mediaResponse)
+                ? mediaResponse
+                : (mediaResponse.items ?? []);
             } catch {
               mediaItems = [];
             }
@@ -283,47 +284,55 @@ function AppContent({
         <LoginForm onSubmit={handleLogin} />
       )}
       {isAuthenticated && user && (
-        <div className="wp-super-gallery__authbar">
-          <div className="wp-super-gallery__container wp-super-gallery__authbar-inner">
+        <Container size="xl" py="sm">
+          <Group justify="space-between" wrap="wrap">
             <span>Signed in as {user.email}</span>
-            {isAdmin && (
-              <button
-                type="button"
-                className="wp-super-gallery__authbar-button"
-                onClick={() => setIsAdminPanelOpen(true)}
+            <Group gap="sm">
+              {isAdmin && (
+                <Button
+                  variant="default"
+                  onClick={openAdminPanel}
+                >
+                  Admin Panel
+                </Button>
+              )}
+              <Button
+                variant="subtle"
+                onClick={() => void logout()}
               >
-                Admin Panel
-              </button>
-            )}
-            <button
-              type="button"
-              className="wp-super-gallery__authbar-button"
-              onClick={() => void logout()}
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
+                Sign out
+              </Button>
+            </Group>
+          </Group>
+        </Container>
       )}
       {actionMessage && (
-        <div className={`wp-super-gallery__banner wp-super-gallery__banner--${actionMessage.type}`}>
-          {actionMessage.text}
-        </div>
+        <Container size="xl" py="sm">
+          <Alert color={actionMessage.type === 'error' ? 'red' : 'green'}>
+            {actionMessage.text}
+          </Alert>
+        </Container>
       )}
       {error && (
-        <div className="wp-super-gallery__banner wp-super-gallery__banner--error">{error}</div>
+        <Container size="xl" py="sm">
+          <Alert color="red">{error}</Alert>
+        </Container>
       )}
       {isAdminPanelOpen ? (
-        <div className="wp-super-gallery__container">
+        <Container size="xl" py="xl">
           <AdminPanel
             apiClient={apiClient}
-            onClose={() => setIsAdminPanelOpen(false)}
+            onClose={closeAdminPanel}
             onCampaignsUpdated={() => void loadCampaigns()}
             onNotify={handleAdminNotify}
           />
-        </div>
+        </Container>
       ) : isLoading ? (
-        <div className="wp-super-gallery__loading">Loading campaigns...</div>
+        <Center py={120}>
+          <Stack align="center">
+            <Loader />
+          </Stack>
+        </Center>
       ) : (
         <CardGallery
           campaigns={campaigns}
