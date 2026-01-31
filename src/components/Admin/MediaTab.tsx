@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, FileButton, Loader, Progress, Paper, Stack } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconUpload, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconUpload, IconTrash, IconRefresh } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, UploadResponse } from '../../api/media';
 
@@ -25,11 +25,22 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const [editingCaption, setEditingCaption] = useState('');
   const [editingThumbnail, setEditingThumbnail] = useState<string | undefined>(undefined);
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
+  const [rescanning, setRescanning] = useState(false);
   const reorderingRef = useRef(false);
 
   useEffect(() => {
     void fetchMedia();
   }, [campaignId]);
+
+  function getMediaTypeFromUrl(url: string): 'image' | 'video' {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
+    const lowerUrl = url.toLowerCase();
+    if (imageExtensions.some(ext => lowerUrl.includes(ext))) {
+      return 'image';
+    }
+    // Default to video for external links, as most oEmbed content is video
+    return 'video';
+  }
 
   async function fetchMedia() {
     if (!campaignId) {
@@ -86,6 +97,9 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
     setUploading(true);
     setUploadProgress(0);
     try {
+      // Determine media type from file
+      const mediaType = selectedFile.type.startsWith('image') ? 'image' : 'video';
+
       // upload using authenticated form POST (no progress via ApiClient.postForm)
       const form = new FormData();
       form.append('file', selectedFile);
@@ -136,7 +150,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         xhr.send(form);
       });
       const newMedia = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, {
-        type: res.mimeType?.startsWith('image') ? 'image' : 'video',
+        type: mediaType,
         source: 'upload',
         provider: 'wordpress',
         attachmentId: res.attachmentId,
@@ -164,8 +178,9 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       return;
     }
     try {
+      const inferredType = externalPreview?.type || getMediaTypeFromUrl(externalUrl);
       const payload: any = {
-        type: externalPreview?.type ?? 'video',
+        type: inferredType,
         source: 'external',
         provider: externalPreview?.provider ?? 'external',
         url: externalUrl,
@@ -285,6 +300,26 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
     }
   }
 
+  async function handleRescanTypes() {
+    setRescanning(true);
+    try {
+      const result = await apiClient.post<{ message: string; updated: number; total: number }>(
+        `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/rescan`,
+        {},
+      );
+      if (result.updated > 0) {
+        showNotification({ title: 'Rescan Complete', message: `Updated ${result.updated} of ${result.total} media items.` });
+        await fetchMedia();
+      } else {
+        showNotification({ title: 'Rescan Complete', message: 'All media types are correct.' });
+      }
+    } catch (err) {
+      showNotification({ title: 'Rescan failed', message: (err as Error).message, color: 'red' });
+    } finally {
+      setRescanning(false);
+    }
+  }
+
   async function moveItem(item: MediaItem, direction: 'up' | 'down') {
     // Prevent concurrent reorder operations using stable ref-based guard
     if (reorderingRef.current) return;
@@ -325,7 +360,18 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
     <div>
       <Group justify="space-between" mb="md">
         <Text fw={700}>Media</Text>
-        <Button leftSection={<IconPlus />} onClick={() => setAddOpen(true)}>Add Media</Button>
+        <Group gap="sm">
+          <Button
+            variant="subtle"
+            leftSection={<IconRefresh size={18} />}
+            onClick={handleRescanTypes}
+            loading={rescanning}
+            disabled={media.length === 0}
+          >
+            Rescan Types
+          </Button>
+          <Button leftSection={<IconPlus />} onClick={() => setAddOpen(true)}>Add Media</Button>
+        </Group>
       </Group>
 
       {loading ? (

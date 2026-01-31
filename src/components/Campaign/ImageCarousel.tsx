@@ -141,32 +141,38 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         fullScreen
         padding={0}
         withCloseButton={false}
+        transitionProps={{ duration: 0 }}
         styles={{
           content: { background: 'rgba(0, 0, 0, 0.95)', overflow: 'hidden' },
         }}
       >
         <Box h="100vh" pos="relative" component="div">
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.9 }}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
-              src={currentImage.url}
-              alt={currentImage.caption}
-              fit="contain"
-              h="100%"
-              w="100%"
-            />
-          </motion.div>
+          <AnimatePresence>
+            {isLightboxOpen && (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Image
+                  src={currentImage.url}
+                  alt={currentImage.caption}
+                  fit="contain"
+                  h="100%"
+                  w="100%"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Close button */}
           <ActionIcon
