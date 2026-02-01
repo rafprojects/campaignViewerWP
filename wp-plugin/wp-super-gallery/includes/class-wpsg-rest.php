@@ -190,6 +190,22 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/users', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'create_user'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/roles', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_roles'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // Company management routes
         register_rest_route('wp-super-gallery/v1', '/companies', [
             [
@@ -262,7 +278,7 @@ class WPSG_REST {
     }
 
     public static function require_admin() {
-        return current_user_can('manage_options');
+        return current_user_can('manage_wpsg');
     }
 
     public static function require_authenticated() {
@@ -1537,7 +1553,7 @@ class WPSG_REST {
         }
 
         $campaign_ids = self::get_accessible_campaign_ids($user_id);
-        $is_admin = current_user_can('manage_options');
+        $is_admin = current_user_can('manage_wpsg');
         return new WP_REST_Response(['campaignIds' => $campaign_ids, 'isAdmin' => $is_admin], 200);
     }
 
@@ -1572,7 +1588,7 @@ class WPSG_REST {
                 'email' => $user->user_email,
                 'displayName' => $user->display_name,
                 'login' => $user->user_login,
-                'isAdmin' => user_can($user->ID, 'manage_options'),
+                'isAdmin' => user_can($user->ID, 'manage_wpsg'),
             ];
         }
 
@@ -1580,6 +1596,156 @@ class WPSG_REST {
             'users' => $users,
             'total' => $user_query->get_total(),
         ], 200);
+    }
+
+    /**
+     * Create a new WordPress user.
+     * Sends password setup email to the user.
+     *
+     * @return WP_REST_Response User creation result.
+     */
+    public static function create_user() {
+        $request = func_get_arg(0);
+        $email = sanitize_email($request->get_param('email') ?? '');
+        $display_name = sanitize_text_field($request->get_param('displayName') ?? '');
+        $role = sanitize_text_field($request->get_param('role') ?? 'subscriber');
+        $campaign_id = intval($request->get_param('campaignId') ?? 0);
+
+        // Validate required fields
+        if (empty($email) || !is_email($email)) {
+            return new WP_REST_Response(['message' => 'Valid email is required.'], 400);
+        }
+
+        if (empty($display_name)) {
+            return new WP_REST_Response(['message' => 'Display name is required.'], 400);
+        }
+
+        // Check if email already exists
+        if (email_exists($email)) {
+            return new WP_REST_Response(['message' => 'A user with this email already exists.'], 409);
+        }
+
+        // Validate role exists and prevent privilege escalation
+        $allowed_roles = ['subscriber', 'wpsg_admin'];
+        if (!in_array($role, $allowed_roles, true)) {
+            return new WP_REST_Response(['message' => 'Invalid role. Allowed: subscriber, wpsg_admin.'], 400);
+        }
+
+        // Generate username from email (before @)
+        $username = sanitize_user(explode('@', $email)[0], true);
+        $base_username = $username;
+        $counter = 1;
+        while (username_exists($username)) {
+            $username = $base_username . $counter;
+            $counter++;
+        }
+
+        // Generate random password
+        $password = wp_generate_password(16, true, true);
+
+        // Create user
+        $user_id = wp_insert_user([
+            'user_login' => $username,
+            'user_email' => $email,
+            'user_pass' => $password,
+            'display_name' => $display_name,
+            'role' => $role,
+        ]);
+
+        if (is_wp_error($user_id)) {
+            return new WP_REST_Response(['message' => $user_id->get_error_message()], 500);
+        }
+
+        // Try to send password setup email
+        $email_sent = false;
+        try {
+            // This sends the "set your password" email
+            wp_new_user_notification($user_id, null, 'user');
+            $email_sent = true;
+        } catch (Exception $e) {
+            $email_sent = false;
+        }
+
+        // If campaign_id provided, grant access
+        $access_granted = false;
+        if ($campaign_id > 0 && self::campaign_exists($campaign_id)) {
+            $grants = get_post_meta($campaign_id, 'access_grants', true);
+            if (!is_array($grants)) {
+                $grants = [];
+            }
+            // Check if not already granted
+            $already_granted = false;
+            foreach ($grants as $grant) {
+                if (isset($grant['userId']) && intval($grant['userId']) === $user_id) {
+                    $already_granted = true;
+                    break;
+                }
+            }
+            if (!$already_granted) {
+                $grants[] = [
+                    'userId' => $user_id,
+                    'grantedAt' => current_time('mysql'),
+                    'grantedBy' => get_current_user_id(),
+                ];
+                update_post_meta($campaign_id, 'access_grants', $grants);
+                self::add_audit_entry($campaign_id, 'access.granted', [
+                    'userId' => $user_id,
+                    'email' => $email,
+                    'source' => 'quick_add_user',
+                ]);
+                self::clear_accessible_campaigns_cache();
+                $access_granted = true;
+            }
+        }
+
+        // Add audit entry for user creation
+        if ($campaign_id > 0) {
+            self::add_audit_entry($campaign_id, 'user.created', [
+                'userId' => $user_id,
+                'email' => $email,
+                'role' => $role,
+            ]);
+        }
+
+        $response = [
+            'message' => 'User created successfully.',
+            'userId' => $user_id,
+            'username' => $username,
+            'email' => $email,
+            'emailSent' => $email_sent,
+            'accessGranted' => $access_granted,
+        ];
+
+        // If email failed, include the password so admin can share it
+        if (!$email_sent) {
+            $response['temporaryPassword'] = $password;
+            $response['message'] = 'User created but email failed. Share the temporary password securely.';
+        }
+
+        return new WP_REST_Response($response, 201);
+    }
+
+    /**
+     * List available roles for user creation.
+     *
+     * @return WP_REST_Response Available roles.
+     */
+    public static function list_roles() {
+        // Only return roles that can be assigned via quick add
+        $roles = [
+            [
+                'value' => 'subscriber',
+                'label' => 'Viewer',
+                'description' => 'Can view campaigns they are granted access to.',
+            ],
+            [
+                'value' => 'wpsg_admin',
+                'label' => 'Gallery Admin',
+                'description' => 'Can manage campaigns and access in this plugin, but not WordPress admin.',
+            ],
+        ];
+
+        return new WP_REST_Response(['roles' => $roles], 200);
     }
 
     /**

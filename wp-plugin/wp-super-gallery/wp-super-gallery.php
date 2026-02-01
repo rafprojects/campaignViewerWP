@@ -19,6 +19,42 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
 
+// Activation hook - set up capabilities and roles
+register_activation_hook(__FILE__, 'wpsg_activate');
+function wpsg_activate() {
+    // Add manage_wpsg capability to Administrator role
+    $admin_role = get_role('administrator');
+    if ($admin_role) {
+        $admin_role->add_cap('manage_wpsg');
+    }
+    
+    // Create WPSG Admin role (can manage plugin but not full WP admin)
+    $existing_role = get_role('wpsg_admin');
+    if (!$existing_role) {
+        add_role('wpsg_admin', 'Gallery Admin', [
+            'read' => true,
+            'upload_files' => true,
+            'manage_wpsg' => true,
+        ]);
+    }
+}
+
+// Deactivation hook - optionally clean up (roles persist by design)
+register_deactivation_hook(__FILE__, 'wpsg_deactivate');
+function wpsg_deactivate() {
+    // Roles and capabilities are kept on deactivation
+    // Only remove on uninstall if desired
+}
+
+// Ensure capabilities exist on every load (handles manual role edits)
+add_action('admin_init', 'wpsg_ensure_capabilities');
+function wpsg_ensure_capabilities() {
+    $admin_role = get_role('administrator');
+    if ($admin_role && !$admin_role->has_cap('manage_wpsg')) {
+        $admin_role->add_cap('manage_wpsg');
+    }
+}
+
 add_action('init', ['WPSG_CPT', 'register']);
 add_action('rest_api_init', ['WPSG_REST', 'register_routes']);
 add_action('init', ['WPSG_Embed', 'register_shortcode']);

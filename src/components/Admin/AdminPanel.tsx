@@ -29,7 +29,7 @@ import {
   Checkbox,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconSearch, IconAlertCircle, IconArchive, IconArchiveOff } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconSearch, IconAlertCircle, IconArchive, IconArchiveOff, IconUserPlus } from '@tabler/icons-react';
 import MediaTab from './MediaTab';
 
 type AdminCampaign = Pick<Campaign, 'id' | 'title' | 'description' | 'status' | 'visibility' | 'createdAt' | 'updatedAt'> & {
@@ -143,6 +143,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const userCombobox = useCombobox({
     onDropdownClose: () => userCombobox.resetSelectedOption(),
   });
+
+  // Quick Add User state
+  const [quickAddUserOpen, setQuickAddUserOpen] = useState(false);
+  const [quickAddEmail, setQuickAddEmail] = useState('');
+  const [quickAddName, setQuickAddName] = useState('');
+  const [quickAddRole, setQuickAddRole] = useState('subscriber');
+  const [quickAddCampaignId, setQuickAddCampaignId] = useState('');
+  const [quickAddSaving, setQuickAddSaving] = useState(false);
+  const [quickAddResult, setQuickAddResult] = useState<{ success: boolean; message: string; tempPassword?: string } | null>(null);
 
   const [auditCampaignId, setAuditCampaignId] = useState<string>('');
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
@@ -376,6 +385,70 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     } finally {
       setAccessSaving(false);
     }
+  };
+
+  // Handle quick add user
+  const handleQuickAddUser = async () => {
+    if (!quickAddEmail || !quickAddName) {
+      onNotify({ type: 'error', text: 'Email and name are required.' });
+      return;
+    }
+    setQuickAddSaving(true);
+    setQuickAddResult(null);
+    try {
+      const response = await apiClient.post<{
+        message: string;
+        userId: number;
+        emailSent: boolean;
+        accessGranted: boolean;
+        temporaryPassword?: string;
+      }>('/wp-json/wp-super-gallery/v1/users', {
+        email: quickAddEmail,
+        displayName: quickAddName,
+        role: quickAddRole,
+        campaignId: quickAddCampaignId ? parseInt(quickAddCampaignId) : 0,
+      });
+
+      if (response.emailSent) {
+        setQuickAddResult({
+          success: true,
+          message: `User created! Password setup email sent to ${quickAddEmail}.`,
+        });
+      } else {
+        setQuickAddResult({
+          success: true,
+          message: response.message,
+          tempPassword: response.temporaryPassword,
+        });
+      }
+
+      // Reload access if we're on a campaign that was granted access
+      if (response.accessGranted && accessCampaignId) {
+        await loadAccess(accessCampaignId);
+      }
+
+      // Clear form after success
+      setQuickAddEmail('');
+      setQuickAddName('');
+      setQuickAddRole('subscriber');
+      setQuickAddCampaignId('');
+    } catch (err) {
+      setQuickAddResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'Failed to create user.',
+      });
+    } finally {
+      setQuickAddSaving(false);
+    }
+  };
+
+  const closeQuickAddUser = () => {
+    setQuickAddUserOpen(false);
+    setQuickAddEmail('');
+    setQuickAddName('');
+    setQuickAddRole('subscriber');
+    setQuickAddCampaignId('');
+    setQuickAddResult(null);
   };
 
   // Load audit when campaign selected
@@ -1031,6 +1104,22 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                   >
                     Apply
                   </Button>
+
+                  <Tooltip label="Create a new user">
+                    <Button
+                      variant="light"
+                      leftSection={<IconUserPlus size={16} />}
+                      onClick={() => {
+                        // Pre-fill campaign if in campaign mode
+                        if (accessViewMode === 'campaign' && accessCampaignId) {
+                          setQuickAddCampaignId(accessCampaignId);
+                        }
+                        setQuickAddUserOpen(true);
+                      }}
+                    >
+                      Quick Add User
+                    </Button>
+                  </Tooltip>
                 </Group>
 
                 {accessViewMode === 'campaign' && accessSource === 'company' && (
@@ -1140,6 +1229,110 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             Archive {confirmArchiveCompany?.activeCampaigns} Campaign{confirmArchiveCompany?.activeCampaigns !== 1 ? 's' : ''}
           </Button>
         </Group>
+      </Modal>
+
+      {/* Quick Add User Modal */}
+      <Modal 
+        opened={quickAddUserOpen} 
+        onClose={closeQuickAddUser} 
+        title="Quick Add User"
+        size="md"
+      >
+        <Stack gap="md">
+          {quickAddResult ? (
+            <>
+              <Alert 
+                color={quickAddResult.success ? 'teal' : 'red'} 
+                title={quickAddResult.success ? 'Success' : 'Error'}
+              >
+                <Text size="sm">{quickAddResult.message}</Text>
+                {quickAddResult.tempPassword && (
+                  <Box mt="sm">
+                    <Text size="sm" fw={500}>Temporary Password:</Text>
+                    <TextInput
+                      value={quickAddResult.tempPassword}
+                      readOnly
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      rightSection={
+                        <Tooltip label="Click to select">
+                          <IconAlertCircle size={16} />
+                        </Tooltip>
+                      }
+                    />
+                    <Text size="xs" c="dimmed" mt="xs">
+                      Share this password securely with the user. They should change it upon first login.
+                    </Text>
+                  </Box>
+                )}
+              </Alert>
+              <Group justify="flex-end">
+                <Button onClick={closeQuickAddUser}>Close</Button>
+              </Group>
+            </>
+          ) : (
+            <>
+              <TextInput
+                label="Email"
+                placeholder="user@example.com"
+                required
+                value={quickAddEmail}
+                onChange={(e) => setQuickAddEmail(e.currentTarget.value)}
+              />
+
+              <TextInput
+                label="Display Name"
+                placeholder="John Doe"
+                required
+                value={quickAddName}
+                onChange={(e) => setQuickAddName(e.currentTarget.value)}
+              />
+
+              <Select
+                label="Role"
+                data={[
+                  { value: 'subscriber', label: '👁 Viewer - Can view granted campaigns' },
+                  { value: 'wpsg_admin', label: '⚙️ Gallery Admin - Can manage this plugin' },
+                ]}
+                value={quickAddRole}
+                onChange={(v) => setQuickAddRole(v ?? 'subscriber')}
+              />
+
+              <Select
+                label="Grant Access To (optional)"
+                placeholder="No initial access"
+                data={[
+                  { value: '', label: 'No initial access' },
+                  ...campaigns.filter(c => c.status === 'active').map((c) => ({ 
+                    value: c.id, 
+                    label: c.companyId ? `${c.title} (${c.companyId})` : c.title 
+                  })),
+                ]}
+                value={quickAddCampaignId}
+                onChange={(v) => setQuickAddCampaignId(v ?? '')}
+                clearable
+              />
+
+              <Checkbox
+                label="Send password setup email to user"
+                checked={true}
+                disabled
+                description="User will receive an email to set their own password"
+              />
+
+              <Group justify="flex-end" mt="md">
+                <Button variant="default" onClick={closeQuickAddUser}>Cancel</Button>
+                <Button 
+                  onClick={handleQuickAddUser} 
+                  loading={quickAddSaving}
+                  disabled={!quickAddEmail || !quickAddName}
+                  leftSection={<IconUserPlus size={16} />}
+                >
+                  Create User
+                </Button>
+              </Group>
+            </>
+          )}
+        </Stack>
       </Modal>
     </Card>
   );
