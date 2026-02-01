@@ -42,6 +42,7 @@ export function CampaignViewer({
           alt={campaign.title}
           h={320}
           fit="cover"
+          loading="lazy"
         />
         
         {/* Overlay gradient */}

@@ -129,6 +129,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
               w={60}
               h={60}
               fit="cover"
+              loading="lazy"
             />
           </ActionIcon>
         ))}

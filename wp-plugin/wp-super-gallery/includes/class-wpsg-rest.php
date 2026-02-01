@@ -174,6 +174,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/users/search', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'search_users'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // Public endpoint to get display settings (no auth required for frontend).
         // POST requires admin permission to update settings.
         register_rest_route('wp-super-gallery/v1', '/settings', [
@@ -538,7 +546,32 @@ class WPSG_REST {
             return $user_id > 0 && !in_array($user_id, $deny_user_ids, true);
         }));
 
-        return new WP_REST_Response($effective, 200);
+        // Enrich with user details
+        $user_ids = array_unique(array_map(function ($entry) {
+            return intval($entry['userId'] ?? 0);
+        }, $effective));
+        
+        $user_map = [];
+        if (!empty($user_ids)) {
+            $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
+            foreach ($users as $user) {
+                $user_map[$user->ID] = [
+                    'displayName' => $user->display_name,
+                    'email' => $user->user_email,
+                    'login' => $user->user_login,
+                ];
+            }
+        }
+
+        $enriched = array_map(function ($entry) use ($user_map) {
+            $user_id = intval($entry['userId'] ?? 0);
+            if (isset($user_map[$user_id])) {
+                $entry['user'] = $user_map[$user_id];
+            }
+            return $entry;
+        }, $effective);
+
+        return new WP_REST_Response($enriched, 200);
     }
 
     public static function grant_access() {
@@ -1134,6 +1167,47 @@ class WPSG_REST {
         $campaign_ids = self::get_accessible_campaign_ids($user_id);
         $is_admin = current_user_can('manage_options');
         return new WP_REST_Response(['campaignIds' => $campaign_ids, 'isAdmin' => $is_admin], 200);
+    }
+
+    /**
+     * Search WordPress users for the access management UI.
+     * Returns matching users with id, email, and display name.
+     *
+     * @return WP_REST_Response List of matching users.
+     */
+    public static function search_users() {
+        $request = func_get_arg(0);
+        $search = sanitize_text_field($request->get_param('search') ?? '');
+        $per_page = min(intval($request->get_param('per_page') ?? 20), 50);
+
+        $args = [
+            'number' => $per_page,
+            'orderby' => 'display_name',
+            'order' => 'ASC',
+        ];
+
+        if (!empty($search)) {
+            $args['search'] = '*' . $search . '*';
+            $args['search_columns'] = ['user_login', 'user_email', 'display_name'];
+        }
+
+        $user_query = new WP_User_Query($args);
+        $users = [];
+
+        foreach ($user_query->get_results() as $user) {
+            $users[] = [
+                'id' => $user->ID,
+                'email' => $user->user_email,
+                'displayName' => $user->display_name,
+                'login' => $user->user_login,
+                'isAdmin' => user_can($user->ID, 'manage_options'),
+            ];
+        }
+
+        return new WP_REST_Response([
+            'users' => $users,
+            'total' => $user_query->get_total(),
+        ], 200);
     }
 
     /**

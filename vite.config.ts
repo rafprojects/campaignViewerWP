@@ -12,6 +12,16 @@ export default defineConfig({
   },
   build: {
     manifest: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core vendor chunks
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-mantine': ['@mantine/core', '@mantine/hooks', '@mantine/modals', '@mantine/notifications'],
+          'vendor-icons': ['@tabler/icons-react'],
+        },
+      },
+    },
   },
   test: {
     environment: 'jsdom',

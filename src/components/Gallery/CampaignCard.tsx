@@ -59,6 +59,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
               src={campaign.thumbnail} 
               alt={campaign.title}
               h={200}
+              loading="lazy"
               style={{ 
                 filter: hasAccess ? 'none' : 'grayscale(100%)',
                 transition: 'transform 0.5s ease'

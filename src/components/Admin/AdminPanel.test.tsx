@@ -64,7 +64,7 @@ describe('AdminPanel', () => {
       { timeout: 5000 },
     );
 
-    const userIdInput = await screen.findByLabelText('User ID');
+    const userIdInput = await screen.findByLabelText('Or enter User ID manually');
     fireEvent.change(userIdInput, { target: { value: '42' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
@@ -210,10 +210,10 @@ describe('AdminPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(onNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ text: 'User ID is required.' }),
+      expect.objectContaining({ text: 'Please select a user or enter a User ID.' }),
     );
 
-    fireEvent.change(screen.getByLabelText('User ID'), { target: { value: 'abc' } });
+    fireEvent.change(screen.getByLabelText('Or enter User ID manually'), { target: { value: 'abc' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(onNotify).toHaveBeenCalledWith(
@@ -310,7 +310,7 @@ describe('AdminPanel', () => {
     );
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
-    fireEvent.change(await screen.findByLabelText('User ID'), { target: { value: '42' } });
+    fireEvent.change(await screen.findByLabelText('Or enter User ID manually'), { target: { value: '42' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     await waitFor(() => {

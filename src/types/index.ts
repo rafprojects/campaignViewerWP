@@ -48,6 +48,11 @@ export interface CampaignAccessGrant {
   source: 'company' | 'campaign';
   grantedAt: string;
   revokedAt?: string;
+  user?: {
+    displayName: string;
+    email: string;
+    login: string;
+  };
 }
 
 /**

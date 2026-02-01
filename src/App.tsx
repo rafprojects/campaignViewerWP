@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Container, Group, Button, Alert, Loader, Center, Stack, ActionIcon, Tooltip, Modal, TextInput, Textarea, Select, Card, Image, Text, SimpleGrid, Badge, FileButton, Tabs, Progress } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { IconSettings, IconTrash, IconPlus, IconUpload, IconLink, IconPhoto } from '@tabler/icons-react';
 import { CardGallery } from './components/Gallery/CardGallery';
-import { AdminPanel } from './components/Admin/AdminPanel';
-import { SettingsPanel } from './components/Admin/SettingsPanel';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
@@ -12,6 +10,10 @@ import { LoginForm } from './components/Auth/LoginForm';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem } from './types';
+
+// Lazy load admin-only components for better initial bundle size
+const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const SettingsPanel = lazy(() => import('./components/Admin/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
 
 const getAuthProvider = (apiBaseUrl: string) => {
   if (window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
@@ -546,20 +548,24 @@ function AppContent({
       )}
       {isSettingsOpen ? (
         <Container size="xl" py="xl">
-          <SettingsPanel
-            apiClient={apiClient}
-            onClose={closeSettings}
-            onNotify={handleAdminNotify}
-          />
+          <Suspense fallback={<Center py={120}><Loader /></Center>}>
+            <SettingsPanel
+              apiClient={apiClient}
+              onClose={closeSettings}
+              onNotify={handleAdminNotify}
+            />
+          </Suspense>
         </Container>
       ) : isAdminPanelOpen ? (
         <Container size="xl" py="xl">
-          <AdminPanel
-            apiClient={apiClient}
-            onClose={closeAdminPanel}
-            onCampaignsUpdated={() => void loadCampaigns()}
-            onNotify={handleAdminNotify}
-          />
+          <Suspense fallback={<Center py={120}><Loader /></Center>}>
+            <AdminPanel
+              apiClient={apiClient}
+              onClose={closeAdminPanel}
+              onCampaignsUpdated={() => void loadCampaigns()}
+              onNotify={handleAdminNotify}
+            />
+          </Suspense>
         </Container>
       ) : isLoading ? (
         <Center py={120}>

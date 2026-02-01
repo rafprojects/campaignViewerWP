@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
+import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconUpload, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
@@ -18,6 +18,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCaption, setUploadCaption] = useState('');
   const dropRef = useRef<HTMLDivElement | null>(null);
   const [externalUrl, setExternalUrl] = useState('');
   const [externalPreview, setExternalPreview] = useState<any | null>(null);
@@ -197,6 +199,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         }
         xhr.send(form);
       });
+      // Use user-provided caption or fall back to file name
+      const finalCaption = uploadCaption.trim() || uploadTitle.trim() || selectedFile.name;
       const newMedia = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, {
         type: mediaType,
         source: 'upload',
@@ -204,10 +208,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         attachmentId: res.attachmentId,
         url: res.url,
         thumbnail: res.thumbnail ?? res.url,
-        caption: selectedFile.name,
+        caption: finalCaption,
+        title: uploadTitle.trim() || undefined,
       });
       setMedia((m) => [...m, newMedia]);
       setSelectedFile(null);
+      setUploadTitle('');
+      setUploadCaption('');
       setAddOpen(false);
       showNotification({ title: 'Uploaded', message: 'Media uploaded and added to campaign.' });
     } catch (err) {
@@ -474,6 +481,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                     h={50}
                     fit="cover"
                     radius="sm"
+                    loading="lazy"
                     style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
                     onClick={() => item.type === 'image' && openLightbox(item)}
                     fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
@@ -522,6 +530,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                       alt={item.caption}
                       h={viewMode === 'compact' ? sizeConfig.small.height : sizeConfig[cardSize].height}
                       fit="cover"
+                      loading="lazy"
                       fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23374151' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
                     />
                   )}
@@ -646,6 +655,26 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
               <Group mt="sm">
                 <Image src={previewUrl} alt="preview" h={140} fit="cover" radius="sm" />
               </Group>
+            )}
+
+            {selectedFile && (
+              <Stack gap="xs" mt="sm">
+                <TextInput
+                  label="Title"
+                  placeholder="Enter a title (optional)"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.currentTarget.value)}
+                />
+                <Textarea
+                  label="Caption"
+                  placeholder="Enter a caption or description (optional)"
+                  value={uploadCaption}
+                  onChange={(e) => setUploadCaption(e.currentTarget.value)}
+                  autosize
+                  minRows={2}
+                  maxRows={4}
+                />
+              </Stack>
             )}
 
             {uploadProgress !== null && <Progress value={uploadProgress} mt="sm" />}

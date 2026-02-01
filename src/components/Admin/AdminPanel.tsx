@@ -20,8 +20,13 @@ import {
   Modal,
   ActionIcon,
   Box,
+  Combobox,
+  InputBase,
+  useCombobox,
+  Tooltip,
 } from '@mantine/core';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh } from '@tabler/icons-react';
+import { useDebouncedValue } from '@mantine/hooks';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconSearch } from '@tabler/icons-react';
 import MediaTab from './MediaTab';
 
 type AdminCampaign = Pick<Campaign, 'id' | 'title' | 'description' | 'status' | 'visibility' | 'createdAt' | 'updatedAt'> & {
@@ -39,6 +44,14 @@ interface AuditEntry {
   details: Record<string, unknown>;
   userId: number;
   createdAt: string;
+}
+
+interface WpUser {
+  id: number;
+  email: string;
+  displayName: string;
+  login: string;
+  isAdmin: boolean;
 }
 
 interface AdminPanelProps {
@@ -77,6 +90,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [accessSource, setAccessSource] = useState<'company' | 'campaign'>('campaign');
   const [accessAction, setAccessAction] = useState<'grant' | 'deny'>('grant');
   const [accessSaving, setAccessSaving] = useState(false);
+  
+  // User search state for searchable picker
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [debouncedSearch] = useDebouncedValue(userSearchQuery, 300);
+  const [userSearchResults, setUserSearchResults] = useState<WpUser[]>([]);
+  const [userSearchLoading, setUserSearchLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<WpUser | null>(null);
+  const userCombobox = useCombobox({
+    onDropdownClose: () => userCombobox.resetSelectedOption(),
+  });
 
   const [auditCampaignId, setAuditCampaignId] = useState<string>('');
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
@@ -144,27 +167,58 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [activeTab, accessCampaignId, loadAccess]);
 
+  // Search users when query changes
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (!debouncedSearch || debouncedSearch.length < 2) {
+        setUserSearchResults([]);
+        return;
+      }
+      setUserSearchLoading(true);
+      try {
+        const response = await apiClient.get<{ users: WpUser[]; total: number }>(
+          `/wp-json/wp-super-gallery/v1/users/search?search=${encodeURIComponent(debouncedSearch)}`
+        );
+        setUserSearchResults(response.users ?? []);
+      } catch {
+        setUserSearchResults([]);
+      } finally {
+        setUserSearchLoading(false);
+      }
+    };
+    void searchUsers();
+  }, [debouncedSearch, apiClient]);
+
   const handleGrantAccess = async () => {
     if (!accessCampaignId) return;
-    if (!accessUserId) {
-      onNotify({ type: 'error', text: 'User ID is required.' });
-      return;
-    }
-    const parsedUserId = Number(accessUserId);
-    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
-      onNotify({ type: 'error', text: 'User ID must be a positive numeric value.' });
+    
+    // Use selected user from picker, or fall back to manual ID input
+    let userId: number;
+    if (selectedUser) {
+      userId = selectedUser.id;
+    } else if (accessUserId) {
+      const parsedUserId = Number(accessUserId);
+      if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+        onNotify({ type: 'error', text: 'User ID must be a positive numeric value.' });
+        return;
+      }
+      userId = parsedUserId;
+    } else {
+      onNotify({ type: 'error', text: 'Please select a user or enter a User ID.' });
       return;
     }
 
     setAccessSaving(true);
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access`, {
-        userId: parsedUserId,
+        userId,
         source: accessSource,
         action: accessSource === 'company' ? 'grant' : accessAction,
       });
       onNotify({ type: 'success', text: 'Access updated.' });
       setAccessUserId('');
+      setSelectedUser(null);
+      setUserSearchQuery('');
       setAccessAction('grant');
       await loadAccess(accessCampaignId);
     } catch (err) {
@@ -312,14 +366,31 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const accessRows = useMemo(() => {
     return accessEntries.map((a) => (
-      <Table.Tr key={`${a.userId}-${a.source}`}>
-        <Table.Td>{a.userId}</Table.Td>
-        <Table.Td><Badge variant="light">{a.source}</Badge></Table.Td>
+      <Table.Tr key={`${a.userId}-${a.source}`} style={a.source === 'company' ? { backgroundColor: 'rgba(34, 139, 230, 0.05)' } : undefined}>
+        <Table.Td>
+          {a.user ? (
+            <Stack gap={2}>
+              <Text size="sm" fw={500}>{a.user.displayName}</Text>
+              <Text size="xs" c="dimmed">{a.user.email}</Text>
+            </Stack>
+          ) : (
+            <Text size="sm">User #{a.userId}</Text>
+          )}
+        </Table.Td>
+        <Table.Td>
+          <Tooltip label={a.source === 'company' ? 'Inherited from company - applies to all campaigns' : 'Direct campaign access'}>
+            <Badge variant="light" color={a.source === 'company' ? 'blue' : 'green'}>
+              {a.source === 'company' ? '🏢 Company' : '📋 Campaign'}
+            </Badge>
+          </Tooltip>
+        </Table.Td>
         <Table.Td>{a.grantedAt ? new Date(a.grantedAt).toLocaleString() : '—'}</Table.Td>
         <Table.Td>
-          <ActionIcon color="red" variant="light" onClick={() => handleRevokeAccess(a)} aria-label="Revoke access">
-            <IconTrash size={16} />
-          </ActionIcon>
+          <Tooltip label={a.source === 'company' ? 'Revoke company-wide access' : 'Revoke campaign access'}>
+            <ActionIcon color="red" variant="light" onClick={() => handleRevokeAccess(a)} aria-label="Revoke access">
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Tooltip>
         </Table.Td>
       </Table.Tr>
     ));
@@ -533,13 +604,73 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Card shadow="sm" withBorder mb="md">
             <Stack gap="sm">
               <Text fw={600}>Grant access</Text>
+              
+              {/* Searchable user picker */}
+              <Combobox
+                store={userCombobox}
+                onOptionSubmit={(val) => {
+                  const user = userSearchResults.find((u) => String(u.id) === val);
+                  if (user) {
+                    setSelectedUser(user);
+                    setAccessUserId('');
+                  }
+                  userCombobox.closeDropdown();
+                }}
+              >
+                <Combobox.Target>
+                  <InputBase
+                    label="Select User"
+                    placeholder="Search by name or email..."
+                    value={selectedUser ? `${selectedUser.displayName} (${selectedUser.email})` : userSearchQuery}
+                    onChange={(e) => {
+                      setUserSearchQuery(e.currentTarget.value);
+                      setSelectedUser(null);
+                      userCombobox.openDropdown();
+                      userCombobox.updateSelectedOptionIndex();
+                    }}
+                    onClick={() => userCombobox.openDropdown()}
+                    onFocus={() => userCombobox.openDropdown()}
+                    onBlur={() => userCombobox.closeDropdown()}
+                    rightSection={userSearchLoading ? <Loader size={16} /> : <IconSearch size={16} />}
+                    rightSectionPointerEvents="none"
+                  />
+                </Combobox.Target>
+
+                <Combobox.Dropdown>
+                  <Combobox.Options>
+                    {userSearchResults.length === 0 && userSearchQuery.length >= 2 && !userSearchLoading && (
+                      <Combobox.Empty>No users found</Combobox.Empty>
+                    )}
+                    {userSearchQuery.length < 2 && (
+                      <Combobox.Empty>Type at least 2 characters to search</Combobox.Empty>
+                    )}
+                    {userSearchResults.map((user) => (
+                      <Combobox.Option key={user.id} value={String(user.id)}>
+                        <Group gap="xs">
+                          <Text size="sm" fw={500}>{user.displayName}</Text>
+                          <Text size="xs" c="dimmed">{user.email}</Text>
+                          {user.isAdmin && <Badge size="xs" color="blue">Admin</Badge>}
+                        </Group>
+                      </Combobox.Option>
+                    ))}
+                  </Combobox.Options>
+                </Combobox.Dropdown>
+              </Combobox>
+
+              {/* Manual ID fallback */}
+              <TextInput
+                label="Or enter User ID manually"
+                placeholder="e.g. 42"
+                value={accessUserId}
+                onChange={(e) => {
+                  setAccessUserId(e.currentTarget.value);
+                  setSelectedUser(null);
+                }}
+                disabled={!!selectedUser}
+                size="xs"
+              />
+
               <Group grow align="flex-end">
-                <TextInput
-                  label="User ID"
-                  placeholder="e.g. 42"
-                  value={accessUserId}
-                  onChange={(e) => setAccessUserId(e.currentTarget.value)}
-                />
                 <Select
                   label="Source"
                   data={[
@@ -577,8 +708,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               <Table verticalSpacing="sm">
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>User ID</Table.Th>
-                    <Table.Th>Source</Table.Th>
+                    <Table.Th>User</Table.Th>
+                    <Table.Th>Access Type</Table.Th>
                     <Table.Th>Granted</Table.Th>
                     <Table.Th>Actions</Table.Th>
                   </Table.Tr>
