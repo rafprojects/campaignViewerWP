@@ -67,6 +67,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/restore', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'restore_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
@@ -178,6 +186,44 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'search_users'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // Company management routes
+        register_rest_route('wp-super-gallery/v1', '/companies', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_companies'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/access', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_company_access'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'grant_company_access'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/access/(?P<userId>\d+)', [
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'revoke_company_access'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/archive', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'archive_company'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -393,6 +439,19 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'campaign.archived', []);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
+    }
+
+    public static function restore_campaign() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        update_post_meta($post_id, 'status', 'active');
+        self::add_audit_entry($post_id, 'campaign.restored', []);
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['message' => 'Campaign restored'], 200);
     }
 
     public static function list_media() {
@@ -675,6 +734,319 @@ class WPSG_REST {
         ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
+    }
+
+    /**
+     * List all companies with their campaign counts and statistics
+     */
+    public static function list_companies() {
+        $terms = get_terms([
+            'taxonomy' => 'wpsg_company',
+            'hide_empty' => false,
+        ]);
+
+        if (is_wp_error($terms)) {
+            return new WP_REST_Response(['message' => 'Failed to fetch companies'], 500);
+        }
+
+        $companies = [];
+        foreach ($terms as $term) {
+            // Get campaigns for this company
+            $campaigns = get_posts([
+                'post_type' => 'wpsg_campaign',
+                'posts_per_page' => -1,
+                'tax_query' => [
+                    [
+                        'taxonomy' => 'wpsg_company',
+                        'field' => 'term_id',
+                        'terms' => $term->term_id,
+                    ],
+                ],
+            ]);
+
+            $active_count = 0;
+            $archived_count = 0;
+            $campaign_list = [];
+
+            foreach ($campaigns as $campaign) {
+                $status = get_post_meta($campaign->ID, 'status', true) ?: 'active';
+                if ($status === 'archived') {
+                    $archived_count++;
+                } else {
+                    $active_count++;
+                }
+                $campaign_list[] = [
+                    'id' => $campaign->ID,
+                    'title' => $campaign->post_title,
+                    'status' => $status,
+                ];
+            }
+
+            // Get company-level access grants
+            $company_grants = get_term_meta($term->term_id, 'access_grants', true);
+            $company_grants = is_array($company_grants) ? $company_grants : [];
+
+            $companies[] = [
+                'id' => $term->term_id,
+                'name' => $term->name,
+                'slug' => $term->slug,
+                'campaignCount' => count($campaigns),
+                'activeCampaigns' => $active_count,
+                'archivedCampaigns' => $archived_count,
+                'accessGrantCount' => count($company_grants),
+                'campaigns' => $campaign_list,
+            ];
+        }
+
+        return new WP_REST_Response($companies, 200);
+    }
+
+    /**
+     * List access grants for a specific company (company-level + optionally all campaign grants)
+     */
+    public static function list_company_access() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $include_campaigns = $request->get_param('include_campaigns') === 'true';
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        // Get company-level grants
+        $company_grants = get_term_meta($term_id, 'access_grants', true);
+        $company_grants = is_array($company_grants) ? $company_grants : [];
+
+        // Mark each grant with its source
+        $all_grants = array_map(function ($entry) use ($term) {
+            $entry['source'] = 'company';
+            $entry['companyId'] = $term->term_id;
+            $entry['companyName'] = $term->name;
+            return $entry;
+        }, $company_grants);
+
+        // If requested, also include campaign-level grants for all campaigns under this company
+        if ($include_campaigns) {
+            $campaigns = get_posts([
+                'post_type' => 'wpsg_campaign',
+                'posts_per_page' => -1,
+                'tax_query' => [
+                    [
+                        'taxonomy' => 'wpsg_company',
+                        'field' => 'term_id',
+                        'terms' => $term_id,
+                    ],
+                ],
+            ]);
+
+            foreach ($campaigns as $campaign) {
+                $campaign_grants = get_post_meta($campaign->ID, 'access_grants', true);
+                $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+
+                foreach ($campaign_grants as $entry) {
+                    $entry['source'] = 'campaign';
+                    $entry['campaignId'] = $campaign->ID;
+                    $entry['campaignTitle'] = $campaign->post_title;
+                    $entry['campaignStatus'] = get_post_meta($campaign->ID, 'status', true) ?: 'active';
+                    $all_grants[] = $entry;
+                }
+            }
+        }
+
+        // Enrich with user details
+        $user_ids = array_unique(array_filter(array_map(function ($entry) {
+            return intval($entry['userId'] ?? 0);
+        }, $all_grants)));
+
+        $user_map = [];
+        if (!empty($user_ids)) {
+            $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
+            foreach ($users as $user) {
+                $user_map[$user->ID] = [
+                    'displayName' => $user->display_name,
+                    'email' => $user->user_email,
+                    'login' => $user->user_login,
+                ];
+            }
+        }
+
+        $enriched = array_map(function ($entry) use ($user_map) {
+            $user_id = intval($entry['userId'] ?? 0);
+            if (isset($user_map[$user_id])) {
+                $entry['user'] = $user_map[$user_id];
+            }
+            return $entry;
+        }, $all_grants);
+
+        return new WP_REST_Response($enriched, 200);
+    }
+
+    /**
+     * Grant company-wide access to a user
+     */
+    public static function grant_company_access() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $user_id = intval($request->get_param('userId'));
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        if ($user_id <= 0) {
+            return new WP_REST_Response(['message' => 'userId is required'], 400);
+        }
+
+        $grants = get_term_meta($term_id, 'access_grants', true);
+        $grants = is_array($grants) ? $grants : [];
+
+        $entry = [
+            'userId' => $user_id,
+            'companyId' => $term_id,
+            'source' => 'company',
+            'grantedAt' => gmdate('c'),
+        ];
+
+        $grants = self::upsert_grant($grants, $entry);
+        update_term_meta($term_id, 'access_grants', $grants);
+
+        // Get first campaign for audit log (if any)
+        $campaigns = get_posts([
+            'post_type' => 'wpsg_campaign',
+            'posts_per_page' => 1,
+            'tax_query' => [
+                [
+                    'taxonomy' => 'wpsg_company',
+                    'field' => 'term_id',
+                    'terms' => $term_id,
+                ],
+            ],
+        ]);
+
+        if (!empty($campaigns)) {
+            self::add_audit_entry($campaigns[0]->ID, 'access.company.granted', [
+                'userId' => $user_id,
+                'companyId' => $term_id,
+                'companyName' => $term->name,
+            ]);
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['message' => 'Company access granted'], 200);
+    }
+
+    /**
+     * Revoke company-wide access for a user
+     */
+    public static function revoke_company_access() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $user_id = intval($request->get_param('userId'));
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        if ($user_id <= 0) {
+            return new WP_REST_Response(['message' => 'userId is required'], 400);
+        }
+
+        $grants = get_term_meta($term_id, 'access_grants', true);
+        $grants = is_array($grants) ? $grants : [];
+        $grants = array_values(array_filter($grants, function ($entry) use ($user_id) {
+            return intval($entry['userId'] ?? 0) !== $user_id;
+        }));
+        update_term_meta($term_id, 'access_grants', $grants);
+
+        // Get first campaign for audit log (if any)
+        $campaigns = get_posts([
+            'post_type' => 'wpsg_campaign',
+            'posts_per_page' => 1,
+            'tax_query' => [
+                [
+                    'taxonomy' => 'wpsg_company',
+                    'field' => 'term_id',
+                    'terms' => $term_id,
+                ],
+            ],
+        ]);
+
+        if (!empty($campaigns)) {
+            self::add_audit_entry($campaigns[0]->ID, 'access.company.revoked', [
+                'userId' => $user_id,
+                'companyId' => $term_id,
+                'companyName' => $term->name,
+            ]);
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['message' => 'Company access revoked'], 200);
+    }
+
+    /**
+     * Archive all campaigns under a company
+     */
+    public static function archive_company() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $revoke_access = $request->get_param('revokeAccess') === true || $request->get_param('revokeAccess') === 'true';
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        // Get all non-archived campaigns for this company
+        $campaigns = get_posts([
+            'post_type' => 'wpsg_campaign',
+            'posts_per_page' => -1,
+            'meta_query' => [
+                [
+                    'key' => 'status',
+                    'value' => 'archived',
+                    'compare' => '!=',
+                ],
+            ],
+            'tax_query' => [
+                [
+                    'taxonomy' => 'wpsg_company',
+                    'field' => 'term_id',
+                    'terms' => $term_id,
+                ],
+            ],
+        ]);
+
+        $archived_count = 0;
+        foreach ($campaigns as $campaign) {
+            update_post_meta($campaign->ID, 'status', 'archived');
+            self::add_audit_entry($campaign->ID, 'campaign.archived', [
+                'bulkAction' => true,
+                'companyId' => $term_id,
+                'companyName' => $term->name,
+            ]);
+            $archived_count++;
+        }
+
+        // Optionally revoke company-level access grants
+        if ($revoke_access) {
+            update_term_meta($term_id, 'access_grants', []);
+            if (!empty($campaigns)) {
+                self::add_audit_entry($campaigns[0]->ID, 'access.company.bulk_revoked', [
+                    'companyId' => $term_id,
+                    'companyName' => $term->name,
+                ]);
+            }
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response([
+            'message' => "Archived {$archived_count} campaigns",
+            'archivedCount' => $archived_count,
+            'accessRevoked' => $revoke_access,
+        ], 200);
     }
 
     public static function update_media() {
