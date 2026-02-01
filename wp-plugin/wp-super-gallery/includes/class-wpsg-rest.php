@@ -150,6 +150,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/media/library', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_media_library'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/media/upload', [
             [
                 'methods' => 'POST',
@@ -917,6 +925,74 @@ class WPSG_REST {
             'attachmentId' => $attachment_id,
             'url' => $url,
         ], 201);
+    }
+
+    /**
+     * List media items from the WordPress Media Library.
+     * Returns image and video attachments that can be associated with campaigns.
+     */
+    public static function list_media_library() {
+        $request = func_get_arg(0);
+        $per_page = intval($request->get_param('per_page') ?? 50);
+        $page = intval($request->get_param('page') ?? 1);
+        $search = sanitize_text_field($request->get_param('search') ?? '');
+
+        $args = [
+            'post_type' => 'attachment',
+            'post_status' => 'inherit',
+            'posts_per_page' => min($per_page, 100),
+            'paged' => max($page, 1),
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'post_mime_type' => ['image', 'video'],
+        ];
+
+        if (!empty($search)) {
+            $args['s'] = $search;
+        }
+
+        $query = new WP_Query($args);
+        $items = [];
+
+        foreach ($query->posts as $post) {
+            $mime = get_post_mime_type($post->ID);
+            $type = 'other';
+            if (strpos($mime, 'image') === 0) {
+                $type = 'image';
+            } elseif (strpos($mime, 'video') === 0) {
+                $type = 'video';
+            }
+
+            $url = wp_get_attachment_url($post->ID);
+            $thumbnail = null;
+            if ($type === 'image') {
+                $thumb = wp_get_attachment_image_src($post->ID, 'thumbnail');
+                $thumbnail = $thumb ? $thumb[0] : null;
+            } elseif ($type === 'video') {
+                // Try to get video thumbnail if available
+                $poster = get_post_meta($post->ID, '_wp_attachment_image_alt', true);
+                $thumbnail = $poster ?: null;
+            }
+
+            $items[] = [
+                'id' => strval($post->ID),
+                'type' => $type,
+                'source' => 'upload',
+                'url' => $url,
+                'thumbnail' => $thumbnail,
+                'caption' => $post->post_excerpt ?: $post->post_title,
+                'filename' => basename(get_attached_file($post->ID)),
+                'mimeType' => $mime,
+                'dateCreated' => $post->post_date,
+            ];
+        }
+
+        return new WP_REST_Response([
+            'items' => $items,
+            'total' => $query->found_posts,
+            'pages' => $query->max_num_pages,
+            'page' => $page,
+        ], 200);
     }
 
     public static function proxy_oembed() {

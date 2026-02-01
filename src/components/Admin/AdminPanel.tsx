@@ -447,6 +447,26 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               value={formState.tags}
               onChange={(e) => setFormState((s) => ({ ...s, tags: e.currentTarget.value }))}
             />
+            {editingCampaign && (
+              <Card withBorder p="sm">
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">
+                    To manage media for this campaign, save changes and go to the Media tab.
+                  </Text>
+                  <Button
+                    variant="light"
+                    size="xs"
+                    onClick={() => {
+                      setMediaCampaignId(editingCampaign.id);
+                      closeCampaignForm();
+                      setActiveTab('media');
+                    }}
+                  >
+                    Go to Media
+                  </Button>
+                </Group>
+              </Card>
+            )}
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={closeCampaignForm}>
                 Cancel
