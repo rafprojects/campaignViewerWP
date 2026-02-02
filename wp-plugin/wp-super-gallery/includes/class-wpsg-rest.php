@@ -1658,12 +1658,19 @@ class WPSG_REST {
 
         // Try to send password setup email
         $email_sent = false;
-        try {
-            // This sends the "set your password" email
-            wp_new_user_notification($user_id, null, 'user');
-            $email_sent = true;
-        } catch (Exception $e) {
-            $email_sent = false;
+        
+        // Allow testing email failure scenario via request param
+        $simulate_param = $request->get_param('simulateEmailFailure');
+        $simulate_email_failure = ($simulate_param === true || $simulate_param === 'true');
+        
+        if (!$simulate_email_failure) {
+            try {
+                // This sends the "set your password" email
+                wp_new_user_notification($user_id, null, 'user');
+                $email_sent = true;
+            } catch (Exception $e) {
+                $email_sent = false;
+            }
         }
 
         // If campaign_id provided, grant access
@@ -1716,10 +1723,24 @@ class WPSG_REST {
             'accessGranted' => $access_granted,
         ];
 
-        // If email failed, include the password so admin can share it
+        // If email failed, generate password reset link instead of exposing password
         if (!$email_sent) {
-            $response['temporaryPassword'] = $password;
-            $response['message'] = 'User created but email failed. Share the temporary password securely.';
+            // Generate a password reset key
+            $reset_key = get_password_reset_key(new WP_User($user_id));
+            
+            if (!is_wp_error($reset_key)) {
+                // Build password reset URL
+                $reset_url = network_site_url("wp-login.php?action=rp&key=$reset_key&login=" . rawurlencode($username), 'login');
+                
+                $response['resetUrl'] = $reset_url;
+                $response['message'] = 'User created but email failed. Use the password reset link to set up the account.';
+                $response['emailFailed'] = true;
+            } else {
+                // If reset key generation also fails, we have a bigger problem
+                $response['message'] = 'User created but email and password reset failed. Please use WordPress admin to reset password.';
+                $response['emailFailed'] = true;
+                $response['resetFailed'] = true;
+            }
         }
 
         return new WP_REST_Response($response, 201);

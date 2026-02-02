@@ -152,7 +152,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [quickAddRole, setQuickAddRole] = useState('subscriber');
   const [quickAddCampaignId, setQuickAddCampaignId] = useState('');
   const [quickAddSaving, setQuickAddSaving] = useState(false);
-  const [quickAddResult, setQuickAddResult] = useState<{ success: boolean; message: string; tempPassword?: string } | null>(null);
+  const [quickAddResult, setQuickAddResult] = useState<{ success: boolean; message: string; resetUrl?: string } | null>(null);
+  const [quickAddTestMode, setQuickAddTestMode] = useState(false);
 
   const [auditCampaignId, setAuditCampaignId] = useState<string>('');
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
@@ -411,12 +412,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         userId: number;
         emailSent: boolean;
         accessGranted: boolean;
-        temporaryPassword?: string;
+        resetUrl?: string;
+        emailFailed?: boolean;
       }>('/wp-json/wp-super-gallery/v1/users', {
         email: quickAddEmail,
         displayName: quickAddName,
         role: quickAddRole,
         campaignId: quickAddCampaignId ? parseInt(quickAddCampaignId) : 0,
+        simulateEmailFailure: quickAddTestMode,
       });
 
       if (response.emailSent) {
@@ -428,7 +431,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         setQuickAddResult({
           success: true,
           message: response.message,
-          tempPassword: response.temporaryPassword,
+          resetUrl: response.resetUrl,
         });
       }
 
@@ -459,6 +462,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     setQuickAddRole('subscriber');
     setQuickAddCampaignId('');
     setQuickAddResult(null);
+    setQuickAddTestMode(false);
   };
 
   // Load audit when campaign selected
@@ -1262,21 +1266,43 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 title={quickAddResult.success ? 'Success' : 'Error'}
               >
                 <Text size="sm">{quickAddResult.message}</Text>
-                {quickAddResult.tempPassword && (
+                {quickAddResult.resetUrl && (
                   <Box mt="sm">
-                    <Text size="sm" fw={500}>Temporary Password:</Text>
+                    <Text size="sm" fw={500}>Password Reset Link:</Text>
                     <TextInput
-                      value={quickAddResult.tempPassword}
+                      value={quickAddResult.resetUrl}
                       readOnly
                       onClick={(e) => (e.target as HTMLInputElement).select()}
-                      rightSection={
+                      rightSection={(
                         <Tooltip label="Click to select">
                           <IconAlertCircle size={16} />
                         </Tooltip>
-                      }
+                      )}
                     />
+                    <Group mt="xs" gap="xs">
+                      <Button
+                        size="xs"
+                        variant="light"
+                        component="a"
+                        href={quickAddResult.resetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open Reset Link
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="subtle"
+                        onClick={() => {
+                          navigator.clipboard.writeText(quickAddResult.resetUrl!);
+                          onNotify({ type: 'success', text: 'Reset URL copied to clipboard' });
+                        }}
+                      >
+                        Copy Link
+                      </Button>
+                    </Group>
                     <Text size="xs" c="dimmed" mt="xs">
-                      Share this password securely with the user. They should change it upon first login.
+                      Share this link securely with the user. They can use it to set their own password.
                     </Text>
                   </Box>
                 )}
@@ -1329,10 +1355,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               />
 
               <Checkbox
-                label="Send password setup email to user"
-                checked={true}
-                disabled
-                description="User will receive an email to set their own password"
+                label="🧪 Test mode: Simulate email failure"
+                checked={quickAddTestMode}
+                onChange={(e) => setQuickAddTestMode(e.currentTarget.checked)}
+                description="Enable to test the password reset link UI without actually sending email"
               />
 
               <Group justify="flex-end" mt="md">
