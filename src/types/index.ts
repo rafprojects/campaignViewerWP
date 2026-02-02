@@ -33,7 +33,7 @@ export interface MediaItem {
   thumbnail?: string;
   title?: string;
   caption?: string;
-  order?: number;
+  order: number;
 }
 
 export interface User {

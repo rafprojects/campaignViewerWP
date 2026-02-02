@@ -115,7 +115,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number; total?: number } }
       >(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`);
       const items = Array.isArray(response) ? response : (response.items ?? []);
-      const sorted = items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const sorted = items.sort((a, b) => a.order - b.order);
       setMedia(sorted);
 
       const typesUpdated = !Array.isArray(response) ? response.meta?.typesUpdated ?? 0 : 0;
