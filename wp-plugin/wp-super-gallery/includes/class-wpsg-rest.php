@@ -1640,10 +1640,11 @@ class WPSG_REST {
             $counter++;
         }
 
-        // Generate random password
-        $password = wp_generate_password(16, true, true);
+        // Generate temporary password (required by WordPress, but user will set their own via reset link)
+        // This password is never exposed or used - it's immediately superseded by the password reset flow
+        $password = wp_generate_password(24, true, true);
 
-        // Create user
+        // Create user account
         $user_id = wp_insert_user([
             'user_login' => $username,
             'user_email' => $email,
@@ -1656,7 +1657,8 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => $user_id->get_error_message()], 500);
         }
 
-        // Try to send password setup email
+        // Send password reset email so user can set their own password
+        // Note: wp_new_user_notification() with 'user' param sends a password reset link, not the password
         $email_sent = false;
         
         // Allow testing email failure scenario via request param
@@ -1665,7 +1667,7 @@ class WPSG_REST {
         
         if (!$simulate_email_failure) {
             try {
-                // This sends the "set your password" email
+                // Send password reset email to user
                 wp_new_user_notification($user_id, null, 'user');
                 $email_sent = true;
             } catch (Exception $e) {
