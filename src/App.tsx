@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Container, Group, Button, Alert, Loader, Center, Stack, ActionIcon, Tooltip, Modal, TextInput, Textarea, Select, Card, Image, Text, SimpleGrid, Badge, FileButton, Tabs, Progress } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { IconSettings, IconTrash, IconPlus, IconUpload, IconLink, IconPhoto } from '@tabler/icons-react';
@@ -122,6 +122,7 @@ function AppContent({
   const [libraryMedia, setLibraryMedia] = useState<MediaItem[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [librarySearch, setLibrarySearch] = useState('');
+  const libraryAbortControllerRef = useRef<AbortController | null>(null);
 
   // Modal state for archive confirmation
   const [archiveModalCampaign, setArchiveModalCampaign] = useState<Campaign | null>(null);
@@ -271,6 +272,15 @@ function AppContent({
   };
 
   const loadLibraryMedia = async (search?: string) => {
+    // Cancel previous request if still in flight
+    if (libraryAbortControllerRef.current) {
+      libraryAbortControllerRef.current.abort();
+    }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    libraryAbortControllerRef.current = abortController;
+
     setLibraryLoading(true);
     try {
       const params = new URLSearchParams();
@@ -278,13 +288,25 @@ function AppContent({
       if (search) params.set('search', search);
       
       const response = await apiClient.get<{ items: MediaItem[]; total: number }>(
-        `/wp-json/wp-super-gallery/v1/media/library?${params.toString()}`
+        `/wp-json/wp-super-gallery/v1/media/library?${params.toString()}`,
+        { signal: abortController.signal }
       );
-      setLibraryMedia(response.items ?? []);
-    } catch {
-      setLibraryMedia([]);
+      
+      // Only update state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setLibraryMedia(response.items ?? []);
+      }
+    } catch (err) {
+      // Ignore abort errors, only handle other errors
+      if (err instanceof Error && err.name !== 'AbortError') {
+        setLibraryMedia([]);
+      }
     } finally {
-      setLibraryLoading(false);
+      // Only update loading state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setLibraryLoading(false);
+        libraryAbortControllerRef.current = null;
+      }
     }
   };
 
