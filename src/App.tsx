@@ -3,6 +3,7 @@ import { Container, Group, Button, Alert, Loader, Center, Stack, ActionIcon, Too
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { IconSettings, IconTrash, IconPlus, IconUpload, IconLink, IconPhoto } from '@tabler/icons-react';
 import { CardGallery } from './components/Gallery/CardGallery';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
@@ -548,24 +549,28 @@ function AppContent({
       )}
       {isSettingsOpen ? (
         <Container size="xl" py="xl">
-          <Suspense fallback={<Center py={120}><Loader /></Center>}>
-            <SettingsPanel
-              apiClient={apiClient}
-              onClose={closeSettings}
-              onNotify={handleAdminNotify}
-            />
-          </Suspense>
+          <ErrorBoundary onReset={closeSettingsPanel}>
+            <Suspense fallback={<Center py={120}><Loader /></Center>}>
+              <SettingsPanel
+                apiClient={apiClient}
+                onClose={closeSettingsPanel}
+                onNotify={handleAdminNotify}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </Container>
       ) : isAdminPanelOpen ? (
         <Container size="xl" py="xl">
-          <Suspense fallback={<Center py={120}><Loader /></Center>}>
-            <AdminPanel
-              apiClient={apiClient}
-              onClose={closeAdminPanel}
-              onCampaignsUpdated={() => void loadCampaigns()}
-              onNotify={handleAdminNotify}
-            />
-          </Suspense>
+          <ErrorBoundary onReset={closeAdminPanel}>
+            <Suspense fallback={<Center py={120}><Loader /></Center>}>
+              <AdminPanel
+                apiClient={apiClient}
+                onClose={closeAdminPanel}
+                onCampaignsUpdated={() => void loadCampaigns()}
+                onNotify={handleAdminNotify}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </Container>
       ) : isLoading ? (
         <Center py={120}>
