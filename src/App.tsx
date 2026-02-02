@@ -571,11 +571,11 @@ function AppContent({
       )}
       {isSettingsOpen ? (
         <Container size="xl" py="xl">
-          <ErrorBoundary onReset={closeSettingsPanel}>
+          <ErrorBoundary onReset={closeSettings}>
             <Suspense fallback={<Center py={120}><Loader /></Center>}>
               <SettingsPanel
                 apiClient={apiClient}
-                onClose={closeSettingsPanel}
+                onClose={closeSettings}
                 onNotify={handleAdminNotify}
               />
             </Suspense>
