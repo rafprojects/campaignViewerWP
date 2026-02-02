@@ -61,6 +61,27 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
     }
   };
 
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        navigateLightbox('prev');
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        navigateLightbox('next');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setLightboxOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, imageItems.length]);
+
   // Card size configurations
   const sizeConfig = {
     small: { span: { base: 6, sm: 4, md: 3, lg: 2 }, height: 80 },
