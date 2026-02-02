@@ -31,6 +31,7 @@ export interface MediaItem {
   provider?: 'youtube' | 'vimeo' | 'rumble' | 'bitchute' | 'odysee' | 'other';
   attachmentId?: number;
   thumbnail?: string;
+  title?: string;
   caption?: string;
   order?: number;
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign, CampaignAccessGrant } from '@/types';
 import {
@@ -143,6 +143,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const userCombobox = useCombobox({
     onDropdownClose: () => userCombobox.resetSelectedOption(),
   });
+  const blurTimeoutRef = useRef<number | null>(null);
 
   // Quick Add User state
   const [quickAddUserOpen, setQuickAddUserOpen] = useState(false);
@@ -178,6 +179,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   useEffect(() => {
     void loadCampaigns();
   }, [loadCampaigns]);
+
+  // Cleanup blur timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Auto-select first campaign for media/access/audit tabs
   useEffect(() => {
@@ -1019,7 +1029,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                           onClick={() => userCombobox.openDropdown()}
                           onFocus={() => userCombobox.openDropdown()}
                           onBlur={() => {
-                            setTimeout(() => userCombobox.closeDropdown(), 150);
+                            if (blurTimeoutRef.current) {
+                              clearTimeout(blurTimeoutRef.current);
+                            }
+                            blurTimeoutRef.current = setTimeout(() => {
+                              userCombobox.closeDropdown();
+                              blurTimeoutRef.current = null;
+                            }, 150);
                           }}
                           rightSection={
                             selectedUser ? (

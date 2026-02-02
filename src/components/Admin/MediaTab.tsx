@@ -27,6 +27,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const [externalError, setExternalError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const [editingCaption, setEditingCaption] = useState('');
   const [editingThumbnail, setEditingThumbnail] = useState<string | undefined>(undefined);
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
@@ -338,6 +339,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
   function openEdit(item: MediaItem) {
     setEditingItem(item);
+    setEditingTitle(item.title ?? '');
     setEditingCaption(item.caption ?? '');
     setEditingThumbnail(item.thumbnail);
     setEditOpen(true);
@@ -346,7 +348,11 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   async function saveEdit() {
     if (!editingItem) return;
     try {
-      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, { caption: editingCaption, thumbnail: editingThumbnail });
+      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, { 
+        title: editingTitle.trim() || undefined,
+        caption: editingCaption, 
+        thumbnail: editingThumbnail 
+      });
       setMedia((m) => m.map((it) => (it.id === updated.id ? updated : it)));
       setEditOpen(false);
       showNotification({ title: 'Saved', message: 'Media updated.' });
@@ -724,8 +730,27 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
       <Modal opened={editOpen} onClose={() => setEditOpen(false)} title="Edit Media">
         <Stack>
-          <TextInput label="Caption" value={editingCaption} onChange={(e) => setEditingCaption(e.currentTarget.value)} />
-          <TextInput label="Thumbnail URL" value={editingThumbnail ?? ''} onChange={(e) => setEditingThumbnail(e.currentTarget.value)} />
+          <TextInput 
+            label="Title" 
+            placeholder="Enter a title (optional)"
+            value={editingTitle} 
+            onChange={(e) => setEditingTitle(e.currentTarget.value)} 
+          />
+          <Textarea
+            label="Caption" 
+            placeholder="Enter a caption or description"
+            value={editingCaption} 
+            onChange={(e) => setEditingCaption(e.currentTarget.value)}
+            autosize
+            minRows={2}
+            maxRows={4}
+          />
+          <TextInput 
+            label="Thumbnail URL" 
+            placeholder="https://..." 
+            value={editingThumbnail ?? ''} 
+            onChange={(e) => setEditingThumbnail(e.currentTarget.value)} 
+          />
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button onClick={saveEdit}>Save</Button>
