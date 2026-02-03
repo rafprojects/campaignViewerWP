@@ -66,10 +66,16 @@ export class ApiClient {
     return response.json() as Promise<T>;
   }
 
-  async get<T>(path: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      headers: await this.getHeaders(),
-    });
+  async get<T>(path: string, init?: RequestInit): Promise<T> {
+    const headers = await this.getHeaders();
+    const requestInit: RequestInit = {
+      ...init,
+      headers: {
+        ...headers,
+        ...(init?.headers as Record<string, string> | undefined),
+      },
+    };
+    const response = await fetch(`${this.baseUrl}${path}`, requestInit);
     return this.handleResponse<T>(response);
   }
 
