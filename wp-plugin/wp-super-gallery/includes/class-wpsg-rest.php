@@ -1432,6 +1432,11 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => 'Invalid oEmbed URL host'], 400);
         }
 
+        // Normalize IPv6 literals wrapped in brackets (e.g. [::1])
+        if (strlen($host) > 2 && $host[0] === '[' && substr($host, -1) === ']') {
+            $host = substr($host, 1, -1);
+        }
+
         if ($scheme !== 'https') {
             return new WP_REST_Response(['message' => 'Only HTTPS oEmbed URLs are allowed'], 400);
         }
