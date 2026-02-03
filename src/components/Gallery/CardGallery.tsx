@@ -81,13 +81,14 @@ export function CardGallery({
                       { label: 'Hide', value: 'hide' },
                     ]}
                     size="xs"
+                    aria-label="Access mode"
                   />
                 </Group>
               )}
             </Group>
 
             {/* Filter tabs */}
-            <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')}>
+            <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters">
               <Tabs.List>
                 <Tabs.Tab value="all">All</Tabs.Tab>
                 <Tabs.Tab value="accessible">My Access</Tabs.Tab>
@@ -101,7 +102,7 @@ export function CardGallery({
 
             {/* Hidden notice */}
             {showHiddenNotice && (
-              <Alert color="yellow" title="Access mode active">
+              <Alert color="yellow" title="Access mode active" role="status" aria-live="polite">
                 {hiddenCount} campaign{hiddenCount === 1 ? '' : 's'} hidden by access mode.
               </Alert>
             )}

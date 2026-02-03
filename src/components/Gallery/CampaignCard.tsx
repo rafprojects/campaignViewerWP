@@ -38,6 +38,21 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
         whileHover={hasAccess ? 'hover' : 'rest'}
         whileTap={{ scale: hasAccess ? 0.98 : 1 }}
         onClick={hasAccess ? onClick : undefined}
+        onKeyDown={(event) => {
+          if (!hasAccess) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick();
+          }
+        }}
+        role="button"
+        tabIndex={hasAccess ? 0 : -1}
+        aria-disabled={!hasAccess}
+        aria-label={
+          hasAccess
+            ? `Open campaign ${campaign.title}`
+            : `Campaign ${campaign.title} is locked`
+        }
         style={{
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,

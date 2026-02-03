@@ -559,14 +559,20 @@ function AppContent({
       )}
       {actionMessage && (
         <Container size="xl" py="sm">
-          <Alert color={actionMessage.type === 'error' ? 'red' : 'green'}>
+          <Alert
+            color={actionMessage.type === 'error' ? 'red' : 'green'}
+            role={actionMessage.type === 'error' ? 'alert' : 'status'}
+            aria-live={actionMessage.type === 'error' ? 'assertive' : 'polite'}
+          >
             {actionMessage.text}
           </Alert>
         </Container>
       )}
       {error && (
         <Container size="xl" py="sm">
-          <Alert color="red">{error}</Alert>
+          <Alert color="red" role="alert" aria-live="assertive">
+            {error}
+          </Alert>
         </Container>
       )}
       {isSettingsOpen ? (
@@ -621,7 +627,7 @@ function AppContent({
         size="xl"
         zIndex={300}
       >
-        <Tabs value={editMediaTab} onChange={setEditMediaTab}>
+        <Tabs value={editMediaTab} onChange={setEditMediaTab} aria-label="Edit campaign tabs">
           <Tabs.List>
             <Tabs.Tab value="details">Details</Tabs.Tab>
             <Tabs.Tab value="list">
@@ -670,7 +676,15 @@ function AppContent({
               <Stack gap="md">
                 <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="sm">
                   {editCampaignMedia.map((media) => (
-                    <Card key={media.id} shadow="sm" padding="xs" radius="md" withBorder>
+                    <Card
+                      key={media.id}
+                      shadow="sm"
+                      padding="xs"
+                      radius="md"
+                      withBorder
+                      role="group"
+                      aria-label={`Media item ${media.caption || media.url}`}
+                    >
                       <Card.Section>
                         <Image
                           src={media.thumbnail || media.url}
@@ -733,6 +747,7 @@ function AppContent({
                   </Group>
                   <TextInput
                     placeholder="Search media..."
+                    aria-label="Search media library"
                     value={librarySearch}
                     onChange={(e) => setLibrarySearch(e.currentTarget.value)}
                     onKeyDown={(e) => e.key === 'Enter' && void loadLibraryMedia(librarySearch)}
@@ -761,6 +776,21 @@ function AppContent({
                               cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
                             }}
                             onClick={() => !isAlreadyAdded && void handleAddFromLibrary(item)}
+                            role="button"
+                            tabIndex={isAlreadyAdded ? -1 : 0}
+                            aria-disabled={isAlreadyAdded}
+                            aria-label={
+                              isAlreadyAdded
+                                ? 'Media already added to campaign'
+                                : `Add ${item.type} media: ${item.caption || item.url}`
+                            }
+                            onKeyDown={(event) => {
+                              if (isAlreadyAdded) return;
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                void handleAddFromLibrary(item);
+                              }
+                            }}
                           >
                             <Image
                               src={item.thumbnail || item.url}
@@ -866,7 +896,11 @@ function AppContent({
             <Button variant="default" onClick={() => setArchiveModalCampaign(null)}>
               Cancel
             </Button>
-            <Button color="red" onClick={() => void confirmArchiveCampaign()}>
+            <Button
+              color="red"
+              onClick={() => void confirmArchiveCampaign()}
+              aria-label={`Archive campaign ${archiveModalCampaign?.title ?? ''}`.trim()}
+            >
               Archive
             </Button>
           </Group>

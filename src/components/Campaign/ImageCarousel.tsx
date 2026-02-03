@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
@@ -22,6 +22,28 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
 
   const currentImage = images[currentIndex];
 
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        prevImage();
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        nextImage();
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsLightboxOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen, images.length]);
+
   return (
     <Stack gap="md">
       <Title order={3} size="h5">
@@ -32,7 +54,26 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
       </Title>
 
       {/* Image viewer */}
-      <Box pos="relative">
+      <Box
+        pos="relative"
+        role="button"
+        tabIndex={0}
+        aria-label={`View image ${currentIndex + 1} of ${images.length}`}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setIsLightboxOpen(true);
+          }
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            prevImage();
+          }
+          if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            nextImage();
+          }
+        }}
+      >
         <AspectRatio ratio={16 / 9}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -45,7 +86,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             >
               <Image
                 src={currentImage.url}
-                alt={currentImage.caption}
+                alt={currentImage.caption || 'Campaign image'}
                 fit="contain"
                 h="100%"
                 style={{ cursor: 'zoom-in' }}
@@ -106,7 +147,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
 
       {/* Caption */}
       <Text size="sm" c="dimmed">
-        {currentImage.caption}
+        {currentImage.caption || 'Untitled image'}
       </Text>
 
       {/* Thumbnail Strip */}
@@ -118,6 +159,8 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             variant={index === currentIndex ? 'light' : 'subtle'}
             size="lg"
             p={0}
+            aria-label={`Show image ${index + 1} of ${images.length}`}
+            aria-pressed={index === currentIndex}
             style={{
               border: index === currentIndex ? '2px solid var(--mantine-color-blue-5)' : 'none',
               overflow: 'hidden',
@@ -125,7 +168,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           >
             <Image
               src={image.url}
-              alt={image.caption}
+              alt={image.caption || 'Campaign image thumbnail'}
               w={60}
               h={60}
               fit="cover"
@@ -166,7 +209,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
               >
                 <Image
                   src={currentImage.url}
-                  alt={currentImage.caption}
+                  alt={currentImage.caption || 'Campaign image'}
                   fit="contain"
                   h="100%"
                   w="100%"

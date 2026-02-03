@@ -699,7 +699,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Button>
       </Group>
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
+      <Tabs value={activeTab} onChange={setActiveTab} aria-label="Admin panel sections">
         <Tabs.List>
           <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
           <Tabs.Tab value="media">Media</Tabs.Tab>
@@ -711,10 +711,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           {isLoading ? (
             <Center><Loader /></Center>
           ) : error ? (
-            <Text c="red">{error}</Text>
+            <Text c="red" role="alert" aria-live="assertive">{error}</Text>
           ) : (
             <ScrollArea>
-              <Table verticalSpacing="sm">
+              <Table verticalSpacing="sm" aria-label="Campaign list">
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Title</Table.Th>
@@ -872,6 +872,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                       { value: 'company', label: '🏢 Company' },
                       { value: 'all', label: '📊 All' },
                     ]}
+                    aria-label="Access view mode"
                   />
                 </Box>
 
@@ -932,7 +933,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                     )}
                   </Stack>
                 )}
-                <Text size="sm" c="dimmed">
+                <Text size="sm" c="dimmed" role="status" aria-live="polite">
                   {accessEntries.length} user{accessEntries.length !== 1 ? 's' : ''} with access
                 </Text>
               </Group>
@@ -976,7 +977,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                   </Text>
                 ) : (
                   <ScrollArea style={{ maxHeight: 300 }}>
-                    <Table verticalSpacing="xs" highlightOnHover>
+                    <Table verticalSpacing="xs" highlightOnHover aria-label="Current access entries">
                       <Table.Thead>
                         <Table.Tr>
                           <Table.Th>User</Table.Th>
@@ -1045,7 +1046,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                             selectedUser ? (
                               <ActionIcon 
                                 size="sm" 
-                                variant="subtle" 
+                                variant="subtle"
+                                aria-label="Clear selected user"
                                 onClick={() => {
                                   setSelectedUser(null);
                                   setUserSearchQuery('');
@@ -1121,6 +1123,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                     onClick={handleGrantAccess} 
                     loading={accessSaving}
                     disabled={!selectedUser && !accessUserId}
+                    aria-disabled={!selectedUser && !accessUserId}
                   >
                     Apply
                   </Button>
@@ -1129,6 +1132,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                     <Button
                       variant="light"
                       leftSection={<IconUserPlus size={16} />}
+                      aria-label="Quick add a new user"
                       onClick={() => {
                         // Pre-fill campaign if in campaign mode
                         if (accessViewMode === 'campaign' && accessCampaignId) {
@@ -1171,10 +1175,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           {auditLoading ? (
             <Center><Loader /></Center>
           ) : auditEntries.length === 0 ? (
-            <Text c="dimmed">No audit entries yet.</Text>
+            <Text c="dimmed" role="status" aria-live="polite">No audit entries yet.</Text>
           ) : (
             <ScrollArea>
-              <Table verticalSpacing="sm">
+              <Table verticalSpacing="sm" aria-label="Audit entries">
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th miw={140}>When</Table.Th>
@@ -1194,7 +1198,18 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Text>Archive this campaign? This action will mark it archived.</Text>
         <Group justify="flex-end" mt="md">
           <Button variant="default" onClick={() => setConfirmArchive(null)}>Cancel</Button>
-          <Button color="red" onClick={() => { if (confirmArchive) { archiveCampaign(confirmArchive); setConfirmArchive(null); } }}>Archive</Button>
+          <Button
+            color="red"
+            onClick={() => {
+              if (confirmArchive) {
+                archiveCampaign(confirmArchive);
+                setConfirmArchive(null);
+              }
+            }}
+            aria-label={`Archive campaign ${confirmArchive?.title ?? ''}`.trim()}
+          >
+            Archive
+          </Button>
         </Group>
       </Modal>
 
@@ -1202,7 +1217,18 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Text>Restore this campaign? This will make it active again and enable any associated access grants.</Text>
         <Group justify="flex-end" mt="md">
           <Button variant="default" onClick={() => setConfirmRestore(null)}>Cancel</Button>
-          <Button color="teal" onClick={() => { if (confirmRestore) { restoreCampaign(confirmRestore); setConfirmRestore(null); } }}>Restore</Button>
+          <Button
+            color="teal"
+            onClick={() => {
+              if (confirmRestore) {
+                restoreCampaign(confirmRestore);
+                setConfirmRestore(null);
+              }
+            }}
+            aria-label={`Restore campaign ${confirmRestore?.title ?? ''}`.trim()}
+          >
+            Restore
+          </Button>
         </Group>
       </Modal>
 
@@ -1245,7 +1271,12 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         
         <Group justify="flex-end" mt="md">
           <Button variant="default" onClick={() => { setConfirmArchiveCompany(null); setArchiveRevokeAccess(false); }}>Cancel</Button>
-          <Button color="red" onClick={handleArchiveCompany} loading={accessSaving}>
+          <Button
+            color="red"
+            onClick={handleArchiveCompany}
+            loading={accessSaving}
+            aria-label={`Archive ${confirmArchiveCompany?.activeCampaigns ?? 0} campaign${confirmArchiveCompany?.activeCampaigns === 1 ? '' : 's'} for ${confirmArchiveCompany?.name ?? 'company'}`}
+          >
             Archive {confirmArchiveCompany?.activeCampaigns} Campaign{confirmArchiveCompany?.activeCampaigns !== 1 ? 's' : ''}
           </Button>
         </Group>
@@ -1264,12 +1295,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               <Alert 
                 color={quickAddResult.success ? 'teal' : 'red'} 
                 title={quickAddResult.success ? 'Success' : 'Error'}
+                role={quickAddResult.success ? 'status' : 'alert'}
+                aria-live={quickAddResult.success ? 'polite' : 'assertive'}
               >
                 <Text size="sm">{quickAddResult.message}</Text>
                 {quickAddResult.resetUrl && (
                   <Box mt="sm">
                     <Text size="sm" fw={500}>Password Reset Link:</Text>
                     <TextInput
+                      label="Password reset link"
                       value={quickAddResult.resetUrl}
                       readOnly
                       onClick={(e) => (e.target as HTMLInputElement).select()}

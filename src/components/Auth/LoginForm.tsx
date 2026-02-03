@@ -71,7 +71,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
         />
 
         {error && (
-          <Alert color="red" title="Error">
+          <Alert color="red" title="Error" role="alert" aria-live="assertive">
             {error}
           </Alert>
         )}

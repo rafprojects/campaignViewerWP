@@ -34,6 +34,7 @@ export function CampaignViewer({
       styles={{
         content: { overflow: 'auto' },
       }}
+      aria-label={`Campaign details for ${campaign.title}`}
     >
       {/* Cover Image Header */}
       <Box pos="relative" h={320} component="div">
@@ -65,6 +66,7 @@ export function CampaignViewer({
           variant="light"
           color="dark"
           radius="xl"
+          aria-label="Back to gallery"
         >
           Back to Gallery
         </Button>
@@ -122,7 +124,7 @@ export function CampaignViewer({
 
           {/* Access notice */}
           {!hasAccess && (
-            <Paper p="md" radius="md" bg="red.9" withBorder>
+            <Paper p="md" radius="md" bg="red.9" withBorder role="alert" aria-live="assertive">
               <Text size="sm" fw={600}>
                 This campaign is private. Sign in or request access to view media.
               </Text>
@@ -176,12 +178,14 @@ export function CampaignViewer({
               <Group gap="md">
                 <Button
                   disabled={!isAdmin}
+                  aria-disabled={!isAdmin}
                   onClick={() => onEditCampaign?.(campaign)}
                 >
                   Edit Campaign
                 </Button>
                 <Button
                   disabled={!isAdmin}
+                  aria-disabled={!isAdmin}
                   onClick={() => onAddExternalMedia?.(campaign)}
                 >
                   Manage Media
@@ -189,6 +193,7 @@ export function CampaignViewer({
                 <Button
                   color="red"
                   disabled={!isAdmin}
+                  aria-disabled={!isAdmin}
                   onClick={() => onArchiveCampaign?.(campaign)}
                 >
                   Archive Campaign

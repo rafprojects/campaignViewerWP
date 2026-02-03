@@ -503,7 +503,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                 <Table.Td>
                   <Image
                     src={item.thumbnail ?? item.url}
-                    alt={item.caption}
+                    alt={item.caption || 'Media thumbnail'}
                     w={50}
                     h={50}
                     fit="cover"
@@ -511,6 +511,20 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                     loading="lazy"
                     style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
                     onClick={() => item.type === 'image' && openLightbox(item)}
+                    role={item.type === 'image' ? 'button' : undefined}
+                    tabIndex={item.type === 'image' ? 0 : -1}
+                    aria-label={
+                      item.type === 'image'
+                        ? `Open image preview for ${item.caption || item.url}`
+                        : undefined
+                    }
+                    onKeyDown={(event) => {
+                      if (item.type !== 'image') return;
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openLightbox(item);
+                      }
+                    }}
                     fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
                   />
                 </Table.Td>
@@ -541,6 +555,20 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                 <Card.Section
                   style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
                   onClick={() => item.type === 'image' && openLightbox(item)}
+                  role={item.type === 'image' ? 'button' : undefined}
+                  tabIndex={item.type === 'image' ? 0 : -1}
+                  aria-label={
+                    item.type === 'image'
+                      ? `Open image preview for ${item.caption || item.url}`
+                      : undefined
+                  }
+                  onKeyDown={(event) => {
+                    if (item.type !== 'image') return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openLightbox(item);
+                    }
+                  }}
                 >
                   {item.source === 'external' && item.type === 'video' && item.embedUrl ? (
                     <div style={{ position: 'relative', paddingTop: '56.25%' }}>
@@ -554,7 +582,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                   ) : (
                     <Image
                       src={item.thumbnail ?? item.url}
-                      alt={item.caption}
+                      alt={item.caption || 'Media thumbnail'}
                       h={viewMode === 'compact' ? sizeConfig.small.height : sizeConfig[cardSize].height}
                       fit="cover"
                       loading="lazy"
@@ -607,7 +635,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
           <Box pos="relative">
             <Image
               src={imageItems[lightboxIndex].url}
-              alt={imageItems[lightboxIndex].caption}
+              alt={imageItems[lightboxIndex].caption || 'Media preview'}
               fit="contain"
               mah="80vh"
             />
@@ -680,7 +708,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
             {previewUrl && (
               <Group mt="sm">
-                <Image src={previewUrl} alt="preview" h={140} fit="cover" radius="sm" />
+                <Image src={previewUrl} alt="Upload preview" h={140} fit="cover" radius="sm" />
               </Group>
             )}
 
@@ -713,13 +741,19 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
           <Text fw={600}>Or add external URL</Text>
           <Group>
             <TextInput
+              label="External URL"
               value={externalUrl}
               onChange={(e) => setExternalUrl(e.currentTarget.value)}
               placeholder="https://youtube.com/..."
               error={externalError}
+              aria-label="External media URL"
             />
-            <Button onClick={handleFetchOEmbed} loading={externalLoading}>Preview</Button>
-            <Button onClick={handleAddExternal} disabled={!externalUrl}>Add</Button>
+            <Button onClick={handleFetchOEmbed} loading={externalLoading} aria-label="Preview external media">
+              Preview
+            </Button>
+            <Button onClick={handleAddExternal} disabled={!externalUrl} aria-label="Add external media">
+              Add
+            </Button>
           </Group>
 
           {externalPreview && (
@@ -736,7 +770,15 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                   </div>
                 ) : (
                   <Group>
-                    {externalPreview.thumbnail_url && <Image src={externalPreview.thumbnail_url} h={100} fit="cover" radius="sm" />}
+                    {externalPreview.thumbnail_url && (
+                      <Image
+                        src={externalPreview.thumbnail_url}
+                        h={100}
+                        fit="cover"
+                        radius="sm"
+                        alt={externalPreview.title || 'External media preview'}
+                      />
+                    )}
                     <div>
                       <Text fw={700}>{externalPreview.title}</Text>
                       <Text size="sm" c="dimmed">{externalPreview.provider_name}</Text>
@@ -784,7 +826,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
           <Text>Are you sure you want to delete this media item? This action cannot be undone.</Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setDeleteItem(null)}>Cancel</Button>
-            <Button color="red" onClick={confirmDelete}>Delete</Button>
+            <Button
+              color="red"
+              onClick={confirmDelete}
+              aria-label={`Delete media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
+            >
+              Delete
+            </Button>
           </Group>
         </Stack>
       </Modal>
