@@ -1,24 +1,48 @@
-export interface MediaItem {
-  id: string;
-  type: 'image' | 'video' | 'other';
-  source: 'upload' | 'external';
-  provider?: string;
-  url: string;
-  embedUrl?: string;
-  thumbnail?: string;
-  caption?: string;
-  order?: number;
-}
+/**
+ * @deprecated This module is deprecated. Use ApiClient from @/services/apiClient instead.
+ *
+ * Types have been moved to @/types/index.ts:
+ * - MediaItem
+ * - UploadResponse
+ *
+ * All API calls should use the ApiClient class which handles authentication
+ * and error handling consistently.
+ *
+ * This file is kept for backward compatibility with tests.
+ * Remove once all call-sites have been migrated.
+ */
 
-export interface UploadResponse {
-  attachmentId: string;
-  url: string;
-  thumbnail?: string;
-  mimeType?: string;
-}
+// Re-export types from canonical location for backward compatibility
+export type { MediaItem, UploadResponse } from '@/types';
+
+// Import types for local use within this file
+import type { MediaItem, UploadResponse } from '@/types';
+
+// Legacy type definitions kept for reference only
+// export interface MediaItem {
+//   id: string;
+//   type: 'image' | 'video' | 'other';
+//   source: 'upload' | 'external';
+//   provider?: string;
+//   url: string;
+//   embedUrl?: string;
+//   thumbnail?: string;
+//   caption?: string;
+//   order?: number;
+// }
+
+// export interface UploadResponse {
+//   attachmentId: string;
+//   url: string;
+//   thumbnail?: string;
+//   mimeType?: string;
+// }
 
 const API_BASE = '/wp-json/wp-super-gallery/v1';
 
+/**
+ * @deprecated Use ApiClient.get() instead
+ */
 export async function getCampaignMedia(campaignId: string, authHeaders?: Record<string, string>): Promise<MediaItem[]> {
   const res = await fetch(`${API_BASE}/campaigns/${campaignId}/media`, {
     headers: authHeaders ?? undefined,
@@ -27,6 +51,9 @@ export async function getCampaignMedia(campaignId: string, authHeaders?: Record<
   return res.json();
 }
 
+/**
+ * @deprecated Use ApiClient with XHR upload for progress tracking
+ */
 export function uploadFile(file: File, onProgress?: (percent: number) => void, authHeaders?: Record<string, string>): Promise<UploadResponse> {
   return new Promise((resolve, reject) => {
     const form = new FormData();
@@ -65,6 +92,9 @@ export function uploadFile(file: File, onProgress?: (percent: number) => void, a
   });
 }
 
+/**
+ * @deprecated Use ApiClient.post() instead
+ */
 export async function addMediaToCampaign(campaignId: string, payload: Partial<MediaItem>, authHeaders?: Record<string, string>) {
   const res = await fetch(`${API_BASE}/campaigns/${campaignId}/media`, {
     method: 'POST',
@@ -75,6 +105,9 @@ export async function addMediaToCampaign(campaignId: string, payload: Partial<Me
   return res.json();
 }
 
+/**
+ * @deprecated Use ApiClient.put() instead
+ */
 export async function updateMedia(campaignId: string, mediaId: string, patch: Partial<MediaItem>, authHeaders?: Record<string, string>) {
   const res = await fetch(`${API_BASE}/campaigns/${campaignId}/media/${mediaId}`, {
     method: 'PUT',
@@ -85,6 +118,9 @@ export async function updateMedia(campaignId: string, mediaId: string, patch: Pa
   return res.json();
 }
 
+/**
+ * @deprecated Use ApiClient.delete() instead
+ */
 export async function deleteMedia(campaignId: string, mediaId: string, authHeaders?: Record<string, string>) {
   const res = await fetch(`${API_BASE}/campaigns/${campaignId}/media/${mediaId}`, {
     method: 'DELETE',
@@ -94,6 +130,9 @@ export async function deleteMedia(campaignId: string, mediaId: string, authHeade
   return res.json();
 }
 
+/**
+ * @deprecated Use ApiClient.put() instead
+ */
 export async function reorderMedia(campaignId: string, items: { id: string; order: number }[], authHeaders?: Record<string, string>) {
   const res = await fetch(`${API_BASE}/campaigns/${campaignId}/media/reorder`, {
     method: 'PUT',
@@ -104,6 +143,9 @@ export async function reorderMedia(campaignId: string, items: { id: string; orde
   return res.json();
 }
 
+/**
+ * @deprecated Use ApiClient.get() instead
+ */
 export async function getOEmbed(url: string) {
   const res = await fetch(`${API_BASE}/oembed?url=${encodeURIComponent(url)}`);
   if (!res.ok) {

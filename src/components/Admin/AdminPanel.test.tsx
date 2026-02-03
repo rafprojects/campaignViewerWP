@@ -64,7 +64,7 @@ describe('AdminPanel', () => {
       { timeout: 5000 },
     );
 
-    const userIdInput = await screen.findByLabelText('User ID');
+    const userIdInput = await screen.findByLabelText('User');
     fireEvent.change(userIdInput, { target: { value: '42' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
@@ -127,10 +127,13 @@ describe('AdminPanel', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'New Campaign' } });
+    // Open the campaign form modal
+    fireEvent.click(screen.getByRole('button', { name: 'New Campaign' }));
+
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'New Campaign' } });
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Desc' } });
     fireEvent.change(screen.getByLabelText('Company Slug'), { target: { value: 'acme' } });
-    fireEvent.change(screen.getByLabelText('Tags (comma separated)'), { target: { value: 'a,b' } });
+    fireEvent.change(screen.getByLabelText('Tags'), { target: { value: 'a,b' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
 
@@ -164,7 +167,10 @@ describe('AdminPanel', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'New Campaign' } });
+    // Open the campaign form modal
+    fireEvent.click(screen.getByRole('button', { name: 'New Campaign' }));
+
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'New Campaign' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
 
     await waitFor(() => {
@@ -201,18 +207,15 @@ describe('AdminPanel', () => {
     );
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    
+    // Apply button should be disabled when no user is selected
+    const applyButton = screen.getByRole('button', { name: 'Apply' });
+    expect(applyButton).toBeDisabled();
 
-    expect(onNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ text: 'User ID is required.' }),
-    );
-
-    fireEvent.change(screen.getByLabelText('User ID'), { target: { value: 'abc' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
-
-    expect(onNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ text: 'User ID must be a positive numeric value.' }),
-    );
+    // Enter non-numeric text - Apply should still be disabled since it's not a valid user
+    const userInput = screen.getByLabelText('User');
+    fireEvent.change(userInput, { target: { value: 'abc' } });
+    expect(applyButton).toBeDisabled();
   });
 
   it('loads audit entries when audit tab is opened', async () => {
@@ -265,7 +268,8 @@ describe('AdminPanel', () => {
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Updated Title' } });
+    // Wait for modal to open
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Updated Title' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     await waitFor(() => {
@@ -303,7 +307,7 @@ describe('AdminPanel', () => {
     );
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
-    fireEvent.change(await screen.findByLabelText('User ID'), { target: { value: '42' } });
+    fireEvent.change(await screen.findByLabelText('User'), { target: { value: '42' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     await waitFor(() => {
@@ -341,12 +345,12 @@ describe('AdminPanel', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
 
-    const sourceInputs = screen.getAllByLabelText('Source');
-    fireEvent.mouseDown(sourceInputs[0]);
-    const companyOptions = screen.getAllByText('Company');
+    const scopeInputs = screen.getAllByLabelText('Scope');
+    fireEvent.mouseDown(scopeInputs[0]);
+    const companyOptions = screen.getAllByText(/All Company Campaigns/i);
     fireEvent.click(companyOptions[companyOptions.length - 1]);
 
-    expect(screen.getByText(/company grants apply across all campaigns/i)).toBeInTheDocument();
+    expect(screen.getByText(/company-level grants give access to all campaigns/i)).toBeInTheDocument();
   });
 
   it('archives campaign and handles errors', async () => {

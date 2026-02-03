@@ -1,9 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
-import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, FileButton, Loader, Progress, Paper, Stack } from '@mantine/core';
+import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconUpload, IconTrash, IconRefresh } from '@tabler/icons-react';
+import { IconPlus, IconUpload, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
-import type { MediaItem, UploadResponse } from '../../api/media';
+import type { MediaItem, UploadResponse } from '@/types';
+
+type ViewMode = 'grid' | 'list' | 'compact';
+type CardSize = 'small' | 'medium' | 'large';
 
 type Props = { campaignId: string; apiClient: ApiClient };
 
@@ -15,6 +18,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCaption, setUploadCaption] = useState('');
   const dropRef = useRef<HTMLDivElement | null>(null);
   const [externalUrl, setExternalUrl] = useState('');
   const [externalPreview, setExternalPreview] = useState<any | null>(null);
@@ -22,11 +27,67 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   const [externalError, setExternalError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const [editingCaption, setEditingCaption] = useState('');
   const [editingThumbnail, setEditingThumbnail] = useState<string | undefined>(undefined);
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
   const [rescanning, setRescanning] = useState(false);
   const reorderingRef = useRef(false);
+
+  // View options
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [cardSize, setCardSize] = useState<CardSize>('medium');
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Get image items for lightbox navigation
+  const imageItems = media.filter((m) => m.type === 'image');
+
+  const openLightbox = (item: MediaItem) => {
+    const idx = imageItems.findIndex((m) => m.id === item.id);
+    if (idx !== -1) {
+      setLightboxIndex(idx);
+      setLightboxOpen(true);
+    }
+  };
+
+  const navigateLightbox = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setLightboxIndex((i) => (i > 0 ? i - 1 : imageItems.length - 1));
+    } else {
+      setLightboxIndex((i) => (i < imageItems.length - 1 ? i + 1 : 0));
+    }
+  };
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        navigateLightbox('prev');
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        navigateLightbox('next');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setLightboxOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, imageItems.length]);
+
+  // Card size configurations
+  const sizeConfig = {
+    small: { span: { base: 6, sm: 4, md: 3, lg: 2 }, height: 80 },
+    medium: { span: { base: 12, sm: 6, md: 4 }, height: 160 },
+    large: { span: { base: 12, sm: 6 }, height: 240 },
+  };
 
   useEffect(() => {
     void fetchMedia();
@@ -54,7 +115,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number; total?: number } }
       >(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`);
       const items = Array.isArray(response) ? response : (response.items ?? []);
-      const sorted = items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const sorted = items.sort((a, b) => a.order - b.order);
       setMedia(sorted);
 
       const typesUpdated = !Array.isArray(response) ? response.meta?.typesUpdated ?? 0 : 0;
@@ -160,6 +221,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         }
         xhr.send(form);
       });
+      // Use user-provided caption or fall back to file name
+      const finalCaption = uploadCaption.trim() || uploadTitle.trim() || selectedFile.name;
       const newMedia = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, {
         type: mediaType,
         source: 'upload',
@@ -167,10 +230,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         attachmentId: res.attachmentId,
         url: res.url,
         thumbnail: res.thumbnail ?? res.url,
-        caption: selectedFile.name,
+        caption: finalCaption,
+        title: uploadTitle.trim() || undefined,
       });
       setMedia((m) => [...m, newMedia]);
       setSelectedFile(null);
+      setUploadTitle('');
+      setUploadCaption('');
       setAddOpen(false);
       showNotification({ title: 'Uploaded', message: 'Media uploaded and added to campaign.' });
     } catch (err) {
@@ -294,6 +360,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
   function openEdit(item: MediaItem) {
     setEditingItem(item);
+    setEditingTitle(item.title ?? '');
     setEditingCaption(item.caption ?? '');
     setEditingThumbnail(item.thumbnail);
     setEditOpen(true);
@@ -302,7 +369,11 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   async function saveEdit() {
     if (!editingItem) return;
     try {
-      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, { caption: editingCaption, thumbnail: editingThumbnail });
+      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, { 
+        title: editingTitle.trim() || undefined,
+        caption: editingCaption, 
+        thumbnail: editingThumbnail 
+      });
       setMedia((m) => m.map((it) => (it.id === updated.id ? updated : it)));
       setEditOpen(false);
       showNotification({ title: 'Saved', message: 'Media updated.' });
@@ -370,8 +441,35 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   return (
     <div>
       <Group justify="space-between" mb="md">
-        <Text fw={700}>Media</Text>
+        <Group gap="md">
+          <Text fw={700}>Media</Text>
+          <Text size="sm" c="dimmed">({media.length} items)</Text>
+        </Group>
         <Group gap="sm">
+          {/* View Mode Toggle */}
+          <SegmentedControl
+            size="xs"
+            value={viewMode}
+            onChange={(v) => setViewMode(v as ViewMode)}
+            data={[
+              { value: 'grid', label: <Tooltip label="Grid View"><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
+              { value: 'compact', label: <Tooltip label="Compact Grid"><Box><IconGridDots size={16} /></Box></Tooltip> },
+              { value: 'list', label: <Tooltip label="List View"><Box><IconList size={16} /></Box></Tooltip> },
+            ]}
+          />
+          {/* Card Size (only for grid modes) */}
+          {viewMode !== 'list' && (
+            <SegmentedControl
+              size="xs"
+              value={cardSize}
+              onChange={(v) => setCardSize(v as CardSize)}
+              data={[
+                { value: 'small', label: 'S' },
+                { value: 'medium', label: 'M' },
+                { value: 'large', label: 'L' },
+              ]}
+            />
+          )}
           <Button
             variant="subtle"
             leftSection={<IconRefresh size={18} />}
@@ -387,12 +485,63 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
       {loading ? (
         <Loader />
+      ) : viewMode === 'list' ? (
+        /* List View */
+        <Table verticalSpacing="xs">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={60}>Thumb</Table.Th>
+              <Table.Th>Caption</Table.Th>
+              <Table.Th>Type</Table.Th>
+              <Table.Th>Source</Table.Th>
+              <Table.Th w={180}>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {media.map((item) => (
+              <Table.Tr key={item.id}>
+                <Table.Td>
+                  <Image
+                    src={item.thumbnail ?? item.url}
+                    alt={item.caption}
+                    w={50}
+                    h={50}
+                    fit="cover"
+                    radius="sm"
+                    loading="lazy"
+                    style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
+                    onClick={() => item.type === 'image' && openLightbox(item)}
+                    fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
+                  />
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
+                  <Text size="xs" c="dimmed" lineClamp={1}>{item.url}</Text>
+                </Table.Td>
+                <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
+                <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
+                <Table.Td>
+                  <Group gap={4}>
+                    <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
+                    <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
+                    <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
+                    <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
       ) : (
+        /* Grid / Compact View */
         <Grid>
           {media.map((item) => (
-            <Grid.Col key={item.id} span={4}>
-              <Card shadow="sm">
-                <Card.Section>
+            <Grid.Col key={item.id} span={viewMode === 'compact' ? sizeConfig.small.span : sizeConfig[cardSize].span}>
+              <Card shadow="sm" padding={viewMode === 'compact' || cardSize === 'small' ? 'xs' : 'sm'}>
+                <Card.Section
+                  style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
+                  onClick={() => item.type === 'image' && openLightbox(item)}
+                >
                   {item.source === 'external' && item.type === 'video' && item.embedUrl ? (
                     <div style={{ position: 'relative', paddingTop: '56.25%' }}>
                       <iframe
@@ -403,30 +552,118 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                       />
                     </div>
                   ) : (
-                    <Image src={item.thumbnail ?? item.url} alt={item.caption} height={160} />
+                    <Image
+                      src={item.thumbnail ?? item.url}
+                      alt={item.caption}
+                      h={viewMode === 'compact' ? sizeConfig.small.height : sizeConfig[cardSize].height}
+                      fit="cover"
+                      loading="lazy"
+                      fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23374151' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
+                    />
                   )}
                 </Card.Section>
-                <Group justify="space-between" mt="sm">
-                  <div>
-                    <Text size="sm">{item.caption || '—'}</Text>
-                    {item.url && (
-                      <Text size="xs" c="dimmed">
-                        <a href={item.url} target="_blank" rel="noreferrer">{item.url}</a>
-                      </Text>
-                    )}
-                  </div>
-                  <Group gap="xs">
-                    <Button variant="subtle" onClick={() => openEdit(item)}>Edit</Button>
-                    <Button variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</Button>
-                    <Button variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</Button>
-                    <Button variant="subtle" color="red" leftSection={<IconTrash size={16} />} onClick={() => handleDelete(item)} aria-label="Delete media" />
+                {/* Show controls based on size */}
+                {(viewMode !== 'compact' && cardSize !== 'small') ? (
+                  <Group justify="space-between" mt="sm">
+                    <Box style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
+                      {cardSize === 'large' && item.url && (
+                        <Text size="xs" c="dimmed" lineClamp={1}>
+                          <a href={item.url} target="_blank" rel="noreferrer">{item.url}</a>
+                        </Text>
+                      )}
+                    </Box>
+                    <Group gap={4} wrap="nowrap">
+                      <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
+                      <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
+                      <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
+                      <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
+                    </Group>
                   </Group>
-                </Group>
+                ) : (
+                  /* Compact/Small: hover overlay for actions */
+                  <Group justify="center" mt={4} gap={2}>
+                    <ActionIcon size="xs" variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={12} /></ActionIcon>
+                    <ActionIcon size="xs" variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={12} /></ActionIcon>
+                  </Group>
+                )}
               </Card>
             </Grid.Col>
           ))}
         </Grid>
       )}
+
+      {/* Image Lightbox Modal */}
+      <Modal
+        opened={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        size="xl"
+        padding={0}
+        withCloseButton={false}
+        centered
+        styles={{ body: { background: 'rgba(0,0,0,0.9)' } }}
+      >
+        {imageItems.length > 0 && imageItems[lightboxIndex] && (
+          <Box pos="relative">
+            <Image
+              src={imageItems[lightboxIndex].url}
+              alt={imageItems[lightboxIndex].caption}
+              fit="contain"
+              mah="80vh"
+            />
+            <ActionIcon
+              variant="filled"
+              color="dark"
+              pos="absolute"
+              top={10}
+              right={10}
+              onClick={() => setLightboxOpen(false)}
+              aria-label="Close lightbox"
+            >
+              <IconX size={18} />
+            </ActionIcon>
+            {imageItems.length > 1 && (
+              <>
+                <ActionIcon
+                  variant="filled"
+                  color="dark"
+                  pos="absolute"
+                  left={10}
+                  top="50%"
+                  style={{ transform: 'translateY(-50%)' }}
+                  onClick={() => navigateLightbox('prev')}
+                  aria-label="Previous image"
+                >
+                  <IconChevronLeft size={20} />
+                </ActionIcon>
+                <ActionIcon
+                  variant="filled"
+                  color="dark"
+                  pos="absolute"
+                  right={10}
+                  top="50%"
+                  style={{ transform: 'translateY(-50%)' }}
+                  onClick={() => navigateLightbox('next')}
+                  aria-label="Next image"
+                >
+                  <IconChevronRight size={20} />
+                </ActionIcon>
+              </>
+            )}
+            <Box
+              pos="absolute"
+              bottom={0}
+              left={0}
+              right={0}
+              p="md"
+              style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.8))' }}
+            >
+              <Text c="white" size="sm">{imageItems[lightboxIndex].caption || 'Untitled'}</Text>
+              <Text c="dimmed" size="xs">{lightboxIndex + 1} / {imageItems.length}</Text>
+            </Box>
+          </Box>
+        )}
+      </Modal>
 
       <Modal opened={addOpen} onClose={() => setAddOpen(false)} title="Add Media">
         <Stack gap="sm">
@@ -443,8 +680,28 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
             {previewUrl && (
               <Group mt="sm">
-                <Image src={previewUrl} alt="preview" height={140} />
+                <Image src={previewUrl} alt="preview" h={140} fit="cover" radius="sm" />
               </Group>
+            )}
+
+            {selectedFile && (
+              <Stack gap="xs" mt="sm">
+                <TextInput
+                  label="Title"
+                  placeholder="Enter a title (optional)"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.currentTarget.value)}
+                />
+                <Textarea
+                  label="Caption"
+                  placeholder="Enter a caption or description (optional)"
+                  value={uploadCaption}
+                  onChange={(e) => setUploadCaption(e.currentTarget.value)}
+                  autosize
+                  minRows={2}
+                  maxRows={4}
+                />
+              </Stack>
             )}
 
             {uploadProgress !== null && <Progress value={uploadProgress} mt="sm" />}
@@ -479,7 +736,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                   </div>
                 ) : (
                   <Group>
-                    {externalPreview.thumbnail_url && <Image src={externalPreview.thumbnail_url} height={100} />}
+                    {externalPreview.thumbnail_url && <Image src={externalPreview.thumbnail_url} h={100} fit="cover" radius="sm" />}
                     <div>
                       <Text fw={700}>{externalPreview.title}</Text>
                       <Text size="sm" c="dimmed">{externalPreview.provider_name}</Text>
@@ -494,8 +751,27 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
       <Modal opened={editOpen} onClose={() => setEditOpen(false)} title="Edit Media">
         <Stack>
-          <TextInput label="Caption" value={editingCaption} onChange={(e) => setEditingCaption(e.currentTarget.value)} />
-          <TextInput label="Thumbnail URL" value={editingThumbnail ?? ''} onChange={(e) => setEditingThumbnail(e.currentTarget.value)} />
+          <TextInput 
+            label="Title" 
+            placeholder="Enter a title (optional)"
+            value={editingTitle} 
+            onChange={(e) => setEditingTitle(e.currentTarget.value)} 
+          />
+          <Textarea
+            label="Caption" 
+            placeholder="Enter a caption or description"
+            value={editingCaption} 
+            onChange={(e) => setEditingCaption(e.currentTarget.value)}
+            autosize
+            minRows={2}
+            maxRows={4}
+          />
+          <TextInput 
+            label="Thumbnail URL" 
+            placeholder="https://..." 
+            value={editingThumbnail ?? ''} 
+            onChange={(e) => setEditingThumbnail(e.currentTarget.value)} 
+          />
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button onClick={saveEdit}>Save</Button>

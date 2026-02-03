@@ -27,11 +27,25 @@ class WPSG_Embed {
                     wp_register_style($style_handle, $base_url . $css_file, [], WPSG_VERSION);
                 }
             }
+
+            // Add filter to load script as ES module (required for Vite code splitting)
+            add_filter('script_loader_tag', [self::class, 'add_module_type'], 10, 3);
             return;
         }
 
         $script_url = $base_url . 'wp-super-gallery.js';
         wp_register_script($handle, $script_url, [], WPSG_VERSION, true);
+    }
+
+    /**
+     * Add type="module" to the script tag for ES module support.
+     */
+    public static function add_module_type($tag, $handle, $src) {
+        if ($handle !== 'wp-super-gallery-app') {
+            return $tag;
+        }
+        // Replace the script tag to use type="module"
+        return str_replace('<script ', '<script type="module" ', $tag);
     }
 
     public static function render_shortcode($atts = []) {

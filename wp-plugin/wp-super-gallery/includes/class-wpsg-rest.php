@@ -67,6 +67,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/restore', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'restore_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
@@ -82,19 +90,7 @@ class WPSG_REST {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', [
-            [
-                'methods' => 'PUT',
-                'callback' => [self::class, 'update_media'],
-                'permission_callback' => [self::class, 'require_admin'],
-            ],
-            [
-                'methods' => 'DELETE',
-                'callback' => [self::class, 'delete_media'],
-                'permission_callback' => [self::class, 'require_admin'],
-            ],
-        ]);
-
+        // Register specific sub-routes BEFORE the generic mediaId route to avoid pattern conflicts
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/reorder', [
             [
                 'methods' => 'PUT',
@@ -107,6 +103,20 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'rescan_media_types'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // Generic mediaId route must come AFTER specific sub-routes
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', [
+            [
+                'methods' => 'PUT',
+                'callback' => [self::class, 'update_media'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'delete_media'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -148,6 +158,14 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/media/library', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_media_library'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/media/upload', [
             [
                 'methods' => 'POST',
@@ -161,6 +179,68 @@ class WPSG_REST {
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_permissions'],
                 'permission_callback' => [self::class, 'require_authenticated'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/users/search', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'search_users'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/users', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'create_user'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/roles', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_roles'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // Company management routes
+        register_rest_route('wp-super-gallery/v1', '/companies', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_companies'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/access', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_company_access'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'grant_company_access'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/access/(?P<userId>\d+)', [
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'revoke_company_access'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/archive', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'archive_company'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -198,7 +278,7 @@ class WPSG_REST {
     }
 
     public static function require_admin() {
-        return current_user_can('manage_options');
+        return current_user_can('manage_wpsg');
     }
 
     public static function require_authenticated() {
@@ -377,6 +457,19 @@ class WPSG_REST {
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
 
+    public static function restore_campaign() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        update_post_meta($post_id, 'status', 'active');
+        self::add_audit_entry($post_id, 'campaign.restored', []);
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['message' => 'Campaign restored'], 200);
+    }
+
     public static function list_media() {
         $request = func_get_arg(0);
         $post_id = intval($request->get_param('id'));
@@ -528,7 +621,32 @@ class WPSG_REST {
             return $user_id > 0 && !in_array($user_id, $deny_user_ids, true);
         }));
 
-        return new WP_REST_Response($effective, 200);
+        // Enrich with user details
+        $user_ids = array_unique(array_map(function ($entry) {
+            return intval($entry['userId'] ?? 0);
+        }, $effective));
+        
+        $user_map = [];
+        if (!empty($user_ids)) {
+            $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
+            foreach ($users as $user) {
+                $user_map[$user->ID] = [
+                    'displayName' => $user->display_name,
+                    'email' => $user->user_email,
+                    'login' => $user->user_login,
+                ];
+            }
+        }
+
+        $enriched = array_map(function ($entry) use ($user_map) {
+            $user_id = intval($entry['userId'] ?? 0);
+            if (isset($user_map[$user_id])) {
+                $entry['user'] = $user_map[$user_id];
+            }
+            return $entry;
+        }, $effective);
+
+        return new WP_REST_Response($enriched, 200);
     }
 
     public static function grant_access() {
@@ -632,6 +750,319 @@ class WPSG_REST {
         ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
+    }
+
+    /**
+     * List all companies with their campaign counts and statistics
+     */
+    public static function list_companies() {
+        $terms = get_terms([
+            'taxonomy' => 'wpsg_company',
+            'hide_empty' => false,
+        ]);
+
+        if (is_wp_error($terms)) {
+            return new WP_REST_Response(['message' => 'Failed to fetch companies'], 500);
+        }
+
+        $companies = [];
+        foreach ($terms as $term) {
+            // Get campaigns for this company
+            $campaigns = get_posts([
+                'post_type' => 'wpsg_campaign',
+                'posts_per_page' => -1,
+                'tax_query' => [
+                    [
+                        'taxonomy' => 'wpsg_company',
+                        'field' => 'term_id',
+                        'terms' => $term->term_id,
+                    ],
+                ],
+            ]);
+
+            $active_count = 0;
+            $archived_count = 0;
+            $campaign_list = [];
+
+            foreach ($campaigns as $campaign) {
+                $status = get_post_meta($campaign->ID, 'status', true) ?: 'active';
+                if ($status === 'archived') {
+                    $archived_count++;
+                } else {
+                    $active_count++;
+                }
+                $campaign_list[] = [
+                    'id' => $campaign->ID,
+                    'title' => $campaign->post_title,
+                    'status' => $status,
+                ];
+            }
+
+            // Get company-level access grants
+            $company_grants = get_term_meta($term->term_id, 'access_grants', true);
+            $company_grants = is_array($company_grants) ? $company_grants : [];
+
+            $companies[] = [
+                'id' => $term->term_id,
+                'name' => $term->name,
+                'slug' => $term->slug,
+                'campaignCount' => count($campaigns),
+                'activeCampaigns' => $active_count,
+                'archivedCampaigns' => $archived_count,
+                'accessGrantCount' => count($company_grants),
+                'campaigns' => $campaign_list,
+            ];
+        }
+
+        return new WP_REST_Response($companies, 200);
+    }
+
+    /**
+     * List access grants for a specific company (company-level + optionally all campaign grants)
+     */
+    public static function list_company_access() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $include_campaigns = $request->get_param('include_campaigns') === 'true';
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        // Get company-level grants
+        $company_grants = get_term_meta($term_id, 'access_grants', true);
+        $company_grants = is_array($company_grants) ? $company_grants : [];
+
+        // Mark each grant with its source
+        $all_grants = array_map(function ($entry) use ($term) {
+            $entry['source'] = 'company';
+            $entry['companyId'] = $term->term_id;
+            $entry['companyName'] = $term->name;
+            return $entry;
+        }, $company_grants);
+
+        // If requested, also include campaign-level grants for all campaigns under this company
+        if ($include_campaigns) {
+            $campaigns = get_posts([
+                'post_type' => 'wpsg_campaign',
+                'posts_per_page' => -1,
+                'tax_query' => [
+                    [
+                        'taxonomy' => 'wpsg_company',
+                        'field' => 'term_id',
+                        'terms' => $term_id,
+                    ],
+                ],
+            ]);
+
+            foreach ($campaigns as $campaign) {
+                $campaign_grants = get_post_meta($campaign->ID, 'access_grants', true);
+                $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+
+                foreach ($campaign_grants as $entry) {
+                    $entry['source'] = 'campaign';
+                    $entry['campaignId'] = $campaign->ID;
+                    $entry['campaignTitle'] = $campaign->post_title;
+                    $entry['campaignStatus'] = get_post_meta($campaign->ID, 'status', true) ?: 'active';
+                    $all_grants[] = $entry;
+                }
+            }
+        }
+
+        // Enrich with user details
+        $user_ids = array_unique(array_filter(array_map(function ($entry) {
+            return intval($entry['userId'] ?? 0);
+        }, $all_grants)));
+
+        $user_map = [];
+        if (!empty($user_ids)) {
+            $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
+            foreach ($users as $user) {
+                $user_map[$user->ID] = [
+                    'displayName' => $user->display_name,
+                    'email' => $user->user_email,
+                    'login' => $user->user_login,
+                ];
+            }
+        }
+
+        $enriched = array_map(function ($entry) use ($user_map) {
+            $user_id = intval($entry['userId'] ?? 0);
+            if (isset($user_map[$user_id])) {
+                $entry['user'] = $user_map[$user_id];
+            }
+            return $entry;
+        }, $all_grants);
+
+        return new WP_REST_Response($enriched, 200);
+    }
+
+    /**
+     * Grant company-wide access to a user
+     */
+    public static function grant_company_access() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $user_id = intval($request->get_param('userId'));
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        if ($user_id <= 0) {
+            return new WP_REST_Response(['message' => 'userId is required'], 400);
+        }
+
+        $grants = get_term_meta($term_id, 'access_grants', true);
+        $grants = is_array($grants) ? $grants : [];
+
+        $entry = [
+            'userId' => $user_id,
+            'companyId' => $term_id,
+            'source' => 'company',
+            'grantedAt' => gmdate('c'),
+        ];
+
+        $grants = self::upsert_grant($grants, $entry);
+        update_term_meta($term_id, 'access_grants', $grants);
+
+        // Get first campaign for audit log (if any)
+        $campaigns = get_posts([
+            'post_type' => 'wpsg_campaign',
+            'posts_per_page' => 1,
+            'tax_query' => [
+                [
+                    'taxonomy' => 'wpsg_company',
+                    'field' => 'term_id',
+                    'terms' => $term_id,
+                ],
+            ],
+        ]);
+
+        if (!empty($campaigns)) {
+            self::add_audit_entry($campaigns[0]->ID, 'access.company.granted', [
+                'userId' => $user_id,
+                'companyId' => $term_id,
+                'companyName' => $term->name,
+            ]);
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['message' => 'Company access granted'], 200);
+    }
+
+    /**
+     * Revoke company-wide access for a user
+     */
+    public static function revoke_company_access() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $user_id = intval($request->get_param('userId'));
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        if ($user_id <= 0) {
+            return new WP_REST_Response(['message' => 'userId is required'], 400);
+        }
+
+        $grants = get_term_meta($term_id, 'access_grants', true);
+        $grants = is_array($grants) ? $grants : [];
+        $grants = array_values(array_filter($grants, function ($entry) use ($user_id) {
+            return intval($entry['userId'] ?? 0) !== $user_id;
+        }));
+        update_term_meta($term_id, 'access_grants', $grants);
+
+        // Get first campaign for audit log (if any)
+        $campaigns = get_posts([
+            'post_type' => 'wpsg_campaign',
+            'posts_per_page' => 1,
+            'tax_query' => [
+                [
+                    'taxonomy' => 'wpsg_company',
+                    'field' => 'term_id',
+                    'terms' => $term_id,
+                ],
+            ],
+        ]);
+
+        if (!empty($campaigns)) {
+            self::add_audit_entry($campaigns[0]->ID, 'access.company.revoked', [
+                'userId' => $user_id,
+                'companyId' => $term_id,
+                'companyName' => $term->name,
+            ]);
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['message' => 'Company access revoked'], 200);
+    }
+
+    /**
+     * Archive all campaigns under a company
+     */
+    public static function archive_company() {
+        $request = func_get_arg(0);
+        $term_id = intval($request->get_param('id'));
+        $revoke_access = $request->get_param('revokeAccess') === true || $request->get_param('revokeAccess') === 'true';
+
+        $term = get_term($term_id, 'wpsg_company');
+        if (!$term || is_wp_error($term)) {
+            return new WP_REST_Response(['message' => 'Company not found'], 404);
+        }
+
+        // Get all non-archived campaigns for this company
+        $campaigns = get_posts([
+            'post_type' => 'wpsg_campaign',
+            'posts_per_page' => -1,
+            'meta_query' => [
+                [
+                    'key' => 'status',
+                    'value' => 'archived',
+                    'compare' => '!=',
+                ],
+            ],
+            'tax_query' => [
+                [
+                    'taxonomy' => 'wpsg_company',
+                    'field' => 'term_id',
+                    'terms' => $term_id,
+                ],
+            ],
+        ]);
+
+        $archived_count = 0;
+        foreach ($campaigns as $campaign) {
+            update_post_meta($campaign->ID, 'status', 'archived');
+            self::add_audit_entry($campaign->ID, 'campaign.archived', [
+                'bulkAction' => true,
+                'companyId' => $term_id,
+                'companyName' => $term->name,
+            ]);
+            $archived_count++;
+        }
+
+        // Optionally revoke company-level access grants
+        if ($revoke_access) {
+            update_term_meta($term_id, 'access_grants', []);
+            if (!empty($campaigns)) {
+                self::add_audit_entry($campaigns[0]->ID, 'access.company.bulk_revoked', [
+                    'companyId' => $term_id,
+                    'companyName' => $term->name,
+                ]);
+            }
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response([
+            'message' => "Archived {$archived_count} campaigns",
+            'archivedCount' => $archived_count,
+            'accessRevoked' => $revoke_access,
+        ], 200);
     }
 
     public static function update_media() {
@@ -917,6 +1348,74 @@ class WPSG_REST {
         ], 201);
     }
 
+    /**
+     * List media items from the WordPress Media Library.
+     * Returns image and video attachments that can be associated with campaigns.
+     */
+    public static function list_media_library() {
+        $request = func_get_arg(0);
+        $per_page = intval($request->get_param('per_page') ?? 50);
+        $page = intval($request->get_param('page') ?? 1);
+        $search = sanitize_text_field($request->get_param('search') ?? '');
+
+        $args = [
+            'post_type' => 'attachment',
+            'post_status' => 'inherit',
+            'posts_per_page' => min($per_page, 100),
+            'paged' => max($page, 1),
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'post_mime_type' => ['image', 'video'],
+        ];
+
+        if (!empty($search)) {
+            $args['s'] = $search;
+        }
+
+        $query = new WP_Query($args);
+        $items = [];
+
+        foreach ($query->posts as $post) {
+            $mime = get_post_mime_type($post->ID);
+            $type = 'other';
+            if (strpos($mime, 'image') === 0) {
+                $type = 'image';
+            } elseif (strpos($mime, 'video') === 0) {
+                $type = 'video';
+            }
+
+            $url = wp_get_attachment_url($post->ID);
+            $thumbnail = null;
+            if ($type === 'image') {
+                $thumb = wp_get_attachment_image_src($post->ID, 'thumbnail');
+                $thumbnail = $thumb ? $thumb[0] : null;
+            } elseif ($type === 'video') {
+                // Try to get video thumbnail if available
+                $poster = get_post_meta($post->ID, '_wp_attachment_image_alt', true);
+                $thumbnail = $poster ?: null;
+            }
+
+            $items[] = [
+                'id' => strval($post->ID),
+                'type' => $type,
+                'source' => 'upload',
+                'url' => $url,
+                'thumbnail' => $thumbnail,
+                'caption' => $post->post_excerpt ?: $post->post_title,
+                'filename' => basename(get_attached_file($post->ID)),
+                'mimeType' => $mime,
+                'dateCreated' => $post->post_date,
+            ];
+        }
+
+        return new WP_REST_Response([
+            'items' => $items,
+            'total' => $query->found_posts,
+            'pages' => $query->max_num_pages,
+            'page' => $page,
+        ], 200);
+    }
+
     public static function proxy_oembed() {
         $request = func_get_arg(0);
         $url = esc_url_raw($request->get_param('url'));
@@ -1054,8 +1553,222 @@ class WPSG_REST {
         }
 
         $campaign_ids = self::get_accessible_campaign_ids($user_id);
-        $is_admin = current_user_can('manage_options');
+        $is_admin = current_user_can('manage_wpsg');
         return new WP_REST_Response(['campaignIds' => $campaign_ids, 'isAdmin' => $is_admin], 200);
+    }
+
+    /**
+     * Search WordPress users for the access management UI.
+     * Returns matching users with id, email, and display name.
+     *
+     * @return WP_REST_Response List of matching users.
+     */
+    public static function search_users() {
+        $request = func_get_arg(0);
+        $search = sanitize_text_field($request->get_param('search') ?? '');
+        $per_page = min(intval($request->get_param('per_page') ?? 20), 50);
+
+        $args = [
+            'number' => $per_page,
+            'orderby' => 'display_name',
+            'order' => 'ASC',
+        ];
+
+        if (!empty($search)) {
+            $args['search'] = '*' . $search . '*';
+            $args['search_columns'] = ['user_login', 'user_email', 'display_name'];
+        }
+
+        $user_query = new WP_User_Query($args);
+        $users = [];
+
+        foreach ($user_query->get_results() as $user) {
+            $users[] = [
+                'id' => $user->ID,
+                'email' => $user->user_email,
+                'displayName' => $user->display_name,
+                'login' => $user->user_login,
+                'isAdmin' => user_can($user->ID, 'manage_wpsg'),
+            ];
+        }
+
+        return new WP_REST_Response([
+            'users' => $users,
+            'total' => $user_query->get_total(),
+        ], 200);
+    }
+
+    /**
+     * Create a new WordPress user.
+     * Sends password setup email to the user.
+     *
+     * @return WP_REST_Response User creation result.
+     */
+    public static function create_user() {
+        $request = func_get_arg(0);
+        $email = sanitize_email($request->get_param('email') ?? '');
+        $display_name = sanitize_text_field($request->get_param('displayName') ?? '');
+        $role = sanitize_text_field($request->get_param('role') ?? 'subscriber');
+        $campaign_id = intval($request->get_param('campaignId') ?? 0);
+
+        // Validate required fields
+        if (empty($email) || !is_email($email)) {
+            return new WP_REST_Response(['message' => 'Valid email is required.'], 400);
+        }
+
+        if (empty($display_name)) {
+            return new WP_REST_Response(['message' => 'Display name is required.'], 400);
+        }
+
+        // Check if email already exists
+        if (email_exists($email)) {
+            return new WP_REST_Response(['message' => 'A user with this email already exists.'], 409);
+        }
+
+        // Validate role exists and prevent privilege escalation
+        $allowed_roles = ['subscriber', 'wpsg_admin'];
+        if (!in_array($role, $allowed_roles, true)) {
+            return new WP_REST_Response(['message' => 'Invalid role. Allowed: subscriber, wpsg_admin.'], 400);
+        }
+
+        // Generate username from email (before @)
+        $username = sanitize_user(explode('@', $email)[0], true);
+        $base_username = $username;
+        $counter = 1;
+        while (username_exists($username)) {
+            $username = $base_username . $counter;
+            $counter++;
+        }
+
+        // Generate temporary password (required by WordPress, but user will set their own via reset link)
+        // This password is never exposed or used - it's immediately superseded by the password reset flow
+        $password = wp_generate_password(24, true, true);
+
+        // Create user account
+        $user_id = wp_insert_user([
+            'user_login' => $username,
+            'user_email' => $email,
+            'user_pass' => $password,
+            'display_name' => $display_name,
+            'role' => $role,
+        ]);
+
+        if (is_wp_error($user_id)) {
+            return new WP_REST_Response(['message' => $user_id->get_error_message()], 500);
+        }
+
+        // Send password reset email so user can set their own password
+        // Note: wp_new_user_notification() with 'user' param sends a password reset link, not the password
+        $email_sent = false;
+        
+        // Allow testing email failure scenario via request param
+        $simulate_param = $request->get_param('simulateEmailFailure');
+        $simulate_email_failure = ($simulate_param === true || $simulate_param === 'true');
+        
+        if (!$simulate_email_failure) {
+            try {
+                // Send password reset email to user
+                wp_new_user_notification($user_id, null, 'user');
+                $email_sent = true;
+            } catch (Exception $e) {
+                $email_sent = false;
+            }
+        }
+
+        // If campaign_id provided, grant access
+        $access_granted = false;
+        if ($campaign_id > 0 && self::campaign_exists($campaign_id)) {
+            $grants = get_post_meta($campaign_id, 'access_grants', true);
+            if (!is_array($grants)) {
+                $grants = [];
+            }
+            // Check if not already granted
+            $already_granted = false;
+            foreach ($grants as $grant) {
+                if (isset($grant['userId']) && intval($grant['userId']) === $user_id) {
+                    $already_granted = true;
+                    break;
+                }
+            }
+            if (!$already_granted) {
+                $grants[] = [
+                    'userId' => $user_id,
+                    'grantedAt' => current_time('mysql'),
+                    'grantedBy' => get_current_user_id(),
+                ];
+                update_post_meta($campaign_id, 'access_grants', $grants);
+                self::add_audit_entry($campaign_id, 'access.granted', [
+                    'userId' => $user_id,
+                    'email' => $email,
+                    'source' => 'quick_add_user',
+                ]);
+                self::clear_accessible_campaigns_cache();
+                $access_granted = true;
+            }
+        }
+
+        // Add audit entry for user creation
+        if ($campaign_id > 0) {
+            self::add_audit_entry($campaign_id, 'user.created', [
+                'userId' => $user_id,
+                'email' => $email,
+                'role' => $role,
+            ]);
+        }
+
+        $response = [
+            'message' => 'User created successfully.',
+            'userId' => $user_id,
+            'username' => $username,
+            'email' => $email,
+            'emailSent' => $email_sent,
+            'accessGranted' => $access_granted,
+        ];
+
+        // If email failed, generate password reset link instead of exposing password
+        if (!$email_sent) {
+            // Generate a password reset key
+            $reset_key = get_password_reset_key(new WP_User($user_id));
+            
+            if (!is_wp_error($reset_key)) {
+                // Build password reset URL
+                $reset_url = network_site_url("wp-login.php?action=rp&key=$reset_key&login=" . rawurlencode($username), 'login');
+                
+                $response['resetUrl'] = $reset_url;
+                $response['message'] = 'User created but email failed. Use the password reset link to set up the account.';
+                $response['emailFailed'] = true;
+            } else {
+                // If reset key generation also fails, we have a bigger problem
+                $response['message'] = 'User created but email and password reset failed. Please use WordPress admin to reset password.';
+                $response['emailFailed'] = true;
+                $response['resetFailed'] = true;
+            }
+        }
+
+        return new WP_REST_Response($response, 201);
+    }
+
+    /**
+     * List available roles for user creation.
+     *
+     * @return WP_REST_Response Available roles.
+     */
+    public static function list_roles() {
+        // Only return roles that can be assigned via quick add
+        $roles = [
+            [
+                'value' => 'subscriber',
+                'label' => 'Viewer',
+                'description' => 'Can view campaigns they are granted access to.',
+            ],
+            [
+                'value' => 'wpsg_admin',
+                'label' => 'Gallery Admin',
+                'description' => 'Can manage campaigns and access in this plugin, but not WordPress admin.',
+            ],
+        ];
+
+        return new WP_REST_Response(['roles' => $roles], 200);
     }
 
     /**
@@ -1176,15 +1889,42 @@ class WPSG_REST {
         return $post && $post->post_type === 'wpsg_campaign';
     }
 
+    /**
+     * Check if an IP address is private/reserved (SSRF protection).
+     *
+     * Handles both IPv4 and IPv6 addresses, including:
+     * - IPv4 private ranges (10.x, 172.16-31.x, 192.168.x)
+     * - IPv4 loopback (127.x)
+     * - IPv4 link-local (169.254.x)
+     * - IPv6 loopback (::1)
+     * - IPv6 unique local (fc00::/7)
+     * - IPv6 link-local (fe80::/10)
+     * - IPv6-mapped IPv4 (::ffff:x.x.x.x)
+     * - IPv6 documentation (2001:db8::/32)
+     * - IPv6 discard (100::/64)
+     *
+     * @param string $ip The IP address to check.
+     * @return bool True if the IP is private/reserved, false otherwise.
+     */
     private static function is_private_ip($ip) {
+        // Normalize the IP - remove brackets if present (common in URL parsing)
+        $ip = trim($ip, '[]');
+
+        // Check IPv4 first
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $long = sprintf('%u', ip2long($ip));
             $ranges = [
-                ['10.0.0.0', '10.255.255.255'],
-                ['172.16.0.0', '172.31.255.255'],
-                ['192.168.0.0', '192.168.255.255'],
-                ['127.0.0.0', '127.255.255.255'],
-                ['169.254.0.0', '169.254.255.255'],
+                ['10.0.0.0', '10.255.255.255'],         // Private (RFC 1918)
+                ['172.16.0.0', '172.31.255.255'],       // Private (RFC 1918)
+                ['192.168.0.0', '192.168.255.255'],     // Private (RFC 1918)
+                ['127.0.0.0', '127.255.255.255'],       // Loopback (RFC 1122)
+                ['169.254.0.0', '169.254.255.255'],     // Link-local (RFC 3927)
+                ['0.0.0.0', '0.255.255.255'],           // "This" network (RFC 1122)
+                ['100.64.0.0', '100.127.255.255'],      // Shared address space (RFC 6598)
+                ['192.0.0.0', '192.0.0.255'],           // IETF Protocol Assignments (RFC 6890)
+                ['192.0.2.0', '192.0.2.255'],           // TEST-NET-1 (RFC 5737)
+                ['198.51.100.0', '198.51.100.255'],     // TEST-NET-2 (RFC 5737)
+                ['203.0.113.0', '203.0.113.255'],       // TEST-NET-3 (RFC 5737)
             ];
             foreach ($ranges as $r) {
                 $from = sprintf('%u', ip2long($r[0]));
@@ -1196,23 +1936,103 @@ class WPSG_REST {
             return false;
         }
 
+        // Check IPv6
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            $lower = strtolower($ip);
-            if ($lower === '::1') {
+            // Expand the IPv6 address to full notation for consistent checking
+            $expanded = self::expand_ipv6($ip);
+            if (!$expanded) {
+                // Invalid IPv6 - treat as private for safety
                 return true;
             }
-            // Unique local addresses fc00::/7 (fc or fd)
-            if (strpos($lower, 'fc') === 0 || strpos($lower, 'fd') === 0) {
+
+            $lower = strtolower($expanded);
+
+            // Loopback (::1)
+            if ($lower === '0000:0000:0000:0000:0000:0000:0000:0001') {
                 return true;
             }
-            // Link-local fe80::/10 (starts with fe80-febf) - simple prefix checks
-            if (strpos($lower, 'fe80') === 0 || strpos($lower, 'fe8') === 0 || strpos($lower, 'fe9') === 0 || strpos($lower, 'fea') === 0 || strpos($lower, 'feb') === 0) {
+
+            // Unspecified (::)
+            if ($lower === '0000:0000:0000:0000:0000:0000:0000:0000') {
                 return true;
             }
+
+            // IPv4-mapped IPv6 (::ffff:x.x.x.x) - check the embedded IPv4
+            if (substr($lower, 0, 30) === '0000:0000:0000:0000:0000:ffff:') {
+                $ipv4_hex = substr($lower, 30);
+                $parts = explode(':', $ipv4_hex);
+                if (count($parts) === 2) {
+                    $oct1 = hexdec(substr($parts[0], 0, 2));
+                    $oct2 = hexdec(substr($parts[0], 2, 2));
+                    $oct3 = hexdec(substr($parts[1], 0, 2));
+                    $oct4 = hexdec(substr($parts[1], 2, 2));
+                    $ipv4 = "$oct1.$oct2.$oct3.$oct4";
+                    return self::is_private_ip($ipv4);
+                }
+            }
+
+            // Get the first 16 bits (first group) for prefix checking
+            $first_group = substr($lower, 0, 4);
+            $first_byte = hexdec(substr($first_group, 0, 2));
+
+            // Unique local addresses fc00::/7 (fc00-fdff)
+            if ($first_byte >= 0xfc && $first_byte <= 0xfd) {
+                return true;
+            }
+
+            // Link-local fe80::/10 (fe80-febf)
+            if ($first_byte === 0xfe) {
+                $second_nibble = hexdec(substr($first_group, 2, 1));
+                // fe80-febf: second nibble is 8, 9, a, or b
+                if ($second_nibble >= 0x8 && $second_nibble <= 0xb) {
+                    return true;
+                }
+            }
+
+            // Documentation 2001:db8::/32
+            if (substr($lower, 0, 9) === '2001:0db8') {
+                return true;
+            }
+
+            // Discard prefix 100::/64
+            if (substr($lower, 0, 4) === '0100' && substr($lower, 0, 19) === '0100:0000:0000:0000') {
+                return true;
+            }
+
+            // Multicast ff00::/8
+            if ($first_byte === 0xff) {
+                return true;
+            }
+
             return false;
         }
 
-        return false;
+        // If we can't validate the IP format, treat as private for safety
+        return true;
+    }
+
+    /**
+     * Expand an IPv6 address to full notation (8 groups of 4 hex digits).
+     *
+     * @param string $ip The IPv6 address to expand.
+     * @return string|false The expanded address or false on failure.
+     */
+    private static function expand_ipv6($ip) {
+        // Use inet_pton and inet_ntop to normalize, then expand
+        $packed = @inet_pton($ip);
+        if ($packed === false) {
+            return false;
+        }
+
+        // Convert to hex string
+        $hex = bin2hex($packed);
+        if (strlen($hex) !== 32) {
+            return false;
+        }
+
+        // Format as 8 groups of 4 hex digits
+        $groups = str_split($hex, 4);
+        return implode(':', $groups);
     }
 
     private static function can_view_campaign($post_id, $user_id) {

@@ -24,13 +24,14 @@ export interface Campaign {
 
 export interface MediaItem {
   id: string;
-  type: 'video' | 'image';
+  type: 'video' | 'image' | 'other';
   source: 'upload' | 'external';
   url: string;
   embedUrl?: string;
   provider?: 'youtube' | 'vimeo' | 'rumble' | 'bitchute' | 'odysee' | 'other';
   attachmentId?: number;
   thumbnail?: string;
+  title?: string;
   caption?: string;
   order: number;
 }
@@ -48,4 +49,19 @@ export interface CampaignAccessGrant {
   source: 'company' | 'campaign';
   grantedAt: string;
   revokedAt?: string;
+  user?: {
+    displayName: string;
+    email: string;
+    login: string;
+  };
+}
+
+/**
+ * Response from media upload endpoint
+ */
+export interface UploadResponse {
+  attachmentId: string;
+  url: string;
+  thumbnail?: string;
+  mimeType?: string;
 }
