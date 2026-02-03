@@ -12,6 +12,29 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.4.0 (February 2, 2026)
+- **MINOR**: Phase 6 Functionality Polish release
+  - Searchable user picker, "Current Access" table with company/campaign badges, and a secure Quick Add User experience that surfaces password reset links + email-failure test mode.
+  - Media workflow refinements (metadata edit, consistent thumbnails, keyboard lightbox, explicit ordering) and consolidated API client usage.
+  - Performance/resilience upgrades: lazy load admin panels inside `Suspense`/`ErrorBoundary`, combobox timeout cleanup, abortable library media requests, and manual chunk splitting.
+  - Security/observability: WordPress password reset flow (no plaintext passwords) and comprehensive IPv4/IPv6 private range detection.
+
+### v0.3.0 (January 30, 2026)
+- **MINOR**: Phase 4 Mantine Migration + Phase 5 WordPress Integration
+  - **Mantine Migration (Phase 4):**
+    - Migrated all 7 main UI components to Mantine 7.17.8
+    - Custom dark theme with design token integration
+    - framer-motion animations with reduce-motion support
+    - 68 tests passing with 93.65% coverage
+  - **WordPress Integration (Phase 5):**
+    - WordPress Settings API integration (`class-wpsg-settings.php`)
+    - REST endpoints for settings (GET/POST `/settings`)
+    - In-app SettingsPanel with display settings
+    - Comprehensive QA documentation (`TESTING_QA.md`)
+    - Packaging & release guide (`PACKAGING_RELEASE.md`)
+    - Embed sandbox, caching guide, auth edge cases documented
+    - Plugin upgrade path with migration considerations
+
 ### v0.2.0 (January 28, 2026)
 - **MINOR**: Complete admin panel implementation
   - Campaign CRUD operations
@@ -55,8 +78,11 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 Current development follows a phased approach:
 
 - **Phase 1-3**: ✅ Complete (Core functionality + Admin Panel)
-- **Phase 4-6**: In Progress (UI migration, integration, polish)
-- **Phase 7**: Deployment & Release
+- **Phase 4**: ✅ Complete (Main UI Mantine Migration)
+- **Phase 5**: ✅ Complete (WordPress Integration)
+- **Phase 6**: ✅ Complete (Functionality Polish — v0.4.0 release)
+- **Phase 7**: Ready to start (Visual Polish + Testing)
+- **Phase 8**: Pending (Theme System)
 
 ## Branching Strategy
 
