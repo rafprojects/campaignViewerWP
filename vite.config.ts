@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     visualizer({
@@ -41,6 +42,7 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 600,
   },
+  // @ts-expect-error Vitest config extension
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

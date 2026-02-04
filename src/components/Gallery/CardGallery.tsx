@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback } from 'react';
-import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center } from '@mantine/core';
+import { lazy, Suspense, useState } from 'react';
+import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader } from '@mantine/core';
 import { CampaignCard } from './CampaignCard';
-import { CampaignViewer } from '@/components/Campaign/CampaignViewer';
 import type { Campaign } from '@/types';
 import styles from './CardGallery.module.scss';
+
+const CampaignViewer = lazy(() => import('@/components/Campaign/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
 
 interface CardGalleryProps {
   campaigns: Campaign[];
@@ -29,57 +30,31 @@ export function CardGallery({
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
-  // Memoize unique companies list
-  const companies = useMemo(
-    () => [...new Set(campaigns.map((c) => c.company.name))],
-    [campaigns]
-  );
+  const companies = [...new Set(campaigns.map((c) => c.company.name))];
 
-  // Memoize access check function
-  const hasAccess = useCallback(
-    (campaignId: string, visibility: 'public' | 'private') => {
-      return visibility === 'public' || userPermissions.includes(campaignId);
-    },
-    [userPermissions]
-  );
+  const hasAccess = (campaignId: string, visibility: 'public' | 'private') => {
+    return visibility === 'public' || userPermissions.includes(campaignId);
+  };
 
-  // Memoize filtered campaigns
-  const filteredCampaigns = useMemo(() => {
-    return campaigns.filter((campaign) => {
-      if (filter === 'all') return true;
-      if (filter === 'accessible') return hasAccess(campaign.id, campaign.visibility);
-      return campaign.company.name === filter;
-    }).filter((campaign) => {
-      if (accessMode !== 'hide') {
-        return true;
-      }
-      if (filter === 'accessible') {
-        return true;
-      }
-      return hasAccess(campaign.id, campaign.visibility);
-    });
-  }, [campaigns, filter, accessMode, hasAccess]);
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    if (filter === 'all') return true;
+    if (filter === 'accessible') return hasAccess(campaign.id, campaign.visibility);
+    return campaign.company.name === filter;
+  }).filter((campaign) => {
+    if (accessMode !== 'hide') {
+      return true;
+    }
+    if (filter === 'accessible') {
+      return true;
+    }
+    return hasAccess(campaign.id, campaign.visibility);
+  });
 
-  // Memoize access counts
-  const { hiddenCount, showHiddenNotice } = useMemo(() => {
-    const accessible = campaigns.filter((campaign) =>
-      hasAccess(campaign.id, campaign.visibility),
-    ).length;
-    const hidden = Math.max(0, campaigns.length - accessible);
-    const showNotice = accessMode === 'hide' && filter === 'all' && hidden > 0;
-
-    return { hiddenCount: hidden, showHiddenNotice: showNotice };
-  }, [campaigns, hasAccess, accessMode, filter]);
-
-  // Memoize campaign selection handler
-  const handleCampaignClick = useCallback((campaign: Campaign) => {
-    setSelectedCampaign(campaign);
-  }, []);
-
-  // Memoize campaign viewer close handler
-  const handleCloseViewer = useCallback(() => {
-    setSelectedCampaign(null);
-  }, []);
+  const accessibleCount = campaigns.filter((campaign) =>
+    hasAccess(campaign.id, campaign.visibility),
+  ).length;
+  const hiddenCount = Math.max(0, campaigns.length - accessibleCount);
+  const showHiddenNotice = accessMode === 'hide' && filter === 'all' && hiddenCount > 0;
 
   return (
     <Box className={styles.gallery}>
@@ -143,7 +118,7 @@ export function CardGallery({
               key={campaign.id}
               campaign={campaign}
               hasAccess={hasAccess(campaign.id, campaign.visibility)}
-              onClick={() => handleCampaignClick(campaign)}
+              onClick={() => setSelectedCampaign(campaign)}
             />
           ))}
         </SimpleGrid>
@@ -165,15 +140,17 @@ export function CardGallery({
 
       {/* Campaign Viewer Modal */}
       {selectedCampaign && (
-        <CampaignViewer
-          campaign={selectedCampaign}
-          hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
-          isAdmin={isAdmin}
-          onEditCampaign={onEditCampaign}
-          onArchiveCampaign={onArchiveCampaign}
-          onAddExternalMedia={onAddExternalMedia}
-          onClose={handleCloseViewer}
-        />
+        <Suspense fallback={<Center py="xl"><Loader /></Center>}>
+          <CampaignViewer
+            campaign={selectedCampaign}
+            hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
+            isAdmin={isAdmin}
+            onEditCampaign={onEditCampaign}
+            onArchiveCampaign={onArchiveCampaign}
+            onAddExternalMedia={onAddExternalMedia}
+            onClose={() => setSelectedCampaign(null)}
+          />
+        </Suspense>
       )}
     </Box>
   );

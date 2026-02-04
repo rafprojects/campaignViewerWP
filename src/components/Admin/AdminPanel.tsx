@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign, CampaignAccessGrant } from '@/types';
 import {
@@ -30,7 +30,8 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconSearch, IconAlertCircle, IconArchive, IconArchiveOff, IconUserPlus } from '@tabler/icons-react';
-import MediaTab from './MediaTab';
+
+const MediaTab = lazy(() => import('./MediaTab'));
 
 type AdminCampaign = Pick<Campaign, 'id' | 'title' | 'description' | 'status' | 'visibility' | 'createdAt' | 'updatedAt'> & {
   companyId: string;
@@ -867,7 +868,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               Rescan All Campaigns
             </Button>
           </Group>
-          <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} />
+          <Suspense fallback={<Center py="md"><Loader /></Center>}>
+            <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} />
+          </Suspense>
         </Tabs.Panel>
 
         <Tabs.Panel value="access" pt="md">
