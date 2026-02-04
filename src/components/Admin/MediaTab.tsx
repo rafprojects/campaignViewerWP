@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip, ScrollArea } from '@mantine/core';
+import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
 import { MediaCard } from './MediaCard';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconUpload, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
@@ -485,8 +485,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         <Loader />
       ) : viewMode === 'list' ? (
         /* List View */
-        <ScrollArea offsetScrollbars type="auto">
-          <Table verticalSpacing="xs" highlightOnHover style={{ minWidth: 720 }}>
+        <Table.ScrollContainer minWidth={720}>
+          <Table verticalSpacing="xs" highlightOnHover>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th w={60}>Thumb</Table.Th>
@@ -545,7 +545,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
               ))}
             </Table.Tbody>
           </Table>
-        </ScrollArea>
+        </Table.ScrollContainer>
       ) : (
         /* Grid / Compact View */
         <Grid>

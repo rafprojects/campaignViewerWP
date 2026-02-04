@@ -59,8 +59,8 @@ export function CampaignViewer({
         {/* Back button */}
         <Button
           pos="absolute"
-          top={16}
-          left={16}
+          top={{ base: 12, sm: 16 }}
+          left={{ base: 12, sm: 16 }}
           leftSection={<ArrowLeft size={20} />}
           onClick={onClose}
           variant="light"
@@ -68,8 +68,9 @@ export function CampaignViewer({
           radius="xl"
           aria-label="Back to gallery"
           size="sm"
+          style={{ minHeight: 44 }}
         >
-          Back to Gallery
+          Back
         </Button>
 
         {/* Company badge */}

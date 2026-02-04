@@ -687,17 +687,24 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   return (
     <Card shadow="sm" radius="md" withBorder>
-      <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
-        <Group>
-          <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
-            <IconArrowLeft />
-          </ActionIcon>
-          <Title order={1} size="h3">Admin Panel</Title>
+      <Stack gap="md" mb="md">
+        <Group justify="space-between" wrap="wrap" gap="sm">
+          <Group>
+            <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
+              <IconArrowLeft />
+            </ActionIcon>
+            <Title order={1} size="h3">Admin Panel</Title>
+          </Group>
+          <Button 
+            leftSection={<IconPlus />} 
+            onClick={handleCreate} 
+            aria-label="Create new campaign"
+            size="sm"
+          >
+            New Campaign
+          </Button>
         </Group>
-        <Button leftSection={<IconPlus />} onClick={handleCreate} aria-label="Create new campaign">
-          New Campaign
-        </Button>
-      </Group>
+      </Stack>
 
       <Tabs value={activeTab} onChange={setActiveTab} aria-label="Admin panel sections">
         <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
@@ -713,8 +720,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           ) : error ? (
             <Text c="red" role="alert" aria-live="assertive">{error}</Text>
           ) : (
-            <ScrollArea offsetScrollbars type="auto">
-              <Table verticalSpacing="sm" highlightOnHover aria-label="Campaign list" style={{ minWidth: 720 }}>
+            <Table.ScrollContainer minWidth={720}>
+              <Table verticalSpacing="sm" highlightOnHover aria-label="Campaign list">
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Title</Table.Th>
@@ -726,7 +733,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 </Table.Thead>
                 <Table.Tbody>{campaignsRows}</Table.Tbody>
               </Table>
-            </ScrollArea>
+            </Table.ScrollContainer>
           )}
         </Tabs.Panel>
 

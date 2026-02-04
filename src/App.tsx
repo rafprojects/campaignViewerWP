@@ -524,15 +524,16 @@ function AppContent({
       )}
       {isAuthenticated && user && (
         <Container size="xl" py="sm">
-          <Group justify="space-between" wrap="wrap">
-            <span>Signed in as {user.email}</span>
-            <Group gap="sm">
+          <Group justify="space-between" wrap="wrap" gap="sm">
+            <Text size="sm">Signed in as {user.email}</Text>
+            <Group gap="sm" wrap="wrap">
               {isAdmin && (
                 <>
                   <Button
                     variant="default"
                     onClick={openAdminPanel}
                     className="wpsg-admin-btn"
+                    size="sm"
                   >
                     Admin Panel
                   </Button>
@@ -552,6 +553,7 @@ function AppContent({
               <Button
                 variant="subtle"
                 onClick={() => void logout()}
+                size="sm"
               >
                 Sign out
               </Button>

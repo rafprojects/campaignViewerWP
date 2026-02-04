@@ -21,6 +21,28 @@
 
 .wp-super-gallery button {
   font: inherit;
+  // Ensure minimum touch target size for mobile (44x44px WCAG guideline)
+  min-height: 36px;
+  min-width: 36px;
+}
+
+@media (max-width: 576px) {
+  .wp-super-gallery button {
+    min-height: 44px;
+  }
+  
+  // Improve text legibility on mobile
+  .wp-super-gallery {
+    font-size: 16px; // Prevents iOS zoom on focus
+  }
+  
+  // Prevent text overflow on small screens
+  .wp-super-gallery h1,
+  .wp-super-gallery h2,
+  .wp-super-gallery h3 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
 }
 
 // ScrollArea tuning: visible scrollbar on desktop, hidden on mobile with touch momentum
