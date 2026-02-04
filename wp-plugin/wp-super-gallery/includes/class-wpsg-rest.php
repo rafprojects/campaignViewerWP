@@ -294,6 +294,27 @@ class WPSG_REST {
         $page = max(1, intval($request->get_param('page')));
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
 
+        // Generate cache key based on user ID and query parameters
+        $user_id = get_current_user_id();
+        $is_admin = current_user_can('manage_options');
+        $cache_key = sprintf(
+            'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s',
+            $user_id,
+            $status ?: 'all',
+            $visibility ?: 'all',
+            $company ?: 'all',
+            $search ?: 'none',
+            $page,
+            $per_page,
+            $is_admin ? 'admin' : 'user'
+        );
+
+        // Try to get cached data
+        $cached = get_transient($cache_key);
+        if (false !== $cached && is_array($cached)) {
+            return new WP_REST_Response($cached, 200);
+        }
+
         $args = [
             'post_type' => 'wpsg_campaign',
             'post_status' => 'publish',
@@ -329,8 +350,7 @@ class WPSG_REST {
             ];
         }
 
-        $user_id = get_current_user_id();
-        if (!current_user_can('manage_options')) {
+        if (!$is_admin) {
             if (!$user_id) {
                 $meta_query[] = [
                     'key' => 'visibility',
@@ -351,13 +371,18 @@ class WPSG_REST {
         $query = new WP_Query($args);
         $items = array_map([self::class, 'format_campaign'], $query->posts);
 
-        return new WP_REST_Response([
+        $response_data = [
             'items' => $items,
             'page' => $page,
             'perPage' => $per_page,
             'total' => (int) $query->found_posts,
             'totalPages' => (int) $query->max_num_pages,
-        ], 200);
+        ];
+
+        // Cache for 5 minutes (300 seconds)
+        set_transient($cache_key, $response_data, 300);
+
+        return new WP_REST_Response($response_data, 200);
     }
 
     public static function create_campaign() {
@@ -2103,6 +2128,7 @@ class WPSG_REST {
     private static function clear_accessible_campaigns_cache() {
         global $wpdb;
 
+        // Clear accessible campaigns cache
         $prefix = $wpdb->esc_like('_transient_wpsg_accessible_campaigns_') . '%';
         $sql = $wpdb->prepare(
             "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
@@ -2116,6 +2142,21 @@ class WPSG_REST {
             $timeout_prefix
         );
         $wpdb->query($timeout_sql);
+
+        // Clear campaign list cache for all users
+        $campaigns_prefix = $wpdb->esc_like('_transient_wpsg_campaigns_') . '%';
+        $campaigns_sql = $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $campaigns_prefix
+        );
+        $wpdb->query($campaigns_sql);
+
+        $campaigns_timeout_prefix = $wpdb->esc_like('_transient_timeout_wpsg_campaigns_') . '%';
+        $campaigns_timeout_sql = $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $campaigns_timeout_prefix
+        );
+        $wpdb->query($campaigns_timeout_sql);
     }
 
     private static function get_campaign_deny_ids($post_id) {

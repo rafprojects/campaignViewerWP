@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
 import type { MediaItem } from '@/types';
@@ -34,25 +33,14 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
       {/* Image viewer */}
       <Box pos="relative">
         <AspectRatio ratio={16 / 9}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.3 }}
-              style={{ width: '100%', height: '100%' }}
-            >
-              <Image
-                src={currentImage.url}
-                alt={currentImage.caption}
-                fit="contain"
-                h="100%"
-                style={{ cursor: 'zoom-in' }}
-                onClick={() => setIsLightboxOpen(true)}
-              />
-            </motion.div>
-          </AnimatePresence>
+          <Image
+            src={currentImage.url}
+            alt={currentImage.caption}
+            fit="contain"
+            h="100%"
+            style={{ cursor: 'zoom-in' }}
+            onClick={() => setIsLightboxOpen(true)}
+          />
         </AspectRatio>
 
         {/* Zoom button */}
@@ -148,32 +136,26 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         }}
       >
         <Box h="100vh" pos="relative" component="div">
-          <AnimatePresence>
-            {isLightboxOpen && (
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Image
-                  src={currentImage.url}
-                  alt={currentImage.caption}
-                  fit="contain"
-                  h="100%"
-                  w="100%"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {isLightboxOpen && (
+            <Box
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                src={currentImage.url}
+                alt={currentImage.caption}
+                fit="contain"
+                h="100%"
+                w="100%"
+              />
+            </Box>
+          )}
 
           {/* Close button */}
           <ActionIcon

@@ -96,7 +96,7 @@ describe('App', () => {
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
-      const url = typeof input === 'string' ? input : input.url;
+      const url = typeof input === 'string' ? input : (input as Request).url;
       if (url.includes('/token/validate')) {
         // Token validation succeeds
         return Promise.resolve({
@@ -321,7 +321,7 @@ describe('App', () => {
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
-      const url = typeof input === 'string' ? input : input.url;
+      const url = typeof input === 'string' ? input : (input as Request).url;
       if (url.includes('/token/validate')) {
         // Token validation succeeds
         return Promise.resolve({

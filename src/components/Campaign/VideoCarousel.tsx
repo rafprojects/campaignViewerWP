@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
@@ -45,7 +44,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               style={{ width: '100%', height: '100%', border: 'none' }}
             />
           ) : (
-            <motion.div key={currentIndex} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div>
               <Image
                 src={currentVideo.thumbnail}
                 alt={currentVideo.caption}
@@ -68,7 +67,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               >
                 <Play size={32} fill="currentColor" />
               </ActionIcon>
-            </motion.div>
+            </div>
           )}
         </AspectRatio>
 

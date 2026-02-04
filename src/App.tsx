@@ -283,8 +283,7 @@ function AppContent({
       if (search) params.set('search', search);
       
       const response = await apiClient.get<{ items: MediaItem[]; total: number }>(
-        `/wp-json/wp-super-gallery/v1/media/library?${params.toString()}`,
-        { signal: abortController.signal }
+        `/wp-json/wp-super-gallery/v1/media/library?${params.toString()}`
       );
       
       // Only update state if this request wasn't aborted
