@@ -8,12 +8,15 @@ import { ModalsProvider } from '@mantine/modals'
 import { theme } from './theme'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
+import { startWebVitalsMonitoring } from './services/monitoring/webVitals'
 
 type MountProps = Record<string, unknown>
 
 const query = new URLSearchParams(window.location.search)
 const windowFlag = (window as Window & { __USE_SHADOW_DOM__?: boolean }).__USE_SHADOW_DOM__
 const useShadowDom = windowFlag ?? query.get('shadow') !== '0'
+
+startWebVitalsMonitoring()
 
 const parseProps = (node: Element): MountProps => {
   const raw = node.getAttribute('data-wpsg-props')
