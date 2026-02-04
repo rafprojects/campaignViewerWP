@@ -1,4 +1,4 @@
-import { forwardRef, memo } from 'react';
+import { forwardRef } from 'react';
 import { Lock, Eye } from 'lucide-react';
 import { Card, Image, Badge, Group, Text, Box, Stack } from '@mantine/core';
 import type { Campaign } from '@/types';
@@ -10,13 +10,28 @@ interface CampaignCardProps {
   onClick: () => void;
 }
 
-const CampaignCardComponent = forwardRef<HTMLDivElement, CampaignCardProps>(
+export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick }, ref) => {
     return (
       <div
         ref={ref}
         onClick={hasAccess ? onClick : undefined}
-        className={styles.cardWrapper}
+        onKeyDown={(event) => {
+          if (!hasAccess) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick();
+          }
+        }}
+        role="button"
+        tabIndex={hasAccess ? 0 : -1}
+        aria-disabled={!hasAccess}
+        aria-label={
+          hasAccess
+            ? `Open campaign ${campaign.title}`
+            : `Campaign ${campaign.title} is locked`
+        }
+        className={styles.card}
         style={{
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,
@@ -160,7 +175,4 @@ const CampaignCardComponent = forwardRef<HTMLDivElement, CampaignCardProps>(
   },
 );
 
-CampaignCardComponent.displayName = 'CampaignCard';
-
-// Memoize component to prevent unnecessary re-renders
-export const CampaignCard = memo(CampaignCardComponent);
+CampaignCard.displayName = 'CampaignCard';
