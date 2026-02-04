@@ -605,7 +605,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Table.Td>
         <Table.Td>{c.companyId || '—'}</Table.Td>
         <Table.Td>
-          <Group gap="xs" wrap="nowrap">
+          <Group gap="xs" wrap="wrap">
             <Button variant="outline" size="xs" leftSection={<IconEdit size={14} />} onClick={() => handleEdit(c)}>
               Edit
             </Button>
@@ -654,7 +654,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Table.Td>{a.grantedAt ? new Date(a.grantedAt).toLocaleString() : '—'}</Table.Td>
         <Table.Td>
           <Tooltip label={a.source === 'company' ? 'Revoke company-wide access' : 'Revoke campaign access'}>
-            <ActionIcon color="red" variant="light" onClick={() => handleRevokeAccess(a)} aria-label="Revoke access">
+            <ActionIcon color="red" variant="light" size="lg" onClick={() => handleRevokeAccess(a)} aria-label="Revoke access">
               <IconTrash size={16} />
             </ActionIcon>
           </Tooltip>
@@ -687,9 +687,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   return (
     <Card shadow="sm" radius="md" withBorder>
-      <Group justify="space-between" mb="md">
+      <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
         <Group>
-          <ActionIcon variant="light" onClick={onClose} aria-label="Back to gallery">
+          <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
             <IconArrowLeft />
           </ActionIcon>
           <Title order={3}>Admin Panel</Title>
@@ -700,7 +700,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       </Group>
 
       <Tabs value={activeTab} onChange={setActiveTab} aria-label="Admin panel sections">
-        <Tabs.List>
+        <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
           <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
           <Tabs.Tab value="media">Media</Tabs.Tab>
           <Tabs.Tab value="access">Access</Tabs.Tab>
@@ -713,8 +713,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           ) : error ? (
             <Text c="red" role="alert" aria-live="assertive">{error}</Text>
           ) : (
-            <ScrollArea>
-              <Table verticalSpacing="sm" aria-label="Campaign list">
+            <ScrollArea offsetScrollbars type="auto">
+              <Table verticalSpacing="sm" highlightOnHover aria-label="Campaign list" style={{ minWidth: 720 }}>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Title</Table.Th>
@@ -737,7 +737,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           title={editingCampaign ? 'Edit Campaign' : 'New Campaign'}
           size="lg"
         >
-          <Stack gap="sm">
+          <Stack gap="md">
             <TextInput
               label="Title"
               placeholder="Campaign title"
@@ -751,7 +751,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               onChange={(e) => setFormState((s) => ({ ...s, description: e.currentTarget.value }))}
               minRows={3}
             />
-            <Group grow>
+            <Group grow wrap="wrap" gap="sm">
               <TextInput
                 label="Company Slug"
                 placeholder="company-id"
@@ -805,7 +805,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 </Group>
               </Card>
             )}
-            <Group justify="flex-end" mt="md">
+            <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
               <Button variant="default" onClick={closeCampaignForm}>
                 Cancel
               </Button>
@@ -817,19 +817,20 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Modal>
 
         <Tabs.Panel value="media" pt="md">
-          <Group mb="md" justify="space-between">
+          <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
             <Select
-              label="Campaign"
+              label={<Text size="sm" fw={500} c="gray.2">Campaign</Text>}
               placeholder="Select campaign"
               data={campaignSelectData}
               value={mediaCampaignId}
               onChange={(v) => setMediaCampaignId(v ?? '')}
-              style={{ minWidth: 200 }}
+              style={{ minWidth: 200, flex: '1 1 200px' }}
             />
             <Button
               variant="outline"
               leftSection={<IconRefresh size={18} />}
               loading={rescanAllLoading}
+              style={{ flex: '0 0 auto' }}
               onClick={async () => {
                 setRescanAllLoading(true);
                 try {
@@ -859,11 +860,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
         <Tabs.Panel value="access" pt="md">
           {/* View Mode Toggle */}
-          <Card shadow="sm" withBorder mb="md" p="sm">
+          <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
             <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
-              <Group align="flex-end" gap="md">
+              <Group align="flex-end" gap="md" wrap="wrap">
                 <Box>
-                  <Text size="sm" fw={500} mb={4}>View By</Text>
+                  <Text size="sm" fw={500} mb={4} c="gray.2">View By</Text>
                   <SegmentedControl
                     value={accessViewMode}
                     onChange={(v) => setAccessViewMode(v as AccessViewMode)}
@@ -878,28 +879,28 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
                 {accessViewMode === 'campaign' ? (
                   <Select
-                    label="Select Campaign"
+                    label={<Text size="sm" fw={500} c="gray.2">Select Campaign</Text>}
                     placeholder="Choose a campaign..."
                     data={campaignSelectData}
                     value={accessCampaignId}
                     onChange={(v) => setAccessCampaignId(v ?? '')}
-                    style={{ minWidth: 280 }}
+                    style={{ minWidth: 240, flex: '1 1 240px' }}
                   />
                 ) : (
                   <Select
-                    label="Select Company"
+                    label={<Text size="sm" fw={500} c="gray.2">Select Company</Text>}
                     placeholder={companiesLoading ? 'Loading...' : 'Choose a company...'}
                     data={companySelectData}
                     value={selectedCompanyId}
                     onChange={(v) => setSelectedCompanyId(v ?? '')}
                     disabled={companiesLoading}
-                    style={{ minWidth: 280 }}
+                    style={{ minWidth: 240, flex: '1 1 240px' }}
                   />
                 )}
               </Group>
 
               {/* Context info */}
-              <Group gap="md">
+              <Group gap="md" wrap="wrap">
                 {accessViewMode === 'campaign' && selectedCampaign && (
                   <Stack gap={2}>
                     <Group gap="xs">
@@ -911,6 +912,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                         <Text size="xs">Archived campaign - grants inactive</Text>
                       </Alert>
                     )}
+                    <Group gap="xs" mt={2}>
+                      <Text size="xs" c="dimmed">Total users:</Text>
+                      <Badge variant="light" color="blue">Access {accessEntries.length}</Badge>
+                    </Group>
                   </Stack>
                 )}
                 {(accessViewMode === 'company' || accessViewMode === 'all') && selectedCompany && (
@@ -927,15 +932,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                         size="xs"
                         leftSection={<IconArchive size={14} />}
                         onClick={() => setConfirmArchiveCompany(selectedCompany)}
+                        mt={4}
                       >
                         Archive All Campaigns
                       </Button>
                     )}
+                    <Group gap="xs" mt={2}>
+                      <Text size="xs" c="dimmed">Total users:</Text>
+                      <Badge variant="light" color="blue">Access {accessEntries.length}</Badge>
+                    </Group>
                   </Stack>
                 )}
-                <Text size="sm" c="dimmed" role="status" aria-live="polite">
-                  {accessEntries.length} user{accessEntries.length !== 1 ? 's' : ''} with access
-                </Text>
               </Group>
             </Group>
           </Card>
@@ -955,9 +962,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           ) : (
             <>
               {/* Current Access - Show this first and prominently */}
-              <Card shadow="sm" withBorder mb="md">
-                <Group justify="space-between" mb="sm">
-                  <Text fw={600} size="lg">
+              <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
+                <Group justify="space-between" mb="sm" wrap="wrap" gap="sm">
+                  <Text fw={600} size="lg" c="gray.1">
                     {accessViewMode === 'campaign' ? 'Current Access' : 
                      accessViewMode === 'company' ? 'Company-Wide Access' : 
                      'All Access (Company + Campaigns)'}
@@ -976,8 +983,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                       : 'No access grants found for this company or its campaigns.'}
                   </Text>
                 ) : (
-                  <ScrollArea style={{ maxHeight: 300 }}>
-                    <Table verticalSpacing="xs" highlightOnHover aria-label="Current access entries">
+                  <ScrollArea style={{ maxHeight: 300 }} offsetScrollbars type="auto">
+                    <Table
+                      verticalSpacing="xs"
+                      highlightOnHover
+                      aria-label="Current access entries"
+                      style={{ minWidth: 640 }}
+                    >
                       <Table.Thead>
                         <Table.Tr>
                           <Table.Th>User</Table.Th>
@@ -993,8 +1005,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               </Card>
 
               {/* Grant Access Form - Unified and compact */}
-              <Card shadow="sm" withBorder>
-                <Text fw={600} size="lg" mb="sm">
+              <Card shadow="sm" withBorder p={{ base: 'sm', md: 'md' }}>
+                <Text fw={600} size="lg" mb="sm" c="gray.1">
                   {accessViewMode === 'campaign' ? 'Grant New Access' : 'Grant Company-Wide Access'}
                 </Text>
                 
@@ -1015,7 +1027,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                     >
                       <Combobox.Target>
                         <InputBase
-                          label="User"
+                          label={<Text size="sm" fw={500} c="gray.2">User</Text>}
                           placeholder="Search name, email, or enter ID..."
                           value={selectedUser ? `${selectedUser.displayName} (${selectedUser.email})` : userSearchQuery}
                           onChange={(e) => {
@@ -1095,7 +1107,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                   {accessViewMode === 'campaign' && (
                     <>
                       <Select
-                        label="Scope"
+                        label={<Text size="sm" fw={500} c="gray.2">Scope</Text>}
                         data={[
                           { value: 'campaign', label: '📋 This Campaign' },
                           { value: 'company', label: '🏢 All Company Campaigns' },
@@ -1106,7 +1118,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                       />
 
                       <Select
-                        label="Action"
+                        label={<Text size="sm" fw={500} c="gray.2">Action</Text>}
                         data={[
                           { value: 'grant', label: '✅ Grant Access' },
                           { value: 'deny', label: '❌ Deny Access' },
@@ -1164,7 +1176,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Tabs.Panel value="audit" pt="md">
           <Group mb="md">
             <Select
-              label="Campaign"
+              label={<Text size="sm" fw={500} c="gray.2">Campaign</Text>}
               placeholder="Select campaign"
               data={campaignSelectData}
               value={auditCampaignId}
@@ -1177,8 +1189,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           ) : auditEntries.length === 0 ? (
             <Text c="dimmed" role="status" aria-live="polite">No audit entries yet.</Text>
           ) : (
-            <ScrollArea>
-              <Table verticalSpacing="sm" aria-label="Audit entries">
+            <ScrollArea
+              offsetScrollbars
+              type="always"
+              scrollbars="y"
+              className="wpsg-scrollarea"
+              h={360}
+            >
+              <Table verticalSpacing="sm" highlightOnHover aria-label="Audit entries" style={{ minWidth: 640 }}>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th miw={140}>When</Table.Th>
@@ -1194,7 +1212,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.Panel>
       </Tabs>
 
-      <Modal opened={!!confirmArchive} onClose={() => setConfirmArchive(null)} title="Archive campaign">
+      <Modal opened={!!confirmArchive} onClose={() => setConfirmArchive(null)} title="Archive campaign" padding="md">
         <Text>Archive this campaign? This action will mark it archived.</Text>
         <Group justify="flex-end" mt="md">
           <Button variant="default" onClick={() => setConfirmArchive(null)}>Cancel</Button>
@@ -1213,7 +1231,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Group>
       </Modal>
 
-      <Modal opened={!!confirmRestore} onClose={() => setConfirmRestore(null)} title="Restore campaign">
+      <Modal opened={!!confirmRestore} onClose={() => setConfirmRestore(null)} title="Restore campaign" padding="md">
         <Text>Restore this campaign? This will make it active again and enable any associated access grants.</Text>
         <Group justify="flex-end" mt="md">
           <Button variant="default" onClick={() => setConfirmRestore(null)}>Cancel</Button>
@@ -1236,6 +1254,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         opened={!!confirmArchiveCompany} 
         onClose={() => { setConfirmArchiveCompany(null); setArchiveRevokeAccess(false); }} 
         title="Archive all company campaigns"
+        padding="md"
       >
         <Stack gap="md">
           <Text>
@@ -1288,6 +1307,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         onClose={closeQuickAddUser} 
         title="Quick Add User"
         size="md"
+        padding="md"
       >
         <Stack gap="md">
           {quickAddResult ? (
@@ -1341,7 +1361,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                   </Box>
                 )}
               </Alert>
-              <Group justify="flex-end">
+              <Group justify="flex-end" wrap="wrap" gap="sm">
                 <Button onClick={closeQuickAddUser}>Close</Button>
               </Group>
             </>
@@ -1395,7 +1415,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 description="Enable to test the password reset link UI without actually sending email"
               />
 
-              <Group justify="flex-end" mt="md">
+              <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
                 <Button variant="default" onClick={closeQuickAddUser}>Cancel</Button>
                 <Button 
                   onClick={handleQuickAddUser} 

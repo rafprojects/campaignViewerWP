@@ -60,7 +60,7 @@ export function CardGallery({
     <Box className={styles.gallery}>
       {/* Header */}
       <Box component="header" className={styles.header}>
-        <Container size="xl" py="md">
+        <Container size="xl" py={{ base: 'sm', md: 'md' }}>
           <Stack gap="lg">
             {/* Title and subtitle */}
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
@@ -89,7 +89,7 @@ export function CardGallery({
 
             {/* Filter tabs */}
             <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters">
-              <Tabs.List>
+              <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
                 <Tabs.Tab value="all">All</Tabs.Tab>
                 <Tabs.Tab value="accessible">My Access</Tabs.Tab>
                 {companies.map((company) => (
@@ -111,9 +111,9 @@ export function CardGallery({
       </Box>
 
       {/* Gallery Grid */}
-      <Container size="xl" component="main" py="xl">
+      <Container size="xl" component="main" py={{ base: 'lg', md: 'xl' }}>
         <motion.div layout>
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing={{ base: 'md', sm: 'lg' }}>
             <AnimatePresence mode="popLayout">
               {filteredCampaigns.map((campaign) => (
                 <CampaignCard
@@ -128,7 +128,7 @@ export function CardGallery({
         </motion.div>
 
         {filteredCampaigns.length === 0 && (
-          <Center py={80}>
+          <Center py={{ base: 60, md: 80 }}>
             <Stack align="center">
               <Text size="lg" c="dimmed">
                 {filter === 'accessible'

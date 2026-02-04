@@ -37,11 +37,11 @@ export function CampaignViewer({
       aria-label={`Campaign details for ${campaign.title}`}
     >
       {/* Cover Image Header */}
-      <Box pos="relative" h={320} component="div">
+      <Box pos="relative" h={{ base: 220, sm: 280, md: 320 }} component="div">
         <Image 
           src={campaign.coverImage}
           alt={campaign.title}
-          h={320}
+          h={{ base: 220, sm: 280, md: 320 }}
           fit="cover"
           loading="lazy"
         />
@@ -67,6 +67,7 @@ export function CampaignViewer({
           color="dark"
           radius="xl"
           aria-label="Back to gallery"
+          size="sm"
         >
           Back to Gallery
         </Button>
@@ -86,11 +87,11 @@ export function CampaignViewer({
         </Badge>
 
         {/* Title and meta overlay */}
-        <Box pos="absolute" bottom={0} left={0} right={0} p="lg">
+        <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
           <Title order={1} size="h1" c="white" mb="sm">
             {campaign.title}
           </Title>
-          <Group gap="lg">
+          <Group gap="lg" wrap="wrap">
             <Group gap={4}>
               <Calendar size={16} color="#cbd5e1" />
               <Text size="sm" c="gray.4">
@@ -112,7 +113,7 @@ export function CampaignViewer({
       </Box>
 
       {/* Content */}
-      <Box p="xl" style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
+      <Box p={{ base: 'md', md: 'xl' }} style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
         <Stack gap="xl">
           {/* Description */}
           <Box>
@@ -142,7 +143,7 @@ export function CampaignViewer({
           )}
 
           {/* Campaign Stats */}
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" py="md" style={{ borderTopWidth: 1, borderTopColor: 'var(--color-border)' }}>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="md" style={{ borderTopWidth: 1, borderTopColor: 'var(--color-border)' }}>
             <Paper p="md" radius="md" withBorder ta="center">
               <Text size="xl" fw={700} c="white">{campaign.videos.length}</Text>
               <Text size="sm" c="dimmed">Videos</Text>
@@ -166,47 +167,37 @@ export function CampaignViewer({
           </SimpleGrid>
 
           {/* Admin Section */}
-          <Paper p="lg" radius="md" withBorder bg="dark.8">
-            <Stack gap="md">
-              <Box>
-                <Title order={3} size="h5" mb={4}>Admin Actions</Title>
-                <Text size="sm" c="dimmed">
-                  Manage this campaign. Admin access is required.
-                </Text>
-              </Box>
-              
-              <Group gap="md">
-                <Button
-                  disabled={!isAdmin}
-                  aria-disabled={!isAdmin}
-                  onClick={() => onEditCampaign?.(campaign)}
-                >
-                  Edit Campaign
-                </Button>
-                <Button
-                  disabled={!isAdmin}
-                  aria-disabled={!isAdmin}
-                  onClick={() => onAddExternalMedia?.(campaign)}
-                >
-                  Manage Media
-                </Button>
-                <Button
-                  color="red"
-                  disabled={!isAdmin}
-                  aria-disabled={!isAdmin}
-                  onClick={() => onArchiveCampaign?.(campaign)}
-                >
-                  Archive Campaign
-                </Button>
-              </Group>
-
-              {!isAdmin && (
-                <Text size="sm" c="red.4">
-                  Admin permissions required.
-                </Text>
-              )}
-            </Stack>
-          </Paper>
+          {isAdmin && (
+            <Paper p="lg" radius="md" withBorder bg="dark.8">
+              <Stack gap="md">
+                <Box>
+                  <Title order={3} size="h5" mb={4}>Admin Actions</Title>
+                </Box>
+                
+                <Group gap="md" wrap="wrap">
+                  <Button
+                    onClick={() => onEditCampaign?.(campaign)}
+                    style={{ flex: '1 1 160px' }}
+                  >
+                    Edit Campaign
+                  </Button>
+                  <Button
+                    onClick={() => onAddExternalMedia?.(campaign)}
+                    style={{ flex: '1 1 160px' }}
+                  >
+                    Manage Media
+                  </Button>
+                  <Button
+                    color="red"
+                    onClick={() => onArchiveCampaign?.(campaign)}
+                    style={{ flex: '1 1 160px' }}
+                  >
+                    Archive Campaign
+                  </Button>
+                </Group>
+              </Stack>
+            </Paper>
+          )}
         </Stack>
       </Box>
     </Modal>

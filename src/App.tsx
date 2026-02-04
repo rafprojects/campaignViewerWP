@@ -532,6 +532,7 @@ function AppContent({
                   <Button
                     variant="default"
                     onClick={openAdminPanel}
+                    className="wpsg-admin-btn"
                   >
                     Admin Panel
                   </Button>
@@ -539,6 +540,7 @@ function AppContent({
                     <ActionIcon
                       variant="default"
                       size="lg"
+                      className="wpsg-admin-btn"
                       onClick={openSettings}
                       aria-label="Settings"
                     >
@@ -889,10 +891,11 @@ function AppContent({
         onClose={() => setArchiveModalCampaign(null)}
         title="Archive Campaign"
         zIndex={300}
+        padding="md"
       >
         <Stack gap="md">
           <p>Are you sure you want to archive &quot;{archiveModalCampaign?.title}&quot;? This action will mark it as archived.</p>
-          <Group justify="flex-end">
+          <Group justify="flex-end" wrap="wrap" gap="sm">
             <Button variant="default" onClick={() => setArchiveModalCampaign(null)}>
               Cancel
             </Button>
@@ -914,6 +917,7 @@ function AppContent({
         title="Add External Media"
         size="md"
         zIndex={300}
+        padding="md"
       >
         <Stack gap="md">
           <Select
@@ -945,7 +949,7 @@ function AppContent({
             value={externalMediaThumbnail}
             onChange={(e) => setExternalMediaThumbnail(e.currentTarget.value)}
           />
-          <Group justify="flex-end" mt="md">
+          <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
             <Button variant="default" onClick={() => setExternalMediaCampaign(null)}>
               Cancel
             </Button>

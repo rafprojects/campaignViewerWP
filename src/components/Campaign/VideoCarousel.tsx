@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
@@ -11,6 +11,7 @@ interface VideoCarouselProps {
 export function VideoCarousel({ videos }: VideoCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   const nextVideo = () => {
     setCurrentIndex((prev) => (prev + 1) % videos.length);
@@ -65,7 +66,12 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               style={{ width: '100%', height: '100%', border: 'none' }}
             />
           ) : (
-            <motion.div key={currentIndex} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+            >
               <Image
                 src={currentVideo.thumbnail}
                 alt={currentVideo.caption || 'Campaign video'}

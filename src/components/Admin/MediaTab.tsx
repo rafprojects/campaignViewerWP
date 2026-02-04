@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
+import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip, ScrollArea } from '@mantine/core';
+import { MediaCard } from './MediaCard';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconUpload, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
@@ -84,8 +85,9 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
   // Card size configurations
   const sizeConfig = {
-    small: { span: { base: 6, sm: 4, md: 3, lg: 2 }, height: 80 },
-    medium: { span: { base: 12, sm: 6, md: 4 }, height: 160 },
+    compact: { span: { base: 6, sm: 3, md: 2, lg: 2 }, height: 72 },
+    small: { span: { base: 6, sm: 4, md: 3, lg: 3 }, height: 110 },
+    medium: { span: { base: 12, sm: 6, md: 4 }, height: 170 },
     large: { span: { base: 12, sm: 6 }, height: 240 },
   };
 
@@ -111,22 +113,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
     setLoading(true);
     try {
-      const response = await apiClient.get<
-        MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number; total?: number } }
-      >(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`);
-      const items = Array.isArray(response) ? response : (response.items ?? []);
-      const sorted = items.sort((a, b) => a.order - b.order);
+      const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
+        `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`,
+      );
+      const items = Array.isArray(response) ? response : response.items ?? [];
+      const sorted = [...items].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       setMedia(sorted);
 
-      const typesUpdated = !Array.isArray(response) ? response.meta?.typesUpdated ?? 0 : 0;
-      if (typesUpdated > 0) {
-        showNotification({
-          title: 'Media types corrected',
-          message: `Updated ${typesUpdated} media item${typesUpdated === 1 ? '' : 's'} automatically.`,
-        });
-      }
-
-      // Auto-fetch oEmbed metadata for external items missing thumbnail or title
       const needs = sorted.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));
       if (needs.length > 0) {
         try {
@@ -440,17 +433,18 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
   return (
     <div>
-      <Group justify="space-between" mb="md">
-        <Group gap="md">
-          <Text fw={700}>Media</Text>
+      <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
+        <Group gap="md" wrap="wrap">
+          <Text fw={700} c="white">Media</Text>
           <Text size="sm" c="dimmed">({media.length} items)</Text>
         </Group>
-        <Group gap="sm">
+        <Group gap="sm" wrap="wrap" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
           {/* View Mode Toggle */}
           <SegmentedControl
             size="xs"
             value={viewMode}
             onChange={(v) => setViewMode(v as ViewMode)}
+            aria-label="Media view mode"
             data={[
               { value: 'grid', label: <Tooltip label="Grid View"><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
               { value: 'compact', label: <Tooltip label="Compact Grid"><Box><IconGridDots size={16} /></Box></Tooltip> },
@@ -463,6 +457,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
               size="xs"
               value={cardSize}
               onChange={(v) => setCardSize(v as CardSize)}
+              aria-label="Media card size"
               data={[
                 { value: 'small', label: 'S' },
                 { value: 'medium', label: 'M' },
@@ -476,10 +471,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
             onClick={handleRescanTypes}
             loading={rescanning}
             disabled={media.length === 0}
+            style={{ flex: '0 0 auto' }}
           >
             Rescan Types
           </Button>
-          <Button leftSection={<IconPlus />} onClick={() => setAddOpen(true)}>Add Media</Button>
+          <Button leftSection={<IconPlus />} onClick={() => setAddOpen(true)} style={{ flex: '0 0 auto' }}>
+            Add Media
+          </Button>
         </Group>
       </Group>
 
@@ -487,137 +485,95 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         <Loader />
       ) : viewMode === 'list' ? (
         /* List View */
-        <Table verticalSpacing="xs">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th w={60}>Thumb</Table.Th>
-              <Table.Th>Caption</Table.Th>
-              <Table.Th>Type</Table.Th>
-              <Table.Th>Source</Table.Th>
-              <Table.Th w={180}>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {media.map((item) => (
-              <Table.Tr key={item.id}>
-                <Table.Td>
-                  <Image
-                    src={item.thumbnail ?? item.url}
-                    alt={item.caption || 'Media thumbnail'}
-                    w={50}
-                    h={50}
-                    fit="cover"
-                    radius="sm"
-                    loading="lazy"
-                    style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
-                    onClick={() => item.type === 'image' && openLightbox(item)}
-                    role={item.type === 'image' ? 'button' : undefined}
-                    tabIndex={item.type === 'image' ? 0 : -1}
-                    aria-label={
-                      item.type === 'image'
-                        ? `Open image preview for ${item.caption || item.url}`
-                        : undefined
-                    }
-                    onKeyDown={(event) => {
-                      if (item.type !== 'image') return;
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        openLightbox(item);
-                      }
-                    }}
-                    fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
-                  />
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
-                  <Text size="xs" c="dimmed" lineClamp={1}>{item.url}</Text>
-                </Table.Td>
-                <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
-                <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
-                <Table.Td>
-                  <Group gap={4}>
-                    <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-                    <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
-                    <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
-                    <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
-                  </Group>
-                </Table.Td>
+        <ScrollArea offsetScrollbars type="auto">
+          <Table verticalSpacing="xs" highlightOnHover style={{ minWidth: 720 }}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th w={60}>Thumb</Table.Th>
+                <Table.Th>Caption</Table.Th>
+                <Table.Th>Type</Table.Th>
+                <Table.Th>Source</Table.Th>
+                <Table.Th w={180}>Actions</Table.Th>
               </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      ) : (
-        /* Grid / Compact View */
-        <Grid>
-          {media.map((item) => (
-            <Grid.Col key={item.id} span={viewMode === 'compact' ? sizeConfig.small.span : sizeConfig[cardSize].span}>
-              <Card shadow="sm" padding={viewMode === 'compact' || cardSize === 'small' ? 'xs' : 'sm'}>
-                <Card.Section
-                  style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
-                  onClick={() => item.type === 'image' && openLightbox(item)}
-                  role={item.type === 'image' ? 'button' : undefined}
-                  tabIndex={item.type === 'image' ? 0 : -1}
-                  aria-label={
-                    item.type === 'image'
-                      ? `Open image preview for ${item.caption || item.url}`
-                      : undefined
-                  }
-                  onKeyDown={(event) => {
-                    if (item.type !== 'image') return;
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      openLightbox(item);
-                    }
-                  }}
-                >
-                  {item.source === 'external' && item.type === 'video' && item.embedUrl ? (
-                    <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-                      <iframe
-                        src={item.embedUrl}
-                        title={item.caption || 'External video'}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
-                        allowFullScreen
-                      />
-                    </div>
-                  ) : (
+            </Table.Thead>
+            <Table.Tbody>
+              {media.map((item) => (
+                <Table.Tr key={item.id}>
+                  <Table.Td>
                     <Image
                       src={item.thumbnail ?? item.url}
                       alt={item.caption || 'Media thumbnail'}
-                      h={viewMode === 'compact' ? sizeConfig.small.height : sizeConfig[cardSize].height}
+                      w={50}
+                      h={50}
                       fit="cover"
+                      radius="sm"
                       loading="lazy"
-                      fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23374151' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
+                      style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
+                      onClick={() => item.type === 'image' && openLightbox(item)}
+                      role={item.type === 'image' ? 'button' : undefined}
+                      tabIndex={item.type === 'image' ? 0 : -1}
+                      aria-label={
+                        item.type === 'image'
+                          ? `Open image preview for ${item.caption || item.url}`
+                          : undefined
+                      }
+                      onKeyDown={(event) => {
+                        if (item.type !== 'image') return;
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openLightbox(item);
+                        }
+                      }}
+                      fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
                     />
-                  )}
-                </Card.Section>
-                {/* Show controls based on size */}
-                {(viewMode !== 'compact' && cardSize !== 'small') ? (
-                  <Group justify="space-between" mt="sm">
-                    <Box style={{ flex: 1, minWidth: 0 }}>
-                      <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
-                      {cardSize === 'large' && item.url && (
-                        <Text size="xs" c="dimmed" lineClamp={1}>
-                          <a href={item.url} target="_blank" rel="noreferrer">{item.url}</a>
-                        </Text>
-                      )}
-                    </Box>
-                    <Group gap={4} wrap="nowrap">
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
+                    <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
+                  </Table.Td>
+                  <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
+                  <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
+                  <Table.Td>
+                    <Group gap={4}>
                       <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
                       <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
                       <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
                       <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
                     </Group>
-                  </Group>
-                ) : (
-                  /* Compact/Small: hover overlay for actions */
-                  <Group justify="center" mt={4} gap={2}>
-                    <ActionIcon size="xs" variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={12} /></ActionIcon>
-                    <ActionIcon size="xs" variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={12} /></ActionIcon>
-                  </Group>
-                )}
-              </Card>
-            </Grid.Col>
-          ))}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
+      ) : (
+        /* Grid / Compact View */
+        <Grid>
+          {media.map((item) => {
+            const mediaHeight = viewMode === 'compact'
+              ? sizeConfig.compact.height
+              : sizeConfig[cardSize].height;
+            const isCompact = viewMode === 'compact' || cardSize === 'small';
+            
+            return (
+              <Grid.Col
+                key={item.id}
+                span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
+              >
+                <MediaCard
+                  item={item}
+                  height={mediaHeight}
+                  compact={isCompact}
+                  showUrl={cardSize === 'large'}
+                  onEdit={() => openEdit(item)}
+                  onDelete={() => handleDelete(item)}
+                  onMoveUp={() => moveItem(item, 'up')}
+                  onMoveDown={() => moveItem(item, 'down')}
+                  onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
+                />
+              </Grid.Col>
+            );
+          })}
         </Grid>
       )}
 
@@ -693,17 +649,17 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         )}
       </Modal>
 
-      <Modal opened={addOpen} onClose={() => setAddOpen(false)} title="Add Media">
+      <Modal opened={addOpen} onClose={() => setAddOpen(false)} title="Add Media" padding="md">
         <Stack gap="sm">
           <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
-            <Group justify="space-between">
+            <Group justify="space-between" wrap="wrap" gap="sm">
               <Group>
                 <FileButton onChange={setSelectedFile} accept="image/*,video/*">
                   {(props) => <Button leftSection={<IconUpload />} {...props}>Choose file</Button>}
                 </FileButton>
                 <Text size="sm" c="dimmed">or drag & drop a file here</Text>
               </Group>
-              {selectedFile && <Text size="sm">{selectedFile.name}</Text>}
+              {selectedFile && <Text size="sm" c="gray.1">{selectedFile.name}</Text>}
             </Group>
 
             {previewUrl && (
@@ -739,7 +695,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
           </Paper>
 
           <Text fw={600}>Or add external URL</Text>
-          <Group>
+          <Group wrap="wrap" gap="sm">
             <TextInput
               label="External URL"
               value={externalUrl}
@@ -791,8 +747,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         </Stack>
       </Modal>
 
-      <Modal opened={editOpen} onClose={() => setEditOpen(false)} title="Edit Media">
-        <Stack>
+      <Modal opened={editOpen} onClose={() => setEditOpen(false)} title="Edit Media" padding="md">
+        <Stack gap="md">
           <TextInput 
             label="Title" 
             placeholder="Enter a title (optional)"
@@ -814,14 +770,14 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
             value={editingThumbnail ?? ''} 
             onChange={(e) => setEditingThumbnail(e.currentTarget.value)} 
           />
-          <Group justify="flex-end">
+          <Group justify="flex-end" wrap="wrap" gap="sm">
             <Button variant="default" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button onClick={saveEdit}>Save</Button>
           </Group>
         </Stack>
       </Modal>
 
-      <Modal opened={!!deleteItem} onClose={() => setDeleteItem(null)} title="Delete Media" size="sm">
+      <Modal opened={!!deleteItem} onClose={() => setDeleteItem(null)} title="Delete Media" size="sm" padding="md">
         <Stack>
           <Text>Are you sure you want to delete this media item? This action cannot be undone.</Text>
           <Group justify="flex-end">
