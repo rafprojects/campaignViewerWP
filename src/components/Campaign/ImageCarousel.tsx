@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
 import type { MediaItem } from '@/types';
@@ -11,15 +10,14 @@ interface ImageCarouselProps {
 export function ImageCarousel({ images }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
+  }, [images.length]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  }, [images.length]);
 
   const currentImage = images[currentIndex];
 
@@ -43,7 +41,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen, images.length]);
+  }, [isLightboxOpen, nextImage, prevImage]);
 
   return (
     <Stack gap="md">
@@ -76,25 +74,16 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         }}
       >
         <AspectRatio ratio={16 / 9}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: prefersReducedMotion ? 0 : -50 }}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
-              style={{ width: '100%', height: '100%' }}
-            >
-              <Image
-                src={currentImage.url}
-                alt={currentImage.caption || 'Campaign image'}
-                fit="contain"
-                h="100%"
-                style={{ cursor: 'zoom-in' }}
-                onClick={() => setIsLightboxOpen(true)}
-              />
-            </motion.div>
-          </AnimatePresence>
+          <Box style={{ width: '100%', height: '100%' }}>
+            <Image
+              src={currentImage.url}
+              alt={currentImage.caption || 'Campaign image'}
+              fit="contain"
+              h="100%"
+              style={{ cursor: 'zoom-in' }}
+              onClick={() => setIsLightboxOpen(true)}
+            />
+          </Box>
         </AspectRatio>
 
         {/* Zoom button */}
@@ -192,32 +181,26 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         }}
       >
         <Box h="100vh" pos="relative" component="div">
-          <AnimatePresence>
-            {isLightboxOpen && (
-              <motion.div
-                initial={{ scale: prefersReducedMotion ? 1 : 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: prefersReducedMotion ? 1 : 0.9, opacity: 0 }}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Image
-                  src={currentImage.url}
-                  alt={currentImage.caption || 'Campaign image'}
-                  fit="contain"
-                  h="100%"
-                  w="100%"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {isLightboxOpen && (
+            <Box
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <Image
+                src={currentImage.url}
+                alt={currentImage.caption || 'Campaign image'}
+                fit="contain"
+                h="100%"
+                w="100%"
+              />
+            </Box>
+          )}
 
           {/* Close button */}
           <ActionIcon

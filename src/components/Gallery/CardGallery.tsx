@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center } from '@mantine/core';
 import { CampaignCard } from './CampaignCard';
 import { CampaignViewer } from '@/components/Campaign/CampaignViewer';
@@ -112,20 +111,16 @@ export function CardGallery({
 
       {/* Gallery Grid */}
       <Container size="xl" component="main" py={{ base: 'lg', md: 'xl' }}>
-        <motion.div layout>
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing={{ base: 'md', sm: 'lg' }}>
-            <AnimatePresence mode="popLayout">
-              {filteredCampaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  hasAccess={hasAccess(campaign.id, campaign.visibility)}
-                  onClick={() => setSelectedCampaign(campaign)}
-                />
-              ))}
-            </AnimatePresence>
-          </SimpleGrid>
-        </motion.div>
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing={{ base: 'md', sm: 'lg' }}>
+          {filteredCampaigns.map((campaign) => (
+            <CampaignCard
+              key={campaign.id}
+              campaign={campaign}
+              hasAccess={hasAccess(campaign.id, campaign.visibility)}
+              onClick={() => setSelectedCampaign(campaign)}
+            />
+          ))}
+        </SimpleGrid>
 
         {filteredCampaigns.length === 0 && (
           <Center py={{ base: 60, md: 80 }} role="status" aria-live="polite">
@@ -143,19 +138,17 @@ export function CardGallery({
       </Container>
 
       {/* Campaign Viewer Modal */}
-      <AnimatePresence>
-        {selectedCampaign && (
-          <CampaignViewer
-            campaign={selectedCampaign}
-            hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
-            isAdmin={isAdmin}
-            onEditCampaign={onEditCampaign}
-            onArchiveCampaign={onArchiveCampaign}
-            onAddExternalMedia={onAddExternalMedia}
-            onClose={() => setSelectedCampaign(null)}
-          />
-        )}
-      </AnimatePresence>
+      {selectedCampaign && (
+        <CampaignViewer
+          campaign={selectedCampaign}
+          hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
+          isAdmin={isAdmin}
+          onEditCampaign={onEditCampaign}
+          onArchiveCampaign={onArchiveCampaign}
+          onAddExternalMedia={onAddExternalMedia}
+          onClose={() => setSelectedCampaign(null)}
+        />
+      )}
     </Box>
   );
 }

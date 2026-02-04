@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Lock, Eye } from 'lucide-react';
 import { Card, Image, Badge, Group, Text, Box, Stack } from '@mantine/core';
 import type { Campaign } from '@/types';
@@ -11,37 +10,11 @@ interface CampaignCardProps {
   onClick: () => void;
 }
 
-const MotionDiv = motion.div;
-
 export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick }, ref) => {
-    const prefersReducedMotion = useReducedMotion();
-    const cardVariants = {
-      initial: { opacity: 0, scale: prefersReducedMotion ? 1 : 0.9 },
-      rest: { opacity: 1, scale: 1, y: 0 },
-      hover: {
-        opacity: 1,
-        scale: prefersReducedMotion ? 1 : hasAccess ? 1.03 : 1.01,
-        y: prefersReducedMotion ? 0 : hasAccess ? -5 : 0,
-      },
-    };
-
-    const borderVariants = {
-      initial: { opacity: 0 },
-      rest: { opacity: 0 },
-      hover: { opacity: 1 },
-    };
-
     return (
-      <MotionDiv
+      <div
         ref={ref}
-        layout
-        variants={cardVariants}
-        initial="initial"
-        animate="rest"
-        exit="initial"
-        whileHover={hasAccess ? 'hover' : 'rest'}
-        whileTap={{ scale: prefersReducedMotion ? 1 : hasAccess ? 0.98 : 1 }}
         onClick={hasAccess ? onClick : undefined}
         onKeyDown={(event) => {
           if (!hasAccess) return;
@@ -186,8 +159,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
 
           {/* Hover border effect */}
           {hasAccess && (
-            <motion.div
-              variants={borderVariants}
+            <div
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -198,7 +170,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
             />
           )}
         </Card>
-      </MotionDiv>
+      </div>
     );
   },
 );

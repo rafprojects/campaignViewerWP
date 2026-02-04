@@ -145,7 +145,7 @@ export function CampaignViewer({
 
           {/* Campaign Stats */}
           <Box component="section" aria-labelledby="campaign-stats-heading">
-            <Title order={2} size="h6" mb="sm" id="campaign-stats-heading" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>Campaign Statistics</Title>
+            <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="md" style={{ borderTopWidth: 1, borderTopColor: 'var(--color-border)' }}>
             <Paper p="md" radius="md" withBorder ta="center">
               <Text size="xl" fw={700} c="white">{campaign.videos.length}</Text>
@@ -175,7 +175,7 @@ export function CampaignViewer({
             <Paper p="lg" radius="md" withBorder bg="dark.8" component="section" aria-labelledby="admin-actions-heading">
               <Stack gap="md">
                 <Box>
-                  <Title order={2} size="h5" mb={4} id="admin-actions-heading">Admin Actions</Title>
+                  <Title order={3} size="h5" mb={4} id="admin-actions-heading">Admin Actions</Title>
                 </Box>
                 
                 <Group gap="md" wrap="wrap">

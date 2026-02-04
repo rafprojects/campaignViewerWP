@@ -1,11 +1,8 @@
 import { forwardRef } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Card, Image, Text, Group, Box, ActionIcon } from '@mantine/core';
 import { IconPhoto, IconTrash } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import styles from './MediaCard.module.scss';
-
-const MotionDiv = motion.div;
 
 interface MediaCardProps {
   item: MediaItem;
@@ -22,25 +19,10 @@ interface MediaCardProps {
 export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
   ({ item, height, compact = false, showUrl = false, onEdit, onDelete, onMoveUp, onMoveDown, onImageClick }, ref) => {
     const isClickableImage = item.type === 'image' && onImageClick;
-    const prefersReducedMotion = useReducedMotion();
-
-    const cardVariants = {
-      initial: { opacity: 0, scale: 0.95 },
-      rest: { opacity: 1, scale: 1, y: 0 },
-      hover: {
-        opacity: 1,
-        scale: prefersReducedMotion ? 1 : 1.01,
-        y: prefersReducedMotion ? 0 : -1,
-      },
-    };
 
     return (
-      <MotionDiv
+      <div
         ref={ref}
-        variants={cardVariants}
-        initial="initial"
-        animate="rest"
-        whileHover="hover"
         className={styles.mediaCard}
       >
         <Card
@@ -95,7 +77,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
                 {showUrl && item.url && (
                   <Text size="xs" c="gray.4" lineClamp={1}>
-                    <a href={item.url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>{item.url}</a>
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{item.url}</a>
                   </Text>
                 )}
               </Box>
@@ -114,7 +96,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
             </Group>
           )}
         </Card>
-      </MotionDiv>
+      </div>
     );
   },
 );

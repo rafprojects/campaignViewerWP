@@ -693,7 +693,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
               <IconArrowLeft />
             </ActionIcon>
-            <Title order={1} size="h3">Admin Panel</Title>
+            <Title order={2} size="h3">Admin Panel</Title>
           </Group>
           <Button 
             leftSection={<IconPlus />} 
@@ -1186,9 +1186,12 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.Panel>
 
         <Tabs.Panel value="audit" pt="md" component="section" aria-labelledby="audit-heading">
+          <Text size="sm" fw={600} c="gray.2" id="audit-heading" mb="xs">
+            Campaign Audit Log
+          </Text>
           <Group mb="md">
             <Select
-              label={<Text size="sm" fw={500} c="gray.2" id="audit-heading">Campaign Audit Log</Text>}
+              label="Campaign"
               placeholder="Select campaign"
               data={campaignSelectData}
               value={auditCampaignId}
