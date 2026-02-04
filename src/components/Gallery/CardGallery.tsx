@@ -85,7 +85,7 @@ export function CardGallery({
     <Box className={styles.gallery}>
       {/* Header */}
       <Box component="header" className={styles.header}>
-        <Container size="xl" py="md">
+        <Container size="xl" py={{ base: 'sm', md: 'md' }}>
           <Stack gap="lg">
             {/* Title and subtitle */}
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
@@ -106,14 +106,15 @@ export function CardGallery({
                       { label: 'Hide', value: 'hide' },
                     ]}
                     size="xs"
+                    aria-label="Access mode"
                   />
                 </Group>
               )}
             </Group>
 
             {/* Filter tabs */}
-            <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')}>
-              <Tabs.List>
+            <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters">
+              <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
                 <Tabs.Tab value="all">All</Tabs.Tab>
                 <Tabs.Tab value="accessible">My Access</Tabs.Tab>
                 {companies.map((company) => (
@@ -126,7 +127,7 @@ export function CardGallery({
 
             {/* Hidden notice */}
             {showHiddenNotice && (
-              <Alert color="yellow" title="Access mode active">
+              <Alert color="yellow" title="Access mode active" role="status" aria-live="polite">
                 {hiddenCount} campaign{hiddenCount === 1 ? '' : 's'} hidden by access mode.
               </Alert>
             )}
@@ -135,8 +136,8 @@ export function CardGallery({
       </Box>
 
       {/* Gallery Grid */}
-      <Container size="xl" component="main" py="xl">
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+      <Container size="xl" component="main" py={{ base: 'lg', md: 'xl' }}>
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing={{ base: 'md', sm: 'lg' }}>
           {filteredCampaigns.map((campaign) => (
             <CampaignCard
               key={campaign.id}
@@ -148,9 +149,9 @@ export function CardGallery({
         </SimpleGrid>
 
         {filteredCampaigns.length === 0 && (
-          <Center py={80}>
-            <Stack align="center">
-              <Text size="lg" c="dimmed">
+          <Center py={{ base: 60, md: 80 }} role="status" aria-live="polite">
+            <Stack align="center" gap="md">
+              <Text size="lg" c="dimmed" ta="center">
                 {filter === 'accessible'
                   ? 'No accessible campaigns yet.'
                   : accessMode === 'hide'
@@ -171,7 +172,7 @@ export function CardGallery({
           onEditCampaign={onEditCampaign}
           onArchiveCampaign={onArchiveCampaign}
           onAddExternalMedia={onAddExternalMedia}
-          onClose={() => handleCloseViewer()}
+          onClose={handleCloseViewer}
         />
       )}
     </Box>

@@ -33,11 +33,11 @@ const CampaignCardComponent = forwardRef<HTMLDivElement, CampaignCardProps>(
           }}
         >
           {/* Thumbnail Section */}
-          <Card.Section pos="relative" h={200} component="div">
+          <Card.Section pos="relative" h={{ base: 160, sm: 200 }} component="div">
             <Image 
               src={campaign.thumbnail} 
               alt={campaign.title}
-              h={200}
+              h={{ base: 160, sm: 200 }}
               loading="lazy"
               style={{ 
                 filter: hasAccess ? 'none' : 'grayscale(100%)',
@@ -129,12 +129,31 @@ const CampaignCardComponent = forwardRef<HTMLDivElement, CampaignCardProps>(
               ))}
             </Group>
 
-            {/* Media count */}
+            {/* Previous counts layout (kept for quick revert)
             <Group gap="md" mt="auto">
-              <Text size="xs" c="dimmed">🎬 {campaign.videos.length} videos</Text>
-              <Text size="xs" c="dimmed">🖼️ {campaign.images.length} images</Text>
+              <Text size="sm" c="dimmed">🎬 {campaign.videos.length} videos</Text>
+              <Text size="sm" c="dimmed">🖼️ {campaign.images.length} images</Text>
+            </Group>
+            */}
+
+            <Group gap="xs" mt="auto" className={styles.mediaStats}>
+              <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
+              <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
             </Group>
           </Stack>
+
+          {/* Hover border effect */}
+          {hasAccess && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                border: `2px solid ${campaign.company.brandColor}`,
+                borderRadius: 'var(--mantine-radius-md)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
         </Card>
       </div>
     );

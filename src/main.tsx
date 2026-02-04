@@ -39,7 +39,14 @@ const renderApp = (mountNode: Element, props: MountProps) => {
 }
 
 const mountWithShadow = (host: HTMLElement, props: MountProps) => {
+  // Prevent double mounting - check host element first
+  if (host.hasAttribute('data-wpsg-mounted')) {
+    return
+  }
+  host.setAttribute('data-wpsg-mounted', 'true')
+  
   const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
+  
   if (!shadowRoot.querySelector('style[data-wpsg]')) {
     const styleTag = document.createElement('style')
     styleTag.setAttribute('data-wpsg', 'true')
@@ -53,11 +60,20 @@ const mountWithShadow = (host: HTMLElement, props: MountProps) => {
 }
 
 const mountDefault = (host: HTMLElement, props: MountProps) => {
+  // Prevent double mounting
+  if (host.hasAttribute('data-wpsg-mounted')) {
+    return
+  }
+  host.setAttribute('data-wpsg-mounted', 'true')
   renderApp(host, props)
 }
 
 const rootHost = document.getElementById('root')
+console.log('[WPSG] Mount init - rootHost:', rootHost, 'useShadowDom:', useShadowDom)
+console.log('[WPSG] All .wp-super-gallery elements:', document.querySelectorAll('.wp-super-gallery').length)
+
 if (rootHost) {
+  console.log('[WPSG] Mounting to #root')
   const props = parseProps(rootHost)
   if (useShadowDom) {
     mountWithShadow(rootHost, props)
@@ -66,8 +82,11 @@ if (rootHost) {
     mountDefault(rootHost, props)
   }
 } else {
+  // Only search for .wp-super-gallery if #root doesn't exist
   const nodes = document.querySelectorAll<HTMLElement>('.wp-super-gallery')
-  nodes.forEach((node) => {
+  console.log('[WPSG] No #root, mounting to', nodes.length, '.wp-super-gallery elements')
+  nodes.forEach((node, index) => {
+    console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
     const props = parseProps(node)
     if (useShadowDom) {
       mountWithShadow(node, props)

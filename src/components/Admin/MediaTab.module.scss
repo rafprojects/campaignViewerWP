@@ -1,0 +1,20 @@
+.mediaCard {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.mediaCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mediaCard {
+    transition: none;
+  }
+
+  .mediaCard:hover {
+    transform: none;
+  }
+}

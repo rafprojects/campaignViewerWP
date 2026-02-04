@@ -19,6 +19,14 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
   - Performance/resilience upgrades: lazy load admin panels inside `Suspense`/`ErrorBoundary`, combobox timeout cleanup, abortable library media requests, and manual chunk splitting.
   - Security/observability: WordPress password reset flow (no plaintext passwords) and comprehensive IPv4/IPv6 private range detection.
 
+### v0.5.0 (February 3, 2026)
+- **MINOR**: Phase 7 Visual Polish + Accessibility + Mobile Optimization release
+  - Full WCAG 2.1 Level AA accessibility compliance with screen reader support, keyboard navigation, and color contrast
+  - Comprehensive mobile optimization including 44px touch targets, responsive tables, and mobile-first design
+  - PHP unit tests implementation with wp-env for isolated testing
+  - Professional UI polish with Framer Motion animations and Mantine component refinements
+  - Production deployment and release preparation
+
 ### v0.3.0 (January 30, 2026)
 - **MINOR**: Phase 4 Mantine Migration + Phase 5 WordPress Integration
   - **Mantine Migration (Phase 4):**
@@ -81,8 +89,9 @@ Current development follows a phased approach:
 - **Phase 4**: ✅ Complete (Main UI Mantine Migration)
 - **Phase 5**: ✅ Complete (WordPress Integration)
 - **Phase 6**: ✅ Complete (Functionality Polish — v0.4.0 release)
-- **Phase 7**: Ready to start (Visual Polish + Testing)
-- **Phase 8**: Pending (Theme System)
+- **Phase 7**: ✅ Complete (Visual Polish + Testing + Accessibility + Mobile Optimization — v0.5.0 release)
+- **Phase 8**: Ready to start (Performance & Production Optimization)
+- **Phase 9**: Pending (Theme System)
 
 ## Branching Strategy
 

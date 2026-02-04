@@ -24,6 +24,7 @@ export const theme: MantineThemeOverride = {
 
   // Primary color palette - blue (matches --color-accent: #3b82f6)
   primaryColor: 'blue',
+  primaryShade: { light: 6, dark: 5 },
 
   // Typography
   fontFamily:
@@ -116,6 +117,17 @@ export const theme: MantineThemeOverride = {
       styles: {
         root: {
           textTransform: 'none',
+          '&:focus-visible': {
+            outline: '2px solid #60a5fa',
+            outlineOffset: 2,
+          },
+          transition: 'background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease',
+          '&:hover': {
+            boxShadow: '0 6px 16px rgba(15, 23, 42, 0.35)',
+          },
+          '&:active': {
+            transform: 'translateY(1px)',
+          },
         },
       },
     },
@@ -141,6 +153,10 @@ export const theme: MantineThemeOverride = {
           '&:focus': {
             borderColor: '#3b82f6', // --color-accent
           },
+          '&:focus-visible': {
+            outline: '2px solid rgba(59, 130, 246, 0.6)',
+            outlineOffset: 1,
+          },
         },
       },
     },
@@ -154,6 +170,10 @@ export const theme: MantineThemeOverride = {
           color: '#ffffff',
           '&:focus': {
             borderColor: '#3b82f6',
+          },
+          '&:focus-visible': {
+            outline: '2px solid rgba(59, 130, 246, 0.6)',
+            outlineOffset: 1,
           },
         },
         label: {
@@ -173,6 +193,10 @@ export const theme: MantineThemeOverride = {
           '&:focus': {
             borderColor: '#3b82f6',
           },
+          '&:focus-visible': {
+            outline: '2px solid rgba(59, 130, 246, 0.6)',
+            outlineOffset: 1,
+          },
         },
         label: {
           color: '#ffffff',
@@ -183,6 +207,9 @@ export const theme: MantineThemeOverride = {
 
     // Modal styles
     Modal: {
+      defaultProps: {
+        transitionProps: { transition: 'fade', duration: 160 },
+      },
       styles: {
         root: {
           '--modal-z-index': '100',
@@ -202,6 +229,25 @@ export const theme: MantineThemeOverride = {
       },
     },
 
+    // ActionIcon styles
+    ActionIcon: {
+      defaultProps: {
+        radius: 'md',
+      },
+      styles: {
+        root: {
+          '&:focus-visible': {
+            outline: '2px solid rgba(59, 130, 246, 0.6)',
+            outlineOffset: 2,
+          },
+          transition: 'transform 150ms ease, background-color 150ms ease',
+          '&:active': {
+            transform: 'translateY(1px)',
+          },
+        },
+      },
+    },
+
     // Badge styles
     Badge: {
       defaultProps: {
@@ -209,9 +255,9 @@ export const theme: MantineThemeOverride = {
       },
       styles: {
         root: {
-          backgroundColor: 'rgba(59, 130, 246, 0.2)', // blue with opacity
-          color: '#60a5fa',
-          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.18)', // blue with opacity
+          color: '#bfdbfe',
+          borderColor: 'rgba(59, 130, 246, 0.5)',
         },
       },
     },
@@ -220,9 +266,9 @@ export const theme: MantineThemeOverride = {
     Alert: {
       styles: {
         root: {
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          borderColor: '#3b82f6',
-          color: '#e0f2fe',
+          backgroundColor: 'rgba(59, 130, 246, 0.12)',
+          borderColor: 'rgba(59, 130, 246, 0.6)',
+          color: '#e2e8f0',
         },
       },
     },
@@ -253,6 +299,35 @@ export const theme: MantineThemeOverride = {
             color: '#3b82f6', // --color-accent
             borderColor: '#3b82f6',
           },
+          '&:focus-visible': {
+            outline: '2px solid rgba(59, 130, 246, 0.6)',
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
+
+    // Table styles
+    Table: {
+      styles: {
+        table: {
+          borderColor: '#334155',
+        },
+        thead: {
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        },
+        th: {
+          color: '#e2e8f0',
+          borderColor: '#334155',
+        },
+        td: {
+          borderColor: '#334155',
+          color: '#e2e8f0',
+        },
+        tr: {
+          '&[data-hover]': {
+            backgroundColor: 'rgba(148, 163, 184, 0.08)',
+          },
         },
       },
     },
@@ -269,6 +344,10 @@ export const theme: MantineThemeOverride = {
           '&[data-active]': {
             backgroundColor: '#3b82f6',
             color: '#ffffff',
+          },
+          '&:focus-visible': {
+            outline: '2px solid rgba(59, 130, 246, 0.6)',
+            outlineOffset: 2,
           },
         },
       },

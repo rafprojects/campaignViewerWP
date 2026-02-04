@@ -518,14 +518,16 @@ function AppContent({
       )}
       {isAuthenticated && user && (
         <Container size="xl" py="sm">
-          <Group justify="space-between" wrap="wrap">
-            <span>Signed in as {user.email}</span>
-            <Group gap="sm">
+          <Group justify="space-between" wrap="wrap" gap="sm">
+            <Text size="sm">Signed in as {user.email}</Text>
+            <Group gap="sm" wrap="wrap">
               {isAdmin && (
                 <>
                   <Button
                     variant="default"
                     onClick={openAdminPanel}
+                    className="wpsg-admin-btn"
+                    size="sm"
                   >
                     Admin Panel
                   </Button>
@@ -533,6 +535,7 @@ function AppContent({
                     <ActionIcon
                       variant="default"
                       size="lg"
+                      className="wpsg-admin-btn"
                       onClick={openSettings}
                       aria-label="Settings"
                     >
@@ -544,6 +547,7 @@ function AppContent({
               <Button
                 variant="subtle"
                 onClick={() => void logout()}
+                size="sm"
               >
                 Sign out
               </Button>
@@ -553,14 +557,20 @@ function AppContent({
       )}
       {actionMessage && (
         <Container size="xl" py="sm">
-          <Alert color={actionMessage.type === 'error' ? 'red' : 'green'}>
+          <Alert
+            color={actionMessage.type === 'error' ? 'red' : 'green'}
+            role={actionMessage.type === 'error' ? 'alert' : 'status'}
+            aria-live={actionMessage.type === 'error' ? 'assertive' : 'polite'}
+          >
             {actionMessage.text}
           </Alert>
         </Container>
       )}
       {error && (
         <Container size="xl" py="sm">
-          <Alert color="red">{error}</Alert>
+          <Alert color="red" role="alert" aria-live="assertive">
+            {error}
+          </Alert>
         </Container>
       )}
       {isSettingsOpen ? (
@@ -615,7 +625,7 @@ function AppContent({
         size="xl"
         zIndex={300}
       >
-        <Tabs value={editMediaTab} onChange={setEditMediaTab}>
+        <Tabs value={editMediaTab} onChange={setEditMediaTab} aria-label="Edit campaign tabs">
           <Tabs.List>
             <Tabs.Tab value="details">Details</Tabs.Tab>
             <Tabs.Tab value="list">
@@ -664,7 +674,15 @@ function AppContent({
               <Stack gap="md">
                 <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="sm">
                   {editCampaignMedia.map((media) => (
-                    <Card key={media.id} shadow="sm" padding="xs" radius="md" withBorder>
+                    <Card
+                      key={media.id}
+                      shadow="sm"
+                      padding="xs"
+                      radius="md"
+                      withBorder
+                      role="group"
+                      aria-label={`Media item ${media.caption || media.url}`}
+                    >
                       <Card.Section>
                         <Image
                           src={media.thumbnail || media.url}
@@ -727,6 +745,7 @@ function AppContent({
                   </Group>
                   <TextInput
                     placeholder="Search media..."
+                    aria-label="Search media library"
                     value={librarySearch}
                     onChange={(e) => setLibrarySearch(e.currentTarget.value)}
                     onKeyDown={(e) => e.key === 'Enter' && void loadLibraryMedia(librarySearch)}
@@ -755,6 +774,21 @@ function AppContent({
                               cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
                             }}
                             onClick={() => !isAlreadyAdded && void handleAddFromLibrary(item)}
+                            role="button"
+                            tabIndex={isAlreadyAdded ? -1 : 0}
+                            aria-disabled={isAlreadyAdded}
+                            aria-label={
+                              isAlreadyAdded
+                                ? 'Media already added to campaign'
+                                : `Add ${item.type} media: ${item.caption || item.url}`
+                            }
+                            onKeyDown={(event) => {
+                              if (isAlreadyAdded) return;
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                void handleAddFromLibrary(item);
+                              }
+                            }}
                           >
                             <Image
                               src={item.thumbnail || item.url}
@@ -853,14 +887,19 @@ function AppContent({
         onClose={() => setArchiveModalCampaign(null)}
         title="Archive Campaign"
         zIndex={300}
+        padding="md"
       >
         <Stack gap="md">
           <p>Are you sure you want to archive &quot;{archiveModalCampaign?.title}&quot;? This action will mark it as archived.</p>
-          <Group justify="flex-end">
+          <Group justify="flex-end" wrap="wrap" gap="sm">
             <Button variant="default" onClick={() => setArchiveModalCampaign(null)}>
               Cancel
             </Button>
-            <Button color="red" onClick={() => void confirmArchiveCampaign()}>
+            <Button
+              color="red"
+              onClick={() => void confirmArchiveCampaign()}
+              aria-label={`Archive campaign ${archiveModalCampaign?.title ?? ''}`.trim()}
+            >
               Archive
             </Button>
           </Group>
@@ -874,6 +913,7 @@ function AppContent({
         title="Add External Media"
         size="md"
         zIndex={300}
+        padding="md"
       >
         <Stack gap="md">
           <Select
@@ -905,7 +945,7 @@ function AppContent({
             value={externalMediaThumbnail}
             onChange={(e) => setExternalMediaThumbnail(e.currentTarget.value)}
           />
-          <Group justify="flex-end" mt="md">
+          <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
             <Button variant="default" onClick={() => setExternalMediaCampaign(null)}>
               Cancel
             </Button>

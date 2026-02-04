@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
 import type { MediaItem } from '@/types';
@@ -11,15 +11,37 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
+  }, [images.length]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  }, [images.length]);
 
   const currentImage = images[currentIndex];
+
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        prevImage();
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        nextImage();
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsLightboxOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen, nextImage, prevImage]);
 
   return (
     <Stack gap="md">
@@ -31,16 +53,37 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
       </Title>
 
       {/* Image viewer */}
-      <Box pos="relative">
+      <Box
+        pos="relative"
+        role="button"
+        tabIndex={0}
+        aria-label={`View image ${currentIndex + 1} of ${images.length}`}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setIsLightboxOpen(true);
+          }
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            prevImage();
+          }
+          if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            nextImage();
+          }
+        }}
+      >
         <AspectRatio ratio={16 / 9}>
-          <Image
-            src={currentImage.url}
-            alt={currentImage.caption}
-            fit="contain"
-            h="100%"
-            style={{ cursor: 'zoom-in' }}
-            onClick={() => setIsLightboxOpen(true)}
-          />
+          <Box style={{ width: '100%', height: '100%' }}>
+            <Image
+              src={currentImage.url}
+              alt={currentImage.caption || 'Campaign image'}
+              fit="contain"
+              h="100%"
+              style={{ cursor: 'zoom-in' }}
+              onClick={() => setIsLightboxOpen(true)}
+            />
+          </Box>
         </AspectRatio>
 
         {/* Zoom button */}
@@ -94,7 +137,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
 
       {/* Caption */}
       <Text size="sm" c="dimmed">
-        {currentImage.caption}
+        {currentImage.caption || 'Untitled image'}
       </Text>
 
       {/* Thumbnail Strip */}
@@ -106,6 +149,8 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             variant={index === currentIndex ? 'light' : 'subtle'}
             size="lg"
             p={0}
+            aria-label={`Show image ${index + 1} of ${images.length}`}
+            aria-pressed={index === currentIndex}
             style={{
               border: index === currentIndex ? '2px solid var(--mantine-color-blue-5)' : 'none',
               overflow: 'hidden',
@@ -113,7 +158,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           >
             <Image
               src={image.url}
-              alt={image.caption}
+              alt={image.caption || 'Campaign image thumbnail'}
               w={60}
               h={60}
               fit="cover"
@@ -145,11 +190,11 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             >
               <Image
                 src={currentImage.url}
-                alt={currentImage.caption}
+                alt={currentImage.caption || 'Campaign image'}
                 fit="contain"
                 h="100%"
                 w="100%"

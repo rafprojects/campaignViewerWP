@@ -43,6 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
           color="red"
           title="Something went wrong"
           icon={<IconAlertTriangle />}
+          role="alert"
         >
           <Stack gap="sm">
             <Text size="sm">
@@ -52,6 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
               size="xs"
               variant="light"
               onClick={this.handleReset}
+              aria-label="Reset error boundary and try again"
             >
               Try Again
             </Button>
