@@ -22,6 +22,12 @@ const sentryDsn = (window as Window & { __WPSG_CONFIG__?: { sentryDsn?: string }
   ?? (window as Window & { __WPSG_SENTRY_DSN__?: string }).__WPSG_SENTRY_DSN__
 void initSentry({ dsn: sentryDsn })
 
+if ('serviceWorker' in navigator && !import.meta.env.DEV) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
+  });
+}
+
 const parseProps = (node: Element): MountProps => {
   const raw = node.getAttribute('data-wpsg-props')
   if (!raw) return {}
