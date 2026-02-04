@@ -113,7 +113,7 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
           <ActionIcon variant="subtle" onClick={onClose} aria-label="Back to gallery">
             <IconArrowLeft size={20} />
           </ActionIcon>
-          <Title order={1}>Display Settings</Title>
+          <Title order={2}>Display Settings</Title>
         </Group>
         <Group gap="sm">
           {hasChanges && (
