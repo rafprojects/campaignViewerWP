@@ -1,0 +1,25 @@
+// Match CampaignCard's approach - class on wrapper div, not on Mantine Card
+.mediaCard {
+  outline: none;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6);
+    border-radius: var(--mantine-radius-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mediaCard {
+    transition: none;
+  }
+
+  .mediaCard:hover {
+    transform: none;
+  }
+}

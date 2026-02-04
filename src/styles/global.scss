@@ -14,6 +14,19 @@
   box-sizing: border-box;
 }
 
+// Screen-reader only utility
+.wp-super-gallery .wpsg-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 .wp-super-gallery img {
   display: block;
   max-width: 100%;
@@ -21,6 +34,65 @@
 
 .wp-super-gallery button {
   font: inherit;
+  // Ensure minimum touch target size for mobile (44x44px WCAG guideline)
+  min-height: 36px;
+  min-width: 36px;
+}
+
+@media (max-width: 576px) {
+  .wp-super-gallery button {
+    min-height: 44px;
+  }
+  
+  // Improve text legibility on mobile
+  .wp-super-gallery {
+    font-size: 16px; // Prevents iOS zoom on focus
+  }
+  
+  // Prevent text overflow on small screens
+  .wp-super-gallery h1,
+  .wp-super-gallery h2,
+  .wp-super-gallery h3 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+// ScrollArea tuning: visible scrollbar on desktop, hidden on mobile with touch momentum
+.wp-super-gallery .wpsg-scrollarea {
+  max-height: 360px;
+  overflow: hidden;
+}
+
+.wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-viewport] {
+  max-height: 360px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Mantine ScrollArea uses data-mantine-scroll-area and data-radix-scroll-area attributes
+.wp-super-gallery .wpsg-scrollarea [data-mantine-scrollbar],
+.wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-scrollbar] {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.wp-super-gallery .wpsg-scrollarea [data-mantine-scrollbar-thumb],
+.wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-thumb] {
+  background-color: rgba(148, 163, 184, 0.65) !important;
+}
+
+@media (max-width: 576px) {
+  .wp-super-gallery .wpsg-scrollarea {
+    max-height: 280px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .wp-super-gallery .wpsg-scrollarea::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }
 
 // Container utilities (maps to Mantine Container component)
@@ -88,6 +160,22 @@
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.4);
   color: #bbf7d0;
+}
+
+// Admin button with hover effects (for Admin Panel and Settings buttons)
+.wp-super-gallery .wpsg-admin-btn {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #e2e8f0;
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.wp-super-gallery .wpsg-admin-btn:hover {
+  background-color: rgba(59, 130, 246, 0.35);
+  border-color: rgba(59, 130, 246, 0.65);
+  color: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
 }
 
 // Compact layout variant

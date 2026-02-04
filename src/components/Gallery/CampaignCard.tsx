@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-import { motion } from 'framer-motion';
 import { Lock, Eye } from 'lucide-react';
 import { Card, Image, Badge, Group, Text, Box, Stack } from '@mantine/core';
 import type { Campaign } from '@/types';
@@ -11,33 +10,28 @@ interface CampaignCardProps {
   onClick: () => void;
 }
 
-const MotionDiv = motion.div;
-
 export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick }, ref) => {
-    const cardVariants = {
-      initial: { opacity: 0, scale: 0.9 },
-      rest: { opacity: 1, scale: 1, y: 0 },
-      hover: { opacity: 1, scale: hasAccess ? 1.03 : 1.01, y: hasAccess ? -5 : 0 },
-    };
-
-    const borderVariants = {
-      initial: { opacity: 0 },
-      rest: { opacity: 0 },
-      hover: { opacity: 1 },
-    };
-
     return (
-      <MotionDiv
+      <div
         ref={ref}
-        layout
-        variants={cardVariants}
-        initial="initial"
-        animate="rest"
-        exit="initial"
-        whileHover={hasAccess ? 'hover' : 'rest'}
-        whileTap={{ scale: hasAccess ? 0.98 : 1 }}
         onClick={hasAccess ? onClick : undefined}
+        onKeyDown={(event) => {
+          if (!hasAccess) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick();
+          }
+        }}
+        role="button"
+        tabIndex={hasAccess ? 0 : -1}
+        aria-disabled={!hasAccess}
+        aria-label={
+          hasAccess
+            ? `Open campaign ${campaign.title}`
+            : `Campaign ${campaign.title} is locked`
+        }
+        className={styles.card}
         style={{
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,
@@ -54,11 +48,11 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
           }}
         >
           {/* Thumbnail Section */}
-          <Card.Section pos="relative" h={200} component="div">
+          <Card.Section pos="relative" h={{ base: 160, sm: 200 }} component="div">
             <Image 
               src={campaign.thumbnail} 
               alt={campaign.title}
-              h={200}
+              h={{ base: 160, sm: 200 }}
               loading="lazy"
               style={{ 
                 filter: hasAccess ? 'none' : 'grayscale(100%)',
@@ -150,17 +144,22 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
               ))}
             </Group>
 
-            {/* Media count */}
+            {/* Previous counts layout (kept for quick revert)
             <Group gap="md" mt="auto">
-              <Text size="xs" c="dimmed">🎬 {campaign.videos.length} videos</Text>
-              <Text size="xs" c="dimmed">🖼️ {campaign.images.length} images</Text>
+              <Text size="sm" c="dimmed">🎬 {campaign.videos.length} videos</Text>
+              <Text size="sm" c="dimmed">🖼️ {campaign.images.length} images</Text>
+            </Group>
+            */}
+
+            <Group gap="xs" mt="auto" className={styles.mediaStats}>
+              <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
+              <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
             </Group>
           </Stack>
 
           {/* Hover border effect */}
           {hasAccess && (
-            <motion.div
-              variants={borderVariants}
+            <div
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -171,7 +170,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
             />
           )}
         </Card>
-      </MotionDiv>
+      </div>
     );
   },
 );

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
@@ -24,6 +23,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
 
   const currentVideo = videos[currentIndex];
 
+
   return (
     <Stack gap="md">
       <Title order={3} size="h5">
@@ -34,7 +34,26 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
       </Title>
 
       {/* Player wrapper */}
-      <Box pos="relative">
+      <Box
+        pos="relative"
+        role="region"
+        tabIndex={0}
+        aria-label={`Video ${currentIndex + 1} of ${videos.length}: ${currentVideo.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            prevVideo();
+          }
+          if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            nextVideo();
+          }
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setIsPlaying(true);
+          }
+        }}
+      >
         <AspectRatio ratio={16 / 9}>
           {isPlaying ? (
             <iframe
@@ -45,10 +64,10 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               style={{ width: '100%', height: '100%', border: 'none' }}
             />
           ) : (
-            <motion.div key={currentIndex} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div>
               <Image
                 src={currentVideo.thumbnail}
-                alt={currentVideo.caption}
+                alt={currentVideo.caption || 'Campaign video'}
                 h="100%"
                 fit="cover"
                 style={{ cursor: 'pointer' }}
@@ -68,7 +87,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               >
                 <Play size={32} fill="currentColor" />
               </ActionIcon>
-            </motion.div>
+            </div>
           )}
         </AspectRatio>
 
@@ -105,7 +124,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
 
       {/* Caption */}
       <Text size="sm" c="dimmed">
-        {currentVideo.caption}
+        {currentVideo.caption || 'Untitled video'}
       </Text>
 
       {/* Thumbnail Strip */}
@@ -121,6 +140,8 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               variant={index === currentIndex ? 'light' : 'subtle'}
               size="lg"
               p={0}
+              aria-label={`Show video ${index + 1} of ${videos.length}`}
+              aria-pressed={index === currentIndex}
               style={{
                 border: index === currentIndex ? '2px solid var(--mantine-color-blue-5)' : 'none',
                 overflow: 'hidden',
@@ -128,7 +149,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
             >
               <Image
                 src={video.thumbnail}
-                alt={video.caption}
+                alt={video.caption || 'Campaign video thumbnail'}
                 w={60}
                 h={45}
                 fit="cover"

@@ -59,17 +59,36 @@ class ProxyOEmbedSSRFTest extends WP_UnitTestCase {
     }
 
     public function test_block_private_ipv6_localhost() {
-        // Note: IPv6 literals in URLs are in brackets, but gethostbynamel may not resolve them
-        // This test may need adjustment based on how the system handles IPv6
-        $this->markTestSkipped('IPv6 literal resolution needs investigation');
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request->set_param('url', 'https://[::1]/some/path');
+        $response = WPSG_REST::proxy_oembed($request);
+
+        $this->assertInstanceOf('WP_REST_Response', $response);
+        $this->assertEquals(400, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals('oEmbed host resolves to a private or disallowed IP', $data['message']);
     }
 
     public function test_block_private_ipv6_unique_local() {
-        $this->markTestSkipped('IPv6 literal resolution needs investigation');
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request->set_param('url', 'https://[fc00::1]/some/path');
+        $response = WPSG_REST::proxy_oembed($request);
+
+        $this->assertInstanceOf('WP_REST_Response', $response);
+        $this->assertEquals(400, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals('oEmbed host resolves to a private or disallowed IP', $data['message']);
     }
 
     public function test_block_private_ipv6_link_local() {
-        $this->markTestSkipped('IPv6 literal resolution needs investigation');
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request->set_param('url', 'https://[fe80::1]/some/path');
+        $response = WPSG_REST::proxy_oembed($request);
+
+        $this->assertInstanceOf('WP_REST_Response', $response);
+        $this->assertEquals(400, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals('oEmbed host resolves to a private or disallowed IP', $data['message']);
     }
 
     public function test_unresolvable_host_returns_400() {
