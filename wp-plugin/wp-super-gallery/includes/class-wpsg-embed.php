@@ -64,6 +64,7 @@ class WPSG_Embed {
 
         $auth_provider = apply_filters('wpsg_auth_provider', 'wp-jwt');
         $api_base = apply_filters('wpsg_api_base', home_url());
+        $sentry_dsn = apply_filters('wpsg_sentry_dsn', '');
 
         // Get display settings from WPSG_Settings if available.
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
@@ -96,6 +97,7 @@ class WPSG_Embed {
             'galleryLayout'    => $gallery_layout,
             'enableLightbox'   => $enable_lightbox,
             'enableAnimations' => $enable_animations,
+            'sentryDsn'         => $sentry_dsn,
         ];
 
         $config_script = '<script>' .
