@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from './test/test-utils';
+import { mutate } from 'swr';
 import App from './App';
 
 const campaignResponse = {
@@ -62,6 +63,11 @@ const setupAdminFetch = () => {
 
 describe('App', () => {
   beforeEach(() => {
+    mutate(() => true, undefined);
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+  beforeEach(() => {
     localStorage.clear();
     delete (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__;
   });
@@ -85,11 +91,34 @@ describe('App', () => {
   });
 
   it('shows error banner when campaigns request fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => ({}),
-    } as Response);
+    (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+    localStorage.setItem('wpsg_access_token', 'token');
+    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/token/validate')) {
+        // Token validation succeeds
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        } as Response);
+      }
+      if (url.includes('/campaigns')) {
+        // Campaigns request fails
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: async () => ({}),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      } as Response);
+    });
 
     render(<App />);
 
@@ -125,7 +154,7 @@ describe('App', () => {
     fireEvent.click(card);
 
     // Test Edit Campaign with modal
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign Alpha' }));
     // Edit modal opens - fill in title and description
     const titleInput = await screen.findByLabelText('Title');
     const descInput = await screen.findByLabelText('Description');
@@ -159,7 +188,7 @@ describe('App', () => {
     fireEvent.click(card);
 
     // Test Add External Media with modal
-    const manageMediaBtn = await screen.findByRole('button', { name: 'Manage Media' });
+    const manageMediaBtn = await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' });
     fireEvent.click(manageMediaBtn);
     // External media modal opens
     const urlInput = await screen.findByLabelText('URL');
@@ -191,10 +220,10 @@ describe('App', () => {
     fireEvent.click(card);
 
     // Test Archive Campaign with modal
-    const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign' });
+    const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign Alpha' });
     fireEvent.click(archiveCampaignBtn);
     // Archive confirmation modal opens
-    const archiveBtn = await screen.findByRole('button', { name: 'Archive' });
+    const archiveBtn = await screen.findByRole('button', { name: 'Archive campaign Campaign Alpha' });
     fireEvent.click(archiveBtn);
 
     await waitFor(() => {
@@ -217,7 +246,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign Alpha' }));
     
     // Modal opens - click Cancel instead of Save
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -244,7 +273,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Archive Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Archive Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Archive
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -271,7 +300,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Manage Media' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Manage media for Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Add Media
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -287,11 +316,34 @@ describe('App', () => {
   });
 
   it('shows session expired message on 401 responses', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 401,
-      json: async () => ({}),
-    } as Response);
+    (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+    localStorage.setItem('wpsg_access_token', 'token');
+    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/token/validate')) {
+        // Token validation succeeds
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        } as Response);
+      }
+      if (url.includes('/campaigns')) {
+        // Campaigns request returns 401
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: async () => ({}),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      } as Response);
+    });
 
     render(<App />);
 

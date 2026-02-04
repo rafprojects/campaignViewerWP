@@ -11,6 +11,7 @@ import { LoginForm } from './components/Auth/LoginForm';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem } from './types';
+import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -88,9 +89,6 @@ function AppContent({
   accessMode: 'lock' | 'hide';
 }) {
   const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [isAdminPanelOpen, { open: openAdminPanel, close: closeAdminPanel }] = useDisclosure(false);
   const [isSettingsOpen, { open: openSettings, close: closeSettings }] = useDisclosure(false);
@@ -147,8 +145,11 @@ function AppContent({
   };
 
   const handleUnauthorized = useCallback(() => {
-    void logout();
     setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
+    // Delay logout to allow the message to be seen
+    setTimeout(() => {
+      void logout();
+    }, 100);
   }, [logout]);
 
   const apiClient = useMemo(
@@ -156,74 +157,68 @@ function AppContent({
     [apiBaseUrl, authProvider, handleUnauthorized],
   );
 
-  const loadCampaigns = useCallback(async () => {
-    if (!isReady) return;
+  // SWR fetcher for campaigns
+  const fetchCampaigns = useCallback(async () => {
+    const response = await apiClient.get<ApiCampaignResponse>(
+      '/wp-json/wp-super-gallery/v1/campaigns',
+    );
+    const items = response.items ?? [];
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiClient.get<ApiCampaignResponse>(
-        '/wp-json/wp-super-gallery/v1/campaigns',
-      );
-      const items = response.items ?? [];
-
-      const mapped = await Promise.all(
-        items.map(async (item) => {
-          let mediaItems: MediaItem[] = [];
-          if (isAuthenticated) {
-            try {
-              const mediaResponse = await apiClient.get<
-                MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
-              >(`/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`);
-              mediaItems = Array.isArray(mediaResponse)
-                ? mediaResponse
-                : (mediaResponse.items ?? []);
-            } catch {
-              mediaItems = [];
-            }
+    const mapped = await Promise.all(
+      items.map(async (item) => {
+        let mediaItems: MediaItem[] = [];
+        if (isAuthenticated) {
+          try {
+            const mediaResponse = await apiClient.get<
+              MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
+            >(`/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`);
+            mediaItems = Array.isArray(mediaResponse)
+              ? mediaResponse
+              : (mediaResponse.items ?? []);
+          } catch {
+            mediaItems = [];
           }
+        }
 
-          const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE;
-          const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE;
-          const orderedMedia = [...mediaItems]
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-            .map((media) => ({
-              ...media,
-              thumbnail: media.thumbnail || thumbnail,
-              caption: media.caption || 'Campaign media',
-            }));
-          const videos = orderedMedia.filter((media) => media.type === 'video');
-          const images = orderedMedia.filter((media) => media.type === 'image');
-          const company = buildCompany(item.companyId);
+        const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE;
+        const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE;
+        const orderedMedia = [...mediaItems]
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((media) => ({
+            ...media,
+            thumbnail: media.thumbnail || thumbnail,
+            caption: media.caption || 'Campaign media',
+          }));
+        const videos = orderedMedia.filter((media) => media.type === 'video');
+        const images = orderedMedia.filter((media) => media.type === 'image');
+        const company = buildCompany(item.companyId);
 
-          return {
-            ...item,
-            companyId: item.companyId,
-            company,
-            thumbnail,
-            coverImage,
-            videos,
-            images,
-          } as Campaign;
-        }),
-      );
+        return {
+          ...item,
+          companyId: item.companyId,
+          company,
+          thumbnail,
+          coverImage,
+          videos,
+          images,
+        } as Campaign;
+      }),
+    );
 
-      setCampaigns(mapped);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setError('Session expired. Please sign in again.');
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to load campaigns');
-      }
-    } finally {
-      setIsLoading(false);
+    return mapped;
+  }, [apiClient, isAuthenticated]);
+
+  const { data: campaigns, error: campaignsError, isLoading, mutate: mutateCampaigns } = useSWR(
+    isReady ? '/campaigns' : null,
+    fetchCampaigns,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000, // 5 seconds
     }
-  }, [apiClient, isAuthenticated, isReady]);
+  );
 
-  useEffect(() => {
-    void loadCampaigns();
-  }, [loadCampaigns]);
+  const error = campaignsError ? (campaignsError instanceof Error ? campaignsError.message : 'Failed to load campaigns') : null;
 
   const handleEditCampaign = async (campaign: Campaign) => {
     if (!isAdmin) {
@@ -439,7 +434,7 @@ function AppContent({
 
       setActionMessage({ type: 'success', text: 'Campaign updated.' });
       setEditModalCampaign(null);
-      await loadCampaigns();
+      await mutateCampaigns();
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setActionMessage({ type: 'error', text: 'Admin permissions required.' });
@@ -464,7 +459,7 @@ function AppContent({
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${archiveModalCampaign.id}/archive`, {});
       setActionMessage({ type: 'success', text: 'Campaign archived.' });
       setArchiveModalCampaign(null);
-      await loadCampaigns();
+      await mutateCampaigns();
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setActionMessage({ type: 'error', text: 'Admin permissions required.' });
@@ -503,7 +498,7 @@ function AppContent({
 
       setActionMessage({ type: 'success', text: 'Media added.' });
       setExternalMediaCampaign(null);
-      await loadCampaigns();
+      await mutateCampaigns();
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setActionMessage({ type: 'error', text: 'Admin permissions required.' });
@@ -588,7 +583,7 @@ function AppContent({
               <AdminPanel
                 apiClient={apiClient}
                 onClose={closeAdminPanel}
-                onCampaignsUpdated={() => void loadCampaigns()}
+                onCampaignsUpdated={() => void mutateCampaigns()}
                 onNotify={handleAdminNotify}
               />
             </Suspense>
@@ -602,7 +597,7 @@ function AppContent({
         </Center>
       ) : (
         <CardGallery
-          campaigns={campaigns}
+          campaigns={campaigns || []}
           userPermissions={permissions}
           accessMode={localAccessMode}
           isAdmin={isAdmin}

@@ -128,12 +128,13 @@ describe('AdminPanel', () => {
     );
 
     // Open the campaign form modal
-    fireEvent.click(screen.getByRole('button', { name: 'New Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
+    await screen.findByText('New Campaign');
 
-    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'New Campaign' } });
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Desc' } });
-    fireEvent.change(screen.getByLabelText('Company Slug'), { target: { value: 'acme' } });
-    fireEvent.change(screen.getByLabelText('Tags'), { target: { value: 'a,b' } });
+    fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
+    fireEvent.change(screen.getByPlaceholderText('Campaign description'), { target: { value: 'Desc' } });
+    fireEvent.change(screen.getByPlaceholderText('company-id'), { target: { value: 'acme' } });
+    fireEvent.change(screen.getByPlaceholderText('tag1, tag2, tag3'), { target: { value: 'a,b' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
 
@@ -168,9 +169,10 @@ describe('AdminPanel', () => {
     );
 
     // Open the campaign form modal
-    fireEvent.click(screen.getByRole('button', { name: 'New Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
+    await screen.findByText('New Campaign');
 
-    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'New Campaign' } });
+    fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
 
     await waitFor(() => {
@@ -269,7 +271,9 @@ describe('AdminPanel', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     // Wait for modal to open
-    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Updated Title' } });
+    await screen.findByText('Edit Campaign');
+
+    fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'Updated Title' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     await waitFor(() => {
@@ -373,8 +377,7 @@ describe('AdminPanel', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
     await screen.findByText('Archive campaign');
-    const archiveButtons = screen.getAllByRole('button', { name: 'Archive' });
-    fireEvent.click(archiveButtons[archiveButtons.length - 1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Archive campaign Admin Campaign' }));
 
     await waitFor(() => {
       expect(onNotify).toHaveBeenCalledWith(
@@ -403,8 +406,7 @@ describe('AdminPanel', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
     await screen.findByText('Archive campaign');
-    const archiveButtons = screen.getAllByRole('button', { name: 'Archive' });
-    fireEvent.click(archiveButtons[archiveButtons.length - 1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Archive campaign Admin Campaign' }));
 
     await waitFor(() => {
       expect(onNotify).toHaveBeenCalledWith(

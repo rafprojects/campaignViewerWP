@@ -68,9 +68,9 @@ describe('CampaignViewer', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Manage Media' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Archive Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Private Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Manage media for Private Campaign' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Archive Private Campaign' }));
 
     expect(onEditCampaign).toHaveBeenCalled();
     expect(onAddExternalMedia).toHaveBeenCalled();

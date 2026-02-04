@@ -83,15 +83,15 @@ describe('MediaTab', () => {
       );
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete media' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete media' })[0]);
     // Wait for the delete confirmation modal to appear
     await waitFor(() => {
       expect(screen.getByText('Delete Media')).toBeInTheDocument();
     });
     // Confirm deletion in the modal
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete media Item Two' }));
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/media/m1');
+      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/media/m2');
     });
   });
 
@@ -130,7 +130,7 @@ describe('MediaTab', () => {
     fireEvent.change(urlInput, {
       target: { value: 'http://example.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add external media' }));
 
     expect(showNotification).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Invalid URL' }),
@@ -164,10 +164,10 @@ describe('MediaTab', () => {
       target: { value: 'https://example.com/video' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview external media' }));
     expect(await screen.findByText('Preview Title')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add external media' }));
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith(
@@ -185,7 +185,7 @@ describe('MediaTab', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add Media' }));
     const urlInput = await screen.findByPlaceholderText('https://youtube.com/...');
     fireEvent.change(urlInput, { target: { value: 'http://example.com' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview external media' }));
 
     expect(await screen.findByText('Please enter a valid https URL.')).toBeInTheDocument();
   });
@@ -201,7 +201,7 @@ describe('MediaTab', () => {
     const urlInput = await screen.findByPlaceholderText('https://youtube.com/...');
     fireEvent.change(urlInput, { target: { value: 'https://example.com/video' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview external media' }));
 
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
@@ -219,7 +219,7 @@ describe('MediaTab', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add Media' }));
     const urlInput = await screen.findByPlaceholderText('https://youtube.com/...');
     fireEvent.change(urlInput, { target: { value: 'https://example.com/video' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add external media' }));
 
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
@@ -397,7 +397,7 @@ describe('MediaTab', () => {
 
     fireEvent.click(await screen.findByLabelText('Delete media'));
     await screen.findByText('Delete Media');
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete media Item One' }));
 
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
