@@ -110,10 +110,10 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
     <Card shadow="sm" padding="lg" radius="md" withBorder>
       <Group justify="space-between" mb="md">
         <Group gap="sm">
-          <ActionIcon variant="subtle" onClick={onClose} aria-label="Back">
+          <ActionIcon variant="subtle" onClick={onClose} aria-label="Back to gallery">
             <IconArrowLeft size={20} />
           </ActionIcon>
-          <Title order={3}>Display Settings</Title>
+          <Title order={1}>Display Settings</Title>
         </Group>
         <Group gap="sm">
           {hasChanges && (

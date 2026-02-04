@@ -586,6 +586,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         withCloseButton={false}
         centered
         styles={{ body: { background: 'rgba(0,0,0,0.9)' } }}
+        aria-label={`Media lightbox: ${imageItems[lightboxIndex]?.caption || 'Image'} (${lightboxIndex + 1} of ${imageItems.length})`}
       >
         {imageItems.length > 0 && imageItems[lightboxIndex] && (
           <Box pos="relative">
@@ -753,7 +754,8 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
             label="Title" 
             placeholder="Enter a title (optional)"
             value={editingTitle} 
-            onChange={(e) => setEditingTitle(e.currentTarget.value)} 
+            onChange={(e) => setEditingTitle(e.currentTarget.value)}
+            description="Optional display title for this media item"
           />
           <Textarea
             label="Caption" 
@@ -763,12 +765,14 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
             autosize
             minRows={2}
             maxRows={4}
+            description="Descriptive text shown with the media"
           />
           <TextInput 
             label="Thumbnail URL" 
             placeholder="https://..." 
             value={editingThumbnail ?? ''} 
-            onChange={(e) => setEditingThumbnail(e.currentTarget.value)} 
+            onChange={(e) => setEditingThumbnail(e.currentTarget.value)}
+            description="Custom preview image URL (optional)"
           />
           <Group justify="flex-end" wrap="wrap" gap="sm">
             <Button variant="default" onClick={() => setEditOpen(false)}>Cancel</Button>

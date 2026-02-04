@@ -128,9 +128,9 @@ export function CardGallery({
         </motion.div>
 
         {filteredCampaigns.length === 0 && (
-          <Center py={{ base: 60, md: 80 }}>
-            <Stack align="center">
-              <Text size="lg" c="dimmed">
+          <Center py={{ base: 60, md: 80 }} role="status" aria-live="polite">
+            <Stack align="center" gap="md">
+              <Text size="lg" c="dimmed" ta="center">
                 {filter === 'accessible'
                   ? 'No accessible campaigns yet.'
                   : accessMode === 'hide'

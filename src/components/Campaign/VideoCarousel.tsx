@@ -40,7 +40,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
         pos="relative"
         role="region"
         tabIndex={0}
-        aria-label={`Video carousel (${currentIndex + 1} of ${videos.length})`}
+        aria-label={`Video ${currentIndex + 1} of ${videos.length}: ${currentVideo.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') {
             event.preventDefault();

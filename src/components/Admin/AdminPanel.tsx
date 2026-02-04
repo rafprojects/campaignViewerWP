@@ -692,9 +692,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
             <IconArrowLeft />
           </ActionIcon>
-          <Title order={3}>Admin Panel</Title>
+          <Title order={1} size="h3">Admin Panel</Title>
         </Group>
-        <Button leftSection={<IconPlus />} onClick={handleCreate}>
+        <Button leftSection={<IconPlus />} onClick={handleCreate} aria-label="Create new campaign">
           New Campaign
         </Button>
       </Group>
@@ -743,6 +743,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               placeholder="Campaign title"
               value={formState.title}
               onChange={(e) => setFormState((s) => ({ ...s, title: e.currentTarget.value }))}
+              required
+              description="A unique name for this campaign"
             />
             <Textarea
               label="Description"
@@ -750,6 +752,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               value={formState.description}
               onChange={(e) => setFormState((s) => ({ ...s, description: e.currentTarget.value }))}
               minRows={3}
+              description="Brief overview of the campaign content"
             />
             <Group grow wrap="wrap" gap="sm">
               <TextInput
@@ -757,6 +760,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 placeholder="company-id"
                 value={formState.company}
                 onChange={(e) => setFormState((s) => ({ ...s, company: e.currentTarget.value }))}
+                required
+                description="Unique identifier for the company"
               />
               <Select
                 label="Status"
@@ -1173,19 +1178,20 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           )}
         </Tabs.Panel>
 
-        <Tabs.Panel value="audit" pt="md">
+        <Tabs.Panel value="audit" pt="md" component="section" aria-labelledby="audit-heading">
           <Group mb="md">
             <Select
-              label={<Text size="sm" fw={500} c="gray.2">Campaign</Text>}
+              label={<Text size="sm" fw={500} c="gray.2" id="audit-heading">Campaign Audit Log</Text>}
               placeholder="Select campaign"
               data={campaignSelectData}
               value={auditCampaignId}
               onChange={(v) => setAuditCampaignId(v ?? '')}
               style={{ minWidth: 200 }}
+              aria-label="Select campaign for audit log"
             />
           </Group>
           {auditLoading ? (
-            <Center><Loader /></Center>
+            <Center><Loader aria-label="Loading audit entries" /></Center>
           ) : auditEntries.length === 0 ? (
             <Text c="dimmed" role="status" aria-live="polite">No audit entries yet.</Text>
           ) : (
@@ -1373,6 +1379,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 required
                 value={quickAddEmail}
                 onChange={(e) => setQuickAddEmail(e.currentTarget.value)}
+                description="User's WordPress login email address"
               />
 
               <TextInput
@@ -1381,6 +1388,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 required
                 value={quickAddName}
                 onChange={(e) => setQuickAddName(e.currentTarget.value)}
+                description="Full name for display purposes"
               />
 
               <Select
@@ -1391,6 +1399,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                 ]}
                 value={quickAddRole}
                 onChange={(v) => setQuickAddRole(v ?? 'subscriber')}
+                description="WordPress role determines plugin permissions"
               />
 
               <Select
