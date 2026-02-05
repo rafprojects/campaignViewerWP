@@ -22,11 +22,13 @@
     "@mantine/hooks": "^7.17.8",
     "@mantine/modals": "^7.17.8",
     "@mantine/notifications": "^7.17.8",
+    "@sentry/react": "^8.49.0",
     "@tabler/icons-react": "^3.36.1",
-
     "lucide-react": "^0.469.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-window": "^1.8.10",
+    "swr": "^2.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -36,6 +38,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
@@ -43,6 +46,7 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
     "jsdom": "^25.0.1",
+    "rollup-plugin-visualizer": "^6.0.5",
     "sass": "^1.77.8",
     "sass-embedded": "^1.77.8",
     "typescript": "~5.6.2",

@@ -1,8 +1,10 @@
+import { lazy, Suspense } from 'react';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
-import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box } from '@mantine/core';
-import { VideoCarousel } from './VideoCarousel';
-import { ImageCarousel } from './ImageCarousel';
+import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
 import type { Campaign } from '@/types';
+
+const VideoCarousel = lazy(() => import('./VideoCarousel').then((m) => ({ default: m.VideoCarousel })));
+const ImageCarousel = lazy(() => import('./ImageCarousel').then((m) => ({ default: m.ImageCarousel })));
 
 interface CampaignViewerProps {
   campaign: Campaign;
@@ -133,14 +135,17 @@ export function CampaignViewer({
             </Paper>
           )}
 
-          {/* Videos Section */}
-          {hasAccess && campaign.videos.length > 0 && (
-            <VideoCarousel videos={campaign.videos} />
-          )}
+          {/* Media Sections */}
+          {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
+            <Suspense fallback={<Center py="md"><Loader /></Center>}>
+              {campaign.videos.length > 0 && (
+                <VideoCarousel videos={campaign.videos} />
+              )}
 
-          {/* Images Section */}
-          {hasAccess && campaign.images.length > 0 && (
-            <ImageCarousel images={campaign.images} />
+              {campaign.images.length > 0 && (
+                <ImageCarousel images={campaign.images} />
+              )}
+            </Suspense>
           )}
 
           {/* Campaign Stats */}

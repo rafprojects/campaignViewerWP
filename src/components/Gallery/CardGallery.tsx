@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center } from '@mantine/core';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader } from '@mantine/core';
 import { CampaignCard } from './CampaignCard';
-import { CampaignViewer } from '@/components/Campaign/CampaignViewer';
 import type { Campaign } from '@/types';
 import styles from './CardGallery.module.scss';
+
+const CampaignViewer = lazy(() => import('@/components/Campaign/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
 
 interface CardGalleryProps {
   campaigns: Campaign[];
@@ -29,31 +30,33 @@ export function CardGallery({
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
-  const companies = [...new Set(campaigns.map((c) => c.company.name))];
+  const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
-  const hasAccess = (campaignId: string, visibility: 'public' | 'private') => {
+  const hasAccess = useCallback((campaignId: string, visibility: 'public' | 'private') => {
     return visibility === 'public' || userPermissions.includes(campaignId);
-  };
+  }, [userPermissions]);
 
-  const filteredCampaigns = campaigns.filter((campaign) => {
-    if (filter === 'all') return true;
-    if (filter === 'accessible') return hasAccess(campaign.id, campaign.visibility);
-    return campaign.company.name === filter;
-  }).filter((campaign) => {
-    if (accessMode !== 'hide') {
-      return true;
-    }
-    if (filter === 'accessible') {
-      return true;
-    }
-    return hasAccess(campaign.id, campaign.visibility);
-  });
+  const filteredCampaigns = useMemo(() => {
+    return campaigns.filter((campaign) => {
+      if (filter === 'all') return true;
+      if (filter === 'accessible') return hasAccess(campaign.id, campaign.visibility);
+      return campaign.company.name === filter;
+    }).filter((campaign) => {
+      if (accessMode !== 'hide') {
+        return true;
+      }
+      if (filter === 'accessible') {
+        return true;
+      }
+      return hasAccess(campaign.id, campaign.visibility);
+    });
+  }, [accessMode, campaigns, filter, hasAccess]);
 
-  const accessibleCount = campaigns.filter((campaign) =>
+  const accessibleCount = useMemo(() => campaigns.filter((campaign) =>
     hasAccess(campaign.id, campaign.visibility),
-  ).length;
-  const hiddenCount = Math.max(0, campaigns.length - accessibleCount);
-  const showHiddenNotice = accessMode === 'hide' && filter === 'all' && hiddenCount > 0;
+  ).length, [campaigns, hasAccess]);
+  const hiddenCount = useMemo(() => Math.max(0, campaigns.length - accessibleCount), [accessibleCount, campaigns.length]);
+  const showHiddenNotice = useMemo(() => accessMode === 'hide' && filter === 'all' && hiddenCount > 0, [accessMode, filter, hiddenCount]);
 
   return (
     <Box className={styles.gallery}>
@@ -139,15 +142,17 @@ export function CardGallery({
 
       {/* Campaign Viewer Modal */}
       {selectedCampaign && (
-        <CampaignViewer
-          campaign={selectedCampaign}
-          hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
-          isAdmin={isAdmin}
-          onEditCampaign={onEditCampaign}
-          onArchiveCampaign={onArchiveCampaign}
-          onAddExternalMedia={onAddExternalMedia}
-          onClose={() => setSelectedCampaign(null)}
-        />
+        <Suspense fallback={<Center py="xl"><Loader /></Center>}>
+          <CampaignViewer
+            campaign={selectedCampaign}
+            hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
+            isAdmin={isAdmin}
+            onEditCampaign={onEditCampaign}
+            onArchiveCampaign={onArchiveCampaign}
+            onAddExternalMedia={onAddExternalMedia}
+            onClose={() => setSelectedCampaign(null)}
+          />
+        </Suspense>
       )}
     </Box>
   );

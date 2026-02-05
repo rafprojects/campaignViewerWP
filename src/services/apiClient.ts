@@ -28,6 +28,11 @@ export class ApiClient {
 
   private async buildAuthHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
+    const nonce = (window as Window & { __WPSG_CONFIG__?: { restNonce?: string }; __WPSG_REST_NONCE__?: string }).__WPSG_CONFIG__?.restNonce
+      ?? (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__;
+    if (nonce) {
+      headers['X-WP-Nonce'] = nonce;
+    }
     if (this.authProvider) {
       const token = await this.authProvider.getAccessToken();
       if (token) {

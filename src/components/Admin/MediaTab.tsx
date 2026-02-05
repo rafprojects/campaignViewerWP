@@ -1,13 +1,20 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
+import { useElementSize } from '@mantine/hooks';
 import { MediaCard } from './MediaCard';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconUpload, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
+import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, UploadResponse } from '@/types';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
+
+const VIRTUALIZATION_THRESHOLD = 80;
+const LIST_ROW_HEIGHT = 72;
+const LIST_MIN_WIDTH = 720;
+const VIRTUAL_LIST_MAX_HEIGHT = 520;
 
 type Props = { campaignId: string; apiClient: ApiClient };
 
@@ -38,13 +45,14 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   // View options
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [cardSize, setCardSize] = useState<CardSize>('medium');
+  const { ref: listMeasureRef, width: listWidth } = useElementSize();
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Get image items for lightbox navigation
-  const imageItems = media.filter((m) => m.type === 'image');
+  const imageItems = useMemo(() => media.filter((m) => m.type === 'image'), [media]);
 
   const openLightbox = (item: MediaItem) => {
     const idx = imageItems.findIndex((m) => m.id === item.id);
@@ -84,12 +92,12 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
   }, [lightboxOpen, imageItems.length]);
 
   // Card size configurations
-  const sizeConfig = {
+  const sizeConfig = useMemo(() => ({
     compact: { span: { base: 6, sm: 3, md: 2, lg: 2 }, height: 72 },
     small: { span: { base: 6, sm: 4, md: 3, lg: 3 }, height: 110 },
     medium: { span: { base: 12, sm: 6, md: 4 }, height: 170 },
     large: { span: { base: 12, sm: 6 }, height: 240 },
-  };
+  }), []);
 
   useEffect(() => {
     void fetchMedia();
@@ -431,6 +439,76 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
     }
   }
 
+  const listHeight = useMemo(() => {
+    if (media.length === 0) return 240;
+    const estimated = media.length * LIST_ROW_HEIGHT;
+    return Math.min(VIRTUAL_LIST_MAX_HEIGHT, Math.max(240, estimated));
+  }, [media.length]);
+
+  const enableVirtualList = viewMode === 'list' && media.length >= VIRTUALIZATION_THRESHOLD && listWidth > 0;
+
+  const renderListRow = ({ index, style }: ListChildComponentProps) => {
+    const item = media[index];
+    return (
+      <Box
+        role="row"
+        key={item.id}
+        style={{
+          ...style,
+          display: 'grid',
+          gridTemplateColumns: '60px 1fr 90px 90px 180px',
+          alignItems: 'center',
+          columnGap: 12,
+          padding: '8px 12px',
+          borderBottom: '1px solid var(--mantine-color-dark-5)',
+        }}
+      >
+        <Box role="cell">
+          <Image
+            src={item.thumbnail ?? item.url}
+            alt={item.caption || 'Media thumbnail'}
+            w={50}
+            h={50}
+            fit="cover"
+            radius="sm"
+            loading="lazy"
+            style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
+            onClick={() => item.type === 'image' && openLightbox(item)}
+            role={item.type === 'image' ? 'button' : undefined}
+            tabIndex={item.type === 'image' ? 0 : -1}
+            aria-label={
+              item.type === 'image'
+                ? `Open image preview for ${item.caption || item.url}`
+                : undefined
+            }
+            onKeyDown={(event) => {
+              if (item.type !== 'image') return;
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openLightbox(item);
+              }
+            }}
+            fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
+          />
+        </Box>
+        <Box role="cell">
+          <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
+          <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
+        </Box>
+        <Box role="cell"><Text size="sm">{item.type}</Text></Box>
+        <Box role="cell"><Text size="sm">{item.source}</Text></Box>
+        <Box role="cell">
+          <Group gap={4} wrap="nowrap">
+            <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
+            <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
+            <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
+            <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
+          </Group>
+        </Box>
+      </Box>
+    );
+  };
+
   return (
     <div>
       <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
@@ -485,67 +563,87 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         <Loader />
       ) : viewMode === 'list' ? (
         /* List View */
-        <Table.ScrollContainer minWidth={720}>
-          <Table verticalSpacing="xs" highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th w={60}>Thumb</Table.Th>
-                <Table.Th>Caption</Table.Th>
-                <Table.Th>Type</Table.Th>
-                <Table.Th>Source</Table.Th>
-                <Table.Th w={180}>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {media.map((item) => (
-                <Table.Tr key={item.id}>
-                  <Table.Td>
-                    <Image
-                      src={item.thumbnail ?? item.url}
-                      alt={item.caption || 'Media thumbnail'}
-                      w={50}
-                      h={50}
-                      fit="cover"
-                      radius="sm"
-                      loading="lazy"
-                      style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
-                      onClick={() => item.type === 'image' && openLightbox(item)}
-                      role={item.type === 'image' ? 'button' : undefined}
-                      tabIndex={item.type === 'image' ? 0 : -1}
-                      aria-label={
-                        item.type === 'image'
-                          ? `Open image preview for ${item.caption || item.url}`
-                          : undefined
-                      }
-                      onKeyDown={(event) => {
-                        if (item.type !== 'image') return;
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          openLightbox(item);
-                        }
-                      }}
-                      fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
-                    />
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
-                    <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
-                  </Table.Td>
-                  <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
-                  <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
-                  <Table.Td>
-                    <Group gap={4}>
-                      <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-                      <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
-                      <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
-                      <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
-                    </Group>
-                  </Table.Td>
+        <Box ref={listMeasureRef}>
+          <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
+            <Table verticalSpacing="xs" highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th w={60}>Thumb</Table.Th>
+                  <Table.Th>Caption</Table.Th>
+                  <Table.Th>Type</Table.Th>
+                  <Table.Th>Source</Table.Th>
+                  <Table.Th w={180}>Actions</Table.Th>
                 </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
+              </Table.Thead>
+            </Table>
+          </Table.ScrollContainer>
+
+          {enableVirtualList ? (
+            <Box style={{ minWidth: LIST_MIN_WIDTH, borderTop: '1px solid var(--mantine-color-dark-5)' }}>
+              <FixedSizeList
+                height={listHeight}
+                itemCount={media.length}
+                itemSize={LIST_ROW_HEIGHT}
+                width={Math.max(listWidth, LIST_MIN_WIDTH)}
+              >
+                {renderListRow}
+              </FixedSizeList>
+            </Box>
+          ) : (
+            <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
+              <Table verticalSpacing="xs" highlightOnHover>
+                <Table.Tbody>
+                  {media.map((item) => (
+                    <Table.Tr key={item.id}>
+                      <Table.Td>
+                        <Image
+                          src={item.thumbnail ?? item.url}
+                          alt={item.caption || 'Media thumbnail'}
+                          w={50}
+                          h={50}
+                          fit="cover"
+                          radius="sm"
+                          loading="lazy"
+                          style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
+                          onClick={() => item.type === 'image' && openLightbox(item)}
+                          role={item.type === 'image' ? 'button' : undefined}
+                          tabIndex={item.type === 'image' ? 0 : -1}
+                          aria-label={
+                            item.type === 'image'
+                              ? `Open image preview for ${item.caption || item.url}`
+                              : undefined
+                          }
+                          onKeyDown={(event) => {
+                            if (item.type !== 'image') return;
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              openLightbox(item);
+                            }
+                          }}
+                          fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
+                        />
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
+                        <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
+                      </Table.Td>
+                      <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
+                      <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
+                      <Table.Td>
+                        <Group gap={4}>
+                          <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
+                          <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
+                          <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
+                          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+        </Box>
       ) : (
         /* Grid / Compact View */
         <Grid>

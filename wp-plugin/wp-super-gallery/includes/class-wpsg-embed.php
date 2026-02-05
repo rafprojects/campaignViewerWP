@@ -17,6 +17,8 @@ class WPSG_Embed {
         $manifest = self::get_manifest();
         $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
 
+        add_action('send_headers', [self::class, 'add_asset_cache_headers']);
+
         if ($entry && isset($entry['file'])) {
             $script_url = $base_url . $entry['file'];
             wp_register_script($handle, $script_url, [], WPSG_VERSION, true);
@@ -37,6 +39,31 @@ class WPSG_Embed {
         wp_register_script($handle, $script_url, [], WPSG_VERSION, true);
     }
 
+    public static function add_asset_cache_headers() {
+        if (headers_sent()) {
+            return;
+        }
+
+        $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        if (empty($uri)) {
+            return;
+        }
+
+        if (strpos($uri, '/wp-content/plugins/wp-super-gallery/assets/') === false) {
+            return;
+        }
+
+        $path = wp_parse_url($uri, PHP_URL_PATH);
+        $ext = $path ? strtolower(pathinfo($path, PATHINFO_EXTENSION)) : '';
+        $cacheable = ['js', 'css', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'woff2', 'woff', 'ttf', 'eot'];
+
+        if (!in_array($ext, $cacheable, true)) {
+            return;
+        }
+
+        header('Cache-Control: public, max-age=31536000, immutable');
+    }
+
     /**
      * Add type="module" to the script tag for ES module support.
      */
@@ -49,6 +76,7 @@ class WPSG_Embed {
     }
 
     public static function render_shortcode($atts = []) {
+        $GLOBALS['wpsg_has_shortcode'] = true;
         $atts = shortcode_atts([
             'campaign' => '',
             'company' => '',
@@ -64,6 +92,7 @@ class WPSG_Embed {
 
         $auth_provider = apply_filters('wpsg_auth_provider', 'wp-jwt');
         $api_base = apply_filters('wpsg_api_base', home_url());
+        $sentry_dsn = apply_filters('wpsg_sentry_dsn', '');
 
         // Get display settings from WPSG_Settings if available.
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
@@ -96,6 +125,8 @@ class WPSG_Embed {
             'galleryLayout'    => $gallery_layout,
             'enableLightbox'   => $enable_lightbox,
             'enableAnimations' => $enable_animations,
+            'sentryDsn'         => $sentry_dsn,
+            'restNonce'         => wp_create_nonce('wp_rest'),
         ];
 
         $config_script = '<script>' .

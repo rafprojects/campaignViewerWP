@@ -8,12 +8,30 @@ import { ModalsProvider } from '@mantine/modals'
 import { theme } from './theme'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
+import { startWebVitalsMonitoring } from './services/monitoring/webVitals'
+import { initSentry } from './services/monitoring/sentry'
 
 type MountProps = Record<string, unknown>
 
 const query = new URLSearchParams(window.location.search)
 const windowFlag = (window as Window & { __USE_SHADOW_DOM__?: boolean }).__USE_SHADOW_DOM__
 const useShadowDom = windowFlag ?? query.get('shadow') !== '0'
+
+startWebVitalsMonitoring()
+const sentryDsn = (window as Window & { __WPSG_CONFIG__?: { sentryDsn?: string }; __WPSG_SENTRY_DSN__?: string }).__WPSG_CONFIG__?.sentryDsn
+  ?? (window as Window & { __WPSG_SENTRY_DSN__?: string }).__WPSG_SENTRY_DSN__
+void initSentry({ dsn: sentryDsn })
+
+if ('serviceWorker' in navigator && !import.meta.env.DEV) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('Service worker registration failed:', error);
+      });
+  });
+}
 
 const parseProps = (node: Element): MountProps => {
   const raw = node.getAttribute('data-wpsg-props')
