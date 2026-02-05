@@ -2405,10 +2405,11 @@ class WPSG_REST {
         }
 
         global $wpdb;
-        $placeholders = implode(',', array_fill(0, count($campaign_ids), '%d'));
+        $placeholders = implode(', ', array_fill(0, count($campaign_ids), '%d'));
+        $params = array_merge($campaign_ids, ['access_grants', 'status']);
         $sql = $wpdb->prepare(
             "SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id IN ({$placeholders}) AND meta_key IN (%s, %s)",
-            array_merge($campaign_ids, ['access_grants', 'status'])
+            $params
         );
 
         $rows = $wpdb->get_results($sql);
