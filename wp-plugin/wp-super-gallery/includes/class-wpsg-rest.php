@@ -1471,6 +1471,32 @@ class WPSG_REST {
         }
 
         $file = $files['file'];
+        if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
+            $message = 'Upload failed.';
+            $status = 400;
+            switch ($file['error']) {
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $message = 'Uploaded file exceeds the allowed size.';
+                    $status = 413;
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $message = 'The uploaded file was only partially uploaded.';
+                    $status = 400;
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $message = 'No file was uploaded.';
+                    $status = 400;
+                    break;
+                case UPLOAD_ERR_NO_TMP_DIR:
+                case UPLOAD_ERR_CANT_WRITE:
+                case UPLOAD_ERR_EXTENSION:
+                    $message = 'Server error while processing upload.';
+                    $status = 500;
+                    break;
+            }
+            return new WP_REST_Response(['message' => $message], $status);
+        }
         if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
             return new WP_REST_Response(['message' => 'Invalid upload'], 400);
         }
