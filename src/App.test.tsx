@@ -66,9 +66,6 @@ describe('App', () => {
     mutate(() => true, undefined);
     vi.clearAllMocks();
     localStorage.clear();
-  });
-  beforeEach(() => {
-    localStorage.clear();
     delete (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__;
   });
 
