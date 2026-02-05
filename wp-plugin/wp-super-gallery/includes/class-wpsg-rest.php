@@ -26,7 +26,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaigns'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [self::class, 'rate_limit_public'],
             ],
             [
                 'methods' => 'POST',
@@ -93,7 +93,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_media'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [self::class, 'rate_limit_public'],
             ],
             [
                 'methods' => 'POST',
@@ -262,7 +262,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_public_settings'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [self::class, 'rate_limit_public'],
             ],
             [
                 'methods' => 'POST',
@@ -284,9 +284,55 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'proxy_oembed'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [self::class, 'rate_limit_public'],
             ],
         ]);
+    }
+
+    public static function rate_limit_public($request) {
+        $limit = intval(apply_filters('wpsg_rate_limit_public', 60));
+        $window = intval(apply_filters('wpsg_rate_limit_window', 60));
+        return self::rate_limit_check($request, 'public', $limit, $window);
+    }
+
+    private static function rate_limit_check($request, $scope, $limit, $window) {
+        if ($limit <= 0) {
+            return true;
+        }
+
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
+        $user_id = get_current_user_id();
+        $route = $request->get_route();
+        $key = sprintf('wpsg_rl_%s_%s_%s', $scope, $user_id ?: 'anon', md5($ip . '|' . $route));
+
+        $data = get_transient($key);
+        if (!is_array($data)) {
+            $data = [
+                'count' => 0,
+                'start' => time(),
+            ];
+        }
+
+        $elapsed = time() - intval($data['start']);
+        if ($elapsed > $window) {
+            $data = [
+                'count' => 0,
+                'start' => time(),
+            ];
+        }
+
+        $data['count']++;
+        set_transient($key, $data, $window);
+
+        if ($data['count'] > $limit) {
+            return new WP_Error(
+                'wpsg_rate_limited',
+                'Rate limit exceeded. Please try again later.',
+                ['status' => 429]
+            );
+        }
+
+        return true;
     }
 
     public static function require_admin() {
