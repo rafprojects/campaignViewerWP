@@ -77,6 +77,28 @@ add_action('init', ['WPSG_Maintenance', 'register']);
 add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
 add_action('init', ['WPSG_Sentry', 'init']);
+add_filter('rest_pre_serve_request', 'wpsg_add_cors_headers', 10, 4);
+
+function wpsg_add_cors_headers($served, $result, $request, $server) {
+    $route = $request->get_route();
+    if (strpos($route, '/wp-super-gallery/v1/') !== 0) {
+        return $served;
+    }
+
+    $origin = isset($_SERVER['HTTP_ORIGIN']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_ORIGIN'])) : '';
+    $allowed = apply_filters('wpsg_cors_allowed_origins', []);
+
+    if ($origin && (empty($allowed) || in_array($origin, $allowed, true))) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Access-Control-Allow-Credentials: true');
+        header('Vary: Origin');
+    }
+
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
+
+    return $served;
+}
 
 // Initialize settings (admin only).
 if (is_admin()) {

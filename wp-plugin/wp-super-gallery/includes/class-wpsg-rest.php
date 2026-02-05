@@ -1461,6 +1461,33 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => 'File is required'], 400);
         }
 
+        $file = $files['file'];
+        if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            return new WP_REST_Response(['message' => 'Invalid upload'], 400);
+        }
+
+        $allowed_mimes = apply_filters('wpsg_upload_allowed_mimes', [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/svg+xml',
+            'video/mp4',
+            'video/webm',
+            'video/ogg',
+        ]);
+
+        $size_limit = intval(apply_filters('wpsg_upload_max_bytes', 50 * 1024 * 1024));
+        if (isset($file['size']) && $file['size'] > $size_limit) {
+            return new WP_REST_Response(['message' => 'File too large'], 413);
+        }
+
+        $check = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
+        $mime = $check['type'] ?? '';
+        if (!$mime || !in_array($mime, $allowed_mimes, true)) {
+            return new WP_REST_Response(['message' => 'Invalid file type'], 415);
+        }
+
         require_once ABSPATH . 'wp-admin/includes/file.php';
         require_once ABSPATH . 'wp-admin/includes/media.php';
         require_once ABSPATH . 'wp-admin/includes/image.php';
