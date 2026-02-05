@@ -36,6 +36,7 @@ class WPSG_Maintenance {
                 [
                     'before' => $before,
                     'inclusive' => true,
+                    'column' => 'post_date_gmt',
                 ],
             ],
             'meta_query' => [
