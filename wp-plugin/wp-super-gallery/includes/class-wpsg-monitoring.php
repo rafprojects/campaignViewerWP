@@ -37,12 +37,9 @@ class WPSG_Monitoring {
 
         $status = is_wp_error($response) ? 500 : (method_exists($response, 'get_status') ? $response->get_status() : 200);
 
-        $total = intval(get_option('wpsg_rest_request_count', 0));
-        update_option('wpsg_rest_request_count', $total + 1, false);
-
+        self::buffer_metric('wpsg_rest_request_count', 1);
         if ($status >= 400) {
-            $errors = intval(get_option('wpsg_rest_error_count', 0));
-            update_option('wpsg_rest_error_count', $errors + 1, false);
+            self::buffer_metric('wpsg_rest_error_count', 1);
         }
 
         do_action('wpsg_rest_metrics', [
@@ -78,6 +75,27 @@ class WPSG_Monitoring {
 
         error_log('[WPSG] Fatal error: ' . wp_json_encode($payload));
         do_action('wpsg_php_error', $payload);
+    }
+
+    private static function buffer_metric($key, $increment) {
+        $buffer_key = $key . '_buffer';
+        $buffer = get_transient($buffer_key);
+        $buffer = is_array($buffer) ? $buffer : ['count' => 0, 'last_flush' => time()];
+
+        $buffer['count'] += $increment;
+
+        $flush_every = intval(apply_filters('wpsg_metrics_flush_every', 10));
+        $flush_seconds = intval(apply_filters('wpsg_metrics_flush_seconds', 60));
+
+        $should_flush = $buffer['count'] >= $flush_every || (time() - intval($buffer['last_flush'])) >= $flush_seconds;
+
+        if ($should_flush) {
+            $total = intval(get_option($key, 0));
+            update_option($key, $total + $buffer['count'], false);
+            $buffer = ['count' => 0, 'last_flush' => time()];
+        }
+
+        set_transient($buffer_key, $buffer, $flush_seconds);
     }
 
     private static function is_wpsg_request() {
