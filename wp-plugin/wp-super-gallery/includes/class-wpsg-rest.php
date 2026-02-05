@@ -472,8 +472,12 @@ class WPSG_REST {
             'totalPages' => (int) $query->max_num_pages,
         ];
 
-        // Cache for 5 minutes (300 seconds)
-        set_transient($cache_key, $response_data, 300);
+        // Cache using configured TTL (defaults to 5 minutes / 300 seconds)
+        $ttl = 300;
+        if (class_exists('WPSG_Settings')) {
+            $ttl = intval(WPSG_Settings::get_setting('cache_ttl') ?: 300);
+        }
+        set_transient($cache_key, $response_data, $ttl);
 
         $response = new WP_REST_Response($response_data, 200);
         self::log_slow_rest('campaigns.list', $start, [
