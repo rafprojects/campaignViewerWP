@@ -300,6 +300,7 @@ class WPSG_REST {
     }
 
     public static function list_campaigns() {
+        $start = microtime(true);
         $request = func_get_arg(0);
         $status = sanitize_text_field($request->get_param('status'));
         $visibility = sanitize_text_field($request->get_param('visibility'));
@@ -396,7 +397,12 @@ class WPSG_REST {
         // Cache for 5 minutes (300 seconds)
         set_transient($cache_key, $response_data, 300);
 
-        return new WP_REST_Response($response_data, 200);
+        $response = new WP_REST_Response($response_data, 200);
+        self::log_slow_rest('campaigns.list', $start, [
+            'count' => count($items),
+            'page' => $page,
+        ]);
+        return $response;
     }
 
     public static function create_campaign() {
@@ -510,6 +516,7 @@ class WPSG_REST {
     }
 
     public static function list_media() {
+        $start = microtime(true);
         $request = func_get_arg(0);
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
@@ -557,7 +564,12 @@ class WPSG_REST {
             ],
         ];
 
-        return self::respond_with_etag($request, $payload, 200, (string) $post_id);
+        $response = self::respond_with_etag($request, $payload, 200, (string) $post_id);
+        self::log_slow_rest('media.list', $start, [
+            'campaignId' => $post_id,
+            'total' => count($media_items),
+        ]);
+        return $response;
     }
 
     public static function create_media() {
@@ -797,9 +809,16 @@ class WPSG_REST {
      * List all companies with their campaign counts and statistics
      */
     public static function list_companies() {
+        $request = func_get_arg(0);
+        $page = max(1, intval($request->get_param('page') ?? 1));
+        $per_page = max(1, min(100, intval($request->get_param('per_page') ?? 50)));
+        $offset = ($page - 1) * $per_page;
+
         $terms = get_terms([
             'taxonomy' => 'wpsg_company',
             'hide_empty' => false,
+            'number' => $per_page,
+            'offset' => $offset,
         ]);
 
         if (is_wp_error($terms)) {
@@ -855,13 +874,19 @@ class WPSG_REST {
             ];
         }
 
-        return new WP_REST_Response($companies, 200);
+        $response = new WP_REST_Response($companies, 200);
+        $total = wp_count_terms('wpsg_company', ['hide_empty' => false]);
+        $response->header('X-WPSG-Total', (string) $total);
+        $response->header('X-WPSG-Page', (string) $page);
+        $response->header('X-WPSG-Per-Page', (string) $per_page);
+        return $response;
     }
 
     /**
      * List access grants for a specific company (company-level + optionally all campaign grants)
      */
     public static function list_company_access() {
+        $start = microtime(true);
         $request = func_get_arg(0);
         $term_id = intval($request->get_param('id'));
         $include_campaigns = $request->get_param('include_campaigns') === 'true';
@@ -897,15 +922,23 @@ class WPSG_REST {
                 ],
             ]);
 
+            $campaign_ids = array_map(function ($campaign) {
+                return intval($campaign->ID);
+            }, $campaigns);
+
+            $campaign_meta = self::get_campaign_meta_maps($campaign_ids);
+            $campaign_grants_map = $campaign_meta['grants'];
+            $campaign_status_map = $campaign_meta['status'];
+
             foreach ($campaigns as $campaign) {
-                $campaign_grants = get_post_meta($campaign->ID, 'access_grants', true);
-                $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+                $campaign_id = intval($campaign->ID);
+                $campaign_grants = $campaign_grants_map[$campaign_id] ?? [];
 
                 foreach ($campaign_grants as $entry) {
                     $entry['source'] = 'campaign';
-                    $entry['campaignId'] = $campaign->ID;
+                    $entry['campaignId'] = $campaign_id;
                     $entry['campaignTitle'] = $campaign->post_title;
-                    $entry['campaignStatus'] = get_post_meta($campaign->ID, 'status', true) ?: 'active';
+                    $entry['campaignStatus'] = $campaign_status_map[$campaign_id] ?? 'active';
                     $all_grants[] = $entry;
                 }
             }
@@ -936,7 +969,13 @@ class WPSG_REST {
             return $entry;
         }, $all_grants);
 
-        return new WP_REST_Response($enriched, 200);
+        $response = new WP_REST_Response($enriched, 200);
+        self::log_slow_rest('companies.access', $start, [
+            'companyId' => $term_id,
+            'entries' => count($enriched),
+            'includeCampaigns' => $include_campaigns,
+        ]);
+        return $response;
     }
 
     /**
@@ -2271,6 +2310,43 @@ class WPSG_REST {
         return null;
     }
 
+    private static function get_campaign_meta_maps($campaign_ids) {
+        $campaign_ids = array_values(array_filter(array_map('intval', $campaign_ids)));
+        if (empty($campaign_ids)) {
+            return [
+                'grants' => [],
+                'status' => [],
+            ];
+        }
+
+        global $wpdb;
+        $placeholders = implode(',', array_fill(0, count($campaign_ids), '%d'));
+        $sql = $wpdb->prepare(
+            "SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id IN ({$placeholders}) AND meta_key IN (%s, %s)",
+            array_merge($campaign_ids, ['access_grants', 'status'])
+        );
+
+        $rows = $wpdb->get_results($sql);
+        $grants = [];
+        $status = [];
+
+        foreach ($rows as $row) {
+            $post_id = intval($row->post_id);
+            if ($row->meta_key === 'access_grants') {
+                $value = maybe_unserialize($row->meta_value);
+                $grants[$post_id] = is_array($value) ? $value : [];
+            } elseif ($row->meta_key === 'status') {
+                $status_value = is_string($row->meta_value) && $row->meta_value !== '' ? $row->meta_value : 'active';
+                $status[$post_id] = $status_value;
+            }
+        }
+
+        return [
+            'grants' => $grants,
+            'status' => $status,
+        ];
+    }
+
     private static function upsert_grant($grants, $entry) {
         $user_id = intval($entry['userId']);
         $filtered = array_filter($grants, function ($item) use ($user_id) {
@@ -2328,6 +2404,24 @@ class WPSG_REST {
             }
         }
         return $sanitized;
+    }
+
+    private static function log_slow_rest($label, $start_time, $context = []) {
+        $elapsed_ms = (microtime(true) - $start_time) * 1000;
+        $threshold_ms = intval(apply_filters('wpsg_slow_query_threshold_ms', 100));
+
+        if ($elapsed_ms < $threshold_ms) {
+            return;
+        }
+
+        $payload = [
+            'label' => $label,
+            'elapsedMs' => round($elapsed_ms, 2),
+            'context' => $context,
+        ];
+
+        error_log('[WPSG] Slow REST: ' . wp_json_encode($payload));
+        do_action('wpsg_slow_rest', $payload);
     }
 
     private static function normalize_external_media($url) {

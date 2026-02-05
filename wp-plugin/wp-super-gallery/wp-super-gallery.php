@@ -18,6 +18,8 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cpt.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-db.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');
@@ -31,6 +33,7 @@ register_deactivation_hook(__FILE__, 'wpsg_deactivate');
 function wpsg_deactivate() {
     // Roles and capabilities are kept on deactivation
     // Only remove on uninstall if desired
+    wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -66,6 +69,8 @@ add_action('init', ['WPSG_CPT', 'register']);
 add_action('rest_api_init', ['WPSG_REST', 'register_routes']);
 add_action('init', ['WPSG_Embed', 'register_shortcode']);
 add_action('wp_enqueue_scripts', ['WPSG_Embed', 'register_assets']);
+add_action('init', ['WPSG_DB', 'maybe_upgrade']);
+add_action('init', ['WPSG_Maintenance', 'register']);
 
 // Initialize settings (admin only).
 if (is_admin()) {
