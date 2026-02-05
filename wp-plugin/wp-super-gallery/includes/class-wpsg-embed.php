@@ -76,6 +76,7 @@ class WPSG_Embed {
     }
 
     public static function render_shortcode($atts = []) {
+        $GLOBALS['wpsg_has_shortcode'] = true;
         $atts = shortcode_atts([
             'campaign' => '',
             'company' => '',

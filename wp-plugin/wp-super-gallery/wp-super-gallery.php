@@ -78,6 +78,7 @@ add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
 add_action('init', ['WPSG_Sentry', 'init']);
 add_filter('rest_pre_serve_request', 'wpsg_add_cors_headers', 10, 4);
+add_action('send_headers', 'wpsg_add_security_headers');
 
 function wpsg_add_cors_headers($served, $result, $request, $server) {
     $route = $request->get_route();
@@ -98,6 +99,50 @@ function wpsg_add_cors_headers($served, $result, $request, $server) {
     header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
 
     return $served;
+}
+
+function wpsg_add_security_headers() {
+    if (!apply_filters('wpsg_security_headers_enabled', true)) {
+        return;
+    }
+
+    if (!wpsg_should_add_security_headers()) {
+        return;
+    }
+
+    if (!headers_sent()) {
+        $xfo = apply_filters('wpsg_x_frame_options', 'SAMEORIGIN');
+        $referrer = apply_filters('wpsg_referrer_policy', 'strict-origin-when-cross-origin');
+        $permissions = apply_filters('wpsg_permissions_policy', 'camera=(), microphone=(), geolocation=()');
+        $csp = apply_filters('wpsg_csp_header', '');
+
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: ' . $xfo);
+        header('Referrer-Policy: ' . $referrer);
+        header('Permissions-Policy: ' . $permissions);
+
+        if (!empty($csp)) {
+            header('Content-Security-Policy: ' . $csp);
+        }
+    }
+}
+
+function wpsg_should_add_security_headers() {
+    if (!empty($GLOBALS['wpsg_has_shortcode'])) {
+        return true;
+    }
+
+    $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';
+    if (strpos($route, '/wp-super-gallery/v1/') === 0) {
+        return true;
+    }
+
+    $uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
+    if (strpos($uri, '/wp-json/wp-super-gallery/v1/') !== false) {
+        return true;
+    }
+
+    return strpos($uri, '/wp-content/plugins/wp-super-gallery/') !== false;
 }
 
 // Initialize settings (admin only).
