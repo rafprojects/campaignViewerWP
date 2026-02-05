@@ -471,10 +471,21 @@ class WPSG_Settings {
         $value = self::get_setting('cache_ttl');
         $options = [
             0      => __('Disabled', 'wp-super-gallery'),
+            10     => __('10 seconds', 'wp-super-gallery'),
+            30     => __('30 seconds', 'wp-super-gallery'),
+            60     => __('1 minute', 'wp-super-gallery'),
             300    => __('5 minutes', 'wp-super-gallery'),
             900    => __('15 minutes', 'wp-super-gallery'),
+            1200   => __('20 minutes', 'wp-super-gallery'),
+            1800   => __('30 minutes', 'wp-super-gallery'),
+            2700   => __('45 minutes', 'wp-super-gallery'),
             3600   => __('1 hour', 'wp-super-gallery'),
+            7200   => __('2 hours', 'wp-super-gallery'),
+            14400  => __('4 hours', 'wp-super-gallery'),
+            28800  => __('8 hours', 'wp-super-gallery'),
+            43200  => __('12 hours', 'wp-super-gallery'),
             86400  => __('1 day', 'wp-super-gallery'),
+            259200 => __('3 days', 'wp-super-gallery'),
             604800 => __('1 week', 'wp-super-gallery'),
         ];
         ?>
