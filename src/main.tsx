@@ -24,7 +24,12 @@ void initSentry({ dsn: sentryDsn })
 
 if ('serviceWorker' in navigator && !import.meta.env.DEV) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
+    void navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('Service worker registration failed:', error);
+      });
   });
 }
 
