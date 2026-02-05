@@ -1507,7 +1507,6 @@ class WPSG_REST {
             'image/png',
             'image/gif',
             'image/webp',
-            'image/svg+xml',
             'video/mp4',
             'video/webm',
             'video/ogg',
@@ -1520,7 +1519,15 @@ class WPSG_REST {
 
         $check = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
         $mime = $check['type'] ?? '';
+        $ext = $check['ext'] ?? '';
+        $check_filename = wp_check_filetype($file['name']);
+        $mime_filename = $check_filename['type'] ?? '';
+
         if (!$mime || !in_array($mime, $allowed_mimes, true)) {
+            return new WP_REST_Response(['message' => 'Invalid file type'], 415);
+        }
+
+        if (!$ext || ($mime_filename && $mime_filename !== $mime)) {
             return new WP_REST_Response(['message' => 'Invalid file type'], 415);
         }
 
