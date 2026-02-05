@@ -125,6 +125,7 @@ class WPSG_Embed {
             'enableLightbox'   => $enable_lightbox,
             'enableAnimations' => $enable_animations,
             'sentryDsn'         => $sentry_dsn,
+            'restNonce'         => wp_create_nonce('wp_rest'),
         ];
 
         $config_script = '<script>' .

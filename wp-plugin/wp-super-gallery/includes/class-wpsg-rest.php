@@ -336,7 +336,12 @@ class WPSG_REST {
     }
 
     public static function require_admin() {
-        return current_user_can('manage_wpsg');
+        return current_user_can('manage_wpsg') && self::verify_rest_nonce();
+    }
+
+    private static function verify_rest_nonce() {
+        $nonce = isset($_SERVER['HTTP_X_WP_NONCE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_WP_NONCE'])) : '';
+        return (bool) wp_verify_nonce($nonce, 'wp_rest');
     }
 
     public static function require_authenticated() {
