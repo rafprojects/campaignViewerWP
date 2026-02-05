@@ -214,7 +214,9 @@ function AppContent({
     return mapped;
   }, [apiClient, isAuthenticated]);
 
-  const campaignsKey = isReady ? ['campaigns', user?.id ?? 'anon', isAuthenticated] : null;
+  const campaignsKey = isReady
+    ? ['campaigns', user?.id ?? 'anon', isAuthenticated, isAdmin ? 'admin' : 'user']
+    : null;
   const { data: campaigns, error: campaignsError, isLoading, mutate: mutateCampaigns } = useSWR(
     campaignsKey,
     fetchCampaigns,
