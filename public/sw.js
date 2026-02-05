@@ -26,6 +26,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/wp-admin/') || url.pathname.startsWith('/wp-json/')) return;
+  if (url.pathname.includes('/wp-login.php')) return;
 
   event.respondWith(
     (async () => {
@@ -35,7 +37,14 @@ self.addEventListener('fetch', (event) => {
 
       try {
         const response = await fetch(request);
-        if (response && response.status === 200) {
+        const cacheControl = response.headers.get('Cache-Control') || '';
+        const contentLength = Number(response.headers.get('Content-Length') || '0');
+        if (
+          response &&
+          response.status === 200 &&
+          !cacheControl.includes('no-store') &&
+          contentLength <= 5 * 1024 * 1024
+        ) {
           cache.put(request, response.clone());
         }
         return response;
