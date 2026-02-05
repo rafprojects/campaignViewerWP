@@ -305,6 +305,25 @@ class WPSG_REST {
         $route = $request->get_route();
         $key = sprintf('wpsg_rl_%s_%s_%s', $scope, $user_id ?: 'anon', md5($ip . '|' . $route));
 
+        if (function_exists('wp_cache_incr')) {
+            $cache_key = $key . '_count';
+            $current = wp_cache_incr($cache_key, 1, 'wpsg_rate_limit');
+            if ($current === false) {
+                wp_cache_add($cache_key, 1, 'wpsg_rate_limit', $window);
+                $current = 1;
+            }
+
+            if ($current > $limit) {
+                return new WP_Error(
+                    'wpsg_rate_limited',
+                    'Rate limit exceeded. Please try again later.',
+                    ['status' => 429]
+                );
+            }
+
+            return true;
+        }
+
         $data = get_transient($key);
         if (!is_array($data)) {
             $data = [
