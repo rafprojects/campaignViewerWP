@@ -31,7 +31,7 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-mantine': ['@mantine/core', '@mantine/hooks', '@mantine/modals', '@mantine/notifications'],
           'vendor-icons': ['@tabler/icons-react'],
-          // Admin chunks (lazy loaded)
+          // Admin chunk (code-split; loaded when lazy imports execute)
           'admin': [
             './src/components/Admin/AdminPanel.tsx',
             './src/components/Admin/SettingsPanel.tsx',

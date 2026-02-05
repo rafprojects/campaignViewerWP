@@ -148,7 +148,13 @@ function AppContent({
     setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
     // Delay logout to allow the message to be seen
     setTimeout(() => {
-      void logout();
+      void (async () => {
+        try {
+          await logout();
+        } catch {
+          // no-op
+        }
+      })();
     }, 100);
   }, [logout]);
 
