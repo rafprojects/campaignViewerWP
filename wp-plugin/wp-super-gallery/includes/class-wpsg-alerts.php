@@ -6,7 +6,8 @@ if (!defined('ABSPATH')) {
 
 class WPSG_Alerts {
     const REST_ERROR_BUCKET = 'wpsg_rest_error_bucket';
-    const ALERT_THROTTLE = 'wpsg_alert_throttle';
+    const ALERT_THROTTLE_FATAL = 'wpsg_alert_throttle_fatal';
+    const ALERT_THROTTLE_REST = 'wpsg_alert_throttle_rest';
 
     public static function register() {
         add_action('wpsg_php_error', [self::class, 'notify_fatal_error']);
@@ -18,7 +19,7 @@ class WPSG_Alerts {
             return;
         }
 
-        if (self::is_throttled()) {
+        if (self::is_throttled(self::ALERT_THROTTLE_FATAL)) {
             return;
         }
 
@@ -28,7 +29,7 @@ class WPSG_Alerts {
         if (class_exists('WPSG_Sentry')) {
             WPSG_Sentry::capture_message('WPSG fatal error', $payload);
         }
-        self::throttle();
+        self::throttle(self::ALERT_THROTTLE_FATAL);
     }
 
     public static function track_rest_metrics($payload) {
@@ -59,7 +60,7 @@ class WPSG_Alerts {
             return;
         }
 
-        if (self::is_throttled()) {
+        if (self::is_throttled(self::ALERT_THROTTLE_REST)) {
             return;
         }
 
@@ -75,7 +76,7 @@ class WPSG_Alerts {
         if (class_exists('WPSG_Sentry')) {
             WPSG_Sentry::capture_message('WPSG REST error spike', $payload);
         }
-        self::throttle();
+        self::throttle(self::ALERT_THROTTLE_REST);
     }
 
     private static function email_enabled() {
@@ -87,12 +88,12 @@ class WPSG_Alerts {
         return is_string($recipient) && $recipient ? $recipient : get_option('admin_email');
     }
 
-    private static function is_throttled() {
-        return get_transient(self::ALERT_THROTTLE) === '1';
+    private static function is_throttled($key) {
+        return get_transient($key) === '1';
     }
 
-    private static function throttle() {
+    private static function throttle($key) {
         $minutes = intval(apply_filters('wpsg_alert_throttle_minutes', 10));
-        set_transient(self::ALERT_THROTTLE, '1', $minutes * 60);
+        set_transient($key, '1', $minutes * 60);
     }
 }

@@ -290,7 +290,7 @@ class WPSG_REST {
     }
 
     public static function rate_limit_public($request) {
-        $limit = intval(apply_filters('wpsg_rate_limit_public', 60));
+        $limit = intval(apply_filters('wpsg_rate_limit_public', 0));
         $window = intval(apply_filters('wpsg_rate_limit_window', 60));
         return self::rate_limit_check($request, 'public', $limit, $window);
     }
