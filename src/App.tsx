@@ -167,7 +167,7 @@ function AppContent({
     const mapped = await Promise.all(
       items.map(async (item) => {
         let mediaItems: MediaItem[] = [];
-        if (isAuthenticated) {
+        if (isAuthenticated || item.visibility === 'public') {
           try {
             const mediaResponse = await apiClient.get<
               MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
@@ -208,8 +208,9 @@ function AppContent({
     return mapped;
   }, [apiClient, isAuthenticated]);
 
+  const campaignsKey = isReady ? ['campaigns', user?.id ?? 'anon', isAuthenticated] : null;
   const { data: campaigns, error: campaignsError, isLoading, mutate: mutateCampaigns } = useSWR(
-    isReady ? '/campaigns' : null,
+    campaignsKey,
     fetchCampaigns,
     {
       revalidateOnFocus: false,
