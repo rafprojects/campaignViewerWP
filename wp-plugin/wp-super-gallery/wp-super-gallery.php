@@ -89,9 +89,11 @@ function wpsg_add_cors_headers($served, $result, $request, $server) {
     $origin = isset($_SERVER['HTTP_ORIGIN']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_ORIGIN'])) : '';
     $allowed = apply_filters('wpsg_cors_allowed_origins', []);
 
-    if ($origin && (empty($allowed) || in_array($origin, $allowed, true))) {
+    if ($origin && !empty($allowed) && in_array($origin, $allowed, true)) {
         header('Access-Control-Allow-Origin: ' . $origin);
-        header('Access-Control-Allow-Credentials: true');
+        if (apply_filters('wpsg_cors_allow_credentials', true)) {
+            header('Access-Control-Allow-Credentials: true');
+        }
         header('Vary: Origin');
     }
 
