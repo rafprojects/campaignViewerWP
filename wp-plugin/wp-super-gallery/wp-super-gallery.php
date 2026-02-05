@@ -20,6 +20,9 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-db.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-monitoring.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-alerts.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-sentry.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');
@@ -71,6 +74,9 @@ add_action('init', ['WPSG_Embed', 'register_shortcode']);
 add_action('wp_enqueue_scripts', ['WPSG_Embed', 'register_assets']);
 add_action('init', ['WPSG_DB', 'maybe_upgrade']);
 add_action('init', ['WPSG_Maintenance', 'register']);
+add_action('init', ['WPSG_Monitoring', 'register']);
+add_action('init', ['WPSG_Alerts', 'register']);
+add_action('init', ['WPSG_Sentry', 'init']);
 
 // Initialize settings (admin only).
 if (is_admin()) {
