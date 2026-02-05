@@ -12,6 +12,14 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.6.0 (February 4, 2026)
+- **MINOR**: Phase 8 Performance & Production Optimization release
+  - Performance: code splitting for heavy components, virtualized media lists, bundle size optimization, and service worker caching.
+  - Caching: transients + SWR, ETags for media, oEmbed TTL caching, and static asset cache headers.
+  - Monitoring: Web Vitals, Sentry (client + server alerts), REST timing metrics, and alerting via admin email.
+  - Database: indexes, pagination, optimized access grants, slow REST profiling, and archive retention strategy.
+  - Security: rate limiting, REST nonce verification, CORS hardening, CSP/security headers, and upload validation.
+
 ### v0.4.0 (February 2, 2026)
 - **MINOR**: Phase 6 Functionality Polish release
   - Searchable user picker, "Current Access" table with company/campaign badges, and a secure Quick Add User experience that surfaces password reset links + email-failure test mode.
@@ -90,8 +98,8 @@ Current development follows a phased approach:
 - **Phase 5**: ✅ Complete (WordPress Integration)
 - **Phase 6**: ✅ Complete (Functionality Polish — v0.4.0 release)
 - **Phase 7**: ✅ Complete (Visual Polish + Testing + Accessibility + Mobile Optimization — v0.5.0 release)
-- **Phase 8**: Ready to start (Performance & Production Optimization)
-- **Phase 9**: Pending (Theme System)
+- **Phase 8**: ✅ Complete (Performance & Production Optimization — v0.6.0 release)
+- **Phase 9**: Ready to start (Theme System)
 
 ## Branching Strategy
 
