@@ -7,6 +7,20 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/class-wpsg-oembed-providers.php';
 
 class WPSG_REST {
+    private static function respond_with_etag($request, $payload, $status = 200, $salt = '') {
+        $etag = '"' . md5(wp_json_encode($payload) . $salt) . '"';
+        $if_none_match = $request ? $request->get_header('if-none-match') : '';
+
+        if (!empty($if_none_match) && trim($if_none_match) === $etag) {
+            $response = new WP_REST_Response(null, 304);
+            $response->header('ETag', $etag);
+            return $response;
+        }
+
+        $response = new WP_REST_Response($payload, $status);
+        $response->header('ETag', $etag);
+        return $response;
+    }
     public static function register_routes() {
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
             [
@@ -535,13 +549,15 @@ class WPSG_REST {
             ]);
         }
 
-        return new WP_REST_Response([
+        $payload = [
             'items' => $media_items,
             'meta' => [
                 'typesUpdated' => $updated_count,
                 'total' => count($media_items),
             ],
-        ], 200);
+        ];
+
+        return self::respond_with_etag($request, $payload, 200, (string) $post_id);
     }
 
     public static function create_media() {
@@ -1433,12 +1449,14 @@ class WPSG_REST {
             ];
         }
 
-        return new WP_REST_Response([
+        $payload = [
             'items' => $items,
             'total' => $query->found_posts,
             'pages' => $query->max_num_pages,
             'page' => $page,
-        ], 200);
+        ];
+
+        return self::respond_with_etag($request, $payload, 200, sprintf('%d:%d:%s', $page, $per_page, $search));
     }
 
     public static function proxy_oembed() {

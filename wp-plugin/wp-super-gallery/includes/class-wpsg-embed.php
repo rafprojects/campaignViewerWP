@@ -17,6 +17,8 @@ class WPSG_Embed {
         $manifest = self::get_manifest();
         $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
 
+        add_action('send_headers', [self::class, 'add_asset_cache_headers']);
+
         if ($entry && isset($entry['file'])) {
             $script_url = $base_url . $entry['file'];
             wp_register_script($handle, $script_url, [], WPSG_VERSION, true);
@@ -35,6 +37,31 @@ class WPSG_Embed {
 
         $script_url = $base_url . 'wp-super-gallery.js';
         wp_register_script($handle, $script_url, [], WPSG_VERSION, true);
+    }
+
+    public static function add_asset_cache_headers() {
+        if (headers_sent()) {
+            return;
+        }
+
+        $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        if (empty($uri)) {
+            return;
+        }
+
+        if (strpos($uri, '/wp-content/plugins/wp-super-gallery/assets/') === false) {
+            return;
+        }
+
+        $path = wp_parse_url($uri, PHP_URL_PATH);
+        $ext = $path ? strtolower(pathinfo($path, PATHINFO_EXTENSION)) : '';
+        $cacheable = ['js', 'css', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'woff2', 'woff', 'ttf', 'eot'];
+
+        if (!in_array($ext, $cacheable, true)) {
+            return;
+        }
+
+        header('Cache-Control: public, max-age=31536000, immutable');
     }
 
     /**
