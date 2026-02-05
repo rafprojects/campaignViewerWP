@@ -370,13 +370,14 @@ class WPSG_REST {
         // Generate cache key based on user ID and query parameters
         $user_id = get_current_user_id();
         $is_admin = current_user_can('manage_options');
+        $search_key = $search ? md5($search) : 'none';
         $cache_key = sprintf(
             'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s',
             $user_id,
             $status ?: 'all',
             $visibility ?: 'all',
             $company ?: 'all',
-            $search ?: 'none',
+            $search_key,
             $page,
             $per_page,
             $is_admin ? 'admin' : 'user'
