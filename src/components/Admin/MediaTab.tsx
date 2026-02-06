@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Button, Grid, Card, Image, Text, Group, Loader, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
 import { MediaCard } from './MediaCard';
 import { MediaLightboxModal } from './MediaLightboxModal';
