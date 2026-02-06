@@ -14,9 +14,9 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
+import { ThemeSelector } from './ThemeSelector';
 
 export interface SettingsData {
-  theme: 'dark' | 'light' | 'auto';
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;
@@ -24,7 +24,6 @@ export interface SettingsData {
 }
 
 const defaultSettings: SettingsData = {
-  theme: 'dark',
   galleryLayout: 'grid',
   itemsPerPage: 12,
   enableLightbox: true,
@@ -49,7 +48,6 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
     try {
       const response = await apiClient.getSettings();
       const loaded: SettingsData = {
-        theme: (response.theme as SettingsData['theme']) ?? defaultSettings.theme,
         galleryLayout: (response.galleryLayout as SettingsData['galleryLayout']) ?? defaultSettings.galleryLayout,
         itemsPerPage: response.itemsPerPage ?? defaultSettings.itemsPerPage,
         enableLightbox: response.enableLightbox ?? defaultSettings.enableLightbox,
@@ -128,16 +126,8 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
       </Group>
 
       <Stack gap="md">
-        <Select
-          label="Theme"
-          description="Default color theme for gallery display."
-          value={settings.theme}
-          onChange={(value) => updateSetting('theme', (value as SettingsData['theme']) ?? 'dark')}
-          data={[
-            { value: 'dark', label: 'Dark' },
-            { value: 'light', label: 'Light' },
-            { value: 'auto', label: 'Auto (Match System)' },
-          ]}
+        <ThemeSelector
+          description="Choose a color theme. Changes apply instantly and are saved automatically."
         />
 
         <Select

@@ -1,0 +1,30 @@
+{
+  "_comment": "Gruvbox Dark — retro warm theme with earthy oranges, greens, and browns",
+  "id": "gruvbox-dark",
+  "name": "Gruvbox Dark",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#282828",
+    "surface": "#3c3836",
+    "surface2": "#504945",
+    "surface3": "#665c54",
+
+    "text": "#ebdbb2",
+    "textMuted": "#bdae93",
+    "textMuted2": "#a89984",
+
+    "border": "#504945",
+
+    "primary": "#fe8019",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#b8bb26",
+    "warning": "#fabd2f",
+    "error": "#fb4934",
+    "info": "#83a598",
+
+    "accent": "#fe8019",
+    "accentGreen": "#b8bb26",
+    "accentPurple": "#d3869b"
+  }
+}

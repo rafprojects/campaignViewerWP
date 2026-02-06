@@ -1,0 +1,30 @@
+{
+  "_comment": "Solarized Light — Ethan Schoonover's precision color scheme (light variant)",
+  "id": "solarized-light",
+  "name": "Solarized Light",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#fdf6e3",
+    "surface": "#eee8d5",
+    "surface2": "#e8e2cf",
+    "surface3": "#ddd6c1",
+
+    "text": "#002b36",
+    "textMuted": "#586e75",
+    "textMuted2": "#93a1a1",
+
+    "border": "#93a1a1",
+
+    "primary": "#268bd2",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#859900",
+    "warning": "#b58900",
+    "error": "#dc322f",
+    "info": "#268bd2",
+
+    "accent": "#2aa198",
+    "accentGreen": "#859900",
+    "accentPurple": "#6c71c4"
+  }
+}

@@ -5,11 +5,11 @@
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+    box-shadow: var(--wpsg-shadow-lg);
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wpsg-color-primary) 60%, transparent);
     border-radius: var(--mantine-radius-md);
   }
 }

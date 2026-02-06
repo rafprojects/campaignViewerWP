@@ -1,0 +1,30 @@
+{
+  "_comment": "Solarized Dark — Ethan Schoonover's precision color scheme (dark variant)",
+  "id": "solarized-dark",
+  "name": "Solarized Dark",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#002b36",
+    "surface": "#073642",
+    "surface2": "#0a4050",
+    "surface3": "#1a5060",
+
+    "text": "#fdf6e3",
+    "textMuted": "#93a1a1",
+    "textMuted2": "#657b83",
+
+    "border": "#586e75",
+
+    "primary": "#268bd2",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#859900",
+    "warning": "#b58900",
+    "error": "#dc322f",
+    "info": "#268bd2",
+
+    "accent": "#2aa198",
+    "accentGreen": "#859900",
+    "accentPurple": "#6c71c4"
+  }
+}

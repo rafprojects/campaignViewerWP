@@ -1,0 +1,30 @@
+{
+  "_comment": "Nord — Arctic, north-bluish color palette (nordtheme.com)",
+  "id": "nord",
+  "name": "Nord",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#2e3440",
+    "surface": "#3b4252",
+    "surface2": "#434c5e",
+    "surface3": "#4c566a",
+
+    "text": "#eceff4",
+    "textMuted": "#d8dee9",
+    "textMuted2": "#81a1c1",
+
+    "border": "#4c566a",
+
+    "primary": "#88c0d0",
+    "primaryShade": { "light": 5, "dark": 4 },
+
+    "success": "#a3be8c",
+    "warning": "#ebcb8b",
+    "error": "#bf616a",
+    "info": "#81a1c1",
+
+    "accent": "#88c0d0",
+    "accentGreen": "#a3be8c",
+    "accentPurple": "#b48ead"
+  }
+}

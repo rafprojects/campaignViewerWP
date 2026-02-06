@@ -1,0 +1,30 @@
+{
+  "_comment": "Cyberpunk — neon pinks, electric cyans, and hot magentas on deep dark canvas",
+  "id": "cyberpunk",
+  "name": "Cyberpunk",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#0a0a0f",
+    "surface": "#12121a",
+    "surface2": "#1e1e2a",
+    "surface3": "#2a2a3a",
+
+    "text": "#e8e8f0",
+    "textMuted": "#a0a0c0",
+    "textMuted2": "#6a6a8a",
+
+    "border": "#2a2a3a",
+
+    "primary": "#ff2d95",
+    "primaryShade": { "light": 5, "dark": 4 },
+
+    "success": "#00ff88",
+    "warning": "#ffdd00",
+    "error": "#ff3344",
+    "info": "#00e5ff",
+
+    "accent": "#ff2d95",
+    "accentGreen": "#00ff88",
+    "accentPurple": "#bf00ff"
+  }
+}
