@@ -163,7 +163,7 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 
 | # | Test | Expected | ✅ |
 |---|------|----------|----|
-| 6.1 | WP Admin → Settings → Theme dropdown | Shows all 9 themes in grouped categories | |
+| 6.1 | WP Admin → Settings → Theme dropdown | Shows all 14 themes in grouped categories | |
 | 6.2 | Select `material-dark` and save | Settings saved successfully | |
 | 6.3 | Visit front-end with `[super-gallery]` shortcode | Gallery loads with `material-dark` theme | |
 | 6.4 | View page source | `window.__wpsgThemeId = "material-dark"` present in config script | |
