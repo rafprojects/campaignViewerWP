@@ -43,9 +43,10 @@ const STORAGE_KEY = 'wpsg-theme-id';
 
 /**
  * Determine the initial theme ID from (in priority order):
- *  1. WP config injection (data attribute or global variable)
- *  2. User's localStorage preference (if persistence allowed)
- *  3. DEFAULT_THEME_ID fallback
+ *  1. WP config injection (global variable or data attribute)
+ *  2. WP __WPSG_CONFIG__.theme (embed shortcode injection)
+ *  3. User's localStorage preference (if persistence allowed)
+ *  4. DEFAULT_THEME_ID fallback
  */
 function resolveInitialThemeId(allowPersistence: boolean): string {
   // 1. WP injected config (set by PHP on the embed container)
@@ -59,7 +60,18 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
     return wpConfigId;
   }
 
-  // 2. LocalStorage persistence
+  // 2. __WPSG_CONFIG__.theme (set by WP embed shortcode)
+  if (typeof window !== 'undefined') {
+    const wpsgConfig = (window as unknown as Record<string, unknown>).__WPSG_CONFIG__ as
+      | Record<string, unknown>
+      | undefined;
+    const configTheme = wpsgConfig?.theme as string | undefined;
+    if (configTheme && hasTheme(configTheme)) {
+      return configTheme;
+    }
+  }
+
+  // 3. LocalStorage persistence
   if (allowPersistence && typeof window !== 'undefined') {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);

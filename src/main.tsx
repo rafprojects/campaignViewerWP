@@ -19,9 +19,20 @@ const windowFlag = (window as Window & { __USE_SHADOW_DOM__?: boolean }).__USE_S
 const useShadowDom = windowFlag ?? query.get('shadow') !== '0'
 
 startWebVitalsMonitoring()
-const sentryDsn = (window as Window & { __WPSG_CONFIG__?: { sentryDsn?: string }; __WPSG_SENTRY_DSN__?: string }).__WPSG_CONFIG__?.sentryDsn
+
+// Read WP-injected configuration.
+const wpsgConfig = (window as Window & {
+  __WPSG_CONFIG__?: { sentryDsn?: string; allowUserThemeOverride?: boolean };
+  __WPSG_SENTRY_DSN__?: string;
+}).__WPSG_CONFIG__
+
+const sentryDsn = wpsgConfig?.sentryDsn
   ?? (window as Window & { __WPSG_SENTRY_DSN__?: string }).__WPSG_SENTRY_DSN__
 void initSentry({ dsn: sentryDsn })
+
+// If the WP admin disables user theme override, we disable localStorage
+// persistence so the admin-chosen theme is always used.
+const allowThemePersistence = wpsgConfig?.allowUserThemeOverride !== false
 
 if ('serviceWorker' in navigator && !import.meta.env.DEV) {
   window.addEventListener('load', () => {
@@ -94,7 +105,7 @@ const renderApp = (
 
   createRoot(mountNode).render(
     <StrictMode>
-      <ThemeProvider shadowRoot={shadowRootEl ?? null}>
+      <ThemeProvider shadowRoot={shadowRootEl ?? null} allowPersistence={allowThemePersistence}>
         <ThemedApp
           props={props}
           isShadowDom={isShadow}

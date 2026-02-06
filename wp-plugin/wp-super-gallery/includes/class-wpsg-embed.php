@@ -96,7 +96,8 @@ class WPSG_Embed {
 
         // Get display settings from WPSG_Settings if available.
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
-        $theme = isset($settings['theme']) ? $settings['theme'] : 'dark';
+        $theme = isset($settings['theme']) ? $settings['theme'] : 'default-dark';
+        $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
         $gallery_layout = isset($settings['gallery_layout']) ? $settings['gallery_layout'] : 'grid';
         $enable_lightbox = isset($settings['enable_lightbox']) ? $settings['enable_lightbox'] : true;
         $enable_animations = isset($settings['enable_animations']) ? $settings['enable_animations'] : true;
@@ -119,18 +120,21 @@ class WPSG_Embed {
 
         // Build config object with all settings.
         $config = [
-            'authProvider'     => $auth_provider,
-            'apiBase'          => $api_base,
-            'theme'            => $theme,
-            'galleryLayout'    => $gallery_layout,
-            'enableLightbox'   => $enable_lightbox,
-            'enableAnimations' => $enable_animations,
-            'sentryDsn'         => $sentry_dsn,
-            'restNonce'         => wp_create_nonce('wp_rest'),
+            'authProvider'            => $auth_provider,
+            'apiBase'                 => $api_base,
+            'theme'                   => $theme,
+            'allowUserThemeOverride'  => $allow_user_theme_override,
+            'galleryLayout'           => $gallery_layout,
+            'enableLightbox'          => $enable_lightbox,
+            'enableAnimations'        => $enable_animations,
+            'sentryDsn'               => $sentry_dsn,
+            'restNonce'               => wp_create_nonce('wp_rest'),
         ];
 
         $config_script = '<script>' .
             'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';' .
+            // Set theme ID global for ThemeContext resolution.
+            'window.__wpsgThemeId = ' . wp_json_encode($theme) . ';' .
             // Keep legacy globals for backward compatibility.
             'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';' .
             'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';' .
