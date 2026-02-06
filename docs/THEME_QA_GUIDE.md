@@ -198,7 +198,7 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 |---|------|----------|----|
 | 8.1 | Open DevTools → Performance tab | Ready to record | |
 | 8.2 | Record while switching themes 5 times rapidly | Each switch completes in <16ms (no dropped frames) | |
-| 8.3 | Check console at startup | `[WPSG Theme] Registry initialized: 9/9 themes in Xms` — should be <50ms | |
+| 8.3 | Check console at startup | `[WPSG Theme] Registry initialized: 14/14 themes in Xms` — should be <50ms | |
 | 8.4 | Memory tab: take heap snapshot | No leaked DOM nodes after 10 theme switches | |
 | 8.5 | Network tab while switching | **Zero** network requests — all themes pre-computed at startup | |
 | 8.6 | Lighthouse performance score | No regression from theme system (bundle ~13KB chroma.js addition) | |
