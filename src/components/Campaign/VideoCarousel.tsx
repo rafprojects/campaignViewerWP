@@ -1,25 +1,26 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
+import { useCarousel } from '@/hooks/useCarousel';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
 }
 
 export function VideoCarousel({ videos }: VideoCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { currentIndex, setCurrentIndex, next, prev } = useCarousel(videos.length);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const nextVideo = () => {
-    setCurrentIndex((prev) => (prev + 1) % videos.length);
+  const nextVideo = useCallback(() => {
+    next();
     setIsPlaying(false);
-  };
+  }, [next]);
 
-  const prevVideo = () => {
-    setCurrentIndex((prev) => (prev - 1 + videos.length) % videos.length);
+  const prevVideo = useCallback(() => {
+    prev();
     setIsPlaying(false);
-  };
+  }, [prev]);
 
   const currentVideo = videos[currentIndex];
 

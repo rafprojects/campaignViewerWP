@@ -1,23 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
 import type { MediaItem } from '@/types';
+import { useCarousel } from '@/hooks/useCarousel';
 
 interface ImageCarouselProps {
   images: MediaItem[];
 }
 
 export function ImageCarousel({ images }: ImageCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { currentIndex, setCurrentIndex, next: nextImage, prev: prevImage } = useCarousel(images.length);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-
-  const nextImage = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  }, [images.length]);
-
-  const prevImage = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
 
   const currentImage = images[currentIndex];
 

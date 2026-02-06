@@ -1,13 +1,16 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Container, Group, Button, Alert, Loader, Center, Stack, ActionIcon, Tooltip, Modal, TextInput, Textarea, Select, Card, Image, Text, SimpleGrid, Badge, FileButton, Tabs, Progress } from '@mantine/core';
+import { Container, Alert, Loader, Center, Stack } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
-import { IconSettings, IconTrash, IconPlus, IconUpload, IconLink, IconPhoto } from '@tabler/icons-react';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
 import { LoginForm } from './components/Auth/LoginForm';
+import { AuthBar } from './components/Auth/AuthBar';
+import { EditCampaignModal } from './components/Campaign/EditCampaignModal';
+import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
+import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem } from './types';
@@ -526,43 +529,13 @@ function AppContent({
         <LoginForm onSubmit={handleLogin} />
       )}
       {isAuthenticated && user && (
-        <Container size="xl" py="sm">
-          <Group justify="space-between" wrap="wrap" gap="sm">
-            <Text size="sm">Signed in as {user.email}</Text>
-            <Group gap="sm" wrap="wrap">
-              {isAdmin && (
-                <>
-                  <Button
-                    variant="default"
-                    onClick={openAdminPanel}
-                    className="wpsg-admin-btn"
-                    size="sm"
-                  >
-                    Admin Panel
-                  </Button>
-                  <Tooltip label="Settings">
-                    <ActionIcon
-                      variant="default"
-                      size="lg"
-                      className="wpsg-admin-btn"
-                      onClick={openSettings}
-                      aria-label="Settings"
-                    >
-                      <IconSettings size={20} />
-                    </ActionIcon>
-                  </Tooltip>
-                </>
-              )}
-              <Button
-                variant="subtle"
-                onClick={() => void logout()}
-                size="sm"
-              >
-                Sign out
-              </Button>
-            </Group>
-          </Group>
-        </Container>
+        <AuthBar
+          email={user.email}
+          isAdmin={isAdmin}
+          onOpenAdminPanel={openAdminPanel}
+          onOpenSettings={openSettings}
+          onLogout={() => void logout()}
+        />
       )}
       {actionMessage && (
         <Container size="xl" py="sm">
@@ -627,343 +600,61 @@ function AppContent({
       )}
 
       {/* Edit Campaign Modal */}
-      <Modal
+      <EditCampaignModal
         opened={!!editModalCampaign}
+        campaign={editModalCampaign}
+        editMediaTab={editMediaTab}
+        onEditMediaTabChange={setEditMediaTab}
+        editTitle={editTitle}
+        onEditTitleChange={setEditTitle}
+        editDescription={editDescription}
+        onEditDescriptionChange={setEditDescription}
         onClose={closeEditModal}
-        title={`Edit Campaign: ${editModalCampaign?.title ?? ''}`}
-        size="xl"
-        zIndex={300}
-      >
-        <Tabs value={editMediaTab} onChange={setEditMediaTab} aria-label="Edit campaign tabs">
-          <Tabs.List>
-            <Tabs.Tab value="details">Details</Tabs.Tab>
-            <Tabs.Tab value="list">
-              Media {editCampaignMedia.length > 0 && <Badge size="sm" ml={4}>{editCampaignMedia.length}</Badge>}
-            </Tabs.Tab>
-            <Tabs.Tab value="add">Add Media</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="details" pt="md">
-            <Stack gap="md">
-              <TextInput
-                label="Title"
-                placeholder="Campaign title"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.currentTarget.value)}
-              />
-              <Textarea
-                label="Description"
-                placeholder="Campaign description"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.currentTarget.value)}
-                minRows={3}
-              />
-              <Group justify="flex-end" mt="md">
-                <Button variant="default" onClick={closeEditModal}>
-                  Cancel
-                </Button>
-                <Button onClick={() => void confirmEditCampaign()}>
-                  Save Changes
-                </Button>
-              </Group>
-            </Stack>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="list" pt="md">
-            {editMediaLoading ? (
-              <Center py="xl"><Loader /></Center>
-            ) : editCampaignMedia.length === 0 ? (
-              <Stack align="center" py="xl">
-                <Text c="dimmed">No media attached to this campaign.</Text>
-                <Button leftSection={<IconPlus size={16} />} onClick={() => setEditMediaTab('add')}>
-                  Add Media
-                </Button>
-              </Stack>
-            ) : (
-              <Stack gap="md">
-                <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="sm">
-                  {editCampaignMedia.map((media) => (
-                    <Card
-                      key={media.id}
-                      shadow="sm"
-                      padding="xs"
-                      radius="md"
-                      withBorder
-                      role="group"
-                      aria-label={`Media item ${media.caption || media.url}`}
-                    >
-                      <Card.Section>
-                        <Image
-                          src={media.thumbnail || media.url}
-                          height={100}
-                          alt={media.caption || 'Media'}
-                          fallbackSrc="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='%23ddd' width='100%' height='100%'/><text x='50%' y='50%' text-anchor='middle' dy='.3em' fill='%23999'>?</text></svg>"
-                        />
-                      </Card.Section>
-                      <Group justify="space-between" mt="xs">
-                        <Badge size="xs" variant="light">
-                          {media.type}
-                        </Badge>
-                        <Tooltip label="Remove from campaign">
-                          <ActionIcon
-                            color="red"
-                            variant="light"
-                            size="sm"
-                            onClick={() => void handleRemoveMedia(media)}
-                            aria-label="Remove from campaign"
-                          >
-                            <IconTrash size={14} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </Group>
-                      {media.caption && (
-                        <Text size="xs" c="dimmed" lineClamp={1} mt={4}>
-                          {media.caption}
-                        </Text>
-                      )}
-                    </Card>
-                  ))}
-                </SimpleGrid>
-                <Group justify="flex-end">
-                  <Button variant="light" leftSection={<IconPlus size={16} />} onClick={() => setEditMediaTab('add')}>
-                    Add More
-                  </Button>
-                </Group>
-              </Stack>
-            )}
-          </Tabs.Panel>
-
-          <Tabs.Panel value="add" pt="md">
-            <Stack gap="lg">
-              {/* Pick from Library Section */}
-              <Card withBorder>
-                <Stack gap="sm">
-                  <Group justify="space-between">
-                    <Group>
-                      <IconPhoto size={20} />
-                      <Text fw={500}>Pick from Media Library</Text>
-                    </Group>
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      onClick={() => void loadLibraryMedia(librarySearch)}
-                      loading={libraryLoading}
-                    >
-                      {libraryMedia.length > 0 ? 'Refresh' : 'Load Library'}
-                    </Button>
-                  </Group>
-                  <TextInput
-                    placeholder="Search media..."
-                    aria-label="Search media library"
-                    value={librarySearch}
-                    onChange={(e) => setLibrarySearch(e.currentTarget.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && void loadLibraryMedia(librarySearch)}
-                  />
-                  {libraryLoading ? (
-                    <Center py="md"><Loader size="sm" /></Center>
-                  ) : libraryMedia.length === 0 ? (
-                    <Text size="sm" c="dimmed" ta="center" py="md">
-                      Click &quot;Load Library&quot; to browse existing media
-                    </Text>
-                  ) : (
-                    <SimpleGrid cols={{ base: 3, sm: 4, md: 5 }} spacing="xs">
-                      {libraryMedia.map((item) => {
-                        const isAlreadyAdded = editCampaignMedia.some(
-                          (m) => m.id === item.id || m.url === item.url
-                        );
-                        return (
-                          <Card
-                            key={item.id}
-                            shadow="xs"
-                            padding={0}
-                            radius="sm"
-                            withBorder
-                            style={{
-                              opacity: isAlreadyAdded ? 0.5 : 1,
-                              cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
-                            }}
-                            onClick={() => !isAlreadyAdded && void handleAddFromLibrary(item)}
-                            role="button"
-                            tabIndex={isAlreadyAdded ? -1 : 0}
-                            aria-disabled={isAlreadyAdded}
-                            aria-label={
-                              isAlreadyAdded
-                                ? 'Media already added to campaign'
-                                : `Add ${item.type} media: ${item.caption || item.url}`
-                            }
-                            onKeyDown={(event) => {
-                              if (isAlreadyAdded) return;
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                event.preventDefault();
-                                void handleAddFromLibrary(item);
-                              }
-                            }}
-                          >
-                            <Image
-                              src={item.thumbnail || item.url}
-                              height={60}
-                              alt={item.caption || 'Media'}
-                              fallbackSrc="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect fill='%23ddd' width='100%' height='100%'/></svg>"
-                            />
-                            <Stack gap={2} p={4}>
-                              <Badge size="xs" variant="light">
-                                {item.type}
-                              </Badge>
-                              {isAlreadyAdded && (
-                                <Text size="xs" c="green">Added</Text>
-                              )}
-                            </Stack>
-                          </Card>
-                        );
-                      })}
-                    </SimpleGrid>
-                  )}
-                </Stack>
-              </Card>
-
-              {/* Upload Section */}
-              <Card withBorder>
-                <Stack gap="sm">
-                  <Group>
-                    <IconUpload size={20} />
-                    <Text fw={500}>Upload New File</Text>
-                  </Group>
-                  <FileButton
-                    onChange={(file) => file && void handleUploadMediaInEdit(file)}
-                    accept="image/*,video/*"
-                  >
-                    {(props) => (
-                      <Button {...props} variant="light" fullWidth disabled={!!uploadFile}>
-                        {uploadFile ? 'Uploading...' : 'Choose file to upload'}
-                      </Button>
-                    )}
-                  </FileButton>
-                  {uploadProgress !== null && (
-                    <Progress value={uploadProgress} size="sm" />
-                  )}
-                </Stack>
-              </Card>
-
-              {/* External URL Section */}
-              <Card withBorder>
-                <Stack gap="sm">
-                  <Group>
-                    <IconLink size={20} />
-                    <Text fw={500}>Add External URL</Text>
-                  </Group>
-                  <Select
-                    label="Type"
-                    data={[
-                      { value: 'video', label: 'Video' },
-                      { value: 'image', label: 'Image' },
-                    ]}
-                    value={addMediaType}
-                    onChange={(v) => setAddMediaType((v as 'video' | 'image') ?? 'video')}
-                  />
-                  <TextInput
-                    label="URL"
-                    placeholder="https://youtube.com/watch?v=... or image URL"
-                    value={addMediaUrl}
-                    onChange={(e) => setAddMediaUrl(e.currentTarget.value)}
-                  />
-                  <TextInput
-                    label="Caption (optional)"
-                    placeholder="Describe this media"
-                    value={addMediaCaption}
-                    onChange={(e) => setAddMediaCaption(e.currentTarget.value)}
-                  />
-                  <Button
-                    onClick={() => void handleAddExternalMediaInEdit()}
-                    disabled={!addMediaUrl}
-                    loading={addMediaLoading}
-                  >
-                    Add External Media
-                  </Button>
-                </Stack>
-              </Card>
-
-              <Button variant="subtle" onClick={() => setEditMediaTab('list')}>
-                ← Back to Media List
-              </Button>
-            </Stack>
-          </Tabs.Panel>
-        </Tabs>
-      </Modal>
+        onConfirmEdit={confirmEditCampaign}
+        editMediaLoading={editMediaLoading}
+        editCampaignMedia={editCampaignMedia}
+        onRemoveMedia={handleRemoveMedia}
+        libraryMedia={libraryMedia}
+        libraryLoading={libraryLoading}
+        librarySearch={librarySearch}
+        onLibrarySearchChange={setLibrarySearch}
+        onLoadLibrary={loadLibraryMedia}
+        onAddFromLibrary={handleAddFromLibrary}
+        uploadFile={uploadFile}
+        uploadProgress={uploadProgress}
+        onUploadFile={handleUploadMediaInEdit}
+        addMediaType={addMediaType}
+        onAddMediaTypeChange={setAddMediaType}
+        addMediaUrl={addMediaUrl}
+        onAddMediaUrlChange={setAddMediaUrl}
+        addMediaCaption={addMediaCaption}
+        onAddMediaCaptionChange={setAddMediaCaption}
+        addMediaLoading={addMediaLoading}
+        onAddExternalMedia={handleAddExternalMediaInEdit}
+      />
 
       {/* Archive Confirmation Modal */}
-      <Modal
+      <ArchiveCampaignModal
         opened={!!archiveModalCampaign}
+        campaign={archiveModalCampaign}
         onClose={() => setArchiveModalCampaign(null)}
-        title="Archive Campaign"
-        zIndex={300}
-        padding="md"
-      >
-        <Stack gap="md">
-          <p>Are you sure you want to archive &quot;{archiveModalCampaign?.title}&quot;? This action will mark it as archived.</p>
-          <Group justify="flex-end" wrap="wrap" gap="sm">
-            <Button variant="default" onClick={() => setArchiveModalCampaign(null)}>
-              Cancel
-            </Button>
-            <Button
-              color="red"
-              onClick={() => void confirmArchiveCampaign()}
-              aria-label={`Archive campaign ${archiveModalCampaign?.title ?? ''}`.trim()}
-            >
-              Archive
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        onConfirm={confirmArchiveCampaign}
+      />
 
       {/* Add External Media Modal */}
-      <Modal
+      <AddExternalMediaModal
         opened={!!externalMediaCampaign}
+        mediaType={externalMediaType}
+        onMediaTypeChange={setExternalMediaType}
+        url={externalMediaUrl}
+        onUrlChange={setExternalMediaUrl}
+        caption={externalMediaCaption}
+        onCaptionChange={setExternalMediaCaption}
+        thumbnail={externalMediaThumbnail}
+        onThumbnailChange={setExternalMediaThumbnail}
         onClose={() => setExternalMediaCampaign(null)}
-        title="Add External Media"
-        size="md"
-        zIndex={300}
-        padding="md"
-      >
-        <Stack gap="md">
-          <Select
-            label="Media Type"
-            data={[
-              { value: 'video', label: 'Video' },
-              { value: 'image', label: 'Image' },
-            ]}
-            value={externalMediaType}
-            onChange={(v) => setExternalMediaType((v as 'video' | 'image') ?? 'video')}
-          />
-          <TextInput
-            label="URL"
-            placeholder="https://..."
-            description="YouTube, Vimeo, or direct media URL"
-            value={externalMediaUrl}
-            onChange={(e) => setExternalMediaUrl(e.currentTarget.value)}
-            required
-          />
-          <TextInput
-            label="Caption"
-            placeholder="Optional caption"
-            value={externalMediaCaption}
-            onChange={(e) => setExternalMediaCaption(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Thumbnail URL"
-            placeholder="Optional thumbnail URL"
-            value={externalMediaThumbnail}
-            onChange={(e) => setExternalMediaThumbnail(e.currentTarget.value)}
-          />
-          <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
-            <Button variant="default" onClick={() => setExternalMediaCampaign(null)}>
-              Cancel
-            </Button>
-            <Button onClick={() => void confirmAddExternalMedia()} disabled={!externalMediaUrl}>
-              Add Media
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        onConfirm={confirmAddExternalMedia}
+      />
     </div>
   );
 }
