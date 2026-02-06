@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
+import { Button, Grid, Card, Image, Text, Group, Loader, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
 import { MediaCard } from './MediaCard';
+import { MediaLightboxModal } from './MediaLightboxModal';
+import { MediaAddModal } from './MediaAddModal';
+import { MediaEditModal } from './MediaEditModal';
+import { MediaDeleteModal } from './MediaDeleteModal';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconUpload, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto } from '@tabler/icons-react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, UploadResponse } from '@/types';
@@ -675,225 +679,56 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         </Grid>
       )}
 
-      {/* Image Lightbox Modal */}
-      <Modal
+      <MediaLightboxModal
         opened={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
-        size="xl"
-        padding={0}
-        withCloseButton={false}
-        centered
-        styles={{ body: { background: 'rgba(0,0,0,0.9)' } }}
-        aria-label={`Media lightbox: ${imageItems[lightboxIndex]?.caption || 'Image'} (${lightboxIndex + 1} of ${imageItems.length})`}
-      >
-        {imageItems.length > 0 && imageItems[lightboxIndex] && (
-          <Box pos="relative">
-            <Image
-              src={imageItems[lightboxIndex].url}
-              alt={imageItems[lightboxIndex].caption || 'Media preview'}
-              fit="contain"
-              mah="80vh"
-            />
-            <ActionIcon
-              variant="filled"
-              color="dark"
-              pos="absolute"
-              top={10}
-              right={10}
-              onClick={() => setLightboxOpen(false)}
-              aria-label="Close lightbox"
-            >
-              <IconX size={18} />
-            </ActionIcon>
-            {imageItems.length > 1 && (
-              <>
-                <ActionIcon
-                  variant="filled"
-                  color="dark"
-                  pos="absolute"
-                  left={10}
-                  top="50%"
-                  style={{ transform: 'translateY(-50%)' }}
-                  onClick={() => navigateLightbox('prev')}
-                  aria-label="Previous image"
-                >
-                  <IconChevronLeft size={20} />
-                </ActionIcon>
-                <ActionIcon
-                  variant="filled"
-                  color="dark"
-                  pos="absolute"
-                  right={10}
-                  top="50%"
-                  style={{ transform: 'translateY(-50%)' }}
-                  onClick={() => navigateLightbox('next')}
-                  aria-label="Next image"
-                >
-                  <IconChevronRight size={20} />
-                </ActionIcon>
-              </>
-            )}
-            <Box
-              pos="absolute"
-              bottom={0}
-              left={0}
-              right={0}
-              p="md"
-              style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.8))' }}
-            >
-              <Text c="white" size="sm">{imageItems[lightboxIndex].caption || 'Untitled'}</Text>
-              <Text c="dimmed" size="xs">{lightboxIndex + 1} / {imageItems.length}</Text>
-            </Box>
-          </Box>
-        )}
-      </Modal>
+        imageItems={imageItems}
+        lightboxIndex={lightboxIndex}
+        onPrev={() => navigateLightbox('prev')}
+        onNext={() => navigateLightbox('next')}
+      />
 
-      <Modal opened={addOpen} onClose={() => setAddOpen(false)} title="Add Media" padding="md">
-        <Stack gap="sm">
-          <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
-            <Group justify="space-between" wrap="wrap" gap="sm">
-              <Group>
-                <FileButton onChange={setSelectedFile} accept="image/*,video/*">
-                  {(props) => <Button leftSection={<IconUpload />} {...props}>Choose file</Button>}
-                </FileButton>
-                <Text size="sm" c="dimmed">or drag & drop a file here</Text>
-              </Group>
-              {selectedFile && <Text size="sm" c="gray.1">{selectedFile.name}</Text>}
-            </Group>
+      <MediaAddModal
+        opened={addOpen}
+        onClose={() => setAddOpen(false)}
+        dropRef={dropRef}
+        selectedFile={selectedFile}
+        onSelectFile={setSelectedFile}
+        previewUrl={previewUrl}
+        uploadTitle={uploadTitle}
+        onUploadTitleChange={setUploadTitle}
+        uploadCaption={uploadCaption}
+        onUploadCaptionChange={setUploadCaption}
+        uploadProgress={uploadProgress}
+        uploading={uploading}
+        onUpload={handleUpload}
+        externalUrl={externalUrl}
+        onExternalUrlChange={setExternalUrl}
+        externalError={externalError}
+        onFetchOEmbed={handleFetchOEmbed}
+        externalLoading={externalLoading}
+        onAddExternal={handleAddExternal}
+        externalPreview={externalPreview}
+      />
 
-            {previewUrl && (
-              <Group mt="sm">
-                <Image src={previewUrl} alt="Upload preview" h={140} fit="cover" radius="sm" />
-              </Group>
-            )}
+      <MediaEditModal
+        opened={editOpen}
+        onClose={() => setEditOpen(false)}
+        editingTitle={editingTitle}
+        onEditingTitleChange={setEditingTitle}
+        editingCaption={editingCaption}
+        onEditingCaptionChange={setEditingCaption}
+        editingThumbnail={editingThumbnail}
+        onEditingThumbnailChange={setEditingThumbnail}
+        onSave={saveEdit}
+      />
 
-            {selectedFile && (
-              <Stack gap="xs" mt="sm">
-                <TextInput
-                  label="Title"
-                  placeholder="Enter a title (optional)"
-                  value={uploadTitle}
-                  onChange={(e) => setUploadTitle(e.currentTarget.value)}
-                />
-                <Textarea
-                  label="Caption"
-                  placeholder="Enter a caption or description (optional)"
-                  value={uploadCaption}
-                  onChange={(e) => setUploadCaption(e.currentTarget.value)}
-                  autosize
-                  minRows={2}
-                  maxRows={4}
-                />
-              </Stack>
-            )}
-
-            {uploadProgress !== null && <Progress value={uploadProgress} mt="sm" />}
-            <Group mt="sm">
-              <Button onClick={handleUpload} loading={uploading} disabled={!selectedFile}>Upload</Button>
-            </Group>
-          </Paper>
-
-          <Text fw={600}>Or add external URL</Text>
-          <Group wrap="wrap" gap="sm">
-            <TextInput
-              label="External URL"
-              value={externalUrl}
-              onChange={(e) => setExternalUrl(e.currentTarget.value)}
-              placeholder="https://youtube.com/..."
-              error={externalError}
-              aria-label="External media URL"
-            />
-            <Button onClick={handleFetchOEmbed} loading={externalLoading} aria-label="Preview external media">
-              Preview
-            </Button>
-            <Button onClick={handleAddExternal} disabled={!externalUrl} aria-label="Add external media">
-              Add
-            </Button>
-          </Group>
-
-          {externalPreview && (
-            <Card mt="sm">
-              <Stack>
-                {externalPreview.html ? (
-                  <div
-                    style={{ position: 'relative', paddingTop: '56.25%' }}
-                  >
-                    <div
-                      style={{ position: 'absolute', inset: 0 }}
-                      dangerouslySetInnerHTML={{ __html: externalPreview.html }}
-                    />
-                  </div>
-                ) : (
-                  <Group>
-                    {externalPreview.thumbnail_url && (
-                      <Image
-                        src={externalPreview.thumbnail_url}
-                        h={100}
-                        fit="cover"
-                        radius="sm"
-                        alt={externalPreview.title || 'External media preview'}
-                      />
-                    )}
-                    <div>
-                      <Text fw={700}>{externalPreview.title}</Text>
-                      <Text size="sm" c="dimmed">{externalPreview.provider_name}</Text>
-                    </div>
-                  </Group>
-                )}
-              </Stack>
-            </Card>
-          )}
-        </Stack>
-      </Modal>
-
-      <Modal opened={editOpen} onClose={() => setEditOpen(false)} title="Edit Media" padding="md">
-        <Stack gap="md">
-          <TextInput 
-            label="Title" 
-            placeholder="Enter a title (optional)"
-            value={editingTitle} 
-            onChange={(e) => setEditingTitle(e.currentTarget.value)}
-            description="Optional display title for this media item"
-          />
-          <Textarea
-            label="Caption" 
-            placeholder="Enter a caption or description"
-            value={editingCaption} 
-            onChange={(e) => setEditingCaption(e.currentTarget.value)}
-            autosize
-            minRows={2}
-            maxRows={4}
-            description="Descriptive text shown with the media"
-          />
-          <TextInput 
-            label="Thumbnail URL" 
-            placeholder="https://..." 
-            value={editingThumbnail ?? ''} 
-            onChange={(e) => setEditingThumbnail(e.currentTarget.value)}
-            description="Custom preview image URL (optional)"
-          />
-          <Group justify="flex-end" wrap="wrap" gap="sm">
-            <Button variant="default" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={saveEdit}>Save</Button>
-          </Group>
-        </Stack>
-      </Modal>
-
-      <Modal opened={!!deleteItem} onClose={() => setDeleteItem(null)} title="Delete Media" size="sm" padding="md">
-        <Stack>
-          <Text>Are you sure you want to delete this media item? This action cannot be undone.</Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setDeleteItem(null)}>Cancel</Button>
-            <Button
-              color="red"
-              onClick={confirmDelete}
-              aria-label={`Delete media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
-            >
-              Delete
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <MediaDeleteModal
+        opened={!!deleteItem}
+        onClose={() => setDeleteItem(null)}
+        deleteItem={deleteItem}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
