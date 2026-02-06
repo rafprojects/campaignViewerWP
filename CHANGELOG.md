@@ -5,6 +5,32 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-05
+
+### Added - Phase 9: Theme System
+- **Theme Infrastructure**: JSON-based theme definitions with chroma.js LAB-space color generation, strict TypeScript validation, and pre-computed MantineThemeOverride objects cached in a Map for O(1) switching.
+- **14 Bundled Themes**: default-dark, default-light, material-dark, material-light, darcula, nord, solarized-dark, solarized-light, high-contrast, catppuccin-mocha, tokyo-night, gruvbox-dark, cyberpunk, synthwave.
+- **Runtime Switching**: Instant theme switching via React context + MantineProvider. <16ms switch time, no page reload.
+- **Shadow DOM Support**: Mantine native `cssVariablesSelector` + `getRootElement` + `forceColorScheme` for full shadow DOM compatibility.
+- **CSS Variable Bridge**: `--wpsg-*` custom properties generated from theme JSON for SCSS module compatibility.
+- **ThemeSelector Component**: Admin dropdown with live color-swatch previews per theme.
+- **WordPress Backend**: Grouped theme dropdown in WP admin settings, `allow_user_theme_override` toggle, config injection via `__WPSG_CONFIG__`.
+- **71 Unit Tests**: colorGen, validation, adapter, cssVariables, and registry test suites.
+- **Documentation**: Theme Authoring Guide, Theme QA Guide (80+ test cases), Phase 9 Report.
+
+### Changed
+- Migrated ~45 hardcoded color values across 11 component/SCSS files to use `var(--wpsg-*)` and `color-mix()` expressions.
+- `src/theme.ts` replaced with thin re-export from theme adapter.
+- `src/styles/_tokens.scss` converted to alias bridge for `--wpsg-*` variables.
+- `src/styles/global.scss` migrated to theme-aware CSS variable references.
+- `src/contexts/ThemeContext.tsx` split into `themeContextDef.ts` + provider + `hooks/useTheme.ts` for Fast Refresh compatibility.
+
+### Fixed
+- Comment numbering typo in ThemeContext.tsx (`resolveInitialThemeId` step 3 → 4).
+- Unused `ThemeSelectItem` component refactored into `renderOption` in ThemeSelector.tsx.
+
+---
+
 ## [0.6.0] - 2026-02-04
 
 ### Added - Phase 8: Performance, Caching, Monitoring, Security
@@ -135,12 +161,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-See [PHASE9_REPORT.md](./docs/PHASE9_REPORT.md) for planned features:
-- Theme system and customization
+See [PHASE10_REPORT.md](./docs/PHASE10_REPORT.md) for planned improvements:
+- Codebase refinement, component decomposition, UX polish
 
 ---
 
 [0.5.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.4.0...v0.5.0
+[0.7.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.5.0...v0.6.0
 [0.4.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.2.0...v0.3.0

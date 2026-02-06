@@ -12,6 +12,19 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.7.0 (February 5, 2026)
+- **MINOR**: Phase 9 Theme System release
+  - Full runtime theme switching with 14 bundled themes (O(1) map-lookup, <16ms switch)
+  - Theme infrastructure: JSON definitions → chroma.js color generation → pre-computed MantineThemeOverride objects
+  - Hierarchical base/extension theme architecture with strict TypeScript validation
+  - Shadow DOM compatible via Mantine's native cssVariablesSelector + getRootElement
+  - CSS variable bridge (`--wpsg-*`) for SCSS module compatibility
+  - Migrated ~45 hardcoded color values across 11 component/SCSS files to theme system
+  - WordPress admin: theme selector dropdown (grouped by category) + user override toggle
+  - ThemeSelector component with live color-swatch previews
+  - 71 unit tests across 5 theme modules (colorGen, validation, adapter, cssVariables, registry)
+  - Theme authoring guide and comprehensive QA guide documentation
+
 ### v0.6.0 (February 4, 2026)
 - **MINOR**: Phase 8 Performance & Production Optimization release
   - Performance: code splitting for heavy components, virtualized media lists, bundle size optimization, and service worker caching.
@@ -99,7 +112,8 @@ Current development follows a phased approach:
 - **Phase 6**: ✅ Complete (Functionality Polish — v0.4.0 release)
 - **Phase 7**: ✅ Complete (Visual Polish + Testing + Accessibility + Mobile Optimization — v0.5.0 release)
 - **Phase 8**: ✅ Complete (Performance & Production Optimization — v0.6.0 release)
-- **Phase 9**: Ready to start (Theme System)
+- **Phase 9**: ✅ Complete (Theme System — v0.7.0 release)
+- **Phase 10**: Ready to start (Codebase Refinement & UX Polish)
 
 ## Branching Strategy
 
