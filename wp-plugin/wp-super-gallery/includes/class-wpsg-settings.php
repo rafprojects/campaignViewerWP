@@ -60,6 +60,11 @@ class WPSG_Settings {
             'solarized-dark',
             'solarized-light',
             'high-contrast',
+            'catppuccin-mocha',
+            'tokyo-night',
+            'gruvbox-dark',
+            'cyberpunk',
+            'synthwave',
         ],
         'gallery_layout' => ['grid', 'masonry', 'carousel'],
     ];
@@ -403,6 +408,15 @@ class WPSG_Settings {
             ],
             __('Accessibility', 'wp-super-gallery') => [
                 'high-contrast'   => __('High Contrast (WCAG AAA)', 'wp-super-gallery'),
+            ],
+            __('Community', 'wp-super-gallery') => [
+                'catppuccin-mocha' => __('Catppuccin Mocha', 'wp-super-gallery'),
+                'tokyo-night'      => __('Tokyo Night', 'wp-super-gallery'),
+                'gruvbox-dark'     => __('Gruvbox Dark', 'wp-super-gallery'),
+            ],
+            __('Neon', 'wp-super-gallery') => [
+                'cyberpunk'        => __('Cyberpunk', 'wp-super-gallery'),
+                'synthwave'        => __('Synthwave \u002784', 'wp-super-gallery'),
             ],
         ];
         ?>

@@ -36,6 +36,11 @@ import nordDef from './definitions/nord.json';
 import solarizedDarkDef from './definitions/solarized-dark.json';
 import solarizedLightDef from './definitions/solarized-light.json';
 import highContrastDef from './definitions/high-contrast.json';
+import catppuccinMochaDef from './definitions/catppuccin-mocha.json';
+import tokyoNightDef from './definitions/tokyo-night.json';
+import gruvboxDarkDef from './definitions/gruvbox-dark.json';
+import cyberpunkDef from './definitions/cyberpunk.json';
+import synthwaveDef from './definitions/synthwave.json';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -152,8 +157,8 @@ function registerTheme(extension: ThemeExtension): boolean {
  * Initialize all bundled themes. Called once at module load.
  *
  * Performance note: each theme takes ~1-5ms to adapt (chroma.js color
- * generation + component override assembly). With 9 themes this is
- * well under 50ms total, run once at startup.
+ * generation + component override assembly). With 14 themes this is
+ * well under 100ms total, run once at startup.
  */
 function initializeRegistry(): void {
   const startTime = performance.now();
@@ -169,6 +174,11 @@ function initializeRegistry(): void {
     solarizedDarkDef as unknown as ThemeExtension,
     solarizedLightDef as unknown as ThemeExtension,
     highContrastDef as unknown as ThemeExtension,
+    catppuccinMochaDef as unknown as ThemeExtension,
+    tokyoNightDef as unknown as ThemeExtension,
+    gruvboxDarkDef as unknown as ThemeExtension,
+    cyberpunkDef as unknown as ThemeExtension,
+    synthwaveDef as unknown as ThemeExtension,
   ];
 
   let successCount = 0;
