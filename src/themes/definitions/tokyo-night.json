@@ -1,0 +1,30 @@
+{
+  "_comment": "Tokyo Night — inspired by the iconic VS Code theme, cool blues and purples on deep navy",
+  "id": "tokyo-night",
+  "name": "Tokyo Night",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#1a1b26",
+    "surface": "#24283b",
+    "surface2": "#414868",
+    "surface3": "#565f89",
+
+    "text": "#c0caf5",
+    "textMuted": "#a9b1d6",
+    "textMuted2": "#565f89",
+
+    "border": "#3b4261",
+
+    "primary": "#7aa2f7",
+    "primaryShade": { "light": 6, "dark": 4 },
+
+    "success": "#9ece6a",
+    "warning": "#e0af68",
+    "error": "#f7768e",
+    "info": "#7dcfff",
+
+    "accent": "#7aa2f7",
+    "accentGreen": "#9ece6a",
+    "accentPurple": "#bb9af7"
+  }
+}

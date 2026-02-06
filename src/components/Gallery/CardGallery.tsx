@@ -67,14 +67,14 @@ export function CardGallery({
             {/* Title and subtitle */}
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
               <Stack gap={0}>
-                <Title order={1} size="h3" c="white">Campaign Gallery</Title>
+                <Title order={1} size="h3">Campaign Gallery</Title>
                 <Text c="dimmed" size="sm">Browse and access your campaign media</Text>
               </Stack>
 
               {/* Admin controls */}
               {isAdmin && (
                 <Group gap="sm" align="center">
-                  <Text size="xs" fw={600} tt="uppercase" c="gray.3">Access mode</Text>
+                  <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
                   <SegmentedControl
                     value={accessMode}
                     onChange={(v) => onAccessModeChange?.(v as 'lock' | 'hide')}

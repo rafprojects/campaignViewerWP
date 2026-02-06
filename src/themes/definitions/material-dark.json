@@ -1,0 +1,30 @@
+{
+  "_comment": "Material Dark — Google Material Design 3 dark palette",
+  "id": "material-dark",
+  "name": "Material Dark",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#121212",
+    "surface": "#1e1e1e",
+    "surface2": "#2c2c2c",
+    "surface3": "#383838",
+
+    "text": "#e0e0e0",
+    "textMuted": "#9e9e9e",
+    "textMuted2": "#757575",
+
+    "border": "#424242",
+
+    "primary": "#bb86fc",
+    "primaryShade": { "light": 6, "dark": 4 },
+
+    "success": "#66bb6a",
+    "warning": "#ffa726",
+    "error": "#cf6679",
+    "info": "#64b5f6",
+
+    "accent": "#03dac6",
+    "accentGreen": "#66bb6a",
+    "accentPurple": "#bb86fc"
+  }
+}

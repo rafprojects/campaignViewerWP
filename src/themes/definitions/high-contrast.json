@@ -1,0 +1,30 @@
+{
+  "_comment": "High Contrast — WCAG AAA compliant theme with maximum contrast ratios (≥7:1)",
+  "id": "high-contrast",
+  "name": "High Contrast",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#000000",
+    "surface": "#1a1a1a",
+    "surface2": "#2d2d2d",
+    "surface3": "#404040",
+
+    "text": "#ffffff",
+    "textMuted": "#e0e0e0",
+    "textMuted2": "#b0b0b0",
+
+    "border": "#ffffff",
+
+    "primary": "#6ec1ff",
+    "primaryShade": { "light": 4, "dark": 3 },
+
+    "success": "#5ef57d",
+    "warning": "#ffd644",
+    "error": "#ff6b6b",
+    "info": "#6ec1ff",
+
+    "accent": "#6ec1ff",
+    "accentGreen": "#5ef57d",
+    "accentPurple": "#d4a5ff"
+  }
+}

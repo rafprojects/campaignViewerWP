@@ -152,7 +152,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             aria-label={`Show image ${index + 1} of ${images.length}`}
             aria-pressed={index === currentIndex}
             style={{
-              border: index === currentIndex ? '2px solid var(--mantine-color-blue-5)' : 'none',
+              border: index === currentIndex ? '2px solid var(--wpsg-color-primary)' : 'none',
               overflow: 'hidden',
             }}
           >

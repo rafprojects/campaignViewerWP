@@ -1,0 +1,30 @@
+{
+  "_comment": "Catppuccin Mocha — warm pastel dark theme, the beloved community palette",
+  "id": "catppuccin-mocha",
+  "name": "Catppuccin Mocha",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#1e1e2e",
+    "surface": "#313244",
+    "surface2": "#45475a",
+    "surface3": "#585b70",
+
+    "text": "#cdd6f4",
+    "textMuted": "#a6adc8",
+    "textMuted2": "#7f849c",
+
+    "border": "#45475a",
+
+    "primary": "#89b4fa",
+    "primaryShade": { "light": 6, "dark": 4 },
+
+    "success": "#a6e3a1",
+    "warning": "#f9e2af",
+    "error": "#f38ba8",
+    "info": "#89dceb",
+
+    "accent": "#89b4fa",
+    "accentGreen": "#a6e3a1",
+    "accentPurple": "#cba6f7"
+  }
+}

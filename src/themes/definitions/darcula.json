@@ -1,0 +1,30 @@
+{
+  "_comment": "Darcula — JetBrains IDE-inspired dark theme",
+  "id": "darcula",
+  "name": "Darcula",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#2b2b2b",
+    "surface": "#3c3f41",
+    "surface2": "#45494a",
+    "surface3": "#515658",
+
+    "text": "#a9b7c6",
+    "textMuted": "#808080",
+    "textMuted2": "#606060",
+
+    "border": "#515151",
+
+    "primary": "#6897bb",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#6a8759",
+    "warning": "#bbb529",
+    "error": "#ff6b68",
+    "info": "#6897bb",
+
+    "accent": "#cc7832",
+    "accentGreen": "#6a8759",
+    "accentPurple": "#9876aa"
+  }
+}

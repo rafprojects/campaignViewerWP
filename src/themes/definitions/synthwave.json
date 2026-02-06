@@ -1,0 +1,30 @@
+{
+  "_comment": "Synthwave '84 — 80s retro neon with sunset gradient tones, deep purples, and electric accents",
+  "id": "synthwave",
+  "name": "Synthwave '84",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#191928",
+    "surface": "#241b35",
+    "surface2": "#342a45",
+    "surface3": "#443a55",
+
+    "text": "#f0e4fc",
+    "textMuted": "#b8a4d0",
+    "textMuted2": "#8a78a0",
+
+    "border": "#3d2e55",
+
+    "primary": "#f97e72",
+    "primaryShade": { "light": 5, "dark": 4 },
+
+    "success": "#72f1b8",
+    "warning": "#fede5d",
+    "error": "#fe4450",
+    "info": "#36f9f6",
+
+    "accent": "#f97e72",
+    "accentGreen": "#72f1b8",
+    "accentPurple": "#c792ea"
+  }
+}

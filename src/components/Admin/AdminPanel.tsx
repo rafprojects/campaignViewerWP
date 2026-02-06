@@ -629,7 +629,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const accessRows = useMemo(() => {
     return accessEntries.map((a) => (
-      <Table.Tr key={`${a.userId}-${a.source}-${a.campaignId || 'company'}`} style={a.source === 'company' ? { backgroundColor: 'rgba(34, 139, 230, 0.05)' } : undefined}>
+      <Table.Tr key={`${a.userId}-${a.source}-${a.campaignId || 'company'}`} style={a.source === 'company' ? { backgroundColor: 'color-mix(in srgb, var(--wpsg-color-primary) 5%, transparent)' } : undefined}>
         <Table.Td>
           {a.user ? (
             <Stack gap={2}>

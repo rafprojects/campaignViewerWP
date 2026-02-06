@@ -32,14 +32,15 @@ class WPSG_Settings {
      * @var array
      */
     private static $defaults = [
-        'auth_provider'     => 'wp-jwt',
-        'api_base'          => '',
-        'theme'             => 'dark',
-        'gallery_layout'    => 'grid',
-        'items_per_page'    => 12,
-        'enable_lightbox'   => true,
-        'enable_animations' => true,
-        'cache_ttl'         => 3600,
+        'auth_provider'              => 'wp-jwt',
+        'api_base'                   => '',
+        'theme'                      => 'default-dark',
+        'allow_user_theme_override'  => true,
+        'gallery_layout'             => 'grid',
+        'items_per_page'             => 12,
+        'enable_lightbox'            => true,
+        'enable_animations'          => true,
+        'cache_ttl'                  => 3600,
     ];
 
     /**
@@ -49,7 +50,22 @@ class WPSG_Settings {
      */
     private static $valid_options = [
         'auth_provider'  => ['wp-jwt', 'none'],
-        'theme'          => ['dark', 'light', 'auto'],
+        'theme'          => [
+            'default-dark',
+            'default-light',
+            'material-dark',
+            'material-light',
+            'darcula',
+            'nord',
+            'solarized-dark',
+            'solarized-light',
+            'high-contrast',
+            'catppuccin-mocha',
+            'tokyo-night',
+            'gruvbox-dark',
+            'cyberpunk',
+            'synthwave',
+        ],
         'gallery_layout' => ['grid', 'masonry', 'carousel'],
     ];
 
@@ -130,6 +146,14 @@ class WPSG_Settings {
             'theme',
             __('Theme', 'wp-super-gallery'),
             [self::class, 'render_theme_field'],
+            self::PAGE_SLUG,
+            'wpsg_display_section'
+        );
+
+        add_settings_field(
+            'allow_user_theme_override',
+            __('Allow User Theme Override', 'wp-super-gallery'),
+            [self::class, 'render_allow_user_theme_override_field'],
             self::PAGE_SLUG,
             'wpsg_display_section'
         );
@@ -250,8 +274,9 @@ class WPSG_Settings {
         }
 
         // Boolean fields.
-        $sanitized['enable_lightbox']   = !empty($input['enable_lightbox']);
-        $sanitized['enable_animations'] = !empty($input['enable_animations']);
+        $sanitized['enable_lightbox']            = !empty($input['enable_lightbox']);
+        $sanitized['enable_animations']          = !empty($input['enable_animations']);
+        $sanitized['allow_user_theme_override']  = !empty($input['allow_user_theme_override']);
 
         // Cache TTL - integer, 0 means disabled, max 1 week.
         if (isset($input['cache_ttl'])) {
@@ -360,25 +385,74 @@ class WPSG_Settings {
     }
 
     /**
-     * Render theme select field.
+     * Render theme select field with all available themes.
      */
     public static function render_theme_field() {
         $value = self::get_setting('theme');
-        $options = [
-            'dark'  => __('Dark', 'wp-super-gallery'),
-            'light' => __('Light', 'wp-super-gallery'),
-            'auto'  => __('Auto (Match System)', 'wp-super-gallery'),
+        $theme_groups = [
+            __('Default', 'wp-super-gallery') => [
+                'default-dark'    => __('Default Dark', 'wp-super-gallery'),
+                'default-light'   => __('Default Light', 'wp-super-gallery'),
+            ],
+            __('Material', 'wp-super-gallery') => [
+                'material-dark'   => __('Material Dark', 'wp-super-gallery'),
+                'material-light'  => __('Material Light', 'wp-super-gallery'),
+            ],
+            __('Classic', 'wp-super-gallery') => [
+                'darcula'         => __('Darcula', 'wp-super-gallery'),
+                'nord'            => __('Nord', 'wp-super-gallery'),
+            ],
+            __('Solarized', 'wp-super-gallery') => [
+                'solarized-dark'  => __('Solarized Dark', 'wp-super-gallery'),
+                'solarized-light' => __('Solarized Light', 'wp-super-gallery'),
+            ],
+            __('Accessibility', 'wp-super-gallery') => [
+                'high-contrast'   => __('High Contrast (WCAG AAA)', 'wp-super-gallery'),
+            ],
+            __('Community', 'wp-super-gallery') => [
+                'catppuccin-mocha' => __('Catppuccin Mocha', 'wp-super-gallery'),
+                'tokyo-night'      => __('Tokyo Night', 'wp-super-gallery'),
+                'gruvbox-dark'     => __('Gruvbox Dark', 'wp-super-gallery'),
+            ],
+            __('Neon', 'wp-super-gallery') => [
+                'cyberpunk'        => __('Cyberpunk', 'wp-super-gallery'),
+                'synthwave'        => __('Synthwave \u002784', 'wp-super-gallery'),
+            ],
         ];
         ?>
         <select name="<?php echo esc_attr(self::OPTION_NAME); ?>[theme]" id="wpsg_theme">
-            <?php foreach ($options as $key => $label) : ?>
-                <option value="<?php echo esc_attr($key); ?>" <?php selected($value, $key); ?>>
-                    <?php echo esc_html($label); ?>
-                </option>
+            <?php foreach ($theme_groups as $group_label => $options) : ?>
+                <optgroup label="<?php echo esc_attr($group_label); ?>">
+                    <?php foreach ($options as $key => $label) : ?>
+                        <option value="<?php echo esc_attr($key); ?>" <?php selected($value, $key); ?>>
+                            <?php echo esc_html($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </optgroup>
             <?php endforeach; ?>
         </select>
         <p class="description">
-            <?php esc_html_e('Default color theme for gallery display.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Default color theme for gallery display. Users can override this if allowed below.', 'wp-super-gallery'); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render allow user theme override checkbox.
+     */
+    public static function render_allow_user_theme_override_field() {
+        $value = self::get_setting('allow_user_theme_override');
+        ?>
+        <label>
+            <input type="checkbox"
+                   name="<?php echo esc_attr(self::OPTION_NAME); ?>[allow_user_theme_override]"
+                   id="wpsg_allow_user_theme_override"
+                   value="1"
+                   <?php checked($value, true); ?>>
+            <?php esc_html_e('Allow visitors to switch themes via the gallery UI.', 'wp-super-gallery'); ?>
+        </label>
+        <p class="description">
+            <?php esc_html_e('When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors.', 'wp-super-gallery'); ?>
         </p>
         <?php
     }

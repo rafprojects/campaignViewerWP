@@ -66,7 +66,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
               pos="absolute"
               inset={0}
               style={{
-                background: 'linear-gradient(to top, rgba(15, 23, 42, 1) 0%, rgba(15, 23, 42, 0.4) 40%, transparent 70%)',
+                background: 'linear-gradient(to top, var(--wpsg-color-background) 0%, color-mix(in srgb, var(--wpsg-color-background) 40%, transparent) 40%, transparent 70%)',
                 pointerEvents: 'none'
               }}
             />
@@ -77,7 +77,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
                 pos="absolute"
                 inset={0}
                 style={{
-                  background: 'rgba(15, 23, 42, 0.6)',
+                  background: 'color-mix(in srgb, var(--wpsg-color-background) 60%, transparent)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -86,14 +86,14 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
                 <Box
                   p="lg"
                   style={{
-                    background: 'rgba(30, 41, 59, 0.9)',
+                    background: 'color-mix(in srgb, var(--wpsg-color-surface) 90%, transparent)',
                     borderRadius: '9999px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Lock size={32} color="#94a3b8" />
+                  <Lock size={32} color="var(--wpsg-color-text-muted)" />
                 </Box>
               </Box>
             )}
@@ -127,7 +127,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
 
           {/* Content Section */}
           <Stack p="md" gap="sm">
-            <Text fw={600} size="lg" lineClamp={1} c="white">
+            <Text fw={600} size="lg" lineClamp={1}>
               {campaign.title}
             </Text>
             
