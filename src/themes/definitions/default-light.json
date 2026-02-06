@@ -1,0 +1,30 @@
+{
+  "_comment": "Default Light — light counterpart to the flagship dark theme",
+  "id": "default-light",
+  "name": "Default Light",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#f8fafc",
+    "surface": "#ffffff",
+    "surface2": "#f1f5f9",
+    "surface3": "#e2e8f0",
+
+    "text": "#0f172a",
+    "textMuted": "#475569",
+    "textMuted2": "#94a3b8",
+
+    "border": "#cbd5e1",
+
+    "primary": "#3b82f6",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#16a34a",
+    "warning": "#d97706",
+    "error": "#dc2626",
+    "info": "#2563eb",
+
+    "accent": "#3b82f6",
+    "accentGreen": "#16a34a",
+    "accentPurple": "#9333ea"
+  }
+}

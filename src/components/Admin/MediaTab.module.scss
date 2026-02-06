@@ -1,12 +1,12 @@
 .mediaCard {
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid color-mix(in srgb, var(--wpsg-color-text-muted) 25%, transparent);
 }
 
 .mediaCard:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
-  border-color: rgba(59, 130, 246, 0.45);
+  box-shadow: var(--wpsg-shadow-lg);
+  border-color: color-mix(in srgb, var(--wpsg-color-primary) 45%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

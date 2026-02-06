@@ -53,7 +53,7 @@ export function CampaignViewer({
           pos="absolute"
           inset={0}
           style={{
-            background: 'linear-gradient(to top, rgba(30, 41, 59, 1) 0%, rgba(30, 41, 59, 0.6) 45%, transparent 80%)',
+            background: 'linear-gradient(to top, var(--wpsg-color-surface) 0%, color-mix(in srgb, var(--wpsg-color-surface) 60%, transparent) 45%, transparent 80%)',
             pointerEvents: 'none'
           }}
         />
@@ -91,13 +91,13 @@ export function CampaignViewer({
 
         {/* Title and meta overlay */}
         <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
-          <Title order={1} size="h1" c="white" mb="sm">
+          <Title order={1} size="h1" mb="sm">
             {campaign.title}
           </Title>
           <Group gap="lg" wrap="wrap">
             <Group gap={4}>
-              <Calendar size={16} color="#cbd5e1" />
-              <Text size="sm" c="gray.4">
+              <Calendar size={16} color="var(--wpsg-color-text-muted)" />
+              <Text size="sm" c="dimmed">
                 {new Date(campaign.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -106,8 +106,8 @@ export function CampaignViewer({
               </Text>
             </Group>
             <Group gap={4}>
-              <Tag size={16} color="#cbd5e1" />
-              <Text size="sm" c="gray.4">
+              <Tag size={16} color="var(--wpsg-color-text-muted)" />
+              <Text size="sm" c="dimmed">
                 {campaign.tags.join(', ')}
               </Text>
             </Group>
@@ -151,21 +151,21 @@ export function CampaignViewer({
           {/* Campaign Stats */}
           <Box component="section" aria-labelledby="campaign-stats-heading">
             <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
-            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="md" style={{ borderTopWidth: 1, borderTopColor: 'var(--color-border)' }}>
+            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="md" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
             <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} c="white">{campaign.videos.length}</Text>
+              <Text size="xl" fw={700}>{campaign.videos.length}</Text>
               <Text size="sm" c="dimmed">Videos</Text>
             </Paper>
             <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} c="white">{campaign.images.length}</Text>
+              <Text size="xl" fw={700}>{campaign.images.length}</Text>
               <Text size="sm" c="dimmed">Images</Text>
             </Paper>
             <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} c="white">{campaign.tags.length}</Text>
+              <Text size="xl" fw={700}>{campaign.tags.length}</Text>
               <Text size="sm" c="dimmed">Tags</Text>
             </Paper>
             <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} c="white">
+              <Text size="xl" fw={700}>
                 {campaign.visibility === 'public' ? '🌐' : '🔒'}
               </Text>
               <Text size="sm" c="dimmed">
@@ -177,7 +177,7 @@ export function CampaignViewer({
 
           {/* Admin Section */}
           {isAdmin && (
-            <Paper p="lg" radius="md" withBorder bg="dark.8" component="section" aria-labelledby="admin-actions-heading">
+            <Paper p="lg" radius="md" withBorder bg="var(--wpsg-color-surface)" component="section" aria-labelledby="admin-actions-heading">
               <Stack gap="md">
                 <Box>
                   <Title order={3} size="h5" mb={4} id="admin-actions-heading">Admin Actions</Title>

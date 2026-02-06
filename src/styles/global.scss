@@ -1,11 +1,22 @@
 @use './tokens';
 
+// ==========================================================================
+// Global Styles — Structural / Reset Only
+//
+// All color styling is handled by the Mantine theme system. This file
+// contains only structural resets, accessibility utilities, responsive
+// adjustments, and layout scaffolding.
+//
+// The @use './tokens' above provides the legacy --color-* → --wpsg-*
+// bridge for SCSS modules that haven't migrated yet.
+//
+// Gold source: docs/THEME_SYSTEM_ASSESSMENT.md
+// ==========================================================================
+
 .wp-super-gallery {
-  color: var(--color-text);
-  background-color: var(--color-bg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  color: var(--wpsg-color-text);
+  background-color: var(--wpsg-color-background);
+  font-family: var(--wpsg-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -79,7 +90,8 @@
 
 .wp-super-gallery .wpsg-scrollarea [data-mantine-scrollbar-thumb],
 .wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-thumb] {
-  background-color: rgba(148, 163, 184, 0.65) !important;
+  background-color: var(--wpsg-color-text-muted) !important;
+  opacity: 0.65 !important;
 }
 
 @media (max-width: 576px) {
@@ -98,17 +110,17 @@
 // Container utilities (maps to Mantine Container component)
 .wp-super-gallery__container {
   width: 100%;
-  max-width: 80rem; // Matches theme.components.Container.styles.root.maxWidth
+  max-width: 80rem;
   margin: 0 auto;
-  padding: 0 1.5rem; // md spacing from theme
+  padding: 0 1.5rem;
 }
 
 // Auth bar styling (top navigation with app controls)
 .wp-super-gallery__banner {
   margin: 1rem auto 0;
   max-width: 80rem;
-  padding: 0.75rem 1rem; // sm spacing
-  border-radius: 0.75rem; // radius-md
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
   font-weight: 600;
   text-align: center;
 }
@@ -119,7 +131,7 @@
   padding: 0.75rem 0;
 }
 
-// Inner auth bar styling with Mantine-aligned colors
+// Inner auth bar styling — colors from theme variables
 .wp-super-gallery__authbar-inner {
   display: flex;
   flex-wrap: wrap;
@@ -128,54 +140,56 @@
   justify-content: space-between;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
-  background: rgba(148, 163, 184, 0.12); // --color-muted with opacity
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  color: var(--color-text);
+  background: var(--wpsg-color-surface);
+  border: 1px solid var(--wpsg-color-border);
+  color: var(--wpsg-color-text);
   font-weight: 600;
 }
 
-// Auth button (replaced by Mantine Button component in App)
+// Auth button
 .wp-super-gallery__authbar-button {
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  background: rgba(15, 23, 42, 0.85); // --color-bg with opacity
-  color: #e2e8f0;
+  border: 1px solid var(--wpsg-color-border);
+  background: var(--wpsg-color-background);
+  color: var(--wpsg-color-text);
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   cursor: pointer;
 }
 
 .wp-super-gallery__authbar-button:hover {
-  background: rgba(15, 23, 42, 0.95);
+  background: var(--wpsg-color-surface2);
 }
 
-// Error banner (used with Mantine Alert component)
+// Error banner — uses theme error color
 .wp-super-gallery__banner--error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #fecaca;
+  background: var(--wpsg-color-error);
+  opacity: 0.85;
+  border: 1px solid var(--wpsg-color-error);
+  color: var(--wpsg-color-text);
 }
 
-// Success banner (used with Mantine Alert component)
+// Success banner — uses theme success color
 .wp-super-gallery__banner--success {
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  color: #bbf7d0;
+  background: var(--wpsg-color-success);
+  opacity: 0.85;
+  border: 1px solid var(--wpsg-color-success);
+  color: var(--wpsg-color-text);
 }
 
 // Admin button with hover effects (for Admin Panel and Settings buttons)
 .wp-super-gallery .wpsg-admin-btn {
-  background-color: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.45);
-  color: #e2e8f0;
+  background-color: var(--wpsg-color-surface2);
+  border-color: var(--wpsg-color-border);
+  color: var(--wpsg-color-text);
   transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 }
 
 .wp-super-gallery .wpsg-admin-btn:hover {
-  background-color: rgba(59, 130, 246, 0.35);
-  border-color: rgba(59, 130, 246, 0.65);
-  color: #f8fafc;
+  background-color: var(--wpsg-color-surface3);
+  border-color: var(--wpsg-color-primary);
+  color: var(--wpsg-color-text);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
+  box-shadow: var(--wpsg-shadow-md);
 }
 
 // Compact layout variant
@@ -187,7 +201,6 @@
 // Responsive breakpoint (maps to Mantine md breakpoint: 768px)
 @media (min-width: 768px) {
   .wp-super-gallery__container {
-    padding: 0 2rem; // lg spacing
+    padding: 0 2rem;
   }
 }
-

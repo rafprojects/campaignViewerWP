@@ -4,7 +4,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.35);
+    box-shadow: var(--wpsg-shadow-lg);
   }
 
   &:hover .thumbnailImage {
@@ -12,7 +12,7 @@
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wpsg-color-primary) 60%, transparent);
     border-radius: var(--mantine-radius-md);
   }
 }
@@ -33,9 +33,9 @@
   gap: 0.35rem;
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  color: #e2e8f0;
+  background: color-mix(in srgb, var(--wpsg-color-background) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wpsg-color-text-muted) 35%, transparent);
+  color: var(--wpsg-color-text);
   font-size: 0.75rem;
   line-height: 1.2;
 }

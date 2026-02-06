@@ -28,6 +28,14 @@ import { resolveColors } from './colorGen';
 
 import baseDefaults from './definitions/_base.json';
 import defaultDarkDef from './definitions/default-dark.json';
+import defaultLightDef from './definitions/default-light.json';
+import materialDarkDef from './definitions/material-dark.json';
+import materialLightDef from './definitions/material-light.json';
+import darculaDef from './definitions/darcula.json';
+import nordDef from './definitions/nord.json';
+import solarizedDarkDef from './definitions/solarized-dark.json';
+import solarizedLightDef from './definitions/solarized-light.json';
+import highContrastDef from './definitions/high-contrast.json';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -153,10 +161,14 @@ function initializeRegistry(): void {
   // Register bundled themes in order
   const bundled: ThemeExtension[] = [
     defaultDarkDef as unknown as ThemeExtension,
-    // Additional themes will be added here as they are created:
-    // defaultLightDef, materialDarkDef, materialLightDef,
-    // darculaDef, nordDef, solarizedDarkDef, solarizedLightDef,
-    // highContrastDef
+    defaultLightDef as unknown as ThemeExtension,
+    materialDarkDef as unknown as ThemeExtension,
+    materialLightDef as unknown as ThemeExtension,
+    darculaDef as unknown as ThemeExtension,
+    nordDef as unknown as ThemeExtension,
+    solarizedDarkDef as unknown as ThemeExtension,
+    solarizedLightDef as unknown as ThemeExtension,
+    highContrastDef as unknown as ThemeExtension,
   ];
 
   let successCount = 0;

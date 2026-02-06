@@ -5,11 +5,12 @@ import { shadowStyles } from './shadowStyles'
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
-import { theme } from './theme'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import { startWebVitalsMonitoring } from './services/monitoring/webVitals'
 import { initSentry } from './services/monitoring/sentry'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { useTheme } from './hooks/useTheme'
 
 type MountProps = Record<string, unknown>
 
@@ -43,15 +44,63 @@ const parseProps = (node: Element): MountProps => {
   }
 }
 
-const renderApp = (mountNode: Element, props: MountProps) => {
+/**
+ * Inner shell that consumes the ThemeContext and feeds the resolved
+ * MantineThemeOverride into MantineProvider. This component re-renders
+ * only when the theme changes (O(1) map lookup, pre-computed objects).
+ */
+function ThemedApp({
+  props,
+  isShadowDom,
+  shadowRootEl,
+}: {
+  props: MountProps
+  isShadowDom: boolean
+  shadowRootEl?: ShadowRoot
+}) {
+  const { mantineTheme, colorScheme } = useTheme()
+
+  return (
+    <MantineProvider
+      theme={mantineTheme}
+      forceColorScheme={colorScheme}
+      // Scope Mantine CSS variables into shadow root or document :root
+      cssVariablesSelector={isShadowDom ? ':host' : ':root'}
+      // Portal targets (modals, tooltips) render inside shadow root
+      getRootElement={() =>
+        isShadowDom && shadowRootEl
+          ? (shadowRootEl.querySelector('[data-wpsg-mount]') as HTMLElement) ?? document.body
+          : document.body
+      }
+    >
+      <Notifications />
+      <ModalsProvider>
+        <App {...props} />
+      </ModalsProvider>
+    </MantineProvider>
+  )
+}
+
+/**
+ * Top-level render — wraps everything in ThemeProvider, then ThemedApp
+ * bridges ThemeContext → MantineProvider.
+ */
+const renderApp = (
+  mountNode: Element,
+  props: MountProps,
+  shadowRootEl?: ShadowRoot,
+) => {
+  const isShadow = !!shadowRootEl
+
   createRoot(mountNode).render(
     <StrictMode>
-      <MantineProvider theme={theme}>
-        <Notifications />
-        <ModalsProvider>
-          <App {...props} />
-        </ModalsProvider>
-      </MantineProvider>
+      <ThemeProvider shadowRoot={shadowRootEl ?? null}>
+        <ThemedApp
+          props={props}
+          isShadowDom={isShadow}
+          shadowRootEl={shadowRootEl}
+        />
+      </ThemeProvider>
     </StrictMode>,
   )
 }
@@ -73,8 +122,9 @@ const mountWithShadow = (host: HTMLElement, props: MountProps) => {
   }
 
   const mountPoint = document.createElement('div')
+  mountPoint.setAttribute('data-wpsg-mount', 'true')
   shadowRoot.appendChild(mountPoint)
-  renderApp(mountPoint, props)
+  renderApp(mountPoint, props, shadowRoot)
 }
 
 const mountDefault = (host: HTMLElement, props: MountProps) => {
