@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
+import { CarouselNavigation } from './CarouselNavigation';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
@@ -92,35 +93,6 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
           )}
         </AspectRatio>
 
-        {/* Navigation Arrows */}
-        {videos.length > 1 && (
-          <>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              left={8}
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={prevVideo}
-              variant="light"
-              size="lg"
-              aria-label="Previous video"
-            >
-              <ChevronLeft size={24} />
-            </ActionIcon>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              right={8}
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={nextVideo}
-              variant="light"
-              size="lg"
-              aria-label="Next video"
-            >
-              <ChevronRight size={24} />
-            </ActionIcon>
-          </>
-        )}
       </Box>
 
       {/* Caption */}
@@ -128,37 +100,26 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
         {currentVideo.caption || 'Untitled video'}
       </Text>
 
-      {/* Thumbnail Strip */}
-      {videos.length > 1 && (
-        <Group gap={6}>
-          {videos.map((video, index) => (
-            <ActionIcon
-              key={video.id}
-              onClick={() => {
-                setCurrentIndex(index);
-                setIsPlaying(false);
-              }}
-              variant={index === currentIndex ? 'light' : 'subtle'}
-              size="lg"
-              p={0}
-              aria-label={`Show video ${index + 1} of ${videos.length}`}
-              aria-pressed={index === currentIndex}
-              style={{
-                border: index === currentIndex ? '2px solid var(--wpsg-color-primary)' : 'none',
-                overflow: 'hidden',
-              }}
-            >
-              <Image
-                src={video.thumbnail}
-                alt={video.caption || 'Campaign video thumbnail'}
-                w={60}
-                h={45}
-                fit="cover"
-              />
-            </ActionIcon>
-          ))}
-        </Group>
-      )}
+      <CarouselNavigation
+        total={videos.length}
+        currentIndex={currentIndex}
+        onPrev={prevVideo}
+        onNext={nextVideo}
+        onSelect={(index) => {
+          setCurrentIndex(index);
+          setIsPlaying(false);
+        }}
+        items={videos.map((video) => ({
+          id: video.id,
+          url: video.url,
+          thumbnail: video.thumbnail,
+          caption: video.caption,
+        }))}
+        previousLabel="Previous video"
+        nextLabel="Next video"
+        thumbnailWidth={60}
+        thumbnailHeight={45}
+      />
     </Stack>
   );
 }

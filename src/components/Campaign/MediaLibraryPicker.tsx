@@ -1,6 +1,7 @@
 import { Badge, Button, Card, Center, Group, Image, Loader, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { IconPhoto } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
+import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 
 interface MediaLibraryPickerProps {
   libraryMedia: MediaItem[];
@@ -87,7 +88,7 @@ export function MediaLibraryPicker({
                     src={item.thumbnail || item.url}
                     height={60}
                     alt={item.caption || 'Media'}
-                    fallbackSrc="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect fill='%23ddd' width='100%' height='100%'/></svg>"
+                    fallbackSrc={FALLBACK_IMAGE_SRC}
                   />
                   <Stack gap={2} p={4}>
                     <Badge size="xs" variant="light">

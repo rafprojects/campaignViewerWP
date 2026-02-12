@@ -1,6 +1,6 @@
 import type { Campaign, Company } from '@/types';
 
-const companies: Company[] = [
+export const companies: Company[] = [
   {
     id: 'nike',
     name: 'Nike',
@@ -174,3 +174,9 @@ export const mockCampaigns: Campaign[] = [
 
 // Simulated user permissions - in real app this comes from auth
 export const mockUserPermissions = ['1', '3', '5']; // User can access campaigns 1, 3, 5
+
+export const getCompanyById = (companyId: string) =>
+  companies.find((company) => company.id === companyId.toLowerCase());
+
+export const getCompanyColor = (companyId: string) =>
+  getCompanyById(companyId)?.brandColor;

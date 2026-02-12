@@ -359,6 +359,13 @@ class WPSG_REST {
             return false;
         }
 
+        // For token-based auth (e.g., JWT Bearer), WordPress nonce is not required.
+        // Nonce verification is only needed for cookie-authenticated REST requests.
+        $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION'])) : '';
+        if (!empty($auth_header) && stripos($auth_header, 'Bearer ') === 0) {
+            return true;
+        }
+
         $require_nonce = apply_filters('wpsg_require_rest_nonce', true);
         if (!$require_nonce) {
             return true;

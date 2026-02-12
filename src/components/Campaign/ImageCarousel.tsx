@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
-import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
+import { Image as ImageIcon, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal } from '@mantine/core';
 import type { MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
+import { useLightbox } from '@/hooks/useLightbox';
+import { CarouselNavigation } from './CarouselNavigation';
 
 interface ImageCarouselProps {
   images: MediaItem[];
@@ -10,31 +11,13 @@ interface ImageCarouselProps {
 
 export function ImageCarousel({ images }: ImageCarouselProps) {
   const { currentIndex, setCurrentIndex, next: nextImage, prev: prevImage } = useCarousel(images.length);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const { isOpen: isLightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
+    onPrev: prevImage,
+    onNext: nextImage,
+    enableArrowNavigation: true,
+  });
 
   const currentImage = images[currentIndex];
-
-  useEffect(() => {
-    if (!isLightboxOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        prevImage();
-      }
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        nextImage();
-      }
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setIsLightboxOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen, nextImage, prevImage]);
 
   return (
     <Stack gap="md">
@@ -51,10 +34,11 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         role="button"
         tabIndex={0}
         aria-label={`View image ${currentIndex + 1} of ${images.length}`}
+        onClick={openLightbox}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            setIsLightboxOpen(true);
+            openLightbox();
           }
           if (event.key === 'ArrowLeft') {
             event.preventDefault();
@@ -74,7 +58,6 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
               fit="contain"
               h="100%"
               style={{ cursor: 'zoom-in' }}
-              onClick={() => setIsLightboxOpen(true)}
             />
           </Box>
         </AspectRatio>
@@ -84,48 +67,13 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           pos="absolute"
           bottom={12}
           right={12}
-          onClick={() => setIsLightboxOpen(true)}
+          onClick={openLightbox}
           size="lg"
           variant="light"
           aria-label="Open lightbox"
         >
           <ZoomIn size={20} />
         </ActionIcon>
-
-        {/* Navigation Arrows */}
-        {images.length > 1 && (
-          <>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              left={8}
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={prevImage}
-              variant="light"
-              size="lg"
-              aria-label="Previous image"
-            >
-              <ChevronLeft size={24} />
-            </ActionIcon>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              right={8}
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={nextImage}
-              variant="light"
-              size="lg"
-              aria-label="Next image"
-            >
-              <ChevronRight size={24} />
-            </ActionIcon>
-          </>
-        )}
-
-        {/* Image counter */}
-        <Badge pos="absolute" bottom={12} left={12}>
-          {currentIndex + 1} / {images.length}
-        </Badge>
       </Box>
 
       {/* Caption */}
@@ -133,38 +81,25 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         {currentImage.caption || 'Untitled image'}
       </Text>
 
-      {/* Thumbnail Strip */}
-      <Group gap={6}>
-        {images.map((image, index) => (
-          <ActionIcon
-            key={image.id}
-            onClick={() => setCurrentIndex(index)}
-            variant={index === currentIndex ? 'light' : 'subtle'}
-            size="lg"
-            p={0}
-            aria-label={`Show image ${index + 1} of ${images.length}`}
-            aria-pressed={index === currentIndex}
-            style={{
-              border: index === currentIndex ? '2px solid var(--wpsg-color-primary)' : 'none',
-              overflow: 'hidden',
-            }}
-          >
-            <Image
-              src={image.url}
-              alt={image.caption || 'Campaign image thumbnail'}
-              w={60}
-              h={60}
-              fit="cover"
-              loading="lazy"
-            />
-          </ActionIcon>
-        ))}
-      </Group>
+      <CarouselNavigation
+        total={images.length}
+        currentIndex={currentIndex}
+        onPrev={prevImage}
+        onNext={nextImage}
+        onSelect={setCurrentIndex}
+        items={images.map((image) => ({
+          id: image.id,
+          url: image.url,
+          caption: image.caption,
+        }))}
+        previousLabel="Previous image"
+        nextLabel="Next image"
+      />
 
       {/* Lightbox Modal */}
       <Modal
         opened={isLightboxOpen}
-        onClose={() => setIsLightboxOpen(false)}
+        onClose={closeLightbox}
         fullScreen
         padding={0}
         withCloseButton={false}
@@ -200,7 +135,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             pos="absolute"
             top={16}
             right={16}
-            onClick={() => setIsLightboxOpen(false)}
+            onClick={closeLightbox}
             size="lg"
             variant="light"
             aria-label="Close lightbox"

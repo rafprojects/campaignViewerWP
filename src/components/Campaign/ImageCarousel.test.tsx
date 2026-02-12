@@ -41,8 +41,7 @@ describe('ImageCarousel', () => {
       expect(screen.getAllByAltText('Image One')[0]).toBeInTheDocument();
     });
 
-    const imageOne = screen.getAllByAltText('Image One')[0];
-    fireEvent.click(imageOne);
+    fireEvent.click(screen.getByLabelText('Open lightbox'));
     await waitFor(() => {
       expect(document.body.getAttribute('data-scroll-locked')).toBe('1');
     });

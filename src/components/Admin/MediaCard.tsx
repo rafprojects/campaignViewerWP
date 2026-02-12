@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon } from '@mantine/core';
 import { IconPhoto, IconTrash } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
+import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import styles from './MediaCard.module.scss';
 
 interface MediaCardProps {
@@ -65,7 +66,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 h={height}
                 fit="cover"
                 loading="lazy"
-                fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23374151' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
+                fallbackSrc={FALLBACK_IMAGE_SRC}
               />
             )}
           </Card.Section>

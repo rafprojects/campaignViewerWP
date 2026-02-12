@@ -1,6 +1,7 @@
 import { ActionIcon, Badge, Button, Card, Center, FileButton, Group, Image, Loader, Modal, Progress, Select, SimpleGrid, Stack, Tabs, Text, TextInput, Textarea, Tooltip } from '@mantine/core';
 import { IconLink, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
 import type { Campaign, MediaItem } from '@/types';
+import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { MediaLibraryPicker } from './MediaLibraryPicker';
 
 interface EditCampaignModalProps {
@@ -139,7 +140,7 @@ export function EditCampaignModal({
                         src={media.thumbnail || media.url}
                         height={100}
                         alt={media.caption || 'Media'}
-                        fallbackSrc="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='%23ddd' width='100%' height='100%'/><text x='50%' y='50%' text-anchor='middle' dy='.3em' fill='%23999'>?</text></svg>"
+                        fallbackSrc={FALLBACK_IMAGE_SRC}
                       />
                     </Card.Section>
                     <Group justify="space-between" mt="xs">

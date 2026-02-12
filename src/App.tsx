@@ -14,6 +14,8 @@ import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaMod
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem } from './types';
+import { getCompanyById } from './data/mockData';
+import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
@@ -35,19 +37,6 @@ interface ApiCampaignResponse {
   items: ApiCampaign[];
 }
 
-const FALLBACK_IMAGE =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="%23f0f0f0"/><stop offset="1" stop-color="%23d9d9d9"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="24" fill="%23999">WP Super Gallery</text></svg>';
-
-
-const COMPANY_THEME: Record<string, Pick<Company, 'name' | 'logo' | 'brandColor'>> = {
-  nike: { name: 'Nike', logo: '🏃', brandColor: '#FF6B00' },
-  adidas: { name: 'Adidas', logo: '⚽', brandColor: '#000000' },
-  apple: { name: 'Apple', logo: '🍎', brandColor: '#555555' },
-  spotify: { name: 'Spotify', logo: '🎵', brandColor: '#1DB954' },
-  netflix: { name: 'Netflix', logo: '🎬', brandColor: '#E50914' },
-  tesla: { name: 'Tesla', logo: '🚗', brandColor: '#CC0000' },
-};
-
 const titleCase = (value: string) =>
   value
     .split(/[-_\s]+/)
@@ -66,9 +55,9 @@ const stringToColor = (value: string) => {
 
 const buildCompany = (companyId: string): Company => {
   const key = companyId?.toLowerCase() || 'unknown';
-  const theme = COMPANY_THEME[key];
-  if (theme) {
-    return { id: key, ...theme };
+  const company = getCompanyById(key);
+  if (company) {
+    return company;
   }
   return {
     id: key,
@@ -134,6 +123,10 @@ function AppContent({
   const [externalMediaUrl, setExternalMediaUrl] = useState('');
   const [externalMediaCaption, setExternalMediaCaption] = useState('');
   const [externalMediaThumbnail, setExternalMediaThumbnail] = useState('');
+  const [campaignLoadProgress, setCampaignLoadProgress] = useState<{ total: number; completed: number }>({
+    total: 0,
+    completed: 0,
+  });
 
   useEffect(() => {
     if (!actionMessage) return;
@@ -168,15 +161,23 @@ function AppContent({
 
   // SWR fetcher for campaigns
   const fetchCampaigns = useCallback(async () => {
+    setCampaignLoadProgress({ total: 0, completed: 0 });
     const response = await apiClient.get<ApiCampaignResponse>(
       '/wp-json/wp-super-gallery/v1/campaigns',
     );
     const items = response.items ?? [];
+    setCampaignLoadProgress({ total: items.length, completed: 0 });
 
     const mapped = await Promise.all(
       items.map(async (item) => {
         let mediaItems: MediaItem[] = [];
-        if (isAuthenticated || item.visibility === 'public') {
+
+        const canAccessCampaign =
+          isAdmin ||
+          item.visibility === 'public' ||
+          permissions.some((permissionId) => String(permissionId) === String(item.id));
+
+        if (canAccessCampaign) {
           try {
             const mediaResponse = await apiClient.get<
               MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
@@ -186,11 +187,21 @@ function AppContent({
               : (mediaResponse.items ?? []);
           } catch {
             mediaItems = [];
+          } finally {
+            setCampaignLoadProgress((prev) => ({
+              total: prev.total,
+              completed: Math.min(prev.completed + 1, prev.total),
+            }));
           }
+        } else {
+          setCampaignLoadProgress((prev) => ({
+            total: prev.total,
+            completed: Math.min(prev.completed + 1, prev.total),
+          }));
         }
 
-        const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE;
-        const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE;
+        const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE_SRC;
+        const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE_SRC;
         const orderedMedia = [...mediaItems]
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           .map((media) => ({
@@ -215,7 +226,7 @@ function AppContent({
     );
 
     return mapped;
-  }, [apiClient, isAuthenticated]);
+  }, [apiClient, isAdmin, permissions]);
 
   const campaignsKey = isReady
     ? ['campaigns', user?.id ?? 'anon', isAuthenticated, isAdmin ? 'admin' : 'user']
@@ -584,6 +595,16 @@ function AppContent({
         <Center py={120}>
           <Stack align="center">
             <Loader />
+            <Stack gap={2} align="center">
+              <Container size="sm" px={0}>
+                <Alert color="blue" variant="light" role="status" aria-live="polite">
+                  Loading campaigns...
+                  {campaignLoadProgress.total > 0
+                    ? ` (${campaignLoadProgress.completed}/${campaignLoadProgress.total} processed)`
+                    : ''}
+                </Alert>
+              </Container>
+            </Stack>
           </Stack>
         </Center>
       ) : (

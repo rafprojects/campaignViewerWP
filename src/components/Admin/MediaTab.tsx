@@ -11,6 +11,7 @@ import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDot
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, UploadResponse } from '@/types';
+import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
@@ -492,7 +493,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                 openLightbox(item);
               }
             }}
-            fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
+            fallbackSrc={FALLBACK_IMAGE_SRC}
           />
         </Box>
         <Box role="cell">
@@ -624,7 +625,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                               openLightbox(item);
                             }
                           }}
-                          fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
+                          fallbackSrc={FALLBACK_IMAGE_SRC}
                         />
                       </Table.Td>
                       <Table.Td>

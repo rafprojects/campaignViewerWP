@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign, CampaignAccessGrant } from '@/types';
 import {
@@ -76,6 +76,17 @@ interface CompanyAccessGrant extends CampaignAccessGrant {
   campaignStatus?: string;
 }
 
+type ListResponse<T> = T[] | { items?: T[]; entries?: T[]; grants?: T[]; data?: T[] };
+
+const normalizeListResponse = <T,>(response: ListResponse<T>): T[] => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.items)) return response.items;
+  if (Array.isArray(response.entries)) return response.entries;
+  if (Array.isArray(response.grants)) return response.grants;
+  if (Array.isArray(response.data)) return response.data;
+  return [];
+};
+
 type AccessViewMode = 'campaign' | 'company' | 'all';
 
 interface AdminPanelProps {
@@ -94,6 +105,8 @@ const emptyForm: CampaignFormState = {
   tags: '',
 };
 
+const campaignFormReducer = (_state: CampaignFormState, next: CampaignFormState): CampaignFormState => next;
+
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<string | null>('campaigns');
   const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
@@ -101,7 +114,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [error, setError] = useState<string | null>(null);
 
   const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
-  const [formState, setFormState] = useState({ ...emptyForm });
+  const [formState, dispatchFormState] = useReducer(campaignFormReducer, { ...emptyForm });
   const [isSavingCampaign, setIsSavingCampaign] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState<string>('');
@@ -183,19 +196,19 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   // Auto-select first campaign for media/access/audit tabs
   useEffect(() => {
     if (activeTab === 'media' && !mediaCampaignId && campaigns.length > 0) {
-      setMediaCampaignId(campaigns[0].id);
+      setMediaCampaignId(String(campaigns[0].id));
     }
   }, [activeTab, campaigns, mediaCampaignId]);
 
   useEffect(() => {
     if (activeTab === 'access' && !accessCampaignId && campaigns.length > 0 && accessViewMode === 'campaign') {
-      setAccessCampaignId(campaigns[0].id);
+      setAccessCampaignId(String(campaigns[0].id));
     }
   }, [activeTab, accessCampaignId, campaigns, accessViewMode]);
 
   useEffect(() => {
     if (activeTab === 'audit' && !auditCampaignId && campaigns.length > 0) {
-      setAuditCampaignId(campaigns[0].id);
+      setAuditCampaignId(String(campaigns[0].id));
     }
   }, [activeTab, auditCampaignId, campaigns]);
 
@@ -231,14 +244,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     if (!campaignId) return;
     setAccessLoading(true);
     try {
-      const response = await apiClient.get<CompanyAccessGrant[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access`);
-      setAccessEntries(response ?? []);
-    } catch {
+      const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access`);
+      setAccessEntries(normalizeListResponse(response));
+    } catch (err) {
+      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load access entries.' });
       setAccessEntries([]);
     } finally {
       setAccessLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onNotify]);
 
   // Load company access when company selected (company/all mode)
   const loadCompanyAccess = useCallback(async (companyId: string, includeCampaigns: boolean) => {
@@ -246,14 +260,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     setAccessLoading(true);
     try {
       const url = `/wp-json/wp-super-gallery/v1/companies/${companyId}/access${includeCampaigns ? '?include_campaigns=true' : ''}`;
-      const response = await apiClient.get<CompanyAccessGrant[]>(url);
-      setAccessEntries(response ?? []);
-    } catch {
+      const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(url);
+      setAccessEntries(normalizeListResponse(response));
+    } catch (err) {
+      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load company access entries.' });
       setAccessEntries([]);
     } finally {
       setAccessLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onNotify]);
 
   // Load access based on view mode
   useEffect(() => {
@@ -460,14 +475,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     if (!campaignId) return;
     setAuditLoading(true);
     try {
-      const response = await apiClient.get<AuditEntry[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`);
-      setAuditEntries(response ?? []);
-    } catch {
+      const response = await apiClient.get<ListResponse<AuditEntry>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`);
+      setAuditEntries(normalizeListResponse(response));
+    } catch (err) {
+      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load audit entries.' });
       setAuditEntries([]);
     } finally {
       setAuditLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onNotify]);
 
   useEffect(() => {
     if (activeTab === 'audit' && auditCampaignId) {
@@ -477,7 +493,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const handleEdit = (campaign: AdminCampaign) => {
     setEditingCampaign(campaign);
-    setFormState({
+    dispatchFormState({
       title: campaign.title ?? '',
       description: campaign.description ?? '',
       company: campaign.companyId ?? '',
@@ -490,14 +506,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const handleCreate = () => {
     setEditingCampaign(null);
-    setFormState({ ...emptyForm });
+    dispatchFormState({ ...emptyForm });
     setCampaignFormOpen(true);
   };
 
   const closeCampaignForm = () => {
     setCampaignFormOpen(false);
     setEditingCampaign(null);
-    setFormState({ ...emptyForm });
+    dispatchFormState({ ...emptyForm });
   };
 
   const saveCampaign = async () => {
@@ -552,7 +568,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const campaignSelectData = useMemo(() => {
     return campaigns.map((c) => ({ 
-      value: c.id, 
+      value: String(c.id), 
       label: c.companyId ? `${c.title} (${c.companyId})` : c.title 
     }));
   }, [campaigns]);
@@ -567,7 +583,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   // Get the currently selected campaign with company info
   const selectedCampaign = useMemo(() => {
     if (!accessCampaignId) return null;
-    return campaigns.find((c) => c.id === accessCampaignId) || null;
+    return campaigns.find((c) => String(c.id) === String(accessCampaignId)) || null;
   }, [accessCampaignId, campaigns]);
 
   // Get the currently selected company info
@@ -717,7 +733,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           opened={campaignFormOpen}
           editingCampaign={editingCampaign}
           formState={formState}
-          onFormChange={setFormState}
+          onFormChange={dispatchFormState}
           onClose={closeCampaignForm}
           onSave={saveCampaign}
           isSaving={isSavingCampaign}
