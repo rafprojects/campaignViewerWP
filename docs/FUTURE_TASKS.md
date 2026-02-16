@@ -46,6 +46,39 @@ The video player in the campaign video gallery must support different aspect rat
 **Impact:** High (visual quality for all video content)  
 **Notes:** May require CSS `object-fit: contain` with transparent container, or custom player wrapper.
 
+### Advanced Video Gallery Controls & UX (Pro-Level)
+
+QA feedback identified a consistency gap across mixed-dimension videos (embedded vs uploaded): container dimensions and playback UX need more admin-level control.
+
+**Requirements:**
+- Standardize video gallery viewport behavior for consistent perceived layout
+- Expose admin-configurable options for:
+	- gallery/player height
+	- thumbnail strip scroll speed
+	- scroll animation style/duration/easing
+	- gallery card styling (radius, spacing, border/shadow presets)
+	- improved UX-oriented scroll controls (buttons, drag/scroll-wheel behavior)
+- Preserve safe defaults for non-technical users
+
+**Effort:** Medium–High  
+**Impact:** High (consistency + customization + perceived quality)
+
+### Advanced Image Gallery Controls & UX (Pro-Level)
+
+Add equivalent UX/config control depth for image gallery behavior so image and video galleries have consistent customization capabilities.
+
+**Requirements:**
+- Expose admin-configurable options for:
+	- gallery viewport height
+	- thumbnail strip scroll speed
+	- scroll animation style/duration/easing
+	- gallery card styling (radius, spacing, border/shadow presets)
+	- enhanced UX-oriented scroll controls
+- Keep defaults aligned with existing current behavior to avoid breaking embeds
+
+**Effort:** Medium–High  
+**Impact:** High (gallery parity + design flexibility)
+
 ### Campaign Card Thumbnails
 
 Campaign cards currently show a generic "WP Super Gallery" placeholder image. Cards should display a representative thumbnail from the campaign's associated media.
@@ -75,6 +108,27 @@ When the user goes offline or loses network connectivity, the app provides no fe
 **Effort:** Low–Medium  
 **Impact:** Medium (error UX, especially for admin users)  
 **Notes:** Could use a `useOnlineStatus` hook combined with a context provider. Consider also using `CampaignViewer` as modal overlays instead of full-page repaints for better resilience.
+
+### Pluggable Gallery Implementations + Layout Builder (Epic)
+
+Enable a gallery "plugin" architecture so both image and video galleries can support interchangeable layouts/styles (e.g., mosaic, masonry, filmstrip, storyboard) without hardcoding one implementation.
+
+**Scope recommendation:** treat as an **epic** with multiple phased tasks.
+
+**Phase candidates:**
+1. **Gallery adapter contract** — interface for gallery capabilities, data requirements, and control schema.
+2. **Runtime gallery selector** — admin setting to choose gallery implementation per media type (image/video).
+3. **Built-in alt implementations** — at least one additional style (e.g., mosaic) for each media type.
+4. **Manual layout builder tool** — internal canvas tool to position/size/orient gallery members manually.
+5. **Schema + persistence** — save/reuse custom layouts, validation, migrations.
+
+**Requirements:**
+- Applies to both video and image galleries
+- Supports custom layout templates and manually authored layouts
+- Maintains backward compatibility with current default gallery
+
+**Effort:** High (multi-phase)  
+**Impact:** High (platform extensibility + advanced UX)
 
 ---
 
@@ -371,4 +425,4 @@ When considering future tasks, evaluate based on:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: February 13, 2026 — added Phase 10 deferred items (A1/A2 stretch, E1/E2, Track F)*
+*Last updated: February 16, 2026 — added advanced gallery controls tasks + pluggable gallery architecture epic*

@@ -122,7 +122,7 @@ describe('App', () => {
     expect(await screen.findByText('Request failed')).toBeInTheDocument();
   });
 
-  it('shows login form when auth provider is configured', async () => {
+  it('shows compact sign-in trigger when auth provider is configured', async () => {
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
@@ -133,7 +133,102 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(await screen.findByText('Sign in to access private campaigns.')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument();
+  });
+
+  it('shows offline banner when browser is offline', async () => {
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    });
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => campaignResponse,
+    } as Response);
+
+    render(<App />);
+
+    expect(await screen.findByText('You appear to be offline. Some features are unavailable.')).toBeInTheDocument();
+
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+  });
+
+  it('uses first campaign media thumbnail when campaign thumbnail is missing', async () => {
+    (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+    localStorage.setItem('wpsg_access_token', 'token');
+    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+
+      if (url.includes('/wp-json/jwt-auth/v1/token/validate')) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) } as Response);
+      }
+
+      if (url.includes('/wp-json/wp-super-gallery/v1/permissions')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ campaignIds: ['101'], isAdmin: true }),
+        } as Response);
+      }
+
+      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns/101/media') && method === 'GET') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ([
+            {
+              id: 'm1',
+              type: 'image',
+              source: 'upload',
+              url: 'https://example.com/image-original.jpg',
+              thumbnail: 'https://example.com/image-thumb.jpg',
+              caption: 'Representative media',
+              order: 1,
+            },
+          ]),
+        } as Response);
+      }
+
+      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns') && method === 'GET') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: [
+              {
+                id: '101',
+                companyId: 'acme',
+                title: 'Campaign Alpha',
+                description: 'Test description',
+                thumbnail: '',
+                coverImage: '',
+                status: 'active',
+                visibility: 'public',
+                tags: ['launch'],
+                createdAt: '2026-01-01T00:00:00.000Z',
+                updatedAt: '2026-01-02T00:00:00.000Z',
+              },
+            ],
+          }),
+        } as Response);
+      }
+
+      return Promise.resolve({ ok: true, status: 200, json: async () => ({}) } as Response);
+    });
+
+    render(<App />);
+
+    const campaignImage = await screen.findByAltText('Campaign Alpha');
+    expect(campaignImage).toHaveAttribute('src', expect.stringContaining('image-thumb.jpg'));
   });
 
   it('edits campaign using modal', async () => {

@@ -12,6 +12,15 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.8.0 (February 16, 2026)
+- **MINOR**: Phase 10 Codebase Refinement & UX Polish release
+  - Component decomposition and DRY consolidation across app/admin surfaces.
+  - Extracted reusable primitives: `useXhrUpload`, `useDirtyGuard`, `useSwipe`, `ConfirmModal`, `CampaignSelector`, and shared utility helpers.
+  - Completed UX track improvements (loading states, unauthenticated empty state, search, pagination/load-more, swipe navigation, keyboard hints, dirty form guards, sticky auth bar, semantic card interactions).
+  - Cleanup/housekeeping track complete (deprecated media API removal, stylesheet cleanup, icon consolidation, global typing cleanup, debug removal, oEmbed sanitization, async modal correctness).
+  - Architecture track partial completion: E3 finished (removed production `any` in media/oEmbed flow), E1/E2 deferred.
+  - Test baseline strengthened and coverage targets enforced at practical thresholds.
+
 ### v0.7.0 (February 5, 2026)
 - **MINOR**: Phase 9 Theme System release
   - Full runtime theme switching with 14 bundled themes (O(1) map-lookup, <16ms switch)
@@ -113,7 +122,8 @@ Current development follows a phased approach:
 - **Phase 7**: ✅ Complete (Visual Polish + Testing + Accessibility + Mobile Optimization — v0.5.0 release)
 - **Phase 8**: ✅ Complete (Performance & Production Optimization — v0.6.0 release)
 - **Phase 9**: ✅ Complete (Theme System — v0.7.0 release)
-- **Phase 10**: Ready to start (Codebase Refinement & UX Polish)
+- **Phase 10**: ✅ Complete (Codebase Refinement & UX Polish — v0.8.0 release)
+- **Phase 11**: 🚧 In Progress (UX & Discovery Improvements)
 
 ## Branching Strategy
 

@@ -105,4 +105,24 @@ describe('ApiClient', () => {
     const headers = await client.getAuthHeaders();
     expect(headers).toEqual({ Authorization: 'Bearer token-456' });
   });
+
+  it('fails fast and skips fetch when offline', async () => {
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    });
+
+    const client = new ApiClient({ baseUrl });
+
+    await expect(client.get('/wp-json/wp-super-gallery/v1/campaigns')).rejects.toMatchObject({
+      message: 'You appear to be offline. Some features are unavailable.',
+      status: 0,
+    });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+
+    Object.defineProperty(window.navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+  });
 });

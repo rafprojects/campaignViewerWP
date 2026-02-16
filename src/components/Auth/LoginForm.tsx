@@ -4,9 +4,10 @@ import { useForm } from '@mantine/form';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
+  compact?: boolean;
 }
 
-export function LoginForm({ onSubmit }: LoginFormProps) {
+export function LoginForm({ onSubmit, compact = false }: LoginFormProps) {
   const form = useForm({
     initialValues: {
       email: '',
@@ -36,6 +37,52 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     }
   });
 
+  const content = (
+    <Stack gap="lg">
+      {!compact && (
+        <Stack gap="xs">
+          <Title order={2} size="h4">Sign in</Title>
+          <Text c="dimmed" size="sm">
+            Access private campaigns with your WordPress account.
+          </Text>
+        </Stack>
+      )}
+
+      <TextInput
+        label="Email"
+        type="email"
+        placeholder="you@example.com"
+        required
+        {...form.getInputProps('email')}
+      />
+
+      <PasswordInput
+        label="Password"
+        placeholder="Enter your password"
+        required
+        {...form.getInputProps('password')}
+      />
+
+      {error && (
+        <Alert color="red" title="Error" role="alert" aria-live="assertive">
+          {error}
+        </Alert>
+      )}
+
+      <Button type="submit" loading={isSubmitting} fullWidth>
+        {isSubmitting ? 'Signing in...' : 'Sign in'}
+      </Button>
+    </Stack>
+  );
+
+  if (compact) {
+    return (
+      <form onSubmit={handleSubmit}>
+        {content}
+      </form>
+    );
+  }
+
   return (
     <Paper
       p="xl"
@@ -47,39 +94,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
       mx="auto"
       my="xl"
     >
-      <Stack gap="lg">
-        <Stack gap="xs">
-          <Title order={2} size="h4">Sign in</Title>
-          <Text c="dimmed" size="sm">
-            Access private campaigns with your WordPress account.
-          </Text>
-        </Stack>
-
-        <TextInput
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          required
-          {...form.getInputProps('email')}
-        />
-
-        <PasswordInput
-          label="Password"
-          placeholder="Enter your password"
-          required
-          {...form.getInputProps('password')}
-        />
-
-        {error && (
-          <Alert color="red" title="Error" role="alert" aria-live="assertive">
-            {error}
-          </Alert>
-        )}
-
-        <Button type="submit" loading={isSubmitting} fullWidth>
-          {isSubmitting ? 'Signing in...' : 'Sign in'}
-        </Button>
-      </Stack>
+      {content}
     </Paper>
   );
 }

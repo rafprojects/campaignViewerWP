@@ -15,6 +15,10 @@ interface EditCampaignModalProps {
   onEditTitleChange: (value: string) => void;
   editDescription: string;
   onEditDescriptionChange: (value: string) => void;
+  editCoverImage: string;
+  onEditCoverImageChange: (value: string) => void;
+  onUploadCoverImage: (file: File) => void;
+  coverImageUploading: boolean;
   onClose: () => void;
   onConfirmEdit: () => void;
   editMediaLoading: boolean;
@@ -48,6 +52,10 @@ export function EditCampaignModal({
   onEditTitleChange,
   editDescription,
   onEditDescriptionChange,
+  editCoverImage,
+  onEditCoverImageChange,
+  onUploadCoverImage,
+  coverImageUploading,
   onClose,
   onConfirmEdit,
   editMediaLoading,
@@ -110,6 +118,48 @@ export function EditCampaignModal({
               onChange={(e) => onEditDescriptionChange(e.currentTarget.value)}
               minRows={3}
             />
+
+            <Card withBorder>
+              <Stack gap="sm">
+                <Text fw={500}>Campaign Thumbnail (Card Image)</Text>
+                <Image
+                  src={editCoverImage || campaign?.thumbnail || FALLBACK_IMAGE_SRC}
+                  alt="Campaign thumbnail preview"
+                  height={140}
+                  fit="cover"
+                  fallbackSrc={FALLBACK_IMAGE_SRC}
+                />
+
+                <Select
+                  label="Use existing campaign media as thumbnail"
+                  placeholder="Choose media image/thumbnail"
+                  value={editCoverImage || null}
+                  data={editCampaignMedia
+                    .filter((media) => media.thumbnail || media.url)
+                    .map((media) => ({
+                      value: media.thumbnail || media.url,
+                      label: media.caption || `${media.type.toUpperCase()} #${media.id}`,
+                    }))}
+                  onChange={(value) => {
+                    if (value) onEditCoverImageChange(value);
+                  }}
+                  searchable
+                  nothingFoundMessage="No campaign media available"
+                />
+
+                <FileButton
+                  onChange={(file) => file && void onUploadCoverImage(file)}
+                  accept="image/*"
+                >
+                  {(props) => (
+                    <Button {...props} variant="light" loading={coverImageUploading}>
+                      Upload Custom Thumbnail
+                    </Button>
+                  )}
+                </FileButton>
+              </Stack>
+            </Card>
+
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={guardedClose}>
                 Cancel

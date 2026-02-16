@@ -45,6 +45,12 @@ export class ApiClient {
     return this.baseUrl;
   }
 
+  private assertOnline(): void {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new ApiError('You appear to be offline. Some features are unavailable.', 0);
+    }
+  }
+
   async getAuthHeaders(): Promise<Record<string, string>> {
     return this.buildAuthHeaders();
   }
@@ -71,6 +77,7 @@ export class ApiClient {
   }
 
   async get<T>(path: string, init?: RequestInit): Promise<T> {
+    this.assertOnline();
     const headers = await this.getHeaders();
     const requestInit: RequestInit = {
       ...init,
@@ -84,6 +91,7 @@ export class ApiClient {
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
+    this.assertOnline();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.getHeaders(),
@@ -93,6 +101,7 @@ export class ApiClient {
   }
 
   async postForm<T>(path: string, formData: FormData): Promise<T> {
+    this.assertOnline();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.buildAuthHeaders(),
@@ -102,6 +111,7 @@ export class ApiClient {
   }
 
   async put<T>(path: string, body: unknown): Promise<T> {
+    this.assertOnline();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: await this.getHeaders(),
@@ -111,6 +121,7 @@ export class ApiClient {
   }
 
   async delete<T>(path: string): Promise<T> {
+    this.assertOnline();
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: await this.getHeaders(),
