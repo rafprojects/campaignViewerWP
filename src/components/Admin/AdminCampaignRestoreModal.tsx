@@ -1,4 +1,4 @@
-import { Button, Group, Modal, Text } from '@mantine/core';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 type CampaignSummary = {
   id: string;
@@ -19,18 +19,15 @@ export function AdminCampaignRestoreModal({
   onConfirm,
 }: AdminCampaignRestoreModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Restore campaign" padding="md">
-      <Text>Restore this campaign? This will make it active again and enable any associated access grants.</Text>
-      <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={onClose}>Cancel</Button>
-        <Button
-          color="teal"
-          onClick={onConfirm}
-          aria-label={`Restore campaign ${campaign?.title ?? ''}`.trim()}
-        >
-          Restore
-        </Button>
-      </Group>
-    </Modal>
+    <ConfirmModal
+      opened={opened}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      title="Restore campaign"
+      message="Restore this campaign? This will make it active again and enable any associated access grants."
+      confirmLabel="Restore"
+      confirmColor="teal"
+      confirmAriaLabel={`Restore campaign ${campaign?.title ?? ''}`.trim()}
+    />
   );
 }

@@ -1,4 +1,4 @@
-import { Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import type { MediaItem } from '@/types';
 
 interface MediaDeleteModalProps {
@@ -15,20 +15,15 @@ export function MediaDeleteModal({
   onConfirm,
 }: MediaDeleteModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Delete Media" size="sm" padding="md">
-      <Stack>
-        <Text>Are you sure you want to delete this media item? This action cannot be undone.</Text>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>Cancel</Button>
-          <Button
-            color="red"
-            onClick={onConfirm}
-            aria-label={`Delete media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
-          >
-            Delete
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+    <ConfirmModal
+      opened={opened}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      title="Delete Media"
+      message="Are you sure you want to delete this media item? This action cannot be undone."
+      confirmLabel="Delete"
+      confirmColor="red"
+      confirmAriaLabel={`Delete media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
+    />
   );
 }

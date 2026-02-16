@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Play } from 'lucide-react';
+import { IconPlayerPlay } from '@tabler/icons-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
+import { useSwipe } from '@/hooks/useSwipe';
 import { CarouselNavigation } from './CarouselNavigation';
 
 interface VideoCarouselProps {
@@ -25,12 +26,16 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
 
   const currentVideo = videos[currentIndex];
 
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: nextVideo,
+    onSwipeRight: prevVideo,
+  });
 
   return (
     <Stack gap="md">
       <Title order={3} size="h5">
         <Group gap={8} component="span">
-          <Play size={18} />
+          <IconPlayerPlay size={18} />
           Videos ({videos.length})
         </Group>
       </Title>
@@ -41,6 +46,8 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
         role="region"
         tabIndex={0}
         aria-label={`Video ${currentIndex + 1} of ${videos.length}: ${currentVideo.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`}
+        {...swipeHandlers}
+        style={{ touchAction: 'pan-y' }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') {
             event.preventDefault();
@@ -87,7 +94,7 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
                 onClick={() => setIsPlaying(true)}
                 aria-label="Play video"
               >
-                <Play size={32} fill="currentColor" />
+                <IconPlayerPlay size={32} fill="currentColor" />
               </ActionIcon>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { ActionIcon, Badge, Group, Image } from '@mantine/core';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 
 interface CarouselNavigationItem {
   id: string;
@@ -44,7 +44,7 @@ export function CarouselNavigation({
             aria-label={previousLabel}
             disabled={total <= 1}
           >
-            <ChevronLeft size={20} />
+            <IconChevronLeft size={20} />
           </ActionIcon>
           <ActionIcon
             onClick={onNext}
@@ -53,7 +53,7 @@ export function CarouselNavigation({
             aria-label={nextLabel}
             disabled={total <= 1}
           >
-            <ChevronRight size={20} />
+            <IconChevronRight size={20} />
           </ActionIcon>
         </Group>
 

@@ -2,6 +2,8 @@ import { ActionIcon, Badge, Button, Card, Center, FileButton, Group, Image, Load
 import { IconLink, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
 import type { Campaign, MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
+import { useDirtyGuard } from '@/hooks/useDirtyGuard';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { MediaLibraryPicker } from './MediaLibraryPicker';
 
 interface EditCampaignModalProps {
@@ -69,10 +71,17 @@ export function EditCampaignModal({
   addMediaLoading,
   onAddExternalMedia,
 }: EditCampaignModalProps) {
+  const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
+    current: { editTitle, editDescription },
+    isOpen: opened,
+    onClose,
+  });
+
   return (
+    <>
     <Modal
       opened={opened}
-      onClose={onClose}
+      onClose={guardedClose}
       title={`Edit Campaign: ${campaign?.title ?? ''}`}
       size="xl"
       zIndex={300}
@@ -102,7 +111,7 @@ export function EditCampaignModal({
               minRows={3}
             />
             <Group justify="flex-end" mt="md">
-              <Button variant="default" onClick={onClose}>
+              <Button variant="default" onClick={guardedClose}>
                 Cancel
               </Button>
               <Button onClick={() => void onConfirmEdit()}>
@@ -208,7 +217,7 @@ export function EditCampaignModal({
                   )}
                 </FileButton>
                 {uploadProgress !== null && (
-                  <Progress value={uploadProgress} size="sm" />
+                  <Progress value={uploadProgress} size="md" striped animated />
                 )}
               </Stack>
             </Card>
@@ -258,5 +267,16 @@ export function EditCampaignModal({
         </Tabs.Panel>
       </Tabs>
     </Modal>
+
+    <ConfirmModal
+      opened={confirmOpen}
+      onClose={cancelDiscard}
+      onConfirm={confirmDiscard}
+      title="Discard changes?"
+      message="You have unsaved changes. Are you sure you want to discard them?"
+      confirmLabel="Discard"
+      confirmColor="red"
+    />
+    </>
   );
 }

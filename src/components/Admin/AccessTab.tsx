@@ -21,6 +21,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } from '@tabler/icons-react';
+import { CampaignSelector, type CampaignSelectItem } from '@/components/shared/CampaignSelector';
 
 type AccessViewMode = 'campaign' | 'company' | 'all';
 
@@ -51,7 +52,7 @@ type WpUser = {
 interface AccessTabProps {
   accessViewMode: AccessViewMode;
   onAccessViewModeChange: (value: AccessViewMode) => void;
-  campaignSelectData: Array<{ value: string; label: string }>;
+  campaignSelectData: CampaignSelectItem[];
   accessCampaignId: string;
   onAccessCampaignChange: (value: string) => void;
   companySelectData: Array<{ value: string; label: string }>;
@@ -138,12 +139,12 @@ export function AccessTab({
             </Box>
 
             {accessViewMode === 'campaign' ? (
-              <Select
-                label={<Text size="sm" fw={500} c="gray.2">Select Campaign</Text>}
+              <CampaignSelector
+                label="Select Campaign"
                 placeholder="Choose a campaign..."
                 data={campaignSelectData}
                 value={accessCampaignId}
-                onChange={(v) => onAccessCampaignChange(v ?? '')}
+                onChange={onAccessCampaignChange}
                 style={{ minWidth: 240, flex: '1 1 240px' }}
               />
             ) : (

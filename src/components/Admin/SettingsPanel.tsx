@@ -15,6 +15,7 @@ import {
 import { IconArrowLeft } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import { ThemeSelector } from './ThemeSelector';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 export interface SettingsData {
   galleryLayout: 'grid' | 'masonry' | 'carousel';
@@ -85,7 +86,7 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
       setHasChanges(false);
       onNotify({ type: 'success', text: 'Settings saved successfully.' });
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save settings.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save settings.') });
     } finally {
       setIsSaving(false);
     }

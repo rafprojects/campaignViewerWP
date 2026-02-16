@@ -9,7 +9,6 @@ import {
   Text,
   Table,
   Badge,
-  Select,
   Stack,
   Loader,
   Center,
@@ -25,10 +24,12 @@ import { CampaignFormModal, type CampaignFormState } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
+import { CampaignSelector } from '@/components/shared/CampaignSelector';
 import { AdminCampaignArchiveModal } from './AdminCampaignArchiveModal';
 import { AdminCampaignRestoreModal } from './AdminCampaignRestoreModal';
 import { ArchiveCompanyModal } from './ArchiveCompanyModal';
 import { QuickAddUserModal } from './QuickAddUserModal';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 
@@ -163,6 +164,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<AdminCampaign | null>(null);
+  const [archivingIds, setArchivingIds] = useState<Set<string>>(new Set());
+  const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
 
@@ -173,7 +176,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       const response = await apiClient.get<ApiCampaignResponse>('/wp-json/wp-super-gallery/v1/campaigns?per_page=50');
       setCampaigns(response.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load campaigns');
+      setError(getErrorMessage(err, 'Failed to load campaigns'));
     } finally {
       setIsLoading(false);
     }
@@ -247,7 +250,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access`);
       setAccessEntries(normalizeListResponse(response));
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load access entries.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load access entries.') });
       setAccessEntries([]);
     } finally {
       setAccessLoading(false);
@@ -263,7 +266,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(url);
       setAccessEntries(normalizeListResponse(response));
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load company access entries.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load company access entries.') });
       setAccessEntries([]);
     } finally {
       setAccessLoading(false);
@@ -349,7 +352,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       setUserSearchQuery('');
       setAccessAction('grant');
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update access.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to update access.') });
     } finally {
       setAccessSaving(false);
     }
@@ -373,7 +376,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       }
       onNotify({ type: 'success', text: 'Access revoked.' });
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to revoke access.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to revoke access.') });
     } finally {
       setAccessSaving(false);
     }
@@ -397,7 +400,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         await loadCompanyAccess(selectedCompanyId, accessViewMode === 'all');
       }
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to archive company.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive company.') });
     } finally {
       setAccessSaving(false);
     }
@@ -453,7 +456,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     } catch (err) {
       setQuickAddResult({
         success: false,
-        message: err instanceof Error ? err.message : 'Failed to create user.',
+        message: getErrorMessage(err, 'Failed to create user.'),
       });
     } finally {
       setQuickAddSaving(false);
@@ -478,7 +481,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       const response = await apiClient.get<ListResponse<AuditEntry>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`);
       setAuditEntries(normalizeListResponse(response));
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load audit entries.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load audit entries.') });
       setAuditEntries([]);
     } finally {
       setAuditLoading(false);
@@ -538,31 +541,39 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       await loadCampaigns();
       onCampaignsUpdated();
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save campaign.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save campaign.') });
     } finally {
       setIsSavingCampaign(false);
     }
   };
 
   const archiveCampaign = async (campaign: AdminCampaign) => {
+    const id = String(campaign.id);
+    setArchivingIds((prev) => new Set(prev).add(id));
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/archive`, {});
       onNotify({ type: 'success', text: 'Campaign archived.' });
       await loadCampaigns();
       onCampaignsUpdated();
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to archive campaign.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive campaign.') });
+    } finally {
+      setArchivingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
     }
   };
 
   const restoreCampaign = async (campaign: AdminCampaign) => {
+    const id = String(campaign.id);
+    setRestoringIds((prev) => new Set(prev).add(id));
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/restore`, {});
       onNotify({ type: 'success', text: 'Campaign restored.' });
       await loadCampaigns();
       onCampaignsUpdated();
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to restore campaign.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to restore campaign.') });
+    } finally {
+      setRestoringIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
     }
   };
 
@@ -616,11 +627,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               Edit
             </Button>
             {c.status === 'archived' ? (
-              <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} onClick={() => setConfirmRestore(c)}>
+              <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} loading={restoringIds.has(String(c.id))} onClick={() => setConfirmRestore(c)}>
                 Restore
               </Button>
             ) : (
-              <Button color="red" size="xs" leftSection={<IconTrash size={14} />} onClick={() => setConfirmArchive(c)}>
+              <Button color="red" size="xs" leftSection={<IconTrash size={14} />} loading={archivingIds.has(String(c.id))} onClick={() => setConfirmArchive(c)}>
                 Archive
               </Button>
             )}
@@ -746,12 +757,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
         <Tabs.Panel value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
-            <Select
-              label={<Text size="sm" fw={500} c="gray.2">Campaign</Text>}
-              placeholder="Select campaign"
+            <CampaignSelector
               data={campaignSelectData}
               value={mediaCampaignId}
-              onChange={(v) => setMediaCampaignId(v ?? '')}
+              onChange={setMediaCampaignId}
               style={{ minWidth: 200, flex: '1 1 200px' }}
             />
             <Button
@@ -784,7 +793,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             </Button>
           </Group>
           <Suspense fallback={<Center py="md"><Loader /></Center>}>
-            <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} />
+            <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
           </Suspense>
         </Tabs.Panel>
 
@@ -846,10 +855,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         opened={!!confirmArchive}
         campaign={confirmArchive ? { id: confirmArchive.id, title: confirmArchive.title } : null}
         onClose={() => setConfirmArchive(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (confirmArchive) {
-            archiveCampaign(confirmArchive);
             setConfirmArchive(null);
+            await archiveCampaign(confirmArchive);
           }
         }}
       />
@@ -858,10 +867,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         opened={!!confirmRestore}
         campaign={confirmRestore ? { id: confirmRestore.id, title: confirmRestore.title } : null}
         onClose={() => setConfirmRestore(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (confirmRestore) {
-            restoreCampaign(confirmRestore);
             setConfirmRestore(null);
+            await restoreCampaign(confirmRestore);
           }
         }}
       />

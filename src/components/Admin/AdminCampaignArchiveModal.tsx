@@ -1,4 +1,4 @@
-import { Button, Group, Modal, Text } from '@mantine/core';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 type CampaignSummary = {
   id: string;
@@ -19,18 +19,15 @@ export function AdminCampaignArchiveModal({
   onConfirm,
 }: AdminCampaignArchiveModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Archive campaign" padding="md">
-      <Text>Archive this campaign? This action will mark it archived.</Text>
-      <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={onClose}>Cancel</Button>
-        <Button
-          color="red"
-          onClick={onConfirm}
-          aria-label={`Archive campaign ${campaign?.title ?? ''}`.trim()}
-        >
-          Archive
-        </Button>
-      </Group>
-    </Modal>
+    <ConfirmModal
+      opened={opened}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      title="Archive campaign"
+      message="Archive this campaign? This action will mark it archived."
+      confirmLabel="Archive"
+      confirmColor="red"
+      confirmAriaLabel={`Archive campaign ${campaign?.title ?? ''}`.trim()}
+    />
   );
 }

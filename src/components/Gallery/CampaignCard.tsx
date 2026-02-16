@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
-import { Lock, Eye } from 'lucide-react';
-import { Card, Image, Badge, Group, Text, Box, Stack } from '@mantine/core';
+import { IconLock, IconEye } from '@tabler/icons-react';
+import { Card, Image, Badge, Group, Text, Box, Stack, UnstyledButton } from '@mantine/core';
 import type { Campaign } from '@/types';
 import styles from './CampaignCard.module.scss';
 
@@ -10,22 +10,13 @@ interface CampaignCardProps {
   onClick: () => void;
 }
 
-export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
+export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick }, ref) => {
     return (
-      <div
+      <UnstyledButton
         ref={ref}
         onClick={hasAccess ? onClick : undefined}
-        onKeyDown={(event) => {
-          if (!hasAccess) return;
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            onClick();
-          }
-        }}
-        role="button"
-        tabIndex={hasAccess ? 0 : -1}
-        aria-disabled={!hasAccess}
+        disabled={!hasAccess}
         aria-label={
           hasAccess
             ? `Open campaign ${campaign.title}`
@@ -93,7 +84,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
                     justifyContent: 'center',
                   }}
                 >
-                  <Lock size={32} color="var(--wpsg-color-text-muted)" />
+                  <IconLock size={32} color="var(--wpsg-color-text-muted)" />
                 </Box>
               </Box>
             )}
@@ -105,7 +96,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
                 top={12}
                 right={12}
                 color="green"
-                leftSection={<Eye size={14} />}
+                leftSection={<IconEye size={14} />}
               >
                 Access
               </Badge>
@@ -170,7 +161,7 @@ export const CampaignCard = forwardRef<HTMLDivElement, CampaignCardProps>(
             />
           )}
         </Card>
-      </div>
+      </UnstyledButton>
     );
   },
 );

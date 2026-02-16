@@ -30,7 +30,7 @@ export function MediaLightboxModal({
       padding={0}
       withCloseButton={false}
       centered
-      styles={{ body: { background: 'rgba(0,0,0,0.9)' } }}
+      styles={{ body: { background: 'color-mix(in srgb, var(--wpsg-color-background) 90%, transparent)' } }}
       aria-label={ariaLabel}
     >
       {imageItems.length > 0 && currentItem && (
@@ -86,7 +86,7 @@ export function MediaLightboxModal({
             left={0}
             right={0}
             p="md"
-            style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.8))' }}
+            style={{ background: 'linear-gradient(transparent, color-mix(in srgb, var(--wpsg-color-background) 80%, transparent))' }}
           >
             <Text c="white" size="sm">{currentItem.caption || 'Untitled'}</Text>
             <Text c="dimmed" size="xs">{lightboxIndex + 1} / {imageItems.length}</Text>

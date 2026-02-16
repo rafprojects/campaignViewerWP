@@ -1,8 +1,9 @@
-import { Center, Group, Loader, ScrollArea, Select, Table, Text } from '@mantine/core';
+import { Center, Group, Loader, ScrollArea, Table, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { CampaignSelector, type CampaignSelectItem } from '@/components/shared/CampaignSelector';
 
 interface AuditTabProps {
-  campaignSelectData: Array<{ value: string; label: string }>;
+  campaignSelectData: CampaignSelectItem[];
   auditCampaignId: string;
   onAuditCampaignChange: (value: string | null) => void;
   auditLoading: boolean;
@@ -24,12 +25,10 @@ export function AuditTab({
         Campaign Audit Log
       </Text>
       <Group mb="md">
-        <Select
-          label="Campaign"
-          placeholder="Select campaign"
+        <CampaignSelector
           data={campaignSelectData}
           value={auditCampaignId}
-          onChange={onAuditCampaignChange}
+          onChange={(v) => onAuditCampaignChange(v)}
           style={{ minWidth: 200 }}
           aria-label="Select campaign for audit log"
         />

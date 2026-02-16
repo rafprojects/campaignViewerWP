@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import DOMPurify from 'dompurify';
 import {
   Button,
   Card,
@@ -14,13 +15,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { IconUpload } from '@tabler/icons-react';
-
-type ExternalPreview = {
-  html?: string;
-  thumbnail_url?: string;
-  title?: string;
-  provider_name?: string;
-} & Record<string, unknown>;
+import type { OEmbedResponse } from '@/types';
 
 interface MediaAddModalProps {
   opened: boolean;
@@ -42,7 +37,7 @@ interface MediaAddModalProps {
   onFetchOEmbed: () => void;
   externalLoading: boolean;
   onAddExternal: () => void;
-  externalPreview: ExternalPreview | null;
+  externalPreview: OEmbedResponse | null;
 }
 
 export function MediaAddModal({
@@ -69,51 +64,60 @@ export function MediaAddModal({
 }: MediaAddModalProps) {
   return (
     <Modal opened={opened} onClose={onClose} title="Add Media" padding="md">
-      <Stack gap="sm">
+      <Stack gap="md">
         <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
-          <Group justify="space-between" wrap="wrap" gap="sm">
-            <Group>
-              <FileButton onChange={onSelectFile} accept="image/*,video/*">
-                {(props) => <Button leftSection={<IconUpload />} {...props}>Choose file</Button>}
-              </FileButton>
-              <Text size="sm" c="dimmed">or drag & drop a file here</Text>
+          <Stack gap="sm">
+            <Group justify="space-between" wrap="wrap" gap="sm">
+              <Group>
+                <FileButton onChange={onSelectFile} accept="image/*,video/*">
+                  {(props) => <Button leftSection={<IconUpload />} {...props}>Choose file</Button>}
+                </FileButton>
+                <Text size="sm" c="dimmed">or drag & drop a file here</Text>
+              </Group>
+              {selectedFile && <Text size="sm" c="dimmed">{selectedFile.name}</Text>}
             </Group>
-            {selectedFile && <Text size="sm" c="gray.1">{selectedFile.name}</Text>}
-          </Group>
 
-          {previewUrl && (
-            <Group mt="sm">
-              <Image src={previewUrl} alt="Upload preview" h={140} fit="cover" radius="sm" />
+            {previewUrl && selectedFile?.type.startsWith('image') && (
+              <Image src={previewUrl} alt="Upload preview" mah={140} fit="contain" radius="sm" />
+            )}
+
+            {selectedFile && (
+              <Stack gap="xs">
+                <TextInput
+                  label="Title"
+                  placeholder="Enter a title (optional)"
+                  value={uploadTitle}
+                  onChange={(e) => onUploadTitleChange(e.currentTarget.value)}
+                />
+                <Textarea
+                  label="Caption"
+                  placeholder="Enter a caption or description (optional)"
+                  value={uploadCaption}
+                  onChange={(e) => onUploadCaptionChange(e.currentTarget.value)}
+                  autosize
+                  minRows={2}
+                  maxRows={4}
+                />
+              </Stack>
+            )}
+
+            {uploadProgress !== null && <Progress value={uploadProgress} size="md" striped animated />}
+            <Group justify="flex-end">
+              <Button
+                onClick={onUpload}
+                loading={uploading}
+                disabled={!selectedFile}
+                variant="filled"
+                color="blue"
+                leftSection={<IconUpload size={16} />}
+              >
+                Upload
+              </Button>
             </Group>
-          )}
-
-          {selectedFile && (
-            <Stack gap="xs" mt="sm">
-              <TextInput
-                label="Title"
-                placeholder="Enter a title (optional)"
-                value={uploadTitle}
-                onChange={(e) => onUploadTitleChange(e.currentTarget.value)}
-              />
-              <Textarea
-                label="Caption"
-                placeholder="Enter a caption or description (optional)"
-                value={uploadCaption}
-                onChange={(e) => onUploadCaptionChange(e.currentTarget.value)}
-                autosize
-                minRows={2}
-                maxRows={4}
-              />
-            </Stack>
-          )}
-
-          {uploadProgress !== null && <Progress value={uploadProgress} mt="sm" />}
-          <Group mt="sm">
-            <Button onClick={onUpload} loading={uploading} disabled={!selectedFile}>Upload</Button>
-          </Group>
+          </Stack>
         </Paper>
 
-        <Text fw={600}>Or add external URL</Text>
+        <Text fw={600}>Add External URL</Text>
         <Group wrap="wrap" gap="sm">
           <TextInput
             label="External URL"
@@ -140,7 +144,7 @@ export function MediaAddModal({
                 >
                   <div
                     style={{ position: 'absolute', inset: 0 }}
-                    dangerouslySetInnerHTML={{ __html: externalPreview.html }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(externalPreview.html, { ADD_TAGS: ['iframe'], ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder'] }) }}
                   />
                 </div>
               ) : (

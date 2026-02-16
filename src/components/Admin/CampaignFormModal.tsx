@@ -1,5 +1,7 @@
 import { Button, Card, Group, Modal, Select, Stack, Text, TextInput, Textarea } from '@mantine/core';
 import type { Campaign } from '@/types';
+import { useDirtyGuard } from '@/hooks/useDirtyGuard';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 export interface CampaignFormState {
   title: string;
@@ -31,10 +33,17 @@ export function CampaignFormModal({
   isSaving,
   onGoToMedia,
 }: CampaignFormModalProps) {
+  const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
+    current: formState,
+    isOpen: opened,
+    onClose,
+  });
+
   return (
+    <>
     <Modal
       opened={opened}
-      onClose={onClose}
+      onClose={guardedClose}
       title={editingCampaign ? 'Edit Campaign' : 'New Campaign'}
       size="lg"
     >
@@ -108,7 +117,7 @@ export function CampaignFormModal({
           </Card>
         )}
         <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
-          <Button variant="default" onClick={onClose}>
+          <Button variant="default" onClick={guardedClose}>
             Cancel
           </Button>
           <Button onClick={onSave} loading={isSaving}>
@@ -117,5 +126,16 @@ export function CampaignFormModal({
         </Group>
       </Stack>
     </Modal>
+
+    <ConfirmModal
+      opened={confirmOpen}
+      onClose={cancelDiscard}
+      onConfirm={confirmDiscard}
+      title="Discard changes?"
+      message="You have unsaved changes. Are you sure you want to discard them?"
+      confirmLabel="Discard"
+      confirmColor="red"
+    />
+  </>
   );
 }

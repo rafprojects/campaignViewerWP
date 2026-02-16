@@ -13,9 +13,12 @@ import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem } from './types';
+import type { Campaign, Company, MediaItem, UploadResponse } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
+import { getErrorMessage } from './utils/getErrorMessage';
+import { sortByOrder } from './utils/sortByOrder';
+import { useXhrUpload } from './hooks/useXhrUpload';
 import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
@@ -106,7 +109,7 @@ function AppContent({
   const [addMediaCaption, setAddMediaCaption] = useState('');
   const [addMediaLoading, setAddMediaLoading] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const { upload, progress: uploadProgress, resetProgress } = useXhrUpload();
   
   // Library media state for picking existing media
   const [libraryMedia, setLibraryMedia] = useState<MediaItem[]>([]);
@@ -202,8 +205,7 @@ function AppContent({
 
         const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE_SRC;
         const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE_SRC;
-        const orderedMedia = [...mediaItems]
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        const orderedMedia = sortByOrder(mediaItems)
           .map((media) => ({
             ...media,
             thumbnail: media.thumbnail || thumbnail,
@@ -263,7 +265,7 @@ function AppContent({
         `/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/media`
       );
       const items = Array.isArray(response) ? response : (response.items ?? []);
-      setEditCampaignMedia(items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+      setEditCampaignMedia(sortByOrder(items));
     } catch {
       setEditCampaignMedia([]);
     } finally {
@@ -275,7 +277,7 @@ function AppContent({
     setEditModalCampaign(null);
     setEditCampaignMedia([]);
     setUploadFile(null);
-    setUploadProgress(null);
+    resetProgress();
   };
 
   const handleRemoveMedia = async (mediaItem: MediaItem) => {
@@ -284,8 +286,9 @@ function AppContent({
       await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${editModalCampaign.id}/media/${mediaItem.id}`);
       setEditCampaignMedia((prev) => prev.filter((m) => m.id !== mediaItem.id));
       setActionMessage({ type: 'success', text: 'Media removed from campaign.' });
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to remove media.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Failed to remove media.') });
     }
   };
 
@@ -349,8 +352,9 @@ function AppContent({
       });
       setEditCampaignMedia((prev) => [...prev, response]);
       setActionMessage({ type: 'success', text: 'Media added to campaign.' });
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to add media.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Failed to add media.') });
     }
   };
 
@@ -371,8 +375,9 @@ function AppContent({
       setAddMediaCaption('');
       setActionMessage({ type: 'success', text: 'Media added.' });
       setEditMediaTab('list');
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to add media.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Failed to add media.') });
     } finally {
       setAddMediaLoading(false);
     }
@@ -380,66 +385,57 @@ function AppContent({
 
   const handleUploadMediaInEdit = async (file: File) => {
     if (!editModalCampaign || !file) return;
+
+    // Client-side validation
+    const ALLOWED_TYPES = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm', 'video/ogg',
+    ];
+    const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setActionMessage({ type: 'error', text: 'File type not allowed. Accepted: JPEG, PNG, GIF, WebP, MP4, WebM, OGG.' });
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setActionMessage({ type: 'error', text: `File too large (${Math.round(file.size / 1024 / 1024)} MB). Maximum size is 50 MB.` });
+      return;
+    }
+
     setUploadFile(file);
-    setUploadProgress(0);
     
     try {
-      // Get auth token before starting XHR
-      const token = authProvider ? await authProvider.getAccessToken() : null;
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('campaignId', editModalCampaign.id);
-
-      const xhr = new XMLHttpRequest();
-      
-      await new Promise<void>((resolve, reject) => {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            setUploadProgress(Math.round((e.loaded / e.total) * 100));
-          }
-        });
-        
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              const mediaType = file.type.startsWith('image') ? 'image' : 'video';
-              const newMedia: MediaItem = {
-                id: response.attachmentId || String(Date.now()),
-                type: mediaType,
-                source: 'upload',
-                url: response.url,
-                thumbnail: response.thumbnail,
-                order: editCampaignMedia.length + 1,
-              };
-              setEditCampaignMedia((prev) => [...prev, newMedia]);
-              setActionMessage({ type: 'success', text: 'File uploaded.' });
-              resolve();
-            } catch {
-              reject(new Error('Invalid response'));
-            }
-          } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
-          }
-        });
-        
-        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-        
-        xhr.open('POST', `${apiBaseUrl}/wp-json/wp-super-gallery/v1/media/upload`);
-        
-        // Add auth header if available
-        if (token) {
-          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        }
-        
-        xhr.send(formData);
+      // Step 1: Upload file to WordPress media library
+      const authHeaders = await apiClient.getAuthHeaders();
+      const response = await upload<UploadResponse>({
+        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        file,
+        headers: authHeaders,
       });
+
+      // Step 2: Link the uploaded file to the campaign
+      const mediaType = file.type.startsWith('image') ? 'image' : 'video';
+      const order = editCampaignMedia.length + 1;
+      const newMedia = await apiClient.post<MediaItem>(
+        `/wp-json/wp-super-gallery/v1/campaigns/${editModalCampaign.id}/media`,
+        {
+          type: mediaType,
+          source: 'upload',
+          url: response.url,
+          thumbnail: response.thumbnail ?? response.url,
+          attachmentId: response.attachmentId,
+          order,
+        },
+      );
+
+      setEditCampaignMedia((prev) => [...prev, newMedia]);
+      setActionMessage({ type: 'success', text: 'File uploaded and added to campaign.' });
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Upload failed.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Upload failed.') });
     } finally {
       setUploadFile(null);
-      setUploadProgress(null);
+      resetProgress();
     }
   };
 
@@ -613,6 +609,7 @@ function AppContent({
           userPermissions={permissions}
           accessMode={localAccessMode}
           isAdmin={isAdmin}
+          isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}
           onEditCampaign={handleEditCampaign}
           onArchiveCampaign={handleArchiveCampaign}

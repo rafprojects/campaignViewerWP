@@ -1,9 +1,11 @@
-import { Image as ImageIcon, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
+import { IconPhoto, IconX, IconZoomIn, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal } from '@mantine/core';
 import type { MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
+import { useSwipe } from '@/hooks/useSwipe';
 import { CarouselNavigation } from './CarouselNavigation';
+import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 
 interface ImageCarouselProps {
   images: MediaItem[];
@@ -17,13 +19,18 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
     enableArrowNavigation: true,
   });
 
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: nextImage,
+    onSwipeRight: prevImage,
+  });
+
   const currentImage = images[currentIndex];
 
   return (
     <Stack gap="md">
       <Title order={3} size="h5">
         <Group gap={8} component="span">
-          <ImageIcon size={18} />
+          <IconPhoto size={18} />
           Images ({images.length})
         </Group>
       </Title>
@@ -35,6 +42,8 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         tabIndex={0}
         aria-label={`View image ${currentIndex + 1} of ${images.length}`}
         onClick={openLightbox}
+        {...swipeHandlers}
+        style={{ touchAction: 'pan-y' }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
@@ -72,7 +81,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           variant="light"
           aria-label="Open lightbox"
         >
-          <ZoomIn size={20} />
+          <IconZoomIn size={20} />
         </ActionIcon>
       </Box>
 
@@ -105,10 +114,10 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         withCloseButton={false}
         transitionProps={{ duration: 0 }}
         styles={{
-          content: { background: 'rgba(0, 0, 0, 0.95)', overflow: 'hidden' },
+          content: { background: 'color-mix(in srgb, var(--wpsg-color-background) 95%, transparent)', overflow: 'hidden' },
         }}
       >
-        <Box h="100vh" pos="relative" component="div">
+        <Box h="100vh" pos="relative" component="div" {...swipeHandlers} style={{ touchAction: 'pan-y' }}>
           {isLightboxOpen && (
             <Box
               style={{
@@ -130,6 +139,9 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             </Box>
           )}
 
+          {/* Keyboard hint (shown once per session) */}
+          <KeyboardHintOverlay visible={isLightboxOpen} />
+
           {/* Close button */}
           <ActionIcon
             pos="absolute"
@@ -140,7 +152,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             variant="light"
             aria-label="Close lightbox"
           >
-            <X size={24} />
+            <IconX size={24} />
           </ActionIcon>
 
           {/* Navigation arrows */}
@@ -159,7 +171,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 size="xl"
                 aria-label="Previous image (lightbox)"
               >
-                <ChevronLeft size={32} />
+                <IconChevronLeft size={32} />
               </ActionIcon>
               <ActionIcon
                 pos="absolute"
@@ -174,7 +186,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 size="xl"
                 aria-label="Next image (lightbox)"
               >
-                <ChevronRight size={32} />
+                <IconChevronRight size={32} />
               </ActionIcon>
             </>
           )}

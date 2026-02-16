@@ -1,4 +1,6 @@
 import { Button, Group, Modal, Stack, TextInput, Textarea } from '@mantine/core';
+import { useDirtyGuard } from '@/hooks/useDirtyGuard';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 interface MediaEditModalProps {
   opened: boolean;
@@ -23,8 +25,15 @@ export function MediaEditModal({
   onEditingThumbnailChange,
   onSave,
 }: MediaEditModalProps) {
+  const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
+    current: { editingTitle, editingCaption, editingThumbnail },
+    isOpen: opened,
+    onClose,
+  });
+
   return (
-    <Modal opened={opened} onClose={onClose} title="Edit Media" padding="md">
+    <>
+    <Modal opened={opened} onClose={guardedClose} title="Edit Media" padding="md">
       <Stack gap="md">
         <TextInput
           label="Title"
@@ -51,10 +60,21 @@ export function MediaEditModal({
           description="Custom preview image URL (optional)"
         />
         <Group justify="flex-end" wrap="wrap" gap="sm">
-          <Button variant="default" onClick={onClose}>Cancel</Button>
+          <Button variant="default" onClick={guardedClose}>Cancel</Button>
           <Button onClick={onSave}>Save</Button>
         </Group>
       </Stack>
     </Modal>
+
+    <ConfirmModal
+      opened={confirmOpen}
+      onClose={cancelDiscard}
+      onConfirm={confirmDiscard}
+      title="Discard changes?"
+      message="You have unsaved changes. Are you sure you want to discard them?"
+      confirmLabel="Discard"
+      confirmColor="red"
+    />
+    </>
   );
 }

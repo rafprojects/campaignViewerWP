@@ -1,4 +1,4 @@
-import { Container, Group, Button, Tooltip, ActionIcon, Text } from '@mantine/core';
+import { Box, Container, Group, Button, Tooltip, ActionIcon, Text } from '@mantine/core';
 import { IconSettings } from '@tabler/icons-react';
 
 interface AuthBarProps {
@@ -17,6 +17,18 @@ export function AuthBar({
   onLogout,
 }: AuthBarProps) {
   return (
+    <Box
+      component="nav"
+      aria-label="User navigation"
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 'var(--z-header, 100)',
+        background: 'color-mix(in srgb, var(--wpsg-color-surface) 92%, transparent)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--wpsg-color-border)',
+      }}
+    >
     <Container size="xl" py="sm">
       <Group justify="space-between" wrap="wrap" gap="sm">
         <Text size="sm">Signed in as {email}</Text>
@@ -54,5 +66,6 @@ export function AuthBar({
         </Group>
       </Group>
     </Container>
+    </Box>
   );
 }
