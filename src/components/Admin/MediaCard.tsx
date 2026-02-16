@@ -1,6 +1,6 @@
-import { forwardRef } from 'react';
+import { forwardRef, type DragEvent } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon } from '@mantine/core';
-import { IconPhoto, IconTrash } from '@tabler/icons-react';
+import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import styles from './MediaCard.module.scss';
@@ -12,19 +12,40 @@ interface MediaCardProps {
   showUrl?: boolean;
   onEdit: () => void;
   onDelete: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
   onImageClick?: () => void;
+  draggable?: boolean;
+  onDragStart?: (event: DragEvent<HTMLDivElement>) => void;
+  onDragOver?: (event: DragEvent<HTMLDivElement>) => void;
+  onDrop?: (event: DragEvent<HTMLDivElement>) => void;
+  onDragEnd?: (event: DragEvent<HTMLDivElement>) => void;
 }
 
 export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
-  ({ item, height, compact = false, showUrl = false, onEdit, onDelete, onMoveUp, onMoveDown, onImageClick }, ref) => {
+  ({
+    item,
+    height,
+    compact = false,
+    showUrl = false,
+    onEdit,
+    onDelete,
+    onImageClick,
+    draggable = false,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
+  }, ref) => {
     const isClickableImage = item.type === 'image' && onImageClick;
 
     return (
       <div
         ref={ref}
         className={styles.mediaCard}
+        draggable={draggable}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onDragEnd={onDragEnd}
       >
         <Card
           shadow="sm"
@@ -83,9 +104,10 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 )}
               </Box>
               <Group gap={4} wrap="nowrap">
+                <ActionIcon variant="subtle" aria-label="Drag media to reorder" style={{ cursor: 'grab' }}>
+                  <IconGripVertical size={16} />
+                </ActionIcon>
                 <ActionIcon variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-                <ActionIcon variant="subtle" onClick={onMoveUp} aria-label="Move media up">↑</ActionIcon>
-                <ActionIcon variant="subtle" onClick={onMoveDown} aria-label="Move media down">↓</ActionIcon>
                 <ActionIcon variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
               </Group>
             </Group>

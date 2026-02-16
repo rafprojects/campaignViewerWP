@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, type DragEvent as ReactDragEvent } from 'react';
 import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
 import { MediaCard } from './MediaCard';
@@ -7,7 +7,7 @@ import { MediaAddModal } from './MediaAddModal';
 import { MediaEditModal } from './MediaEditModal';
 import { MediaDeleteModal } from './MediaDeleteModal';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
@@ -48,6 +48,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
   const [rescanning, setRescanning] = useState(false);
   const reorderingRef = useRef(false);
+  const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
 
   // View options
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -301,8 +302,8 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   useEffect(() => {
     const el = dropRef.current;
     if (!el) return;
-    const onDragOver = (e: DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
-    const onDrop = (e: DragEvent) => {
+    const onDragOver = (e: globalThis.DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
+    const onDrop = (e: globalThis.DragEvent) => {
       e.preventDefault();
       const f = e.dataTransfer?.files?.[0];
       if (f) setSelectedFile(f);
@@ -388,32 +389,17 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
-  async function moveItem(item: MediaItem, direction: 'up' | 'down') {
+  async function reorderMediaItems(nextMedia: MediaItem[]) {
     // Prevent concurrent reorder operations using stable ref-based guard
     if (reorderingRef.current) return;
     reorderingRef.current = true;
 
     const prev = media.slice();
-    const idx = media.findIndex((m) => m.id === item.id);
-    if (idx === -1) {
-      reorderingRef.current = false;
-      return;
-    }
-
-    const newMedia = media.slice();
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newMedia.length) {
-      reorderingRef.current = false;
-      return;
-    }
-    const temp = newMedia[swapIdx];
-    newMedia[swapIdx] = newMedia[idx];
-    newMedia[idx] = temp;
-    const itemsToSend = newMedia.map((it, i) => ({ id: it.id, order: i + 1 }));
+    const itemsToSend = nextMedia.map((it, i) => ({ id: it.id, order: i + 1 }));
 
     try {
       await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
-      setMedia(newMedia.map((it, i) => ({ ...it, order: i + 1 })));
+      setMedia(nextMedia.map((it, i) => ({ ...it, order: i + 1 })));
       showNotification({ title: 'Reordered', message: 'Media order updated.' });
       onCampaignsUpdated?.();
     } catch (err) {
@@ -424,6 +410,42 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       reorderingRef.current = false;
     }
   }
+
+  const handleDragStart = (mediaId: string) => {
+    setDraggedMediaId(mediaId);
+  };
+
+  const handleDragOver = (event: ReactDragEvent<HTMLElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  };
+
+  const handleDrop = async (targetMediaId: string) => {
+    if (!draggedMediaId || draggedMediaId === targetMediaId) {
+      setDraggedMediaId(null);
+      return;
+    }
+
+    const sourceIndex = media.findIndex((m) => m.id === draggedMediaId);
+    const targetIndex = media.findIndex((m) => m.id === targetMediaId);
+    if (sourceIndex === -1 || targetIndex === -1) {
+      setDraggedMediaId(null);
+      return;
+    }
+
+    const nextMedia = media.slice();
+    const [moved] = nextMedia.splice(sourceIndex, 1);
+    nextMedia.splice(targetIndex, 0, moved);
+
+    setDraggedMediaId(null);
+    await reorderMediaItems(nextMedia);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedMediaId(null);
+  };
 
   const listHeight = useMemo(() => {
     if (media.length === 0) return 240;
@@ -439,6 +461,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       <Box
         role="row"
         key={item.id}
+        draggable
+        data-testid={`media-draggable-${item.id}`}
+        onDragStart={() => handleDragStart(item.id)}
+        onDragOver={handleDragOver}
+        onDrop={() => void handleDrop(item.id)}
+        onDragEnd={handleDragEnd}
         style={{
           ...style,
           display: 'grid',
@@ -485,9 +513,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         <Box role="cell"><Text size="sm">{item.source}</Text></Box>
         <Box role="cell">
           <Group gap={4} wrap="nowrap">
+            <ActionIcon variant="subtle" aria-label="Drag media to reorder" style={{ cursor: 'grab' }}>
+              <IconGripVertical size={16} />
+            </ActionIcon>
             <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-            <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
-            <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
             <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
           </Group>
         </Box>
@@ -580,7 +609,15 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
               <Table verticalSpacing="xs" highlightOnHover>
                 <Table.Tbody>
                   {media.map((item) => (
-                    <Table.Tr key={item.id}>
+                    <Table.Tr
+                      key={item.id}
+                      draggable
+                      data-testid={`media-draggable-${item.id}`}
+                      onDragStart={() => handleDragStart(item.id)}
+                      onDragOver={handleDragOver}
+                      onDrop={() => void handleDrop(item.id)}
+                      onDragEnd={handleDragEnd}
+                    >
                       <Table.Td>
                         <Image
                           src={item.thumbnail ?? item.url}
@@ -617,9 +654,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                       <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
                       <Table.Td>
                         <Group gap={4}>
+                          <ActionIcon variant="subtle" aria-label="Drag media to reorder" style={{ cursor: 'grab' }}>
+                            <IconGripVertical size={16} />
+                          </ActionIcon>
                           <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-                          <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
-                          <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
                           <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
                         </Group>
                       </Table.Td>
@@ -642,6 +680,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             return (
               <Grid.Col
                 key={item.id}
+                draggable
+                data-testid={`media-draggable-${item.id}`}
+                onDragStart={() => handleDragStart(item.id)}
+                onDragOver={handleDragOver}
+                onDrop={() => void handleDrop(item.id)}
+                onDragEnd={handleDragEnd}
                 span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
               >
                 <MediaCard
@@ -651,9 +695,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                   showUrl={cardSize === 'large'}
                   onEdit={() => openEdit(item)}
                   onDelete={() => handleDelete(item)}
-                  onMoveUp={() => moveItem(item, 'up')}
-                  onMoveDown={() => moveItem(item, 'down')}
                   onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
+                  draggable
+                  onDragStart={() => handleDragStart(item.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => void handleDrop(item.id)}
+                  onDragEnd={handleDragEnd}
                 />
               </Grid.Col>
             );

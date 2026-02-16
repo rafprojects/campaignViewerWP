@@ -83,10 +83,10 @@ This report also records the baseline inherited from Phase 10 so planning and im
 **Effort:** Medium (backend + frontend)  
 **Impact:** High
 
-### B2. Drag-and-Drop Media Reordering
+### B2. Drag-and-Drop Media Reordering ✅
 
-- [ ] Replace manual up/down controls with drag-and-drop ordering
-- [ ] Persist order changes reliably through existing media update APIs
+- [x] Replace manual up/down controls with drag-and-drop ordering
+- [x] Persist order changes reliably through existing media update APIs
 
 **Effort:** Medium  
 **Impact:** High
@@ -122,6 +122,7 @@ This report also records the baseline inherited from Phase 10 so planning and im
 - **2026-02-16:** A3 completed — campaign cards auto-select representative media thumbnails; edit modal now supports manual thumbnail override (choose existing campaign media) and custom thumbnail upload.
 - **2026-02-16:** A4 completed — added online/offline detection, persistent offline banner, API fail-fast behavior while offline, and reconnect-triggered campaign revalidation.
 - **2026-02-16:** B1 completed — campaigns endpoint now supports `include_media=1` and returns `mediaByCampaign`; App consumes bulk media map to avoid per-campaign `/media` fan-out requests on initial gallery load.
+- **2026-02-16:** B2 completed — MediaTab now supports drag-and-drop media reordering (grid/list/virtualized list), MediaCard exposes drag-handle behavior, and reorder persistence continues through existing `/media/reorder` flow with updated test coverage.
 
 ---
 

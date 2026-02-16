@@ -36,7 +36,7 @@ describe('MediaTab', () => {
     apiClient.delete.mockReset();
   });
 
-  it('renders media items and supports edit/delete/reorder', async () => {
+  it('renders media items and supports edit/delete/drag-reorder', async () => {
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -75,7 +75,12 @@ describe('MediaTab', () => {
       );
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Move media down' })[0]);
+    const dragSource = screen.getByTestId('media-draggable-m1');
+    const dragTarget = screen.getByTestId('media-draggable-m2');
+    fireEvent.dragStart(dragSource);
+    fireEvent.dragOver(dragTarget);
+    fireEvent.drop(dragTarget);
+    fireEvent.dragEnd(dragSource);
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
         '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
@@ -421,7 +426,11 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    fireEvent.click(await screen.findByLabelText('Move media up'));
+    const dragItem = await screen.findByTestId('media-draggable-m1');
+    fireEvent.dragStart(dragItem);
+    fireEvent.dragOver(dragItem);
+    fireEvent.drop(dragItem);
+    fireEvent.dragEnd(dragItem);
     expect(apiClient.put).not.toHaveBeenCalledWith(
       '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
       expect.any(Object),
@@ -453,8 +462,12 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    const downButtons = await screen.findAllByLabelText('Move media down');
-    fireEvent.click(downButtons[0]);
+    const dragSource = await screen.findByTestId('media-draggable-m1');
+    const dragTarget = await screen.findByTestId('media-draggable-m2');
+    fireEvent.dragStart(dragSource);
+    fireEvent.dragOver(dragTarget);
+    fireEvent.drop(dragTarget);
+    fireEvent.dragEnd(dragSource);
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Reorder failed' }),
