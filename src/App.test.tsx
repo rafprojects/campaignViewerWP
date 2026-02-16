@@ -180,25 +180,7 @@ describe('App', () => {
         } as Response);
       }
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns/101/media') && method === 'GET') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ([
-            {
-              id: 'm1',
-              type: 'image',
-              source: 'upload',
-              url: 'https://example.com/image-original.jpg',
-              thumbnail: 'https://example.com/image-thumb.jpg',
-              caption: 'Representative media',
-              order: 1,
-            },
-          ]),
-        } as Response);
-      }
-
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns') && method === 'GET') {
+      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -218,6 +200,19 @@ describe('App', () => {
                 updatedAt: '2026-01-02T00:00:00.000Z',
               },
             ],
+            mediaByCampaign: {
+              '101': [
+                {
+                  id: 'm1',
+                  type: 'image',
+                  source: 'upload',
+                  url: 'https://example.com/image-original.jpg',
+                  thumbnail: 'https://example.com/image-thumb.jpg',
+                  caption: 'Representative media',
+                  order: 1,
+                },
+              ],
+            },
           }),
         } as Response);
       }
@@ -229,6 +224,67 @@ describe('App', () => {
 
     const campaignImage = await screen.findByAltText('Campaign Alpha');
     expect(campaignImage).toHaveAttribute('src', expect.stringContaining('image-thumb.jpg'));
+  });
+
+  it('uses campaigns include_media response without per-campaign media fetches', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+
+      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: [
+              {
+                id: '101',
+                companyId: 'acme',
+                title: 'Campaign Alpha',
+                description: 'Test description',
+                thumbnail: '',
+                coverImage: '',
+                status: 'active',
+                visibility: 'public',
+                tags: ['launch'],
+                createdAt: '2026-01-01T00:00:00.000Z',
+                updatedAt: '2026-01-02T00:00:00.000Z',
+              },
+            ],
+            mediaByCampaign: {
+              '101': [
+                {
+                  id: 'm1',
+                  type: 'image',
+                  source: 'upload',
+                  url: 'https://example.com/image-original.jpg',
+                  thumbnail: 'https://example.com/image-thumb.jpg',
+                  caption: 'Bulk media',
+                  order: 1,
+                },
+              ],
+            },
+          }),
+        } as Response;
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ items: [] }),
+      } as Response;
+    });
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock as typeof fetch);
+
+    render(<App />);
+
+    expect(await screen.findByText('Campaign Alpha')).toBeInTheDocument();
+
+    const calledPerCampaignMedia = fetchMock.mock.calls.some(([url]) =>
+      String(url).includes('/wp-json/wp-super-gallery/v1/campaigns/101/media'),
+    );
+    expect(calledPerCampaignMedia).toBe(false);
   });
 
   it('edits campaign using modal', async () => {

@@ -75,10 +75,10 @@ This report also records the baseline inherited from Phase 10 so planning and im
 
 ## Track B — High-Impact Carryover (from FUTURE_TASKS)
 
-### B1. Fix N+1 Media Fetch in CardGallery (E2 carryover)
+### B1. Fix N+1 Media Fetch in CardGallery (E2 carryover) ✅
 
-- [ ] Introduce bulk media loading strategy (new endpoint or expanded campaign payload)
-- [ ] Reduce initial request fan-out for large campaign sets
+- [x] Introduce bulk media loading strategy (expanded campaigns payload via `include_media=1`)
+- [x] Reduce initial request fan-out for large campaign sets
 
 **Effort:** Medium (backend + frontend)  
 **Impact:** High
@@ -121,6 +121,7 @@ This report also records the baseline inherited from Phase 10 so planning and im
 - **2026-02-16 (QA):** Confirmed transparent rendering looks good for 9:16; additional ratio validation pending.
 - **2026-02-16:** A3 completed — campaign cards auto-select representative media thumbnails; edit modal now supports manual thumbnail override (choose existing campaign media) and custom thumbnail upload.
 - **2026-02-16:** A4 completed — added online/offline detection, persistent offline banner, API fail-fast behavior while offline, and reconnect-triggered campaign revalidation.
+- **2026-02-16:** B1 completed — campaigns endpoint now supports `include_media=1` and returns `mediaByCampaign`; App consumes bulk media map to avoid per-campaign `/media` fan-out requests on initial gallery load.
 
 ---
 

@@ -390,6 +390,8 @@ class WPSG_REST {
         $visibility = sanitize_text_field($request->get_param('visibility'));
         $company = sanitize_text_field($request->get_param('company'));
         $search = sanitize_text_field($request->get_param('search'));
+        $include_media_raw = $request->get_param('include_media');
+        $include_media = in_array(strtolower((string) $include_media_raw), ['1', 'true', 'yes'], true);
         $page = max(1, intval($request->get_param('page')));
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
 
@@ -398,7 +400,7 @@ class WPSG_REST {
         $is_admin = current_user_can('manage_options');
         $search_key = $search ? md5($search) : 'none';
         $cache_key = sprintf(
-            'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s',
+            'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s_%s',
             $user_id,
             $status ?: 'all',
             $visibility ?: 'all',
@@ -406,7 +408,8 @@ class WPSG_REST {
             $search_key,
             $page,
             $per_page,
-            $is_admin ? 'admin' : 'user'
+            $is_admin ? 'admin' : 'user',
+            $include_media ? 'with_media' : 'no_media'
         );
 
         // Try to get cached data
@@ -471,6 +474,15 @@ class WPSG_REST {
         $query = new WP_Query($args);
         $items = array_map([self::class, 'format_campaign'], $query->posts);
 
+        $media_by_campaign = [];
+        if ($include_media && !empty($query->posts)) {
+            foreach ($query->posts as $post) {
+                $campaign_id = (string) $post->ID;
+                $media_items = get_post_meta($post->ID, 'media_items', true);
+                $media_by_campaign[$campaign_id] = is_array($media_items) ? $media_items : [];
+            }
+        }
+
         $response_data = [
             'items' => $items,
             'page' => $page,
@@ -478,6 +490,10 @@ class WPSG_REST {
             'total' => (int) $query->found_posts,
             'totalPages' => (int) $query->max_num_pages,
         ];
+
+        if ($include_media) {
+            $response_data['mediaByCampaign'] = $media_by_campaign;
+        }
 
         // Cache using configured TTL (defaults to 5 minutes / 300 seconds)
         $ttl = 300;

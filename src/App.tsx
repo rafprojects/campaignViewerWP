@@ -39,6 +39,7 @@ type ApiCampaign = Omit<Campaign, 'company' | 'videos' | 'images'> & {
 
 interface ApiCampaignResponse {
   items: ApiCampaign[];
+  mediaByCampaign?: Record<string, MediaItem[]>;
 }
 
 const titleCase = (value: string) =>
@@ -173,13 +174,13 @@ function AppContent({
   const fetchCampaigns = useCallback(async () => {
     setCampaignLoadProgress({ total: 0, completed: 0 });
     const response = await apiClient.get<ApiCampaignResponse>(
-      '/wp-json/wp-super-gallery/v1/campaigns',
+      '/wp-json/wp-super-gallery/v1/campaigns?include_media=1',
     );
     const items = response.items ?? [];
+    const mediaByCampaign = response.mediaByCampaign ?? {};
     setCampaignLoadProgress({ total: items.length, completed: 0 });
 
-    const mapped = await Promise.all(
-      items.map(async (item) => {
+    const mapped = items.map((item) => {
         let mediaItems: MediaItem[] = [];
 
         const canAccessCampaign =
@@ -188,26 +189,7 @@ function AppContent({
           permissions.some((permissionId) => String(permissionId) === String(item.id));
 
         if (canAccessCampaign) {
-          try {
-            const mediaResponse = await apiClient.get<
-              MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
-            >(`/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`);
-            mediaItems = Array.isArray(mediaResponse)
-              ? mediaResponse
-              : (mediaResponse.items ?? []);
-          } catch {
-            mediaItems = [];
-          } finally {
-            setCampaignLoadProgress((prev) => ({
-              total: prev.total,
-              completed: Math.min(prev.completed + 1, prev.total),
-            }));
-          }
-        } else {
-          setCampaignLoadProgress((prev) => ({
-            total: prev.total,
-            completed: Math.min(prev.completed + 1, prev.total),
-          }));
+          mediaItems = mediaByCampaign[String(item.id)] ?? [];
         }
 
         const sortedMedia = sortByOrder(mediaItems);
@@ -235,8 +217,9 @@ function AppContent({
           videos,
           images,
         } as Campaign;
-      }),
-    );
+      });
+
+    setCampaignLoadProgress({ total: items.length, completed: items.length });
 
     return mapped;
   }, [apiClient, isAdmin, permissions]);
