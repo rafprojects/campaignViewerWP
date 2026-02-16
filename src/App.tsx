@@ -1,16 +1,24 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Container, Group, Button, Alert, Loader, Center, Stack, ActionIcon, Tooltip, Modal, TextInput, Textarea, Select, Card, Image, Text, SimpleGrid, Badge, FileButton, Tabs, Progress } from '@mantine/core';
+import { Container, Alert, Loader, Center, Stack } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
-import { IconSettings, IconTrash, IconPlus, IconUpload, IconLink, IconPhoto } from '@tabler/icons-react';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
 import { LoginForm } from './components/Auth/LoginForm';
+import { AuthBar } from './components/Auth/AuthBar';
+import { EditCampaignModal } from './components/Campaign/EditCampaignModal';
+import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
+import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem } from './types';
+import type { Campaign, Company, MediaItem, UploadResponse } from './types';
+import { getCompanyById } from './data/mockData';
+import { FALLBACK_IMAGE_SRC } from './utils/fallback';
+import { getErrorMessage } from './utils/getErrorMessage';
+import { sortByOrder } from './utils/sortByOrder';
+import { useXhrUpload } from './hooks/useXhrUpload';
 import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
@@ -32,19 +40,6 @@ interface ApiCampaignResponse {
   items: ApiCampaign[];
 }
 
-const FALLBACK_IMAGE =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="%23f0f0f0"/><stop offset="1" stop-color="%23d9d9d9"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="24" fill="%23999">WP Super Gallery</text></svg>';
-
-
-const COMPANY_THEME: Record<string, Pick<Company, 'name' | 'logo' | 'brandColor'>> = {
-  nike: { name: 'Nike', logo: '🏃', brandColor: '#FF6B00' },
-  adidas: { name: 'Adidas', logo: '⚽', brandColor: '#000000' },
-  apple: { name: 'Apple', logo: '🍎', brandColor: '#555555' },
-  spotify: { name: 'Spotify', logo: '🎵', brandColor: '#1DB954' },
-  netflix: { name: 'Netflix', logo: '🎬', brandColor: '#E50914' },
-  tesla: { name: 'Tesla', logo: '🚗', brandColor: '#CC0000' },
-};
-
 const titleCase = (value: string) =>
   value
     .split(/[-_\s]+/)
@@ -63,9 +58,9 @@ const stringToColor = (value: string) => {
 
 const buildCompany = (companyId: string): Company => {
   const key = companyId?.toLowerCase() || 'unknown';
-  const theme = COMPANY_THEME[key];
-  if (theme) {
-    return { id: key, ...theme };
+  const company = getCompanyById(key);
+  if (company) {
+    return company;
   }
   return {
     id: key,
@@ -114,7 +109,7 @@ function AppContent({
   const [addMediaCaption, setAddMediaCaption] = useState('');
   const [addMediaLoading, setAddMediaLoading] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const { upload, progress: uploadProgress, resetProgress } = useXhrUpload();
   
   // Library media state for picking existing media
   const [libraryMedia, setLibraryMedia] = useState<MediaItem[]>([]);
@@ -131,6 +126,10 @@ function AppContent({
   const [externalMediaUrl, setExternalMediaUrl] = useState('');
   const [externalMediaCaption, setExternalMediaCaption] = useState('');
   const [externalMediaThumbnail, setExternalMediaThumbnail] = useState('');
+  const [campaignLoadProgress, setCampaignLoadProgress] = useState<{ total: number; completed: number }>({
+    total: 0,
+    completed: 0,
+  });
 
   useEffect(() => {
     if (!actionMessage) return;
@@ -165,15 +164,23 @@ function AppContent({
 
   // SWR fetcher for campaigns
   const fetchCampaigns = useCallback(async () => {
+    setCampaignLoadProgress({ total: 0, completed: 0 });
     const response = await apiClient.get<ApiCampaignResponse>(
       '/wp-json/wp-super-gallery/v1/campaigns',
     );
     const items = response.items ?? [];
+    setCampaignLoadProgress({ total: items.length, completed: 0 });
 
     const mapped = await Promise.all(
       items.map(async (item) => {
         let mediaItems: MediaItem[] = [];
-        if (isAuthenticated || item.visibility === 'public') {
+
+        const canAccessCampaign =
+          isAdmin ||
+          item.visibility === 'public' ||
+          permissions.some((permissionId) => String(permissionId) === String(item.id));
+
+        if (canAccessCampaign) {
           try {
             const mediaResponse = await apiClient.get<
               MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
@@ -183,13 +190,22 @@ function AppContent({
               : (mediaResponse.items ?? []);
           } catch {
             mediaItems = [];
+          } finally {
+            setCampaignLoadProgress((prev) => ({
+              total: prev.total,
+              completed: Math.min(prev.completed + 1, prev.total),
+            }));
           }
+        } else {
+          setCampaignLoadProgress((prev) => ({
+            total: prev.total,
+            completed: Math.min(prev.completed + 1, prev.total),
+          }));
         }
 
-        const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE;
-        const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE;
-        const orderedMedia = [...mediaItems]
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE_SRC;
+        const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE_SRC;
+        const orderedMedia = sortByOrder(mediaItems)
           .map((media) => ({
             ...media,
             thumbnail: media.thumbnail || thumbnail,
@@ -212,7 +228,7 @@ function AppContent({
     );
 
     return mapped;
-  }, [apiClient, isAuthenticated]);
+  }, [apiClient, isAdmin, permissions]);
 
   const campaignsKey = isReady
     ? ['campaigns', user?.id ?? 'anon', isAuthenticated, isAdmin ? 'admin' : 'user']
@@ -249,7 +265,7 @@ function AppContent({
         `/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/media`
       );
       const items = Array.isArray(response) ? response : (response.items ?? []);
-      setEditCampaignMedia(items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+      setEditCampaignMedia(sortByOrder(items));
     } catch {
       setEditCampaignMedia([]);
     } finally {
@@ -261,7 +277,7 @@ function AppContent({
     setEditModalCampaign(null);
     setEditCampaignMedia([]);
     setUploadFile(null);
-    setUploadProgress(null);
+    resetProgress();
   };
 
   const handleRemoveMedia = async (mediaItem: MediaItem) => {
@@ -270,8 +286,9 @@ function AppContent({
       await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${editModalCampaign.id}/media/${mediaItem.id}`);
       setEditCampaignMedia((prev) => prev.filter((m) => m.id !== mediaItem.id));
       setActionMessage({ type: 'success', text: 'Media removed from campaign.' });
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to remove media.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Failed to remove media.') });
     }
   };
 
@@ -335,8 +352,9 @@ function AppContent({
       });
       setEditCampaignMedia((prev) => [...prev, response]);
       setActionMessage({ type: 'success', text: 'Media added to campaign.' });
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to add media.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Failed to add media.') });
     }
   };
 
@@ -357,8 +375,9 @@ function AppContent({
       setAddMediaCaption('');
       setActionMessage({ type: 'success', text: 'Media added.' });
       setEditMediaTab('list');
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to add media.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Failed to add media.') });
     } finally {
       setAddMediaLoading(false);
     }
@@ -366,66 +385,57 @@ function AppContent({
 
   const handleUploadMediaInEdit = async (file: File) => {
     if (!editModalCampaign || !file) return;
+
+    // Client-side validation
+    const ALLOWED_TYPES = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm', 'video/ogg',
+    ];
+    const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setActionMessage({ type: 'error', text: 'File type not allowed. Accepted: JPEG, PNG, GIF, WebP, MP4, WebM, OGG.' });
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setActionMessage({ type: 'error', text: `File too large (${Math.round(file.size / 1024 / 1024)} MB). Maximum size is 50 MB.` });
+      return;
+    }
+
     setUploadFile(file);
-    setUploadProgress(0);
     
     try {
-      // Get auth token before starting XHR
-      const token = authProvider ? await authProvider.getAccessToken() : null;
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('campaignId', editModalCampaign.id);
-
-      const xhr = new XMLHttpRequest();
-      
-      await new Promise<void>((resolve, reject) => {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            setUploadProgress(Math.round((e.loaded / e.total) * 100));
-          }
-        });
-        
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              const mediaType = file.type.startsWith('image') ? 'image' : 'video';
-              const newMedia: MediaItem = {
-                id: response.attachmentId || String(Date.now()),
-                type: mediaType,
-                source: 'upload',
-                url: response.url,
-                thumbnail: response.thumbnail,
-                order: editCampaignMedia.length + 1,
-              };
-              setEditCampaignMedia((prev) => [...prev, newMedia]);
-              setActionMessage({ type: 'success', text: 'File uploaded.' });
-              resolve();
-            } catch {
-              reject(new Error('Invalid response'));
-            }
-          } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
-          }
-        });
-        
-        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-        
-        xhr.open('POST', `${apiBaseUrl}/wp-json/wp-super-gallery/v1/media/upload`);
-        
-        // Add auth header if available
-        if (token) {
-          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        }
-        
-        xhr.send(formData);
+      // Step 1: Upload file to WordPress media library
+      const authHeaders = await apiClient.getAuthHeaders();
+      const response = await upload<UploadResponse>({
+        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        file,
+        headers: authHeaders,
       });
+
+      // Step 2: Link the uploaded file to the campaign
+      const mediaType = file.type.startsWith('image') ? 'image' : 'video';
+      const order = editCampaignMedia.length + 1;
+      const newMedia = await apiClient.post<MediaItem>(
+        `/wp-json/wp-super-gallery/v1/campaigns/${editModalCampaign.id}/media`,
+        {
+          type: mediaType,
+          source: 'upload',
+          url: response.url,
+          thumbnail: response.thumbnail ?? response.url,
+          attachmentId: response.attachmentId,
+          order,
+        },
+      );
+
+      setEditCampaignMedia((prev) => [...prev, newMedia]);
+      setActionMessage({ type: 'success', text: 'File uploaded and added to campaign.' });
+      await mutateCampaigns();
     } catch (err) {
-      setActionMessage({ type: 'error', text: err instanceof Error ? err.message : 'Upload failed.' });
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Upload failed.') });
     } finally {
       setUploadFile(null);
-      setUploadProgress(null);
+      resetProgress();
     }
   };
 
@@ -526,43 +536,13 @@ function AppContent({
         <LoginForm onSubmit={handleLogin} />
       )}
       {isAuthenticated && user && (
-        <Container size="xl" py="sm">
-          <Group justify="space-between" wrap="wrap" gap="sm">
-            <Text size="sm">Signed in as {user.email}</Text>
-            <Group gap="sm" wrap="wrap">
-              {isAdmin && (
-                <>
-                  <Button
-                    variant="default"
-                    onClick={openAdminPanel}
-                    className="wpsg-admin-btn"
-                    size="sm"
-                  >
-                    Admin Panel
-                  </Button>
-                  <Tooltip label="Settings">
-                    <ActionIcon
-                      variant="default"
-                      size="lg"
-                      className="wpsg-admin-btn"
-                      onClick={openSettings}
-                      aria-label="Settings"
-                    >
-                      <IconSettings size={20} />
-                    </ActionIcon>
-                  </Tooltip>
-                </>
-              )}
-              <Button
-                variant="subtle"
-                onClick={() => void logout()}
-                size="sm"
-              >
-                Sign out
-              </Button>
-            </Group>
-          </Group>
-        </Container>
+        <AuthBar
+          email={user.email}
+          isAdmin={isAdmin}
+          onOpenAdminPanel={openAdminPanel}
+          onOpenSettings={openSettings}
+          onLogout={() => void logout()}
+        />
       )}
       {actionMessage && (
         <Container size="xl" py="sm">
@@ -611,6 +591,16 @@ function AppContent({
         <Center py={120}>
           <Stack align="center">
             <Loader />
+            <Stack gap={2} align="center">
+              <Container size="sm" px={0}>
+                <Alert color="blue" variant="light" role="status" aria-live="polite">
+                  Loading campaigns...
+                  {campaignLoadProgress.total > 0
+                    ? ` (${campaignLoadProgress.completed}/${campaignLoadProgress.total} processed)`
+                    : ''}
+                </Alert>
+              </Container>
+            </Stack>
           </Stack>
         </Center>
       ) : (
@@ -619,6 +609,7 @@ function AppContent({
           userPermissions={permissions}
           accessMode={localAccessMode}
           isAdmin={isAdmin}
+          isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}
           onEditCampaign={handleEditCampaign}
           onArchiveCampaign={handleArchiveCampaign}
@@ -627,343 +618,61 @@ function AppContent({
       )}
 
       {/* Edit Campaign Modal */}
-      <Modal
+      <EditCampaignModal
         opened={!!editModalCampaign}
+        campaign={editModalCampaign}
+        editMediaTab={editMediaTab}
+        onEditMediaTabChange={setEditMediaTab}
+        editTitle={editTitle}
+        onEditTitleChange={setEditTitle}
+        editDescription={editDescription}
+        onEditDescriptionChange={setEditDescription}
         onClose={closeEditModal}
-        title={`Edit Campaign: ${editModalCampaign?.title ?? ''}`}
-        size="xl"
-        zIndex={300}
-      >
-        <Tabs value={editMediaTab} onChange={setEditMediaTab} aria-label="Edit campaign tabs">
-          <Tabs.List>
-            <Tabs.Tab value="details">Details</Tabs.Tab>
-            <Tabs.Tab value="list">
-              Media {editCampaignMedia.length > 0 && <Badge size="sm" ml={4}>{editCampaignMedia.length}</Badge>}
-            </Tabs.Tab>
-            <Tabs.Tab value="add">Add Media</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="details" pt="md">
-            <Stack gap="md">
-              <TextInput
-                label="Title"
-                placeholder="Campaign title"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.currentTarget.value)}
-              />
-              <Textarea
-                label="Description"
-                placeholder="Campaign description"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.currentTarget.value)}
-                minRows={3}
-              />
-              <Group justify="flex-end" mt="md">
-                <Button variant="default" onClick={closeEditModal}>
-                  Cancel
-                </Button>
-                <Button onClick={() => void confirmEditCampaign()}>
-                  Save Changes
-                </Button>
-              </Group>
-            </Stack>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="list" pt="md">
-            {editMediaLoading ? (
-              <Center py="xl"><Loader /></Center>
-            ) : editCampaignMedia.length === 0 ? (
-              <Stack align="center" py="xl">
-                <Text c="dimmed">No media attached to this campaign.</Text>
-                <Button leftSection={<IconPlus size={16} />} onClick={() => setEditMediaTab('add')}>
-                  Add Media
-                </Button>
-              </Stack>
-            ) : (
-              <Stack gap="md">
-                <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="sm">
-                  {editCampaignMedia.map((media) => (
-                    <Card
-                      key={media.id}
-                      shadow="sm"
-                      padding="xs"
-                      radius="md"
-                      withBorder
-                      role="group"
-                      aria-label={`Media item ${media.caption || media.url}`}
-                    >
-                      <Card.Section>
-                        <Image
-                          src={media.thumbnail || media.url}
-                          height={100}
-                          alt={media.caption || 'Media'}
-                          fallbackSrc="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='%23ddd' width='100%' height='100%'/><text x='50%' y='50%' text-anchor='middle' dy='.3em' fill='%23999'>?</text></svg>"
-                        />
-                      </Card.Section>
-                      <Group justify="space-between" mt="xs">
-                        <Badge size="xs" variant="light">
-                          {media.type}
-                        </Badge>
-                        <Tooltip label="Remove from campaign">
-                          <ActionIcon
-                            color="red"
-                            variant="light"
-                            size="sm"
-                            onClick={() => void handleRemoveMedia(media)}
-                            aria-label="Remove from campaign"
-                          >
-                            <IconTrash size={14} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </Group>
-                      {media.caption && (
-                        <Text size="xs" c="dimmed" lineClamp={1} mt={4}>
-                          {media.caption}
-                        </Text>
-                      )}
-                    </Card>
-                  ))}
-                </SimpleGrid>
-                <Group justify="flex-end">
-                  <Button variant="light" leftSection={<IconPlus size={16} />} onClick={() => setEditMediaTab('add')}>
-                    Add More
-                  </Button>
-                </Group>
-              </Stack>
-            )}
-          </Tabs.Panel>
-
-          <Tabs.Panel value="add" pt="md">
-            <Stack gap="lg">
-              {/* Pick from Library Section */}
-              <Card withBorder>
-                <Stack gap="sm">
-                  <Group justify="space-between">
-                    <Group>
-                      <IconPhoto size={20} />
-                      <Text fw={500}>Pick from Media Library</Text>
-                    </Group>
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      onClick={() => void loadLibraryMedia(librarySearch)}
-                      loading={libraryLoading}
-                    >
-                      {libraryMedia.length > 0 ? 'Refresh' : 'Load Library'}
-                    </Button>
-                  </Group>
-                  <TextInput
-                    placeholder="Search media..."
-                    aria-label="Search media library"
-                    value={librarySearch}
-                    onChange={(e) => setLibrarySearch(e.currentTarget.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && void loadLibraryMedia(librarySearch)}
-                  />
-                  {libraryLoading ? (
-                    <Center py="md"><Loader size="sm" /></Center>
-                  ) : libraryMedia.length === 0 ? (
-                    <Text size="sm" c="dimmed" ta="center" py="md">
-                      Click &quot;Load Library&quot; to browse existing media
-                    </Text>
-                  ) : (
-                    <SimpleGrid cols={{ base: 3, sm: 4, md: 5 }} spacing="xs">
-                      {libraryMedia.map((item) => {
-                        const isAlreadyAdded = editCampaignMedia.some(
-                          (m) => m.id === item.id || m.url === item.url
-                        );
-                        return (
-                          <Card
-                            key={item.id}
-                            shadow="xs"
-                            padding={0}
-                            radius="sm"
-                            withBorder
-                            style={{
-                              opacity: isAlreadyAdded ? 0.5 : 1,
-                              cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
-                            }}
-                            onClick={() => !isAlreadyAdded && void handleAddFromLibrary(item)}
-                            role="button"
-                            tabIndex={isAlreadyAdded ? -1 : 0}
-                            aria-disabled={isAlreadyAdded}
-                            aria-label={
-                              isAlreadyAdded
-                                ? 'Media already added to campaign'
-                                : `Add ${item.type} media: ${item.caption || item.url}`
-                            }
-                            onKeyDown={(event) => {
-                              if (isAlreadyAdded) return;
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                event.preventDefault();
-                                void handleAddFromLibrary(item);
-                              }
-                            }}
-                          >
-                            <Image
-                              src={item.thumbnail || item.url}
-                              height={60}
-                              alt={item.caption || 'Media'}
-                              fallbackSrc="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect fill='%23ddd' width='100%' height='100%'/></svg>"
-                            />
-                            <Stack gap={2} p={4}>
-                              <Badge size="xs" variant="light">
-                                {item.type}
-                              </Badge>
-                              {isAlreadyAdded && (
-                                <Text size="xs" c="green">Added</Text>
-                              )}
-                            </Stack>
-                          </Card>
-                        );
-                      })}
-                    </SimpleGrid>
-                  )}
-                </Stack>
-              </Card>
-
-              {/* Upload Section */}
-              <Card withBorder>
-                <Stack gap="sm">
-                  <Group>
-                    <IconUpload size={20} />
-                    <Text fw={500}>Upload New File</Text>
-                  </Group>
-                  <FileButton
-                    onChange={(file) => file && void handleUploadMediaInEdit(file)}
-                    accept="image/*,video/*"
-                  >
-                    {(props) => (
-                      <Button {...props} variant="light" fullWidth disabled={!!uploadFile}>
-                        {uploadFile ? 'Uploading...' : 'Choose file to upload'}
-                      </Button>
-                    )}
-                  </FileButton>
-                  {uploadProgress !== null && (
-                    <Progress value={uploadProgress} size="sm" />
-                  )}
-                </Stack>
-              </Card>
-
-              {/* External URL Section */}
-              <Card withBorder>
-                <Stack gap="sm">
-                  <Group>
-                    <IconLink size={20} />
-                    <Text fw={500}>Add External URL</Text>
-                  </Group>
-                  <Select
-                    label="Type"
-                    data={[
-                      { value: 'video', label: 'Video' },
-                      { value: 'image', label: 'Image' },
-                    ]}
-                    value={addMediaType}
-                    onChange={(v) => setAddMediaType((v as 'video' | 'image') ?? 'video')}
-                  />
-                  <TextInput
-                    label="URL"
-                    placeholder="https://youtube.com/watch?v=... or image URL"
-                    value={addMediaUrl}
-                    onChange={(e) => setAddMediaUrl(e.currentTarget.value)}
-                  />
-                  <TextInput
-                    label="Caption (optional)"
-                    placeholder="Describe this media"
-                    value={addMediaCaption}
-                    onChange={(e) => setAddMediaCaption(e.currentTarget.value)}
-                  />
-                  <Button
-                    onClick={() => void handleAddExternalMediaInEdit()}
-                    disabled={!addMediaUrl}
-                    loading={addMediaLoading}
-                  >
-                    Add External Media
-                  </Button>
-                </Stack>
-              </Card>
-
-              <Button variant="subtle" onClick={() => setEditMediaTab('list')}>
-                ← Back to Media List
-              </Button>
-            </Stack>
-          </Tabs.Panel>
-        </Tabs>
-      </Modal>
+        onConfirmEdit={confirmEditCampaign}
+        editMediaLoading={editMediaLoading}
+        editCampaignMedia={editCampaignMedia}
+        onRemoveMedia={handleRemoveMedia}
+        libraryMedia={libraryMedia}
+        libraryLoading={libraryLoading}
+        librarySearch={librarySearch}
+        onLibrarySearchChange={setLibrarySearch}
+        onLoadLibrary={loadLibraryMedia}
+        onAddFromLibrary={handleAddFromLibrary}
+        uploadFile={uploadFile}
+        uploadProgress={uploadProgress}
+        onUploadFile={handleUploadMediaInEdit}
+        addMediaType={addMediaType}
+        onAddMediaTypeChange={setAddMediaType}
+        addMediaUrl={addMediaUrl}
+        onAddMediaUrlChange={setAddMediaUrl}
+        addMediaCaption={addMediaCaption}
+        onAddMediaCaptionChange={setAddMediaCaption}
+        addMediaLoading={addMediaLoading}
+        onAddExternalMedia={handleAddExternalMediaInEdit}
+      />
 
       {/* Archive Confirmation Modal */}
-      <Modal
+      <ArchiveCampaignModal
         opened={!!archiveModalCampaign}
+        campaign={archiveModalCampaign}
         onClose={() => setArchiveModalCampaign(null)}
-        title="Archive Campaign"
-        zIndex={300}
-        padding="md"
-      >
-        <Stack gap="md">
-          <p>Are you sure you want to archive &quot;{archiveModalCampaign?.title}&quot;? This action will mark it as archived.</p>
-          <Group justify="flex-end" wrap="wrap" gap="sm">
-            <Button variant="default" onClick={() => setArchiveModalCampaign(null)}>
-              Cancel
-            </Button>
-            <Button
-              color="red"
-              onClick={() => void confirmArchiveCampaign()}
-              aria-label={`Archive campaign ${archiveModalCampaign?.title ?? ''}`.trim()}
-            >
-              Archive
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        onConfirm={confirmArchiveCampaign}
+      />
 
       {/* Add External Media Modal */}
-      <Modal
+      <AddExternalMediaModal
         opened={!!externalMediaCampaign}
+        mediaType={externalMediaType}
+        onMediaTypeChange={setExternalMediaType}
+        url={externalMediaUrl}
+        onUrlChange={setExternalMediaUrl}
+        caption={externalMediaCaption}
+        onCaptionChange={setExternalMediaCaption}
+        thumbnail={externalMediaThumbnail}
+        onThumbnailChange={setExternalMediaThumbnail}
         onClose={() => setExternalMediaCampaign(null)}
-        title="Add External Media"
-        size="md"
-        zIndex={300}
-        padding="md"
-      >
-        <Stack gap="md">
-          <Select
-            label="Media Type"
-            data={[
-              { value: 'video', label: 'Video' },
-              { value: 'image', label: 'Image' },
-            ]}
-            value={externalMediaType}
-            onChange={(v) => setExternalMediaType((v as 'video' | 'image') ?? 'video')}
-          />
-          <TextInput
-            label="URL"
-            placeholder="https://..."
-            description="YouTube, Vimeo, or direct media URL"
-            value={externalMediaUrl}
-            onChange={(e) => setExternalMediaUrl(e.currentTarget.value)}
-            required
-          />
-          <TextInput
-            label="Caption"
-            placeholder="Optional caption"
-            value={externalMediaCaption}
-            onChange={(e) => setExternalMediaCaption(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Thumbnail URL"
-            placeholder="Optional thumbnail URL"
-            value={externalMediaThumbnail}
-            onChange={(e) => setExternalMediaThumbnail(e.currentTarget.value)}
-          />
-          <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
-            <Button variant="default" onClick={() => setExternalMediaCampaign(null)}>
-              Cancel
-            </Button>
-            <Button onClick={() => void confirmAddExternalMedia()} disabled={!externalMediaUrl}>
-              Add Media
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        onConfirm={confirmAddExternalMedia}
+      />
     </div>
   );
 }

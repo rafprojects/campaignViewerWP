@@ -31,7 +31,7 @@ const getId = (name: VitalName) => `${name}-${Math.random().toString(36).slice(2
 const defaultReport = (metric: VitalMetric) => {
   vitalsBuffer.push(metric);
   if (typeof window !== 'undefined') {
-    (window as Window & { __WPSG_VITALS__?: VitalMetric[] }).__WPSG_VITALS__ = vitalsBuffer;
+    window.__WPSG_VITALS__ = vitalsBuffer;
   }
   console.info('[WPSG][Vitals]', metric.name, metric.value.toFixed(2));
 };

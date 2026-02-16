@@ -65,3 +65,17 @@ export interface UploadResponse {
   thumbnail?: string;
   mimeType?: string;
 }
+
+/**
+ * Response from the oEmbed proxy endpoint
+ */
+export interface OEmbedResponse {
+  type?: 'video' | 'photo' | 'rich' | 'link';
+  title?: string;
+  thumbnail_url?: string;
+  provider_name?: string;
+  provider?: string;
+  html?: string;
+  width?: number;
+  height?: number;
+}

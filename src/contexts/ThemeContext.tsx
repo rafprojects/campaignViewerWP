@@ -52,7 +52,7 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
   // 1. WP injected config (set by PHP on the embed container)
   const wpConfigId: string | null | undefined =
     (typeof window !== 'undefined'
-      ? ((window as unknown as Record<string, unknown>).__wpsgThemeId as string | undefined)
+      ? window.__wpsgThemeId
       : undefined) ??
     document.querySelector('[data-wpsg-theme]')?.getAttribute('data-wpsg-theme');
 
@@ -62,10 +62,7 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
 
   // 2. __WPSG_CONFIG__.theme (set by WP embed shortcode)
   if (typeof window !== 'undefined') {
-    const wpsgConfig = (window as unknown as Record<string, unknown>).__WPSG_CONFIG__ as
-      | Record<string, unknown>
-      | undefined;
-    const configTheme = wpsgConfig?.theme as string | undefined;
+    const configTheme = window.__WPSG_CONFIG__?.theme;
     if (configTheme && hasTheme(configTheme)) {
       return configTheme;
     }

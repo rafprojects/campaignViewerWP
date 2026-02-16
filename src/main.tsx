@@ -21,13 +21,9 @@ const useShadowDom = windowFlag ?? query.get('shadow') !== '0'
 startWebVitalsMonitoring()
 
 // Read WP-injected configuration.
-const wpsgConfig = (window as Window & {
-  __WPSG_CONFIG__?: { sentryDsn?: string; allowUserThemeOverride?: boolean };
-  __WPSG_SENTRY_DSN__?: string;
-}).__WPSG_CONFIG__
+const wpsgConfig = window.__WPSG_CONFIG__
 
-const sentryDsn = wpsgConfig?.sentryDsn
-  ?? (window as Window & { __WPSG_SENTRY_DSN__?: string }).__WPSG_SENTRY_DSN__
+const sentryDsn = wpsgConfig?.sentryDsn ?? window.__WPSG_SENTRY_DSN__
 void initSentry({ dsn: sentryDsn })
 
 // If the WP admin disables user theme override, we disable localStorage
@@ -148,11 +144,13 @@ const mountDefault = (host: HTMLElement, props: MountProps) => {
 }
 
 const rootHost = document.getElementById('root')
-console.log('[WPSG] Mount init - rootHost:', rootHost, 'useShadowDom:', useShadowDom)
-console.log('[WPSG] All .wp-super-gallery elements:', document.querySelectorAll('.wp-super-gallery').length)
+if (import.meta.env.DEV) {
+  console.log('[WPSG] Mount init - rootHost:', rootHost, 'useShadowDom:', useShadowDom)
+  console.log('[WPSG] All .wp-super-gallery elements:', document.querySelectorAll('.wp-super-gallery').length)
+}
 
 if (rootHost) {
-  console.log('[WPSG] Mounting to #root')
+  if (import.meta.env.DEV) console.log('[WPSG] Mounting to #root')
   const props = parseProps(rootHost)
   if (useShadowDom) {
     mountWithShadow(rootHost, props)
@@ -163,9 +161,9 @@ if (rootHost) {
 } else {
   // Only search for .wp-super-gallery if #root doesn't exist
   const nodes = document.querySelectorAll<HTMLElement>('.wp-super-gallery')
-  console.log('[WPSG] No #root, mounting to', nodes.length, '.wp-super-gallery elements')
+  if (import.meta.env.DEV) console.log('[WPSG] No #root, mounting to', nodes.length, '.wp-super-gallery elements')
   nodes.forEach((node, index) => {
-    console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
+    if (import.meta.env.DEV) console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
     const props = parseProps(node)
     if (useShadowDom) {
       mountWithShadow(node, props)

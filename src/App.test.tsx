@@ -150,8 +150,9 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    // Test Edit Campaign with modal
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign Alpha' }));
+    // Test Edit Campaign with modal (CampaignViewer is lazy-loaded)
+    const editButton = await screen.findByRole('button', { name: 'Edit Campaign Alpha' });
+    fireEvent.click(editButton);
     // Edit modal opens - fill in title and description
     const titleInput = await screen.findByLabelText('Title');
     const descInput = await screen.findByLabelText('Description');

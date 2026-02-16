@@ -40,14 +40,39 @@ class WPSG_CPT {
         register_post_meta('wpsg_campaign', 'media_items', [
             'type' => 'array',
             'single' => true,
-            'show_in_rest' => true,
+            'show_in_rest' => [
+                'schema' => [
+                    'type'  => 'array',
+                    'items' => [
+                        'type'       => 'object',
+                        'properties' => [
+                            'id'           => ['type' => 'string'],
+                            'type'         => ['type' => 'string'],
+                            'source'       => ['type' => 'string'],
+                            'url'          => ['type' => 'string'],
+                            'thumbnail'    => ['type' => 'string'],
+                            'caption'      => ['type' => 'string'],
+                            'order'        => ['type' => 'integer'],
+                            'embedUrl'     => ['type' => 'string'],
+                            'provider'     => ['type' => 'string'],
+                            'attachmentId' => ['type' => 'integer'],
+                            'title'        => ['type' => 'string'],
+                        ],
+                    ],
+                ],
+            ],
             'default' => [],
         ]);
 
         register_post_meta('wpsg_campaign', 'tags', [
             'type' => 'array',
             'single' => true,
-            'show_in_rest' => true,
+            'show_in_rest' => [
+                'schema' => [
+                    'type'  => 'array',
+                    'items' => ['type' => 'string'],
+                ],
+            ],
             'default' => [],
         ]);
 

@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Button, Grid, Card, Image, Text, Group, Modal, TextInput, Textarea, FileButton, Loader, Progress, Paper, Stack, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
 import { MediaCard } from './MediaCard';
+import { MediaLightboxModal } from './MediaLightboxModal';
+import { MediaAddModal } from './MediaAddModal';
+import { MediaEditModal } from './MediaEditModal';
+import { MediaDeleteModal } from './MediaDeleteModal';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconUpload, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto } from '@tabler/icons-react';
 import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import type { ApiClient } from '@/services/apiClient';
-import type { MediaItem, UploadResponse } from '@/types';
+import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
+import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
+import { useXhrUpload } from '@/hooks/useXhrUpload';
+import { getErrorMessage } from '@/utils/getErrorMessage';
+import { sortByOrder } from '@/utils/sortByOrder';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
@@ -16,21 +24,20 @@ const LIST_ROW_HEIGHT = 72;
 const LIST_MIN_WIDTH = 720;
 const VIRTUAL_LIST_MAX_HEIGHT = 520;
 
-type Props = { campaignId: string; apiClient: ApiClient };
+type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
-export default function MediaTab({ campaignId, apiClient }: Props) {
+export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const { upload, isUploading: uploading, progress: uploadProgress, resetProgress } = useXhrUpload();
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadCaption, setUploadCaption] = useState('');
   const dropRef = useRef<HTMLDivElement | null>(null);
   const [externalUrl, setExternalUrl] = useState('');
-  const [externalPreview, setExternalPreview] = useState<any | null>(null);
+  const [externalPreview, setExternalPreview] = useState<OEmbedResponse | null>(null);
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -125,7 +132,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`,
       );
       const items = Array.isArray(response) ? response : response.items ?? [];
-      const sorted = [...items].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const sorted = sortByOrder(items);
       setMedia(sorted);
 
       const needs = sorted.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));
@@ -134,7 +141,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
           await Promise.all(
             needs.map(async (it) => {
               try {
-                const data = await apiClient.get<any>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(it.url)}`);
+                const data = await apiClient.get<OEmbedResponse>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(it.url)}`);
                 if (data) {
                   const nextThumb = it.thumbnail || data.thumbnail_url;
                   const nextCaption = it.caption || data.title || '';
@@ -167,60 +174,35 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
 
   async function handleUpload() {
     if (!selectedFile) return;
-    setUploading(true);
-    setUploadProgress(0);
+
+    // Client-side validation
+    const ALLOWED_TYPES = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm', 'video/ogg',
+    ];
+    const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+
+    if (!ALLOWED_TYPES.includes(selectedFile.type)) {
+      showNotification({ title: 'Invalid file type', message: 'Accepted: JPEG, PNG, GIF, WebP, MP4, WebM, OGG.', color: 'red' });
+      setSelectedFile(null);
+      return;
+    }
+    if (selectedFile.size > MAX_SIZE) {
+      showNotification({ title: 'File too large', message: `File is ${Math.round(selectedFile.size / 1024 / 1024)} MB. Maximum size is 50 MB.`, color: 'red' });
+      setSelectedFile(null);
+      return;
+    }
+
     try {
       // Determine media type from file
       const mediaType = selectedFile.type.startsWith('image') ? 'image' : 'video';
 
-      // upload using authenticated form POST (no progress via ApiClient.postForm)
-      const form = new FormData();
-      form.append('file', selectedFile);
       const uploadUrl = `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`;
       const authHeaders = await apiClient.getAuthHeaders();
-      const res = await new Promise<UploadResponse>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', uploadUrl);
-        Object.entries(authHeaders).forEach(([key, value]) => {
-          xhr.setRequestHeader(key, value);
-        });
-        xhr.responseType = 'json';
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(xhr.response as UploadResponse);
-          } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
-          }
-        };
-        xhr.onerror = () => {
-          try {
-            const detailsParts: string[] = [
-              `status=${xhr.status}`,
-              `readyState=${xhr.readyState}`,
-            ];
-            if (xhr.statusText) {
-              detailsParts.push(`statusText=${xhr.statusText}`);
-            }
-            // Attempt to capture any response text if available
-            try {
-              if (xhr.responseText) {
-                detailsParts.push(`response=${xhr.responseText.substring(0,200)}`);
-              }
-            } catch {}
-            const details = detailsParts.join(', ');
-            reject(new Error(`Upload failed (network/CORS). Details: ${details}`));
-          } catch (e) {
-            reject(new Error('Upload failed'));
-          }
-        };
-        if (xhr.upload) {
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              setUploadProgress(Math.round((e.loaded / e.total) * 100));
-            }
-          };
-        }
-        xhr.send(form);
+      const res = await upload<UploadResponse>({
+        url: uploadUrl,
+        file: selectedFile,
+        headers: authHeaders,
       });
       // Use user-provided caption or fall back to file name
       const finalCaption = uploadCaption.trim() || uploadTitle.trim() || selectedFile.name;
@@ -240,12 +222,13 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       setUploadCaption('');
       setAddOpen(false);
       showNotification({ title: 'Uploaded', message: 'Media uploaded and added to campaign.' });
+      onCampaignsUpdated?.();
     } catch (err) {
       console.error(err);
-      showNotification({ title: 'Upload failed', message: (err as Error).message, color: 'red' });
+      showNotification({ title: 'Upload failed', message: getErrorMessage(err, 'Upload failed.'), color: 'red' });
+      setSelectedFile(null);
     } finally {
-      setUploading(false);
-      setUploadProgress(null);
+      resetProgress();
     }
   }
 
@@ -257,10 +240,10 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
     }
     try {
       const inferredType = externalPreview?.type || getMediaTypeFromUrl(externalUrl);
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         type: inferredType,
         source: 'external',
-        provider: externalPreview?.provider ?? 'external',
+        provider: externalPreview?.provider ?? externalPreview?.provider_name ?? 'external',
         url: externalUrl,
         caption: externalPreview?.title ?? '',
         thumbnail: externalPreview?.thumbnail_url ?? undefined,
@@ -271,6 +254,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       setExternalPreview(null);
       setAddOpen(false);
       showNotification({ title: 'Added', message: 'External media added.' });
+      onCampaignsUpdated?.();
     } catch (err) {
       console.error(err);
       showNotification({ title: 'Add failed', message: (err as Error).message, color: 'red' });
@@ -289,7 +273,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       // Rely on server-side proxy to avoid CORS/provider restrictions.
       // The server implements provider handlers and caching; if it cannot
       // fetch a preview it will return a non-200 or error payload.
-      const data = await apiClient.get<any>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
+      const data = await apiClient.get<OEmbedResponse>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
       if (data) {
         setExternalPreview(data);
         showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
@@ -351,6 +335,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
       setMedia((m) => m.filter((x) => x.id !== deleteItem.id));
       showNotification({ title: 'Deleted', message: 'Media removed.' });
+      onCampaignsUpdated?.();
     } catch (err) {
       console.error(err);
       showNotification({ title: 'Delete failed', message: (err as Error).message, color: 'red' });
@@ -430,6 +415,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
       await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
       setMedia(newMedia.map((it, i) => ({ ...it, order: i + 1 })));
       showNotification({ title: 'Reordered', message: 'Media order updated.' });
+      onCampaignsUpdated?.();
     } catch (err) {
       // Roll back local state to previous order
       setMedia(prev);
@@ -488,7 +474,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                 openLightbox(item);
               }
             }}
-            fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
+            fallbackSrc={FALLBACK_IMAGE_SRC}
           />
         </Box>
         <Box role="cell">
@@ -620,7 +606,7 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
                               openLightbox(item);
                             }
                           }}
-                          fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect fill='%23374151' width='50' height='50'/%3E%3C/svg%3E"
+                          fallbackSrc={FALLBACK_IMAGE_SRC}
                         />
                       </Table.Td>
                       <Table.Td>
@@ -675,225 +661,56 @@ export default function MediaTab({ campaignId, apiClient }: Props) {
         </Grid>
       )}
 
-      {/* Image Lightbox Modal */}
-      <Modal
+      <MediaLightboxModal
         opened={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
-        size="xl"
-        padding={0}
-        withCloseButton={false}
-        centered
-        styles={{ body: { background: 'rgba(0,0,0,0.9)' } }}
-        aria-label={`Media lightbox: ${imageItems[lightboxIndex]?.caption || 'Image'} (${lightboxIndex + 1} of ${imageItems.length})`}
-      >
-        {imageItems.length > 0 && imageItems[lightboxIndex] && (
-          <Box pos="relative">
-            <Image
-              src={imageItems[lightboxIndex].url}
-              alt={imageItems[lightboxIndex].caption || 'Media preview'}
-              fit="contain"
-              mah="80vh"
-            />
-            <ActionIcon
-              variant="filled"
-              color="dark"
-              pos="absolute"
-              top={10}
-              right={10}
-              onClick={() => setLightboxOpen(false)}
-              aria-label="Close lightbox"
-            >
-              <IconX size={18} />
-            </ActionIcon>
-            {imageItems.length > 1 && (
-              <>
-                <ActionIcon
-                  variant="filled"
-                  color="dark"
-                  pos="absolute"
-                  left={10}
-                  top="50%"
-                  style={{ transform: 'translateY(-50%)' }}
-                  onClick={() => navigateLightbox('prev')}
-                  aria-label="Previous image"
-                >
-                  <IconChevronLeft size={20} />
-                </ActionIcon>
-                <ActionIcon
-                  variant="filled"
-                  color="dark"
-                  pos="absolute"
-                  right={10}
-                  top="50%"
-                  style={{ transform: 'translateY(-50%)' }}
-                  onClick={() => navigateLightbox('next')}
-                  aria-label="Next image"
-                >
-                  <IconChevronRight size={20} />
-                </ActionIcon>
-              </>
-            )}
-            <Box
-              pos="absolute"
-              bottom={0}
-              left={0}
-              right={0}
-              p="md"
-              style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.8))' }}
-            >
-              <Text c="white" size="sm">{imageItems[lightboxIndex].caption || 'Untitled'}</Text>
-              <Text c="dimmed" size="xs">{lightboxIndex + 1} / {imageItems.length}</Text>
-            </Box>
-          </Box>
-        )}
-      </Modal>
+        imageItems={imageItems}
+        lightboxIndex={lightboxIndex}
+        onPrev={() => navigateLightbox('prev')}
+        onNext={() => navigateLightbox('next')}
+      />
 
-      <Modal opened={addOpen} onClose={() => setAddOpen(false)} title="Add Media" padding="md">
-        <Stack gap="sm">
-          <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
-            <Group justify="space-between" wrap="wrap" gap="sm">
-              <Group>
-                <FileButton onChange={setSelectedFile} accept="image/*,video/*">
-                  {(props) => <Button leftSection={<IconUpload />} {...props}>Choose file</Button>}
-                </FileButton>
-                <Text size="sm" c="dimmed">or drag & drop a file here</Text>
-              </Group>
-              {selectedFile && <Text size="sm" c="gray.1">{selectedFile.name}</Text>}
-            </Group>
+      <MediaAddModal
+        opened={addOpen}
+        onClose={() => setAddOpen(false)}
+        dropRef={dropRef}
+        selectedFile={selectedFile}
+        onSelectFile={setSelectedFile}
+        previewUrl={previewUrl}
+        uploadTitle={uploadTitle}
+        onUploadTitleChange={setUploadTitle}
+        uploadCaption={uploadCaption}
+        onUploadCaptionChange={setUploadCaption}
+        uploadProgress={uploadProgress}
+        uploading={uploading}
+        onUpload={handleUpload}
+        externalUrl={externalUrl}
+        onExternalUrlChange={setExternalUrl}
+        externalError={externalError}
+        onFetchOEmbed={handleFetchOEmbed}
+        externalLoading={externalLoading}
+        onAddExternal={handleAddExternal}
+        externalPreview={externalPreview}
+      />
 
-            {previewUrl && (
-              <Group mt="sm">
-                <Image src={previewUrl} alt="Upload preview" h={140} fit="cover" radius="sm" />
-              </Group>
-            )}
+      <MediaEditModal
+        opened={editOpen}
+        onClose={() => setEditOpen(false)}
+        editingTitle={editingTitle}
+        onEditingTitleChange={setEditingTitle}
+        editingCaption={editingCaption}
+        onEditingCaptionChange={setEditingCaption}
+        editingThumbnail={editingThumbnail}
+        onEditingThumbnailChange={setEditingThumbnail}
+        onSave={saveEdit}
+      />
 
-            {selectedFile && (
-              <Stack gap="xs" mt="sm">
-                <TextInput
-                  label="Title"
-                  placeholder="Enter a title (optional)"
-                  value={uploadTitle}
-                  onChange={(e) => setUploadTitle(e.currentTarget.value)}
-                />
-                <Textarea
-                  label="Caption"
-                  placeholder="Enter a caption or description (optional)"
-                  value={uploadCaption}
-                  onChange={(e) => setUploadCaption(e.currentTarget.value)}
-                  autosize
-                  minRows={2}
-                  maxRows={4}
-                />
-              </Stack>
-            )}
-
-            {uploadProgress !== null && <Progress value={uploadProgress} mt="sm" />}
-            <Group mt="sm">
-              <Button onClick={handleUpload} loading={uploading} disabled={!selectedFile}>Upload</Button>
-            </Group>
-          </Paper>
-
-          <Text fw={600}>Or add external URL</Text>
-          <Group wrap="wrap" gap="sm">
-            <TextInput
-              label="External URL"
-              value={externalUrl}
-              onChange={(e) => setExternalUrl(e.currentTarget.value)}
-              placeholder="https://youtube.com/..."
-              error={externalError}
-              aria-label="External media URL"
-            />
-            <Button onClick={handleFetchOEmbed} loading={externalLoading} aria-label="Preview external media">
-              Preview
-            </Button>
-            <Button onClick={handleAddExternal} disabled={!externalUrl} aria-label="Add external media">
-              Add
-            </Button>
-          </Group>
-
-          {externalPreview && (
-            <Card mt="sm">
-              <Stack>
-                {externalPreview.html ? (
-                  <div
-                    style={{ position: 'relative', paddingTop: '56.25%' }}
-                  >
-                    <div
-                      style={{ position: 'absolute', inset: 0 }}
-                      dangerouslySetInnerHTML={{ __html: externalPreview.html }}
-                    />
-                  </div>
-                ) : (
-                  <Group>
-                    {externalPreview.thumbnail_url && (
-                      <Image
-                        src={externalPreview.thumbnail_url}
-                        h={100}
-                        fit="cover"
-                        radius="sm"
-                        alt={externalPreview.title || 'External media preview'}
-                      />
-                    )}
-                    <div>
-                      <Text fw={700}>{externalPreview.title}</Text>
-                      <Text size="sm" c="dimmed">{externalPreview.provider_name}</Text>
-                    </div>
-                  </Group>
-                )}
-              </Stack>
-            </Card>
-          )}
-        </Stack>
-      </Modal>
-
-      <Modal opened={editOpen} onClose={() => setEditOpen(false)} title="Edit Media" padding="md">
-        <Stack gap="md">
-          <TextInput 
-            label="Title" 
-            placeholder="Enter a title (optional)"
-            value={editingTitle} 
-            onChange={(e) => setEditingTitle(e.currentTarget.value)}
-            description="Optional display title for this media item"
-          />
-          <Textarea
-            label="Caption" 
-            placeholder="Enter a caption or description"
-            value={editingCaption} 
-            onChange={(e) => setEditingCaption(e.currentTarget.value)}
-            autosize
-            minRows={2}
-            maxRows={4}
-            description="Descriptive text shown with the media"
-          />
-          <TextInput 
-            label="Thumbnail URL" 
-            placeholder="https://..." 
-            value={editingThumbnail ?? ''} 
-            onChange={(e) => setEditingThumbnail(e.currentTarget.value)}
-            description="Custom preview image URL (optional)"
-          />
-          <Group justify="flex-end" wrap="wrap" gap="sm">
-            <Button variant="default" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={saveEdit}>Save</Button>
-          </Group>
-        </Stack>
-      </Modal>
-
-      <Modal opened={!!deleteItem} onClose={() => setDeleteItem(null)} title="Delete Media" size="sm" padding="md">
-        <Stack>
-          <Text>Are you sure you want to delete this media item? This action cannot be undone.</Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setDeleteItem(null)}>Cancel</Button>
-            <Button
-              color="red"
-              onClick={confirmDelete}
-              aria-label={`Delete media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
-            >
-              Delete
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <MediaDeleteModal
+        opened={!!deleteItem}
+        onClose={() => setDeleteItem(null)}
+        deleteItem={deleteItem}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

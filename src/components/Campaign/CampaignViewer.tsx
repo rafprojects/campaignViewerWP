@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { ArrowLeft, Calendar, Tag } from 'lucide-react';
+import { IconArrowLeft, IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
 import type { Campaign } from '@/types';
 
@@ -63,7 +63,7 @@ export function CampaignViewer({
           pos="absolute"
           top={{ base: 12, sm: 16 }}
           left={{ base: 12, sm: 16 }}
-          leftSection={<ArrowLeft size={20} />}
+          leftSection={<IconArrowLeft size={20} />}
           onClick={onClose}
           variant="light"
           color="dark"
@@ -96,7 +96,7 @@ export function CampaignViewer({
           </Title>
           <Group gap="lg" wrap="wrap">
             <Group gap={4}>
-              <Calendar size={16} color="var(--wpsg-color-text-muted)" />
+              <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
               <Text size="sm" c="dimmed">
                 {new Date(campaign.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
@@ -106,7 +106,7 @@ export function CampaignViewer({
               </Text>
             </Group>
             <Group gap={4}>
-              <Tag size={16} color="var(--wpsg-color-text-muted)" />
+              <IconTag size={16} color="var(--wpsg-color-text-muted)" />
               <Text size="sm" c="dimmed">
                 {campaign.tags.join(', ')}
               </Text>

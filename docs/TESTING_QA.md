@@ -204,6 +204,147 @@ This is the primary checklist for QA on a local WordPress install. Use it for ev
 
 ---
 
+## Phase 10 QA — Track B (Upload & DRY-up)
+
+### Upload Validation (Edit Campaign Modal + Admin Media Tab)
+
+- [ ] Select a disallowed file type (e.g., `.exe`, `.zip`, `.pdf`):
+  - [ ] Error notification appears **immediately** — no upload attempt is made.
+  - [ ] Message reads: "File type not allowed. Accepted: JPEG, PNG, GIF, WebP, MP4, WebM, OGG."
+  - [ ] File selection is cleared (file input resets).
+- [ ] Select a file larger than 50 MB:
+  - [ ] Error notification appears **immediately** — no upload attempt is made.
+  - [ ] Message reads: "File too large. Maximum size: 50 MB."
+  - [ ] File selection is cleared.
+- [ ] Select a valid image (e.g., `.jpg` < 50 MB):
+  - [ ] Upload begins; progress bar is visible, striped, and animated.
+  - [ ] On success, media appears in the campaign media list.
+- [ ] Repeat the above in **both** the Edit Campaign modal (App.tsx flow) and the Admin Panel → Media tab upload.
+
+### Upload Button UX (Admin Media Tab → Add Media modal)
+
+- [ ] With no file selected, the Upload button is **disabled** and visually muted.
+- [ ] With a file selected, the Upload button becomes **enabled** with a filled blue style and upload icon.
+- [ ] After a failed upload, the file selection clears and the button returns to disabled.
+
+### 401 Upload Regression (Edit Campaign Modal)
+
+- [ ] Log in as admin, open a campaign, click "Edit Campaign".
+- [ ] Upload a valid image from the edit modal.
+  - [ ] Upload succeeds (no 401 error).
+  - [ ] Uploaded media appears in the campaign.
+  - [ ] Gallery card updates in real-time without page refresh.
+
+### Error Message Readability
+
+- [ ] Simulate a server error (e.g., stop WP server mid-upload):
+  - [ ] Error notification displays a human-readable message, not a raw HTTP status code.
+- [ ] On 401 (expired token): message should indicate authentication failure.
+
+### Shared Utilities (Regression Check)
+
+- [ ] Verify `getErrorMessage` renders proper error text in notifications across:
+  - [ ] Campaign save, archive, restore
+  - [ ] Media upload, add, delete
+  - [ ] Access grant/deny/revoke
+- [ ] Verify media sort order is preserved after page reload in both gallery viewer and admin media tab.
+
+---
+
+## Phase 10 QA — Track C (UX Improvements)
+
+### C1: Button Loading States (Admin Panel → Campaigns tab)
+
+- [ ] Click "Archive" on an active campaign:
+  - [ ] Confirmation modal appears.
+  - [ ] Confirm → the Archive button on that row shows a **spinner** until the operation completes.
+  - [ ] On success: notification appears, campaign row updates to archived status.
+  - [ ] On failure (e.g., disconnect server): error notification appears, spinner stops.
+- [ ] Click "Restore" on an archived campaign:
+  - [ ] Same loading behavior as above on the Restore button.
+
+### C2: Empty State for Unauthenticated Gallery
+
+- [ ] Log out (or open the gallery in an incognito window without a token).
+- [ ] If no public campaigns exist:
+  - [ ] Gallery shows "Sign in to view campaigns" instead of a generic empty message.
+- [ ] If public campaigns exist:
+  - [ ] They render normally.
+
+### C3: Gallery Search
+
+- [ ] With campaigns visible in the gallery:
+  - [ ] A search input is visible in the header area.
+  - [ ] Type a campaign title (partial match) → grid filters in real-time.
+  - [ ] Type a tag name → matching campaigns appear.
+  - [ ] Clear the search → all campaigns return.
+  - [ ] Search + tab filter combine (e.g., search "summer" + tab "My Access" narrows to accessible campaigns with "summer" in the title/description/tags).
+  - [ ] Empty search result shows "No campaigns match your search."
+
+### C9: CampaignCard Semantic Button
+
+- [ ] Tab through the gallery:
+  - [ ] Campaign cards receive focus via native keyboard navigation.
+  - [ ] Pressing Enter opens the campaign viewer.
+- [ ] Using a screen reader:
+  - [ ] Cards are announced as interactive buttons (not generic `div`s).
+  - [ ] Locked cards are announced as disabled.
+
+### C4: Gallery Pagination / Load More
+
+- [ ] Navigate to the gallery with many campaigns (≥13):
+  - [ ] Only the first 12 campaigns are rendered initially.
+  - [ ] A "Load more (N remaining)" button appears below the grid.
+  - [ ] Click "Load more" → next batch of 12 campaigns appends to the grid.
+  - [ ] Button disappears when all campaigns are visible.
+- [ ] Change tab filter or type into search:
+  - [ ] Visible count resets — only the first 12 matches are shown.
+  - [ ] "Load more" reappears if results exceed 12.
+
+### C5: Touch/Swipe for Carousel
+
+- [ ] On a touch device (or Chrome DevTools device emulation):
+  - [ ] Image carousel (inline viewer): swipe left → next image; swipe right → previous image.
+  - [ ] Image carousel (lightbox): swipe left/right navigates between images.
+  - [ ] Video carousel: swipe left/right switches videos.
+- [ ] Desktop mouse interaction is unaffected (no accidental swipe on click).
+
+### C6: Keyboard Shortcut Hints
+
+- [ ] Open the image lightbox for the first time in a fresh session:
+  - [ ] A subtle overlay appears: "← → navigate · Esc close".
+  - [ ] Overlay auto-dismisses after ~3.5 seconds.
+  - [ ] Pressing any key or tapping dismisses the overlay immediately.
+- [ ] Close and reopen the lightbox in the same session:
+  - [ ] Overlay does NOT appear again (shown once per session).
+- [ ] Open a new browser session (or clear sessionStorage):
+  - [ ] Overlay appears again on first lightbox open.
+
+### C7: Dirty Form Guard
+
+- [ ] Admin Panel → Campaigns → Edit a campaign:
+  - [ ] Modify the title and click ✕ or Cancel:
+    - [ ] A "Discard changes?" confirmation appears.
+    - [ ] Click "Discard" → modal closes, changes lost.
+    - [ ] Click "Cancel" on the confirmation → returns to the form with edits intact.
+  - [ ] Without making changes, click ✕ or Cancel:
+    - [ ] Modal closes immediately (no confirmation).
+- [ ] Admin Panel → Media → Edit Media:
+  - [ ] Same dirty detection and guard behavior for title/caption/thumbnail fields.
+- [ ] Gallery → Edit Campaign (viewer):
+  - [ ] Same dirty detection for title/description fields.
+- [ ] While a dirty form is open, navigate away from the browser tab:
+  - [ ] Browser shows a "Leave site?" warning (beforeunload).
+
+### C8: Sticky Auth Bar
+
+- [ ] Sign in and scroll down in the gallery:
+  - [ ] The auth bar (email + Admin Panel button + Sign out) remains sticky at the top.
+  - [ ] It has a frosted-glass backdrop blur effect.
+  - [ ] It does not overlap or conflict with the gallery header's sticky behavior.
+
+---
+
 ## REST API Manual Testing (Updated)
 
 Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with your WordPress site URL (e.g. `http://localhost:8888`) and `$TOKEN` with a valid JWT for an admin user.

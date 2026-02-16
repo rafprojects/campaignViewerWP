@@ -1,53 +1,36 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, X, ZoomIn } from 'lucide-react';
-import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal, Badge } from '@mantine/core';
+import { IconPhoto, IconX, IconZoomIn, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal } from '@mantine/core';
 import type { MediaItem } from '@/types';
+import { useCarousel } from '@/hooks/useCarousel';
+import { useLightbox } from '@/hooks/useLightbox';
+import { useSwipe } from '@/hooks/useSwipe';
+import { CarouselNavigation } from './CarouselNavigation';
+import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 
 interface ImageCarouselProps {
   images: MediaItem[];
 }
 
 export function ImageCarousel({ images }: ImageCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const { currentIndex, setCurrentIndex, next: nextImage, prev: prevImage } = useCarousel(images.length);
+  const { isOpen: isLightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
+    onPrev: prevImage,
+    onNext: nextImage,
+    enableArrowNavigation: true,
+  });
 
-  const nextImage = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  }, [images.length]);
-
-  const prevImage = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: nextImage,
+    onSwipeRight: prevImage,
+  });
 
   const currentImage = images[currentIndex];
-
-  useEffect(() => {
-    if (!isLightboxOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        prevImage();
-      }
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        nextImage();
-      }
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setIsLightboxOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen, nextImage, prevImage]);
 
   return (
     <Stack gap="md">
       <Title order={3} size="h5">
         <Group gap={8} component="span">
-          <ImageIcon size={18} />
+          <IconPhoto size={18} />
           Images ({images.length})
         </Group>
       </Title>
@@ -58,10 +41,13 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         role="button"
         tabIndex={0}
         aria-label={`View image ${currentIndex + 1} of ${images.length}`}
+        onClick={openLightbox}
+        {...swipeHandlers}
+        style={{ touchAction: 'pan-y' }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            setIsLightboxOpen(true);
+            openLightbox();
           }
           if (event.key === 'ArrowLeft') {
             event.preventDefault();
@@ -81,7 +67,6 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
               fit="contain"
               h="100%"
               style={{ cursor: 'zoom-in' }}
-              onClick={() => setIsLightboxOpen(true)}
             />
           </Box>
         </AspectRatio>
@@ -91,48 +76,13 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           pos="absolute"
           bottom={12}
           right={12}
-          onClick={() => setIsLightboxOpen(true)}
+          onClick={openLightbox}
           size="lg"
           variant="light"
           aria-label="Open lightbox"
         >
-          <ZoomIn size={20} />
+          <IconZoomIn size={20} />
         </ActionIcon>
-
-        {/* Navigation Arrows */}
-        {images.length > 1 && (
-          <>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              left={8}
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={prevImage}
-              variant="light"
-              size="lg"
-              aria-label="Previous image"
-            >
-              <ChevronLeft size={24} />
-            </ActionIcon>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              right={8}
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={nextImage}
-              variant="light"
-              size="lg"
-              aria-label="Next image"
-            >
-              <ChevronRight size={24} />
-            </ActionIcon>
-          </>
-        )}
-
-        {/* Image counter */}
-        <Badge pos="absolute" bottom={12} left={12}>
-          {currentIndex + 1} / {images.length}
-        </Badge>
       </Box>
 
       {/* Caption */}
@@ -140,47 +90,34 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         {currentImage.caption || 'Untitled image'}
       </Text>
 
-      {/* Thumbnail Strip */}
-      <Group gap={6}>
-        {images.map((image, index) => (
-          <ActionIcon
-            key={image.id}
-            onClick={() => setCurrentIndex(index)}
-            variant={index === currentIndex ? 'light' : 'subtle'}
-            size="lg"
-            p={0}
-            aria-label={`Show image ${index + 1} of ${images.length}`}
-            aria-pressed={index === currentIndex}
-            style={{
-              border: index === currentIndex ? '2px solid var(--wpsg-color-primary)' : 'none',
-              overflow: 'hidden',
-            }}
-          >
-            <Image
-              src={image.url}
-              alt={image.caption || 'Campaign image thumbnail'}
-              w={60}
-              h={60}
-              fit="cover"
-              loading="lazy"
-            />
-          </ActionIcon>
-        ))}
-      </Group>
+      <CarouselNavigation
+        total={images.length}
+        currentIndex={currentIndex}
+        onPrev={prevImage}
+        onNext={nextImage}
+        onSelect={setCurrentIndex}
+        items={images.map((image) => ({
+          id: image.id,
+          url: image.url,
+          caption: image.caption,
+        }))}
+        previousLabel="Previous image"
+        nextLabel="Next image"
+      />
 
       {/* Lightbox Modal */}
       <Modal
         opened={isLightboxOpen}
-        onClose={() => setIsLightboxOpen(false)}
+        onClose={closeLightbox}
         fullScreen
         padding={0}
         withCloseButton={false}
         transitionProps={{ duration: 0 }}
         styles={{
-          content: { background: 'rgba(0, 0, 0, 0.95)', overflow: 'hidden' },
+          content: { background: 'color-mix(in srgb, var(--wpsg-color-background) 95%, transparent)', overflow: 'hidden' },
         }}
       >
-        <Box h="100vh" pos="relative" component="div">
+        <Box h="100vh" pos="relative" component="div" {...swipeHandlers} style={{ touchAction: 'pan-y' }}>
           {isLightboxOpen && (
             <Box
               style={{
@@ -202,17 +139,20 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
             </Box>
           )}
 
+          {/* Keyboard hint (shown once per session) */}
+          <KeyboardHintOverlay visible={isLightboxOpen} />
+
           {/* Close button */}
           <ActionIcon
             pos="absolute"
             top={16}
             right={16}
-            onClick={() => setIsLightboxOpen(false)}
+            onClick={closeLightbox}
             size="lg"
             variant="light"
             aria-label="Close lightbox"
           >
-            <X size={24} />
+            <IconX size={24} />
           </ActionIcon>
 
           {/* Navigation arrows */}
@@ -231,7 +171,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 size="xl"
                 aria-label="Previous image (lightbox)"
               >
-                <ChevronLeft size={32} />
+                <IconChevronLeft size={32} />
               </ActionIcon>
               <ActionIcon
                 pos="absolute"
@@ -246,7 +186,7 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 size="xl"
                 aria-label="Next image (lightbox)"
               >
-                <ChevronRight size={32} />
+                <IconChevronRight size={32} />
               </ActionIcon>
             </>
           )}

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign, CampaignAccessGrant } from '@/types';
 import {
@@ -7,29 +7,29 @@ import {
   Group,
   Card,
   Text,
-  ScrollArea,
   Table,
   Badge,
-  TextInput,
-  Textarea,
-  Select,
   Stack,
   Loader,
   Center,
   Title,
-  Modal,
   ActionIcon,
   Box,
-  Combobox,
-  InputBase,
   useCombobox,
   Tooltip,
-  SegmentedControl,
-  Alert,
-  Checkbox,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconSearch, IconAlertCircle, IconArchive, IconArchiveOff, IconUserPlus } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff } from '@tabler/icons-react';
+import { CampaignFormModal, type CampaignFormState } from './CampaignFormModal';
+import { CampaignsTab } from './CampaignsTab';
+import { AuditTab } from './AuditTab';
+import { AccessTab } from './AccessTab';
+import { CampaignSelector } from '@/components/shared/CampaignSelector';
+import { AdminCampaignArchiveModal } from './AdminCampaignArchiveModal';
+import { AdminCampaignRestoreModal } from './AdminCampaignRestoreModal';
+import { ArchiveCompanyModal } from './ArchiveCompanyModal';
+import { QuickAddUserModal } from './QuickAddUserModal';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 
@@ -77,18 +77,18 @@ interface CompanyAccessGrant extends CampaignAccessGrant {
   campaignStatus?: string;
 }
 
+type ListResponse<T> = T[] | { items?: T[]; entries?: T[]; grants?: T[]; data?: T[] };
+
+const normalizeListResponse = <T,>(response: ListResponse<T>): T[] => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.items)) return response.items;
+  if (Array.isArray(response.entries)) return response.entries;
+  if (Array.isArray(response.grants)) return response.grants;
+  if (Array.isArray(response.data)) return response.data;
+  return [];
+};
+
 type AccessViewMode = 'campaign' | 'company' | 'all';
-
-interface AdminPanelProps {
-}
-
-interface WpUser {
-  id: number;
-  email: string;
-  displayName: string;
-  login: string;
-  isAdmin: boolean;
-}
 
 interface AdminPanelProps {
   apiClient: ApiClient;
@@ -97,7 +97,7 @@ interface AdminPanelProps {
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
 }
 
-const emptyForm = {
+const emptyForm: CampaignFormState = {
   title: '',
   description: '',
   company: '',
@@ -106,6 +106,8 @@ const emptyForm = {
   tags: '',
 };
 
+const campaignFormReducer = (_state: CampaignFormState, next: CampaignFormState): CampaignFormState => next;
+
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<string | null>('campaigns');
   const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
@@ -113,7 +115,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [error, setError] = useState<string | null>(null);
 
   const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
-  const [formState, setFormState] = useState({ ...emptyForm });
+  const [formState, dispatchFormState] = useReducer(campaignFormReducer, { ...emptyForm });
   const [isSavingCampaign, setIsSavingCampaign] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState<string>('');
@@ -162,6 +164,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<AdminCampaign | null>(null);
+  const [archivingIds, setArchivingIds] = useState<Set<string>>(new Set());
+  const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
 
@@ -172,7 +176,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       const response = await apiClient.get<ApiCampaignResponse>('/wp-json/wp-super-gallery/v1/campaigns?per_page=50');
       setCampaigns(response.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load campaigns');
+      setError(getErrorMessage(err, 'Failed to load campaigns'));
     } finally {
       setIsLoading(false);
     }
@@ -184,9 +188,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   // Cleanup blur timeout on unmount
   useEffect(() => {
+    const timeoutId = blurTimeoutRef.current;
     return () => {
-      if (blurTimeoutRef.current) {
-        clearTimeout(blurTimeoutRef.current);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     };
   }, []);
@@ -194,19 +199,19 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   // Auto-select first campaign for media/access/audit tabs
   useEffect(() => {
     if (activeTab === 'media' && !mediaCampaignId && campaigns.length > 0) {
-      setMediaCampaignId(campaigns[0].id);
+      setMediaCampaignId(String(campaigns[0].id));
     }
   }, [activeTab, campaigns, mediaCampaignId]);
 
   useEffect(() => {
     if (activeTab === 'access' && !accessCampaignId && campaigns.length > 0 && accessViewMode === 'campaign') {
-      setAccessCampaignId(campaigns[0].id);
+      setAccessCampaignId(String(campaigns[0].id));
     }
   }, [activeTab, accessCampaignId, campaigns, accessViewMode]);
 
   useEffect(() => {
     if (activeTab === 'audit' && !auditCampaignId && campaigns.length > 0) {
-      setAuditCampaignId(campaigns[0].id);
+      setAuditCampaignId(String(campaigns[0].id));
     }
   }, [activeTab, auditCampaignId, campaigns]);
 
@@ -242,14 +247,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     if (!campaignId) return;
     setAccessLoading(true);
     try {
-      const response = await apiClient.get<CompanyAccessGrant[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access`);
-      setAccessEntries(response ?? []);
-    } catch {
+      const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access`);
+      setAccessEntries(normalizeListResponse(response));
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load access entries.') });
       setAccessEntries([]);
     } finally {
       setAccessLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onNotify]);
 
   // Load company access when company selected (company/all mode)
   const loadCompanyAccess = useCallback(async (companyId: string, includeCampaigns: boolean) => {
@@ -257,14 +263,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     setAccessLoading(true);
     try {
       const url = `/wp-json/wp-super-gallery/v1/companies/${companyId}/access${includeCampaigns ? '?include_campaigns=true' : ''}`;
-      const response = await apiClient.get<CompanyAccessGrant[]>(url);
-      setAccessEntries(response ?? []);
-    } catch {
+      const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(url);
+      setAccessEntries(normalizeListResponse(response));
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load company access entries.') });
       setAccessEntries([]);
     } finally {
       setAccessLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onNotify]);
 
   // Load access based on view mode
   useEffect(() => {
@@ -345,13 +352,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       setUserSearchQuery('');
       setAccessAction('grant');
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update access.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to update access.') });
     } finally {
       setAccessSaving(false);
     }
   };
 
-  const handleRevokeAccess = async (entry: CompanyAccessGrant) => {
+  const handleRevokeAccess = useCallback(async (entry: CompanyAccessGrant) => {
     setAccessSaving(true);
     try {
       if (accessViewMode === 'campaign') {
@@ -369,11 +376,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       }
       onNotify({ type: 'success', text: 'Access revoked.' });
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to revoke access.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to revoke access.') });
     } finally {
       setAccessSaving(false);
     }
-  };
+  }, [accessCampaignId, accessViewMode, apiClient, loadAccess, loadCompanyAccess, onNotify, selectedCompanyId]);
 
   // Handle archive company (bulk archive all campaigns)
   const handleArchiveCompany = async () => {
@@ -393,7 +400,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         await loadCompanyAccess(selectedCompanyId, accessViewMode === 'all');
       }
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to archive company.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive company.') });
     } finally {
       setAccessSaving(false);
     }
@@ -449,7 +456,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     } catch (err) {
       setQuickAddResult({
         success: false,
-        message: err instanceof Error ? err.message : 'Failed to create user.',
+        message: getErrorMessage(err, 'Failed to create user.'),
       });
     } finally {
       setQuickAddSaving(false);
@@ -471,14 +478,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     if (!campaignId) return;
     setAuditLoading(true);
     try {
-      const response = await apiClient.get<AuditEntry[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`);
-      setAuditEntries(response ?? []);
-    } catch {
+      const response = await apiClient.get<ListResponse<AuditEntry>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`);
+      setAuditEntries(normalizeListResponse(response));
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load audit entries.') });
       setAuditEntries([]);
     } finally {
       setAuditLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onNotify]);
 
   useEffect(() => {
     if (activeTab === 'audit' && auditCampaignId) {
@@ -488,7 +496,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const handleEdit = (campaign: AdminCampaign) => {
     setEditingCampaign(campaign);
-    setFormState({
+    dispatchFormState({
       title: campaign.title ?? '',
       description: campaign.description ?? '',
       company: campaign.companyId ?? '',
@@ -501,14 +509,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const handleCreate = () => {
     setEditingCampaign(null);
-    setFormState({ ...emptyForm });
+    dispatchFormState({ ...emptyForm });
     setCampaignFormOpen(true);
   };
 
   const closeCampaignForm = () => {
     setCampaignFormOpen(false);
     setEditingCampaign(null);
-    setFormState({ ...emptyForm });
+    dispatchFormState({ ...emptyForm });
   };
 
   const saveCampaign = async () => {
@@ -533,37 +541,45 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       await loadCampaigns();
       onCampaignsUpdated();
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save campaign.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save campaign.') });
     } finally {
       setIsSavingCampaign(false);
     }
   };
 
   const archiveCampaign = async (campaign: AdminCampaign) => {
+    const id = String(campaign.id);
+    setArchivingIds((prev) => new Set(prev).add(id));
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/archive`, {});
       onNotify({ type: 'success', text: 'Campaign archived.' });
       await loadCampaigns();
       onCampaignsUpdated();
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to archive campaign.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive campaign.') });
+    } finally {
+      setArchivingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
     }
   };
 
   const restoreCampaign = async (campaign: AdminCampaign) => {
+    const id = String(campaign.id);
+    setRestoringIds((prev) => new Set(prev).add(id));
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/restore`, {});
       onNotify({ type: 'success', text: 'Campaign restored.' });
       await loadCampaigns();
       onCampaignsUpdated();
     } catch (err) {
-      onNotify({ type: 'error', text: err instanceof Error ? err.message : 'Failed to restore campaign.' });
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to restore campaign.') });
+    } finally {
+      setRestoringIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
     }
   };
 
   const campaignSelectData = useMemo(() => {
     return campaigns.map((c) => ({ 
-      value: c.id, 
+      value: String(c.id), 
       label: c.companyId ? `${c.title} (${c.companyId})` : c.title 
     }));
   }, [campaigns]);
@@ -578,7 +594,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   // Get the currently selected campaign with company info
   const selectedCampaign = useMemo(() => {
     if (!accessCampaignId) return null;
-    return campaigns.find((c) => c.id === accessCampaignId) || null;
+    return campaigns.find((c) => String(c.id) === String(accessCampaignId)) || null;
   }, [accessCampaignId, campaigns]);
 
   // Get the currently selected company info
@@ -611,11 +627,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               Edit
             </Button>
             {c.status === 'archived' ? (
-              <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} onClick={() => setConfirmRestore(c)}>
+              <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} loading={restoringIds.has(String(c.id))} onClick={() => setConfirmRestore(c)}>
                 Restore
               </Button>
             ) : (
-              <Button color="red" size="xs" leftSection={<IconTrash size={14} />} onClick={() => setConfirmArchive(c)}>
+              <Button color="red" size="xs" leftSection={<IconTrash size={14} />} loading={archivingIds.has(String(c.id))} onClick={() => setConfirmArchive(c)}>
                 Archive
               </Button>
             )}
@@ -716,127 +732,35 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.List>
 
         <Tabs.Panel value="campaigns" pt="md">
-          {isLoading ? (
-            <Center><Loader /></Center>
-          ) : error ? (
-            <Text c="red" role="alert" aria-live="assertive">{error}</Text>
-          ) : (
-            <Table.ScrollContainer minWidth={720}>
-              <Table verticalSpacing="sm" highlightOnHover aria-label="Campaign list">
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Title</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Visibility</Table.Th>
-                    <Table.Th>Company</Table.Th>
-                    <Table.Th>Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>{campaignsRows}</Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
-          )}
+          <CampaignsTab
+            isLoading={isLoading}
+            error={error}
+            campaignsRows={campaignsRows}
+          />
         </Tabs.Panel>
 
         {/* Campaign Form Modal */}
-        <Modal
+        <CampaignFormModal
           opened={campaignFormOpen}
+          editingCampaign={editingCampaign}
+          formState={formState}
+          onFormChange={dispatchFormState}
           onClose={closeCampaignForm}
-          title={editingCampaign ? 'Edit Campaign' : 'New Campaign'}
-          size="lg"
-        >
-          <Stack gap="md">
-            <TextInput
-              label="Title"
-              placeholder="Campaign title"
-              value={formState.title}
-              onChange={(e) => setFormState((s) => ({ ...s, title: e.currentTarget.value }))}
-              required
-              description="A unique name for this campaign"
-            />
-            <Textarea
-              label="Description"
-              placeholder="Campaign description"
-              value={formState.description}
-              onChange={(e) => setFormState((s) => ({ ...s, description: e.currentTarget.value }))}
-              minRows={3}
-              description="Brief overview of the campaign content"
-            />
-            <Group grow wrap="wrap" gap="sm">
-              <TextInput
-                label="Company Slug"
-                placeholder="company-id"
-                value={formState.company}
-                onChange={(e) => setFormState((s) => ({ ...s, company: e.currentTarget.value }))}
-                required
-                description="Unique identifier for the company"
-              />
-              <Select
-                label="Status"
-                data={[
-                  { value: 'draft', label: 'Draft' },
-                  { value: 'active', label: 'Active' },
-                  { value: 'archived', label: 'Archived' },
-                ]}
-                value={formState.status}
-                onChange={(v) => setFormState((s) => ({ ...s, status: (v ?? 'draft') as Campaign['status'] }))}
-              />
-              <Select
-                label="Visibility"
-                data={[
-                  { value: 'private', label: 'Private' },
-                  { value: 'public', label: 'Public' },
-                ]}
-                value={formState.visibility}
-                onChange={(v) => setFormState((s) => ({ ...s, visibility: (v ?? 'private') as Campaign['visibility'] }))}
-              />
-            </Group>
-            <TextInput
-              label="Tags"
-              placeholder="tag1, tag2, tag3"
-              description="Comma separated list of tags"
-              value={formState.tags}
-              onChange={(e) => setFormState((s) => ({ ...s, tags: e.currentTarget.value }))}
-            />
-            {editingCampaign && (
-              <Card withBorder p="sm">
-                <Group justify="space-between">
-                  <Text size="sm" c="dimmed">
-                    To manage media for this campaign, save changes and go to the Media tab.
-                  </Text>
-                  <Button
-                    variant="light"
-                    size="xs"
-                    onClick={() => {
-                      setMediaCampaignId(editingCampaign.id);
-                      closeCampaignForm();
-                      setActiveTab('media');
-                    }}
-                  >
-                    Go to Media
-                  </Button>
-                </Group>
-              </Card>
-            )}
-            <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
-              <Button variant="default" onClick={closeCampaignForm}>
-                Cancel
-              </Button>
-              <Button onClick={saveCampaign} loading={isSavingCampaign}>
-                {editingCampaign ? 'Save Changes' : 'Create Campaign'}
-              </Button>
-            </Group>
-          </Stack>
-        </Modal>
+          onSave={saveCampaign}
+          isSaving={isSavingCampaign}
+          onGoToMedia={(campaignId) => {
+            setMediaCampaignId(campaignId);
+            closeCampaignForm();
+            setActiveTab('media');
+          }}
+        />
 
         <Tabs.Panel value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
-            <Select
-              label={<Text size="sm" fw={500} c="gray.2">Campaign</Text>}
-              placeholder="Select campaign"
+            <CampaignSelector
               data={campaignSelectData}
               value={mediaCampaignId}
-              onChange={(v) => setMediaCampaignId(v ?? '')}
+              onChange={setMediaCampaignId}
               style={{ minWidth: 200, flex: '1 1 200px' }}
             />
             <Button
@@ -869,589 +793,120 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             </Button>
           </Group>
           <Suspense fallback={<Center py="md"><Loader /></Center>}>
-            <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} />
+            <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
           </Suspense>
         </Tabs.Panel>
 
         <Tabs.Panel value="access" pt="md">
-          {/* View Mode Toggle */}
-          <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
-            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
-              <Group align="flex-end" gap="md" wrap="wrap">
-                <Box>
-                  <Text size="sm" fw={500} mb={4} c="gray.2">View By</Text>
-                  <SegmentedControl
-                    value={accessViewMode}
-                    onChange={(v) => setAccessViewMode(v as AccessViewMode)}
-                    data={[
-                      { value: 'campaign', label: '📋 Campaign' },
-                      { value: 'company', label: '🏢 Company' },
-                      { value: 'all', label: '📊 All' },
-                    ]}
-                    aria-label="Access view mode"
-                  />
-                </Box>
-
-                {accessViewMode === 'campaign' ? (
-                  <Select
-                    label={<Text size="sm" fw={500} c="gray.2">Select Campaign</Text>}
-                    placeholder="Choose a campaign..."
-                    data={campaignSelectData}
-                    value={accessCampaignId}
-                    onChange={(v) => setAccessCampaignId(v ?? '')}
-                    style={{ minWidth: 240, flex: '1 1 240px' }}
-                  />
-                ) : (
-                  <Select
-                    label={<Text size="sm" fw={500} c="gray.2">Select Company</Text>}
-                    placeholder={companiesLoading ? 'Loading...' : 'Choose a company...'}
-                    data={companySelectData}
-                    value={selectedCompanyId}
-                    onChange={(v) => setSelectedCompanyId(v ?? '')}
-                    disabled={companiesLoading}
-                    style={{ minWidth: 240, flex: '1 1 240px' }}
-                  />
-                )}
-              </Group>
-
-              {/* Context info */}
-              <Group gap="md" wrap="wrap">
-                {accessViewMode === 'campaign' && selectedCampaign && (
-                  <Stack gap={2}>
-                    <Group gap="xs">
-                      <Text size="sm" c="dimmed">Company:</Text>
-                      <Badge variant="light">{selectedCampaign.companyId || 'None'}</Badge>
-                    </Group>
-                    {selectedCampaign.status === 'archived' && (
-                      <Alert color="yellow" variant="light" p="xs" icon={<IconAlertCircle size={16} />}>
-                        <Text size="xs">Archived campaign - grants inactive</Text>
-                      </Alert>
-                    )}
-                    <Group gap="xs" mt={2}>
-                      <Text size="xs" c="dimmed">Total users:</Text>
-                      <Badge variant="light" color="blue">Access {accessEntries.length}</Badge>
-                    </Group>
-                  </Stack>
-                )}
-                {(accessViewMode === 'company' || accessViewMode === 'all') && selectedCompany && (
-                  <Stack gap={2}>
-                    <Group gap="xs">
-                      <Text size="sm" c="dimmed">Campaigns:</Text>
-                      <Badge variant="light" color="green">{selectedCompany.activeCampaigns} active</Badge>
-                      <Badge variant="light" color="gray">{selectedCompany.archivedCampaigns} archived</Badge>
-                    </Group>
-                    {selectedCompany.activeCampaigns > 0 && (
-                      <Button
-                        variant="light"
-                        color="red"
-                        size="xs"
-                        leftSection={<IconArchive size={14} />}
-                        onClick={() => setConfirmArchiveCompany(selectedCompany)}
-                        mt={4}
-                      >
-                        Archive All Campaigns
-                      </Button>
-                    )}
-                    <Group gap="xs" mt={2}>
-                      <Text size="xs" c="dimmed">Total users:</Text>
-                      <Badge variant="light" color="blue">Access {accessEntries.length}</Badge>
-                    </Group>
-                  </Stack>
-                )}
-              </Group>
-            </Group>
-          </Card>
-
-          {/* Empty state */}
-          {(accessViewMode === 'campaign' && !accessCampaignId) || 
-           ((accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId) ? (
-            <Center py="xl">
-              <Stack align="center" gap="xs">
-                <Text c="dimmed">
-                  {accessViewMode === 'campaign' 
-                    ? 'Select a campaign to manage access permissions'
-                    : 'Select a company to manage access permissions'}
-                </Text>
-              </Stack>
-            </Center>
-          ) : (
-            <>
-              {/* Current Access - Show this first and prominently */}
-              <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
-                <Group justify="space-between" mb="sm" wrap="wrap" gap="sm">
-                  <Text fw={600} size="lg" c="gray.1">
-                    {accessViewMode === 'campaign' ? 'Current Access' : 
-                     accessViewMode === 'company' ? 'Company-Wide Access' : 
-                     'All Access (Company + Campaigns)'}
-                  </Text>
-                  <Badge variant="light">{accessEntries.length} users</Badge>
-                </Group>
-                
-                {accessLoading ? (
-                  <Center py="md"><Loader /></Center>
-                ) : accessEntries.length === 0 ? (
-                  <Text c="dimmed" ta="center" py="md">
-                    {accessViewMode === 'campaign' 
-                      ? 'No users have access to this campaign yet. Add users below.'
-                      : accessViewMode === 'company'
-                      ? 'No company-wide access grants. Add users below.'
-                      : 'No access grants found for this company or its campaigns.'}
-                  </Text>
-                ) : (
-                  <ScrollArea style={{ maxHeight: 300 }} offsetScrollbars type="auto">
-                    <Table
-                      verticalSpacing="xs"
-                      highlightOnHover
-                      aria-label="Current access entries"
-                      style={{ minWidth: 640 }}
-                    >
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>User</Table.Th>
-                          <Table.Th>Access Type</Table.Th>
-                          <Table.Th>Granted</Table.Th>
-                          <Table.Th w={80}>Revoke</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>{accessRows}</Table.Tbody>
-                    </Table>
-                  </ScrollArea>
-                )}
-              </Card>
-
-              {/* Grant Access Form - Unified and compact */}
-              <Card shadow="sm" withBorder p={{ base: 'sm', md: 'md' }}>
-                <Text fw={600} size="lg" mb="sm" c="gray.1">
-                  {accessViewMode === 'campaign' ? 'Grant New Access' : 'Grant Company-Wide Access'}
-                </Text>
-                
-                <Group align="flex-end" gap="sm" wrap="wrap">
-                  {/* Unified user search with ID fallback built-in */}
-                  <Box style={{ flex: 1, minWidth: 250 }}>
-                    <Combobox
-                      store={userCombobox}
-                      onOptionSubmit={(val) => {
-                        const user = userSearchResults.find((u) => String(u.id) === val);
-                        if (user) {
-                          setSelectedUser(user);
-                          setAccessUserId('');
-                          setUserSearchQuery('');
-                        }
-                        userCombobox.closeDropdown();
-                      }}
-                    >
-                      <Combobox.Target>
-                        <InputBase
-                          label={<Text size="sm" fw={500} c="gray.2">User</Text>}
-                          placeholder="Search name, email, or enter ID..."
-                          value={selectedUser ? `${selectedUser.displayName} (${selectedUser.email})` : userSearchQuery}
-                          onChange={(e) => {
-                            const val = e.currentTarget.value;
-                            setUserSearchQuery(val);
-                            setSelectedUser(null);
-                            // If it looks like a number, treat as User ID
-                            if (/^\d+$/.test(val)) {
-                              setAccessUserId(val);
-                            } else {
-                              setAccessUserId('');
-                            }
-                            userCombobox.openDropdown();
-                            userCombobox.updateSelectedOptionIndex();
-                          }}
-                          onClick={() => userCombobox.openDropdown()}
-                          onFocus={() => userCombobox.openDropdown()}
-                          onBlur={() => {
-                            if (blurTimeoutRef.current) {
-                              clearTimeout(blurTimeoutRef.current);
-                            }
-                            blurTimeoutRef.current = setTimeout(() => {
-                              userCombobox.closeDropdown();
-                              blurTimeoutRef.current = null;
-                            }, 150);
-                          }}
-                          rightSection={
-                            selectedUser ? (
-                              <ActionIcon 
-                                size="sm" 
-                                variant="subtle"
-                                aria-label="Clear selected user"
-                                onClick={() => {
-                                  setSelectedUser(null);
-                                  setUserSearchQuery('');
-                                  setAccessUserId('');
-                                }}
-                              >
-                                <IconTrash size={14} />
-                              </ActionIcon>
-                            ) : userSearchLoading ? (
-                              <Loader size={16} />
-                            ) : (
-                              <IconSearch size={16} />
-                            )
-                          }
-                          rightSectionPointerEvents={selectedUser ? 'auto' : 'none'}
-                        />
-                      </Combobox.Target>
-
-                      <Combobox.Dropdown>
-                        <Combobox.Options>
-                          {userSearchResults.length === 0 && userSearchQuery.length >= 2 && !userSearchLoading && !/^\d+$/.test(userSearchQuery) && (
-                            <Combobox.Empty>No users found</Combobox.Empty>
-                          )}
-                          {/^\d+$/.test(userSearchQuery) && (
-                            <Combobox.Empty>Using User ID: {userSearchQuery}</Combobox.Empty>
-                          )}
-                          {userSearchQuery.length < 2 && !/^\d+$/.test(userSearchQuery) && (
-                            <Combobox.Empty>Type name/email or enter user ID</Combobox.Empty>
-                          )}
-                          {userSearchResults.map((user) => (
-                            <Combobox.Option key={user.id} value={String(user.id)}>
-                              <Group gap="xs">
-                                <Text size="sm" fw={500}>{user.displayName}</Text>
-                                <Text size="xs" c="dimmed">{user.email}</Text>
-                                {user.isAdmin && <Badge size="xs" color="blue">Admin</Badge>}
-                              </Group>
-                            </Combobox.Option>
-                          ))}
-                        </Combobox.Options>
-                      </Combobox.Dropdown>
-                    </Combobox>
-                  </Box>
-
-                  {/* Campaign mode: show scope and action options */}
-                  {accessViewMode === 'campaign' && (
-                    <>
-                      <Select
-                        label={<Text size="sm" fw={500} c="gray.2">Scope</Text>}
-                        data={[
-                          { value: 'campaign', label: '📋 This Campaign' },
-                          { value: 'company', label: '🏢 All Company Campaigns' },
-                        ]}
-                        value={accessSource}
-                        onChange={(v) => setAccessSource((v as 'company' | 'campaign') ?? 'campaign')}
-                        style={{ minWidth: 180 }}
-                      />
-
-                      <Select
-                        label={<Text size="sm" fw={500} c="gray.2">Action</Text>}
-                        data={[
-                          { value: 'grant', label: '✅ Grant Access' },
-                          { value: 'deny', label: '❌ Deny Access' },
-                        ]}
-                        value={accessAction}
-                        onChange={(v) => setAccessAction((v as 'grant' | 'deny') ?? 'grant')}
-                        disabled={accessSource === 'company'}
-                        style={{ minWidth: 150 }}
-                      />
-                    </>
-                  )}
-
-                  <Button 
-                    onClick={handleGrantAccess} 
-                    loading={accessSaving}
-                    disabled={!selectedUser && !accessUserId}
-                    aria-disabled={!selectedUser && !accessUserId}
-                  >
-                    Apply
-                  </Button>
-
-                  <Tooltip label="Create a new user">
-                    <Button
-                      variant="light"
-                      leftSection={<IconUserPlus size={16} />}
-                      aria-label="Quick add a new user"
-                      onClick={() => {
-                        // Pre-fill campaign if in campaign mode
-                        if (accessViewMode === 'campaign' && accessCampaignId) {
-                          setQuickAddCampaignId(accessCampaignId);
-                        }
-                        setQuickAddUserOpen(true);
-                      }}
-                    >
-                      Quick Add User
-                    </Button>
-                  </Tooltip>
-                </Group>
-
-                {accessViewMode === 'campaign' && accessSource === 'company' && (
-                  <Text size="xs" c="dimmed" mt="xs">
-                    Company-level grants give access to all campaigns under the same company.
-                  </Text>
-                )}
-                {(accessViewMode === 'company' || accessViewMode === 'all') && (
-                  <Text size="xs" c="dimmed" mt="xs">
-                    Grants apply to all current and future campaigns for this company.
-                  </Text>
-                )}
-              </Card>
-            </>
-          )}
+          <AccessTab
+            accessViewMode={accessViewMode}
+            onAccessViewModeChange={(v) => setAccessViewMode(v)}
+            campaignSelectData={campaignSelectData}
+            accessCampaignId={accessCampaignId}
+            onAccessCampaignChange={setAccessCampaignId}
+            companySelectData={companySelectData}
+            selectedCompanyId={selectedCompanyId}
+            onSelectedCompanyChange={setSelectedCompanyId}
+            companiesLoading={companiesLoading}
+            selectedCampaign={selectedCampaign}
+            selectedCompany={selectedCompany}
+            accessEntriesCount={accessEntries.length}
+            accessLoading={accessLoading}
+            accessRows={accessRows}
+            onArchiveCompanyClick={(company) => setConfirmArchiveCompany(company)}
+            userCombobox={userCombobox}
+            userSearchResults={userSearchResults}
+            userSearchQuery={userSearchQuery}
+            userSearchLoading={userSearchLoading}
+            selectedUser={selectedUser}
+            setSelectedUser={setSelectedUser}
+            setUserSearchQuery={setUserSearchQuery}
+            setAccessUserId={setAccessUserId}
+            accessUserId={accessUserId}
+            blurTimeoutRef={blurTimeoutRef}
+            accessSource={accessSource}
+            onAccessSourceChange={setAccessSource}
+            accessAction={accessAction}
+            onAccessActionChange={setAccessAction}
+            onGrantAccess={handleGrantAccess}
+            accessSaving={accessSaving}
+            onQuickAddUser={() => {
+              if (accessViewMode === 'campaign' && accessCampaignId) {
+                setQuickAddCampaignId(accessCampaignId);
+              }
+              setQuickAddUserOpen(true);
+            }}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value="audit" pt="md" component="section" aria-labelledby="audit-heading">
-          <Text size="sm" fw={600} c="gray.2" id="audit-heading" mb="xs">
-            Campaign Audit Log
-          </Text>
-          <Group mb="md">
-            <Select
-              label="Campaign"
-              placeholder="Select campaign"
-              data={campaignSelectData}
-              value={auditCampaignId}
-              onChange={(v) => setAuditCampaignId(v ?? '')}
-              style={{ minWidth: 200 }}
-              aria-label="Select campaign for audit log"
-            />
-          </Group>
-          {auditLoading ? (
-            <Center><Loader aria-label="Loading audit entries" /></Center>
-          ) : auditEntries.length === 0 ? (
-            <Text c="dimmed" role="status" aria-live="polite">No audit entries yet.</Text>
-          ) : (
-            <ScrollArea
-              offsetScrollbars
-              type="always"
-              scrollbars="y"
-              className="wpsg-scrollarea"
-              h={360}
-            >
-              <Table verticalSpacing="sm" highlightOnHover aria-label="Audit entries" style={{ minWidth: 640 }}>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th miw={140}>When</Table.Th>
-                    <Table.Th miw={160}>Action</Table.Th>
-                    <Table.Th miw={80}>User</Table.Th>
-                    <Table.Th miw={200}>Details</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>{auditRows}</Table.Tbody>
-              </Table>
-            </ScrollArea>
-          )}
+          <AuditTab
+            campaignSelectData={campaignSelectData}
+            auditCampaignId={auditCampaignId}
+            onAuditCampaignChange={(v) => setAuditCampaignId(v ?? '')}
+            auditLoading={auditLoading}
+            auditEntriesCount={auditEntries.length}
+            auditRows={auditRows}
+          />
         </Tabs.Panel>
       </Tabs>
 
-      <Modal opened={!!confirmArchive} onClose={() => setConfirmArchive(null)} title="Archive campaign" padding="md">
-        <Text>Archive this campaign? This action will mark it archived.</Text>
-        <Group justify="flex-end" mt="md">
-          <Button variant="default" onClick={() => setConfirmArchive(null)}>Cancel</Button>
-          <Button
-            color="red"
-            onClick={() => {
-              if (confirmArchive) {
-                archiveCampaign(confirmArchive);
-                setConfirmArchive(null);
-              }
-            }}
-            aria-label={`Archive campaign ${confirmArchive?.title ?? ''}`.trim()}
-          >
-            Archive
-          </Button>
-        </Group>
-      </Modal>
+      <AdminCampaignArchiveModal
+        opened={!!confirmArchive}
+        campaign={confirmArchive ? { id: confirmArchive.id, title: confirmArchive.title } : null}
+        onClose={() => setConfirmArchive(null)}
+        onConfirm={async () => {
+          if (confirmArchive) {
+            setConfirmArchive(null);
+            await archiveCampaign(confirmArchive);
+          }
+        }}
+      />
 
-      <Modal opened={!!confirmRestore} onClose={() => setConfirmRestore(null)} title="Restore campaign" padding="md">
-        <Text>Restore this campaign? This will make it active again and enable any associated access grants.</Text>
-        <Group justify="flex-end" mt="md">
-          <Button variant="default" onClick={() => setConfirmRestore(null)}>Cancel</Button>
-          <Button
-            color="teal"
-            onClick={() => {
-              if (confirmRestore) {
-                restoreCampaign(confirmRestore);
-                setConfirmRestore(null);
-              }
-            }}
-            aria-label={`Restore campaign ${confirmRestore?.title ?? ''}`.trim()}
-          >
-            Restore
-          </Button>
-        </Group>
-      </Modal>
+      <AdminCampaignRestoreModal
+        opened={!!confirmRestore}
+        campaign={confirmRestore ? { id: confirmRestore.id, title: confirmRestore.title } : null}
+        onClose={() => setConfirmRestore(null)}
+        onConfirm={async () => {
+          if (confirmRestore) {
+            setConfirmRestore(null);
+            await restoreCampaign(confirmRestore);
+          }
+        }}
+      />
 
-      <Modal 
-        opened={!!confirmArchiveCompany} 
-        onClose={() => { setConfirmArchiveCompany(null); setArchiveRevokeAccess(false); }} 
-        title="Archive all company campaigns"
-        padding="md"
-      >
-        <Stack gap="md">
-          <Text>
-            Archive all campaigns for <strong>{confirmArchiveCompany?.name}</strong>? 
-            This will archive {confirmArchiveCompany?.activeCampaigns} active campaign{confirmArchiveCompany?.activeCampaigns !== 1 ? 's' : ''}.
-          </Text>
-          
-          {confirmArchiveCompany && confirmArchiveCompany.campaigns.filter(c => c.status !== 'archived').length > 0 && (
-            <Box>
-              <Text size="sm" fw={500} mb="xs">Campaigns to be archived:</Text>
-              <ScrollArea style={{ maxHeight: 150 }}>
-                <Stack gap={4}>
-                  {confirmArchiveCompany.campaigns
-                    .filter(c => c.status !== 'archived')
-                    .map(c => (
-                      <Text key={c.id} size="sm" c="dimmed">• {c.title}</Text>
-                    ))}
-                </Stack>
-              </ScrollArea>
-            </Box>
-          )}
+      <ArchiveCompanyModal
+        opened={!!confirmArchiveCompany}
+        company={confirmArchiveCompany}
+        archiveRevokeAccess={archiveRevokeAccess}
+        onArchiveRevokeAccessChange={setArchiveRevokeAccess}
+        onClose={() => {
+          setConfirmArchiveCompany(null);
+          setArchiveRevokeAccess(false);
+        }}
+        onConfirm={handleArchiveCompany}
+        accessSaving={accessSaving}
+      />
 
-          <Checkbox
-            label="Also revoke all company-level access grants"
-            checked={archiveRevokeAccess}
-            onChange={(e) => setArchiveRevokeAccess(e.currentTarget.checked)}
-          />
-
-          <Alert color="yellow" variant="light">
-            <Text size="sm">Access grants for individual campaigns will be preserved but become inactive.</Text>
-          </Alert>
-        </Stack>
-        
-        <Group justify="flex-end" mt="md">
-          <Button variant="default" onClick={() => { setConfirmArchiveCompany(null); setArchiveRevokeAccess(false); }}>Cancel</Button>
-          <Button
-            color="red"
-            onClick={handleArchiveCompany}
-            loading={accessSaving}
-            aria-label={`Archive ${confirmArchiveCompany?.activeCampaigns ?? 0} campaign${confirmArchiveCompany?.activeCampaigns === 1 ? '' : 's'} for ${confirmArchiveCompany?.name ?? 'company'}`}
-          >
-            Archive {confirmArchiveCompany?.activeCampaigns} Campaign{confirmArchiveCompany?.activeCampaigns !== 1 ? 's' : ''}
-          </Button>
-        </Group>
-      </Modal>
-
-      {/* Quick Add User Modal */}
-      <Modal 
-        opened={quickAddUserOpen} 
-        onClose={closeQuickAddUser} 
-        title="Quick Add User"
-        size="md"
-        padding="md"
-      >
-        <Stack gap="md">
-          {quickAddResult ? (
-            <>
-              <Alert 
-                color={quickAddResult.success ? 'teal' : 'red'} 
-                title={quickAddResult.success ? 'Success' : 'Error'}
-                role={quickAddResult.success ? 'status' : 'alert'}
-                aria-live={quickAddResult.success ? 'polite' : 'assertive'}
-              >
-                <Text size="sm">{quickAddResult.message}</Text>
-                {quickAddResult.resetUrl && (
-                  <Box mt="sm">
-                    <Text size="sm" fw={500}>Password Reset Link:</Text>
-                    <TextInput
-                      label="Password reset link"
-                      value={quickAddResult.resetUrl}
-                      readOnly
-                      onClick={(e) => (e.target as HTMLInputElement).select()}
-                      rightSection={(
-                        <Tooltip label="Click to select">
-                          <IconAlertCircle size={16} />
-                        </Tooltip>
-                      )}
-                    />
-                    <Group mt="xs" gap="xs">
-                      <Button
-                        size="xs"
-                        variant="light"
-                        component="a"
-                        href={quickAddResult.resetUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open Reset Link
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="subtle"
-                        onClick={() => {
-                          navigator.clipboard.writeText(quickAddResult.resetUrl!);
-                          onNotify({ type: 'success', text: 'Reset URL copied to clipboard' });
-                        }}
-                      >
-                        Copy Link
-                      </Button>
-                    </Group>
-                    <Text size="xs" c="dimmed" mt="xs">
-                      Share this link securely with the user. They can use it to set their own password.
-                    </Text>
-                  </Box>
-                )}
-              </Alert>
-              <Group justify="flex-end" wrap="wrap" gap="sm">
-                <Button onClick={closeQuickAddUser}>Close</Button>
-              </Group>
-            </>
-          ) : (
-            <>
-              <TextInput
-                label="Email"
-                placeholder="user@example.com"
-                required
-                value={quickAddEmail}
-                onChange={(e) => setQuickAddEmail(e.currentTarget.value)}
-                description="User's WordPress login email address"
-              />
-
-              <TextInput
-                label="Display Name"
-                placeholder="John Doe"
-                required
-                value={quickAddName}
-                onChange={(e) => setQuickAddName(e.currentTarget.value)}
-                description="Full name for display purposes"
-              />
-
-              <Select
-                label="Role"
-                data={[
-                  { value: 'subscriber', label: '👁 Viewer - Can view granted campaigns' },
-                  { value: 'wpsg_admin', label: '⚙️ Gallery Admin - Can manage this plugin' },
-                ]}
-                value={quickAddRole}
-                onChange={(v) => setQuickAddRole(v ?? 'subscriber')}
-                description="WordPress role determines plugin permissions"
-              />
-
-              <Select
-                label="Grant Access To (optional)"
-                placeholder="No initial access"
-                data={[
-                  { value: '', label: 'No initial access' },
-                  ...campaigns.filter(c => c.status === 'active').map((c) => ({ 
-                    value: c.id, 
-                    label: c.companyId ? `${c.title} (${c.companyId})` : c.title 
-                  })),
-                ]}
-                value={quickAddCampaignId}
-                onChange={(v) => setQuickAddCampaignId(v ?? '')}
-                clearable
-              />
-
-              <Checkbox
-                label="🧪 Test mode: Simulate email failure"
-                checked={quickAddTestMode}
-                onChange={(e) => setQuickAddTestMode(e.currentTarget.checked)}
-                description="Enable to test the password reset link UI without actually sending email"
-              />
-
-              <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
-                <Button variant="default" onClick={closeQuickAddUser}>Cancel</Button>
-                <Button 
-                  onClick={handleQuickAddUser} 
-                  loading={quickAddSaving}
-                  disabled={!quickAddEmail || !quickAddName}
-                  leftSection={<IconUserPlus size={16} />}
-                >
-                  Create User
-                </Button>
-              </Group>
-            </>
-          )}
-        </Stack>
-      </Modal>
+      <QuickAddUserModal
+        opened={quickAddUserOpen}
+        onClose={closeQuickAddUser}
+        quickAddResult={quickAddResult}
+        quickAddEmail={quickAddEmail}
+        setQuickAddEmail={setQuickAddEmail}
+        quickAddName={quickAddName}
+        setQuickAddName={setQuickAddName}
+        quickAddRole={quickAddRole}
+        setQuickAddRole={setQuickAddRole}
+        quickAddCampaignId={quickAddCampaignId}
+        setQuickAddCampaignId={setQuickAddCampaignId}
+        quickAddTestMode={quickAddTestMode}
+        setQuickAddTestMode={setQuickAddTestMode}
+        campaigns={campaigns}
+        onSubmit={handleQuickAddUser}
+        quickAddSaving={quickAddSaving}
+        onNotify={onNotify}
+      />
     </Card>
   );
 }

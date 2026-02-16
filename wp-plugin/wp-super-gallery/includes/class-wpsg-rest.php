@@ -359,6 +359,13 @@ class WPSG_REST {
             return false;
         }
 
+        // For token-based auth (e.g., JWT Bearer), WordPress nonce is not required.
+        // Nonce verification is only needed for cookie-authenticated REST requests.
+        $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION'])) : '';
+        if (!empty($auth_header) && stripos($auth_header, 'Bearer ') === 0) {
+            return true;
+        }
+
         $require_nonce = apply_filters('wpsg_require_rest_nonce', true);
         if (!$require_nonce) {
             return true;
@@ -1564,9 +1571,19 @@ class WPSG_REST {
         }
 
         $url = wp_get_attachment_url($attachment_id);
+
+        // Generate thumbnail for images
+        $thumbnail = null;
+        $mime = get_post_mime_type($attachment_id);
+        if ($mime && strpos($mime, 'image') === 0) {
+            $thumb = wp_get_attachment_image_src($attachment_id, 'medium');
+            $thumbnail = $thumb ? $thumb[0] : $url;
+        }
+
         return new WP_REST_Response([
             'attachmentId' => $attachment_id,
             'url' => $url,
+            'thumbnail' => $thumbnail,
         ], 201);
     }
 
@@ -1612,9 +1629,12 @@ class WPSG_REST {
                 $thumb = wp_get_attachment_image_src($post->ID, 'thumbnail');
                 $thumbnail = $thumb ? $thumb[0] : null;
             } elseif ($type === 'video') {
-                // Try to get video thumbnail if available
-                $poster = get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-                $thumbnail = $poster ?: null;
+                // Try to get video poster/thumbnail if WP generated one
+                $poster_id = get_post_meta($post->ID, '_thumbnail_id', true);
+                if ($poster_id) {
+                    $poster_src = wp_get_attachment_image_src(intval($poster_id), 'medium');
+                    $thumbnail = $poster_src ? $poster_src[0] : null;
+                }
             }
 
             $items[] = [
