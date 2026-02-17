@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { IconPlayerPlay } from '@tabler/icons-react';
-import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box } from '@mantine/core';
+import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
 import type { MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useSwipe } from '@/hooks/useSwipe';
@@ -8,6 +8,18 @@ import { CarouselNavigation } from './CarouselNavigation';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
+}
+
+const STANDARD_PLAYER_HEIGHT = 'clamp(240px, 36vw, 420px)';
+
+function withAutoplay(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set('autoplay', '1');
+    return parsed.toString();
+  } catch {
+    return `${url}${url.includes('?') ? '&' : '?'}autoplay=1`;
+  }
 }
 
 export function VideoCarousel({ videos }: VideoCarouselProps) {
@@ -26,6 +38,13 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
 
   const currentVideo = videos[currentIndex];
 
+  const playerTitle = useMemo(
+    () => `Video player: ${currentVideo.caption || 'Campaign video'}`,
+    [currentVideo.caption],
+  );
+
+  const isUploadVideo = currentVideo.source === 'upload';
+
   const swipeHandlers = useSwipe({
     onSwipeLeft: nextVideo,
     onSwipeRight: prevVideo,
@@ -43,11 +62,19 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
       {/* Player wrapper */}
       <Box
         pos="relative"
+        data-testid="video-player-frame"
         role="region"
         tabIndex={0}
         aria-label={`Video ${currentIndex + 1} of ${videos.length}: ${currentVideo.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`}
         {...swipeHandlers}
-        style={{ touchAction: 'pan-y' }}
+        style={{
+          touchAction: 'pan-y',
+          height: STANDARD_PLAYER_HEIGHT,
+          maxHeight: STANDARD_PLAYER_HEIGHT,
+          minHeight: STANDARD_PLAYER_HEIGHT,
+          width: '100%',
+          backgroundColor: 'transparent',
+        }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') {
             event.preventDefault();
@@ -63,22 +90,62 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
           }
         }}
       >
-        <AspectRatio ratio={16 / 9}>
-          {isPlaying ? (
-            <iframe
-              src={`${currentVideo.embedUrl ?? currentVideo.url}?autoplay=1`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={`Video player: ${currentVideo.caption}`}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-            />
+        {isPlaying ? (
+            isUploadVideo ? (
+              <Box
+                data-testid="video-player-surface"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <video
+                  src={currentVideo.url}
+                  controls
+                  autoPlay
+                  playsInline
+                  poster={currentVideo.thumbnail}
+                  aria-label={playerTitle}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    backgroundColor: 'transparent',
+                  }}
+                />
+              </Box>
+            ) : (
+              <Box
+                data-testid="video-player-surface"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <iframe
+                  src={withAutoplay(currentVideo.embedUrl ?? currentVideo.url)}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={playerTitle}
+                  style={{ width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' }}
+                />
+              </Box>
+            )
           ) : (
-            <div>
+            <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
               <Image
                 src={currentVideo.thumbnail}
                 alt={currentVideo.caption || 'Campaign video'}
                 h="100%"
-                fit="cover"
+                fit="contain"
                 style={{ cursor: 'pointer' }}
                 onClick={() => setIsPlaying(true)}
               />
@@ -98,7 +165,6 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               </ActionIcon>
             </div>
           )}
-        </AspectRatio>
 
       </Box>
 

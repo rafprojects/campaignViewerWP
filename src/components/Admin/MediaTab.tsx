@@ -1,14 +1,33 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
-import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
-import { useElementSize } from '@mantine/hooks';
+import { useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
+import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination } from '@mantine/core';
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { MediaCard } from './MediaCard';
 import { MediaLightboxModal } from './MediaLightboxModal';
 import { MediaAddModal } from './MediaAddModal';
 import { MediaEditModal } from './MediaEditModal';
 import { MediaDeleteModal } from './MediaDeleteModal';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto } from '@tabler/icons-react';
-import { FixedSizeList, type ListChildComponentProps } from 'react-window';
+import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
@@ -18,11 +37,10 @@ import { sortByOrder } from '@/utils/sortByOrder';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
+type DropPosition = 'before' | 'after';
 
-const VIRTUALIZATION_THRESHOLD = 80;
-const LIST_ROW_HEIGHT = 72;
 const LIST_MIN_WIDTH = 720;
-const VIRTUAL_LIST_MAX_HEIGHT = 520;
+const LIST_PAGE_SIZE = 50;
 
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
@@ -48,11 +66,18 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
   const [rescanning, setRescanning] = useState(false);
   const reorderingRef = useRef(false);
+  const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
+  const [overMediaId, setOverMediaId] = useState<string | null>(null);
 
   // View options
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [cardSize, setCardSize] = useState<CardSize>('medium');
-  const { ref: listMeasureRef, width: listWidth } = useElementSize();
+  const [listPage, setListPage] = useState(1);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -301,8 +326,8 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   useEffect(() => {
     const el = dropRef.current;
     if (!el) return;
-    const onDragOver = (e: DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
-    const onDrop = (e: DragEvent) => {
+    const onDragOver = (e: globalThis.DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
+    const onDrop = (e: globalThis.DragEvent) => {
       e.preventDefault();
       const f = e.dataTransfer?.files?.[0];
       if (f) setSelectedFile(f);
@@ -388,32 +413,17 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
-  async function moveItem(item: MediaItem, direction: 'up' | 'down') {
+  async function reorderMediaItems(nextMedia: MediaItem[]) {
     // Prevent concurrent reorder operations using stable ref-based guard
     if (reorderingRef.current) return;
     reorderingRef.current = true;
 
     const prev = media.slice();
-    const idx = media.findIndex((m) => m.id === item.id);
-    if (idx === -1) {
-      reorderingRef.current = false;
-      return;
-    }
-
-    const newMedia = media.slice();
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= newMedia.length) {
-      reorderingRef.current = false;
-      return;
-    }
-    const temp = newMedia[swapIdx];
-    newMedia[swapIdx] = newMedia[idx];
-    newMedia[idx] = temp;
-    const itemsToSend = newMedia.map((it, i) => ({ id: it.id, order: i + 1 }));
+    const itemsToSend = nextMedia.map((it, i) => ({ id: it.id, order: i + 1 }));
 
     try {
       await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
-      setMedia(newMedia.map((it, i) => ({ ...it, order: i + 1 })));
+      setMedia(nextMedia.map((it, i) => ({ ...it, order: i + 1 })));
       showNotification({ title: 'Reordered', message: 'Media order updated.' });
       onCampaignsUpdated?.();
     } catch (err) {
@@ -425,31 +435,123 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
-  const listHeight = useMemo(() => {
-    if (media.length === 0) return 240;
-    const estimated = media.length * LIST_ROW_HEIGHT;
-    return Math.min(VIRTUAL_LIST_MAX_HEIGHT, Math.max(240, estimated));
-  }, [media.length]);
+  const mediaIds = useMemo(() => media.map((item) => item.id), [media]);
+  const listTotalPages = useMemo(() => Math.max(1, Math.ceil(media.length / LIST_PAGE_SIZE)), [media.length]);
+  const pagedListMedia = useMemo(() => {
+    const start = (listPage - 1) * LIST_PAGE_SIZE;
+    return media.slice(start, start + LIST_PAGE_SIZE);
+  }, [media, listPage]);
 
-  const enableVirtualList = viewMode === 'list' && media.length >= VIRTUALIZATION_THRESHOLD && listWidth > 0;
+  useEffect(() => {
+    if (listPage > listTotalPages) {
+      setListPage(listTotalPages);
+    }
+  }, [listPage, listTotalPages]);
 
-  const renderListRow = ({ index, style }: ListChildComponentProps) => {
-    const item = media[index];
+  useEffect(() => {
+    if (viewMode !== 'list') {
+      setListPage(1);
+    }
+  }, [viewMode]);
+
+  const getDropPosition = (activeId: string, overId: string): DropPosition => {
+    const sourceIndex = media.findIndex((item) => item.id === activeId);
+    const targetIndex = media.findIndex((item) => item.id === overId);
+    return sourceIndex < targetIndex ? 'after' : 'before';
+  };
+
+  const getInsertionStyle = (itemId: string, axis: 'horizontal' | 'vertical'): CSSProperties | undefined => {
+    if (!activeMediaId || !overMediaId || activeMediaId === overMediaId || itemId !== overMediaId) {
+      return undefined;
+    }
+
+    const position = getDropPosition(activeMediaId, overMediaId);
+    if (axis === 'horizontal') {
+      return {
+        boxShadow:
+          position === 'before'
+            ? 'inset 6px 0 0 0 var(--wpsg-color-primary)'
+            : 'inset -6px 0 0 0 var(--wpsg-color-primary)',
+      };
+    }
+
+    return {
+      boxShadow:
+        position === 'before'
+          ? 'inset 0 6px 0 0 var(--wpsg-color-primary)'
+          : 'inset 0 -6px 0 0 var(--wpsg-color-primary)',
+    };
+  };
+
+  const handleDndStart = ({ active }: DragStartEvent) => {
+    setActiveMediaId(String(active.id));
+    setOverMediaId(String(active.id));
+  };
+
+  const handleDndOver = ({ over }: DragOverEvent) => {
+    setOverMediaId(over ? String(over.id) : null);
+  };
+
+  const handleDndEnd = async ({ active, over }: DragEndEvent) => {
+    const activeId = String(active.id);
+    const overId = over ? String(over.id) : null;
+
+    setActiveMediaId(null);
+    setOverMediaId(null);
+
+    if (!overId || activeId === overId) return;
+
+    const sourceIndex = media.findIndex((item) => item.id === activeId);
+    const targetIndex = media.findIndex((item) => item.id === overId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const nextMedia = arrayMove(media, sourceIndex, targetIndex);
+    await reorderMediaItems(nextMedia);
+  };
+
+  const moveByKeyboard = async (itemId: string, direction: 'forward' | 'backward') => {
+    const sourceIndex = media.findIndex((item) => item.id === itemId);
+    if (sourceIndex === -1) return;
+
+    const targetIndex = direction === 'forward' ? sourceIndex + 1 : sourceIndex - 1;
+    if (targetIndex < 0 || targetIndex >= media.length) return;
+
+    const nextMedia = arrayMove(media, sourceIndex, targetIndex);
+    await reorderMediaItems(nextMedia);
+  };
+
+  const activeMediaItem = useMemo(
+    () => (activeMediaId ? media.find((item) => item.id === activeMediaId) ?? null : null),
+    [activeMediaId, media],
+  );
+
+  const SortableListRow = ({ item }: { item: MediaItem }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+    const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
+      listeners?.onKeyDown?.(event);
+      if (event.defaultPrevented) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'forward');
+      } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'backward');
+      }
+    };
+    const rowStyle: CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.7 : 1,
+      ...getInsertionStyle(item.id, 'vertical'),
+    };
+    const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
+    const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
+    const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
+    const sourceColor = item.source === 'external' ? 'grape' : 'teal';
+
     return (
-      <Box
-        role="row"
-        key={item.id}
-        style={{
-          ...style,
-          display: 'grid',
-          gridTemplateColumns: '60px 1fr 90px 90px 180px',
-          alignItems: 'center',
-          columnGap: 12,
-          padding: '8px 12px',
-          borderBottom: '1px solid var(--mantine-color-dark-5)',
-        }}
-      >
-        <Box role="cell">
+      <Table.Tr ref={setNodeRef} data-testid={`media-draggable-${item.id}`} style={rowStyle}>
+        <Table.Td>
           <Image
             src={item.thumbnail ?? item.url}
             alt={item.caption || 'Media thumbnail'}
@@ -476,22 +578,74 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             }}
             fallbackSrc={FALLBACK_IMAGE_SRC}
           />
-        </Box>
-        <Box role="cell">
+        </Table.Td>
+        <Table.Td>
           <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
+          <Group gap={4} mt={4}>
+            <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
+            <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
+          </Group>
           <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
-        </Box>
-        <Box role="cell"><Text size="sm">{item.type}</Text></Box>
-        <Box role="cell"><Text size="sm">{item.source}</Text></Box>
-        <Box role="cell">
-          <Group gap={4} wrap="nowrap">
+        </Table.Td>
+        <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
+        <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
+        <Table.Td>
+          <Group gap={4}>
+            <ActionIcon
+              variant="subtle"
+              aria-label="Drag media to reorder"
+              style={{ cursor: 'grab' }}
+              {...attributes}
+              {...listeners}
+              onKeyDown={onHandleKeyDown}
+            >
+              <IconGripVertical size={16} />
+            </ActionIcon>
             <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-            <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
-            <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
             <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
           </Group>
-        </Box>
-      </Box>
+        </Table.Td>
+      </Table.Tr>
+    );
+  };
+
+  const SortableGridItem = ({ item }: { item: MediaItem }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+    const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
+      listeners?.onKeyDown?.(event);
+      if (event.defaultPrevented) return;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'forward');
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'backward');
+      }
+    };
+    const mediaHeight = viewMode === 'compact'
+      ? sizeConfig.compact.height
+      : sizeConfig[cardSize].height;
+    const isCompact = viewMode === 'compact' || cardSize === 'small';
+
+    return (
+      <Grid.Col
+        ref={setNodeRef}
+        data-testid={`media-draggable-${item.id}`}
+        style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 }}
+        span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
+      >
+        <MediaCard
+          item={item}
+          height={mediaHeight}
+          compact={isCompact}
+          showUrl={cardSize === 'large'}
+          onEdit={() => openEdit(item)}
+          onDelete={() => handleDelete(item)}
+          onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
+          cardStyle={getInsertionStyle(item.id, 'horizontal')}
+          dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
+        />
+      </Grid.Col>
     );
   };
 
@@ -547,118 +701,73 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
       {loading ? (
         <Loader />
-      ) : viewMode === 'list' ? (
-        /* List View */
-        <Box ref={listMeasureRef}>
-          <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
-            <Table verticalSpacing="xs" highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th w={60}>Thumb</Table.Th>
-                  <Table.Th>Caption</Table.Th>
-                  <Table.Th>Type</Table.Th>
-                  <Table.Th>Source</Table.Th>
-                  <Table.Th w={180}>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-            </Table>
-          </Table.ScrollContainer>
-
-          {enableVirtualList ? (
-            <Box style={{ minWidth: LIST_MIN_WIDTH, borderTop: '1px solid var(--mantine-color-dark-5)' }}>
-              <FixedSizeList
-                height={listHeight}
-                itemCount={media.length}
-                itemSize={LIST_ROW_HEIGHT}
-                width={Math.max(listWidth, LIST_MIN_WIDTH)}
-              >
-                {renderListRow}
-              </FixedSizeList>
-            </Box>
-          ) : (
-            <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
-              <Table verticalSpacing="xs" highlightOnHover>
-                <Table.Tbody>
-                  {media.map((item) => (
-                    <Table.Tr key={item.id}>
-                      <Table.Td>
-                        <Image
-                          src={item.thumbnail ?? item.url}
-                          alt={item.caption || 'Media thumbnail'}
-                          w={50}
-                          h={50}
-                          fit="cover"
-                          radius="sm"
-                          loading="lazy"
-                          style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
-                          onClick={() => item.type === 'image' && openLightbox(item)}
-                          role={item.type === 'image' ? 'button' : undefined}
-                          tabIndex={item.type === 'image' ? 0 : -1}
-                          aria-label={
-                            item.type === 'image'
-                              ? `Open image preview for ${item.caption || item.url}`
-                              : undefined
-                          }
-                          onKeyDown={(event) => {
-                            if (item.type !== 'image') return;
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              openLightbox(item);
-                            }
-                          }}
-                          fallbackSrc={FALLBACK_IMAGE_SRC}
-                        />
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
-                        <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
-                      </Table.Td>
-                      <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
-                      <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
-                      <Table.Td>
-                        <Group gap={4}>
-                          <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-                          <ActionIcon variant="subtle" onClick={() => moveItem(item, 'up')} aria-label="Move media up">↑</ActionIcon>
-                          <ActionIcon variant="subtle" onClick={() => moveItem(item, 'down')} aria-label="Move media down">↓</ActionIcon>
-                          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
-          )}
-        </Box>
       ) : (
-        /* Grid / Compact View */
-        <Grid>
-          {media.map((item) => {
-            const mediaHeight = viewMode === 'compact'
-              ? sizeConfig.compact.height
-              : sizeConfig[cardSize].height;
-            const isCompact = viewMode === 'compact' || cardSize === 'small';
-            
-            return (
-              <Grid.Col
-                key={item.id}
-                span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
-              >
-                <MediaCard
-                  item={item}
-                  height={mediaHeight}
-                  compact={isCompact}
-                  showUrl={cardSize === 'large'}
-                  onEdit={() => openEdit(item)}
-                  onDelete={() => handleDelete(item)}
-                  onMoveUp={() => moveItem(item, 'up')}
-                  onMoveDown={() => moveItem(item, 'down')}
-                  onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
-                />
-              </Grid.Col>
-            );
-          })}
-        </Grid>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDndStart}
+          onDragOver={handleDndOver}
+          onDragEnd={(event) => void handleDndEnd(event)}
+        >
+          {viewMode === 'list' ? (
+            <>
+              <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
+                <Table verticalSpacing="xs" highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th w={60}>Thumb</Table.Th>
+                      <Table.Th>Caption</Table.Th>
+                      <Table.Th>Type</Table.Th>
+                      <Table.Th>Source</Table.Th>
+                      <Table.Th w={180}>Actions</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                </Table>
+              </Table.ScrollContainer>
+
+              <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
+                <SortableContext items={pagedListMedia.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+                  <Table verticalSpacing="xs" highlightOnHover>
+                    <Table.Tbody>
+                      {pagedListMedia.map((item) => (
+                        <SortableListRow key={item.id} item={item} />
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </SortableContext>
+              </Table.ScrollContainer>
+
+              {listTotalPages > 1 && (
+                <Group justify="flex-end" mt="sm">
+                  <Pagination
+                    value={listPage}
+                    onChange={setListPage}
+                    total={listTotalPages}
+                    size="sm"
+                    withEdges
+                    aria-label="Media list pages"
+                  />
+                </Group>
+              )}
+            </>
+          ) : (
+            <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
+              <Grid>
+                {media.map((item) => (
+                  <SortableGridItem key={item.id} item={item} />
+                ))}
+              </Grid>
+            </SortableContext>
+          )}
+
+          <DragOverlay>
+            {activeMediaItem ? (
+              <Card withBorder shadow="sm" radius="md" p="xs" style={{ minWidth: 160, opacity: 0.95 }}>
+                <Text size="sm" c="gray.1" lineClamp={1}>{activeMediaItem.caption || 'Dragging media'}</Text>
+              </Card>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       <MediaLightboxModal

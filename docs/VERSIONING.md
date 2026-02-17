@@ -12,6 +12,23 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.9.0 (February 16, 2026)
+- **MINOR**: Phase 11 UX & Discovery Improvements release
+  - Track A complete: compact sign-in UX, video transparency + fixed-height consistency, campaign thumbnail auto-selection + admin override/upload, and offline/reconnect UX resilience.
+  - Track B high-impact delivery: N+1 media fetch eliminated via `include_media=1` bulk campaign payload and dnd-kit-based media drag-and-drop reordering.
+  - Admin media UX polish: type/source badges in list/card views, external video cards switched to cached thumbnails to prevent iframe reload churn during reorder, and list-mode pagination/windowing for large media sets.
+  - Campaign edit robustness: cover-image clear/reset is persisted end-to-end and included in unsaved-change dirty guard tracking.
+  - Backend consistency: campaigns `mediaByCampaign` now shares media-type normalization with media list handling.
+
+### v0.8.0 (February 16, 2026)
+- **MINOR**: Phase 10 Codebase Refinement & UX Polish release
+  - Component decomposition and DRY consolidation across app/admin surfaces.
+  - Extracted reusable primitives: `useXhrUpload`, `useDirtyGuard`, `useSwipe`, `ConfirmModal`, `CampaignSelector`, and shared utility helpers.
+  - Completed UX track improvements (loading states, unauthenticated empty state, search, pagination/load-more, swipe navigation, keyboard hints, dirty form guards, sticky auth bar, semantic card interactions).
+  - Cleanup/housekeeping track complete (deprecated media API removal, stylesheet cleanup, icon consolidation, global typing cleanup, debug removal, oEmbed sanitization, async modal correctness).
+  - Architecture track partial completion: E3 finished (removed production `any` in media/oEmbed flow), E1/E2 deferred.
+  - Test baseline strengthened and coverage targets enforced at practical thresholds.
+
 ### v0.7.0 (February 5, 2026)
 - **MINOR**: Phase 9 Theme System release
   - Full runtime theme switching with 14 bundled themes (O(1) map-lookup, <16ms switch)
@@ -113,7 +130,8 @@ Current development follows a phased approach:
 - **Phase 7**: ✅ Complete (Visual Polish + Testing + Accessibility + Mobile Optimization — v0.5.0 release)
 - **Phase 8**: ✅ Complete (Performance & Production Optimization — v0.6.0 release)
 - **Phase 9**: ✅ Complete (Theme System — v0.7.0 release)
-- **Phase 10**: Ready to start (Codebase Refinement & UX Polish)
+- **Phase 10**: ✅ Complete (Codebase Refinement & UX Polish — v0.8.0 release)
+- **Phase 11**: ✅ Complete (UX & Discovery Improvements — v0.9.0 release)
 
 ## Branching Strategy
 

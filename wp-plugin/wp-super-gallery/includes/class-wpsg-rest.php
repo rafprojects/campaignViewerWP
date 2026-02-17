@@ -390,6 +390,8 @@ class WPSG_REST {
         $visibility = sanitize_text_field($request->get_param('visibility'));
         $company = sanitize_text_field($request->get_param('company'));
         $search = sanitize_text_field($request->get_param('search'));
+        $include_media_raw = $request->get_param('include_media');
+        $include_media = in_array(strtolower((string) $include_media_raw), ['1', 'true', 'yes'], true);
         $page = max(1, intval($request->get_param('page')));
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
 
@@ -398,7 +400,7 @@ class WPSG_REST {
         $is_admin = current_user_can('manage_options');
         $search_key = $search ? md5($search) : 'none';
         $cache_key = sprintf(
-            'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s',
+            'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s_%s',
             $user_id,
             $status ?: 'all',
             $visibility ?: 'all',
@@ -406,7 +408,8 @@ class WPSG_REST {
             $search_key,
             $page,
             $per_page,
-            $is_admin ? 'admin' : 'user'
+            $is_admin ? 'admin' : 'user',
+            $include_media ? 'with_media' : 'no_media'
         );
 
         // Try to get cached data
@@ -471,6 +474,17 @@ class WPSG_REST {
         $query = new WP_Query($args);
         $items = array_map([self::class, 'format_campaign'], $query->posts);
 
+        $media_by_campaign = [];
+        if ($include_media && !empty($query->posts)) {
+            foreach ($query->posts as $post) {
+                $campaign_id = (string) $post->ID;
+                $media_items = get_post_meta($post->ID, 'media_items', true);
+                $media_items = is_array($media_items) ? $media_items : [];
+                $normalized = self::normalize_media_items_types($media_items);
+                $media_by_campaign[$campaign_id] = $normalized['items'];
+            }
+        }
+
         $response_data = [
             'items' => $items,
             'page' => $page,
@@ -478,6 +492,10 @@ class WPSG_REST {
             'total' => (int) $query->found_posts,
             'totalPages' => (int) $query->max_num_pages,
         ];
+
+        if ($include_media) {
+            $response_data['mediaByCampaign'] = $media_by_campaign;
+        }
 
         // Cache using configured TTL (defaults to 5 minutes / 300 seconds)
         $ttl = 300;
@@ -622,21 +640,9 @@ class WPSG_REST {
 
         // Normalize legacy media types on read for accuracy
         $updated_count = 0;
-        foreach ($media_items as &$media_item) {
-            $url = $media_item['url'] ?? '';
-            $current_type = $media_item['type'] ?? '';
-            $inferred_type = self::infer_media_type_from_url($url);
-
-            if (!empty($media_item['embedUrl'])) {
-                $inferred_type = 'video';
-            }
-
-            if ($inferred_type && $inferred_type !== $current_type) {
-                $media_item['type'] = $inferred_type;
-                $updated_count++;
-            }
-        }
-        unset($media_item);
+        $normalized = self::normalize_media_items_types($media_items);
+        $media_items = $normalized['items'];
+        $updated_count = $normalized['updated'];
 
         if ($updated_count > 0) {
             update_post_meta($post_id, 'media_items', $media_items);
@@ -1366,6 +1372,37 @@ class WPSG_REST {
         
         // Default: keep existing type or assume video for external
         return null;
+    }
+
+    /**
+     * Normalize media item types, including legacy records missing/incorrect type fields.
+     *
+     * @param array $media_items
+     * @return array{items: array, updated: int}
+     */
+    private static function normalize_media_items_types(array $media_items) {
+        $updated_count = 0;
+
+        foreach ($media_items as &$media_item) {
+            $url = $media_item['url'] ?? '';
+            $current_type = $media_item['type'] ?? '';
+            $inferred_type = self::infer_media_type_from_url($url);
+
+            if (!empty($media_item['embedUrl'])) {
+                $inferred_type = 'video';
+            }
+
+            if ($inferred_type && $inferred_type !== $current_type) {
+                $media_item['type'] = $inferred_type;
+                $updated_count++;
+            }
+        }
+        unset($media_item);
+
+        return [
+            'items' => $media_items,
+            'updated' => $updated_count,
+        ];
     }
 
     /**
@@ -2429,7 +2466,7 @@ class WPSG_REST {
         $visibility = sanitize_text_field($request->get_param('visibility'));
         $status = sanitize_text_field($request->get_param('status'));
         $tags = $request->get_param('tags');
-        $cover_image = esc_url_raw($request->get_param('coverImage'));
+        $cover_image_param = $request->get_param('coverImage');
         $thumbnail_id = intval($request->get_param('thumbnailId'));
 
         if (!empty($visibility)) {
@@ -2441,8 +2478,13 @@ class WPSG_REST {
         if (is_array($tags)) {
             update_post_meta($post_id, 'tags', array_values(array_map('sanitize_text_field', $tags)));
         }
-        if (!empty($cover_image)) {
-            update_post_meta($post_id, 'cover_image', $cover_image);
+        if (!is_null($cover_image_param)) {
+            $cover_image = esc_url_raw($cover_image_param);
+            if ($cover_image === '') {
+                delete_post_meta($post_id, 'cover_image');
+            } else {
+                update_post_meta($post_id, 'cover_image', $cover_image);
+            }
         }
         if ($thumbnail_id > 0) {
             set_post_thumbnail($post_id, $thumbnail_id);

@@ -47,4 +47,37 @@ describe('VideoCarousel', () => {
     fireEvent.click(screen.getByLabelText('Previous video'));
     expect(screen.getByText('Video One')).toBeInTheDocument();
   });
+
+  it('renders native video player for uploaded videos with transparent surface', () => {
+    const uploadedVideos: MediaItem[] = [
+      {
+        id: 'u1',
+        type: 'video',
+        source: 'upload',
+        url: 'https://example.com/video.mp4',
+        thumbnail: 'https://example.com/video-thumb.jpg',
+        caption: 'Uploaded Video',
+        order: 1,
+      },
+    ];
+
+    render(<VideoCarousel videos={uploadedVideos} />);
+
+    fireEvent.click(screen.getByAltText('Uploaded Video'));
+
+    const player = screen.getByLabelText('Video player: Uploaded Video');
+    expect(player.tagName.toLowerCase()).toBe('video');
+
+    expect(screen.getByTestId('video-player-surface')).toBeInTheDocument();
+    expect(player).toHaveStyle({ objectFit: 'contain' });
+  });
+
+  it('appends autoplay to external embed URL safely', () => {
+    render(<VideoCarousel videos={videos} />);
+
+    fireEvent.click(screen.getAllByAltText('Video One')[0]);
+
+    const iframe = screen.getByTitle('Video player: Video One') as HTMLIFrameElement;
+    expect(iframe.src).toContain('autoplay=1');
+  });
 });

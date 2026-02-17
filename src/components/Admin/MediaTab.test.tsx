@@ -36,7 +36,7 @@ describe('MediaTab', () => {
     apiClient.delete.mockReset();
   });
 
-  it('renders media items and supports edit/delete/reorder', async () => {
+  it('renders media items and supports edit/delete/drag-reorder', async () => {
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -75,7 +75,9 @@ describe('MediaTab', () => {
       );
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Move media down' })[0]);
+    const dragHandles = screen.getAllByLabelText('Drag media to reorder');
+    dragHandles[0].focus();
+    fireEvent.keyDown(dragHandles[0], { key: 'ArrowRight', code: 'ArrowRight' });
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
         '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
@@ -421,7 +423,9 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    fireEvent.click(await screen.findByLabelText('Move media up'));
+    const dragHandle = (await screen.findAllByLabelText('Drag media to reorder'))[0];
+    dragHandle.focus();
+    fireEvent.keyDown(dragHandle, { key: 'ArrowRight', code: 'ArrowRight' });
     expect(apiClient.put).not.toHaveBeenCalledWith(
       '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
       expect.any(Object),
@@ -453,8 +457,9 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    const downButtons = await screen.findAllByLabelText('Move media down');
-    fireEvent.click(downButtons[0]);
+    const dragHandles = await screen.findAllByLabelText('Drag media to reorder');
+    dragHandles[0].focus();
+    fireEvent.keyDown(dragHandles[0], { key: 'ArrowRight', code: 'ArrowRight' });
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Reorder failed' }),

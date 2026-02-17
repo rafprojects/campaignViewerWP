@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Container, Alert, Loader, Center, Stack } from '@mantine/core';
+import { Container, Alert, Loader, Center, Stack, Group, Text, Button, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -19,6 +19,7 @@ import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { getErrorMessage } from './utils/getErrorMessage';
 import { sortByOrder } from './utils/sortByOrder';
 import { useXhrUpload } from './hooks/useXhrUpload';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
@@ -38,6 +39,7 @@ type ApiCampaign = Omit<Campaign, 'company' | 'videos' | 'images'> & {
 
 interface ApiCampaignResponse {
   items: ApiCampaign[];
+  mediaByCampaign?: Record<string, MediaItem[]>;
 }
 
 const titleCase = (value: string) =>
@@ -84,9 +86,11 @@ function AppContent({
   accessMode: 'lock' | 'hide';
 }) {
   const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
+  const isOnline = useOnlineStatus();
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [isAdminPanelOpen, { open: openAdminPanel, close: closeAdminPanel }] = useDisclosure(false);
   const [isSettingsOpen, { open: openSettings, close: closeSettings }] = useDisclosure(false);
+  const [isSignInOpen, { open: openSignIn, close: closeSignIn }] = useDisclosure(false);
   const [localAccessMode, setLocalAccessMode] = useLocalStorage<'lock' | 'hide'>({
     key: ACCESS_MODE_STORAGE_KEY,
     defaultValue: accessMode,
@@ -99,6 +103,9 @@ function AppContent({
   const [editModalCampaign, setEditModalCampaign] = useState<Campaign | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editCoverImage, setEditCoverImage] = useState('');
+  const [coverImageChanged, setCoverImageChanged] = useState(false);
+  const [coverImageUploading, setCoverImageUploading] = useState(false);
   
   // Media management state for edit campaign modal
   const [editCampaignMedia, setEditCampaignMedia] = useState<MediaItem[]>([]);
@@ -141,6 +148,7 @@ function AppContent({
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password);
+    closeSignIn();
   };
 
   const handleUnauthorized = useCallback(() => {
@@ -166,13 +174,13 @@ function AppContent({
   const fetchCampaigns = useCallback(async () => {
     setCampaignLoadProgress({ total: 0, completed: 0 });
     const response = await apiClient.get<ApiCampaignResponse>(
-      '/wp-json/wp-super-gallery/v1/campaigns',
+      '/wp-json/wp-super-gallery/v1/campaigns?include_media=1',
     );
     const items = response.items ?? [];
+    const mediaByCampaign = response.mediaByCampaign ?? {};
     setCampaignLoadProgress({ total: items.length, completed: 0 });
 
-    const mapped = await Promise.all(
-      items.map(async (item) => {
+    const mapped = items.map((item) => {
         let mediaItems: MediaItem[] = [];
 
         const canAccessCampaign =
@@ -181,34 +189,19 @@ function AppContent({
           permissions.some((permissionId) => String(permissionId) === String(item.id));
 
         if (canAccessCampaign) {
-          try {
-            const mediaResponse = await apiClient.get<
-              MediaItem[] | { items: MediaItem[]; meta?: { typesUpdated?: number } }
-            >(`/wp-json/wp-super-gallery/v1/campaigns/${item.id}/media`);
-            mediaItems = Array.isArray(mediaResponse)
-              ? mediaResponse
-              : (mediaResponse.items ?? []);
-          } catch {
-            mediaItems = [];
-          } finally {
-            setCampaignLoadProgress((prev) => ({
-              total: prev.total,
-              completed: Math.min(prev.completed + 1, prev.total),
-            }));
-          }
-        } else {
-          setCampaignLoadProgress((prev) => ({
-            total: prev.total,
-            completed: Math.min(prev.completed + 1, prev.total),
-          }));
+          mediaItems = mediaByCampaign[String(item.id)] ?? [];
         }
 
-        const thumbnail = item.thumbnail || item.coverImage || FALLBACK_IMAGE_SRC;
-        const coverImage = item.coverImage || item.thumbnail || FALLBACK_IMAGE_SRC;
-        const orderedMedia = sortByOrder(mediaItems)
+        const sortedMedia = sortByOrder(mediaItems);
+        const representativeMedia = sortedMedia.find((media) => media.thumbnail || media.url);
+        const representativeThumbnail = representativeMedia?.thumbnail || representativeMedia?.url;
+
+        const thumbnail = item.coverImage || representativeThumbnail || item.thumbnail || FALLBACK_IMAGE_SRC;
+        const coverImage = item.coverImage || representativeThumbnail || item.thumbnail || FALLBACK_IMAGE_SRC;
+        const orderedMedia = sortedMedia
           .map((media) => ({
             ...media,
-            thumbnail: media.thumbnail || thumbnail,
+            thumbnail: media.thumbnail || (media.type === 'image' ? media.url : thumbnail),
             caption: media.caption || 'Campaign media',
           }));
         const videos = orderedMedia.filter((media) => media.type === 'video');
@@ -224,8 +217,9 @@ function AppContent({
           videos,
           images,
         } as Campaign;
-      }),
-    );
+      });
+
+    setCampaignLoadProgress({ total: items.length, completed: items.length });
 
     return mapped;
   }, [apiClient, isAdmin, permissions]);
@@ -245,6 +239,12 @@ function AppContent({
 
   const error = campaignsError ? (campaignsError instanceof Error ? campaignsError.message : 'Failed to load campaigns') : null;
 
+  useEffect(() => {
+    if (isOnline && isReady) {
+      void mutateCampaigns();
+    }
+  }, [isOnline, isReady, mutateCampaigns]);
+
   const handleEditCampaign = async (campaign: Campaign) => {
     if (!isAdmin) {
       setActionMessage({ type: 'error', text: 'Admin permissions required.' });
@@ -252,6 +252,8 @@ function AppContent({
     }
     setEditTitle(campaign.title);
     setEditDescription(campaign.description ?? '');
+    setEditCoverImage(campaign.coverImage && campaign.coverImage !== FALLBACK_IMAGE_SRC ? campaign.coverImage : '');
+    setCoverImageChanged(false);
     setEditModalCampaign(campaign);
     setEditMediaTab('details');
     setAddMediaUrl('');
@@ -276,8 +278,44 @@ function AppContent({
   const closeEditModal = () => {
     setEditModalCampaign(null);
     setEditCampaignMedia([]);
+    setEditCoverImage('');
+    setCoverImageChanged(false);
     setUploadFile(null);
     resetProgress();
+  };
+
+  const handleSelectCoverImage = (value: string) => {
+    setEditCoverImage(value);
+    setCoverImageChanged(true);
+  };
+
+  const handleUploadCoverImage = async (file: File) => {
+    if (!editModalCampaign) return;
+
+    if (!file.type.startsWith('image/')) {
+      setActionMessage({ type: 'error', text: 'Please select an image file for campaign thumbnail.' });
+      return;
+    }
+
+    setCoverImageUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await apiClient.postForm<UploadResponse>(
+        '/wp-json/wp-super-gallery/v1/media/upload',
+        formData,
+      );
+
+      const coverUrl = response.thumbnail ?? response.url;
+      setEditCoverImage(coverUrl);
+      setCoverImageChanged(true);
+      setActionMessage({ type: 'success', text: 'Campaign thumbnail uploaded.' });
+    } catch (err) {
+      setActionMessage({ type: 'error', text: getErrorMessage(err, 'Failed to upload campaign thumbnail.') });
+    } finally {
+      setCoverImageUploading(false);
+    }
   };
 
   const handleRemoveMedia = async (mediaItem: MediaItem) => {
@@ -443,12 +481,16 @@ function AppContent({
     if (!editModalCampaign) return;
 
     try {
-      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${editModalCampaign.id}`,
-        {
-          title: editTitle,
-          description: editDescription,
-        },
-      );
+      const payload: { title: string; description: string; coverImage?: string } = {
+        title: editTitle,
+        description: editDescription,
+      };
+
+      if (coverImageChanged) {
+        payload.coverImage = editCoverImage || '';
+      }
+
+      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${editModalCampaign.id}`, payload);
 
       setActionMessage({ type: 'success', text: 'Campaign updated.' });
       setEditModalCampaign(null);
@@ -533,7 +575,21 @@ function AppContent({
   return (
     <div className="wp-super-gallery">
       {hasProvider && !isAuthenticated && isReady && (
-        <LoginForm onSubmit={handleLogin} />
+        <>
+          <Container size="xl" py="sm">
+            <Alert color="blue" variant="light" role="status" aria-live="polite">
+              <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+                <Text size="sm">Sign in to access private campaigns.</Text>
+                <Button size="xs" onClick={openSignIn}>
+                  Sign in
+                </Button>
+              </Group>
+            </Alert>
+          </Container>
+          <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
+            <LoginForm onSubmit={handleLogin} compact />
+          </Modal>
+        </>
       )}
       {isAuthenticated && user && (
         <AuthBar
@@ -552,6 +608,13 @@ function AppContent({
             aria-live={actionMessage.type === 'error' ? 'assertive' : 'polite'}
           >
             {actionMessage.text}
+          </Alert>
+        </Container>
+      )}
+      {!isOnline && (
+        <Container size="xl" py="sm">
+          <Alert color="orange" role="alert" aria-live="assertive">
+            You appear to be offline. Some features are unavailable.
           </Alert>
         </Container>
       )}
@@ -627,6 +690,10 @@ function AppContent({
         onEditTitleChange={setEditTitle}
         editDescription={editDescription}
         onEditDescriptionChange={setEditDescription}
+        editCoverImage={editCoverImage}
+        onEditCoverImageChange={handleSelectCoverImage}
+        onUploadCoverImage={handleUploadCoverImage}
+        coverImageUploading={coverImageUploading}
         onClose={closeEditModal}
         onConfirmEdit={confirmEditCampaign}
         editMediaLoading={editMediaLoading}

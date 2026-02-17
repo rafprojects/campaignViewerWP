@@ -5,6 +5,41 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-02-16
+
+### Added - Phase 11: UX & Discovery Improvements
+- **Track A complete**: compact sign-in UX, transparent/stable video player behavior, campaign thumbnail auto-selection + admin override/upload controls, and robust online/offline fail-fast + reconnect revalidation.
+- **Track B high-impact delivery**: N+1 media fetch removed via `include_media=1` bulk payload, and media reordering upgraded to `dnd-kit` drag-and-drop interactions.
+- **Admin media clarity**: media type/source badges added in card and list admin views to improve at-a-glance identification.
+
+### Changed
+- Admin media card rendering now uses cached thumbnails for external videos (instead of live embeds) to avoid iframe reload churn during reorder operations.
+- Campaign edit thumbnail workflow now supports explicit clear/reset, including dirty-state tracking for thumbnail-only edits.
+- Campaign list `mediaByCampaign` now uses shared media-type normalization to keep types consistent with media list endpoints.
+
+### Fixed
+- `useOnlineStatus` hardened for SSR/non-browser contexts by guarding `window`/`navigator` access.
+- Campaign cover-image clear behavior now persists end-to-end (frontend sends explicit clears; backend removes stored `cover_image` meta).
+- Reordering/list and modal test flows stabilized around async UI timing and updated interaction paths.
+
+## [0.8.0] - 2026-02-16
+
+### Added - Phase 10: Codebase Refinement & UX Polish
+- **Component decomposition + shared architecture**: Extracted reusable hooks/components including `useXhrUpload`, `useDirtyGuard`, `useSwipe`, `ConfirmModal`, `CampaignSelector`, `KeyboardHintOverlay`, and shared fallback/error utilities.
+- **UX improvements (C1-C9)**: Admin loading states, unauthenticated empty-state messaging, gallery search, pagination/load-more behavior, touch swipe support, keyboard hint overlay, dirty-form confirmation guards, sticky auth bar, and semantic `CampaignCard` button handling.
+- **Admin and media workflow quality**: Unified upload behavior, client-side file validation, better status/error messaging, and immediate gallery revalidation after media mutations.
+- **Testing expansion**: New tests for `SettingsPanel`, `ThemeContext`, `ThemeSelector`, `useSwipe`, `useTheme`, and `useDirtyGuard`.
+
+### Changed
+- App/admin orchestration reduced through extraction and modal decomposition; deprecated `src/api/media.ts` flow fully removed in favor of `services/apiClient.ts`.
+- Theme and typing hygiene improvements including elimination of remaining production `any` usage in media/oEmbed paths via shared typed interfaces.
+- Coverage gate strategy aligned to realistic baselines while preserving quality bars (`80%` lines/statements, `72%` branches, `60%` functions).
+
+### Fixed
+- Upload auth-header mismatch regression and media-linking workflow edge cases in edit flows.
+- Async modal handler correctness for archive/restore actions.
+- oEmbed rendering path hardened via sanitization before `dangerouslySetInnerHTML`.
+
 ## [0.7.0] - 2026-02-05
 
 ### Added - Phase 9: Theme System
@@ -161,12 +196,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-See [PHASE10_REPORT.md](./docs/PHASE10_REPORT.md) for planned improvements:
-- Codebase refinement, component decomposition, UX polish
+See [PHASE11_REPORT.md](./docs/PHASE11_REPORT.md) for final Phase 11 execution details and carryover notes.
 
 ---
 
 [0.5.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.4.0...v0.5.0
+[0.9.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.5.0...v0.6.0
 [0.4.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.3.0...v0.4.0
