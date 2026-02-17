@@ -486,8 +486,8 @@ function AppContent({
         description: editDescription,
       };
 
-      if (coverImageChanged && editCoverImage) {
-        payload.coverImage = editCoverImage;
+      if (coverImageChanged) {
+        payload.coverImage = editCoverImage || '';
       }
 
       await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${editModalCampaign.id}`, payload);

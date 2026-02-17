@@ -2466,7 +2466,7 @@ class WPSG_REST {
         $visibility = sanitize_text_field($request->get_param('visibility'));
         $status = sanitize_text_field($request->get_param('status'));
         $tags = $request->get_param('tags');
-        $cover_image = esc_url_raw($request->get_param('coverImage'));
+        $cover_image_param = $request->get_param('coverImage');
         $thumbnail_id = intval($request->get_param('thumbnailId'));
 
         if (!empty($visibility)) {
@@ -2478,8 +2478,13 @@ class WPSG_REST {
         if (is_array($tags)) {
             update_post_meta($post_id, 'tags', array_values(array_map('sanitize_text_field', $tags)));
         }
-        if (!empty($cover_image)) {
-            update_post_meta($post_id, 'cover_image', $cover_image);
+        if (!is_null($cover_image_param)) {
+            $cover_image = esc_url_raw($cover_image_param);
+            if ($cover_image === '') {
+                delete_post_meta($post_id, 'cover_image');
+            } else {
+                update_post_meta($post_id, 'cover_image', $cover_image);
+            }
         }
         if ($thumbnail_id > 0) {
             set_post_thumbnail($post_id, $thumbnail_id);
