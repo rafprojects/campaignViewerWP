@@ -80,7 +80,7 @@ export function EditCampaignModal({
   onAddExternalMedia,
 }: EditCampaignModalProps) {
   const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
-    current: { editTitle, editDescription },
+    current: { editTitle, editDescription, editCoverImage },
     isOpen: opened,
     onClose,
   });
