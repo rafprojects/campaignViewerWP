@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
-import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge } from '@mantine/core';
 import {
   DndContext,
   DragOverlay,
@@ -525,6 +525,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       opacity: isDragging ? 0.7 : 1,
       ...getInsertionStyle(item.id, 'vertical'),
     };
+    const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
+    const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
+    const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
+    const sourceColor = item.source === 'external' ? 'grape' : 'teal';
 
     return (
       <Table.Tr ref={setNodeRef} data-testid={`media-draggable-${item.id}`} style={rowStyle}>
@@ -558,6 +562,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         </Table.Td>
         <Table.Td>
           <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
+          <Group gap={4} mt={4}>
+            <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
+            <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
+          </Group>
           <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
         </Table.Td>
         <Table.Td><Text size="sm">{item.type}</Text></Table.Td>

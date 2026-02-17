@@ -1,5 +1,5 @@
 import { forwardRef, type DragEvent, type CSSProperties, type HTMLAttributes } from 'react';
-import { Card, Image, Text, Group, Box, ActionIcon } from '@mantine/core';
+import { Card, Image, Text, Group, Box, ActionIcon, Badge } from '@mantine/core';
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
@@ -44,6 +44,10 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     dragHandleProps,
   }, ref) => {
     const isClickableImage = item.type === 'image' && onImageClick;
+    const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
+    const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
+    const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
+    const sourceColor = item.source === 'external' ? 'grape' : 'teal';
 
     return (
       <div
@@ -82,16 +86,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               }
             }}
           >
-            {item.source === 'external' && item.type === 'video' && item.embedUrl ? (
-              <div style={{ height, width: '100%' }}>
-                <iframe
-                  src={item.embedUrl}
-                  title={item.caption || 'External video'}
-                  style={{ width: '100%', height: '100%', border: 0 }}
-                  allowFullScreen
-                />
-              </div>
-            ) : (
+            <Box className={styles.previewWrapper}>
               <Image
                 src={item.thumbnail ?? item.url}
                 alt={item.caption || 'Media thumbnail'}
@@ -100,7 +95,11 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 loading="lazy"
                 fallbackSrc={FALLBACK_IMAGE_SRC}
               />
-            )}
+              <Group gap={4} className={styles.badgeGroup}>
+                <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
+                <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
+              </Group>
+            </Box>
           </Card.Section>
 
           {/* Show controls based on size */}
