@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
-import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination } from '@mantine/core';
 import {
   DndContext,
   DragOverlay,
@@ -40,6 +40,7 @@ type CardSize = 'small' | 'medium' | 'large';
 type DropPosition = 'before' | 'after';
 
 const LIST_MIN_WIDTH = 720;
+const LIST_PAGE_SIZE = 50;
 
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
@@ -71,6 +72,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // View options
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [cardSize, setCardSize] = useState<CardSize>('medium');
+  const [listPage, setListPage] = useState(1);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -434,6 +436,23 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   }
 
   const mediaIds = useMemo(() => media.map((item) => item.id), [media]);
+  const listTotalPages = useMemo(() => Math.max(1, Math.ceil(media.length / LIST_PAGE_SIZE)), [media.length]);
+  const pagedListMedia = useMemo(() => {
+    const start = (listPage - 1) * LIST_PAGE_SIZE;
+    return media.slice(start, start + LIST_PAGE_SIZE);
+  }, [media, listPage]);
+
+  useEffect(() => {
+    if (listPage > listTotalPages) {
+      setListPage(listTotalPages);
+    }
+  }, [listPage, listTotalPages]);
+
+  useEffect(() => {
+    if (viewMode !== 'list') {
+      setListPage(1);
+    }
+  }, [viewMode]);
 
   const getDropPosition = (activeId: string, overId: string): DropPosition => {
     const sourceIndex = media.findIndex((item) => item.id === activeId);
@@ -707,16 +726,29 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
               </Table.ScrollContainer>
 
               <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
-                <SortableContext items={mediaIds} strategy={verticalListSortingStrategy}>
+                <SortableContext items={pagedListMedia.map((item) => item.id)} strategy={verticalListSortingStrategy}>
                   <Table verticalSpacing="xs" highlightOnHover>
                     <Table.Tbody>
-                      {media.map((item) => (
+                      {pagedListMedia.map((item) => (
                         <SortableListRow key={item.id} item={item} />
                       ))}
                     </Table.Tbody>
                   </Table>
                 </SortableContext>
               </Table.ScrollContainer>
+
+              {listTotalPages > 1 && (
+                <Group justify="flex-end" mt="sm">
+                  <Pagination
+                    value={listPage}
+                    onChange={setListPage}
+                    total={listTotalPages}
+                    size="sm"
+                    withEdges
+                    aria-label="Media list pages"
+                  />
+                </Group>
+              )}
             </>
           ) : (
             <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
