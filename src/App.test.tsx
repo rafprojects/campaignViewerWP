@@ -395,7 +395,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Campaign Alpha' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Campaign Alpha' }));
     
     // Modal opens - click Cancel instead of Save
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -422,7 +422,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Archive Campaign Alpha' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Archive
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -449,7 +449,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Manage media for Campaign Alpha' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Add Media
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });

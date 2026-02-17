@@ -141,9 +141,14 @@ export function EditCampaignModal({
                       label: media.caption || `${media.type.toUpperCase()} #${media.id}`,
                     }))}
                   onChange={(value) => {
-                    if (value) onEditCoverImageChange(value);
+                    if (value !== null) {
+                      onEditCoverImageChange(value);
+                    } else {
+                      onEditCoverImageChange('');
+                    }
                   }}
                   searchable
+                  clearable
                   nothingFoundMessage="No campaign media available"
                 />
 
