@@ -1,6 +1,26 @@
-import { useEffect, useMemo, useState, useRef, type DragEvent as ReactDragEvent } from 'react';
-import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip } from '@mantine/core';
-import { useElementSize } from '@mantine/hooks';
+import { useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
+import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card } from '@mantine/core';
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { MediaCard } from './MediaCard';
 import { MediaLightboxModal } from './MediaLightboxModal';
 import { MediaAddModal } from './MediaAddModal';
@@ -8,7 +28,6 @@ import { MediaEditModal } from './MediaEditModal';
 import { MediaDeleteModal } from './MediaDeleteModal';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
-import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
@@ -18,11 +37,9 @@ import { sortByOrder } from '@/utils/sortByOrder';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
+type DropPosition = 'before' | 'after';
 
-const VIRTUALIZATION_THRESHOLD = 80;
-const LIST_ROW_HEIGHT = 72;
 const LIST_MIN_WIDTH = 720;
-const VIRTUAL_LIST_MAX_HEIGHT = 520;
 
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
@@ -48,12 +65,17 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
   const [rescanning, setRescanning] = useState(false);
   const reorderingRef = useRef(false);
-  const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
+  const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
+  const [overMediaId, setOverMediaId] = useState<string | null>(null);
 
   // View options
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [cardSize, setCardSize] = useState<CardSize>('medium');
-  const { ref: listMeasureRef, width: listWidth } = useElementSize();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -411,73 +433,102 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
-  const handleDragStart = (mediaId: string) => {
-    setDraggedMediaId(mediaId);
+  const mediaIds = useMemo(() => media.map((item) => item.id), [media]);
+
+  const getDropPosition = (activeId: string, overId: string): DropPosition => {
+    const sourceIndex = media.findIndex((item) => item.id === activeId);
+    const targetIndex = media.findIndex((item) => item.id === overId);
+    return sourceIndex < targetIndex ? 'after' : 'before';
   };
 
-  const handleDragOver = (event: ReactDragEvent<HTMLElement>) => {
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
+  const getInsertionStyle = (itemId: string, axis: 'horizontal' | 'vertical'): CSSProperties | undefined => {
+    if (!activeMediaId || !overMediaId || activeMediaId === overMediaId || itemId !== overMediaId) {
+      return undefined;
     }
+
+    const position = getDropPosition(activeMediaId, overMediaId);
+    if (axis === 'horizontal') {
+      return {
+        boxShadow:
+          position === 'before'
+            ? 'inset 6px 0 0 0 var(--wpsg-color-primary)'
+            : 'inset -6px 0 0 0 var(--wpsg-color-primary)',
+      };
+    }
+
+    return {
+      boxShadow:
+        position === 'before'
+          ? 'inset 0 6px 0 0 var(--wpsg-color-primary)'
+          : 'inset 0 -6px 0 0 var(--wpsg-color-primary)',
+    };
   };
 
-  const handleDrop = async (targetMediaId: string) => {
-    if (!draggedMediaId || draggedMediaId === targetMediaId) {
-      setDraggedMediaId(null);
-      return;
-    }
+  const handleDndStart = ({ active }: DragStartEvent) => {
+    setActiveMediaId(String(active.id));
+    setOverMediaId(String(active.id));
+  };
 
-    const sourceIndex = media.findIndex((m) => m.id === draggedMediaId);
-    const targetIndex = media.findIndex((m) => m.id === targetMediaId);
-    if (sourceIndex === -1 || targetIndex === -1) {
-      setDraggedMediaId(null);
-      return;
-    }
+  const handleDndOver = ({ over }: DragOverEvent) => {
+    setOverMediaId(over ? String(over.id) : null);
+  };
 
-    const nextMedia = media.slice();
-    const [moved] = nextMedia.splice(sourceIndex, 1);
-    nextMedia.splice(targetIndex, 0, moved);
+  const handleDndEnd = async ({ active, over }: DragEndEvent) => {
+    const activeId = String(active.id);
+    const overId = over ? String(over.id) : null;
 
-    setDraggedMediaId(null);
+    setActiveMediaId(null);
+    setOverMediaId(null);
+
+    if (!overId || activeId === overId) return;
+
+    const sourceIndex = media.findIndex((item) => item.id === activeId);
+    const targetIndex = media.findIndex((item) => item.id === overId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const nextMedia = arrayMove(media, sourceIndex, targetIndex);
     await reorderMediaItems(nextMedia);
   };
 
-  const handleDragEnd = () => {
-    setDraggedMediaId(null);
+  const moveByKeyboard = async (itemId: string, direction: 'forward' | 'backward') => {
+    const sourceIndex = media.findIndex((item) => item.id === itemId);
+    if (sourceIndex === -1) return;
+
+    const targetIndex = direction === 'forward' ? sourceIndex + 1 : sourceIndex - 1;
+    if (targetIndex < 0 || targetIndex >= media.length) return;
+
+    const nextMedia = arrayMove(media, sourceIndex, targetIndex);
+    await reorderMediaItems(nextMedia);
   };
 
-  const listHeight = useMemo(() => {
-    if (media.length === 0) return 240;
-    const estimated = media.length * LIST_ROW_HEIGHT;
-    return Math.min(VIRTUAL_LIST_MAX_HEIGHT, Math.max(240, estimated));
-  }, [media.length]);
+  const activeMediaItem = useMemo(
+    () => (activeMediaId ? media.find((item) => item.id === activeMediaId) ?? null : null),
+    [activeMediaId, media],
+  );
 
-  const enableVirtualList = viewMode === 'list' && media.length >= VIRTUALIZATION_THRESHOLD && listWidth > 0;
+  const SortableListRow = ({ item }: { item: MediaItem }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+    const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
+      listeners?.onKeyDown?.(event);
+      if (event.defaultPrevented) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'forward');
+      } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'backward');
+      }
+    };
+    const rowStyle: CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.7 : 1,
+      ...getInsertionStyle(item.id, 'vertical'),
+    };
 
-  const renderListRow = ({ index, style }: ListChildComponentProps) => {
-    const item = media[index];
     return (
-      <Box
-        role="row"
-        key={item.id}
-        draggable
-        data-testid={`media-draggable-${item.id}`}
-        onDragStart={() => handleDragStart(item.id)}
-        onDragOver={handleDragOver}
-        onDrop={() => void handleDrop(item.id)}
-        onDragEnd={handleDragEnd}
-        style={{
-          ...style,
-          display: 'grid',
-          gridTemplateColumns: '60px 1fr 90px 90px 180px',
-          alignItems: 'center',
-          columnGap: 12,
-          padding: '8px 12px',
-          borderBottom: '1px solid var(--mantine-color-dark-5)',
-        }}
-      >
-        <Box role="cell">
+      <Table.Tr ref={setNodeRef} data-testid={`media-draggable-${item.id}`} style={rowStyle}>
+        <Table.Td>
           <Image
             src={item.thumbnail ?? item.url}
             alt={item.caption || 'Media thumbnail'}
@@ -504,23 +555,70 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             }}
             fallbackSrc={FALLBACK_IMAGE_SRC}
           />
-        </Box>
-        <Box role="cell">
+        </Table.Td>
+        <Table.Td>
           <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
           <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
-        </Box>
-        <Box role="cell"><Text size="sm">{item.type}</Text></Box>
-        <Box role="cell"><Text size="sm">{item.source}</Text></Box>
-        <Box role="cell">
-          <Group gap={4} wrap="nowrap">
-            <ActionIcon variant="subtle" aria-label="Drag media to reorder" style={{ cursor: 'grab' }}>
+        </Table.Td>
+        <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
+        <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
+        <Table.Td>
+          <Group gap={4}>
+            <ActionIcon
+              variant="subtle"
+              aria-label="Drag media to reorder"
+              style={{ cursor: 'grab' }}
+              {...attributes}
+              {...listeners}
+              onKeyDown={onHandleKeyDown}
+            >
               <IconGripVertical size={16} />
             </ActionIcon>
             <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
             <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
           </Group>
-        </Box>
-      </Box>
+        </Table.Td>
+      </Table.Tr>
+    );
+  };
+
+  const SortableGridItem = ({ item }: { item: MediaItem }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+    const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
+      listeners?.onKeyDown?.(event);
+      if (event.defaultPrevented) return;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'forward');
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        void moveByKeyboard(item.id, 'backward');
+      }
+    };
+    const mediaHeight = viewMode === 'compact'
+      ? sizeConfig.compact.height
+      : sizeConfig[cardSize].height;
+    const isCompact = viewMode === 'compact' || cardSize === 'small';
+
+    return (
+      <Grid.Col
+        ref={setNodeRef}
+        data-testid={`media-draggable-${item.id}`}
+        style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 }}
+        span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
+      >
+        <MediaCard
+          item={item}
+          height={mediaHeight}
+          compact={isCompact}
+          showUrl={cardSize === 'large'}
+          onEdit={() => openEdit(item)}
+          onDelete={() => handleDelete(item)}
+          onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
+          cardStyle={getInsertionStyle(item.id, 'horizontal')}
+          dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
+        />
+      </Grid.Col>
     );
   };
 
@@ -576,136 +674,60 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
       {loading ? (
         <Loader />
-      ) : viewMode === 'list' ? (
-        /* List View */
-        <Box ref={listMeasureRef}>
-          <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
-            <Table verticalSpacing="xs" highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th w={60}>Thumb</Table.Th>
-                  <Table.Th>Caption</Table.Th>
-                  <Table.Th>Type</Table.Th>
-                  <Table.Th>Source</Table.Th>
-                  <Table.Th w={180}>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-            </Table>
-          </Table.ScrollContainer>
-
-          {enableVirtualList ? (
-            <Box style={{ minWidth: LIST_MIN_WIDTH, borderTop: '1px solid var(--mantine-color-dark-5)' }}>
-              <FixedSizeList
-                height={listHeight}
-                itemCount={media.length}
-                itemSize={LIST_ROW_HEIGHT}
-                width={Math.max(listWidth, LIST_MIN_WIDTH)}
-              >
-                {renderListRow}
-              </FixedSizeList>
-            </Box>
-          ) : (
-            <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
-              <Table verticalSpacing="xs" highlightOnHover>
-                <Table.Tbody>
-                  {media.map((item) => (
-                    <Table.Tr
-                      key={item.id}
-                      draggable
-                      data-testid={`media-draggable-${item.id}`}
-                      onDragStart={() => handleDragStart(item.id)}
-                      onDragOver={handleDragOver}
-                      onDrop={() => void handleDrop(item.id)}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <Table.Td>
-                        <Image
-                          src={item.thumbnail ?? item.url}
-                          alt={item.caption || 'Media thumbnail'}
-                          w={50}
-                          h={50}
-                          fit="cover"
-                          radius="sm"
-                          loading="lazy"
-                          style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
-                          onClick={() => item.type === 'image' && openLightbox(item)}
-                          role={item.type === 'image' ? 'button' : undefined}
-                          tabIndex={item.type === 'image' ? 0 : -1}
-                          aria-label={
-                            item.type === 'image'
-                              ? `Open image preview for ${item.caption || item.url}`
-                              : undefined
-                          }
-                          onKeyDown={(event) => {
-                            if (item.type !== 'image') return;
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              openLightbox(item);
-                            }
-                          }}
-                          fallbackSrc={FALLBACK_IMAGE_SRC}
-                        />
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
-                        <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
-                      </Table.Td>
-                      <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
-                      <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
-                      <Table.Td>
-                        <Group gap={4}>
-                          <ActionIcon variant="subtle" aria-label="Drag media to reorder" style={{ cursor: 'grab' }}>
-                            <IconGripVertical size={16} />
-                          </ActionIcon>
-                          <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-                          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
-          )}
-        </Box>
       ) : (
-        /* Grid / Compact View */
-        <Grid>
-          {media.map((item) => {
-            const mediaHeight = viewMode === 'compact'
-              ? sizeConfig.compact.height
-              : sizeConfig[cardSize].height;
-            const isCompact = viewMode === 'compact' || cardSize === 'small';
-            
-            return (
-              <Grid.Col
-                key={item.id}
-                draggable
-                data-testid={`media-draggable-${item.id}`}
-                onDragStart={() => handleDragStart(item.id)}
-                onDragOver={handleDragOver}
-                onDrop={() => void handleDrop(item.id)}
-                onDragEnd={handleDragEnd}
-                span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
-              >
-                <MediaCard
-                  item={item}
-                  height={mediaHeight}
-                  compact={isCompact}
-                  showUrl={cardSize === 'large'}
-                  onEdit={() => openEdit(item)}
-                  onDelete={() => handleDelete(item)}
-                  onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
-                  draggable
-                  onDragStart={() => handleDragStart(item.id)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => void handleDrop(item.id)}
-                  onDragEnd={handleDragEnd}
-                />
-              </Grid.Col>
-            );
-          })}
-        </Grid>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDndStart}
+          onDragOver={handleDndOver}
+          onDragEnd={(event) => void handleDndEnd(event)}
+        >
+          {viewMode === 'list' ? (
+            <>
+              <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
+                <Table verticalSpacing="xs" highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th w={60}>Thumb</Table.Th>
+                      <Table.Th>Caption</Table.Th>
+                      <Table.Th>Type</Table.Th>
+                      <Table.Th>Source</Table.Th>
+                      <Table.Th w={180}>Actions</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                </Table>
+              </Table.ScrollContainer>
+
+              <Table.ScrollContainer minWidth={LIST_MIN_WIDTH}>
+                <SortableContext items={mediaIds} strategy={verticalListSortingStrategy}>
+                  <Table verticalSpacing="xs" highlightOnHover>
+                    <Table.Tbody>
+                      {media.map((item) => (
+                        <SortableListRow key={item.id} item={item} />
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </SortableContext>
+              </Table.ScrollContainer>
+            </>
+          ) : (
+            <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
+              <Grid>
+                {media.map((item) => (
+                  <SortableGridItem key={item.id} item={item} />
+                ))}
+              </Grid>
+            </SortableContext>
+          )}
+
+          <DragOverlay>
+            {activeMediaItem ? (
+              <Card withBorder shadow="sm" radius="md" p="xs" style={{ minWidth: 160, opacity: 0.95 }}>
+                <Text size="sm" c="gray.1" lineClamp={1}>{activeMediaItem.caption || 'Dragging media'}</Text>
+              </Card>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       <MediaLightboxModal

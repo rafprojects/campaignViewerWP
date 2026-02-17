@@ -1,4 +1,4 @@
-import { forwardRef, type DragEvent } from 'react';
+import { forwardRef, type DragEvent, type CSSProperties, type HTMLAttributes } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon } from '@mantine/core';
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
@@ -15,9 +15,13 @@ interface MediaCardProps {
   onImageClick?: () => void;
   draggable?: boolean;
   onDragStart?: (event: DragEvent<HTMLDivElement>) => void;
+  onDragEnter?: (event: DragEvent<HTMLDivElement>) => void;
   onDragOver?: (event: DragEvent<HTMLDivElement>) => void;
   onDrop?: (event: DragEvent<HTMLDivElement>) => void;
   onDragEnd?: (event: DragEvent<HTMLDivElement>) => void;
+  style?: CSSProperties;
+  cardStyle?: CSSProperties;
+  dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
 }
 
 export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
@@ -31,9 +35,13 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     onImageClick,
     draggable = false,
     onDragStart,
+    onDragEnter,
     onDragOver,
     onDrop,
     onDragEnd,
+    style,
+    cardStyle,
+    dragHandleProps,
   }, ref) => {
     const isClickableImage = item.type === 'image' && onImageClick;
 
@@ -43,15 +51,18 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
         className={styles.mediaCard}
         draggable={draggable}
         onDragStart={onDragStart}
+        onDragEnter={onDragEnter}
         onDragOver={onDragOver}
         onDrop={onDrop}
         onDragEnd={onDragEnd}
+        style={style}
       >
         <Card
           shadow="sm"
           padding={compact ? 'xs' : 'sm'}
           radius="md"
           withBorder
+          style={cardStyle}
         >
           <Card.Section
             style={{ cursor: isClickableImage ? 'pointer' : 'default' }}
@@ -104,7 +115,12 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 )}
               </Box>
               <Group gap={4} wrap="nowrap">
-                <ActionIcon variant="subtle" aria-label="Drag media to reorder" style={{ cursor: 'grab' }}>
+                <ActionIcon
+                  variant="subtle"
+                  aria-label="Drag media to reorder"
+                  style={{ cursor: 'grab' }}
+                  {...dragHandleProps}
+                >
                   <IconGripVertical size={16} />
                 </ActionIcon>
                 <ActionIcon variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>

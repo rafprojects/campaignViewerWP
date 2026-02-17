@@ -75,12 +75,9 @@ describe('MediaTab', () => {
       );
     });
 
-    const dragSource = screen.getByTestId('media-draggable-m1');
-    const dragTarget = screen.getByTestId('media-draggable-m2');
-    fireEvent.dragStart(dragSource);
-    fireEvent.dragOver(dragTarget);
-    fireEvent.drop(dragTarget);
-    fireEvent.dragEnd(dragSource);
+    const dragHandles = screen.getAllByLabelText('Drag media to reorder');
+    dragHandles[0].focus();
+    fireEvent.keyDown(dragHandles[0], { key: 'ArrowRight', code: 'ArrowRight' });
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
         '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
@@ -426,11 +423,9 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    const dragItem = await screen.findByTestId('media-draggable-m1');
-    fireEvent.dragStart(dragItem);
-    fireEvent.dragOver(dragItem);
-    fireEvent.drop(dragItem);
-    fireEvent.dragEnd(dragItem);
+    const dragHandle = (await screen.findAllByLabelText('Drag media to reorder'))[0];
+    dragHandle.focus();
+    fireEvent.keyDown(dragHandle, { key: 'ArrowRight', code: 'ArrowRight' });
     expect(apiClient.put).not.toHaveBeenCalledWith(
       '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
       expect.any(Object),
@@ -462,12 +457,9 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    const dragSource = await screen.findByTestId('media-draggable-m1');
-    const dragTarget = await screen.findByTestId('media-draggable-m2');
-    fireEvent.dragStart(dragSource);
-    fireEvent.dragOver(dragTarget);
-    fireEvent.drop(dragTarget);
-    fireEvent.dragEnd(dragSource);
+    const dragHandles = await screen.findAllByLabelText('Drag media to reorder');
+    dragHandles[0].focus();
+    fireEvent.keyDown(dragHandles[0], { key: 'ArrowRight', code: 'ArrowRight' });
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Reorder failed' }),
