@@ -1,4 +1,4 @@
-import { forwardRef, type DragEvent, type CSSProperties, type HTMLAttributes } from 'react';
+import { forwardRef, type CSSProperties, type HTMLAttributes } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon, Badge } from '@mantine/core';
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
@@ -13,12 +13,6 @@ interface MediaCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onImageClick?: () => void;
-  draggable?: boolean;
-  onDragStart?: (event: DragEvent<HTMLDivElement>) => void;
-  onDragEnter?: (event: DragEvent<HTMLDivElement>) => void;
-  onDragOver?: (event: DragEvent<HTMLDivElement>) => void;
-  onDrop?: (event: DragEvent<HTMLDivElement>) => void;
-  onDragEnd?: (event: DragEvent<HTMLDivElement>) => void;
   style?: CSSProperties;
   cardStyle?: CSSProperties;
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
@@ -33,12 +27,6 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     onEdit,
     onDelete,
     onImageClick,
-    draggable = false,
-    onDragStart,
-    onDragEnter,
-    onDragOver,
-    onDrop,
-    onDragEnd,
     style,
     cardStyle,
     dragHandleProps,
@@ -53,12 +41,6 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
       <div
         ref={ref}
         className={styles.mediaCard}
-        draggable={draggable}
-        onDragStart={onDragStart}
-        onDragEnter={onDragEnter}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        onDragEnd={onDragEnd}
         style={style}
       >
         <Card

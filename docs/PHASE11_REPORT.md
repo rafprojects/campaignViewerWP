@@ -1,6 +1,6 @@
 # Phase 11 — UX & Discovery Improvements
 
-**Status:** In Progress  
+**Status:** Complete  
 **Version target:** v0.9.0  
 **Created:** February 16, 2026
 **Last updated:** February 16, 2026
@@ -96,6 +96,8 @@ This report also records the baseline inherited from Phase 10 so planning and im
 - [ ] Add multi-select for media in admin workflows
 - [ ] Support batch delete/move actions with clear confirmations
 
+**Status:** Deferred to next phase/carryover backlog after v0.9.0 release scope freeze.
+
 **Effort:** Medium  
 **Impact:** High
 
@@ -123,6 +125,8 @@ This report also records the baseline inherited from Phase 10 so planning and im
 - **2026-02-16:** A4 completed — added online/offline detection, persistent offline banner, API fail-fast behavior while offline, and reconnect-triggered campaign revalidation.
 - **2026-02-16:** B1 completed — campaigns endpoint now supports `include_media=1` and returns `mediaByCampaign`; App consumes bulk media map to avoid per-campaign `/media` fan-out requests on initial gallery load.
 - **2026-02-16:** B2 completed — MediaTab now supports drag-and-drop media reordering (grid/list/virtualized list), MediaCard exposes drag-handle behavior, and reorder persistence continues through existing `/media/reorder` flow with updated test coverage.
+- **2026-02-16 (follow-up):** B2 UX/performance polish — migrated media reordering to `dnd-kit` sortable interactions for clearer insertion feedback, replaced admin external-video card embeds with cached thumbnails to prevent iframe reload churn during reorder, and added media type/source badges across card and list admin views.
+- **2026-02-16 (completion):** Phase 11 released as **v0.9.0**. Final hardening included cover-image clear/reset persistence, dirty-guard coverage for thumbnail edits, SSR-safe online-status hook guards, and shared media-type normalization for `mediaByCampaign` payload consistency.
 
 ---
 

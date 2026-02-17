@@ -5,6 +5,23 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-02-16
+
+### Added - Phase 11: UX & Discovery Improvements
+- **Track A complete**: compact sign-in UX, transparent/stable video player behavior, campaign thumbnail auto-selection + admin override/upload controls, and robust online/offline fail-fast + reconnect revalidation.
+- **Track B high-impact delivery**: N+1 media fetch removed via `include_media=1` bulk payload, and media reordering upgraded to `dnd-kit` drag-and-drop interactions.
+- **Admin media clarity**: media type/source badges added in card and list admin views to improve at-a-glance identification.
+
+### Changed
+- Admin media card rendering now uses cached thumbnails for external videos (instead of live embeds) to avoid iframe reload churn during reorder operations.
+- Campaign edit thumbnail workflow now supports explicit clear/reset, including dirty-state tracking for thumbnail-only edits.
+- Campaign list `mediaByCampaign` now uses shared media-type normalization to keep types consistent with media list endpoints.
+
+### Fixed
+- `useOnlineStatus` hardened for SSR/non-browser contexts by guarding `window`/`navigator` access.
+- Campaign cover-image clear behavior now persists end-to-end (frontend sends explicit clears; backend removes stored `cover_image` meta).
+- Reordering/list and modal test flows stabilized around async UI timing and updated interaction paths.
+
 ## [0.8.0] - 2026-02-16
 
 ### Added - Phase 10: Codebase Refinement & UX Polish
@@ -179,12 +196,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-See [PHASE11_REPORT.md](./docs/PHASE11_REPORT.md) for active planning and execution:
-- UX and discovery improvements, media experience upgrades, and high-impact carryover tasks
+See [PHASE11_REPORT.md](./docs/PHASE11_REPORT.md) for final Phase 11 execution details and carryover notes.
 
 ---
 
 [0.5.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.4.0...v0.5.0
+[0.9.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.5.0...v0.6.0
