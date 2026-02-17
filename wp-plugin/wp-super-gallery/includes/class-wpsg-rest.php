@@ -479,7 +479,9 @@ class WPSG_REST {
             foreach ($query->posts as $post) {
                 $campaign_id = (string) $post->ID;
                 $media_items = get_post_meta($post->ID, 'media_items', true);
-                $media_by_campaign[$campaign_id] = is_array($media_items) ? $media_items : [];
+                $media_items = is_array($media_items) ? $media_items : [];
+                $normalized = self::normalize_media_items_types($media_items);
+                $media_by_campaign[$campaign_id] = $normalized['items'];
             }
         }
 
@@ -638,21 +640,9 @@ class WPSG_REST {
 
         // Normalize legacy media types on read for accuracy
         $updated_count = 0;
-        foreach ($media_items as &$media_item) {
-            $url = $media_item['url'] ?? '';
-            $current_type = $media_item['type'] ?? '';
-            $inferred_type = self::infer_media_type_from_url($url);
-
-            if (!empty($media_item['embedUrl'])) {
-                $inferred_type = 'video';
-            }
-
-            if ($inferred_type && $inferred_type !== $current_type) {
-                $media_item['type'] = $inferred_type;
-                $updated_count++;
-            }
-        }
-        unset($media_item);
+        $normalized = self::normalize_media_items_types($media_items);
+        $media_items = $normalized['items'];
+        $updated_count = $normalized['updated'];
 
         if ($updated_count > 0) {
             update_post_meta($post_id, 'media_items', $media_items);
@@ -1382,6 +1372,37 @@ class WPSG_REST {
         
         // Default: keep existing type or assume video for external
         return null;
+    }
+
+    /**
+     * Normalize media item types, including legacy records missing/incorrect type fields.
+     *
+     * @param array $media_items
+     * @return array{items: array, updated: int}
+     */
+    private static function normalize_media_items_types(array $media_items) {
+        $updated_count = 0;
+
+        foreach ($media_items as &$media_item) {
+            $url = $media_item['url'] ?? '';
+            $current_type = $media_item['type'] ?? '';
+            $inferred_type = self::infer_media_type_from_url($url);
+
+            if (!empty($media_item['embedUrl'])) {
+                $inferred_type = 'video';
+            }
+
+            if ($inferred_type && $inferred_type !== $current_type) {
+                $media_item['type'] = $inferred_type;
+                $updated_count++;
+            }
+        }
+        unset($media_item);
+
+        return [
+            'items' => $media_items,
+            'updated' => $updated_count,
+        ];
     }
 
     /**
