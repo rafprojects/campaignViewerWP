@@ -3,7 +3,7 @@
 **Status:** Planned  
 **Version target:** v0.10.0 (planning target)  
 **Created:** February 17, 2026
-**Last updated:** February 17, 2026
+**Last updated:** February 18, 2026
 
 ---
 
@@ -17,6 +17,15 @@ This phase centers on four promoted tracks:
 2. Advanced image gallery controls/UX
 3. Pluggable gallery implementation + layout builder foundation
 4. Modularized embed provider handlers
+
+And six new enhancement tracks identified during Phase 12 implementation:
+
+5. Settings panel modal redesign (HIGHEST PRIORITY — before pluggable gallery)
+6. Gallery card border radius controls
+7. Transition fade-in/out for entering/exiting cards
+8. Navigation overlay arrows with admin controls
+9. Dot navigator with admin controls
+10. Image/video shadow & depth controls
 
 ---
 
@@ -105,12 +114,147 @@ This phase centers on four promoted tracks:
 
 ---
 
+## Track P12-E — Settings Panel Modal Redesign ⭐ HIGHEST PRIORITY
+
+### Objectives
+
+- Restructure the current inline SettingsPanel into a full modal dialog
+- Organize settings into tabbed sections for improved discoverability and scalability
+- Must be completed before pluggable gallery work to establish the settings architecture
+
+### Candidate Deliverables
+
+- Modal wrapper replacing current inline panel
+- Tab system organizing settings by category (General, Gallery Behavior, Transitions, Navigation, Appearance)
+- Preserve existing save/reset/dirty-tracking behavior
+- Responsive layout for both desktop and mobile admin views
+- Foundation for adding new settings without further panel restructuring
+
+**Effort:** Medium  
+**Impact:** Very High (unblocks all subsequent settings-heavy tracks)
+
+---
+
+## Track P12-F — Gallery Card Border Radius Controls
+
+### Objectives
+
+- Provide admin-configurable border radius for images and videos independently
+- Allow different radius values per media type for design flexibility
+
+### Candidate Deliverables
+
+- Separate `imageBorderRadius` and `videoBorderRadius` settings (px or rem slider)
+- End-to-end wiring: React UI → SWR → PHP REST API → WP settings
+- Applied to both main viewport and thumbnail strip items
+- Safe defaults (e.g., 8px) preserving current appearance
+
+**Effort:** Low–Medium  
+**Impact:** Medium
+
+---
+
+## Track P12-G — Transition Fade for Entering/Exiting Cards
+
+### Objectives
+
+- Address the current slide-off UX where cards vanish abruptly before reaching viewport edge
+- Add optional opacity fade on entering and exiting cards during transitions
+
+### Candidate Deliverables
+
+- New `transitionFadeEnabled` boolean setting (default: true)
+- Opacity fade applied to both enter and exit layers during slide transitions
+- Configurable fade intensity or kept as a polished default
+- Works in combination with existing slide/slide-fade/fade transition types
+
+**Effort:** Low  
+**Impact:** High (significant UX polish)
+
+---
+
+## Track P12-H — Navigation Overlay Arrows
+
+### Objectives
+
+- Move prev/next navigation arrows from below the viewport to overlaid on the media viewport
+- Provide comprehensive admin controls for arrow appearance and behavior
+
+### Candidate Deliverables
+
+- Overlay arrow positioning (left/right edges of viewport)
+- Admin controls for:
+  - Arrow position (vertical alignment: top, center, bottom)
+  - Arrow size (px slider)
+  - Arrow color and background color
+  - Border style and width
+  - Hover grow effect (scale factor)
+  - Activity fade timing (auto-hide delay in ms, 0 = always visible)
+- Touch-friendly sizing on mobile
+- Accessibility: keyboard navigation, ARIA labels maintained
+
+**Effort:** Medium–High  
+**Impact:** High
+
+---
+
+## Track P12-I — Dot Navigator
+
+### Objectives
+
+- Add a dot-style page indicator common in modern carousels/sliders
+- Provide admin controls for dot appearance and behavior
+
+### Candidate Deliverables
+
+- Dot navigator component rendered below (or overlaid on) the viewport
+- Click/tap to navigate to specific slide
+- Admin controls for:
+  - Dot position (below viewport, overlaid bottom, overlaid top)
+  - Dot size, active color, inactive color
+  - Dot shape (circle, pill, square)
+  - Spacing between dots
+  - Active dot scale factor
+- Truncation strategy for large galleries (e.g., show 5 + ellipsis)
+
+**Effort:** Medium  
+**Impact:** Medium–High
+
+---
+
+## Track P12-J — Image/Video Shadow & Depth Controls
+
+### Objectives
+
+- Allow admins to control box-shadow and depth effects on gallery media cards
+- Provide visual depth to gallery items for a more polished presentation
+
+### Candidate Deliverables
+
+- Shadow preset selector (none, subtle, medium, strong, custom)
+- Custom shadow controls: offsetX, offsetY, blur, spread, color
+- Separate controls for images and videos
+- Optional inner shadow / inset option
+- Applied to both main viewport and optionally to thumbnails
+- CSS `filter: drop-shadow()` option for non-rectangular content
+
+**Effort:** Medium  
+**Impact:** Medium
+
+---
+
 ## Initial Execution Order
 
-1. Track P12-D: Modular embed provider handlers (enables cleaner provider extensibility)
-2. Track P12-C: Gallery adapter contract + runtime selector foundation
-3. Track P12-A: Advanced video gallery controls
-4. Track P12-B: Advanced image gallery controls
+1. **Track P12-E: Settings panel modal redesign** (HIGHEST PRIORITY — unblocks all settings-heavy work)
+2. Track P12-D: Modular embed provider handlers (enables cleaner provider extensibility)
+3. Track P12-F: Gallery card border radius controls
+4. Track P12-G: Transition fade-in/out for entering/exiting cards
+5. Track P12-H: Navigation overlay arrows with admin controls
+6. Track P12-I: Dot navigator with admin controls
+7. Track P12-J: Image/video shadow & depth controls
+8. Track P12-C: Gallery adapter contract + runtime selector foundation
+9. Track P12-A: Advanced video gallery controls
+10. Track P12-B: Advanced image gallery controls
 
 ---
 
@@ -134,6 +278,7 @@ This phase centers on four promoted tracks:
 ## Progress Log
 
 - **2026-02-17:** Phase 12 planning doc created and tracks promoted from `FUTURE_TASKS.md`.
+- **2026-02-18:** Imperative CSS transitions implemented and verified (replaced failing CSS @keyframes approach). `scrollTransitionType` setting added end-to-end. Debug logs cleaned, unused keyframes removed, plugin version bumped to 0.9.1. Six new enhancement tracks (P12-E through P12-J) added. Settings panel modal redesign designated as highest priority.
 
 ---
 
