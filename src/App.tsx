@@ -13,7 +13,8 @@ import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem, UploadResponse } from './types';
+import type { Campaign, Company, MediaItem, UploadResponse, GalleryBehaviorSettings } from './types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { getErrorMessage } from './utils/getErrorMessage';
@@ -238,6 +239,39 @@ function AppContent({
   );
 
   const error = campaignsError ? (campaignsError instanceof Error ? campaignsError.message : 'Failed to load campaigns') : null;
+
+  const fetchGalleryBehaviorSettings = useCallback(async () => {
+    const response = await apiClient.getSettings();
+    const resolved = {
+      videoViewportHeight:
+        response.videoViewportHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight,
+      imageViewportHeight:
+        response.imageViewportHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight,
+      thumbnailScrollSpeed:
+        response.thumbnailScrollSpeed ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollSpeed,
+      scrollAnimationStyle:
+        response.scrollAnimationStyle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle,
+      scrollAnimationDurationMs:
+        response.scrollAnimationDurationMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs,
+      scrollAnimationEasing:
+        response.scrollAnimationEasing ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing,
+      scrollTransitionType:
+        response.scrollTransitionType ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType,
+    } as GalleryBehaviorSettings;
+
+    return resolved;
+  }, [apiClient]);
+
+  const { data: galleryBehaviorSettings, mutate: mutateGalleryBehaviorSettings } = useSWR<GalleryBehaviorSettings>(
+    'gallery-behavior-settings',
+    fetchGalleryBehaviorSettings,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      shouldRetryOnError: false,
+      fallbackData: DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+    },
+  );
 
   useEffect(() => {
     if (isOnline && isReady) {
@@ -633,6 +667,20 @@ function AppContent({
                 apiClient={apiClient}
                 onClose={closeSettings}
                 onNotify={handleAdminNotify}
+                onSettingsSaved={(saved) => {
+                  void mutateGalleryBehaviorSettings(
+                    {
+                      videoViewportHeight: saved.videoViewportHeight,
+                      imageViewportHeight: saved.imageViewportHeight,
+                      thumbnailScrollSpeed: saved.thumbnailScrollSpeed,
+                      scrollAnimationStyle: saved.scrollAnimationStyle,
+                      scrollAnimationDurationMs: saved.scrollAnimationDurationMs,
+                      scrollAnimationEasing: saved.scrollAnimationEasing,
+                      scrollTransitionType: saved.scrollTransitionType,
+                    },
+                    false,
+                  );
+                }}
               />
             </Suspense>
           </ErrorBoundary>
@@ -671,6 +719,7 @@ function AppContent({
           campaigns={campaigns || []}
           userPermissions={permissions}
           accessMode={localAccessMode}
+          galleryBehaviorSettings={galleryBehaviorSettings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
           isAdmin={isAdmin}
           isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}

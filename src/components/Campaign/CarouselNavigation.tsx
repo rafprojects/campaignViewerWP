@@ -1,5 +1,7 @@
-import { ActionIcon, Badge, Group, Image } from '@mantine/core';
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { ActionIcon, Badge, Box, Group, Image } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import type { ScrollAnimationEasing, ScrollAnimationStyle } from '@/types';
 
 interface CarouselNavigationItem {
   id: string;
@@ -19,6 +21,10 @@ interface CarouselNavigationProps {
   nextLabel: string;
   thumbnailHeight?: number;
   thumbnailWidth?: number;
+  thumbnailScrollSpeed?: number;
+  scrollAnimationStyle?: ScrollAnimationStyle;
+  scrollAnimationDurationMs?: number;
+  scrollAnimationEasing?: ScrollAnimationEasing;
 }
 
 export function CarouselNavigation({
@@ -32,7 +38,31 @@ export function CarouselNavigation({
   nextLabel,
   thumbnailHeight = 60,
   thumbnailWidth = 60,
+  thumbnailScrollSpeed = 1,
+  scrollAnimationStyle = 'smooth',
+  scrollAnimationDurationMs = 180,
+  scrollAnimationEasing = 'ease',
 }: CarouselNavigationProps) {
+  const thumbnailStripRef = useRef<HTMLDivElement | null>(null);
+  const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const resolvedScrollBehavior = useMemo<ScrollBehavior>(
+    () => (scrollAnimationStyle === 'smooth' ? 'smooth' : 'auto'),
+    [scrollAnimationStyle],
+  );
+
+  const resolvedCssScrollBehavior = useMemo<NonNullable<CSSProperties['scrollBehavior']>>(
+    () => (scrollAnimationStyle === 'smooth' ? 'smooth' : 'auto'),
+    [scrollAnimationStyle],
+  );
+
+  useEffect(() => {
+    const activeThumb = thumbRefs.current[currentIndex];
+    if (!activeThumb) return;
+    if (typeof activeThumb.scrollIntoView !== 'function') return;
+    activeThumb.scrollIntoView({ behavior: resolvedScrollBehavior, inline: 'center', block: 'nearest' });
+  }, [currentIndex, resolvedScrollBehavior]);
+
   return (
     <>
       <Group justify="space-between" align="center">
@@ -63,10 +93,30 @@ export function CarouselNavigation({
       </Group>
 
       {total > 1 && (
-        <Group gap={6}>
+        <Box
+          ref={thumbnailStripRef}
+          onWheel={(event) => {
+            const strip = thumbnailStripRef.current;
+            if (!strip) return;
+            const deltaX = (event.deltaY !== 0 ? event.deltaY : event.deltaX) * thumbnailScrollSpeed;
+            strip.scrollBy({ left: deltaX, behavior: resolvedScrollBehavior });
+            event.preventDefault();
+          }}
+          style={{
+            display: 'flex',
+            gap: 6,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            scrollBehavior: resolvedCssScrollBehavior,
+            paddingBottom: 4,
+          }}
+        >
           {items.map((item, index) => (
             <ActionIcon
               key={item.id}
+              ref={(node) => {
+                thumbRefs.current[index] = node;
+              }}
               onClick={() => onSelect(index)}
               variant={index === currentIndex ? 'light' : 'subtle'}
               size="lg"
@@ -74,8 +124,11 @@ export function CarouselNavigation({
               aria-label={`Show item ${index + 1} of ${total}`}
               aria-pressed={index === currentIndex}
               style={{
-                border: index === currentIndex ? '2px solid var(--wpsg-color-primary)' : 'none',
+                border: '2px solid',
+                borderColor: index === currentIndex ? 'var(--wpsg-color-primary)' : 'transparent',
                 overflow: 'hidden',
+                flex: '0 0 auto',
+                transition: `border-color ${scrollAnimationDurationMs}ms ${scrollAnimationEasing}`,
               }}
             >
               <Image
@@ -92,7 +145,7 @@ export function CarouselNavigation({
               />
             </ActionIcon>
           ))}
-        </Group>
+        </Box>
       )}
     </>
   );

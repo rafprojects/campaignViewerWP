@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { IconArrowLeft, IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
-import type { Campaign } from '@/types';
+import type { Campaign, GalleryBehaviorSettings } from '@/types';
 
 const VideoCarousel = lazy(() => import('./VideoCarousel').then((m) => ({ default: m.VideoCarousel })));
 const ImageCarousel = lazy(() => import('./ImageCarousel').then((m) => ({ default: m.ImageCarousel })));
@@ -9,6 +9,7 @@ const ImageCarousel = lazy(() => import('./ImageCarousel').then((m) => ({ defaul
 interface CampaignViewerProps {
   campaign: Campaign;
   hasAccess: boolean;
+  galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin: boolean;
   onEditCampaign?: (campaign: Campaign) => void;
   onArchiveCampaign?: (campaign: Campaign) => void;
@@ -19,6 +20,7 @@ interface CampaignViewerProps {
 export function CampaignViewer({
   campaign,
   hasAccess,
+  galleryBehaviorSettings,
   isAdmin,
   onEditCampaign,
   onArchiveCampaign,
@@ -139,11 +141,11 @@ export function CampaignViewer({
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
             <Suspense fallback={<Center py="md"><Loader /></Center>}>
               {campaign.videos.length > 0 && (
-                <VideoCarousel videos={campaign.videos} />
+                <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
               )}
 
               {campaign.images.length > 0 && (
-                <ImageCarousel images={campaign.images} />
+                <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
               )}
             </Suspense>
           )}

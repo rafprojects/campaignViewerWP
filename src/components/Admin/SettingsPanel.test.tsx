@@ -23,12 +23,24 @@ function createMockApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
       itemsPerPage: 12,
       enableLightbox: true,
       enableAnimations: true,
+      videoViewportHeight: 420,
+      imageViewportHeight: 420,
+      thumbnailScrollSpeed: 1,
+      scrollAnimationStyle: 'smooth',
+      scrollAnimationDurationMs: 180,
+      scrollAnimationEasing: 'ease',
     }),
     updateSettings: vi.fn().mockResolvedValue({
       galleryLayout: 'grid',
       itemsPerPage: 12,
       enableLightbox: true,
       enableAnimations: true,
+      videoViewportHeight: 420,
+      imageViewportHeight: 420,
+      thumbnailScrollSpeed: 1,
+      scrollAnimationStyle: 'smooth',
+      scrollAnimationDurationMs: 180,
+      scrollAnimationEasing: 'ease',
     }),
     testConnection: vi.fn().mockResolvedValue({ success: true, message: 'ok' }),
     ...overrides,
@@ -65,6 +77,8 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Items Per Page')).toBeDefined();
     expect(screen.getByText('Enable Lightbox')).toBeDefined();
     expect(screen.getByText('Enable Animations')).toBeDefined();
+    expect(screen.getByText('Video Gallery Height (px)')).toBeDefined();
+    expect(screen.getByText('Image Gallery Height (px)')).toBeDefined();
   });
 
   it('uses defaults when getSettings fails', async () => {

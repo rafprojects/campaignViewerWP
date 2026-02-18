@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '../../test/test-utils';
 import { VideoCarousel } from './VideoCarousel';
-import type { MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem } from '@/types';
 
 const videos: MediaItem[] = [
   {
@@ -79,5 +79,19 @@ describe('VideoCarousel', () => {
 
     const iframe = screen.getByTitle('Video player: Video One') as HTMLIFrameElement;
     expect(iframe.src).toContain('autoplay=1');
+  });
+
+  it('uses configured video viewport height', () => {
+    render(
+      <VideoCarousel
+        videos={videos}
+        settings={{
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          videoViewportHeight: 520,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('video-player-frame')).toHaveStyle({ height: '520px' });
   });
 });

@@ -152,6 +152,13 @@ export interface SettingsResponse {
   enableLightbox?: boolean;
   enableAnimations?: boolean;
   cacheTtl?: number;
+  videoViewportHeight?: number;
+  imageViewportHeight?: number;
+  thumbnailScrollSpeed?: number;
+  scrollAnimationStyle?: 'smooth' | 'instant';
+  scrollAnimationDurationMs?: number;
+  scrollAnimationEasing?: 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+  scrollTransitionType?: 'fade' | 'slide' | 'slide-fade';
 }
 
 export interface SettingsUpdateRequest {
@@ -163,6 +170,13 @@ export interface SettingsUpdateRequest {
   enableLightbox?: boolean;
   enableAnimations?: boolean;
   cacheTtl?: number;
+  videoViewportHeight?: number;
+  imageViewportHeight?: number;
+  thumbnailScrollSpeed?: number;
+  scrollAnimationStyle?: 'smooth' | 'instant';
+  scrollAnimationDurationMs?: number;
+  scrollAnimationEasing?: 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+  scrollTransitionType?: 'fade' | 'slide' | 'slide-fade';
 }
 
 export class ApiError extends Error {

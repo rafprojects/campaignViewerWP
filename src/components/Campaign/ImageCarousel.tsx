@@ -1,18 +1,55 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { IconPhoto, IconX, IconZoomIn, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { Stack, Title, Group, ActionIcon, Image, AspectRatio, Text, Box, Modal } from '@mantine/core';
-import type { MediaItem } from '@/types';
+import { Stack, Title, Group, ActionIcon, Image, Text, Box, Modal } from '@mantine/core';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
 import { useSwipe } from '@/hooks/useSwipe';
 import { CarouselNavigation } from './CarouselNavigation';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
+import { applyGalleryTransition } from '@/utils/galleryAnimations';
 
 interface ImageCarouselProps {
   images: MediaItem[];
+  settings?: GalleryBehaviorSettings;
 }
 
-export function ImageCarousel({ images }: ImageCarouselProps) {
-  const { currentIndex, setCurrentIndex, next: nextImage, prev: prevImage } = useCarousel(images.length);
+export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS }: ImageCarouselProps) {
+  const { currentIndex, direction, setCurrentIndex, next: nextRaw, prev: prevRaw } = useCarousel(images.length);
+  const [previousImage, setPreviousImage] = useState<MediaItem | null>(null);
+  const exitTimerRef = useRef<number>(0);
+  const enterRef = useRef<HTMLDivElement>(null);
+  const exitRef = useRef<HTMLDivElement>(null);
+  const lbEnterRef = useRef<HTMLDivElement>(null);
+  const lbExitRef = useRef<HTMLDivElement>(null);
+  const prevIndexRef = useRef(currentIndex);
+
+  const currentImage = images[currentIndex];
+
+  const mediaTransitionDuration = useMemo(
+    () => (settings.scrollAnimationStyle === 'instant' ? 0 : settings.scrollAnimationDurationMs),
+    [settings.scrollAnimationStyle, settings.scrollAnimationDurationMs],
+  );
+
+  const transitionType = settings.scrollTransitionType ?? 'slide-fade';
+
+  const beginTransition = (navigate: () => void) => {
+    window.clearTimeout(exitTimerRef.current);
+    if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+      setPreviousImage(images[currentIndex]);
+      exitTimerRef.current = window.setTimeout(
+        () => setPreviousImage(null),
+        mediaTransitionDuration + 100,
+      );
+    }
+    navigate();
+  };
+
+  const nextImage = () => beginTransition(nextRaw);
+  const prevImage = () => beginTransition(prevRaw);
+
+  useEffect(() => () => window.clearTimeout(exitTimerRef.current), []);
+
   const { isOpen: isLightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     onPrev: prevImage,
     onNext: nextImage,
@@ -24,7 +61,27 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
     onSwipeRight: prevImage,
   });
 
-  const currentImage = images[currentIndex];
+  const standardViewerHeight = useMemo(
+    () => `${Math.max(180, Math.min(900, settings.imageViewportHeight))}px`,
+    [settings.imageViewportHeight],
+  );
+
+  // Imperative CSS transition — runs before browser paint
+  useLayoutEffect(() => {
+    if (prevIndexRef.current === currentIndex) return;
+    prevIndexRef.current = currentIndex;
+    if (mediaTransitionDuration <= 0 || direction === 0 || settings.scrollAnimationStyle === 'instant') return;
+
+    const opts = {
+      direction: direction as 1 | -1,
+      transitionType: transitionType as 'fade' | 'slide' | 'slide-fade',
+      durationMs: mediaTransitionDuration,
+      easing: settings.scrollAnimationEasing,
+    };
+
+    applyGalleryTransition(enterRef.current, exitRef.current, opts);
+    applyGalleryTransition(lbEnterRef.current, lbExitRef.current, opts);
+  }, [currentIndex, direction, mediaTransitionDuration, transitionType, settings.scrollAnimationEasing, settings.scrollAnimationStyle]);
 
   return (
     <Stack gap="md">
@@ -38,12 +95,13 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
       {/* Image viewer */}
       <Box
         pos="relative"
+        data-testid="image-viewer-frame"
         role="button"
         tabIndex={0}
         aria-label={`View image ${currentIndex + 1} of ${images.length}`}
         onClick={openLightbox}
         {...swipeHandlers}
-        style={{ touchAction: 'pan-y' }}
+        style={{ touchAction: 'pan-y', height: standardViewerHeight, overflow: 'hidden' }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
@@ -59,17 +117,51 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
           }
         }}
       >
-        <AspectRatio ratio={16 / 9}>
-          <Box style={{ width: '100%', height: '100%' }}>
+        {previousImage && (
+          <Box
+            ref={exitRef}
+            onTransitionEnd={() => {
+              setPreviousImage(null);
+              window.clearTimeout(exitTimerRef.current);
+            }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              willChange: 'transform, opacity',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
             <Image
-              src={currentImage.url}
-              alt={currentImage.caption || 'Campaign image'}
+              src={previousImage.url}
+              alt=""
+              aria-hidden
               fit="contain"
               h="100%"
-              style={{ cursor: 'zoom-in' }}
             />
           </Box>
-        </AspectRatio>
+        )}
+
+        <Box
+          key={currentImage.id}
+          ref={enterRef}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            willChange: 'transform, opacity',
+            zIndex: 2,
+          }}
+        >
+          <Image
+            src={currentImage.url}
+            alt={currentImage.caption || 'Campaign image'}
+            fit="contain"
+            h="100%"
+            style={{ cursor: 'zoom-in' }}
+          />
+        </Box>
 
         {/* Zoom button */}
         <ActionIcon
@@ -95,7 +187,19 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         currentIndex={currentIndex}
         onPrev={prevImage}
         onNext={nextImage}
-        onSelect={setCurrentIndex}
+        onSelect={(index) => {
+          if (index !== currentIndex) {
+            window.clearTimeout(exitTimerRef.current);
+            if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+              setPreviousImage(currentImage);
+              exitTimerRef.current = window.setTimeout(
+                () => setPreviousImage(null),
+                mediaTransitionDuration + 100,
+              );
+            }
+          }
+          setCurrentIndex(index);
+        }}
         items={images.map((image) => ({
           id: image.id,
           url: image.url,
@@ -103,6 +207,10 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
         }))}
         previousLabel="Previous image"
         nextLabel="Next image"
+        thumbnailScrollSpeed={settings.thumbnailScrollSpeed}
+        scrollAnimationStyle={settings.scrollAnimationStyle}
+        scrollAnimationDurationMs={settings.scrollAnimationDurationMs}
+        scrollAnimationEasing={settings.scrollAnimationEasing}
       />
 
       {/* Lightbox Modal */}
@@ -126,16 +234,57 @@ export function ImageCarousel({ images }: ImageCarouselProps) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                position: 'relative',
               }}
               onClick={(event) => event.stopPropagation()}
             >
-              <Image
-                src={currentImage.url}
-                alt={currentImage.caption || 'Campaign image'}
-                fit="contain"
-                h="100%"
-                w="100%"
-              />
+              {previousImage && (
+                <Box
+                  ref={lbExitRef}
+                  onTransitionEnd={() => {
+                    setPreviousImage(null);
+                    window.clearTimeout(exitTimerRef.current);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    willChange: 'transform, opacity',
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }}
+                >
+                  <Image
+                    src={previousImage.url}
+                    alt=""
+                    aria-hidden
+                    fit="contain"
+                    h="100%"
+                    w="100%"
+                  />
+                </Box>
+              )}
+              <Box
+                key={`lightbox-${currentImage.id}`}
+                ref={lbEnterRef}
+                style={{
+                  willChange: 'transform, opacity',
+                  zIndex: 2,
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Image
+                  src={currentImage.url}
+                  alt={currentImage.caption || 'Campaign image'}
+                  fit="contain"
+                  h="100%"
+                  w="100%"
+                />
+              </Box>
             </Box>
           )}
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { ImageCarousel } from './ImageCarousel';
-import type { MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem } from '@/types';
 
 const images: MediaItem[] = [
   {
@@ -57,5 +57,19 @@ describe('ImageCarousel', () => {
     await waitFor(() => {
       expect(document.body.getAttribute('data-scroll-locked')).toBeNull();
     });
+  });
+
+  it('uses configured image viewport height', () => {
+    render(
+      <ImageCarousel
+        images={images}
+        settings={{
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          imageViewportHeight: 500,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('image-viewer-frame')).toHaveStyle({ height: '500px' });
   });
 });

@@ -40,6 +40,13 @@ class WPSG_Settings {
         'items_per_page'             => 12,
         'enable_lightbox'            => true,
         'enable_animations'          => true,
+        'video_viewport_height'      => 420,
+        'image_viewport_height'      => 420,
+        'thumbnail_scroll_speed'     => 1,
+        'scroll_animation_style'     => 'smooth',
+        'scroll_animation_duration_ms' => 350,
+        'scroll_animation_easing'    => 'ease',
+        'scroll_transition_type'     => 'slide-fade',
         'cache_ttl'                  => 3600,
     ];
 
@@ -67,6 +74,9 @@ class WPSG_Settings {
             'synthwave',
         ],
         'gallery_layout' => ['grid', 'masonry', 'carousel'],
+        'scroll_animation_style' => ['smooth', 'instant'],
+        'scroll_animation_easing' => ['ease', 'linear', 'ease-in', 'ease-out', 'ease-in-out'],
+        'scroll_transition_type' => ['fade', 'slide', 'slide-fade'],
     ];
 
     /**
@@ -271,6 +281,44 @@ class WPSG_Settings {
         if (isset($input['items_per_page'])) {
             $items = intval($input['items_per_page']);
             $sanitized['items_per_page'] = max(1, min(100, $items));
+        }
+
+        if (isset($input['video_viewport_height'])) {
+            $height = intval($input['video_viewport_height']);
+            $sanitized['video_viewport_height'] = max(180, min(900, $height));
+        }
+
+        if (isset($input['image_viewport_height'])) {
+            $height = intval($input['image_viewport_height']);
+            $sanitized['image_viewport_height'] = max(180, min(900, $height));
+        }
+
+        if (isset($input['thumbnail_scroll_speed'])) {
+            $speed = floatval($input['thumbnail_scroll_speed']);
+            $sanitized['thumbnail_scroll_speed'] = max(0.25, min(3, $speed));
+        }
+
+        if (isset($input['scroll_animation_style'])) {
+            $sanitized['scroll_animation_style'] = in_array($input['scroll_animation_style'], self::$valid_options['scroll_animation_style'], true)
+                ? $input['scroll_animation_style']
+                : self::$defaults['scroll_animation_style'];
+        }
+
+        if (isset($input['scroll_animation_duration_ms'])) {
+            $duration = intval($input['scroll_animation_duration_ms']);
+            $sanitized['scroll_animation_duration_ms'] = max(0, min(2000, $duration));
+        }
+
+        if (isset($input['scroll_animation_easing'])) {
+            $sanitized['scroll_animation_easing'] = in_array($input['scroll_animation_easing'], self::$valid_options['scroll_animation_easing'], true)
+                ? $input['scroll_animation_easing']
+                : self::$defaults['scroll_animation_easing'];
+        }
+
+        if (isset($input['scroll_transition_type'])) {
+            $sanitized['scroll_transition_type'] = in_array($input['scroll_transition_type'], self::$valid_options['scroll_transition_type'], true)
+                ? $input['scroll_transition_type']
+                : self::$defaults['scroll_transition_type'];
         }
 
         // Boolean fields.

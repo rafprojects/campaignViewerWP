@@ -2076,6 +2076,13 @@ class WPSG_REST {
                 'items_per_page'    => 12,
                 'enable_lightbox'   => true,
                 'enable_animations' => true,
+                'video_viewport_height' => 420,
+                'image_viewport_height' => 420,
+                'thumbnail_scroll_speed' => 1,
+                'scroll_animation_style' => 'smooth',
+                'scroll_animation_duration_ms' => 350,
+                'scroll_animation_easing' => 'ease',
+                'scroll_transition_type' => 'slide-fade',
                 'cache_ttl'         => 3600,
             ];
         }
@@ -2090,6 +2097,13 @@ class WPSG_REST {
                 'itemsPerPage'     => $settings['items_per_page'] ?? 12,
                 'enableLightbox'   => $settings['enable_lightbox'] ?? true,
                 'enableAnimations' => $settings['enable_animations'] ?? true,
+                'videoViewportHeight' => $settings['video_viewport_height'] ?? 420,
+                'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
+                'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
+                'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
+                'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 180,
+                'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
+                'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2101,6 +2115,13 @@ class WPSG_REST {
             'itemsPerPage'     => $settings['items_per_page'] ?? 12,
             'enableLightbox'   => $settings['enable_lightbox'] ?? true,
             'enableAnimations' => $settings['enable_animations'] ?? true,
+            'videoViewportHeight' => $settings['video_viewport_height'] ?? 420,
+            'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
+            'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
+            'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
+            'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 180,
+            'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
+            'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2143,6 +2164,27 @@ class WPSG_REST {
         if (isset($body['enableAnimations'])) {
             $input['enable_animations'] = (bool) $body['enableAnimations'];
         }
+        if (isset($body['videoViewportHeight'])) {
+            $input['video_viewport_height'] = intval($body['videoViewportHeight']);
+        }
+        if (isset($body['imageViewportHeight'])) {
+            $input['image_viewport_height'] = intval($body['imageViewportHeight']);
+        }
+        if (isset($body['thumbnailScrollSpeed'])) {
+            $input['thumbnail_scroll_speed'] = floatval($body['thumbnailScrollSpeed']);
+        }
+        if (isset($body['scrollAnimationStyle'])) {
+            $input['scroll_animation_style'] = sanitize_text_field($body['scrollAnimationStyle']);
+        }
+        if (isset($body['scrollAnimationDurationMs'])) {
+            $input['scroll_animation_duration_ms'] = intval($body['scrollAnimationDurationMs']);
+        }
+        if (isset($body['scrollAnimationEasing'])) {
+            $input['scroll_animation_easing'] = sanitize_text_field($body['scrollAnimationEasing']);
+        }
+        if (isset($body['scrollTransitionType'])) {
+            $input['scroll_transition_type'] = sanitize_text_field($body['scrollTransitionType']);
+        }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2166,6 +2208,13 @@ class WPSG_REST {
             'itemsPerPage'     => $merged['items_per_page'],
             'enableLightbox'   => $merged['enable_lightbox'],
             'enableAnimations' => $merged['enable_animations'],
+            'videoViewportHeight' => $merged['video_viewport_height'] ?? 420,
+            'imageViewportHeight' => $merged['image_viewport_height'] ?? 420,
+            'thumbnailScrollSpeed' => $merged['thumbnail_scroll_speed'] ?? 1,
+            'scrollAnimationStyle' => $merged['scroll_animation_style'] ?? 'smooth',
+            'scrollAnimationDurationMs' => $merged['scroll_animation_duration_ms'] ?? 180,
+            'scrollAnimationEasing' => $merged['scroll_animation_easing'] ?? 'ease',
+            'scrollTransitionType' => $merged['scroll_transition_type'] ?? 'slide-fade',
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

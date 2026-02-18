@@ -14,10 +14,17 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
+import {
+  DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+  type GalleryBehaviorSettings,
+  type ScrollAnimationEasing,
+  type ScrollAnimationStyle,
+  type ScrollTransitionType,
+} from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
-export interface SettingsData {
+export interface SettingsData extends GalleryBehaviorSettings {
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;
@@ -29,15 +36,38 @@ const defaultSettings: SettingsData = {
   itemsPerPage: 12,
   enableLightbox: true,
   enableAnimations: true,
+  videoViewportHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight,
+  imageViewportHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight,
+  thumbnailScrollSpeed: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollSpeed,
+  scrollAnimationStyle: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle,
+  scrollAnimationDurationMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs,
+  scrollAnimationEasing: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing,
+  scrollTransitionType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType,
 };
 
 interface SettingsPanelProps {
   apiClient: ApiClient;
   onClose: () => void;
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
+  onSettingsSaved?: (settings: SettingsData) => void;
 }
 
-export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelProps) {
+const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettings']>>): SettingsData => ({
+  galleryLayout: (response.galleryLayout as SettingsData['galleryLayout']) ?? defaultSettings.galleryLayout,
+  itemsPerPage: response.itemsPerPage ?? defaultSettings.itemsPerPage,
+  enableLightbox: response.enableLightbox ?? defaultSettings.enableLightbox,
+  enableAnimations: response.enableAnimations ?? defaultSettings.enableAnimations,
+  videoViewportHeight: response.videoViewportHeight ?? defaultSettings.videoViewportHeight,
+  imageViewportHeight: response.imageViewportHeight ?? defaultSettings.imageViewportHeight,
+  thumbnailScrollSpeed: response.thumbnailScrollSpeed ?? defaultSettings.thumbnailScrollSpeed,
+  scrollAnimationStyle: response.scrollAnimationStyle ?? defaultSettings.scrollAnimationStyle,
+  scrollAnimationDurationMs:
+    response.scrollAnimationDurationMs ?? defaultSettings.scrollAnimationDurationMs,
+  scrollAnimationEasing: response.scrollAnimationEasing ?? defaultSettings.scrollAnimationEasing,
+  scrollTransitionType: response.scrollTransitionType ?? defaultSettings.scrollTransitionType,
+});
+
+export function SettingsPanel({ apiClient, onClose, onNotify, onSettingsSaved }: SettingsPanelProps) {
   const [settings, setSettings] = useState<SettingsData>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -48,17 +78,13 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
     setIsLoading(true);
     try {
       const response = await apiClient.getSettings();
-      const loaded: SettingsData = {
-        galleryLayout: (response.galleryLayout as SettingsData['galleryLayout']) ?? defaultSettings.galleryLayout,
-        itemsPerPage: response.itemsPerPage ?? defaultSettings.itemsPerPage,
-        enableLightbox: response.enableLightbox ?? defaultSettings.enableLightbox,
-        enableAnimations: response.enableAnimations ?? defaultSettings.enableAnimations,
-      };
+      const loaded = mapResponseToSettings(response);
       setSettings(loaded);
       setOriginalSettings(loaded);
       setHasChanges(false);
     } catch {
       // If settings endpoint doesn't exist or fails, use defaults
+      console.warn('[src/components/Admin/SettingsPanel.tsx::loadSettings] failed to load settings, using defaults');
       setSettings(defaultSettings);
       setOriginalSettings(defaultSettings);
     } finally {
@@ -81,9 +107,12 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await apiClient.updateSettings(settings);
-      setOriginalSettings(settings);
+      const response = await apiClient.updateSettings(settings);
+      const saved = mapResponseToSettings(response);
+      setSettings(saved);
+      setOriginalSettings(saved);
       setHasChanges(false);
+      onSettingsSaved?.(saved);
       onNotify({ type: 'success', text: 'Settings saved successfully.' });
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save settings.') });
@@ -167,6 +196,110 @@ export function SettingsPanel({ apiClient, onClose, onNotify }: SettingsPanelPro
           description="Enable smooth animations and transitions. Disable for better performance on low-end devices."
           checked={settings.enableAnimations}
           onChange={(e) => updateSetting('enableAnimations', e.currentTarget.checked)}
+        />
+
+        <NumberInput
+          label="Video Gallery Height (px)"
+          description="Standard viewport height for video gallery player area."
+          value={settings.videoViewportHeight}
+          onChange={(value) =>
+            updateSetting('videoViewportHeight', typeof value === 'number' ? value : defaultSettings.videoViewportHeight)
+          }
+          min={180}
+          max={900}
+          step={10}
+        />
+
+        <NumberInput
+          label="Image Gallery Height (px)"
+          description="Standard viewport height for image gallery viewer area."
+          value={settings.imageViewportHeight}
+          onChange={(value) =>
+            updateSetting('imageViewportHeight', typeof value === 'number' ? value : defaultSettings.imageViewportHeight)
+          }
+          min={180}
+          max={900}
+          step={10}
+        />
+
+        <NumberInput
+          label="Thumbnail Scroll Speed"
+          description="Multiplier for thumbnail-strip wheel scroll speed."
+          value={settings.thumbnailScrollSpeed}
+          onChange={(value) =>
+            updateSetting('thumbnailScrollSpeed', typeof value === 'number' ? value : defaultSettings.thumbnailScrollSpeed)
+          }
+          min={0.25}
+          max={3}
+          step={0.25}
+          decimalScale={2}
+        />
+
+        <Select
+          label="Scroll Animation Style"
+          description="Navigation scroll behavior for gallery thumbnail strips."
+          value={settings.scrollAnimationStyle}
+          onChange={(value) =>
+            updateSetting(
+              'scrollAnimationStyle',
+              (value as ScrollAnimationStyle) ?? defaultSettings.scrollAnimationStyle,
+            )
+          }
+          data={[
+            { value: 'smooth', label: 'Smooth' },
+            { value: 'instant', label: 'Instant' },
+          ]}
+        />
+
+        <Select
+          label="Transition Type"
+          description="How gallery media slides between items: fade only, slide only, or combined slide-fade."
+          value={settings.scrollTransitionType}
+          onChange={(value) =>
+            updateSetting(
+              'scrollTransitionType',
+              (value as ScrollTransitionType) ?? defaultSettings.scrollTransitionType,
+            )
+          }
+          data={[
+            { value: 'slide-fade', label: 'Slide + Fade' },
+            { value: 'slide', label: 'Slide' },
+            { value: 'fade', label: 'Fade' },
+          ]}
+        />
+
+        <NumberInput
+          label="Scroll Animation Duration (ms)"
+          description="Duration for thumbnail highlight/transition animations."
+          value={settings.scrollAnimationDurationMs}
+          onChange={(value) =>
+            updateSetting(
+              'scrollAnimationDurationMs',
+              typeof value === 'number' ? value : defaultSettings.scrollAnimationDurationMs,
+            )
+          }
+          min={0}
+          max={2000}
+          step={10}
+        />
+
+        <Select
+          label="Scroll Animation Easing"
+          description="Timing function used for thumbnail strip transitions."
+          value={settings.scrollAnimationEasing}
+          onChange={(value) =>
+            updateSetting(
+              'scrollAnimationEasing',
+              (value as ScrollAnimationEasing) ?? defaultSettings.scrollAnimationEasing,
+            )
+          }
+          data={[
+            { value: 'ease', label: 'Ease' },
+            { value: 'linear', label: 'Linear' },
+            { value: 'ease-in', label: 'Ease In' },
+            { value: 'ease-out', label: 'Ease Out' },
+            { value: 'ease-in-out', label: 'Ease In Out' },
+          ]}
         />
       </Stack>
     </Card>

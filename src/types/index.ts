@@ -79,3 +79,27 @@ export interface OEmbedResponse {
   width?: number;
   height?: number;
 }
+
+export type ScrollAnimationStyle = 'smooth' | 'instant';
+export type ScrollAnimationEasing = 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+export type ScrollTransitionType = 'fade' | 'slide' | 'slide-fade';
+
+export interface GalleryBehaviorSettings {
+  videoViewportHeight: number;
+  imageViewportHeight: number;
+  thumbnailScrollSpeed: number;
+  scrollAnimationStyle: ScrollAnimationStyle;
+  scrollAnimationDurationMs: number;
+  scrollAnimationEasing: ScrollAnimationEasing;
+  scrollTransitionType: ScrollTransitionType;
+}
+
+export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
+  videoViewportHeight: 420,
+  imageViewportHeight: 420,
+  thumbnailScrollSpeed: 1,
+  scrollAnimationStyle: 'smooth',
+  scrollAnimationDurationMs: 350,
+  scrollAnimationEasing: 'ease',
+  scrollTransitionType: 'slide-fade',
+};
