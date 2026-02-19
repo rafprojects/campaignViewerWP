@@ -321,6 +321,15 @@ function AppContent({
         response.imageShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
       videoShadowCustom:
         response.videoShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
+      // P12-C
+      imageGalleryAdapterId:
+        response.imageGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
+      videoGalleryAdapterId:
+        response.videoGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
+      gridCardWidth:
+        response.gridCardWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
+      gridCardHeight:
+        response.gridCardHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -776,6 +785,11 @@ function AppContent({
                     videoShadowPreset: saved.videoShadowPreset,
                     imageShadowCustom: saved.imageShadowCustom,
                     videoShadowCustom: saved.videoShadowCustom,
+                    // P12-C
+                    imageGalleryAdapterId: saved.imageGalleryAdapterId,
+                    videoGalleryAdapterId: saved.videoGalleryAdapterId,
+                    gridCardWidth: saved.gridCardWidth,
+                    gridCardHeight: saved.gridCardHeight,
                   },
                   false,
                 );

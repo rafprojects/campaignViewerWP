@@ -5,6 +5,11 @@ import type { Campaign, GalleryBehaviorSettings } from '@/types';
 
 const VideoCarousel = lazy(() => import('./VideoCarousel').then((m) => ({ default: m.VideoCarousel })));
 const ImageCarousel = lazy(() => import('./ImageCarousel').then((m) => ({ default: m.ImageCarousel })));
+const CompactGridGallery = lazy(() =>
+  import('@/gallery-adapters/compact-grid/CompactGridGallery').then((m) => ({
+    default: m.CompactGridGallery,
+  }))
+);
 
 interface CampaignViewerProps {
   campaign: Campaign;
@@ -145,7 +150,9 @@ export function CampaignViewer({
               )}
 
               {campaign.images.length > 0 && (
-                <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
+                galleryBehaviorSettings.imageGalleryAdapterId === 'compact-grid'
+                  ? <CompactGridGallery images={campaign.images} settings={galleryBehaviorSettings} />
+                  : <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
               )}
             </Suspense>
           )}

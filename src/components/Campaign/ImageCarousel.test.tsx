@@ -43,7 +43,9 @@ describe('ImageCarousel', () => {
 
     fireEvent.click(screen.getByLabelText('Open lightbox'));
     await waitFor(() => {
-      expect(document.body.getAttribute('data-scroll-locked')).toBe('1');
+      // Lightbox is now a Portal-based overlay (not a Mantine Modal), so we
+      // verify it opened by checking the close button and image are rendered.
+      expect(screen.getByLabelText('Close lightbox')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByLabelText('Next image (lightbox)'));
     await waitFor(() => {
@@ -55,7 +57,8 @@ describe('ImageCarousel', () => {
     });
     fireEvent.click(screen.getByLabelText(/close lightbox/i));
     await waitFor(() => {
-      expect(document.body.getAttribute('data-scroll-locked')).toBeNull();
+      // After close, the portal overlay is unmounted.
+      expect(screen.queryByLabelText('Close lightbox')).toBeNull();
     });
   });
 

@@ -193,6 +193,11 @@ export interface SettingsResponse {
   videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
   imageShadowCustom?: string;
   videoShadowCustom?: string;
+  // P12-C
+  imageGalleryAdapterId?: string;
+  videoGalleryAdapterId?: string;
+  gridCardWidth?: number;
+  gridCardHeight?: number;
 }
 
 export interface SettingsUpdateRequest {
@@ -245,6 +250,11 @@ export interface SettingsUpdateRequest {
   videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
   imageShadowCustom?: string;
   videoShadowCustom?: string;
+  // P12-C
+  imageGalleryAdapterId?: string;
+  videoGalleryAdapterId?: string;
+  gridCardWidth?: number;
+  gridCardHeight?: number;
 }
 
 export class ApiError extends Error {

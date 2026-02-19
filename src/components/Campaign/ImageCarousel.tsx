@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { IconPhoto, IconX, IconZoomIn, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { Stack, Title, Group, ActionIcon, Image, Text, Box, Modal } from '@mantine/core';
+import { IconPhoto, IconZoomIn } from '@tabler/icons-react';
+import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
+import { Lightbox } from './Lightbox';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
@@ -23,8 +24,6 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
   const exitTimerRef = useRef<number>(0);
   const enterRef = useRef<HTMLDivElement>(null);
   const exitRef = useRef<HTMLDivElement>(null);
-  const lbEnterRef = useRef<HTMLDivElement>(null);
-  const lbExitRef = useRef<HTMLDivElement>(null);
   const prevIndexRef = useRef(currentIndex);
 
   const currentImage = images[currentIndex];
@@ -53,10 +52,10 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
 
   useEffect(() => () => window.clearTimeout(exitTimerRef.current), []);
 
+  // useLightbox manages open state and body-scroll lock; keyboard handled by <Lightbox>
   const { isOpen: isLightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     onPrev: prevImage,
     onNext: nextImage,
-    enableArrowNavigation: true,
   });
 
   const swipeHandlers = useSwipe({
@@ -84,7 +83,6 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
     };
 
     applyGalleryTransition(enterRef.current, exitRef.current, opts);
-    applyGalleryTransition(lbEnterRef.current, lbExitRef.current, opts);
   }, [currentIndex, direction, mediaTransitionDuration, transitionType, settings.scrollAnimationEasing, settings.scrollAnimationStyle, settings.transitionFadeEnabled]);
 
   return (
@@ -277,146 +275,15 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
         scrollAnimationEasing={settings.scrollAnimationEasing}
       />
 
-      {/* Lightbox Modal */}
-      <Modal
-        opened={isLightboxOpen}
+      {/* Lightbox — Portal-based, z-index 9999, bypasses CampaignViewer Modal nesting */}
+      <Lightbox
+        isOpen={isLightboxOpen}
+        images={images}
+        currentIndex={currentIndex}
+        onPrev={prevImage}
+        onNext={nextImage}
         onClose={closeLightbox}
-        fullScreen
-        padding={0}
-        withCloseButton={false}
-        transitionProps={{ duration: 0 }}
-        styles={{
-          content: { background: 'color-mix(in srgb, var(--wpsg-color-background) 95%, transparent)', overflow: 'hidden' },
-        }}
-      >
-        <Box h="100vh" pos="relative" component="div" {...swipeHandlers} style={{ touchAction: 'pan-y' }}>
-          {isLightboxOpen && (
-            <Box
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-              }}
-              onClick={(event) => event.stopPropagation()}
-            >
-              {previousImage && (
-                <Box
-                  ref={lbExitRef}
-                  onTransitionEnd={() => {
-                    setPreviousImage(null);
-                    window.clearTimeout(exitTimerRef.current);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    willChange: 'transform, opacity',
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                  }}
-                >
-                  <Image
-                    src={previousImage.url}
-                    alt=""
-                    aria-hidden
-                    fit="contain"
-                    h="100%"
-                    w="100%"
-                  />
-                </Box>
-              )}
-              <Box
-                key={`lightbox-${currentImage.id}`}
-                ref={lbEnterRef}
-                style={{
-                  willChange: 'transform, opacity',
-                  zIndex: 2,
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Image
-                  src={currentImage.url}
-                  alt={currentImage.caption || 'Campaign image'}
-                  fit="contain"
-                  h="100%"
-                  w="100%"
-                />
-              </Box>
-            </Box>
-          )}
-
-          {/* Keyboard hint (shown once per session) */}
-          <KeyboardHintOverlay visible={isLightboxOpen} />
-
-          {/* Close button */}
-          <ActionIcon
-            pos="absolute"
-            top={16}
-            right={16}
-            onClick={closeLightbox}
-            size="lg"
-            variant="light"
-            aria-label="Close lightbox"
-          >
-            <IconX size={24} />
-          </ActionIcon>
-
-          {/* Navigation arrows */}
-          {images.length > 1 && (
-            <>
-              <ActionIcon
-                pos="absolute"
-                top="50%"
-                left={16}
-                style={{ transform: 'translateY(-50%)' }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  prevImage();
-                }}
-                variant="light"
-                size="xl"
-                aria-label="Previous image (lightbox)"
-              >
-                <IconChevronLeft size={32} />
-              </ActionIcon>
-              <ActionIcon
-                pos="absolute"
-                top="50%"
-                right={16}
-                style={{ transform: 'translateY(-50%)' }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nextImage();
-                }}
-                variant="light"
-                size="xl"
-                aria-label="Next image (lightbox)"
-              >
-                <IconChevronRight size={32} />
-              </ActionIcon>
-            </>
-          )}
-
-          {/* Caption and counter */}
-          <Box pos="absolute" bottom={0} left={0} right={0} p="lg">
-            <Stack gap="xs">
-              <Text size="lg" fw={600} c="white">
-                {currentImage.caption}
-              </Text>
-              <Text size="sm" c="gray.4">
-                {currentIndex + 1} / {images.length}
-              </Text>
-            </Stack>
-          </Box>
-        </Box>
-      </Modal>
+      />
     </Stack>
   );
 }

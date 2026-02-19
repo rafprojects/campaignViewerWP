@@ -91,6 +91,11 @@ const defaultSettings: SettingsData = {
   videoShadowPreset: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset,
   imageShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
   videoShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
+  // P12-C
+  imageGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
+  videoGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
+  gridCardWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
+  gridCardHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
 };
 
 interface SettingsPanelProps {
@@ -150,6 +155,11 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   videoShadowPreset: (response.videoShadowPreset as ShadowPreset) ?? defaultSettings.videoShadowPreset,
   imageShadowCustom: response.imageShadowCustom ?? defaultSettings.imageShadowCustom,
   videoShadowCustom: response.videoShadowCustom ?? defaultSettings.videoShadowCustom,
+  // P12-C
+  imageGalleryAdapterId: response.imageGalleryAdapterId ?? defaultSettings.imageGalleryAdapterId,
+  videoGalleryAdapterId: response.videoGalleryAdapterId ?? defaultSettings.videoGalleryAdapterId,
+  gridCardWidth: response.gridCardWidth ?? defaultSettings.gridCardWidth,
+  gridCardHeight: response.gridCardHeight ?? defaultSettings.gridCardHeight,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -495,6 +505,59 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   description="Show left/right scroll buttons on the thumbnail strip edges."
                   checked={settings.thumbnailScrollButtonsVisible}
                   onChange={(e) => updateSetting('thumbnailScrollButtonsVisible', e.currentTarget.checked)}
+                />
+
+                <Divider label="Gallery Adapter" labelPosition="center" />
+
+                <Select
+                  label="Image Gallery Layout"
+                  description="Choose how images are displayed. 'Classic' uses the carousel; 'Compact Grid' arranges images in a responsive playing-card grid with lightbox."
+                  value={settings.imageGalleryAdapterId}
+                  onChange={(value) => updateSetting('imageGalleryAdapterId', value ?? 'classic')}
+                  data={[
+                    { value: 'classic', label: 'Classic (Carousel)' },
+                    { value: 'compact-grid', label: 'Compact Grid' },
+                  ]}
+                />
+
+                {settings.imageGalleryAdapterId === 'compact-grid' && (
+                  <>
+                    <Group grow>
+                      <NumberInput
+                        label="Card Min Width (px)"
+                        description="Minimum width of each grid card. Grid auto-fills based on available space."
+                        value={settings.gridCardWidth}
+                        onChange={(value) =>
+                          updateSetting('gridCardWidth', typeof value === 'number' ? value : defaultSettings.gridCardWidth)
+                        }
+                        min={80}
+                        max={400}
+                        step={10}
+                      />
+                      <NumberInput
+                        label="Card Height (px)"
+                        description="Fixed height of each grid card. Default 224 px gives a classic 5:7 playing-card proportion."
+                        value={settings.gridCardHeight}
+                        onChange={(value) =>
+                          updateSetting('gridCardHeight', typeof value === 'number' ? value : defaultSettings.gridCardHeight)
+                        }
+                        min={80}
+                        max={600}
+                        step={10}
+                      />
+                    </Group>
+                  </>
+                )}
+
+                <Select
+                  label="Video Gallery Layout"
+                  description="Layout adapter for video galleries. Only Classic is available in this release."
+                  value={settings.videoGalleryAdapterId}
+                  onChange={(value) => updateSetting('videoGalleryAdapterId', value ?? 'classic')}
+                  disabled
+                  data={[
+                    { value: 'classic', label: 'Classic (Carousel)' },
+                  ]}
                 />
               </Stack>
             </Tabs.Panel>

@@ -2138,6 +2138,11 @@ class WPSG_REST {
                 'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
                 'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
                 'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
+                // P12-C
+                'imageGalleryAdapterId' => $settings['image_gallery_adapter_id'] ?? 'classic',
+                'videoGalleryAdapterId' => $settings['video_gallery_adapter_id'] ?? 'classic',
+                'gridCardWidth'         => $settings['grid_card_width'] ?? 160,
+                'gridCardHeight'        => $settings['grid_card_height'] ?? 224,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2190,6 +2195,11 @@ class WPSG_REST {
             'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
             'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
             'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
+            // P12-C
+            'imageGalleryAdapterId' => $settings['image_gallery_adapter_id'] ?? 'classic',
+            'videoGalleryAdapterId' => $settings['video_gallery_adapter_id'] ?? 'classic',
+            'gridCardWidth'         => $settings['grid_card_width'] ?? 160,
+            'gridCardHeight'        => $settings['grid_card_height'] ?? 224,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2346,6 +2356,19 @@ class WPSG_REST {
         }
         if (isset($body['thumbnailScrollButtonsVisible'])) {
             $input['thumbnail_scroll_buttons_visible'] = (bool) $body['thumbnailScrollButtonsVisible'];
+        }
+        // P12-C: Gallery Adapters
+        if (isset($body['imageGalleryAdapterId'])) {
+            $input['image_gallery_adapter_id'] = sanitize_text_field($body['imageGalleryAdapterId']);
+        }
+        if (isset($body['videoGalleryAdapterId'])) {
+            $input['video_gallery_adapter_id'] = sanitize_text_field($body['videoGalleryAdapterId']);
+        }
+        if (isset($body['gridCardWidth'])) {
+            $input['grid_card_width'] = intval($body['gridCardWidth']);
+        }
+        if (isset($body['gridCardHeight'])) {
+            $input['grid_card_height'] = intval($body['gridCardHeight']);
         }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
