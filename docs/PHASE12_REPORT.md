@@ -3,7 +3,7 @@
 **Status:** In Progress  
 **Version target:** v0.10.0 (planning target)  
 **Created:** February 17, 2026
-**Last updated:** February 18, 2026
+**Last updated:** February 19, 2026
 
 ---
 
@@ -72,7 +72,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ---
 
-## Track P12-C — Pluggable Gallery + Layout Builder (Epic Slice)
+## Track P12-C — Pluggable Gallery + Layout Builder (Epic Slice) 🚧 PLANNED
 
 ### Objectives
 
@@ -80,17 +80,31 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - Enable runtime gallery selection per media type
 - Lay groundwork for manual layout authoring
 
-### Proposed Phase 12 Scope Slice
+### Decisions Locked (2026-02-19)
 
-1. Gallery adapter contract (capabilities + schema)
-2. Runtime gallery selector setting (image/video)
-3. At least one alternate implementation path (POC-level)
-4. Persistence contract for layout presets (foundation)
+1. **Phase boundary (MVP slice):** ship adapter foundation only; no visual canvas editor in Phase 12.
+2. **Runtime selection per media type:** add two settings with safe defaults:
+	- `videoGalleryAdapterId` (default: `classic`)
+	- `imageGalleryAdapterId` (default: `classic`)
+3. **Adapter registry contract:** adapters are registered by id and constrained by media type (`video` or `image`) with declared capabilities.
+4. **Fallback behavior:** unknown adapter ids must hard-fallback to `classic` without breaking existing galleries.
+5. **POC alternate implementation:** ship one alternate adapter for **images** (working baseline path) while videos remain on `classic`.
+6. **Persistence foundation only:** add a schema contract for saved layout presets (id, adapterId, mediaType, schemaVersion, config) without building authoring UX.
 
-### Deferred Beyond Phase 12 (Likely)
+### Planned Deliverables (Implementation)
+
+1. TypeScript adapter contract + registry module (frontend)
+2. Runtime adapter resolver in campaign viewer flow
+3. Settings UI controls for image/video adapter selection
+4. WP settings + REST wiring for adapter ids and layout preset foundation fields
+5. One alternate image adapter implementation (POC-level, production-safe fallback)
+6. Adapter capability docs + migration/fallback notes
+
+### Deferred Beyond Phase 12 (Confirmed)
 
 - Full manual canvas layout editor UX
-- Rich migration tooling for multiple layout schema versions
+- Rich layout migration tooling across multiple schema versions
+- Advanced preset authoring/management workflows
 
 **Effort:** High  
 **Impact:** High
@@ -295,6 +309,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - **2026-02-18:** **P12-H, P12-I, P12-J COMPLETE.** OverlayArrows component (7 settings), DotNavigator component (8 settings), shadow presets utility (4 settings) — 19 new settings total, full end-to-end wiring (types → apiClient → SettingsPanel → App.tsx → PHP defaults/sanitization/REST). 3 new files, 8 modified. 178 tests passing. Committed `d3669e3`.
 - **2026-02-18:** **P12-H bugfix.** Fixed overlay arrows Y-axis drop (translateY/-50% conflict with hover scale) and auto-hide timer (pointer-events:none wrapper couldn't receive mousemove). Committed `5cd8be1`.
 - **2026-02-18:** **P12-A, P12-B COMPLETE.** Advanced thumbnail strip controls: configurable dimensions (video 60×45, image 60×60 defaults), gap, wheel scroll toggle, drag-to-scroll with pointer capture, optional strip scroll buttons. CarouselNavigation upgraded with drag handlers and scroll buttons. 8 new settings end-to-end. 178 tests passing. Committed `4cb3058`.
+- **2026-02-19:** **P12-C planning decisions locked.** Scope constrained to adapter foundation (no canvas editor), runtime adapter settings per media type (`videoGalleryAdapterId`, `imageGalleryAdapterId`) with hard fallback to `classic`, one alternate image adapter as POC path, and layout preset persistence contract (schema foundation only).
 
 ---
 
