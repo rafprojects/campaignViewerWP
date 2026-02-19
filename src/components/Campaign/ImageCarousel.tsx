@@ -9,7 +9,6 @@ import { useSwipe } from '@/hooks/useSwipe';
 import { CarouselNavigation } from './CarouselNavigation';
 import { OverlayArrows } from './OverlayArrows';
 import { DotNavigator } from './DotNavigator';
-import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 import { applyGalleryTransition } from '@/utils/galleryAnimations';
 import { resolveBoxShadow } from '@/utils/shadowPresets';
 
