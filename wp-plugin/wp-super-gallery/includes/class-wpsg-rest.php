@@ -2129,6 +2129,15 @@ class WPSG_REST {
                 'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
                 'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
                 'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+                // P12-A/B
+                'videoThumbnailWidth'  => $settings['video_thumbnail_width'] ?? 60,
+                'videoThumbnailHeight' => $settings['video_thumbnail_height'] ?? 45,
+                'imageThumbnailWidth'  => $settings['image_thumbnail_width'] ?? 60,
+                'imageThumbnailHeight' => $settings['image_thumbnail_height'] ?? 60,
+                'thumbnailGap'         => $settings['thumbnail_gap'] ?? 6,
+                'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
+                'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
+                'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2172,6 +2181,15 @@ class WPSG_REST {
             'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
             'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
             'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            // P12-A/B
+            'videoThumbnailWidth'  => $settings['video_thumbnail_width'] ?? 60,
+            'videoThumbnailHeight' => $settings['video_thumbnail_height'] ?? 45,
+            'imageThumbnailWidth'  => $settings['image_thumbnail_width'] ?? 60,
+            'imageThumbnailHeight' => $settings['image_thumbnail_height'] ?? 60,
+            'thumbnailGap'         => $settings['thumbnail_gap'] ?? 6,
+            'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
+            'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
+            'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2303,6 +2321,31 @@ class WPSG_REST {
         }
         if (isset($body['videoShadowCustom'])) {
             $input['video_shadow_custom'] = sanitize_text_field($body['videoShadowCustom']);
+        }
+        // P12-A/B
+        if (isset($body['videoThumbnailWidth'])) {
+            $input['video_thumbnail_width'] = intval($body['videoThumbnailWidth']);
+        }
+        if (isset($body['videoThumbnailHeight'])) {
+            $input['video_thumbnail_height'] = intval($body['videoThumbnailHeight']);
+        }
+        if (isset($body['imageThumbnailWidth'])) {
+            $input['image_thumbnail_width'] = intval($body['imageThumbnailWidth']);
+        }
+        if (isset($body['imageThumbnailHeight'])) {
+            $input['image_thumbnail_height'] = intval($body['imageThumbnailHeight']);
+        }
+        if (isset($body['thumbnailGap'])) {
+            $input['thumbnail_gap'] = intval($body['thumbnailGap']);
+        }
+        if (isset($body['thumbnailWheelScrollEnabled'])) {
+            $input['thumbnail_wheel_scroll_enabled'] = (bool) $body['thumbnailWheelScrollEnabled'];
+        }
+        if (isset($body['thumbnailDragScrollEnabled'])) {
+            $input['thumbnail_drag_scroll_enabled'] = (bool) $body['thumbnailDragScrollEnabled'];
+        }
+        if (isset($body['thumbnailScrollButtonsVisible'])) {
+            $input['thumbnail_scroll_buttons_visible'] = (bool) $body['thumbnailScrollButtonsVisible'];
         }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);

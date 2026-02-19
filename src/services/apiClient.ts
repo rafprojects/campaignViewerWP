@@ -179,6 +179,15 @@ export interface SettingsResponse {
   dotNavShape?: 'circle' | 'pill' | 'square';
   dotNavSpacing?: number;
   dotNavActiveScale?: number;
+  // P12-A/B
+  videoThumbnailWidth?: number;
+  videoThumbnailHeight?: number;
+  imageThumbnailWidth?: number;
+  imageThumbnailHeight?: number;
+  thumbnailGap?: number;
+  thumbnailWheelScrollEnabled?: boolean;
+  thumbnailDragScrollEnabled?: boolean;
+  thumbnailScrollButtonsVisible?: boolean;
   // P12-J
   imageShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
   videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
@@ -222,6 +231,15 @@ export interface SettingsUpdateRequest {
   dotNavShape?: 'circle' | 'pill' | 'square';
   dotNavSpacing?: number;
   dotNavActiveScale?: number;
+  // P12-A/B
+  videoThumbnailWidth?: number;
+  videoThumbnailHeight?: number;
+  imageThumbnailWidth?: number;
+  imageThumbnailHeight?: number;
+  thumbnailGap?: number;
+  thumbnailWheelScrollEnabled?: boolean;
+  thumbnailDragScrollEnabled?: boolean;
+  thumbnailScrollButtonsVisible?: boolean;
   // P12-J
   imageShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
   videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';

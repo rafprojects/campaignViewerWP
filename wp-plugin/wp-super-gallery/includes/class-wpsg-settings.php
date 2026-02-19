@@ -50,6 +50,15 @@ class WPSG_Settings {
         'image_border_radius'        => 8,
         'video_border_radius'        => 8,
         'transition_fade_enabled'    => true,
+        // P12-A/B: Advanced thumbnail strip
+        'video_thumbnail_width'      => 60,
+        'video_thumbnail_height'     => 45,
+        'image_thumbnail_width'      => 60,
+        'image_thumbnail_height'     => 60,
+        'thumbnail_gap'              => 6,
+        'thumbnail_wheel_scroll_enabled' => true,
+        'thumbnail_drag_scroll_enabled'  => true,
+        'thumbnail_scroll_buttons_visible' => false,
         // P12-H: Navigation Overlay Arrows
         'nav_arrow_position'         => 'center',
         'nav_arrow_size'             => 36,
@@ -363,6 +372,32 @@ class WPSG_Settings {
 
         if (isset($input['transition_fade_enabled'])) {
             $sanitized['transition_fade_enabled'] = (bool) $input['transition_fade_enabled'];
+        }
+
+        // P12-A/B: Advanced thumbnail strip
+        if (isset($input['video_thumbnail_width'])) {
+            $sanitized['video_thumbnail_width'] = max(30, min(200, intval($input['video_thumbnail_width'])));
+        }
+        if (isset($input['video_thumbnail_height'])) {
+            $sanitized['video_thumbnail_height'] = max(30, min(200, intval($input['video_thumbnail_height'])));
+        }
+        if (isset($input['image_thumbnail_width'])) {
+            $sanitized['image_thumbnail_width'] = max(30, min(200, intval($input['image_thumbnail_width'])));
+        }
+        if (isset($input['image_thumbnail_height'])) {
+            $sanitized['image_thumbnail_height'] = max(30, min(200, intval($input['image_thumbnail_height'])));
+        }
+        if (isset($input['thumbnail_gap'])) {
+            $sanitized['thumbnail_gap'] = max(0, min(24, intval($input['thumbnail_gap'])));
+        }
+        if (isset($input['thumbnail_wheel_scroll_enabled'])) {
+            $sanitized['thumbnail_wheel_scroll_enabled'] = (bool) $input['thumbnail_wheel_scroll_enabled'];
+        }
+        if (isset($input['thumbnail_drag_scroll_enabled'])) {
+            $sanitized['thumbnail_drag_scroll_enabled'] = (bool) $input['thumbnail_drag_scroll_enabled'];
+        }
+        if (isset($input['thumbnail_scroll_buttons_visible'])) {
+            $sanitized['thumbnail_scroll_buttons_visible'] = (bool) $input['thumbnail_scroll_buttons_visible'];
         }
 
         // P12-H: Navigation Overlay Arrows

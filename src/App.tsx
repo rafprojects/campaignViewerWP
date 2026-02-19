@@ -263,6 +263,23 @@ function AppContent({
         response.videoBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
       transitionFadeEnabled:
         response.transitionFadeEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
+      // P12-A/B
+      videoThumbnailWidth:
+        response.videoThumbnailWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailWidth,
+      videoThumbnailHeight:
+        response.videoThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailHeight,
+      imageThumbnailWidth:
+        response.imageThumbnailWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailWidth,
+      imageThumbnailHeight:
+        response.imageThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailHeight,
+      thumbnailGap:
+        response.thumbnailGap ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap,
+      thumbnailWheelScrollEnabled:
+        response.thumbnailWheelScrollEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailWheelScrollEnabled,
+      thumbnailDragScrollEnabled:
+        response.thumbnailDragScrollEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailDragScrollEnabled,
+      thumbnailScrollButtonsVisible:
+        response.thumbnailScrollButtonsVisible ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollButtonsVisible,
       // P12-H
       navArrowPosition:
         response.navArrowPosition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition,
@@ -728,6 +745,15 @@ function AppContent({
                     imageBorderRadius: saved.imageBorderRadius,
                     videoBorderRadius: saved.videoBorderRadius,
                     transitionFadeEnabled: saved.transitionFadeEnabled,
+                    // P12-A/B
+                    videoThumbnailWidth: saved.videoThumbnailWidth,
+                    videoThumbnailHeight: saved.videoThumbnailHeight,
+                    imageThumbnailWidth: saved.imageThumbnailWidth,
+                    imageThumbnailHeight: saved.imageThumbnailHeight,
+                    thumbnailGap: saved.thumbnailGap,
+                    thumbnailWheelScrollEnabled: saved.thumbnailWheelScrollEnabled,
+                    thumbnailDragScrollEnabled: saved.thumbnailDragScrollEnabled,
+                    thumbnailScrollButtonsVisible: saved.thumbnailScrollButtonsVisible,
                     // P12-H
                     navArrowPosition: saved.navArrowPosition,
                     navArrowSize: saved.navArrowSize,

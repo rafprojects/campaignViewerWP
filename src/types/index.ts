@@ -105,6 +105,15 @@ export interface GalleryBehaviorSettings {
   imageBorderRadius: number;
   videoBorderRadius: number;
   transitionFadeEnabled: boolean;
+  // P12-A/B: Advanced thumbnail strip controls
+  videoThumbnailWidth: number;
+  videoThumbnailHeight: number;
+  imageThumbnailWidth: number;
+  imageThumbnailHeight: number;
+  thumbnailGap: number;
+  thumbnailWheelScrollEnabled: boolean;
+  thumbnailDragScrollEnabled: boolean;
+  thumbnailScrollButtonsVisible: boolean;
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -140,6 +149,15 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   imageBorderRadius: 8,
   videoBorderRadius: 8,
   transitionFadeEnabled: true,
+  // P12-A/B defaults
+  videoThumbnailWidth: 60,
+  videoThumbnailHeight: 45,
+  imageThumbnailWidth: 60,
+  imageThumbnailHeight: 60,
+  thumbnailGap: 6,
+  thumbnailWheelScrollEnabled: true,
+  thumbnailDragScrollEnabled: true,
+  thumbnailScrollButtonsVisible: false,
   // P12-H defaults
   navArrowPosition: 'center',
   navArrowSize: 36,

@@ -60,6 +60,15 @@ const defaultSettings: SettingsData = {
   imageBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius,
   videoBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
   transitionFadeEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
+  // P12-A/B
+  videoThumbnailWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailWidth,
+  videoThumbnailHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailHeight,
+  imageThumbnailWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailWidth,
+  imageThumbnailHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailHeight,
+  thumbnailGap: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap,
+  thumbnailWheelScrollEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailWheelScrollEnabled,
+  thumbnailDragScrollEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailDragScrollEnabled,
+  thumbnailScrollButtonsVisible: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollButtonsVisible,
   // P12-H
   navArrowPosition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition,
   navArrowSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize,
@@ -110,6 +119,15 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   imageBorderRadius: response.imageBorderRadius ?? defaultSettings.imageBorderRadius,
   videoBorderRadius: response.videoBorderRadius ?? defaultSettings.videoBorderRadius,
   transitionFadeEnabled: response.transitionFadeEnabled ?? defaultSettings.transitionFadeEnabled,
+  // P12-A/B
+  videoThumbnailWidth: response.videoThumbnailWidth ?? defaultSettings.videoThumbnailWidth,
+  videoThumbnailHeight: response.videoThumbnailHeight ?? defaultSettings.videoThumbnailHeight,
+  imageThumbnailWidth: response.imageThumbnailWidth ?? defaultSettings.imageThumbnailWidth,
+  imageThumbnailHeight: response.imageThumbnailHeight ?? defaultSettings.imageThumbnailHeight,
+  thumbnailGap: response.thumbnailGap ?? defaultSettings.thumbnailGap,
+  thumbnailWheelScrollEnabled: response.thumbnailWheelScrollEnabled ?? defaultSettings.thumbnailWheelScrollEnabled,
+  thumbnailDragScrollEnabled: response.thumbnailDragScrollEnabled ?? defaultSettings.thumbnailDragScrollEnabled,
+  thumbnailScrollButtonsVisible: response.thumbnailScrollButtonsVisible ?? defaultSettings.thumbnailScrollButtonsVisible,
   // P12-H
   navArrowPosition: (response.navArrowPosition as NavArrowPosition) ?? defaultSettings.navArrowPosition,
   navArrowSize: response.navArrowSize ?? defaultSettings.navArrowSize,
@@ -393,6 +411,91 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     onChange={(e) => updateSetting('videoShadowCustom', e.currentTarget.value)}
                   />
                 )}
+
+                <Divider label="Thumbnail Strip" labelPosition="center" />
+
+                <Group grow>
+                  <NumberInput
+                    label="Video Thumb Width (px)"
+                    description="Width of video thumbnail items."
+                    value={settings.videoThumbnailWidth}
+                    onChange={(value) =>
+                      updateSetting('videoThumbnailWidth', typeof value === 'number' ? value : defaultSettings.videoThumbnailWidth)
+                    }
+                    min={30}
+                    max={200}
+                    step={5}
+                  />
+                  <NumberInput
+                    label="Video Thumb Height (px)"
+                    description="Height of video thumbnail items."
+                    value={settings.videoThumbnailHeight}
+                    onChange={(value) =>
+                      updateSetting('videoThumbnailHeight', typeof value === 'number' ? value : defaultSettings.videoThumbnailHeight)
+                    }
+                    min={30}
+                    max={200}
+                    step={5}
+                  />
+                </Group>
+
+                <Group grow>
+                  <NumberInput
+                    label="Image Thumb Width (px)"
+                    description="Width of image thumbnail items."
+                    value={settings.imageThumbnailWidth}
+                    onChange={(value) =>
+                      updateSetting('imageThumbnailWidth', typeof value === 'number' ? value : defaultSettings.imageThumbnailWidth)
+                    }
+                    min={30}
+                    max={200}
+                    step={5}
+                  />
+                  <NumberInput
+                    label="Image Thumb Height (px)"
+                    description="Height of image thumbnail items."
+                    value={settings.imageThumbnailHeight}
+                    onChange={(value) =>
+                      updateSetting('imageThumbnailHeight', typeof value === 'number' ? value : defaultSettings.imageThumbnailHeight)
+                    }
+                    min={30}
+                    max={200}
+                    step={5}
+                  />
+                </Group>
+
+                <NumberInput
+                  label="Thumbnail Gap (px)"
+                  description="Spacing between thumbnail items in the strip."
+                  value={settings.thumbnailGap}
+                  onChange={(value) =>
+                    updateSetting('thumbnailGap', typeof value === 'number' ? value : defaultSettings.thumbnailGap)
+                  }
+                  min={0}
+                  max={24}
+                  step={1}
+                />
+
+                <Switch
+                  label="Wheel Scroll"
+                  description="Allow mouse wheel to scroll the thumbnail strip horizontally."
+                  checked={settings.thumbnailWheelScrollEnabled}
+                  onChange={(e) => updateSetting('thumbnailWheelScrollEnabled', e.currentTarget.checked)}
+                />
+
+                <Switch
+                  label="Drag Scroll"
+                  description="Allow click-and-drag to scroll the thumbnail strip."
+                  checked={settings.thumbnailDragScrollEnabled}
+                  onChange={(e) => updateSetting('thumbnailDragScrollEnabled', e.currentTarget.checked)}
+                />
+
+                <Switch
+                  label="Strip Scroll Buttons"
+                  description="Show left/right scroll buttons on the thumbnail strip edges."
+                  checked={settings.thumbnailScrollButtonsVisible}
+                  onChange={(e) => updateSetting('thumbnailScrollButtonsVisible', e.currentTarget.checked)}
+                />
               </Stack>
             </Tabs.Panel>
 

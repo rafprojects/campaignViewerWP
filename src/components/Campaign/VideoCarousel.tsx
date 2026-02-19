@@ -343,9 +343,13 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
         }))}
         previousLabel="Previous video"
         nextLabel="Next video"
-        thumbnailWidth={60}
-        thumbnailHeight={45}
+        thumbnailWidth={settings.videoThumbnailWidth}
+        thumbnailHeight={settings.videoThumbnailHeight}
         thumbnailScrollSpeed={settings.thumbnailScrollSpeed}
+        thumbnailGap={settings.thumbnailGap}
+        thumbnailWheelScrollEnabled={settings.thumbnailWheelScrollEnabled}
+        thumbnailDragScrollEnabled={settings.thumbnailDragScrollEnabled}
+        thumbnailScrollButtonsVisible={settings.thumbnailScrollButtonsVisible}
         scrollAnimationStyle={settings.scrollAnimationStyle}
         scrollAnimationDurationMs={settings.scrollAnimationDurationMs}
         scrollAnimationEasing={settings.scrollAnimationEasing}
