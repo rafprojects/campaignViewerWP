@@ -72,7 +72,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ---
 
-## Track P12-C — Pluggable Gallery + Layout Builder (Epic Slice) 🚧 PLANNED
+## Track P12-C — Pluggable Gallery + Layout Builder (Epic Slice) ✅ COMPLETE
 
 ### Objectives
 
@@ -80,31 +80,26 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - Enable runtime gallery selection per media type
 - Lay groundwork for manual layout authoring
 
-### Decisions Locked (2026-02-19)
+### Deliverables (Completed)
 
-1. **Phase boundary (MVP slice):** ship adapter foundation only; no visual canvas editor in Phase 12.
-2. **Runtime selection per media type:** add two settings with safe defaults:
-	- `videoGalleryAdapterId` (default: `classic`)
-	- `imageGalleryAdapterId` (default: `classic`)
-3. **Adapter registry contract:** adapters are registered by id and constrained by media type (`video` or `image`) with declared capabilities.
-4. **Fallback behavior:** unknown adapter ids must hard-fallback to `classic` without breaking existing galleries.
-5. **POC alternate implementation:** ship one alternate adapter for **images** (working baseline path) while videos remain on `classic`.
-6. **Persistence foundation only:** add a schema contract for saved layout presets (id, adapterId, mediaType, schemaVersion, config) without building authoring UX.
-
-### Planned Deliverables (Implementation)
-
-1. TypeScript adapter contract + registry module (frontend)
-2. Runtime adapter resolver in campaign viewer flow
-3. Settings UI controls for image/video adapter selection
-4. WP settings + REST wiring for adapter ids and layout preset foundation fields
-5. One alternate image adapter implementation (POC-level, production-safe fallback)
-6. Adapter capability docs + migration/fallback notes
+- ✅ **Adapter contract** (`src/gallery-adapters/GalleryAdapter.ts`): `ImageAdapterProps`, `VideoAdapterProps`, `AdapterRegistration<T>`, `AdapterCapability` types
+- ✅ **Adapter registry** (`src/gallery-adapters/adapterRegistry.ts`): `register/resolve` with hard fallback to `classic` for unknown ids
+- ✅ **Compact Grid adapter** (`src/gallery-adapters/compact-grid/CompactGridGallery.tsx`): responsive `auto-fill` CSS grid, configurable card dimensions (default 160×224 px, 5:7 playing-card ratio), per-card hover scale + zoom-icon overlay, click-to-lightbox
+- ✅ **Portal-based Lightbox** (`src/components/Campaign/Lightbox.tsx`): fixes broken nested-Modal lightbox — Portal renders at z-index 9999 above CampaignViewer's fullscreen Modal; works in shadow DOM + normal DOM; keyboard nav (ESC/arrows), swipe, caption/counter
+- ✅ **ImageCarousel lightbox fixed**: replaced nested Mantine Modal (broken z-index) with `<Lightbox>` component
+- ✅ **4 new settings**: `imageGalleryAdapterId` (`classic`|`compact-grid`), `videoGalleryAdapterId` (`classic`), `gridCardWidth`, `gridCardHeight`
+- ✅ **Settings UI**: Gallery Adapter divider section in SettingsPanel Gallery tab; conditional card-size controls when compact-grid selected; video adapter select (disabled, future use)
+- ✅ **CampaignViewer**: adapter-conditional lazy render (`ImageCarousel` vs `CompactGridGallery`)
+- ✅ **Full stack**: `types/index.ts`, `apiClient.ts`, `App.tsx`, `SettingsPanel.tsx`, PHP settings defaults/sanitization (`classic`|`compact-grid` whitelist), REST API (admin + public response + update_settings)
+- ✅ 178 tests / 0 failures; updated lightbox test assertions for Portal model
+- ✅ Committed `7f7cef7`
 
 ### Deferred Beyond Phase 12 (Confirmed)
 
 - Full manual canvas layout editor UX
 - Rich layout migration tooling across multiple schema versions
 - Advanced preset authoring/management workflows
+- Layout preset persistence schema (PHP table creation)
 
 **Effort:** High  
 **Impact:** High
@@ -310,6 +305,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - **2026-02-18:** **P12-H bugfix.** Fixed overlay arrows Y-axis drop (translateY/-50% conflict with hover scale) and auto-hide timer (pointer-events:none wrapper couldn't receive mousemove). Committed `5cd8be1`.
 - **2026-02-18:** **P12-A, P12-B COMPLETE.** Advanced thumbnail strip controls: configurable dimensions (video 60×45, image 60×60 defaults), gap, wheel scroll toggle, drag-to-scroll with pointer capture, optional strip scroll buttons. CarouselNavigation upgraded with drag handlers and scroll buttons. 8 new settings end-to-end. 178 tests passing. Committed `4cb3058`.
 - **2026-02-19:** **P12-C planning decisions locked.** Scope constrained to adapter foundation (no canvas editor), runtime adapter settings per media type (`videoGalleryAdapterId`, `imageGalleryAdapterId`) with hard fallback to `classic`, one alternate image adapter as POC path, and layout preset persistence contract (schema foundation only).
+- **2026-02-19:** **P12-C COMPLETE.** Adapter contract + registry, Portal-based Lightbox (fixes broken nested-Modal z-index), CompactGridGallery adapter (responsive auto-fill grid, playing-card proportions, hover scale, zoom overlay). 4 new settings end-to-end (frontend + PHP). ImageCarousel lightbox fixed. 178 tests / 0 failures. Committed `7f7cef7`.
 
 ---
 
