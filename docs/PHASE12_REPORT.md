@@ -181,73 +181,73 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ---
 
-## Track P12-H — Navigation Overlay Arrows
+## Track P12-H — Navigation Overlay Arrows ✅ COMPLETE
 
 ### Objectives
 
 - Move prev/next navigation arrows from below the viewport to overlaid on the media viewport
 - Provide comprehensive admin controls for arrow appearance and behavior
 
-### Candidate Deliverables
+### Deliverables
 
-- Overlay arrow positioning (left/right edges of viewport)
-- Admin controls for:
-  - Arrow position (vertical alignment: top, center, bottom)
-  - Arrow size (px slider)
-  - Arrow color and background color
-  - Border style and width
-  - Hover grow effect (scale factor)
-  - Activity fade timing (auto-hide delay in ms, 0 = always visible)
-- Touch-friendly sizing on mobile
-- Accessibility: keyboard navigation, ARIA labels maintained
+- **OverlayArrows component** (`src/components/Campaign/OverlayArrows.tsx`): standalone overlay nav with plain `<button>` elements
+- Configurable vertical position (top/center/bottom), size, color, bgColor, border width
+- Hover-scale effect with CSS transition
+- Auto-hide timer (onMouseMove/onTouchStart triggers visibility, fades after configurable ms)
+- `pointerEvents: 'none'` on wrapper, `'auto'` on visible buttons only
+- Distinct `aria-label` values (`"(overlay)"` suffix) to avoid conflicts with CarouselNavigation
+- Wired into both ImageCarousel and VideoCarousel viewports
+- 7 admin settings: navArrowPosition, navArrowSize, navArrowColor, navArrowBgColor, navArrowBorderWidth, navArrowHoverScale, navArrowAutoHideMs
 
 **Effort:** Medium–High  
-**Impact:** High
+**Impact:** High  
+**Commit:** `d3669e3`
 
 ---
 
-## Track P12-I — Dot Navigator
+## Track P12-I — Dot Navigator ✅ COMPLETE
 
 ### Objectives
 
 - Add a dot-style page indicator common in modern carousels/sliders
 - Provide admin controls for dot appearance and behavior
 
-### Candidate Deliverables
+### Deliverables
 
-- Dot navigator component rendered below (or overlaid on) the viewport
-- Click/tap to navigate to specific slide
-- Admin controls for:
-  - Dot position (below viewport, overlaid bottom, overlaid top)
-  - Dot size, active color, inactive color
-  - Dot shape (circle, pill, square)
-  - Spacing between dots
-  - Active dot scale factor
-- Truncation strategy for large galleries (e.g., show 5 + ellipsis)
+- **DotNavigator component** (`src/components/Campaign/DotNavigator.tsx`): standalone dot-style page indicator
+- Supports circle, pill, square shapes via CSS borderRadius
+- Configurable colors (active/inactive), size, spacing, active-dot scale factor
+- Smart truncation for >7 items: shows first, last, current±1, with `…` ellipsis buttons
+- Positioning: `below` (normal flow after viewport) or `overlay-bottom`/`overlay-top` (position: absolute)
+- Full a11y: `role="tablist"`, `role="tab"`, `aria-selected`, `aria-label="Go to slide N"`
+- Wired into both ImageCarousel and VideoCarousel
+- 8 admin settings: dotNavEnabled, dotNavPosition, dotNavSize, dotNavActiveColor, dotNavInactiveColor, dotNavShape, dotNavSpacing, dotNavActiveScale
 
 **Effort:** Medium  
-**Impact:** Medium–High
+**Impact:** Medium–High  
+**Commit:** `d3669e3`
 
 ---
 
-## Track P12-J — Image/Video Shadow & Depth Controls
+## Track P12-J — Image/Video Shadow & Depth Controls ✅ COMPLETE
 
 ### Objectives
 
 - Allow admins to control box-shadow and depth effects on gallery media cards
 - Provide visual depth to gallery items for a more polished presentation
 
-### Candidate Deliverables
+### Deliverables
 
-- Shadow preset selector (none, subtle, medium, strong, custom)
-- Custom shadow controls: offsetX, offsetY, blur, spread, color
-- Separate controls for images and videos
-- Optional inner shadow / inset option
-- Applied to both main viewport and optionally to thumbnails
-- CSS `filter: drop-shadow()` option for non-rectangular content
+- **resolveBoxShadow utility** (`src/utils/shadowPresets.ts`): maps preset names to CSS box-shadow values
+- Presets: none, subtle (`0 2px 8px`), medium (`0 4px 16px`), strong (`0 8px 30px`), custom (pass-through)
+- Applied to ImageCarousel viewer Box and VideoCarousel player Box inline styles
+- Separate controls for images and videos in Settings panel (Gallery tab → Shadow & Depth section)
+- Custom CSS text input revealed when preset is "custom"
+- 4 admin settings: imageShadowPreset, videoShadowPreset, imageShadowCustom, videoShadowCustom
 
 **Effort:** Medium  
-**Impact:** Medium
+**Impact:** Medium  
+**Commit:** `d3669e3`
 
 ---
 
@@ -257,9 +257,9 @@ And six new enhancement tracks identified during Phase 12 implementation:
 2. ~~Track P12-D: Modular embed provider handlers~~ ✅ COMPLETE (`db45335`)
 3. ~~Track P12-F: Gallery card border radius controls~~ ✅ COMPLETE (`db45335`)
 4. ~~Track P12-G: Transition fade-in/out for entering/exiting cards~~ ✅ COMPLETE (`db45335`)
-5. Track P12-H: Navigation overlay arrows with admin controls
-6. Track P12-I: Dot navigator with admin controls
-7. Track P12-J: Image/video shadow & depth controls
+5. ~~Track P12-H: Navigation overlay arrows with admin controls~~ ✅ COMPLETE (`d3669e3`)
+6. ~~Track P12-I: Dot navigator with admin controls~~ ✅ COMPLETE (`d3669e3`)
+7. ~~Track P12-J: Image/video shadow & depth controls~~ ✅ COMPLETE (`d3669e3`)
 8. Track P12-C: Gallery adapter contract + runtime selector foundation
 9. Track P12-A: Advanced video gallery controls
 10. Track P12-B: Advanced image gallery controls
@@ -290,6 +290,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - **2026-02-18:** **P12-E COMPLETE.** Settings panel converted from inline Card to Mantine Modal with 4 tabs (General, Gallery, Transitions, Navigation). All save/reset/dirty-tracking preserved. Committed `6853c40`.
 - **2026-02-18:** Settings loading delay eliminated. Added `initialSettings` prop seeded from SWR cache for instant rendering. Background revalidation with `hasChangesRef` prevents overwriting user edits. 178 tests passing. Committed `8863676`.
 - **2026-02-18:** **P12-F, P12-G, P12-D COMPLETE.** Border radius controls (imageBorderRadius/videoBorderRadius, 0–48px), transition fade toggle (transitionFadeEnabled), and modular embed provider system (handler interface, registry, 4 handler classes). 17 files changed, 598 insertions. Committed `db45335`.
+- **2026-02-18:** **P12-H, P12-I, P12-J COMPLETE.** OverlayArrows component (7 settings), DotNavigator component (8 settings), shadow presets utility (4 settings) — 19 new settings total, full end-to-end wiring (types → apiClient → SettingsPanel → App.tsx → PHP defaults/sanitization/REST). 3 new files, 8 modified. 178 tests passing. Committed `d3669e3`.
 
 ---
 
