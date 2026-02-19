@@ -162,6 +162,28 @@ export interface SettingsResponse {
   imageBorderRadius?: number;
   videoBorderRadius?: number;
   transitionFadeEnabled?: boolean;
+  // P12-H
+  navArrowPosition?: 'top' | 'center' | 'bottom';
+  navArrowSize?: number;
+  navArrowColor?: string;
+  navArrowBgColor?: string;
+  navArrowBorderWidth?: number;
+  navArrowHoverScale?: number;
+  navArrowAutoHideMs?: number;
+  // P12-I
+  dotNavEnabled?: boolean;
+  dotNavPosition?: 'below' | 'overlay-bottom' | 'overlay-top';
+  dotNavSize?: number;
+  dotNavActiveColor?: string;
+  dotNavInactiveColor?: string;
+  dotNavShape?: 'circle' | 'pill' | 'square';
+  dotNavSpacing?: number;
+  dotNavActiveScale?: number;
+  // P12-J
+  imageShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  imageShadowCustom?: string;
+  videoShadowCustom?: string;
 }
 
 export interface SettingsUpdateRequest {
@@ -183,6 +205,28 @@ export interface SettingsUpdateRequest {
   imageBorderRadius?: number;
   videoBorderRadius?: number;
   transitionFadeEnabled?: boolean;
+  // P12-H
+  navArrowPosition?: 'top' | 'center' | 'bottom';
+  navArrowSize?: number;
+  navArrowColor?: string;
+  navArrowBgColor?: string;
+  navArrowBorderWidth?: number;
+  navArrowHoverScale?: number;
+  navArrowAutoHideMs?: number;
+  // P12-I
+  dotNavEnabled?: boolean;
+  dotNavPosition?: 'below' | 'overlay-bottom' | 'overlay-top';
+  dotNavSize?: number;
+  dotNavActiveColor?: string;
+  dotNavInactiveColor?: string;
+  dotNavShape?: 'circle' | 'pill' | 'square';
+  dotNavSpacing?: number;
+  dotNavActiveScale?: number;
+  // P12-J
+  imageShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  imageShadowCustom?: string;
+  videoShadowCustom?: string;
 }
 
 export class ApiError extends Error {

@@ -13,6 +13,9 @@ import {
   Tabs,
   Text,
   Divider,
+  TextInput,
+  ColorInput,
+  Slider,
 } from '@mantine/core';
 import {
   IconSettings,
@@ -27,6 +30,10 @@ import {
   type ScrollAnimationEasing,
   type ScrollAnimationStyle,
   type ScrollTransitionType,
+  type NavArrowPosition,
+  type DotNavPosition,
+  type DotNavShape,
+  type ShadowPreset,
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -53,6 +60,28 @@ const defaultSettings: SettingsData = {
   imageBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius,
   videoBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
   transitionFadeEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
+  // P12-H
+  navArrowPosition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition,
+  navArrowSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize,
+  navArrowColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowColor,
+  navArrowBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBgColor,
+  navArrowBorderWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBorderWidth,
+  navArrowHoverScale: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowHoverScale,
+  navArrowAutoHideMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs,
+  // P12-I
+  dotNavEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavEnabled,
+  dotNavPosition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavPosition,
+  dotNavSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSize,
+  dotNavActiveColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveColor,
+  dotNavInactiveColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavInactiveColor,
+  dotNavShape: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavShape,
+  dotNavSpacing: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSpacing,
+  dotNavActiveScale: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveScale,
+  // P12-J
+  imageShadowPreset: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset,
+  videoShadowPreset: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset,
+  imageShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
+  videoShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
 };
 
 interface SettingsPanelProps {
@@ -81,6 +110,28 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   imageBorderRadius: response.imageBorderRadius ?? defaultSettings.imageBorderRadius,
   videoBorderRadius: response.videoBorderRadius ?? defaultSettings.videoBorderRadius,
   transitionFadeEnabled: response.transitionFadeEnabled ?? defaultSettings.transitionFadeEnabled,
+  // P12-H
+  navArrowPosition: (response.navArrowPosition as NavArrowPosition) ?? defaultSettings.navArrowPosition,
+  navArrowSize: response.navArrowSize ?? defaultSettings.navArrowSize,
+  navArrowColor: response.navArrowColor ?? defaultSettings.navArrowColor,
+  navArrowBgColor: response.navArrowBgColor ?? defaultSettings.navArrowBgColor,
+  navArrowBorderWidth: response.navArrowBorderWidth ?? defaultSettings.navArrowBorderWidth,
+  navArrowHoverScale: response.navArrowHoverScale ?? defaultSettings.navArrowHoverScale,
+  navArrowAutoHideMs: response.navArrowAutoHideMs ?? defaultSettings.navArrowAutoHideMs,
+  // P12-I
+  dotNavEnabled: response.dotNavEnabled ?? defaultSettings.dotNavEnabled,
+  dotNavPosition: (response.dotNavPosition as DotNavPosition) ?? defaultSettings.dotNavPosition,
+  dotNavSize: response.dotNavSize ?? defaultSettings.dotNavSize,
+  dotNavActiveColor: response.dotNavActiveColor ?? defaultSettings.dotNavActiveColor,
+  dotNavInactiveColor: response.dotNavInactiveColor ?? defaultSettings.dotNavInactiveColor,
+  dotNavShape: (response.dotNavShape as DotNavShape) ?? defaultSettings.dotNavShape,
+  dotNavSpacing: response.dotNavSpacing ?? defaultSettings.dotNavSpacing,
+  dotNavActiveScale: response.dotNavActiveScale ?? defaultSettings.dotNavActiveScale,
+  // P12-J
+  imageShadowPreset: (response.imageShadowPreset as ShadowPreset) ?? defaultSettings.imageShadowPreset,
+  videoShadowPreset: (response.videoShadowPreset as ShadowPreset) ?? defaultSettings.videoShadowPreset,
+  imageShadowCustom: response.imageShadowCustom ?? defaultSettings.imageShadowCustom,
+  videoShadowCustom: response.videoShadowCustom ?? defaultSettings.videoShadowCustom,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -290,6 +341,58 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   max={48}
                   step={1}
                 />
+
+                <Divider label="Shadow & Depth" labelPosition="center" />
+
+                <Select
+                  label="Image Shadow Preset"
+                  description="Box-shadow depth effect for image gallery viewport."
+                  value={settings.imageShadowPreset}
+                  onChange={(value) =>
+                    updateSetting('imageShadowPreset', (value as ShadowPreset) ?? defaultSettings.imageShadowPreset)
+                  }
+                  data={[
+                    { value: 'none', label: 'None' },
+                    { value: 'subtle', label: 'Subtle' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'strong', label: 'Strong' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                />
+
+                {settings.imageShadowPreset === 'custom' && (
+                  <TextInput
+                    label="Image Custom Shadow"
+                    description="CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
+                    value={settings.imageShadowCustom}
+                    onChange={(e) => updateSetting('imageShadowCustom', e.currentTarget.value)}
+                  />
+                )}
+
+                <Select
+                  label="Video Shadow Preset"
+                  description="Box-shadow depth effect for video gallery viewport."
+                  value={settings.videoShadowPreset}
+                  onChange={(value) =>
+                    updateSetting('videoShadowPreset', (value as ShadowPreset) ?? defaultSettings.videoShadowPreset)
+                  }
+                  data={[
+                    { value: 'none', label: 'None' },
+                    { value: 'subtle', label: 'Subtle' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'strong', label: 'Strong' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                />
+
+                {settings.videoShadowPreset === 'custom' && (
+                  <TextInput
+                    label="Video Custom Shadow"
+                    description="CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
+                    value={settings.videoShadowCustom}
+                    onChange={(e) => updateSetting('videoShadowCustom', e.currentTarget.value)}
+                  />
+                )}
               </Stack>
             </Tabs.Panel>
 
@@ -388,9 +491,179 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   decimalScale={2}
                 />
 
-                <Text size="sm" c="dimmed" fs="italic">
-                  More navigation controls (overlay arrows, dot navigator) coming soon.
-                </Text>
+                <Divider label="Overlay Arrows" labelPosition="center" />
+
+                <Select
+                  label="Arrow Vertical Position"
+                  description="Vertical alignment of the overlay prev/next arrows."
+                  value={settings.navArrowPosition}
+                  onChange={(value) =>
+                    updateSetting('navArrowPosition', (value as NavArrowPosition) ?? defaultSettings.navArrowPosition)
+                  }
+                  data={[
+                    { value: 'top', label: 'Top' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'bottom', label: 'Bottom' },
+                  ]}
+                />
+
+                <NumberInput
+                  label="Arrow Size (px)"
+                  description="Diameter of the overlay navigation arrows."
+                  value={settings.navArrowSize}
+                  onChange={(value) =>
+                    updateSetting('navArrowSize', typeof value === 'number' ? value : defaultSettings.navArrowSize)
+                  }
+                  min={20}
+                  max={64}
+                  step={2}
+                />
+
+                <ColorInput
+                  label="Arrow Color"
+                  description="Icon color for the overlay arrows."
+                  value={settings.navArrowColor}
+                  onChange={(value) => updateSetting('navArrowColor', value)}
+                  format="hex"
+                />
+
+                <TextInput
+                  label="Arrow Background Color"
+                  description="Background color (supports rgba for transparency)."
+                  value={settings.navArrowBgColor}
+                  onChange={(e) => updateSetting('navArrowBgColor', e.currentTarget.value)}
+                />
+
+                <NumberInput
+                  label="Arrow Border Width (px)"
+                  description="Border thickness around the arrows (0 = none)."
+                  value={settings.navArrowBorderWidth}
+                  onChange={(value) =>
+                    updateSetting('navArrowBorderWidth', typeof value === 'number' ? value : defaultSettings.navArrowBorderWidth)
+                  }
+                  min={0}
+                  max={6}
+                  step={1}
+                />
+
+                <Text size="sm" fw={500}>Hover Scale Factor</Text>
+                <Slider
+                  value={settings.navArrowHoverScale}
+                  onChange={(value) => updateSetting('navArrowHoverScale', value)}
+                  min={1}
+                  max={1.5}
+                  step={0.05}
+                  marks={[
+                    { value: 1, label: '1×' },
+                    { value: 1.25, label: '1.25×' },
+                    { value: 1.5, label: '1.5×' },
+                  ]}
+                />
+
+                <NumberInput
+                  label="Auto-hide Delay (ms)"
+                  description="Show arrows on hover/interaction. 0 = always visible."
+                  value={settings.navArrowAutoHideMs}
+                  onChange={(value) =>
+                    updateSetting('navArrowAutoHideMs', typeof value === 'number' ? value : defaultSettings.navArrowAutoHideMs)
+                  }
+                  min={0}
+                  max={10000}
+                  step={500}
+                />
+
+                <Divider label="Dot Navigator" labelPosition="center" />
+
+                <Switch
+                  label="Enable Dot Navigator"
+                  description="Show a dot-style page indicator."
+                  checked={settings.dotNavEnabled}
+                  onChange={(e) => updateSetting('dotNavEnabled', e.currentTarget.checked)}
+                />
+
+                {settings.dotNavEnabled && (
+                  <>
+                    <Select
+                      label="Dot Position"
+                      description="Where to render the dot navigator relative to the viewport."
+                      value={settings.dotNavPosition}
+                      onChange={(value) =>
+                        updateSetting('dotNavPosition', (value as DotNavPosition) ?? defaultSettings.dotNavPosition)
+                      }
+                      data={[
+                        { value: 'below', label: 'Below Viewport' },
+                        { value: 'overlay-bottom', label: 'Overlay Bottom' },
+                        { value: 'overlay-top', label: 'Overlay Top' },
+                      ]}
+                    />
+
+                    <NumberInput
+                      label="Dot Size (px)"
+                      description="Diameter of each dot."
+                      value={settings.dotNavSize}
+                      onChange={(value) =>
+                        updateSetting('dotNavSize', typeof value === 'number' ? value : defaultSettings.dotNavSize)
+                      }
+                      min={4}
+                      max={24}
+                      step={1}
+                    />
+
+                    <Select
+                      label="Dot Shape"
+                      description="Shape of the navigation dots."
+                      value={settings.dotNavShape}
+                      onChange={(value) =>
+                        updateSetting('dotNavShape', (value as DotNavShape) ?? defaultSettings.dotNavShape)
+                      }
+                      data={[
+                        { value: 'circle', label: 'Circle' },
+                        { value: 'pill', label: 'Pill' },
+                        { value: 'square', label: 'Square' },
+                      ]}
+                    />
+
+                    <TextInput
+                      label="Active Dot Color"
+                      description="Color for the currently active dot (CSS value)."
+                      value={settings.dotNavActiveColor}
+                      onChange={(e) => updateSetting('dotNavActiveColor', e.currentTarget.value)}
+                    />
+
+                    <TextInput
+                      label="Inactive Dot Color"
+                      description="Color for inactive dots (CSS value)."
+                      value={settings.dotNavInactiveColor}
+                      onChange={(e) => updateSetting('dotNavInactiveColor', e.currentTarget.value)}
+                    />
+
+                    <NumberInput
+                      label="Dot Spacing (px)"
+                      description="Gap between dots."
+                      value={settings.dotNavSpacing}
+                      onChange={(value) =>
+                        updateSetting('dotNavSpacing', typeof value === 'number' ? value : defaultSettings.dotNavSpacing)
+                      }
+                      min={2}
+                      max={20}
+                      step={1}
+                    />
+
+                    <Text size="sm" fw={500}>Active Dot Scale</Text>
+                    <Slider
+                      value={settings.dotNavActiveScale}
+                      onChange={(value) => updateSetting('dotNavActiveScale', value)}
+                      min={1}
+                      max={2}
+                      step={0.1}
+                      marks={[
+                        { value: 1, label: '1×' },
+                        { value: 1.5, label: '1.5×' },
+                        { value: 2, label: '2×' },
+                      ]}
+                    />
+                  </>
+                )}
               </Stack>
             </Tabs.Panel>
           </Tabs>

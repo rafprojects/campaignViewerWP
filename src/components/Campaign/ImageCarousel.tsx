@@ -6,8 +6,11 @@ import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
 import { useSwipe } from '@/hooks/useSwipe';
 import { CarouselNavigation } from './CarouselNavigation';
+import { OverlayArrows } from './OverlayArrows';
+import { DotNavigator } from './DotNavigator';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 import { applyGalleryTransition } from '@/utils/galleryAnimations';
+import { resolveBoxShadow } from '@/utils/shadowPresets';
 
 interface ImageCarouselProps {
   images: MediaItem[];
@@ -102,7 +105,7 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
         aria-label={`View image ${currentIndex + 1} of ${images.length}`}
         onClick={openLightbox}
         {...swipeHandlers}
-        style={{ touchAction: 'pan-y', height: standardViewerHeight, overflow: 'hidden', borderRadius: `${settings.imageBorderRadius}px` }}
+        style={{ touchAction: 'pan-y', height: standardViewerHeight, overflow: 'hidden', borderRadius: `${settings.imageBorderRadius}px`, boxShadow: resolveBoxShadow(settings.imageShadowPreset, settings.imageShadowCustom) }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
@@ -176,12 +179,66 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
         >
           <IconZoomIn size={20} />
         </ActionIcon>
+
+        {/* Overlay navigation arrows */}
+        <OverlayArrows
+          onPrev={prevImage}
+          onNext={nextImage}
+          total={images.length}
+          settings={settings}
+          previousLabel="Previous image (overlay)"
+          nextLabel="Next image (overlay)"
+        />
+
+        {/* Overlay dot navigator (inside viewport) */}
+        {settings.dotNavPosition !== 'below' && (
+          <DotNavigator
+            total={images.length}
+            currentIndex={currentIndex}
+            onSelect={(index) => {
+              if (index !== currentIndex) {
+                window.clearTimeout(exitTimerRef.current);
+                if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+                  setPreviousImage(currentImage);
+                  exitTimerRef.current = window.setTimeout(
+                    () => setPreviousImage(null),
+                    mediaTransitionDuration + 100,
+                  );
+                }
+              }
+              setCurrentIndex(index);
+            }}
+            settings={settings}
+          />
+        )}
       </Box>
 
       {/* Caption */}
       <Text size="sm" c="dimmed">
         {currentImage.caption || 'Untitled image'}
       </Text>
+
+      {/* Dot navigator (below viewport) */}
+      {settings.dotNavPosition === 'below' && (
+        <DotNavigator
+          total={images.length}
+          currentIndex={currentIndex}
+          onSelect={(index) => {
+            if (index !== currentIndex) {
+              window.clearTimeout(exitTimerRef.current);
+              if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+                setPreviousImage(currentImage);
+                exitTimerRef.current = window.setTimeout(
+                  () => setPreviousImage(null),
+                  mediaTransitionDuration + 100,
+                );
+              }
+            }
+            setCurrentIndex(index);
+          }}
+          settings={settings}
+        />
+      )}
 
       <CarouselNavigation
         total={images.length}

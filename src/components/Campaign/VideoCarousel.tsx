@@ -5,7 +5,10 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type M
 import { useCarousel } from '@/hooks/useCarousel';
 import { useSwipe } from '@/hooks/useSwipe';
 import { CarouselNavigation } from './CarouselNavigation';
+import { OverlayArrows } from './OverlayArrows';
+import { DotNavigator } from './DotNavigator';
 import { applyGalleryTransition } from '@/utils/galleryAnimations';
+import { resolveBoxShadow } from '@/utils/shadowPresets';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
@@ -120,6 +123,7 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
           backgroundColor: 'transparent',
           overflow: 'hidden',
           borderRadius: `${settings.videoBorderRadius}px`,
+          boxShadow: resolveBoxShadow(settings.videoShadowPreset, settings.videoShadowCustom),
         }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') {
@@ -250,12 +254,67 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
           )}
         </Box>
 
+        {/* Overlay navigation arrows */}
+        <OverlayArrows
+          onPrev={prevVideo}
+          onNext={nextVideo}
+          total={videos.length}
+          settings={settings}
+          previousLabel="Previous video (overlay)"
+          nextLabel="Next video (overlay)"
+        />
+
+        {/* Overlay dot navigator (inside viewport) */}
+        {settings.dotNavPosition !== 'below' && (
+          <DotNavigator
+            total={videos.length}
+            currentIndex={currentIndex}
+            onSelect={(index) => {
+              if (index !== currentIndex) {
+                window.clearTimeout(exitTimerRef.current);
+                if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+                  setPreviousVideo(currentVideo);
+                  exitTimerRef.current = window.setTimeout(
+                    () => setPreviousVideo(null),
+                    mediaTransitionDuration + 100,
+                  );
+                }
+              }
+              setCurrentIndex(index);
+              setIsPlaying(false);
+            }}
+            settings={settings}
+          />
+        )}
       </Box>
 
       {/* Caption */}
       <Text size="sm" c="dimmed">
         {currentVideo.caption || 'Untitled video'}
       </Text>
+
+      {/* Dot navigator (below or overlay — overlay is rendered inside the player Box separately) */}
+      {settings.dotNavPosition === 'below' && (
+        <DotNavigator
+          total={videos.length}
+          currentIndex={currentIndex}
+          onSelect={(index) => {
+            if (index !== currentIndex) {
+              window.clearTimeout(exitTimerRef.current);
+              if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+                setPreviousVideo(currentVideo);
+                exitTimerRef.current = window.setTimeout(
+                  () => setPreviousVideo(null),
+                  mediaTransitionDuration + 100,
+                );
+              }
+            }
+            setCurrentIndex(index);
+            setIsPlaying(false);
+          }}
+          settings={settings}
+        />
+      )}
 
       <CarouselNavigation
         total={videos.length}

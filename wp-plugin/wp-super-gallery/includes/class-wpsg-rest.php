@@ -2107,6 +2107,28 @@ class WPSG_REST {
                 'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
                 'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
                 'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
+                // P12-H
+                'navArrowPosition'     => $settings['nav_arrow_position'] ?? 'center',
+                'navArrowSize'         => $settings['nav_arrow_size'] ?? 36,
+                'navArrowColor'        => $settings['nav_arrow_color'] ?? '#ffffff',
+                'navArrowBgColor'      => $settings['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
+                'navArrowBorderWidth'  => $settings['nav_arrow_border_width'] ?? 0,
+                'navArrowHoverScale'   => $settings['nav_arrow_hover_scale'] ?? 1.1,
+                'navArrowAutoHideMs'   => $settings['nav_arrow_auto_hide_ms'] ?? 0,
+                // P12-I
+                'dotNavEnabled'        => $settings['dot_nav_enabled'] ?? true,
+                'dotNavPosition'       => $settings['dot_nav_position'] ?? 'below',
+                'dotNavSize'           => $settings['dot_nav_size'] ?? 10,
+                'dotNavActiveColor'    => $settings['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
+                'dotNavInactiveColor'  => $settings['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
+                'dotNavShape'          => $settings['dot_nav_shape'] ?? 'circle',
+                'dotNavSpacing'        => $settings['dot_nav_spacing'] ?? 6,
+                'dotNavActiveScale'    => $settings['dot_nav_active_scale'] ?? 1.3,
+                // P12-J
+                'imageShadowPreset'    => $settings['image_shadow_preset'] ?? 'subtle',
+                'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
+                'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+                'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2128,6 +2150,28 @@ class WPSG_REST {
             'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
             'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
             'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
+            // P12-H
+            'navArrowPosition'     => $settings['nav_arrow_position'] ?? 'center',
+            'navArrowSize'         => $settings['nav_arrow_size'] ?? 36,
+            'navArrowColor'        => $settings['nav_arrow_color'] ?? '#ffffff',
+            'navArrowBgColor'      => $settings['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
+            'navArrowBorderWidth'  => $settings['nav_arrow_border_width'] ?? 0,
+            'navArrowHoverScale'   => $settings['nav_arrow_hover_scale'] ?? 1.1,
+            'navArrowAutoHideMs'   => $settings['nav_arrow_auto_hide_ms'] ?? 0,
+            // P12-I
+            'dotNavEnabled'        => $settings['dot_nav_enabled'] ?? true,
+            'dotNavPosition'       => $settings['dot_nav_position'] ?? 'below',
+            'dotNavSize'           => $settings['dot_nav_size'] ?? 10,
+            'dotNavActiveColor'    => $settings['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
+            'dotNavInactiveColor'  => $settings['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
+            'dotNavShape'          => $settings['dot_nav_shape'] ?? 'circle',
+            'dotNavSpacing'        => $settings['dot_nav_spacing'] ?? 6,
+            'dotNavActiveScale'    => $settings['dot_nav_active_scale'] ?? 1.3,
+            // P12-J
+            'imageShadowPreset'    => $settings['image_shadow_preset'] ?? 'subtle',
+            'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
+            'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2199,6 +2243,66 @@ class WPSG_REST {
         }
         if (isset($body['transitionFadeEnabled'])) {
             $input['transition_fade_enabled'] = (bool) $body['transitionFadeEnabled'];
+        }
+        // P12-H: Navigation Overlay Arrows
+        if (isset($body['navArrowPosition'])) {
+            $input['nav_arrow_position'] = sanitize_text_field($body['navArrowPosition']);
+        }
+        if (isset($body['navArrowSize'])) {
+            $input['nav_arrow_size'] = intval($body['navArrowSize']);
+        }
+        if (isset($body['navArrowColor'])) {
+            $input['nav_arrow_color'] = sanitize_text_field($body['navArrowColor']);
+        }
+        if (isset($body['navArrowBgColor'])) {
+            $input['nav_arrow_bg_color'] = sanitize_text_field($body['navArrowBgColor']);
+        }
+        if (isset($body['navArrowBorderWidth'])) {
+            $input['nav_arrow_border_width'] = intval($body['navArrowBorderWidth']);
+        }
+        if (isset($body['navArrowHoverScale'])) {
+            $input['nav_arrow_hover_scale'] = floatval($body['navArrowHoverScale']);
+        }
+        if (isset($body['navArrowAutoHideMs'])) {
+            $input['nav_arrow_auto_hide_ms'] = intval($body['navArrowAutoHideMs']);
+        }
+        // P12-I: Dot Navigator
+        if (isset($body['dotNavEnabled'])) {
+            $input['dot_nav_enabled'] = (bool) $body['dotNavEnabled'];
+        }
+        if (isset($body['dotNavPosition'])) {
+            $input['dot_nav_position'] = sanitize_text_field($body['dotNavPosition']);
+        }
+        if (isset($body['dotNavSize'])) {
+            $input['dot_nav_size'] = intval($body['dotNavSize']);
+        }
+        if (isset($body['dotNavActiveColor'])) {
+            $input['dot_nav_active_color'] = sanitize_text_field($body['dotNavActiveColor']);
+        }
+        if (isset($body['dotNavInactiveColor'])) {
+            $input['dot_nav_inactive_color'] = sanitize_text_field($body['dotNavInactiveColor']);
+        }
+        if (isset($body['dotNavShape'])) {
+            $input['dot_nav_shape'] = sanitize_text_field($body['dotNavShape']);
+        }
+        if (isset($body['dotNavSpacing'])) {
+            $input['dot_nav_spacing'] = intval($body['dotNavSpacing']);
+        }
+        if (isset($body['dotNavActiveScale'])) {
+            $input['dot_nav_active_scale'] = floatval($body['dotNavActiveScale']);
+        }
+        // P12-J: Shadow & Depth
+        if (isset($body['imageShadowPreset'])) {
+            $input['image_shadow_preset'] = sanitize_text_field($body['imageShadowPreset']);
+        }
+        if (isset($body['videoShadowPreset'])) {
+            $input['video_shadow_preset'] = sanitize_text_field($body['videoShadowPreset']);
+        }
+        if (isset($body['imageShadowCustom'])) {
+            $input['image_shadow_custom'] = sanitize_text_field($body['imageShadowCustom']);
+        }
+        if (isset($body['videoShadowCustom'])) {
+            $input['video_shadow_custom'] = sanitize_text_field($body['videoShadowCustom']);
         }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);

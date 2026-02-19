@@ -263,6 +263,47 @@ function AppContent({
         response.videoBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
       transitionFadeEnabled:
         response.transitionFadeEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
+      // P12-H
+      navArrowPosition:
+        response.navArrowPosition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition,
+      navArrowSize:
+        response.navArrowSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize,
+      navArrowColor:
+        response.navArrowColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowColor,
+      navArrowBgColor:
+        response.navArrowBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBgColor,
+      navArrowBorderWidth:
+        response.navArrowBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBorderWidth,
+      navArrowHoverScale:
+        response.navArrowHoverScale ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowHoverScale,
+      navArrowAutoHideMs:
+        response.navArrowAutoHideMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs,
+      // P12-I
+      dotNavEnabled:
+        response.dotNavEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavEnabled,
+      dotNavPosition:
+        response.dotNavPosition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavPosition,
+      dotNavSize:
+        response.dotNavSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSize,
+      dotNavActiveColor:
+        response.dotNavActiveColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveColor,
+      dotNavInactiveColor:
+        response.dotNavInactiveColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavInactiveColor,
+      dotNavShape:
+        response.dotNavShape ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavShape,
+      dotNavSpacing:
+        response.dotNavSpacing ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSpacing,
+      dotNavActiveScale:
+        response.dotNavActiveScale ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveScale,
+      // P12-J
+      imageShadowPreset:
+        response.imageShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset,
+      videoShadowPreset:
+        response.videoShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset,
+      imageShadowCustom:
+        response.imageShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
+      videoShadowCustom:
+        response.videoShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -687,6 +728,28 @@ function AppContent({
                     imageBorderRadius: saved.imageBorderRadius,
                     videoBorderRadius: saved.videoBorderRadius,
                     transitionFadeEnabled: saved.transitionFadeEnabled,
+                    // P12-H
+                    navArrowPosition: saved.navArrowPosition,
+                    navArrowSize: saved.navArrowSize,
+                    navArrowColor: saved.navArrowColor,
+                    navArrowBgColor: saved.navArrowBgColor,
+                    navArrowBorderWidth: saved.navArrowBorderWidth,
+                    navArrowHoverScale: saved.navArrowHoverScale,
+                    navArrowAutoHideMs: saved.navArrowAutoHideMs,
+                    // P12-I
+                    dotNavEnabled: saved.dotNavEnabled,
+                    dotNavPosition: saved.dotNavPosition,
+                    dotNavSize: saved.dotNavSize,
+                    dotNavActiveColor: saved.dotNavActiveColor,
+                    dotNavInactiveColor: saved.dotNavInactiveColor,
+                    dotNavShape: saved.dotNavShape,
+                    dotNavSpacing: saved.dotNavSpacing,
+                    dotNavActiveScale: saved.dotNavActiveScale,
+                    // P12-J
+                    imageShadowPreset: saved.imageShadowPreset,
+                    videoShadowPreset: saved.videoShadowPreset,
+                    imageShadowCustom: saved.imageShadowCustom,
+                    videoShadowCustom: saved.videoShadowCustom,
                   },
                   false,
                 );

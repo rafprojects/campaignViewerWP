@@ -50,6 +50,28 @@ class WPSG_Settings {
         'image_border_radius'        => 8,
         'video_border_radius'        => 8,
         'transition_fade_enabled'    => true,
+        // P12-H: Navigation Overlay Arrows
+        'nav_arrow_position'         => 'center',
+        'nav_arrow_size'             => 36,
+        'nav_arrow_color'            => '#ffffff',
+        'nav_arrow_bg_color'         => 'rgba(0,0,0,0.45)',
+        'nav_arrow_border_width'     => 0,
+        'nav_arrow_hover_scale'      => 1.1,
+        'nav_arrow_auto_hide_ms'     => 0,
+        // P12-I: Dot Navigator
+        'dot_nav_enabled'            => true,
+        'dot_nav_position'           => 'below',
+        'dot_nav_size'               => 10,
+        'dot_nav_active_color'       => 'var(--wpsg-color-primary)',
+        'dot_nav_inactive_color'     => 'rgba(128,128,128,0.4)',
+        'dot_nav_shape'              => 'circle',
+        'dot_nav_spacing'            => 6,
+        'dot_nav_active_scale'       => 1.3,
+        // P12-J: Shadow & Depth
+        'image_shadow_preset'        => 'subtle',
+        'video_shadow_preset'        => 'subtle',
+        'image_shadow_custom'        => '0 2px 8px rgba(0,0,0,0.15)',
+        'video_shadow_custom'        => '0 2px 8px rgba(0,0,0,0.15)',
         'cache_ttl'                  => 3600,
     ];
 
@@ -80,6 +102,11 @@ class WPSG_Settings {
         'scroll_animation_style' => ['smooth', 'instant'],
         'scroll_animation_easing' => ['ease', 'linear', 'ease-in', 'ease-out', 'ease-in-out'],
         'scroll_transition_type' => ['fade', 'slide', 'slide-fade'],
+        'nav_arrow_position'     => ['top', 'center', 'bottom'],
+        'dot_nav_position'       => ['below', 'overlay-bottom', 'overlay-top'],
+        'dot_nav_shape'          => ['circle', 'pill', 'square'],
+        'image_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
+        'video_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
     ];
 
     /**
@@ -336,6 +363,79 @@ class WPSG_Settings {
 
         if (isset($input['transition_fade_enabled'])) {
             $sanitized['transition_fade_enabled'] = (bool) $input['transition_fade_enabled'];
+        }
+
+        // P12-H: Navigation Overlay Arrows
+        if (isset($input['nav_arrow_position'])) {
+            $sanitized['nav_arrow_position'] = in_array($input['nav_arrow_position'], self::$valid_options['nav_arrow_position'], true)
+                ? $input['nav_arrow_position']
+                : self::$defaults['nav_arrow_position'];
+        }
+        if (isset($input['nav_arrow_size'])) {
+            $sanitized['nav_arrow_size'] = max(20, min(64, intval($input['nav_arrow_size'])));
+        }
+        if (isset($input['nav_arrow_color'])) {
+            $sanitized['nav_arrow_color'] = sanitize_text_field($input['nav_arrow_color']);
+        }
+        if (isset($input['nav_arrow_bg_color'])) {
+            $sanitized['nav_arrow_bg_color'] = sanitize_text_field($input['nav_arrow_bg_color']);
+        }
+        if (isset($input['nav_arrow_border_width'])) {
+            $sanitized['nav_arrow_border_width'] = max(0, min(6, intval($input['nav_arrow_border_width'])));
+        }
+        if (isset($input['nav_arrow_hover_scale'])) {
+            $sanitized['nav_arrow_hover_scale'] = max(1.0, min(1.5, floatval($input['nav_arrow_hover_scale'])));
+        }
+        if (isset($input['nav_arrow_auto_hide_ms'])) {
+            $sanitized['nav_arrow_auto_hide_ms'] = max(0, min(10000, intval($input['nav_arrow_auto_hide_ms'])));
+        }
+
+        // P12-I: Dot Navigator
+        if (isset($input['dot_nav_enabled'])) {
+            $sanitized['dot_nav_enabled'] = (bool) $input['dot_nav_enabled'];
+        }
+        if (isset($input['dot_nav_position'])) {
+            $sanitized['dot_nav_position'] = in_array($input['dot_nav_position'], self::$valid_options['dot_nav_position'], true)
+                ? $input['dot_nav_position']
+                : self::$defaults['dot_nav_position'];
+        }
+        if (isset($input['dot_nav_size'])) {
+            $sanitized['dot_nav_size'] = max(4, min(24, intval($input['dot_nav_size'])));
+        }
+        if (isset($input['dot_nav_active_color'])) {
+            $sanitized['dot_nav_active_color'] = sanitize_text_field($input['dot_nav_active_color']);
+        }
+        if (isset($input['dot_nav_inactive_color'])) {
+            $sanitized['dot_nav_inactive_color'] = sanitize_text_field($input['dot_nav_inactive_color']);
+        }
+        if (isset($input['dot_nav_shape'])) {
+            $sanitized['dot_nav_shape'] = in_array($input['dot_nav_shape'], self::$valid_options['dot_nav_shape'], true)
+                ? $input['dot_nav_shape']
+                : self::$defaults['dot_nav_shape'];
+        }
+        if (isset($input['dot_nav_spacing'])) {
+            $sanitized['dot_nav_spacing'] = max(2, min(20, intval($input['dot_nav_spacing'])));
+        }
+        if (isset($input['dot_nav_active_scale'])) {
+            $sanitized['dot_nav_active_scale'] = max(1.0, min(2.0, floatval($input['dot_nav_active_scale'])));
+        }
+
+        // P12-J: Shadow & Depth
+        if (isset($input['image_shadow_preset'])) {
+            $sanitized['image_shadow_preset'] = in_array($input['image_shadow_preset'], self::$valid_options['image_shadow_preset'], true)
+                ? $input['image_shadow_preset']
+                : self::$defaults['image_shadow_preset'];
+        }
+        if (isset($input['video_shadow_preset'])) {
+            $sanitized['video_shadow_preset'] = in_array($input['video_shadow_preset'], self::$valid_options['video_shadow_preset'], true)
+                ? $input['video_shadow_preset']
+                : self::$defaults['video_shadow_preset'];
+        }
+        if (isset($input['image_shadow_custom'])) {
+            $sanitized['image_shadow_custom'] = sanitize_text_field($input['image_shadow_custom']);
+        }
+        if (isset($input['video_shadow_custom'])) {
+            $sanitized['video_shadow_custom'] = sanitize_text_field($input['video_shadow_custom']);
         }
 
         // Boolean fields.

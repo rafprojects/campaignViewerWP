@@ -84,6 +84,16 @@ export type ScrollAnimationStyle = 'smooth' | 'instant';
 export type ScrollAnimationEasing = 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
 export type ScrollTransitionType = 'fade' | 'slide' | 'slide-fade';
 
+// P12-H: Overlay Arrow types
+export type NavArrowPosition = 'top' | 'center' | 'bottom';
+
+// P12-I: Dot Navigator types
+export type DotNavPosition = 'below' | 'overlay-bottom' | 'overlay-top';
+export type DotNavShape = 'circle' | 'pill' | 'square';
+
+// P12-J: Shadow types
+export type ShadowPreset = 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+
 export interface GalleryBehaviorSettings {
   videoViewportHeight: number;
   imageViewportHeight: number;
@@ -95,6 +105,28 @@ export interface GalleryBehaviorSettings {
   imageBorderRadius: number;
   videoBorderRadius: number;
   transitionFadeEnabled: boolean;
+  // P12-H: Navigation Overlay Arrows
+  navArrowPosition: NavArrowPosition;
+  navArrowSize: number;
+  navArrowColor: string;
+  navArrowBgColor: string;
+  navArrowBorderWidth: number;
+  navArrowHoverScale: number;
+  navArrowAutoHideMs: number;
+  // P12-I: Dot Navigator
+  dotNavEnabled: boolean;
+  dotNavPosition: DotNavPosition;
+  dotNavSize: number;
+  dotNavActiveColor: string;
+  dotNavInactiveColor: string;
+  dotNavShape: DotNavShape;
+  dotNavSpacing: number;
+  dotNavActiveScale: number;
+  // P12-J: Shadow & Depth Controls
+  imageShadowPreset: ShadowPreset;
+  videoShadowPreset: ShadowPreset;
+  imageShadowCustom: string;
+  videoShadowCustom: string;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -108,4 +140,26 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   imageBorderRadius: 8,
   videoBorderRadius: 8,
   transitionFadeEnabled: true,
+  // P12-H defaults
+  navArrowPosition: 'center',
+  navArrowSize: 36,
+  navArrowColor: '#ffffff',
+  navArrowBgColor: 'rgba(0,0,0,0.45)',
+  navArrowBorderWidth: 0,
+  navArrowHoverScale: 1.1,
+  navArrowAutoHideMs: 0,
+  // P12-I defaults
+  dotNavEnabled: true,
+  dotNavPosition: 'below',
+  dotNavSize: 10,
+  dotNavActiveColor: 'var(--wpsg-color-primary)',
+  dotNavInactiveColor: 'rgba(128,128,128,0.4)',
+  dotNavShape: 'circle',
+  dotNavSpacing: 6,
+  dotNavActiveScale: 1.3,
+  // P12-J defaults
+  imageShadowPreset: 'subtle',
+  videoShadowPreset: 'subtle',
+  imageShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
+  videoShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
 };
