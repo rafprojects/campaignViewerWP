@@ -53,6 +53,11 @@ function getSwitchInputs(): HTMLInputElement[] {
   return Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
 }
 
+/** Navigate to a tab by clicking its tab button */
+function clickTab(name: string) {
+  fireEvent.click(screen.getByRole('tab', { name }));
+}
+
 describe('SettingsPanel', () => {
   let apiClient: ApiClient;
   const onClose = vi.fn();
@@ -63,9 +68,9 @@ describe('SettingsPanel', () => {
     apiClient = createMockApiClient();
   });
 
-  it('renders settings after loading', async () => {
+  it('renders settings modal with tabs after loading', async () => {
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
@@ -73,8 +78,29 @@ describe('SettingsPanel', () => {
     });
 
     expect(apiClient.getSettings).toHaveBeenCalledOnce();
+
+    // General tab (default) — settings visible
     expect(screen.getByText('Default Layout')).toBeDefined();
     expect(screen.getByText('Items Per Page')).toBeDefined();
+
+    // Tab buttons visible
+    expect(screen.getByRole('tab', { name: /General/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Gallery/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Transitions/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Navigation/i })).toBeDefined();
+  });
+
+  it('shows gallery tab settings when Gallery tab is clicked', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Display Settings')).toBeDefined();
+    });
+
+    clickTab('Gallery');
+
     expect(screen.getByText('Enable Lightbox')).toBeDefined();
     expect(screen.getByText('Enable Animations')).toBeDefined();
     expect(screen.getByText('Video Gallery Height (px)')).toBeDefined();
@@ -87,7 +113,7 @@ describe('SettingsPanel', () => {
     });
 
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
@@ -97,22 +123,24 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Default Layout')).toBeDefined();
   });
 
-  it('calls onClose when back button is clicked', async () => {
+  it('calls onClose when modal close button is clicked', async () => {
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
 
-    fireEvent.click(screen.getByLabelText('Back to gallery'));
+    const closeButton = document.querySelector('.mantine-Modal-close') as HTMLButtonElement;
+    expect(closeButton).not.toBeNull();
+    fireEvent.click(closeButton);
     expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('shows Save Changes button that is disabled when no changes', async () => {
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
@@ -125,12 +153,15 @@ describe('SettingsPanel', () => {
 
   it('enables save and shows reset when settings change, then saves', async () => {
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
+
+    // Navigate to Gallery tab to find switches
+    clickTab('Gallery');
 
     // Toggle "Enable Lightbox" via hidden checkbox input
     const switches = getSwitchInputs();
@@ -158,12 +189,15 @@ describe('SettingsPanel', () => {
 
   it('resets changes when reset button is clicked', async () => {
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
+
+    // Navigate to Gallery tab to find switches
+    clickTab('Gallery');
 
     // Toggle "Enable Animations" via hidden checkbox
     const switches = getSwitchInputs();
@@ -183,12 +217,15 @@ describe('SettingsPanel', () => {
     });
 
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
+
+    // Navigate to Gallery tab to find switches
+    clickTab('Gallery');
 
     // Make a change
     const switches = getSwitchInputs();
@@ -204,13 +241,21 @@ describe('SettingsPanel', () => {
     });
   });
 
-  it('renders ThemeSelector', async () => {
+  it('renders ThemeSelector on the General tab', async () => {
     render(
-      <SettingsPanel apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
     await waitFor(() => {
       expect(screen.getByTestId('theme-selector')).toBeDefined();
     });
+  });
+
+  it('does not render content when opened is false', () => {
+    render(
+      <SettingsPanel opened={false} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+    );
+
+    expect(screen.queryByText('Display Settings')).toBeNull();
   });
 });

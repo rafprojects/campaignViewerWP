@@ -659,33 +659,33 @@ function AppContent({
           </Alert>
         </Container>
       )}
-      {isSettingsOpen ? (
-        <Container size="xl" py="xl">
-          <ErrorBoundary onReset={closeSettings}>
-            <Suspense fallback={<Center py={120}><Loader /></Center>}>
-              <SettingsPanel
-                apiClient={apiClient}
-                onClose={closeSettings}
-                onNotify={handleAdminNotify}
-                onSettingsSaved={(saved) => {
-                  void mutateGalleryBehaviorSettings(
-                    {
-                      videoViewportHeight: saved.videoViewportHeight,
-                      imageViewportHeight: saved.imageViewportHeight,
-                      thumbnailScrollSpeed: saved.thumbnailScrollSpeed,
-                      scrollAnimationStyle: saved.scrollAnimationStyle,
-                      scrollAnimationDurationMs: saved.scrollAnimationDurationMs,
-                      scrollAnimationEasing: saved.scrollAnimationEasing,
-                      scrollTransitionType: saved.scrollTransitionType,
-                    },
-                    false,
-                  );
-                }}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </Container>
-      ) : isAdminPanelOpen ? (
+      {isSettingsOpen && (
+        <ErrorBoundary onReset={closeSettings}>
+          <Suspense fallback={null}>
+            <SettingsPanel
+              opened={isSettingsOpen}
+              apiClient={apiClient}
+              onClose={closeSettings}
+              onNotify={handleAdminNotify}
+              onSettingsSaved={(saved) => {
+                void mutateGalleryBehaviorSettings(
+                  {
+                    videoViewportHeight: saved.videoViewportHeight,
+                    imageViewportHeight: saved.imageViewportHeight,
+                    thumbnailScrollSpeed: saved.thumbnailScrollSpeed,
+                    scrollAnimationStyle: saved.scrollAnimationStyle,
+                    scrollAnimationDurationMs: saved.scrollAnimationDurationMs,
+                    scrollAnimationEasing: saved.scrollAnimationEasing,
+                    scrollTransitionType: saved.scrollTransitionType,
+                  },
+                  false,
+                );
+              }}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+      {isAdminPanelOpen ? (
         <Container size="xl" py="xl">
           <ErrorBoundary onReset={closeAdminPanel}>
             <Suspense fallback={<Center py={120}><Loader /></Center>}>
