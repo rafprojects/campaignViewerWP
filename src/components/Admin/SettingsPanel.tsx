@@ -92,8 +92,7 @@ const defaultSettings: SettingsData = {
   imageShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
   videoShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
   // P12-C
-  imageGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
-  videoGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
+  galleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryAdapterId,
   gridCardWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
   gridCardHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
 };
@@ -156,8 +155,7 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   imageShadowCustom: response.imageShadowCustom ?? defaultSettings.imageShadowCustom,
   videoShadowCustom: response.videoShadowCustom ?? defaultSettings.videoShadowCustom,
   // P12-C
-  imageGalleryAdapterId: response.imageGalleryAdapterId ?? defaultSettings.imageGalleryAdapterId,
-  videoGalleryAdapterId: response.videoGalleryAdapterId ?? defaultSettings.videoGalleryAdapterId,
+  galleryAdapterId: response.galleryAdapterId ?? defaultSettings.galleryAdapterId,
   gridCardWidth: response.gridCardWidth ?? defaultSettings.gridCardWidth,
   gridCardHeight: response.gridCardHeight ?? defaultSettings.gridCardHeight,
 });
@@ -510,17 +508,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 <Divider label="Gallery Adapter" labelPosition="center" />
 
                 <Select
-                  label="Image Gallery Layout"
-                  description="Choose how images are displayed. 'Classic' uses the carousel; 'Compact Grid' arranges images in a responsive playing-card grid with lightbox."
-                  value={settings.imageGalleryAdapterId}
-                  onChange={(value) => updateSetting('imageGalleryAdapterId', value ?? 'classic')}
+                  label="Gallery Layout Adapter"
+                  description="Choose how all campaign media (images + videos) is displayed. 'Classic' uses separate carousels; 'Compact Grid' combines everything in a responsive playing-card grid with lightbox."
+                  value={settings.galleryAdapterId}
+                  onChange={(value) => updateSetting('galleryAdapterId', value ?? 'classic')}
                   data={[
                     { value: 'classic', label: 'Classic (Carousel)' },
                     { value: 'compact-grid', label: 'Compact Grid' },
                   ]}
                 />
 
-                {settings.imageGalleryAdapterId === 'compact-grid' && (
+                {settings.galleryAdapterId === 'compact-grid' && (
                   <>
                     <Group grow>
                       <NumberInput
@@ -548,17 +546,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Group>
                   </>
                 )}
-
-                <Select
-                  label="Video Gallery Layout"
-                  description="Layout adapter for video galleries. Only Classic is available in this release."
-                  value={settings.videoGalleryAdapterId}
-                  onChange={(value) => updateSetting('videoGalleryAdapterId', value ?? 'classic')}
-                  disabled
-                  data={[
-                    { value: 'classic', label: 'Classic (Carousel)' },
-                  ]}
-                />
               </Stack>
             </Tabs.Panel>
 

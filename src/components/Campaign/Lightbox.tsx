@@ -17,15 +17,15 @@ import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 
 export interface LightboxProps {
   isOpen: boolean;
-  images: MediaItem[];
+  media: MediaItem[];
   currentIndex: number;
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
 }
 
-export function Lightbox({ isOpen, images, currentIndex, onPrev, onNext, onClose }: LightboxProps) {
-  const current = images[currentIndex];
+export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose }: LightboxProps) {
+  const current = media[currentIndex];
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: onNext,
@@ -67,7 +67,7 @@ export function Lightbox({ isOpen, images, currentIndex, onPrev, onNext, onClose
         onClick={onClose}
         role="dialog"
         aria-modal="true"
-        aria-label="Image lightbox"
+        aria-label="Media lightbox"
         style={{
           position: 'fixed',
           inset: 0,
@@ -103,23 +103,57 @@ export function Lightbox({ isOpen, images, currentIndex, onPrev, onNext, onClose
             justifyContent: 'center',
           }}
         >
-          <img
-            key={current.id}
-            src={current.url}
-            alt={current.caption || 'Campaign image'}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '90vw',
-              maxHeight: '85vh',
-              objectFit: 'contain',
-              borderRadius: 4,
-              display: 'block',
-            }}
-          />
+          {current.type === 'video' ? (
+            current.embedUrl ? (
+              <iframe
+                key={current.id}
+                src={current.embedUrl}
+                title={current.caption || 'Campaign video'}
+                allowFullScreen
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: '90vw',
+                  maxWidth: 1100,
+                  height: '70vh',
+                  border: 'none',
+                  borderRadius: 4,
+                  display: 'block',
+                }}
+              />
+            ) : (
+              <video
+                key={current.id}
+                src={current.url}
+                controls
+                autoPlay
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  maxWidth: '90vw',
+                  maxHeight: '85vh',
+                  borderRadius: 4,
+                  display: 'block',
+                }}
+              />
+            )
+          ) : (
+            <img
+              key={current.id}
+              src={current.url}
+              alt={current.caption || 'Campaign image'}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '85vh',
+                objectFit: 'contain',
+                borderRadius: 4,
+                display: 'block',
+              }}
+            />
+          )}
         </Box>
 
         {/* Navigation arrows */}
-        {images.length > 1 && (
+        {media.length > 1 && (
           <>
             <ActionIcon
               pos="absolute"
@@ -170,7 +204,7 @@ export function Lightbox({ isOpen, images, currentIndex, onPrev, onNext, onClose
               </Text>
             )}
             <Text size="sm" c="gray.4">
-              {currentIndex + 1} / {images.length}
+              {currentIndex + 1} / {media.length}
             </Text>
           </Stack>
         </Box>

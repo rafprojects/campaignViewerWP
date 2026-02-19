@@ -115,8 +115,7 @@ export interface GalleryBehaviorSettings {
   thumbnailDragScrollEnabled: boolean;
   thumbnailScrollButtonsVisible: boolean;
   // P12-C: Pluggable Gallery Adapters
-  imageGalleryAdapterId: string;
-  videoGalleryAdapterId: string;
+  galleryAdapterId: string;
   gridCardWidth: number;
   gridCardHeight: number;
   // P12-H: Navigation Overlay Arrows
@@ -186,8 +185,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   imageShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
   videoShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
   // P12-C defaults
-  imageGalleryAdapterId: 'classic',
-  videoGalleryAdapterId: 'classic',
+  galleryAdapterId: 'classic',
   gridCardWidth: 160,
   gridCardHeight: 224,
 };

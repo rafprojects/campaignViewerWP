@@ -277,7 +277,7 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
       {/* Lightbox — Portal-based, z-index 9999, bypasses CampaignViewer Modal nesting */}
       <Lightbox
         isOpen={isLightboxOpen}
-        images={images}
+        media={images}
         currentIndex={currentIndex}
         onPrev={prevImage}
         onNext={nextImage}

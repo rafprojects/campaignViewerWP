@@ -2,8 +2,9 @@
  * P12-C: Gallery Adapter Contract
  *
  * Defines the TypeScript interface for pluggable gallery adapters.
- * Each adapter registers with an id, declares capabilities, and provides
- * a React component that conforms to the appropriate Props interface.
+ * Each adapter registers with an id and provides a React component
+ * that accepts a mixed media array — both images and videos — so a
+ * single adapter can display all campaign media in one layout.
  */
 import type { ComponentType } from 'react';
 import type { MediaItem, GalleryBehaviorSettings } from '@/types';
@@ -18,30 +19,17 @@ export type AdapterCapability =
   | 'keyboard-nav'
   | 'touch-swipe';
 
-export type AdapterMediaType = 'image' | 'video';
-
-/** Props contract all image gallery adapter components must accept. */
-export interface ImageAdapterProps {
-  images: MediaItem[];
+/** Unified, type-agnostic props every gallery adapter component must accept. */
+export interface GalleryAdapterProps {
+  /** All media items for this campaign (images + videos, pre-sorted by order). */
+  media: MediaItem[];
   settings: GalleryBehaviorSettings;
 }
 
-/** Props contract all video gallery adapter components must accept. */
-export interface VideoAdapterProps {
-  videos: MediaItem[];
-  settings: GalleryBehaviorSettings;
-}
-
-/**
- * Registered metadata for a gallery adapter.
- * T narrows the mediaType and component prop type together.
- */
-export interface AdapterRegistration<T extends AdapterMediaType = AdapterMediaType> {
+/** Registered metadata for a gallery adapter. */
+export interface AdapterRegistration {
   id: string;
-  mediaType: T;
   label: string;
   capabilities: AdapterCapability[];
-  component: T extends 'image'
-    ? ComponentType<ImageAdapterProps>
-    : ComponentType<VideoAdapterProps>;
+  component: ComponentType<GalleryAdapterProps>;
 }

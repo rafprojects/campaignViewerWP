@@ -1,27 +1,29 @@
 /**
  * P12-C: Compact Grid Gallery Adapter
  *
- * Responsive CSS grid with playing-card–proportioned image tiles
+ * Responsive CSS grid with playing-card–proportioned media tiles
  * (configurable width/height, default 160×224 px — a 5:7 ratio).
- * Click any card to open the shared Portal-based Lightbox.
+ * Accepts a unified media array (images + videos). Image tiles open the
+ * shared Portal-based Lightbox; video tiles show a play-button overlay
+ * and also open in the lightbox (the lightbox handles both types).
  *
- * Registered as adapter id="compact-grid", mediaType="image".
+ * Registered as adapter id="compact-grid".
  */
 import { useState, useCallback } from 'react';
 import { Box, Group, Stack, Title } from '@mantine/core';
-import { IconLayoutGrid, IconZoomIn } from '@tabler/icons-react';
+import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
 
 interface CompactGridGalleryProps {
-  images: MediaItem[];
+  media: MediaItem[];
   settings: GalleryBehaviorSettings;
 }
 
-export function CompactGridGallery({ images, settings }: CompactGridGalleryProps) {
+export function CompactGridGallery({ media, settings }: CompactGridGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const { currentIndex, setCurrentIndex, next, prev } = useCarousel(images.length);
+  const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
 
   const openAt = useCallback(
     (index: number) => {
@@ -43,7 +45,7 @@ export function CompactGridGallery({ images, settings }: CompactGridGalleryProps
       <Title order={3} size="h5">
         <Group gap={8} component="span">
           <IconLayoutGrid size={18} />
-          Images ({images.length})
+          Gallery ({media.length})
         </Group>
       </Title>
 
@@ -55,10 +57,10 @@ export function CompactGridGallery({ images, settings }: CompactGridGalleryProps
           gap: `${gap}px`,
         }}
       >
-        {images.map((image, index) => (
+        {media.map((item, index) => (
           <GridCard
-            key={image.id}
-            image={image}
+            key={item.id}
+            item={item}
             index={index}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
@@ -70,7 +72,7 @@ export function CompactGridGallery({ images, settings }: CompactGridGalleryProps
 
       <Lightbox
         isOpen={lightboxOpen}
-        images={images}
+        media={media}
         currentIndex={currentIndex}
         onPrev={prev}
         onNext={next}
@@ -83,7 +85,7 @@ export function CompactGridGallery({ images, settings }: CompactGridGalleryProps
 // ─── Internal card component ────────────────────────────────────────────────
 
 interface GridCardProps {
-  image: MediaItem;
+  item: MediaItem;
   index: number;
   cardWidth: number;
   cardHeight: number;
@@ -91,8 +93,13 @@ interface GridCardProps {
   onOpen: (index: number) => void;
 }
 
-function GridCard({ image, index, cardWidth, cardHeight, borderRadius, onOpen }: GridCardProps) {
+function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: GridCardProps) {
   const [hovered, setHovered] = useState(false);
+  const isVideo = item.type === 'video';
+  const thumbSrc = item.thumbnail || item.url;
+  const label = item.caption
+    ? `${isVideo ? 'Play' : 'View'}: ${item.caption}`
+    : `${isVideo ? 'Play' : 'View'} ${isVideo ? 'video' : 'image'} ${index + 1}`;
 
   return (
     <Box
@@ -102,7 +109,7 @@ function GridCard({ image, index, cardWidth, cardHeight, borderRadius, onOpen }:
       onMouseLeave={() => setHovered(false)}
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
-      aria-label={image.caption ? `View: ${image.caption}` : `View image ${index + 1} of ${index + 1}`}
+      aria-label={label}
       style={{
         /* Layout */
         display: 'block',
@@ -124,10 +131,10 @@ function GridCard({ image, index, cardWidth, cardHeight, borderRadius, onOpen }:
         transition: 'box-shadow 0.25s ease',
       }}
     >
-      {/* Cover image */}
+      {/* Cover thumbnail */}
       <img
-        src={image.thumbnail || image.url}
-        alt={image.caption || ''}
+        src={thumbSrc}
+        alt={item.caption || ''}
         loading="lazy"
         style={{
           width: '100%',
@@ -139,12 +146,12 @@ function GridCard({ image, index, cardWidth, cardHeight, borderRadius, onOpen }:
         }}
       />
 
-      {/* Hover overlay */}
+      {/* Hover overlay — zoom icon for images, play icon for videos */}
       <Box
         style={{
           position: 'absolute',
           inset: 0,
-          background: hovered ? 'rgba(0,0,0,0.30)' : 'rgba(0,0,0,0)',
+          background: hovered ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -152,16 +159,50 @@ function GridCard({ image, index, cardWidth, cardHeight, borderRadius, onOpen }:
           pointerEvents: 'none',
         }}
       >
-        <IconZoomIn
-          size={28}
-          color="white"
-          style={{
-            opacity: hovered ? 1 : 0,
-            transition: 'opacity 0.25s ease',
-            filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
-          }}
-        />
+        {isVideo ? (
+          <IconPlayerPlay
+            size={32}
+            color="white"
+            style={{
+              opacity: hovered ? 1 : 0.6,
+              transition: 'opacity 0.25s ease',
+              filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.7))',
+            }}
+          />
+        ) : (
+          <IconZoomIn
+            size={28}
+            color="white"
+            style={{
+              opacity: hovered ? 1 : 0,
+              transition: 'opacity 0.25s ease',
+              filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
+            }}
+          />
+        )}
       </Box>
+
+      {/* Video badge */}
+      {isVideo && (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 6,
+            left: 6,
+            background: 'rgba(0,0,0,0.65)',
+            borderRadius: 4,
+            padding: '2px 6px',
+            fontSize: 10,
+            color: 'white',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            pointerEvents: 'none',
+          }}
+        >
+          VIDEO
+        </Box>
+      )}
     </Box>
   );
 }
+

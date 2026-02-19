@@ -145,14 +145,25 @@ export function CampaignViewer({
           {/* Media Sections */}
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
             <Suspense fallback={<Center py="md"><Loader /></Center>}>
-              {campaign.videos.length > 0 && (
-                <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
-              )}
-
-              {campaign.images.length > 0 && (
-                galleryBehaviorSettings.imageGalleryAdapterId === 'compact-grid'
-                  ? <CompactGridGallery images={campaign.images} settings={galleryBehaviorSettings} />
-                  : <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
+              {galleryBehaviorSettings.galleryAdapterId === 'classic' ? (
+                <>
+                  {campaign.videos.length > 0 && (
+                    <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
+                  )}
+                  {campaign.images.length > 0 && (
+                    <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
+                  )}
+                </>
+              ) : (
+                // Non-classic adapter: merge all media sorted by order
+                (() => {
+                  const allMedia = [...campaign.videos, ...campaign.images].sort(
+                    (a, b) => a.order - b.order,
+                  );
+                  return allMedia.length > 0 ? (
+                    <CompactGridGallery media={allMedia} settings={galleryBehaviorSettings} />
+                  ) : null;
+                })()
               )}
             </Suspense>
           )}

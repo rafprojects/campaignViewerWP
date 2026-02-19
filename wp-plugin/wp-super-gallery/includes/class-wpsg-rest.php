@@ -2139,8 +2139,7 @@ class WPSG_REST {
                 'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
                 'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
                 // P12-C
-                'imageGalleryAdapterId' => $settings['image_gallery_adapter_id'] ?? 'classic',
-                'videoGalleryAdapterId' => $settings['video_gallery_adapter_id'] ?? 'classic',
+                'galleryAdapterId'      => $settings['gallery_adapter_id'] ?? 'classic',
                 'gridCardWidth'         => $settings['grid_card_width'] ?? 160,
                 'gridCardHeight'        => $settings['grid_card_height'] ?? 224,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
@@ -2196,8 +2195,7 @@ class WPSG_REST {
             'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
             'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
             // P12-C
-            'imageGalleryAdapterId' => $settings['image_gallery_adapter_id'] ?? 'classic',
-            'videoGalleryAdapterId' => $settings['video_gallery_adapter_id'] ?? 'classic',
+            'galleryAdapterId'      => $settings['gallery_adapter_id'] ?? 'classic',
             'gridCardWidth'         => $settings['grid_card_width'] ?? 160,
             'gridCardHeight'        => $settings['grid_card_height'] ?? 224,
         ];
@@ -2358,11 +2356,8 @@ class WPSG_REST {
             $input['thumbnail_scroll_buttons_visible'] = (bool) $body['thumbnailScrollButtonsVisible'];
         }
         // P12-C: Gallery Adapters
-        if (isset($body['imageGalleryAdapterId'])) {
-            $input['image_gallery_adapter_id'] = sanitize_text_field($body['imageGalleryAdapterId']);
-        }
-        if (isset($body['videoGalleryAdapterId'])) {
-            $input['video_gallery_adapter_id'] = sanitize_text_field($body['videoGalleryAdapterId']);
+        if (isset($body['galleryAdapterId'])) {
+            $input['gallery_adapter_id'] = sanitize_text_field($body['galleryAdapterId']);
         }
         if (isset($body['gridCardWidth'])) {
             $input['grid_card_width'] = intval($body['gridCardWidth']);
@@ -2400,6 +2395,44 @@ class WPSG_REST {
             'scrollAnimationDurationMs' => $merged['scroll_animation_duration_ms'] ?? 180,
             'scrollAnimationEasing' => $merged['scroll_animation_easing'] ?? 'ease',
             'scrollTransitionType' => $merged['scroll_transition_type'] ?? 'slide-fade',
+            'imageBorderRadius' => $merged['image_border_radius'] ?? 8,
+            'videoBorderRadius' => $merged['video_border_radius'] ?? 8,
+            'transitionFadeEnabled' => $merged['transition_fade_enabled'] ?? true,
+            // P12-H
+            'navArrowPosition'     => $merged['nav_arrow_position'] ?? 'center',
+            'navArrowSize'         => $merged['nav_arrow_size'] ?? 36,
+            'navArrowColor'        => $merged['nav_arrow_color'] ?? '#ffffff',
+            'navArrowBgColor'      => $merged['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
+            'navArrowBorderWidth'  => $merged['nav_arrow_border_width'] ?? 0,
+            'navArrowHoverScale'   => $merged['nav_arrow_hover_scale'] ?? 1.1,
+            'navArrowAutoHideMs'   => $merged['nav_arrow_auto_hide_ms'] ?? 0,
+            // P12-I
+            'dotNavEnabled'        => $merged['dot_nav_enabled'] ?? true,
+            'dotNavPosition'       => $merged['dot_nav_position'] ?? 'below',
+            'dotNavSize'           => $merged['dot_nav_size'] ?? 10,
+            'dotNavActiveColor'    => $merged['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
+            'dotNavInactiveColor'  => $merged['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
+            'dotNavShape'          => $merged['dot_nav_shape'] ?? 'circle',
+            'dotNavSpacing'        => $merged['dot_nav_spacing'] ?? 6,
+            'dotNavActiveScale'    => $merged['dot_nav_active_scale'] ?? 1.3,
+            // P12-J
+            'imageShadowPreset'    => $merged['image_shadow_preset'] ?? 'subtle',
+            'videoShadowPreset'    => $merged['video_shadow_preset'] ?? 'subtle',
+            'imageShadowCustom'    => $merged['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            'videoShadowCustom'    => $merged['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            // P12-A/B
+            'videoThumbnailWidth'  => $merged['video_thumbnail_width'] ?? 60,
+            'videoThumbnailHeight' => $merged['video_thumbnail_height'] ?? 45,
+            'imageThumbnailWidth'  => $merged['image_thumbnail_width'] ?? 60,
+            'imageThumbnailHeight' => $merged['image_thumbnail_height'] ?? 60,
+            'thumbnailGap'         => $merged['thumbnail_gap'] ?? 6,
+            'thumbnailWheelScrollEnabled'   => $merged['thumbnail_wheel_scroll_enabled'] ?? true,
+            'thumbnailDragScrollEnabled'    => $merged['thumbnail_drag_scroll_enabled'] ?? true,
+            'thumbnailScrollButtonsVisible' => $merged['thumbnail_scroll_buttons_visible'] ?? false,
+            // P12-C
+            'galleryAdapterId'      => $merged['gallery_adapter_id'] ?? 'classic',
+            'gridCardWidth'         => $merged['grid_card_width'] ?? 160,
+            'gridCardHeight'        => $merged['grid_card_height'] ?? 224,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }
