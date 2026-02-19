@@ -145,17 +145,8 @@ export function CampaignViewer({
           {/* Media Sections */}
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
             <Suspense fallback={<Center py="md"><Loader /></Center>}>
-              {galleryBehaviorSettings.galleryAdapterId === 'classic' ? (
-                <>
-                  {campaign.videos.length > 0 && (
-                    <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
-                  )}
-                  {campaign.images.length > 0 && (
-                    <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
-                  )}
-                </>
-              ) : (
-                // Non-classic adapter: merge all media sorted by order
+              {galleryBehaviorSettings.unifiedGalleryEnabled ? (
+                // Unified mode: all media merged and sorted by order → single adapter
                 (() => {
                   const allMedia = [...campaign.videos, ...campaign.images].sort(
                     (a, b) => a.order - b.order,
@@ -164,6 +155,20 @@ export function CampaignViewer({
                     <CompactGridGallery media={allMedia} settings={galleryBehaviorSettings} />
                   ) : null;
                 })()
+              ) : (
+                // Per-type mode: each media kind uses its own adapter choice
+                <>
+                  {campaign.videos.length > 0 && (
+                    galleryBehaviorSettings.videoGalleryAdapterId === 'classic'
+                      ? <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
+                      : <CompactGridGallery media={campaign.videos} settings={galleryBehaviorSettings} />
+                  )}
+                  {campaign.images.length > 0 && (
+                    galleryBehaviorSettings.imageGalleryAdapterId === 'classic'
+                      ? <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
+                      : <CompactGridGallery media={campaign.images} settings={galleryBehaviorSettings} />
+                  )}
+                </>
               )}
             </Suspense>
           )}

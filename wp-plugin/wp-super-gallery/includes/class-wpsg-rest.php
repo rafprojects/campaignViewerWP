@@ -2139,9 +2139,12 @@ class WPSG_REST {
                 'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
                 'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
                 // P12-C
-                'galleryAdapterId'      => $settings['gallery_adapter_id'] ?? 'classic',
-                'gridCardWidth'         => $settings['grid_card_width'] ?? 160,
-                'gridCardHeight'        => $settings['grid_card_height'] ?? 224,
+                'imageGalleryAdapterId'      => $settings['image_gallery_adapter_id'] ?? 'classic',
+                'videoGalleryAdapterId'      => $settings['video_gallery_adapter_id'] ?? 'classic',
+                'unifiedGalleryEnabled'      => $settings['unified_gallery_enabled'] ?? false,
+                'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
+                'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
+                'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2195,9 +2198,12 @@ class WPSG_REST {
             'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
             'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
             // P12-C
-            'galleryAdapterId'      => $settings['gallery_adapter_id'] ?? 'classic',
-            'gridCardWidth'         => $settings['grid_card_width'] ?? 160,
-            'gridCardHeight'        => $settings['grid_card_height'] ?? 224,
+            'imageGalleryAdapterId'      => $settings['image_gallery_adapter_id'] ?? 'classic',
+            'videoGalleryAdapterId'      => $settings['video_gallery_adapter_id'] ?? 'classic',
+            'unifiedGalleryEnabled'      => $settings['unified_gallery_enabled'] ?? false,
+            'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
+            'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
+            'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2356,8 +2362,17 @@ class WPSG_REST {
             $input['thumbnail_scroll_buttons_visible'] = (bool) $body['thumbnailScrollButtonsVisible'];
         }
         // P12-C: Gallery Adapters
-        if (isset($body['galleryAdapterId'])) {
-            $input['gallery_adapter_id'] = sanitize_text_field($body['galleryAdapterId']);
+        if (isset($body['imageGalleryAdapterId'])) {
+            $input['image_gallery_adapter_id'] = sanitize_text_field($body['imageGalleryAdapterId']);
+        }
+        if (isset($body['videoGalleryAdapterId'])) {
+            $input['video_gallery_adapter_id'] = sanitize_text_field($body['videoGalleryAdapterId']);
+        }
+        if (isset($body['unifiedGalleryEnabled'])) {
+            $input['unified_gallery_enabled'] = (bool) $body['unifiedGalleryEnabled'];
+        }
+        if (isset($body['unifiedGalleryAdapterId'])) {
+            $input['unified_gallery_adapter_id'] = sanitize_text_field($body['unifiedGalleryAdapterId']);
         }
         if (isset($body['gridCardWidth'])) {
             $input['grid_card_width'] = intval($body['gridCardWidth']);
@@ -2430,9 +2445,12 @@ class WPSG_REST {
             'thumbnailDragScrollEnabled'    => $merged['thumbnail_drag_scroll_enabled'] ?? true,
             'thumbnailScrollButtonsVisible' => $merged['thumbnail_scroll_buttons_visible'] ?? false,
             // P12-C
-            'galleryAdapterId'      => $merged['gallery_adapter_id'] ?? 'classic',
-            'gridCardWidth'         => $merged['grid_card_width'] ?? 160,
-            'gridCardHeight'        => $merged['grid_card_height'] ?? 224,
+            'imageGalleryAdapterId'      => $merged['image_gallery_adapter_id'] ?? 'classic',
+            'videoGalleryAdapterId'      => $merged['video_gallery_adapter_id'] ?? 'classic',
+            'unifiedGalleryEnabled'      => $merged['unified_gallery_enabled'] ?? false,
+            'unifiedGalleryAdapterId'    => $merged['unified_gallery_adapter_id'] ?? 'compact-grid',
+            'gridCardWidth'              => $merged['grid_card_width'] ?? 160,
+            'gridCardHeight'             => $merged['grid_card_height'] ?? 224,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

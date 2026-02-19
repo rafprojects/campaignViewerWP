@@ -194,7 +194,10 @@ export interface SettingsResponse {
   imageShadowCustom?: string;
   videoShadowCustom?: string;
   // P12-C
-  galleryAdapterId?: string;
+  imageGalleryAdapterId?: string;
+  videoGalleryAdapterId?: string;
+  unifiedGalleryEnabled?: boolean;
+  unifiedGalleryAdapterId?: string;
   gridCardWidth?: number;
   gridCardHeight?: number;
 }
@@ -250,7 +253,10 @@ export interface SettingsUpdateRequest {
   imageShadowCustom?: string;
   videoShadowCustom?: string;
   // P12-C
-  galleryAdapterId?: string;
+  imageGalleryAdapterId?: string;
+  videoGalleryAdapterId?: string;
+  unifiedGalleryEnabled?: boolean;
+  unifiedGalleryAdapterId?: string;
   gridCardWidth?: number;
   gridCardHeight?: number;
 }

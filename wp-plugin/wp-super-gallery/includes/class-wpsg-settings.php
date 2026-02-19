@@ -82,7 +82,10 @@ class WPSG_Settings {
         'image_shadow_custom'        => '0 2px 8px rgba(0,0,0,0.15)',
         'video_shadow_custom'        => '0 2px 8px rgba(0,0,0,0.15)',
         // P12-C: Gallery Adapters
-        'gallery_adapter_id'         => 'classic',
+        'image_gallery_adapter_id'   => 'classic',
+        'video_gallery_adapter_id'   => 'classic',
+        'unified_gallery_enabled'    => false,
+        'unified_gallery_adapter_id' => 'compact-grid',
         'grid_card_width'            => 160,
         'grid_card_height'           => 224,
         'cache_ttl'                  => 3600,
@@ -478,10 +481,21 @@ class WPSG_Settings {
         }
 
         // P12-C: Gallery Adapters
-        if (isset($input['gallery_adapter_id'])) {
-            $sanitized['gallery_adapter_id'] = in_array($input['gallery_adapter_id'], ['classic', 'compact-grid'], true)
-                ? $input['gallery_adapter_id']
+        if (isset($input['image_gallery_adapter_id'])) {
+            $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], ['classic', 'compact-grid'], true)
+                ? $input['image_gallery_adapter_id']
                 : 'classic';
+        }
+        if (isset($input['video_gallery_adapter_id'])) {
+            $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], ['classic', 'compact-grid'], true)
+                ? $input['video_gallery_adapter_id']
+                : 'classic';
+        }
+        $sanitized['unified_gallery_enabled'] = !empty($input['unified_gallery_enabled']);
+        if (isset($input['unified_gallery_adapter_id'])) {
+            $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], ['classic', 'compact-grid'], true)
+                ? $input['unified_gallery_adapter_id']
+                : 'compact-grid';
         }
         if (isset($input['grid_card_width'])) {
             $sanitized['grid_card_width'] = max(80, min(400, intval($input['grid_card_width'])));

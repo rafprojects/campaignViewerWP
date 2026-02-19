@@ -115,7 +115,10 @@ export interface GalleryBehaviorSettings {
   thumbnailDragScrollEnabled: boolean;
   thumbnailScrollButtonsVisible: boolean;
   // P12-C: Pluggable Gallery Adapters
-  galleryAdapterId: string;
+  imageGalleryAdapterId: string;
+  videoGalleryAdapterId: string;
+  unifiedGalleryEnabled: boolean;
+  unifiedGalleryAdapterId: string;
   gridCardWidth: number;
   gridCardHeight: number;
   // P12-H: Navigation Overlay Arrows
@@ -185,7 +188,10 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   imageShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
   videoShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
   // P12-C defaults
-  galleryAdapterId: 'classic',
+  imageGalleryAdapterId: 'classic',
+  videoGalleryAdapterId: 'classic',
+  unifiedGalleryEnabled: false,
+  unifiedGalleryAdapterId: 'compact-grid',
   gridCardWidth: 160,
   gridCardHeight: 224,
 };

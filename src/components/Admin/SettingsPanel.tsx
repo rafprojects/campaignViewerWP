@@ -92,7 +92,10 @@ const defaultSettings: SettingsData = {
   imageShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
   videoShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
   // P12-C
-  galleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryAdapterId,
+  imageGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
+  videoGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
+  unifiedGalleryEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryEnabled,
+  unifiedGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryAdapterId,
   gridCardWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
   gridCardHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
 };
@@ -155,7 +158,10 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   imageShadowCustom: response.imageShadowCustom ?? defaultSettings.imageShadowCustom,
   videoShadowCustom: response.videoShadowCustom ?? defaultSettings.videoShadowCustom,
   // P12-C
-  galleryAdapterId: response.galleryAdapterId ?? defaultSettings.galleryAdapterId,
+  imageGalleryAdapterId: response.imageGalleryAdapterId ?? defaultSettings.imageGalleryAdapterId,
+  videoGalleryAdapterId: response.videoGalleryAdapterId ?? defaultSettings.videoGalleryAdapterId,
+  unifiedGalleryEnabled: response.unifiedGalleryEnabled ?? defaultSettings.unifiedGalleryEnabled,
+  unifiedGalleryAdapterId: response.unifiedGalleryAdapterId ?? defaultSettings.unifiedGalleryAdapterId,
   gridCardWidth: response.gridCardWidth ?? defaultSettings.gridCardWidth,
   gridCardHeight: response.gridCardHeight ?? defaultSettings.gridCardHeight,
 });
@@ -507,44 +513,78 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
                 <Divider label="Gallery Adapter" labelPosition="center" />
 
-                <Select
-                  label="Gallery Layout Adapter"
-                  description="Choose how all campaign media (images + videos) is displayed. 'Classic' uses separate carousels; 'Compact Grid' combines everything in a responsive playing-card grid with lightbox."
-                  value={settings.galleryAdapterId}
-                  onChange={(value) => updateSetting('galleryAdapterId', value ?? 'classic')}
-                  data={[
-                    { value: 'classic', label: 'Classic (Carousel)' },
-                    { value: 'compact-grid', label: 'Compact Grid' },
-                  ]}
+                <Switch
+                  label="Unified Gallery Mode"
+                  description="When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
+                  checked={settings.unifiedGalleryEnabled}
+                  onChange={(e) => updateSetting('unifiedGalleryEnabled', e.currentTarget.checked)}
                 />
 
-                {settings.galleryAdapterId === 'compact-grid' && (
+                {settings.unifiedGalleryEnabled ? (
+                  <Select
+                    label="Unified Gallery Adapter"
+                    description="Layout used when images and videos are displayed together."
+                    value={settings.unifiedGalleryAdapterId}
+                    onChange={(value) => updateSetting('unifiedGalleryAdapterId', value ?? 'compact-grid')}
+                    data={[
+                      { value: 'compact-grid', label: 'Compact Grid' },
+                    ]}
+                  />
+                ) : (
                   <>
-                    <Group grow>
-                      <NumberInput
-                        label="Card Min Width (px)"
-                        description="Minimum width of each grid card. Grid auto-fills based on available space."
-                        value={settings.gridCardWidth}
-                        onChange={(value) =>
-                          updateSetting('gridCardWidth', typeof value === 'number' ? value : defaultSettings.gridCardWidth)
-                        }
-                        min={80}
-                        max={400}
-                        step={10}
-                      />
-                      <NumberInput
-                        label="Card Height (px)"
-                        description="Fixed height of each grid card. Default 224 px gives a classic 5:7 playing-card proportion."
-                        value={settings.gridCardHeight}
-                        onChange={(value) =>
-                          updateSetting('gridCardHeight', typeof value === 'number' ? value : defaultSettings.gridCardHeight)
-                        }
-                        min={80}
-                        max={600}
-                        step={10}
-                      />
-                    </Group>
+                    <Select
+                      label="Image Gallery Adapter"
+                      description="Layout for campaigns with images."
+                      value={settings.imageGalleryAdapterId}
+                      onChange={(value) => updateSetting('imageGalleryAdapterId', value ?? 'classic')}
+                      data={[
+                        { value: 'classic', label: 'Classic (Carousel)' },
+                        { value: 'compact-grid', label: 'Compact Grid' },
+                      ]}
+                    />
+                    <Select
+                      label="Video Gallery Adapter"
+                      description="Layout for campaigns with videos."
+                      value={settings.videoGalleryAdapterId}
+                      onChange={(value) => updateSetting('videoGalleryAdapterId', value ?? 'classic')}
+                      data={[
+                        { value: 'classic', label: 'Classic (Carousel)' },
+                        { value: 'compact-grid', label: 'Compact Grid' },
+                      ]}
+                    />
                   </>
+                )}
+
+                {/* Card dimensions — visible whenever compact-grid is active in any mode */}
+                {(settings.unifiedGalleryEnabled
+                  ? settings.unifiedGalleryAdapterId === 'compact-grid'
+                  : settings.imageGalleryAdapterId === 'compact-grid' ||
+                    settings.videoGalleryAdapterId === 'compact-grid'
+                ) && (
+                  <Group grow>
+                    <NumberInput
+                      label="Card Min Width (px)"
+                      description="Minimum width of each grid card. Grid auto-fills based on available space."
+                      value={settings.gridCardWidth}
+                      onChange={(value) =>
+                        updateSetting('gridCardWidth', typeof value === 'number' ? value : defaultSettings.gridCardWidth)
+                      }
+                      min={80}
+                      max={400}
+                      step={10}
+                    />
+                    <NumberInput
+                      label="Card Height (px)"
+                      description="Fixed height of each grid card. Default 224 px gives a classic 5:7 playing-card proportion."
+                      value={settings.gridCardHeight}
+                      onChange={(value) =>
+                        updateSetting('gridCardHeight', typeof value === 'number' ? value : defaultSettings.gridCardHeight)
+                      }
+                      min={80}
+                      max={600}
+                      step={10}
+                    />
+                  </Group>
                 )}
               </Stack>
             </Tabs.Panel>

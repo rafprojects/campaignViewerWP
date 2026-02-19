@@ -322,8 +322,14 @@ function AppContent({
       videoShadowCustom:
         response.videoShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
       // P12-C
-      galleryAdapterId:
-        response.galleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryAdapterId,
+      imageGalleryAdapterId:
+        response.imageGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
+      videoGalleryAdapterId:
+        response.videoGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
+      unifiedGalleryEnabled:
+        response.unifiedGalleryEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryEnabled,
+      unifiedGalleryAdapterId:
+        response.unifiedGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryAdapterId,
       gridCardWidth:
         response.gridCardWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
       gridCardHeight:
@@ -784,7 +790,10 @@ function AppContent({
                     imageShadowCustom: saved.imageShadowCustom,
                     videoShadowCustom: saved.videoShadowCustom,
                     // P12-C
-                    galleryAdapterId: saved.galleryAdapterId,
+                    imageGalleryAdapterId: saved.imageGalleryAdapterId,
+                    videoGalleryAdapterId: saved.videoGalleryAdapterId,
+                    unifiedGalleryEnabled: saved.unifiedGalleryEnabled,
+                    unifiedGalleryAdapterId: saved.unifiedGalleryAdapterId,
                     gridCardWidth: saved.gridCardWidth,
                     gridCardHeight: saved.gridCardHeight,
                   },
