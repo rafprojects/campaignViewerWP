@@ -95,19 +95,21 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ---
 
-## Track P12-D — Modular Embed Provider Handlers
+## Track P12-D — Modular Embed Provider Handlers ✅ COMPLETE
 
 ### Objectives
 
 - Refactor provider-specific embed logic into modular handlers
 - Improve maintainability and extensibility for current/future providers
 
-### Candidate Deliverables
+### Deliverables (Completed)
 
-- Provider handler contract
-- Registry/factory wiring for provider resolution
-- Robust fallback thumbnail strategies for providers without reliable oEmbed
-- Revisit non-oEmbed providers (including Rumble) for consistent preview behavior
+- ✅ `WPSG_Provider_Handler` interface contract (can_handle, fetch, get_name, get_priority)
+- ✅ 4 modular handler classes: Rumble, WPCore, Direct oEmbed, OG Fallback
+- ✅ `WPSG_Provider_Registry` with priority-based resolution, register/deregister/reset
+- ✅ `WPSG_OEmbed_Providers` refactored as thin facade (backwards compatible)
+- ✅ `wpsg_register_providers` action hook for third-party extensibility
+- ✅ Committed `db45335`
 
 **Effort:** Medium  
 **Impact:** Medium
@@ -138,38 +140,41 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ---
 
-## Track P12-F — Gallery Card Border Radius Controls
+## Track P12-F — Gallery Card Border Radius Controls ✅ COMPLETE
 
 ### Objectives
 
 - Provide admin-configurable border radius for images and videos independently
 - Allow different radius values per media type for design flexibility
 
-### Candidate Deliverables
+### Deliverables (Completed)
 
-- Separate `imageBorderRadius` and `videoBorderRadius` settings (px or rem slider)
-- End-to-end wiring: React UI → SWR → PHP REST API → WP settings
-- Applied to both main viewport and thumbnail strip items
-- Safe defaults (e.g., 8px) preserving current appearance
+- ✅ `imageBorderRadius` and `videoBorderRadius` settings (0–48px slider, default 8px)
+- ✅ End-to-end wiring: React UI → SWR → PHP REST API → WP settings
+- ✅ Applied to video player and image viewer viewport containers
+- ✅ NumberInput controls in Gallery tab under "Border Radius" divider
+- ✅ Committed `db45335`
 
 **Effort:** Low–Medium  
 **Impact:** Medium
 
 ---
 
-## Track P12-G — Transition Fade for Entering/Exiting Cards
+## Track P12-G — Transition Fade for Entering/Exiting Cards ✅ COMPLETE
 
 ### Objectives
 
 - Address the current slide-off UX where cards vanish abruptly before reaching viewport edge
 - Add optional opacity fade on entering and exiting cards during transitions
 
-### Candidate Deliverables
+### Deliverables (Completed)
 
-- New `transitionFadeEnabled` boolean setting (default: true)
-- Opacity fade applied to both enter and exit layers during slide transitions
-- Configurable fade intensity or kept as a polished default
-- Works in combination with existing slide/slide-fade/fade transition types
+- ✅ `transitionFadeEnabled` boolean setting (default: true)
+- ✅ Opacity fade applied to enter/exit layers during ALL transition types when enabled
+- ✅ Switch control at top of Transitions tab in Settings modal
+- ✅ Wired through `galleryAnimations.ts` `TransitionOpts` interface
+- ✅ Both VideoCarousel and ImageCarousel (including lightbox) pass setting through
+- ✅ Committed `db45335`
 
 **Effort:** Low  
 **Impact:** High (significant UX polish)
@@ -249,9 +254,9 @@ And six new enhancement tracks identified during Phase 12 implementation:
 ## Initial Execution Order
 
 1. ~~**Track P12-E: Settings panel modal redesign**~~ ✅ COMPLETE (`6853c40`, `8863676`)
-2. Track P12-D: Modular embed provider handlers (enables cleaner provider extensibility)
-3. Track P12-F: Gallery card border radius controls
-4. Track P12-G: Transition fade-in/out for entering/exiting cards
+2. ~~Track P12-D: Modular embed provider handlers~~ ✅ COMPLETE (`db45335`)
+3. ~~Track P12-F: Gallery card border radius controls~~ ✅ COMPLETE (`db45335`)
+4. ~~Track P12-G: Transition fade-in/out for entering/exiting cards~~ ✅ COMPLETE (`db45335`)
 5. Track P12-H: Navigation overlay arrows with admin controls
 6. Track P12-I: Dot navigator with admin controls
 7. Track P12-J: Image/video shadow & depth controls
@@ -284,6 +289,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - **2026-02-18:** Imperative CSS transitions implemented and verified (replaced failing CSS @keyframes approach). `scrollTransitionType` setting added end-to-end. Debug logs cleaned, unused keyframes removed, plugin version bumped to 0.9.1. Six new enhancement tracks (P12-E through P12-J) added. Settings panel modal redesign designated as highest priority.
 - **2026-02-18:** **P12-E COMPLETE.** Settings panel converted from inline Card to Mantine Modal with 4 tabs (General, Gallery, Transitions, Navigation). All save/reset/dirty-tracking preserved. Committed `6853c40`.
 - **2026-02-18:** Settings loading delay eliminated. Added `initialSettings` prop seeded from SWR cache for instant rendering. Background revalidation with `hasChangesRef` prevents overwriting user edits. 178 tests passing. Committed `8863676`.
+- **2026-02-18:** **P12-F, P12-G, P12-D COMPLETE.** Border radius controls (imageBorderRadius/videoBorderRadius, 0–48px), transition fade toggle (transitionFadeEnabled), and modular embed provider system (handler interface, registry, 4 handler classes). 17 files changed, 598 insertions. Committed `db45335`.
 
 ---
 
