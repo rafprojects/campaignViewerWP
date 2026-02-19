@@ -667,6 +667,7 @@ function AppContent({
               apiClient={apiClient}
               onClose={closeSettings}
               onNotify={handleAdminNotify}
+              initialSettings={galleryBehaviorSettings}
               onSettingsSaved={(saved) => {
                 void mutateGalleryBehaviorSettings(
                   {

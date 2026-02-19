@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Button,
   Group,
@@ -58,6 +58,8 @@ interface SettingsPanelProps {
   onClose: () => void;
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
   onSettingsSaved?: (settings: SettingsData) => void;
+  /** Pre-cached settings from SWR — avoids loading spinner on open */
+  initialSettings?: Partial<SettingsData>;
 }
 
 const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettings']>>): SettingsData => ({
@@ -75,27 +77,29 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   scrollTransitionType: response.scrollTransitionType ?? defaultSettings.scrollTransitionType,
 });
 
-export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved }: SettingsPanelProps) {
-  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
-  const [isLoading, setIsLoading] = useState(true);
+export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
+  const seedSettings: SettingsData = initialSettings
+    ? { ...defaultSettings, ...initialSettings }
+    : defaultSettings;
+
+  const [settings, setSettings] = useState<SettingsData>(seedSettings);
+  const [isLoading, setIsLoading] = useState(!initialSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [originalSettings, setOriginalSettings] = useState<SettingsData>(defaultSettings);
+  const [originalSettings, setOriginalSettings] = useState<SettingsData>(seedSettings);
   const [activeTab, setActiveTab] = useState<string | null>('general');
+  const hasChangesRef = useRef(false);
 
   const loadSettings = useCallback(async () => {
-    setIsLoading(true);
     try {
       const response = await apiClient.getSettings();
       const loaded = mapResponseToSettings(response);
-      setSettings(loaded);
+      if (!hasChangesRef.current) {
+        setSettings(loaded);
+      }
       setOriginalSettings(loaded);
-      setHasChanges(false);
     } catch {
-      // If settings endpoint doesn't exist or fails, use defaults
-      console.warn('[SettingsPanel] failed to load settings, using defaults');
-      setSettings(defaultSettings);
-      setOriginalSettings(defaultSettings);
+      // If settings endpoint doesn't exist or fails, keep current state
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +114,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
     setSettings((prev) => {
       const updated = { ...prev, [key]: value };
-      setHasChanges(JSON.stringify(updated) !== JSON.stringify(originalSettings));
+      const changed = JSON.stringify(updated) !== JSON.stringify(originalSettings);
+      setHasChanges(changed);
+      hasChangesRef.current = changed;
       return updated;
     });
   };
@@ -123,6 +129,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       setSettings(saved);
       setOriginalSettings(saved);
       setHasChanges(false);
+      hasChangesRef.current = false;
       onSettingsSaved?.(saved);
       onNotify({ type: 'success', text: 'Settings saved successfully.' });
     } catch (err) {
@@ -135,6 +142,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const handleReset = () => {
     setSettings(originalSettings);
     setHasChanges(false);
+    hasChangesRef.current = false;
   };
 
   return (

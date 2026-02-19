@@ -258,4 +258,31 @@ describe('SettingsPanel', () => {
 
     expect(screen.queryByText('Display Settings')).toBeNull();
   });
+
+  it('renders instantly without spinner when initialSettings are provided', () => {
+    const initial = {
+      videoViewportHeight: 500,
+      imageViewportHeight: 600,
+      thumbnailScrollSpeed: 2,
+      scrollAnimationStyle: 'smooth' as const,
+      scrollAnimationDurationMs: 200,
+      scrollAnimationEasing: 'ease' as const,
+      scrollTransitionType: 'fade' as const,
+    };
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={initial}
+      />
+    );
+
+    // Should render immediately — no loader, tabs visible synchronously
+    expect(screen.getByText('Display Settings')).toBeDefined();
+    expect(screen.getByRole('tab', { name: /General/i })).toBeDefined();
+    expect(screen.queryByRole('status')).toBeNull(); // no loader spinner
+  });
 });
