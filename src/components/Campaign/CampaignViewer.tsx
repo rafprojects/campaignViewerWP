@@ -10,6 +10,11 @@ const CompactGridGallery = lazy(() =>
     default: m.CompactGridGallery,
   }))
 );
+const MosaicGallery = lazy(() =>
+  import('@/gallery-adapters/mosaic/MosaicGallery').then((m) => ({
+    default: m.MosaicGallery,
+  }))
+);
 
 interface CampaignViewerProps {
   campaign: Campaign;
@@ -151,22 +156,28 @@ export function CampaignViewer({
                   const allMedia = [...campaign.videos, ...campaign.images].sort(
                     (a, b) => a.order - b.order,
                   );
-                  return allMedia.length > 0 ? (
-                    <CompactGridGallery media={allMedia} settings={galleryBehaviorSettings} />
-                  ) : null;
+                  if (allMedia.length === 0) return null;
+                  const uid = galleryBehaviorSettings.unifiedGalleryAdapterId;
+                  if (uid === 'mosaic') return <MosaicGallery media={allMedia} settings={galleryBehaviorSettings} />;
+                  if (uid === 'compact-grid') return <CompactGridGallery media={allMedia} settings={galleryBehaviorSettings} />;
+                  return <CompactGridGallery media={allMedia} settings={galleryBehaviorSettings} />;
                 })()
               ) : (
                 // Per-type mode: each media kind uses its own adapter choice
                 <>
                   {campaign.videos.length > 0 && (
-                    galleryBehaviorSettings.videoGalleryAdapterId === 'classic'
-                      ? <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
-                      : <CompactGridGallery media={campaign.videos} settings={galleryBehaviorSettings} />
+                    galleryBehaviorSettings.videoGalleryAdapterId === 'mosaic'
+                      ? <MosaicGallery media={campaign.videos} settings={galleryBehaviorSettings} />
+                      : galleryBehaviorSettings.videoGalleryAdapterId === 'classic'
+                        ? <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
+                        : <CompactGridGallery media={campaign.videos} settings={galleryBehaviorSettings} />
                   )}
                   {campaign.images.length > 0 && (
-                    galleryBehaviorSettings.imageGalleryAdapterId === 'classic'
-                      ? <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
-                      : <CompactGridGallery media={campaign.images} settings={galleryBehaviorSettings} />
+                    galleryBehaviorSettings.imageGalleryAdapterId === 'mosaic'
+                      ? <MosaicGallery media={campaign.images} settings={galleryBehaviorSettings} />
+                      : galleryBehaviorSettings.imageGalleryAdapterId === 'classic'
+                        ? <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
+                        : <CompactGridGallery media={campaign.images} settings={galleryBehaviorSettings} />
                   )}
                 </>
               )}

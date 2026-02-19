@@ -88,6 +88,7 @@ class WPSG_Settings {
         'unified_gallery_adapter_id' => 'compact-grid',
         'grid_card_width'            => 160,
         'grid_card_height'           => 224,
+        'mosaic_target_row_height'   => 200,
         'cache_ttl'                  => 3600,
     ];
 
@@ -482,20 +483,23 @@ class WPSG_Settings {
 
         // P12-C: Gallery Adapters
         if (isset($input['image_gallery_adapter_id'])) {
-            $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], ['classic', 'compact-grid'], true)
+            $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], ['classic', 'compact-grid', 'mosaic'], true)
                 ? $input['image_gallery_adapter_id']
                 : 'classic';
         }
         if (isset($input['video_gallery_adapter_id'])) {
-            $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], ['classic', 'compact-grid'], true)
+            $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], ['classic', 'compact-grid', 'mosaic'], true)
                 ? $input['video_gallery_adapter_id']
                 : 'classic';
         }
         $sanitized['unified_gallery_enabled'] = !empty($input['unified_gallery_enabled']);
         if (isset($input['unified_gallery_adapter_id'])) {
-            $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], ['classic', 'compact-grid'], true)
+            $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], ['classic', 'compact-grid', 'mosaic'], true)
                 ? $input['unified_gallery_adapter_id']
                 : 'compact-grid';
+        }
+        if (isset($input['mosaic_target_row_height'])) {
+            $sanitized['mosaic_target_row_height'] = max(60, min(600, intval($input['mosaic_target_row_height'])));
         }
         if (isset($input['grid_card_width'])) {
             $sanitized['grid_card_width'] = max(80, min(400, intval($input['grid_card_width'])));

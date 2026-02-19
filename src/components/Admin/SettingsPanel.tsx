@@ -98,6 +98,7 @@ const defaultSettings: SettingsData = {
   unifiedGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryAdapterId,
   gridCardWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
   gridCardHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
+  mosaicTargetRowHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight,
 };
 
 interface SettingsPanelProps {
@@ -164,6 +165,7 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   unifiedGalleryAdapterId: response.unifiedGalleryAdapterId ?? defaultSettings.unifiedGalleryAdapterId,
   gridCardWidth: response.gridCardWidth ?? defaultSettings.gridCardWidth,
   gridCardHeight: response.gridCardHeight ?? defaultSettings.gridCardHeight,
+  mosaicTargetRowHeight: response.mosaicTargetRowHeight ?? defaultSettings.mosaicTargetRowHeight,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -528,6 +530,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     onChange={(value) => updateSetting('unifiedGalleryAdapterId', value ?? 'compact-grid')}
                     data={[
                       { value: 'compact-grid', label: 'Compact Grid' },
+                      { value: 'mosaic', label: 'Mosaic (Justified Rows)' },
                     ]}
                   />
                 ) : (
@@ -540,6 +543,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       data={[
                         { value: 'classic', label: 'Classic (Carousel)' },
                         { value: 'compact-grid', label: 'Compact Grid' },
+                        { value: 'mosaic', label: 'Mosaic (Justified Rows)' },
                       ]}
                     />
                     <Select
@@ -550,6 +554,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       data={[
                         { value: 'classic', label: 'Classic (Carousel)' },
                         { value: 'compact-grid', label: 'Compact Grid' },
+                        { value: 'mosaic', label: 'Mosaic (Justified Rows)' },
                       ]}
                     />
                   </>
@@ -585,6 +590,25 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       step={10}
                     />
                   </Group>
+                )}
+
+                {/* Mosaic target row height — visible whenever mosaic is active in any mode */}
+                {(settings.unifiedGalleryEnabled
+                  ? settings.unifiedGalleryAdapterId === 'mosaic'
+                  : settings.imageGalleryAdapterId === 'mosaic' ||
+                    settings.videoGalleryAdapterId === 'mosaic'
+                ) && (
+                  <NumberInput
+                    label="Mosaic Target Row Height (px)"
+                    description="Ideal height for each row of images in the mosaic layout. Rows expand or contract slightly to fill the width while preserving aspect ratios."
+                    value={settings.mosaicTargetRowHeight}
+                    onChange={(value) =>
+                      updateSetting('mosaicTargetRowHeight', typeof value === 'number' ? value : defaultSettings.mosaicTargetRowHeight)
+                    }
+                    min={60}
+                    max={600}
+                    step={10}
+                  />
                 )}
               </Stack>
             </Tabs.Panel>

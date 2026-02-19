@@ -34,6 +34,9 @@ export interface MediaItem {
   title?: string;
   caption?: string;
   order: number;
+  /** Pixel dimensions supplied by server (WP attachment metadata). Used by mosaic layout. */
+  width?: number;
+  height?: number;
 }
 
 export interface User {
@@ -121,6 +124,7 @@ export interface GalleryBehaviorSettings {
   unifiedGalleryAdapterId: string;
   gridCardWidth: number;
   gridCardHeight: number;
+  mosaicTargetRowHeight: number;
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -194,4 +198,5 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   unifiedGalleryAdapterId: 'compact-grid',
   gridCardWidth: 160,
   gridCardHeight: 224,
+  mosaicTargetRowHeight: 200,
 };

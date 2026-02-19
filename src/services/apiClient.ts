@@ -200,6 +200,7 @@ export interface SettingsResponse {
   unifiedGalleryAdapterId?: string;
   gridCardWidth?: number;
   gridCardHeight?: number;
+  mosaicTargetRowHeight?: number;
 }
 
 export interface SettingsUpdateRequest {
@@ -259,6 +260,7 @@ export interface SettingsUpdateRequest {
   unifiedGalleryAdapterId?: string;
   gridCardWidth?: number;
   gridCardHeight?: number;
+  mosaicTargetRowHeight?: number;
 }
 
 export class ApiError extends Error {

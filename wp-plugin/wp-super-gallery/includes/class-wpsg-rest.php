@@ -481,7 +481,7 @@ class WPSG_REST {
                 $media_items = get_post_meta($post->ID, 'media_items', true);
                 $media_items = is_array($media_items) ? $media_items : [];
                 $normalized = self::normalize_media_items_types($media_items);
-                $media_by_campaign[$campaign_id] = $normalized['items'];
+                $media_by_campaign[$campaign_id] = self::enrich_media_with_dimensions($normalized['items']);
             }
         }
 
@@ -641,7 +641,7 @@ class WPSG_REST {
         // Normalize legacy media types on read for accuracy
         $updated_count = 0;
         $normalized = self::normalize_media_items_types($media_items);
-        $media_items = $normalized['items'];
+        $media_items = self::enrich_media_with_dimensions($normalized['items']);
         $updated_count = $normalized['updated'];
 
         if ($updated_count > 0) {
@@ -1406,6 +1406,35 @@ class WPSG_REST {
     }
 
     /**
+     * Enrich media items with width/height from WP attachment metadata.
+     * Items that already carry dimensions are left unchanged.
+     * Images without stored dimensions are probed via wp_get_attachment_metadata().
+     *
+     * @param array $items Normalised media items array.
+     * @return array Items with 'width' / 'height' fields populated where possible.
+     */
+    private static function enrich_media_with_dimensions(array $items): array {
+        foreach ($items as &$item) {
+            // Already has server-side dimensions — nothing to do.
+            if (!empty($item['width']) && !empty($item['height'])) {
+                continue;
+            }
+
+            $attachment_id = intval($item['attachmentId'] ?? 0);
+            if ($attachment_id > 0 && ($item['type'] ?? '') === 'image') {
+                $meta = wp_get_attachment_metadata($attachment_id);
+                if (!empty($meta['width']) && !empty($meta['height'])) {
+                    $item['width']  = intval($meta['width']);
+                    $item['height'] = intval($meta['height']);
+                }
+            }
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    /**
      * Rescan and fix media types for a single campaign.
      */
     public static function rescan_media_types() {
@@ -2145,6 +2174,7 @@ class WPSG_REST {
                 'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
                 'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
                 'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
+                'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2204,6 +2234,7 @@ class WPSG_REST {
             'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
             'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
             'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
+            'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2374,6 +2405,9 @@ class WPSG_REST {
         if (isset($body['unifiedGalleryAdapterId'])) {
             $input['unified_gallery_adapter_id'] = sanitize_text_field($body['unifiedGalleryAdapterId']);
         }
+        if (isset($body['mosaicTargetRowHeight'])) {
+            $input['mosaic_target_row_height'] = intval($body['mosaicTargetRowHeight']);
+        }
         if (isset($body['gridCardWidth'])) {
             $input['grid_card_width'] = intval($body['gridCardWidth']);
         }
@@ -2451,6 +2485,7 @@ class WPSG_REST {
             'unifiedGalleryAdapterId'    => $merged['unified_gallery_adapter_id'] ?? 'compact-grid',
             'gridCardWidth'              => $merged['grid_card_width'] ?? 160,
             'gridCardHeight'             => $merged['grid_card_height'] ?? 224,
+            'mosaicTargetRowHeight'      => $merged['mosaic_target_row_height'] ?? 200,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

@@ -334,6 +334,8 @@ function AppContent({
         response.gridCardWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
       gridCardHeight:
         response.gridCardHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
+      mosaicTargetRowHeight:
+        response.mosaicTargetRowHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -796,6 +798,7 @@ function AppContent({
                     unifiedGalleryAdapterId: saved.unifiedGalleryAdapterId,
                     gridCardWidth: saved.gridCardWidth,
                     gridCardHeight: saved.gridCardHeight,
+                    mosaicTargetRowHeight: saved.mosaicTargetRowHeight,
                   },
                   false,
                 );
