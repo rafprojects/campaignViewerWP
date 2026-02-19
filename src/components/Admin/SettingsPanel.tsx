@@ -99,6 +99,16 @@ const defaultSettings: SettingsData = {
   gridCardWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
   gridCardHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
   mosaicTargetRowHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight,
+  tileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileSize,
+  tileGapX: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapX,
+  tileGapY: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapY,
+  tileBorderWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth,
+  tileBorderColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderColor,
+  tileGlowEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowEnabled,
+  tileGlowColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowColor,
+  tileGlowSpread: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread,
+  tileHoverBounce: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce,
+  masonryColumns: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns,
 };
 
 interface SettingsPanelProps {
@@ -166,6 +176,16 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   gridCardWidth: response.gridCardWidth ?? defaultSettings.gridCardWidth,
   gridCardHeight: response.gridCardHeight ?? defaultSettings.gridCardHeight,
   mosaicTargetRowHeight: response.mosaicTargetRowHeight ?? defaultSettings.mosaicTargetRowHeight,
+  tileSize: response.tileSize ?? defaultSettings.tileSize,
+  tileGapX: response.tileGapX ?? defaultSettings.tileGapX,
+  tileGapY: response.tileGapY ?? defaultSettings.tileGapY,
+  tileBorderWidth: response.tileBorderWidth ?? defaultSettings.tileBorderWidth,
+  tileBorderColor: response.tileBorderColor ?? defaultSettings.tileBorderColor,
+  tileGlowEnabled: response.tileGlowEnabled ?? defaultSettings.tileGlowEnabled,
+  tileGlowColor: response.tileGlowColor ?? defaultSettings.tileGlowColor,
+  tileGlowSpread: response.tileGlowSpread ?? defaultSettings.tileGlowSpread,
+  tileHoverBounce: response.tileHoverBounce ?? defaultSettings.tileHoverBounce,
+  masonryColumns: response.masonryColumns ?? defaultSettings.masonryColumns,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -530,7 +550,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     onChange={(value) => updateSetting('unifiedGalleryAdapterId', value ?? 'compact-grid')}
                     data={[
                       { value: 'compact-grid', label: 'Compact Grid' },
-                      { value: 'mosaic', label: 'Mosaic (Justified Rows)' },
+                      { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                      { value: 'masonry', label: 'Masonry' },
+                      { value: 'hexagonal', label: 'Hexagonal' },
+                      { value: 'circular', label: 'Circular' },
+                      { value: 'diamond', label: 'Diamond' },
                     ]}
                   />
                 ) : (
@@ -543,7 +567,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       data={[
                         { value: 'classic', label: 'Classic (Carousel)' },
                         { value: 'compact-grid', label: 'Compact Grid' },
-                        { value: 'mosaic', label: 'Mosaic (Justified Rows)' },
+                        { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                        { value: 'masonry', label: 'Masonry' },
+                        { value: 'hexagonal', label: 'Hexagonal' },
+                        { value: 'circular', label: 'Circular' },
+                        { value: 'diamond', label: 'Diamond' },
                       ]}
                     />
                     <Select
@@ -554,13 +582,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       data={[
                         { value: 'classic', label: 'Classic (Carousel)' },
                         { value: 'compact-grid', label: 'Compact Grid' },
-                        { value: 'mosaic', label: 'Mosaic (Justified Rows)' },
+                        { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                        { value: 'masonry', label: 'Masonry' },
+                        { value: 'hexagonal', label: 'Hexagonal' },
+                        { value: 'circular', label: 'Circular' },
+                        { value: 'diamond', label: 'Diamond' },
                       ]}
                     />
                   </>
                 )}
 
-                {/* Card dimensions — visible whenever compact-grid is active in any mode */}
+                {/* ── Compact-grid dimensions ── */}
                 {(settings.unifiedGalleryEnabled
                   ? settings.unifiedGalleryAdapterId === 'compact-grid'
                   : settings.imageGalleryAdapterId === 'compact-grid' ||
@@ -574,41 +606,149 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       onChange={(value) =>
                         updateSetting('gridCardWidth', typeof value === 'number' ? value : defaultSettings.gridCardWidth)
                       }
-                      min={80}
-                      max={400}
-                      step={10}
+                      min={80} max={400} step={10}
                     />
                     <NumberInput
                       label="Card Height (px)"
-                      description="Fixed height of each grid card. Default 224 px gives a classic 5:7 playing-card proportion."
+                      description="Fixed height of each grid card."
                       value={settings.gridCardHeight}
                       onChange={(value) =>
                         updateSetting('gridCardHeight', typeof value === 'number' ? value : defaultSettings.gridCardHeight)
                       }
-                      min={80}
-                      max={600}
-                      step={10}
+                      min={80} max={600} step={10}
                     />
                   </Group>
                 )}
 
-                {/* Mosaic target row height — visible whenever mosaic is active in any mode */}
+                {/* ── Justified Rows target height ── */}
                 {(settings.unifiedGalleryEnabled
-                  ? settings.unifiedGalleryAdapterId === 'mosaic'
-                  : settings.imageGalleryAdapterId === 'mosaic' ||
-                    settings.videoGalleryAdapterId === 'mosaic'
+                  ? ['justified', 'mosaic'].includes(settings.unifiedGalleryAdapterId)
+                  : ['justified', 'mosaic'].includes(settings.imageGalleryAdapterId) ||
+                    ['justified', 'mosaic'].includes(settings.videoGalleryAdapterId)
                 ) && (
                   <NumberInput
-                    label="Mosaic Target Row Height (px)"
-                    description="Ideal height for each row of images in the mosaic layout. Rows expand or contract slightly to fill the width while preserving aspect ratios."
+                    label="Target Row Height (px)"
+                    description="Ideal height for each justified row. Rows scale slightly to fill container width while preserving aspect ratios."
                     value={settings.mosaicTargetRowHeight}
                     onChange={(value) =>
                       updateSetting('mosaicTargetRowHeight', typeof value === 'number' ? value : defaultSettings.mosaicTargetRowHeight)
                     }
-                    min={60}
-                    max={600}
-                    step={10}
+                    min={60} max={600} step={10}
                   />
+                )}
+
+                {/* ── Masonry columns ── */}
+                {(settings.unifiedGalleryEnabled
+                  ? settings.unifiedGalleryAdapterId === 'masonry'
+                  : settings.imageGalleryAdapterId === 'masonry' ||
+                    settings.videoGalleryAdapterId === 'masonry'
+                ) && (
+                  <NumberInput
+                    label="Masonry Columns (0 = auto)"
+                    description="Number of masonry columns. Set 0 to let the layout choose responsively (1–4 based on width)."
+                    value={settings.masonryColumns}
+                    onChange={(value) =>
+                      updateSetting('masonryColumns', typeof value === 'number' ? value : defaultSettings.masonryColumns)
+                    }
+                    min={0} max={8} step={1}
+                  />
+                )}
+
+                {/* ── Shape tile size (hex / circle / diamond) ── */}
+                {(settings.unifiedGalleryEnabled
+                  ? ['hexagonal', 'circular', 'diamond'].includes(settings.unifiedGalleryAdapterId)
+                  : ['hexagonal', 'circular', 'diamond'].includes(settings.imageGalleryAdapterId) ||
+                    ['hexagonal', 'circular', 'diamond'].includes(settings.videoGalleryAdapterId)
+                ) && (
+                  <NumberInput
+                    label="Tile Size (px)"
+                    description="Width and height of each shape tile."
+                    value={settings.tileSize}
+                    onChange={(value) =>
+                      updateSetting('tileSize', typeof value === 'number' ? value : defaultSettings.tileSize)
+                    }
+                    min={60} max={400} step={10}
+                  />
+                )}
+
+                <Divider label="Tile Appearance" labelPosition="center" />
+
+                {/* ── Gap controls ── */}
+                <Group grow>
+                  <NumberInput
+                    label="Gap X (px)"
+                    description="Horizontal gap between tiles."
+                    value={settings.tileGapX}
+                    onChange={(value) =>
+                      updateSetting('tileGapX', typeof value === 'number' ? value : defaultSettings.tileGapX)
+                    }
+                    min={0} max={60} step={1}
+                  />
+                  <NumberInput
+                    label="Gap Y (px)"
+                    description="Vertical gap between tile rows."
+                    value={settings.tileGapY}
+                    onChange={(value) =>
+                      updateSetting('tileGapY', typeof value === 'number' ? value : defaultSettings.tileGapY)
+                    }
+                    min={0} max={60} step={1}
+                  />
+                </Group>
+
+                {/* ── Border ── */}
+                <Group grow>
+                  <NumberInput
+                    label="Border Width (px)"
+                    description="Tile border thickness. 0 = no border."
+                    value={settings.tileBorderWidth}
+                    onChange={(value) =>
+                      updateSetting('tileBorderWidth', typeof value === 'number' ? value : defaultSettings.tileBorderWidth)
+                    }
+                    min={0} max={20} step={1}
+                  />
+                  {settings.tileBorderWidth > 0 && (
+                    <ColorInput
+                      label="Border Color"
+                      value={settings.tileBorderColor}
+                      onChange={(value) => updateSetting('tileBorderColor', value)}
+                      format="hex"
+                    />
+                  )}
+                </Group>
+
+                {/* ── Hover bounce ── */}
+                <Switch
+                  label="Hover Bounce"
+                  description="Scale-up spring animation when hovering over a tile."
+                  checked={settings.tileHoverBounce}
+                  onChange={(e) => updateSetting('tileHoverBounce', e.currentTarget.checked)}
+                />
+
+                {/* ── Border glow ── */}
+                <Switch
+                  label="Hover Glow"
+                  description="Drop-shadow glow on hover (works with clip-path shapes)."
+                  checked={settings.tileGlowEnabled}
+                  onChange={(e) => updateSetting('tileGlowEnabled', e.currentTarget.checked)}
+                />
+                {settings.tileGlowEnabled && (
+                  <Group grow>
+                    <ColorInput
+                      label="Glow Color"
+                      value={settings.tileGlowColor}
+                      onChange={(value) => updateSetting('tileGlowColor', value)}
+                      format="hex"
+                    />
+                    <NumberInput
+                      label="Glow Spread (px)"
+                      description="Radius of the glow effect."
+                      value={settings.tileGlowSpread}
+                      onChange={(value) =>
+                        updateSetting('tileGlowSpread', typeof value === 'number' ? value : defaultSettings.tileGlowSpread)
+                      }
+                      min={2} max={60} step={2}
+                    />
+                  </Group>
                 )}
               </Stack>
             </Tabs.Panel>

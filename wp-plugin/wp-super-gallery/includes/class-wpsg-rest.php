@@ -2175,6 +2175,16 @@ class WPSG_REST {
                 'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
                 'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
                 'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
+                'tileSize'                   => $settings['tile_size'] ?? 150,
+                'tileGapX'                   => $settings['tile_gap_x'] ?? 8,
+                'tileGapY'                   => $settings['tile_gap_y'] ?? 8,
+                'tileBorderWidth'            => $settings['tile_border_width'] ?? 0,
+                'tileBorderColor'            => $settings['tile_border_color'] ?? '#ffffff',
+                'tileGlowEnabled'            => $settings['tile_glow_enabled'] ?? false,
+                'tileGlowColor'              => $settings['tile_glow_color'] ?? '#7c9ef8',
+                'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
+                'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
+                'masonryColumns'             => $settings['masonry_columns'] ?? 0,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2235,6 +2245,16 @@ class WPSG_REST {
             'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
             'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
             'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
+            'tileSize'                   => $settings['tile_size'] ?? 150,
+            'tileGapX'                   => $settings['tile_gap_x'] ?? 8,
+            'tileGapY'                   => $settings['tile_gap_y'] ?? 8,
+            'tileBorderWidth'            => $settings['tile_border_width'] ?? 0,
+            'tileBorderColor'            => $settings['tile_border_color'] ?? '#ffffff',
+            'tileGlowEnabled'            => $settings['tile_glow_enabled'] ?? false,
+            'tileGlowColor'              => $settings['tile_glow_color'] ?? '#7c9ef8',
+            'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
+            'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
+            'masonryColumns'             => $settings['masonry_columns'] ?? 0,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2414,6 +2434,17 @@ class WPSG_REST {
         if (isset($body['gridCardHeight'])) {
             $input['grid_card_height'] = intval($body['gridCardHeight']);
         }
+        // Tile appearance
+        if (isset($body['tileSize'])) { $input['tile_size'] = intval($body['tileSize']); }
+        if (isset($body['tileGapX'])) { $input['tile_gap_x'] = intval($body['tileGapX']); }
+        if (isset($body['tileGapY'])) { $input['tile_gap_y'] = intval($body['tileGapY']); }
+        if (isset($body['tileBorderWidth'])) { $input['tile_border_width'] = intval($body['tileBorderWidth']); }
+        if (isset($body['tileBorderColor'])) { $input['tile_border_color'] = sanitize_hex_color($body['tileBorderColor']) ?: '#ffffff'; }
+        if (isset($body['tileGlowEnabled'])) { $input['tile_glow_enabled'] = (bool) $body['tileGlowEnabled']; }
+        if (isset($body['tileGlowColor'])) { $input['tile_glow_color'] = sanitize_hex_color($body['tileGlowColor']) ?: '#7c9ef8'; }
+        if (isset($body['tileGlowSpread'])) { $input['tile_glow_spread'] = intval($body['tileGlowSpread']); }
+        if (isset($body['tileHoverBounce'])) { $input['tile_hover_bounce'] = (bool) $body['tileHoverBounce']; }
+        if (isset($body['masonryColumns'])) { $input['masonry_columns'] = intval($body['masonryColumns']); }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2486,6 +2517,16 @@ class WPSG_REST {
             'gridCardWidth'              => $merged['grid_card_width'] ?? 160,
             'gridCardHeight'             => $merged['grid_card_height'] ?? 224,
             'mosaicTargetRowHeight'      => $merged['mosaic_target_row_height'] ?? 200,
+            'tileSize'                   => $merged['tile_size'] ?? 150,
+            'tileGapX'                   => $merged['tile_gap_x'] ?? 8,
+            'tileGapY'                   => $merged['tile_gap_y'] ?? 8,
+            'tileBorderWidth'            => $merged['tile_border_width'] ?? 0,
+            'tileBorderColor'            => $merged['tile_border_color'] ?? '#ffffff',
+            'tileGlowEnabled'            => $merged['tile_glow_enabled'] ?? false,
+            'tileGlowColor'              => $merged['tile_glow_color'] ?? '#7c9ef8',
+            'tileGlowSpread'             => $merged['tile_glow_spread'] ?? 12,
+            'tileHoverBounce'            => $merged['tile_hover_bounce'] ?? true,
+            'masonryColumns'             => $merged['masonry_columns'] ?? 0,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

@@ -336,6 +336,16 @@ function AppContent({
         response.gridCardHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
       mosaicTargetRowHeight:
         response.mosaicTargetRowHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight,
+      tileSize: response.tileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileSize,
+      tileGapX: response.tileGapX ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapX,
+      tileGapY: response.tileGapY ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapY,
+      tileBorderWidth: response.tileBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth,
+      tileBorderColor: response.tileBorderColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderColor,
+      tileGlowEnabled: response.tileGlowEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowEnabled,
+      tileGlowColor: response.tileGlowColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowColor,
+      tileGlowSpread: response.tileGlowSpread ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread,
+      tileHoverBounce: response.tileHoverBounce ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce,
+      masonryColumns: response.masonryColumns ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -799,6 +809,16 @@ function AppContent({
                     gridCardWidth: saved.gridCardWidth,
                     gridCardHeight: saved.gridCardHeight,
                     mosaicTargetRowHeight: saved.mosaicTargetRowHeight,
+                    tileSize: saved.tileSize,
+                    tileGapX: saved.tileGapX,
+                    tileGapY: saved.tileGapY,
+                    tileBorderWidth: saved.tileBorderWidth,
+                    tileBorderColor: saved.tileBorderColor,
+                    tileGlowEnabled: saved.tileGlowEnabled,
+                    tileGlowColor: saved.tileGlowColor,
+                    tileGlowSpread: saved.tileGlowSpread,
+                    tileHoverBounce: saved.tileHoverBounce,
+                    masonryColumns: saved.masonryColumns,
                   },
                   false,
                 );

@@ -125,6 +125,17 @@ export interface GalleryBehaviorSettings {
   gridCardWidth: number;
   gridCardHeight: number;
   mosaicTargetRowHeight: number;
+  // Tile appearance — shared by masonry, justified, hexagonal, circular, diamond
+  tileSize: number;          // px: fixed tile size for shape adapters
+  tileGapX: number;          // px: horizontal gap between tiles
+  tileGapY: number;          // px: vertical gap between tiles
+  tileBorderWidth: number;   // px: 0 = no border
+  tileBorderColor: string;   // CSS color
+  tileGlowEnabled: boolean;  // hover glow via drop-shadow
+  tileGlowColor: string;     // glow CSS color
+  tileGlowSpread: number;    // px: glow spread radius
+  tileHoverBounce: boolean;  // scale-up bounce on hover
+  masonryColumns: number;    // 0 = auto-responsive
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -199,4 +210,15 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   gridCardWidth: 160,
   gridCardHeight: 224,
   mosaicTargetRowHeight: 200,
+  // Tile appearance defaults
+  tileSize: 150,
+  tileGapX: 8,
+  tileGapY: 8,
+  tileBorderWidth: 0,
+  tileBorderColor: '#ffffff',
+  tileGlowEnabled: false,
+  tileGlowColor: '#7c9ef8',
+  tileGlowSpread: 12,
+  tileHoverBounce: true,
+  masonryColumns: 0,
 };

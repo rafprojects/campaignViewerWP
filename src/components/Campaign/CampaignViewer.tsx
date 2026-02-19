@@ -1,7 +1,31 @@
 import { lazy, Suspense } from 'react';
 import { IconArrowLeft, IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
-import type { Campaign, GalleryBehaviorSettings } from '@/types';
+import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
+
+/**
+ * Dispatch a gallery adapter by ID. 'classic' is handled separately in the
+ * caller because image/video carousels have different props. All other adapter
+ * IDs are resolved here. Unknown IDs fall back to CompactGridGallery.
+ */
+function renderAdapter(id: string, media: MediaItem[], settings: GalleryBehaviorSettings) {
+  switch (id) {
+    case 'justified':
+    case 'mosaic': // legacy alias → justified (fixes single-column bug)
+      return <JustifiedGallery media={media} settings={settings} />;
+    case 'masonry':
+      return <MasonryGallery media={media} settings={settings} />;
+    case 'hexagonal':
+      return <HexagonalGallery media={media} settings={settings} />;
+    case 'circular':
+      return <CircularGallery media={media} settings={settings} />;
+    case 'diamond':
+      return <DiamondGallery media={media} settings={settings} />;
+    case 'compact-grid':
+    default:
+      return <CompactGridGallery media={media} settings={settings} />;
+  }
+}
 
 const VideoCarousel = lazy(() => import('./VideoCarousel').then((m) => ({ default: m.VideoCarousel })));
 const ImageCarousel = lazy(() => import('./ImageCarousel').then((m) => ({ default: m.ImageCarousel })));
@@ -10,9 +34,29 @@ const CompactGridGallery = lazy(() =>
     default: m.CompactGridGallery,
   }))
 );
-const MosaicGallery = lazy(() =>
-  import('@/gallery-adapters/mosaic/MosaicGallery').then((m) => ({
-    default: m.MosaicGallery,
+const JustifiedGallery = lazy(() =>
+  import('@/gallery-adapters/justified/JustifiedGallery').then((m) => ({
+    default: m.JustifiedGallery,
+  }))
+);
+const MasonryGallery = lazy(() =>
+  import('@/gallery-adapters/masonry/MasonryGallery').then((m) => ({
+    default: m.MasonryGallery,
+  }))
+);
+const HexagonalGallery = lazy(() =>
+  import('@/gallery-adapters/hexagonal/HexagonalGallery').then((m) => ({
+    default: m.HexagonalGallery,
+  }))
+);
+const CircularGallery = lazy(() =>
+  import('@/gallery-adapters/circular/CircularGallery').then((m) => ({
+    default: m.CircularGallery,
+  }))
+);
+const DiamondGallery = lazy(() =>
+  import('@/gallery-adapters/diamond/DiamondGallery').then((m) => ({
+    default: m.DiamondGallery,
   }))
 );
 
@@ -157,28 +201,21 @@ export function CampaignViewer({
                     (a, b) => a.order - b.order,
                   );
                   if (allMedia.length === 0) return null;
-                  const uid = galleryBehaviorSettings.unifiedGalleryAdapterId;
-                  if (uid === 'mosaic') return <MosaicGallery media={allMedia} settings={galleryBehaviorSettings} />;
-                  if (uid === 'compact-grid') return <CompactGridGallery media={allMedia} settings={galleryBehaviorSettings} />;
-                  return <CompactGridGallery media={allMedia} settings={galleryBehaviorSettings} />;
+                  return renderAdapter(galleryBehaviorSettings.unifiedGalleryAdapterId, allMedia, galleryBehaviorSettings);
                 })()
               ) : (
-                // Per-type mode: each media kind uses its own adapter choice
+                // Per-type mode: each media kind uses its own adapter
                 <>
-                  {campaign.videos.length > 0 && (
-                    galleryBehaviorSettings.videoGalleryAdapterId === 'mosaic'
-                      ? <MosaicGallery media={campaign.videos} settings={galleryBehaviorSettings} />
-                      : galleryBehaviorSettings.videoGalleryAdapterId === 'classic'
-                        ? <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />
-                        : <CompactGridGallery media={campaign.videos} settings={galleryBehaviorSettings} />
-                  )}
-                  {campaign.images.length > 0 && (
-                    galleryBehaviorSettings.imageGalleryAdapterId === 'mosaic'
-                      ? <MosaicGallery media={campaign.images} settings={galleryBehaviorSettings} />
-                      : galleryBehaviorSettings.imageGalleryAdapterId === 'classic'
-                        ? <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />
-                        : <CompactGridGallery media={campaign.images} settings={galleryBehaviorSettings} />
-                  )}
+                  {campaign.videos.length > 0 && (() => {
+                    const id = galleryBehaviorSettings.videoGalleryAdapterId;
+                    if (id === 'classic') return <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />;
+                    return renderAdapter(id, campaign.videos, galleryBehaviorSettings);
+                  })()}
+                  {campaign.images.length > 0 && (() => {
+                    const id = galleryBehaviorSettings.imageGalleryAdapterId;
+                    if (id === 'classic') return <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />;
+                    return renderAdapter(id, campaign.images, galleryBehaviorSettings);
+                  })()}
                 </>
               )}
             </Suspense>

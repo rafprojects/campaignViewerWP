@@ -201,6 +201,16 @@ export interface SettingsResponse {
   gridCardWidth?: number;
   gridCardHeight?: number;
   mosaicTargetRowHeight?: number;
+  tileSize?: number;
+  tileGapX?: number;
+  tileGapY?: number;
+  tileBorderWidth?: number;
+  tileBorderColor?: string;
+  tileGlowEnabled?: boolean;
+  tileGlowColor?: string;
+  tileGlowSpread?: number;
+  tileHoverBounce?: boolean;
+  masonryColumns?: number;
 }
 
 export interface SettingsUpdateRequest {
@@ -261,6 +271,16 @@ export interface SettingsUpdateRequest {
   gridCardWidth?: number;
   gridCardHeight?: number;
   mosaicTargetRowHeight?: number;
+  tileSize?: number;
+  tileGapX?: number;
+  tileGapY?: number;
+  tileBorderWidth?: number;
+  tileBorderColor?: string;
+  tileGlowEnabled?: boolean;
+  tileGlowColor?: string;
+  tileGlowSpread?: number;
+  tileHoverBounce?: boolean;
+  masonryColumns?: number;
 }
 
 export class ApiError extends Error {

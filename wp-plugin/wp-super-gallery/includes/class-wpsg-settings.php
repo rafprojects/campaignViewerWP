@@ -89,6 +89,17 @@ class WPSG_Settings {
         'grid_card_width'            => 160,
         'grid_card_height'           => 224,
         'mosaic_target_row_height'   => 200,
+        // Tile appearance (hex / circle / diamond / masonry / justified)
+        'tile_size'                  => 150,
+        'tile_gap_x'                 => 8,
+        'tile_gap_y'                 => 8,
+        'tile_border_width'          => 0,
+        'tile_border_color'          => '#ffffff',
+        'tile_glow_enabled'          => false,
+        'tile_glow_color'            => '#7c9ef8',
+        'tile_glow_spread'           => 12,
+        'tile_hover_bounce'          => true,
+        'masonry_columns'            => 0,
         'cache_ttl'                  => 3600,
     ];
 
@@ -483,18 +494,21 @@ class WPSG_Settings {
 
         // P12-C: Gallery Adapters
         if (isset($input['image_gallery_adapter_id'])) {
-            $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], ['classic', 'compact-grid', 'mosaic'], true)
+            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
+            $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['image_gallery_adapter_id']
                 : 'classic';
         }
         if (isset($input['video_gallery_adapter_id'])) {
-            $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], ['classic', 'compact-grid', 'mosaic'], true)
+            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
+            $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['video_gallery_adapter_id']
                 : 'classic';
         }
         $sanitized['unified_gallery_enabled'] = !empty($input['unified_gallery_enabled']);
         if (isset($input['unified_gallery_adapter_id'])) {
-            $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], ['classic', 'compact-grid', 'mosaic'], true)
+            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
+            $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['unified_gallery_adapter_id']
                 : 'compact-grid';
         }
@@ -506,6 +520,37 @@ class WPSG_Settings {
         }
         if (isset($input['grid_card_height'])) {
             $sanitized['grid_card_height'] = max(80, min(600, intval($input['grid_card_height'])));
+        }
+        // Tile appearance settings
+        if (isset($input['tile_size'])) {
+            $sanitized['tile_size'] = max(60, min(400, intval($input['tile_size'])));
+        }
+        if (isset($input['tile_gap_x'])) {
+            $sanitized['tile_gap_x'] = max(0, min(60, intval($input['tile_gap_x'])));
+        }
+        if (isset($input['tile_gap_y'])) {
+            $sanitized['tile_gap_y'] = max(0, min(60, intval($input['tile_gap_y'])));
+        }
+        if (isset($input['tile_border_width'])) {
+            $sanitized['tile_border_width'] = max(0, min(20, intval($input['tile_border_width'])));
+        }
+        if (isset($input['tile_border_color'])) {
+            $sanitized['tile_border_color'] = sanitize_hex_color($input['tile_border_color']) ?: '#ffffff';
+        }
+        if (isset($input['tile_glow_enabled'])) {
+            $sanitized['tile_glow_enabled'] = (bool) $input['tile_glow_enabled'];
+        }
+        if (isset($input['tile_glow_color'])) {
+            $sanitized['tile_glow_color'] = sanitize_hex_color($input['tile_glow_color']) ?: '#7c9ef8';
+        }
+        if (isset($input['tile_glow_spread'])) {
+            $sanitized['tile_glow_spread'] = max(2, min(60, intval($input['tile_glow_spread'])));
+        }
+        if (isset($input['tile_hover_bounce'])) {
+            $sanitized['tile_hover_bounce'] = (bool) $input['tile_hover_bounce'];
+        }
+        if (isset($input['masonry_columns'])) {
+            $sanitized['masonry_columns'] = max(0, min(8, intval($input['masonry_columns'])));
         }
 
         // Boolean fields.
