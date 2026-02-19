@@ -257,6 +257,12 @@ function AppContent({
         response.scrollAnimationEasing ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing,
       scrollTransitionType:
         response.scrollTransitionType ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType,
+      imageBorderRadius:
+        response.imageBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius,
+      videoBorderRadius:
+        response.videoBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
+      transitionFadeEnabled:
+        response.transitionFadeEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -678,6 +684,9 @@ function AppContent({
                     scrollAnimationDurationMs: saved.scrollAnimationDurationMs,
                     scrollAnimationEasing: saved.scrollAnimationEasing,
                     scrollTransitionType: saved.scrollTransitionType,
+                    imageBorderRadius: saved.imageBorderRadius,
+                    videoBorderRadius: saved.videoBorderRadius,
+                    transitionFadeEnabled: saved.transitionFadeEnabled,
                   },
                   false,
                 );

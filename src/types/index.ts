@@ -92,6 +92,9 @@ export interface GalleryBehaviorSettings {
   scrollAnimationDurationMs: number;
   scrollAnimationEasing: ScrollAnimationEasing;
   scrollTransitionType: ScrollTransitionType;
+  imageBorderRadius: number;
+  videoBorderRadius: number;
+  transitionFadeEnabled: boolean;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -102,4 +105,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   scrollAnimationDurationMs: 350,
   scrollAnimationEasing: 'ease',
   scrollTransitionType: 'slide-fade',
+  imageBorderRadius: 8,
+  videoBorderRadius: 8,
+  transitionFadeEnabled: true,
 };

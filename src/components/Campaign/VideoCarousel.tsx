@@ -83,10 +83,11 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
       transitionType: transitionType as 'fade' | 'slide' | 'slide-fade',
       durationMs: mediaTransitionDuration,
       easing: settings.scrollAnimationEasing,
+      transitionFadeEnabled: settings.transitionFadeEnabled,
     };
 
     applyGalleryTransition(enterRef.current, exitRef.current, opts);
-  }, [currentIndex, direction, mediaTransitionDuration, transitionType, settings.scrollAnimationEasing, settings.scrollAnimationStyle]);
+  }, [currentIndex, direction, mediaTransitionDuration, transitionType, settings.scrollAnimationEasing, settings.scrollAnimationStyle, settings.transitionFadeEnabled]);
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: nextVideo,
@@ -118,6 +119,7 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
           width: '100%',
           backgroundColor: 'transparent',
           overflow: 'hidden',
+          borderRadius: `${settings.videoBorderRadius}px`,
         }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') {

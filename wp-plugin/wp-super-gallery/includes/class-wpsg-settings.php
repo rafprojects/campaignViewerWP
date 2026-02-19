@@ -47,6 +47,9 @@ class WPSG_Settings {
         'scroll_animation_duration_ms' => 350,
         'scroll_animation_easing'    => 'ease',
         'scroll_transition_type'     => 'slide-fade',
+        'image_border_radius'        => 8,
+        'video_border_radius'        => 8,
+        'transition_fade_enabled'    => true,
         'cache_ttl'                  => 3600,
     ];
 
@@ -319,6 +322,20 @@ class WPSG_Settings {
             $sanitized['scroll_transition_type'] = in_array($input['scroll_transition_type'], self::$valid_options['scroll_transition_type'], true)
                 ? $input['scroll_transition_type']
                 : self::$defaults['scroll_transition_type'];
+        }
+
+        if (isset($input['image_border_radius'])) {
+            $radius = intval($input['image_border_radius']);
+            $sanitized['image_border_radius'] = max(0, min(48, $radius));
+        }
+
+        if (isset($input['video_border_radius'])) {
+            $radius = intval($input['video_border_radius']);
+            $sanitized['video_border_radius'] = max(0, min(48, $radius));
+        }
+
+        if (isset($input['transition_fade_enabled'])) {
+            $sanitized['transition_fade_enabled'] = (bool) $input['transition_fade_enabled'];
         }
 
         // Boolean fields.

@@ -1,6 +1,6 @@
 # Phase 12 — Gallery Extensibility & Advanced Experience
 
-**Status:** Planned  
+**Status:** In Progress  
 **Version target:** v0.10.0 (planning target)  
 **Created:** February 17, 2026
 **Last updated:** February 18, 2026
@@ -114,7 +114,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ---
 
-## Track P12-E — Settings Panel Modal Redesign ⭐ HIGHEST PRIORITY
+## Track P12-E — Settings Panel Modal Redesign ✅ COMPLETE
 
 ### Objectives
 
@@ -122,13 +122,16 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - Organize settings into tabbed sections for improved discoverability and scalability
 - Must be completed before pluggable gallery work to establish the settings architecture
 
-### Candidate Deliverables
+### Deliverables (Completed)
 
-- Modal wrapper replacing current inline panel
-- Tab system organizing settings by category (General, Gallery Behavior, Transitions, Navigation, Appearance)
-- Preserve existing save/reset/dirty-tracking behavior
-- Responsive layout for both desktop and mobile admin views
-- Foundation for adding new settings without further panel restructuring
+- ✅ Mantine Modal wrapper replacing inline Card-based panel (`6853c40`)
+- ✅ 4-tab system: General, Gallery, Transitions, Navigation
+- ✅ Preserved save/reset/dirty-tracking behavior across all tabs
+- ✅ Close button via Mantine Modal header, overlay click to close
+- ✅ All 11 SettingsPanel tests passing (3 new tests added)
+- ✅ Settings loading delay eliminated — `initialSettings` prop seeds from SWR cache (`8863676`)
+- ✅ Background revalidation with `hasChangesRef` to prevent overwriting user edits
+- ✅ Foundation ready for adding new settings without panel restructuring
 
 **Effort:** Medium  
 **Impact:** Very High (unblocks all subsequent settings-heavy tracks)
@@ -245,7 +248,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ## Initial Execution Order
 
-1. **Track P12-E: Settings panel modal redesign** (HIGHEST PRIORITY — unblocks all settings-heavy work)
+1. ~~**Track P12-E: Settings panel modal redesign**~~ ✅ COMPLETE (`6853c40`, `8863676`)
 2. Track P12-D: Modular embed provider handlers (enables cleaner provider extensibility)
 3. Track P12-F: Gallery card border radius controls
 4. Track P12-G: Transition fade-in/out for entering/exiting cards
@@ -279,6 +282,8 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 - **2026-02-17:** Phase 12 planning doc created and tracks promoted from `FUTURE_TASKS.md`.
 - **2026-02-18:** Imperative CSS transitions implemented and verified (replaced failing CSS @keyframes approach). `scrollTransitionType` setting added end-to-end. Debug logs cleaned, unused keyframes removed, plugin version bumped to 0.9.1. Six new enhancement tracks (P12-E through P12-J) added. Settings panel modal redesign designated as highest priority.
+- **2026-02-18:** **P12-E COMPLETE.** Settings panel converted from inline Card to Mantine Modal with 4 tabs (General, Gallery, Transitions, Navigation). All save/reset/dirty-tracking preserved. Committed `6853c40`.
+- **2026-02-18:** Settings loading delay eliminated. Added `initialSettings` prop seeded from SWR cache for instant rendering. Background revalidation with `hasChangesRef` prevents overwriting user edits. 178 tests passing. Committed `8863676`.
 
 ---
 

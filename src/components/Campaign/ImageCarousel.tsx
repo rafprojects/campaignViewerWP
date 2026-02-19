@@ -77,11 +77,12 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
       transitionType: transitionType as 'fade' | 'slide' | 'slide-fade',
       durationMs: mediaTransitionDuration,
       easing: settings.scrollAnimationEasing,
+      transitionFadeEnabled: settings.transitionFadeEnabled,
     };
 
     applyGalleryTransition(enterRef.current, exitRef.current, opts);
     applyGalleryTransition(lbEnterRef.current, lbExitRef.current, opts);
-  }, [currentIndex, direction, mediaTransitionDuration, transitionType, settings.scrollAnimationEasing, settings.scrollAnimationStyle]);
+  }, [currentIndex, direction, mediaTransitionDuration, transitionType, settings.scrollAnimationEasing, settings.scrollAnimationStyle, settings.transitionFadeEnabled]);
 
   return (
     <Stack gap="md">
@@ -101,7 +102,7 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
         aria-label={`View image ${currentIndex + 1} of ${images.length}`}
         onClick={openLightbox}
         {...swipeHandlers}
-        style={{ touchAction: 'pan-y', height: standardViewerHeight, overflow: 'hidden' }}
+        style={{ touchAction: 'pan-y', height: standardViewerHeight, overflow: 'hidden', borderRadius: `${settings.imageBorderRadius}px` }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();

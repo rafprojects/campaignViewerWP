@@ -18,6 +18,8 @@ export interface TransitionOpts {
   transitionType: 'fade' | 'slide' | 'slide-fade';
   durationMs: number;
   easing: string;
+  /** When true, opacity fade is always applied regardless of transitionType. */
+  transitionFadeEnabled?: boolean;
 }
 
 /**
@@ -29,9 +31,9 @@ export function applyGalleryTransition(
   exitEl: HTMLElement | null,
   opts: TransitionOpts,
 ): void {
-  const { direction, transitionType, durationMs, easing } = opts;
+  const { direction, transitionType, durationMs, easing, transitionFadeEnabled = false } = opts;
   const useSlide = transitionType === 'slide' || transitionType === 'slide-fade';
-  const useFade = transitionType === 'fade' || transitionType === 'slide-fade';
+  const useFade = transitionType === 'fade' || transitionType === 'slide-fade' || transitionFadeEnabled;
   const dur = `${durationMs}ms`;
   const txEnter = direction === 1 ? '60%' : '-60%';
   const txExit = direction === 1 ? '-60%' : '60%';

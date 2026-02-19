@@ -50,6 +50,9 @@ const defaultSettings: SettingsData = {
   scrollAnimationDurationMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs,
   scrollAnimationEasing: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing,
   scrollTransitionType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType,
+  imageBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius,
+  videoBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
+  transitionFadeEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
 };
 
 interface SettingsPanelProps {
@@ -75,6 +78,9 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
     response.scrollAnimationDurationMs ?? defaultSettings.scrollAnimationDurationMs,
   scrollAnimationEasing: response.scrollAnimationEasing ?? defaultSettings.scrollAnimationEasing,
   scrollTransitionType: response.scrollTransitionType ?? defaultSettings.scrollTransitionType,
+  imageBorderRadius: response.imageBorderRadius ?? defaultSettings.imageBorderRadius,
+  videoBorderRadius: response.videoBorderRadius ?? defaultSettings.videoBorderRadius,
+  transitionFadeEnabled: response.transitionFadeEnabled ?? defaultSettings.transitionFadeEnabled,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -258,12 +264,45 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   max={900}
                   step={10}
                 />
+
+                <Divider label="Border Radius" labelPosition="center" />
+
+                <NumberInput
+                  label="Image Border Radius (px)"
+                  description="Corner rounding for image gallery viewport and thumbnails."
+                  value={settings.imageBorderRadius}
+                  onChange={(value) =>
+                    updateSetting('imageBorderRadius', typeof value === 'number' ? value : defaultSettings.imageBorderRadius)
+                  }
+                  min={0}
+                  max={48}
+                  step={1}
+                />
+
+                <NumberInput
+                  label="Video Border Radius (px)"
+                  description="Corner rounding for video gallery viewport and thumbnails."
+                  value={settings.videoBorderRadius}
+                  onChange={(value) =>
+                    updateSetting('videoBorderRadius', typeof value === 'number' ? value : defaultSettings.videoBorderRadius)
+                  }
+                  min={0}
+                  max={48}
+                  step={1}
+                />
               </Stack>
             </Tabs.Panel>
 
             {/* ── Transitions Tab ──────────────────────────────── */}
             <Tabs.Panel value="transitions" pt="md">
               <Stack gap="md">
+                <Switch
+                  label="Transition Fade"
+                  description="Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
+                  checked={settings.transitionFadeEnabled}
+                  onChange={(e) => updateSetting('transitionFadeEnabled', e.currentTarget.checked)}
+                />
+
                 <Select
                   label="Transition Type"
                   description="How gallery media slides between items: fade only, slide only, or combined slide-fade."

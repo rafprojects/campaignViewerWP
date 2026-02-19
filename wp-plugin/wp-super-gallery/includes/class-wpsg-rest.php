@@ -2104,6 +2104,9 @@ class WPSG_REST {
                 'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 180,
                 'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
                 'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
+                'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
+                'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
+                'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2122,6 +2125,9 @@ class WPSG_REST {
             'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 180,
             'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
             'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
+            'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
+            'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
+            'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2184,6 +2190,15 @@ class WPSG_REST {
         }
         if (isset($body['scrollTransitionType'])) {
             $input['scroll_transition_type'] = sanitize_text_field($body['scrollTransitionType']);
+        }
+        if (isset($body['imageBorderRadius'])) {
+            $input['image_border_radius'] = intval($body['imageBorderRadius']);
+        }
+        if (isset($body['videoBorderRadius'])) {
+            $input['video_border_radius'] = intval($body['videoBorderRadius']);
+        }
+        if (isset($body['transitionFadeEnabled'])) {
+            $input['transition_fade_enabled'] = (bool) $body['transitionFadeEnabled'];
         }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);

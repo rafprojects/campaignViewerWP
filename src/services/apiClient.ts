@@ -159,6 +159,9 @@ export interface SettingsResponse {
   scrollAnimationDurationMs?: number;
   scrollAnimationEasing?: 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
   scrollTransitionType?: 'fade' | 'slide' | 'slide-fade';
+  imageBorderRadius?: number;
+  videoBorderRadius?: number;
+  transitionFadeEnabled?: boolean;
 }
 
 export interface SettingsUpdateRequest {
@@ -177,6 +180,9 @@ export interface SettingsUpdateRequest {
   scrollAnimationDurationMs?: number;
   scrollAnimationEasing?: 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
   scrollTransitionType?: 'fade' | 'slide' | 'slide-fade';
+  imageBorderRadius?: number;
+  videoBorderRadius?: number;
+  transitionFadeEnabled?: boolean;
 }
 
 export class ApiError extends Error {
