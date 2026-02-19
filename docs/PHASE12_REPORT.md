@@ -29,7 +29,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 
 ---
 
-## Track P12-A — Advanced Video Gallery
+## Track P12-A — Advanced Video Gallery ✅ COMPLETE
 
 ### Objectives
 
@@ -37,36 +37,38 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - Expose admin-configurable controls for advanced playback/gallery UX
 - Preserve safe defaults and backwards compatibility for existing embeds
 
-### Candidate Deliverables
+### Deliverables
 
-- Gallery/player height controls
-- Thumbnail strip scroll speed controls
-- Scroll animation style/duration/easing controls
-- Gallery card styling controls (radius, spacing, border/shadow presets)
-- Enhanced scroll interactions (buttons, drag, wheel behavior)
+- **Configurable video thumbnail dimensions** (`videoThumbnailWidth`/`videoThumbnailHeight`, 30–200px) replacing hardcoded 60×45
+- **Thumbnail gap** (`thumbnailGap`, 0–24px) replacing hardcoded 6px
+- **Wheel scroll toggle** (`thumbnailWheelScrollEnabled`) to opt-out mouse wheel horizontal scrolling
+- **Drag-to-scroll** (`thumbnailDragScrollEnabled`) — new pointer-capture-based drag scrolling with grab cursor and hasMoved guard
+- **Strip scroll buttons** (`thumbnailScrollButtonsVisible`) — optional chevron buttons at strip edges for page-based scrolling
+- Gallery/player height, scroll speed, animation style/duration/easing already existed and were verified working
 
-**Effort:** Medium–High  
-**Impact:** High
+**Effort:** Medium  
+**Impact:** High  
+**Commit:** `4cb3058`
 
 ---
 
-## Track P12-B — Advanced Image Gallery
+## Track P12-B — Advanced Image Gallery ✅ COMPLETE
 
 ### Objectives
 
 - Bring image gallery control depth to parity with video gallery controls
 - Improve consistency of admin customization across both media types
 
-### Candidate Deliverables
+### Deliverables
 
-- Gallery viewport height controls
-- Thumbnail strip scroll speed controls
-- Scroll animation style/duration/easing controls
-- Gallery card styling controls (radius, spacing, border/shadow presets)
-- Enhanced image gallery scroll controls
+- **Configurable image thumbnail dimensions** (`imageThumbnailWidth`/`imageThumbnailHeight`, 30–200px) replacing hardcoded 60×60
+- All shared thumbnail strip controls (gap, wheel, drag, scroll buttons) apply to image gallery identically
+- Gallery viewport height, scroll speed, animation controls already existed and were verified working
+- Full parity with video gallery P12-A controls achieved
 
-**Effort:** Medium–High  
-**Impact:** High
+**Effort:** Medium  
+**Impact:** High  
+**Commit:** `4cb3058`
 
 ---
 
@@ -261,8 +263,8 @@ And six new enhancement tracks identified during Phase 12 implementation:
 6. ~~Track P12-I: Dot navigator with admin controls~~ ✅ COMPLETE (`d3669e3`)
 7. ~~Track P12-J: Image/video shadow & depth controls~~ ✅ COMPLETE (`d3669e3`)
 8. Track P12-C: Gallery adapter contract + runtime selector foundation
-9. Track P12-A: Advanced video gallery controls
-10. Track P12-B: Advanced image gallery controls
+9. ~~Track P12-A: Advanced video gallery controls~~ ✅ COMPLETE (`4cb3058`)
+10. ~~Track P12-B: Advanced image gallery controls~~ ✅ COMPLETE (`4cb3058`)
 
 ---
 
@@ -291,6 +293,8 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - **2026-02-18:** Settings loading delay eliminated. Added `initialSettings` prop seeded from SWR cache for instant rendering. Background revalidation with `hasChangesRef` prevents overwriting user edits. 178 tests passing. Committed `8863676`.
 - **2026-02-18:** **P12-F, P12-G, P12-D COMPLETE.** Border radius controls (imageBorderRadius/videoBorderRadius, 0–48px), transition fade toggle (transitionFadeEnabled), and modular embed provider system (handler interface, registry, 4 handler classes). 17 files changed, 598 insertions. Committed `db45335`.
 - **2026-02-18:** **P12-H, P12-I, P12-J COMPLETE.** OverlayArrows component (7 settings), DotNavigator component (8 settings), shadow presets utility (4 settings) — 19 new settings total, full end-to-end wiring (types → apiClient → SettingsPanel → App.tsx → PHP defaults/sanitization/REST). 3 new files, 8 modified. 178 tests passing. Committed `d3669e3`.
+- **2026-02-18:** **P12-H bugfix.** Fixed overlay arrows Y-axis drop (translateY/-50% conflict with hover scale) and auto-hide timer (pointer-events:none wrapper couldn't receive mousemove). Committed `5cd8be1`.
+- **2026-02-18:** **P12-A, P12-B COMPLETE.** Advanced thumbnail strip controls: configurable dimensions (video 60×45, image 60×60 defaults), gap, wheel scroll toggle, drag-to-scroll with pointer capture, optional strip scroll buttons. CarouselNavigation upgraded with drag handlers and scroll buttons. 8 new settings end-to-end. 178 tests passing. Committed `4cb3058`.
 
 ---
 
