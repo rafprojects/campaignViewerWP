@@ -15,6 +15,9 @@ interface OverlayArrowsProps {
  * Navigation arrows overlaid on the media viewport (left/right edges).
  * Supports configurable position, size, color, background, border, hover scale,
  * and auto-hide with fade timing.
+ *
+ * Auto-hide attaches mousemove/touchstart listeners to the parent element
+ * (the viewport Box) so events fire even while the overlay has pointer-events: none.
  */
 export function OverlayArrows({
   onPrev,
@@ -26,6 +29,7 @@ export function OverlayArrows({
 }: OverlayArrowsProps) {
   const [visible, setVisible] = useState(settings.navArrowAutoHideMs === 0);
   const hideTimerRef = useRef<number>(0);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const scheduleHide = useCallback(() => {
     if (settings.navArrowAutoHideMs <= 0) return;
@@ -33,14 +37,9 @@ export function OverlayArrows({
     hideTimerRef.current = window.setTimeout(() => setVisible(false), settings.navArrowAutoHideMs);
   }, [settings.navArrowAutoHideMs]);
 
-  const handleInteraction = useCallback(() => {
-    setVisible(true);
-    scheduleHide();
-  }, [scheduleHide]);
-
+  /* Seed initial visibility */
   useEffect(() => {
     if (settings.navArrowAutoHideMs > 0) {
-      // Start hidden, show on interaction
       setVisible(false);
     } else {
       setVisible(true);
@@ -48,14 +47,38 @@ export function OverlayArrows({
     return () => window.clearTimeout(hideTimerRef.current);
   }, [settings.navArrowAutoHideMs]);
 
+  /* Attach interaction listeners on the *parent* element (the viewport Box)
+     so they fire even while the overlay wrapper has pointer-events: none. */
+  useEffect(() => {
+    if (settings.navArrowAutoHideMs <= 0) return;
+    const parent = wrapperRef.current?.parentElement;
+    if (!parent) return;
+
+    const show = () => {
+      setVisible(true);
+      window.clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = window.setTimeout(() => setVisible(false), settings.navArrowAutoHideMs);
+    };
+
+    parent.addEventListener('mousemove', show);
+    parent.addEventListener('touchstart', show, { passive: true });
+    return () => {
+      parent.removeEventListener('mousemove', show);
+      parent.removeEventListener('touchstart', show);
+    };
+  }, [settings.navArrowAutoHideMs, scheduleHide]);
+
   if (total <= 1) return null;
 
+  /* Use top/bottom + margin:auto for vertical centering so that `transform`
+     is free for the hover-scale effect (avoids the translateY(-50%) conflict
+     that caused the "initial drop" bug). */
   const verticalStyle: CSSProperties =
     settings.navArrowPosition === 'top'
       ? { top: 12 }
       : settings.navArrowPosition === 'bottom'
         ? { bottom: 12 }
-        : { top: '50%', transform: 'translateY(-50%)' };
+        : { top: 0, bottom: 0, marginBlock: 'auto' };
 
   const iconSize = Math.round(settings.navArrowSize * 0.6);
 
@@ -82,17 +105,14 @@ export function OverlayArrows({
   };
 
   const handleHover = (e: React.MouseEvent<HTMLButtonElement>, entering: boolean) => {
-    if (entering) {
-      e.currentTarget.style.transform = `scale(${settings.navArrowHoverScale})`;
-    } else {
-      e.currentTarget.style.transform = '';
-    }
+    e.currentTarget.style.transform = entering
+      ? `scale(${settings.navArrowHoverScale})`
+      : 'scale(1)';
   };
 
   return (
     <div
-      onMouseMove={settings.navArrowAutoHideMs > 0 ? handleInteraction : undefined}
-      onTouchStart={settings.navArrowAutoHideMs > 0 ? handleInteraction : undefined}
+      ref={wrapperRef}
       style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}
     >
       <button
