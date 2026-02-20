@@ -1,12 +1,58 @@
 # Future Tasks & Enhancements
 
-This document tracks deferred and exploratory work that remains after the Phase 11 release.
+This document tracks deferred and exploratory work that remains after the Phase 12 release.
 
 > Note: Items promoted to active phase execution are moved into dedicated phase reports and removed from this backlog.
 
 ---
 
 ## High Priority
+
+### Layout Builder Epic (Post-Phase 12 Carryover)
+
+Phase 12 intentionally delivered adapter architecture + runtime adapter controls, while deferring the full layout-builder epic.
+
+**Goal:** evolve from adapter switching to authored, reusable, migration-safe layout presets.
+
+#### LB-1. Preset Data Model + Persistence
+- Define versioned preset schema (`layoutSchemaVersion`) with migration hooks
+- Add persistence strategy (WP option vs dedicated table) with indexing plan
+- Store authored constraints (tile sizing rules, spacing, focal hints, breakpoints)
+
+**Effort:** High  
+**Impact:** High
+
+#### LB-2. Visual Layout Authoring Surface
+- Build canvas/editor workflow for placing/adjusting media tiles and rules
+- Add snapping/grid guides and safe-constraint validation
+- Support preview across responsive breakpoints before save
+
+**Effort:** High  
+**Impact:** High
+
+#### LB-3. Preset Lifecycle Management
+- Preset CRUD (create, duplicate, archive, delete)
+- Preset assignment to image/video/unified modes
+- Import/export format for moving presets across WP instances
+
+**Effort:** Medium–High  
+**Impact:** High
+
+#### LB-4. Migration + Fallback Strategy
+- Backward-compatible migration path from adapter-only settings
+- Fallback behavior when preset is missing/invalid/corrupted
+- Admin diagnostics for migration status and conflicts
+
+**Effort:** Medium  
+**Impact:** High
+
+#### LB-5. Testing & QA for Builder
+- Add schema migration test matrix (N→N+1 version upgrades)
+- Add visual regression coverage for generated layouts
+- Add stress/performance tests for large media collections
+
+**Effort:** Medium  
+**Impact:** Medium–High
 
 ### Bulk Media Operations
 
@@ -222,4 +268,4 @@ When considering future tasks:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: February 17, 2026 — removed Phase 11-completed items and moved selected tracks into Phase 12 planning*
+*Last updated: February 19, 2026 — Phase 12 carryover captured; layout-builder epic expanded into actionable backlog tracks*

@@ -5,6 +5,23 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-02-19
+
+### Added - Phase 12: Gallery Extensibility & Advanced Experience (Close-out)
+- Completed pluggable gallery expansion with shipping adapters: `compact-grid`, `justified` (legacy `mosaic` alias), `masonry`, `hexagonal`, `circular`, and `diamond`.
+- Added advanced tile appearance controls for non-classic adapters: tile size, X/Y gaps, border width/color, hover bounce, glow color/spread, and masonry column override.
+- Added per-media viewport background controls for image/video/unified galleries with four modes: `none`, `solid`, `gradient`, `image`.
+- Settings, REST API, and WordPress defaults/sanitization were extended end-to-end for all new gallery/viewport options.
+
+### Changed
+- Fixed justified rows root-cause layout regression by removing conflicting display override in `RowsPhotoAlbum` render path.
+- CampaignViewer gallery rendering now applies optional background wrappers per media mode while preserving adapter behavior.
+- Phase 12 report and future-task backlog were updated to close the phase and move deferred layout-builder work into a structured post-phase epic.
+
+### Fixed
+- Removed deprecated dead `MosaicGallery` implementation superseded by `JustifiedGallery`.
+- Maintained clean build/test baseline while adding adapter and viewport background extensibility.
+
 ## [0.9.0] - 2026-02-16
 
 ### Added - Phase 11: UX & Discovery Improvements
@@ -196,10 +213,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-See [PHASE11_REPORT.md](./docs/PHASE11_REPORT.md) for final Phase 11 execution details and carryover notes.
+See [PHASE12_REPORT.md](./docs/PHASE12_REPORT.md) for final Phase 12 execution details and carryover notes.
 
 ---
 
+[0.9.2]: https://github.com/yourorg/wp-super-gallery/compare/v0.9.0...v0.9.2
 [0.5.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.4.0...v0.5.0
 [0.9.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.7.0...v0.8.0

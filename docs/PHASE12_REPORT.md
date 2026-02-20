@@ -1,7 +1,7 @@
 # Phase 12 — Gallery Extensibility & Advanced Experience
 
-**Status:** In Progress  
-**Version target:** v0.10.0 (planning target)  
+**Status:** Complete ✅  
+**Version target:** v0.9.2  
 **Created:** February 17, 2026
 **Last updated:** February 19, 2026
 
@@ -94,12 +94,14 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - ✅ 178 tests / 0 failures; updated lightbox test assertions for Portal model
 - ✅ Committed `7f7cef7`
 
-### Deferred Beyond Phase 12 (Confirmed)
+### Deferred Beyond Phase 12 (Confirmed — moved to FUTURE_TASKS)
 
 - Full manual canvas layout editor UX
 - Rich layout migration tooling across multiple schema versions
 - Advanced preset authoring/management workflows
 - Layout preset persistence schema (PHP table creation)
+
+These items are now tracked in `docs/FUTURE_TASKS.md` under **Layout Builder Epic (Post-Phase 12 Carryover)**.
 
 **Effort:** High  
 **Impact:** High
@@ -271,7 +273,7 @@ And six new enhancement tracks identified during Phase 12 implementation:
 5. ~~Track P12-H: Navigation overlay arrows with admin controls~~ ✅ COMPLETE (`d3669e3`)
 6. ~~Track P12-I: Dot navigator with admin controls~~ ✅ COMPLETE (`d3669e3`)
 7. ~~Track P12-J: Image/video shadow & depth controls~~ ✅ COMPLETE (`d3669e3`)
-8. Track P12-C: Gallery adapter contract + runtime selector foundation
+8. ~~Track P12-C: Gallery adapter contract + runtime selector foundation~~ ✅ COMPLETE (`7f7cef7`)
 9. ~~Track P12-A: Advanced video gallery controls~~ ✅ COMPLETE (`4cb3058`)
 10. ~~Track P12-B: Advanced image gallery controls~~ ✅ COMPLETE (`4cb3058`)
 
@@ -306,6 +308,19 @@ And six new enhancement tracks identified during Phase 12 implementation:
 - **2026-02-18:** **P12-A, P12-B COMPLETE.** Advanced thumbnail strip controls: configurable dimensions (video 60×45, image 60×60 defaults), gap, wheel scroll toggle, drag-to-scroll with pointer capture, optional strip scroll buttons. CarouselNavigation upgraded with drag handlers and scroll buttons. 8 new settings end-to-end. 178 tests passing. Committed `4cb3058`.
 - **2026-02-19:** **P12-C planning decisions locked.** Scope constrained to adapter foundation (no canvas editor), runtime adapter settings per media type (`videoGalleryAdapterId`, `imageGalleryAdapterId`) with hard fallback to `classic`, one alternate image adapter as POC path, and layout preset persistence contract (schema foundation only).
 - **2026-02-19:** **P12-C COMPLETE.** Adapter contract + registry, Portal-based Lightbox (fixes broken nested-Modal z-index), CompactGridGallery adapter (responsive auto-fill grid, playing-card proportions, hover scale, zoom overlay). 4 new settings end-to-end (frontend + PHP). ImageCarousel lightbox fixed. 178 tests / 0 failures. Committed `7f7cef7`.
+- **2026-02-19:** **P12-C extension: advanced adapter set completed.** Fixed justified rows bug root cause (`display:block` conflict), added true masonry adapter, and added hexagonal/circular/diamond shape adapters with shared tile appearance controls (gap/border/glow/bounce + masonry columns). Committed `0d3daa8`.
+- **2026-02-19:** Dead legacy mosaic adapter file removed after justified replacement (`src/gallery-adapters/mosaic/MosaicGallery.tsx`). Committed `cf07bcc`.
+- **2026-02-19:** Added per-media viewport background controls for image/video/unified galleries (none/solid/gradient/image), wired end-to-end through React settings, CampaignViewer rendering, PHP settings defaults/sanitization, and REST responses. Committed `3ed74e5`.
+
+---
+
+## Phase 12 Close-out Summary
+
+Phase 12 is complete and productionized through **v0.9.2** scope.
+
+- Tracks **P12-A through P12-J** are complete.
+- Adapter system moved from foundation to practical extensibility with multiple shipping gallery styles.
+- Remaining layout-builder epic work is intentionally deferred and now detailed in `docs/FUTURE_TASKS.md`.
 
 ---
 
