@@ -2215,6 +2215,11 @@ class WPSG_REST {
                 'modalTransition'            => $settings['modal_transition'] ?? 'pop',
                 'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
                 'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
+                // P13-F: Card Gallery Pagination
+                'cardDisplayMode'            => $settings['card_display_mode'] ?? 'load-more',
+                'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
+                'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
+                'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2312,6 +2317,11 @@ class WPSG_REST {
             'modalTransition'            => $settings['modal_transition'] ?? 'pop',
             'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
             'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
+            // P13-F: Card Gallery Pagination
+            'cardDisplayMode'            => $settings['card_display_mode'] ?? 'load-more',
+            'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
+            'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
+            'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2530,6 +2540,11 @@ class WPSG_REST {
         if (isset($body['modalTransition'])) { $input['modal_transition'] = sanitize_text_field($body['modalTransition']); }
         if (isset($body['modalTransitionDuration'])) { $input['modal_transition_duration'] = intval($body['modalTransitionDuration']); }
         if (isset($body['modalMaxHeight'])) { $input['modal_max_height'] = intval($body['modalMaxHeight']); }
+        // P13-F: Card Gallery Pagination
+        if (isset($body['cardDisplayMode'])) { $input['card_display_mode'] = sanitize_text_field($body['cardDisplayMode']); }
+        if (isset($body['cardRowsPerPage'])) { $input['card_rows_per_page'] = intval($body['cardRowsPerPage']); }
+        if (isset($body['cardPageDotNav'])) { $input['card_page_dot_nav'] = (bool) $body['cardPageDotNav']; }
+        if (isset($body['cardPageTransitionMs'])) { $input['card_page_transition_ms'] = intval($body['cardPageTransitionMs']); }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2639,6 +2654,11 @@ class WPSG_REST {
             'modalTransition'            => $merged['modal_transition'] ?? 'pop',
             'modalTransitionDuration'    => $merged['modal_transition_duration'] ?? 300,
             'modalMaxHeight'             => $merged['modal_max_height'] ?? 90,
+            // P13-F: Card Gallery Pagination
+            'cardDisplayMode'            => $merged['card_display_mode'] ?? 'load-more',
+            'cardRowsPerPage'            => $merged['card_rows_per_page'] ?? 3,
+            'cardPageDotNav'             => $merged['card_page_dot_nav'] ?? false,
+            'cardPageTransitionMs'       => $merged['card_page_transition_ms'] ?? 300,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

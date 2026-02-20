@@ -127,6 +127,11 @@ class WPSG_Settings {
         'modal_transition'           => 'pop',
         'modal_transition_duration'  => 300,
         'modal_max_height'           => 90,
+        // P13-F: Card Gallery Pagination
+        'card_display_mode'          => 'load-more',
+        'card_rows_per_page'         => 3,
+        'card_page_dot_nav'          => false,
+        'card_page_transition_ms'    => 300,
         'cache_ttl'                  => 3600,
     ];
 
@@ -166,6 +171,7 @@ class WPSG_Settings {
         'card_thumbnail_fit'     => ['cover', 'contain'],
         'card_border_mode'       => ['auto', 'single', 'individual'],
         'modal_transition'       => ['pop', 'fade', 'slide-up'],
+        'card_display_mode'      => ['show-all', 'load-more', 'paginated'],
     ];
 
     /**
@@ -638,6 +644,20 @@ class WPSG_Settings {
         }
         if (isset($input['modal_max_height'])) {
             $sanitized['modal_max_height'] = max(50, min(100, intval($input['modal_max_height'])));
+        }
+
+        // P13-F: Card Gallery Pagination.
+        if (isset($input['card_display_mode']) && in_array($input['card_display_mode'], self::$valid_options['card_display_mode'], true)) {
+            $sanitized['card_display_mode'] = $input['card_display_mode'];
+        }
+        if (isset($input['card_rows_per_page'])) {
+            $sanitized['card_rows_per_page'] = max(1, min(10, intval($input['card_rows_per_page'])));
+        }
+        if (isset($input['card_page_dot_nav'])) {
+            $sanitized['card_page_dot_nav'] = (bool) $input['card_page_dot_nav'];
+        }
+        if (isset($input['card_page_transition_ms'])) {
+            $sanitized['card_page_transition_ms'] = max(100, min(800, intval($input['card_page_transition_ms'])));
         }
 
         // Boolean fields.

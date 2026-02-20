@@ -373,6 +373,11 @@ function AppContent({
       modalTransition: response.modalTransition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransition,
       modalTransitionDuration: response.modalTransitionDuration ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransitionDuration,
       modalMaxHeight: response.modalMaxHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalMaxHeight,
+      // P13-F: Card Gallery Pagination
+      cardDisplayMode: (response.cardDisplayMode as GalleryBehaviorSettings['cardDisplayMode']) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardDisplayMode,
+      cardRowsPerPage: response.cardRowsPerPage ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardRowsPerPage,
+      cardPageDotNav: response.cardPageDotNav ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageDotNav,
+      cardPageTransitionMs: response.cardPageTransitionMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageTransitionMs,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -873,6 +878,10 @@ function AppContent({
                     modalTransition: saved.modalTransition,
                     modalTransitionDuration: saved.modalTransitionDuration,
                     modalMaxHeight: saved.modalMaxHeight,
+                    cardDisplayMode: saved.cardDisplayMode,
+                    cardRowsPerPage: saved.cardRowsPerPage,
+                    cardPageDotNav: saved.cardPageDotNav,
+                    cardPageTransitionMs: saved.cardPageTransitionMs,
                   },
                   false,
                 );

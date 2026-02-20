@@ -11,39 +11,39 @@
 
 Phase 13 focuses on UX polish, frontend performance, and campaign lifecycle management. Four tracks were promoted from `docs/FUTURE_TASKS.md`:
 
-1. **P13-A — Modal CampaignViewer** (HIGHEST PRIORITY)
-2. **P13-B — Lazy Loading for Large Galleries**
-3. **P13-C — Admin Panel Loading Performance**
-4. **P13-D — Campaign Scheduling**
+1. **P13-A — Modal CampaignViewer + Card Settings** ✅ COMPLETE
+2. **P13-F — Card Gallery Pagination** (NEXT PRIORITY)
+3. **P13-B — Lazy Loading for Large Galleries**
+4. **P13-C — Admin Panel Loading Performance**
+5. **P13-D — Campaign Scheduling**
+6. **P13-E — Mobile Readiness Audit**
 
 ---
 
-## Track P13-A — Modal CampaignViewer  ⬅️ IN PROGRESS
+## Track P13-A — Modal CampaignViewer + Card Settings  ✅ COMPLETE
 
 ### Problem
 
-CampaignViewer currently opens via `<Modal fullScreen>`, which takes over the entire viewport and feels like a page navigation rather than a contextual preview. The "Back" button reinforces this disconnected pattern.
+CampaignViewer opened via `<Modal fullScreen>`, taking over the entire viewport. The "Back" button pattern felt like page navigation rather than a contextual preview. Additionally, card appearance and modal behavior had no admin-configurable settings.
 
-### Objectives
+### Delivered
 
-- Replace `fullScreen` modal with a standard centered Mantine `<Modal>` (large but not full-viewport)
-- Add smooth open/close animation (scale-up + fade) for polished UX
-- Preserve all existing content: cover image header, metadata, media galleries, stats, admin actions
-- Ensure responsive behavior (near-fullscreen on mobile, ~900px max on desktop)
-- Replace "Back" button with standard modal close affordances (X button, click-outside, Escape)
-- Maintain scroll within modal body for long campaigns
+- [x] Converted `<Modal fullScreen>` to centered `<Modal size="xl">` with `radius="lg"`
+- [x] Modal transitions animate correctly (pop/fade/slide-up) via `opened` prop toggling
+- [x] Component stays mounted during close animation (ref pattern)
+- [x] Close button (X) replaces "Back" button; click-outside and Escape work
+- [x] Cover image height reduced for modal context, Title demoted h1→h3
+- [x] 13 configurable settings in "Campaign Card" settings tab (full stack):
+  - Card: border radius, width, border mode (auto/single/individual), border color, shadow preset, thumbnail height, thumbnail fit
+  - Grid: columns, gap
+  - Modal: cover height, transition, duration, max height
+- [x] Border color 3-mode system with per-card ColorInput in Edit Campaign
+- [x] Theme persistence fix (localStorage priority over WP injection)
+- [x] Theme form element contrast fix (surface2 inputs, autoContrast buttons)
+- [x] CampaignViewer + CardGallery + SettingsPanel + PHP REST/Settings all updated
+- [x] All 178 tests pass, build clean
 
-### Deliverables
-
-- [ ] Convert `<Modal fullScreen>` to centered `<Modal size="xl">` with max-width constraint
-- [ ] Add `transitionProps` for animated open (pop/scale transition)
-- [ ] Replace "Back" button with `withCloseButton`
-- [ ] Adjust cover image height for modal context
-- [ ] Verify CampaignViewer tests pass with modal changes
-- [ ] Verify CardGallery integration tests still work
-
-**Effort:** Low–Medium  
-**Impact:** High
+**Commits:** `04f0167`, `4202fe4`
 
 ---
 
@@ -156,22 +156,122 @@ The application has not been systematically verified for mobile viewports. Touch
 
 ---
 
+## Track P13-F — Card Gallery Pagination  ⬅️ NEXT
+
+### Problem
+
+The card gallery currently uses a "Load more" progressive pattern that appends 12 cards at a time. For galleries with many campaigns, this creates an ever-growing page. Admins need the option to show a fixed number of card rows per page with arrow navigation, similar to the classic gallery carousel.
+
+### Design
+
+**Three display modes** (admin-configurable in Campaign Card settings tab):
+
+| Mode | Behavior |
+|------|----------|
+| `show-all` | All cards rendered at once, no pagination |
+| `load-more` | Current behavior — 12 cards initially, "Load more" button appends batches |
+| `paginated` | Fixed rows per page with arrow navigation |
+
+**Rows-per-page calculation:**
+- The setting controls **rows per page** (e.g., 2, 3, 4), not card count
+- Actual cards per page = `rowsPerPage × currentColumnCount`
+- Column count is determined by the existing responsive `cardGridColumns` setting (auto = 1/2/3 at base/sm/lg, or fixed 2–4)
+- When the viewport changes, cards reflow and the page boundary adjusts automatically
+- Default: 3 rows per page
+
+**Pagination navigation:**
+- Overlay arrows on left/right edges of the card grid (same OverlayArrow component used by classic gallery carousel)
+- Optional dot navigator below the grid (reuse existing DotNavigator component, default off)
+- Page indicator text (e.g., "Page 2 of 5") shown near dots/arrows when paginated
+- Keyboard: left/right arrow keys navigate pages when grid area has focus
+
+**Page transition:**
+- Slide animation (cards slide left/right between pages)
+- Duration controlled by `cardPageTransitionMs` setting
+
+### New Settings (Campaign Card tab)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `cardDisplayMode` | `'show-all' \| 'load-more' \| 'paginated'` | `'load-more'` | Card gallery display behavior |
+| `cardRowsPerPage` | `number (1–10)` | `3` | Rows visible per page in paginated mode |
+| `cardPageDotNav` | `boolean` | `false` | Show dot navigator below grid in paginated mode |
+| `cardPageTransitionMs` | `number (100–800)` | `300` | Slide animation duration between pages |
+
+### Implementation Plan
+
+#### F-1. Settings layer
+- Add 4 new fields to `GalleryBehaviorSettings` interface + defaults
+- Add to `SettingsResponse` / `SettingsUpdateRequest` in apiClient
+- Add to `App.tsx` fetch/mutate mapping
+- Add to `SettingsPanel` Campaign Card tab (display mode Select, conditional rows/dots/duration inputs)
+- Add to PHP `class-wpsg-settings.php` defaults + sanitization
+- Add to PHP `class-wpsg-rest.php` all 4 response/parser blocks
+
+#### F-2. CardGallery pagination logic
+- Track `currentPage` state (reset to 0 on filter/search change)
+- Compute `effectiveColumns` from settings + current breakpoint (Mantine `useMatches` or `window.matchMedia`)
+- Compute `cardsPerPage = rowsPerPage × effectiveColumns`
+- Compute `totalPages = ceil(filteredCampaigns.length / cardsPerPage)`
+- Slice `filteredCampaigns` for current page
+- Wire `prevPage` / `nextPage` handlers
+
+#### F-3. Pagination UI (arrows + dots)
+- Render OverlayArrows flanking the `SimpleGrid` container (conditionally when paginated + totalPages > 1)
+- Render DotNavigator below grid when `cardPageDotNav` is true
+- Add page indicator text ("Page N of M")
+- Add keyboard navigation (left/right arrow keys)
+- Hide arrows on first/last page (or wrap around — TBD based on UX feel)
+
+#### F-4. Slide transition
+- Wrap the `SimpleGrid` in a transition container
+- On page change, slide the outgoing page out (left or right based on direction) and slide the incoming page in
+- Use CSS `transform: translateX()` + `transition` for performant GPU-accelerated animation
+- Duration controlled by `cardPageTransitionMs`
+
+#### F-5. Responsive edge cases
+- When viewport resizes mid-pagination, recalculate `cardsPerPage` and clamp `currentPage` to valid range
+- If `totalPages` shrinks below `currentPage`, snap to last valid page
+- On mobile (1 column), each "row" = 1 card, so 3 rows = 3 cards per page
+
+#### F-6. Tests
+- Unit test pagination math (cardsPerPage, totalPages, page clamping)
+- Test display mode switching (show-all / load-more / paginated)
+- Test page navigation (arrow clicks, keyboard)
+- Test responsive recalculation
+
+### Deliverables
+
+- [ ] F-1: Settings layer (types → apiClient → App → SettingsPanel → PHP)
+- [ ] F-2: CardGallery pagination state and slicing logic
+- [ ] F-3: OverlayArrows + DotNavigator integration for pages
+- [ ] F-4: Slide transition animation between pages
+- [ ] F-5: Responsive edge case handling
+- [ ] F-6: Tests for pagination logic and UI
+
+**Effort:** Medium  
+**Impact:** High
+
+---
+
 ## Execution Order
 
 | Priority | Track | Status |
 |----------|-------|--------|
-| 1 | P13-A — Modal CampaignViewer + Card Settings | In Progress |
-| 2 | P13-E — Mobile Readiness Audit | Not Started |
-| 3 | P13-B — Lazy Loading | Not Started |
-| 4 | P13-C — Admin Panel Performance | Not Started |
-| 5 | P13-D — Campaign Scheduling | Not Started |
+| 1 | P13-A — Modal CampaignViewer + Card Settings | ✅ Complete |
+| 2 | P13-F — Card Gallery Pagination | Not Started |
+| 3 | P13-E — Mobile Readiness Audit | Not Started |
+| 4 | P13-B — Lazy Loading | Not Started |
+| 5 | P13-C — Admin Panel Performance | Not Started |
+| 6 | P13-D — Campaign Scheduling | Not Started |
 
 ---
 
 ## Progress Log
 
 - **2026-02-20:** Phase 13 initiated. Four tracks promoted from FUTURE_TASKS. P13-A prioritized.
-- **2026-02-20:** P13-A: Campaign Card settings tab (11 settings) + modal/card wiring complete. P13-E mobile readiness track added.
+- **2026-02-20:** P13-A complete — Modal conversion, 13 card settings (full stack), border color 3-mode system, modal animation fix, theme persistence fix, theme contrast fix. Commits: `04f0167`, `4202fe4`.
+- **2026-02-20:** P13-F card gallery pagination track added. Design finalized: 3 display modes (show-all/load-more/paginated), rows-per-page setting, OverlayArrows + optional DotNavigator, slide transition.
 
 ---
 

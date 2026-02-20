@@ -238,6 +238,11 @@ export interface SettingsResponse {
   modalTransition?: string;
   modalTransitionDuration?: number;
   modalMaxHeight?: number;
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode?: string;
+  cardRowsPerPage?: number;
+  cardPageDotNav?: boolean;
+  cardPageTransitionMs?: number;
 }
 
 export interface SettingsUpdateRequest {
@@ -335,6 +340,11 @@ export interface SettingsUpdateRequest {
   modalTransition?: string;
   modalTransitionDuration?: number;
   modalMaxHeight?: number;
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode?: string;
+  cardRowsPerPage?: number;
+  cardPageDotNav?: boolean;
+  cardPageTransitionMs?: number;
 }
 
 export class ApiError extends Error {

@@ -2,6 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
+import { OverlayArrows } from '@/components/Campaign/OverlayArrows';
+import { DotNavigator } from '@/components/Campaign/DotNavigator';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import styles from './CardGallery.module.scss';
 
@@ -39,9 +41,39 @@ export function CardGallery({
   const displayedCampaign = selectedCampaign ?? lastCampaignRef.current;
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [visibleCount, setVisibleCount] = useState(12);
 
-  const PAGE_SIZE = 12;
+  // Load-more state
+  const LOAD_MORE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(LOAD_MORE_SIZE);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+
+  const displayMode = galleryBehaviorSettings.cardDisplayMode ?? 'load-more';
+
+  /** Resolve effective column count based on settings + current breakpoint. */
+  const getEffectiveColumns = useCallback((): number => {
+    const cols = galleryBehaviorSettings.cardGridColumns;
+    if (cols > 0) return cols;
+    // Responsive auto: match Mantine's base:1 sm:2 lg:3 breakpoints
+    const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    if (w >= 1200) return 3;  // lg
+    if (w >= 768) return 2;   // sm
+    return 1;                 // base
+  }, [galleryBehaviorSettings.cardGridColumns]);
+
+  const [effectiveColumns, setEffectiveColumns] = useState(getEffectiveColumns);
+
+  // Update columns on resize
+  useEffect(() => {
+    if (displayMode !== 'paginated') return;
+    const handleResize = () => setEffectiveColumns(getEffectiveColumns());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [displayMode, getEffectiveColumns]);
 
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
@@ -72,16 +104,81 @@ export function CardGallery({
   const hiddenCount = useMemo(() => Math.max(0, campaigns.length - accessibleCount), [accessibleCount, campaigns.length]);
   const showHiddenNotice = useMemo(() => accessMode === 'hide' && filter === 'all' && hiddenCount > 0, [accessMode, filter, hiddenCount]);
 
-  // Reset visible count when filters change
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [filter, searchQuery, accessMode]);
+  // Pagination math
+  const rowsPerPage = galleryBehaviorSettings.cardRowsPerPage ?? 3;
+  const cardsPerPage = rowsPerPage * effectiveColumns;
+  const totalPages = displayMode === 'paginated' && cardsPerPage > 0
+    ? Math.ceil(filteredCampaigns.length / cardsPerPage)
+    : 1;
 
-  const visibleCampaigns = useMemo(
-    () => filteredCampaigns.slice(0, visibleCount),
-    [filteredCampaigns, visibleCount],
-  );
-  const hasMore = visibleCount < filteredCampaigns.length;
+  // Reset state when filters/mode change
+  useEffect(() => {
+    setVisibleCount(LOAD_MORE_SIZE);
+    setCurrentPage(0);
+    setSlideDirection(null);
+    setIsAnimating(false);
+  }, [filter, searchQuery, accessMode, displayMode]);
+
+  // Clamp currentPage if totalPages shrinks (e.g. resize or filter change)
+  useEffect(() => {
+    if (currentPage >= totalPages && totalPages > 0) {
+      setCurrentPage(totalPages - 1);
+    }
+  }, [currentPage, totalPages]);
+
+  // Compute visible campaigns based on display mode
+  const visibleCampaigns = useMemo(() => {
+    if (displayMode === 'show-all') return filteredCampaigns;
+    if (displayMode === 'paginated') {
+      const start = currentPage * cardsPerPage;
+      return filteredCampaigns.slice(start, start + cardsPerPage);
+    }
+    // load-more
+    return filteredCampaigns.slice(0, visibleCount);
+  }, [filteredCampaigns, displayMode, currentPage, cardsPerPage, visibleCount]);
+
+  const hasMore = displayMode === 'load-more' && visibleCount < filteredCampaigns.length;
+
+  // Page navigation handlers
+  const goToPage = useCallback((page: number) => {
+    if (isAnimating || page < 0 || page >= totalPages || page === currentPage) return;
+    const dir = page > currentPage ? 'left' : 'right';
+    setSlideDirection(dir);
+    setIsAnimating(true);
+    const duration = galleryBehaviorSettings.cardPageTransitionMs ?? 300;
+    setTimeout(() => {
+      setCurrentPage(page);
+      setSlideDirection(null);
+      setIsAnimating(false);
+    }, duration);
+  }, [currentPage, galleryBehaviorSettings.cardPageTransitionMs, isAnimating, totalPages]);
+
+  const goPrev = useCallback(() => goToPage(currentPage - 1), [currentPage, goToPage]);
+  const goNext = useCallback(() => goToPage(currentPage + 1), [currentPage, goToPage]);
+
+  // Keyboard navigation for paginated mode
+  useEffect(() => {
+    if (displayMode !== 'paginated' || totalPages <= 1) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+    };
+    const container = gridContainerRef.current;
+    container?.addEventListener('keydown', handleKey);
+    return () => container?.removeEventListener('keydown', handleKey);
+  }, [displayMode, totalPages, goPrev, goNext]);
+
+  // Slide animation styles
+  const transitionMs = galleryBehaviorSettings.cardPageTransitionMs ?? 300;
+  const slideStyle: React.CSSProperties = displayMode === 'paginated' ? {
+    transform: slideDirection === 'left'
+      ? 'translateX(-100%)'
+      : slideDirection === 'right'
+        ? 'translateX(100%)'
+        : 'translateX(0)',
+    transition: slideDirection ? `transform ${transitionMs}ms ease` : 'none',
+    opacity: slideDirection ? 0.3 : 1,
+  } : {};
 
   return (
     <Box className={styles.gallery}>
@@ -150,30 +247,70 @@ export function CardGallery({
 
       {/* Gallery Grid */}
       <Container size="xl" component="main" py={{ base: 'lg', md: 'xl' }}>
-        <SimpleGrid
-          cols={galleryBehaviorSettings.cardGridColumns > 0
-            ? galleryBehaviorSettings.cardGridColumns
-            : { base: 1, sm: 2, lg: 3 }
-          }
-          spacing={galleryBehaviorSettings.cardGap}
+        {/* Pagination wrapper — relative for overlay arrows */}
+        <Box
+          ref={gridContainerRef}
+          style={{ position: 'relative', overflow: 'hidden' }}
+          tabIndex={displayMode === 'paginated' ? 0 : undefined}
+          aria-label={displayMode === 'paginated' ? `Card gallery page ${currentPage + 1} of ${totalPages}` : undefined}
         >
-          {visibleCampaigns.map((campaign) => (
-            <CampaignCard
-              key={campaign.id}
-              campaign={campaign}
-              hasAccess={hasAccess(campaign.id, campaign.visibility)}
-              onClick={() => setSelectedCampaign(campaign)}
-              settings={galleryBehaviorSettings}
-            />
-          ))}
-        </SimpleGrid>
+          <div style={slideStyle}>
+            <SimpleGrid
+              cols={galleryBehaviorSettings.cardGridColumns > 0
+                ? galleryBehaviorSettings.cardGridColumns
+                : { base: 1, sm: 2, lg: 3 }
+              }
+              spacing={galleryBehaviorSettings.cardGap}
+            >
+              {visibleCampaigns.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  hasAccess={hasAccess(campaign.id, campaign.visibility)}
+                  onClick={() => setSelectedCampaign(campaign)}
+                  settings={galleryBehaviorSettings}
+                />
+              ))}
+            </SimpleGrid>
+          </div>
 
+          {/* Overlay arrows for paginated mode */}
+          {displayMode === 'paginated' && totalPages > 1 && (
+            <OverlayArrows
+              onPrev={goPrev}
+              onNext={goNext}
+              total={totalPages}
+              settings={galleryBehaviorSettings}
+              previousLabel="Previous page"
+              nextLabel="Next page"
+            />
+          )}
+        </Box>
+
+        {/* Dot navigator + page indicator for paginated mode */}
+        {displayMode === 'paginated' && totalPages > 1 && (
+          <Stack align="center" gap={4} mt="sm">
+            {galleryBehaviorSettings.cardPageDotNav && (
+              <DotNavigator
+                total={totalPages}
+                currentIndex={currentPage}
+                onSelect={(page) => goToPage(page)}
+                settings={galleryBehaviorSettings}
+              />
+            )}
+            <Text size="xs" c="dimmed">
+              Page {currentPage + 1} of {totalPages}
+            </Text>
+          </Stack>
+        )}
+
+        {/* Load more button */}
         {hasMore && (
           <Center mt="xl">
             <Button
               variant="light"
               size="md"
-              onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+              onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_SIZE)}
             >
               Load more ({filteredCampaigns.length - visibleCount} remaining)
             </Button>

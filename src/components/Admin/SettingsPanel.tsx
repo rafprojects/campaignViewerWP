@@ -138,6 +138,11 @@ const defaultSettings: SettingsData = {
   modalTransition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransition,
   modalTransitionDuration: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransitionDuration,
   modalMaxHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalMaxHeight,
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardDisplayMode,
+  cardRowsPerPage: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardRowsPerPage,
+  cardPageDotNav: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageDotNav,
+  cardPageTransitionMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageTransitionMs,
 };
 
 interface SettingsPanelProps {
@@ -242,6 +247,11 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   modalTransition: response.modalTransition ?? defaultSettings.modalTransition,
   modalTransitionDuration: response.modalTransitionDuration ?? defaultSettings.modalTransitionDuration,
   modalMaxHeight: response.modalMaxHeight ?? defaultSettings.modalMaxHeight,
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode: (response.cardDisplayMode ?? defaultSettings.cardDisplayMode) as GalleryBehaviorSettings['cardDisplayMode'],
+  cardRowsPerPage: response.cardRowsPerPage ?? defaultSettings.cardRowsPerPage,
+  cardPageDotNav: response.cardPageDotNav ?? defaultSettings.cardPageDotNav,
+  cardPageTransitionMs: response.cardPageTransitionMs ?? defaultSettings.cardPageTransitionMs,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -1296,6 +1306,47 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   max={48}
                   step={2}
                 />
+
+                <Divider label="Card Pagination" labelPosition="left" />
+                <Select
+                  label="Display Mode"
+                  description="How cards are displayed: all at once, progressively loaded, or paginated with arrows"
+                  data={[
+                    { value: 'show-all', label: 'Show All' },
+                    { value: 'load-more', label: 'Load More (progressive)' },
+                    { value: 'paginated', label: 'Paginated (arrows)' },
+                  ]}
+                  value={settings.cardDisplayMode}
+                  onChange={(v) => updateSetting('cardDisplayMode', (v ?? 'load-more') as GalleryBehaviorSettings['cardDisplayMode'])}
+                />
+                {settings.cardDisplayMode === 'paginated' && (
+                  <>
+                    <NumberInput
+                      label="Rows Per Page"
+                      description="Number of card rows visible per page"
+                      value={settings.cardRowsPerPage}
+                      onChange={(v) => updateSetting('cardRowsPerPage', typeof v === 'number' ? v : 3)}
+                      min={1}
+                      max={10}
+                      step={1}
+                    />
+                    <Switch
+                      label="Dot Navigator"
+                      description="Show dot navigator below the card grid"
+                      checked={settings.cardPageDotNav}
+                      onChange={(e) => updateSetting('cardPageDotNav', e.currentTarget.checked)}
+                    />
+                    <NumberInput
+                      label="Page Transition Duration (ms)"
+                      description="Slide animation speed between pages"
+                      value={settings.cardPageTransitionMs}
+                      onChange={(v) => updateSetting('cardPageTransitionMs', typeof v === 'number' ? v : 300)}
+                      min={100}
+                      max={800}
+                      step={50}
+                    />
+                  </>
+                )}
 
                 <Divider label="Campaign Modal" labelPosition="left" />
                 <NumberInput

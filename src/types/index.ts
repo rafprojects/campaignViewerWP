@@ -188,6 +188,11 @@ export interface GalleryBehaviorSettings {
   modalTransition: string;
   modalTransitionDuration: number;
   modalMaxHeight: number;
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode: 'show-all' | 'load-more' | 'paginated';
+  cardRowsPerPage: number;
+  cardPageDotNav: boolean;
+  cardPageTransitionMs: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -259,6 +264,11 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   modalTransition: 'pop',
   modalTransitionDuration: 300,
   modalMaxHeight: 90,
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode: 'load-more',
+  cardRowsPerPage: 3,
+  cardPageDotNav: false,
+  cardPageTransitionMs: 300,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',
