@@ -2185,6 +2185,19 @@ class WPSG_REST {
                 'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
                 'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
                 'masonryColumns'             => $settings['masonry_columns'] ?? 0,
+                // Viewport backgrounds
+                'imageBgType'                => $settings['image_bg_type'] ?? 'none',
+                'imageBgColor'               => $settings['image_bg_color'] ?? '#1a1a2e',
+                'imageBgGradient'            => $settings['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+                'imageBgImageUrl'            => $settings['image_bg_image_url'] ?? '',
+                'videoBgType'                => $settings['video_bg_type'] ?? 'none',
+                'videoBgColor'               => $settings['video_bg_color'] ?? '#0d0d0d',
+                'videoBgGradient'            => $settings['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+                'videoBgImageUrl'            => $settings['video_bg_image_url'] ?? '',
+                'unifiedBgType'              => $settings['unified_bg_type'] ?? 'none',
+                'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
+                'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+                'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2255,6 +2268,19 @@ class WPSG_REST {
             'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
             'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
             'masonryColumns'             => $settings['masonry_columns'] ?? 0,
+            // Viewport backgrounds
+            'imageBgType'                => $settings['image_bg_type'] ?? 'none',
+            'imageBgColor'               => $settings['image_bg_color'] ?? '#1a1a2e',
+            'imageBgGradient'            => $settings['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'imageBgImageUrl'            => $settings['image_bg_image_url'] ?? '',
+            'videoBgType'                => $settings['video_bg_type'] ?? 'none',
+            'videoBgColor'               => $settings['video_bg_color'] ?? '#0d0d0d',
+            'videoBgGradient'            => $settings['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+            'videoBgImageUrl'            => $settings['video_bg_image_url'] ?? '',
+            'unifiedBgType'              => $settings['unified_bg_type'] ?? 'none',
+            'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
+            'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2445,6 +2471,20 @@ class WPSG_REST {
         if (isset($body['tileGlowSpread'])) { $input['tile_glow_spread'] = intval($body['tileGlowSpread']); }
         if (isset($body['tileHoverBounce'])) { $input['tile_hover_bounce'] = (bool) $body['tileHoverBounce']; }
         if (isset($body['masonryColumns'])) { $input['masonry_columns'] = intval($body['masonryColumns']); }
+        // Viewport backgrounds
+        $allowed_bg_types = ['none', 'solid', 'gradient', 'image'];
+        if (isset($body['imageBgType'])) { $input['image_bg_type'] = in_array($body['imageBgType'], $allowed_bg_types, true) ? $body['imageBgType'] : 'none'; }
+        if (isset($body['imageBgColor'])) { $input['image_bg_color'] = sanitize_text_field($body['imageBgColor']); }
+        if (isset($body['imageBgGradient'])) { $input['image_bg_gradient'] = sanitize_text_field($body['imageBgGradient']); }
+        if (isset($body['imageBgImageUrl'])) { $input['image_bg_image_url'] = esc_url_raw($body['imageBgImageUrl']); }
+        if (isset($body['videoBgType'])) { $input['video_bg_type'] = in_array($body['videoBgType'], $allowed_bg_types, true) ? $body['videoBgType'] : 'none'; }
+        if (isset($body['videoBgColor'])) { $input['video_bg_color'] = sanitize_text_field($body['videoBgColor']); }
+        if (isset($body['videoBgGradient'])) { $input['video_bg_gradient'] = sanitize_text_field($body['videoBgGradient']); }
+        if (isset($body['videoBgImageUrl'])) { $input['video_bg_image_url'] = esc_url_raw($body['videoBgImageUrl']); }
+        if (isset($body['unifiedBgType'])) { $input['unified_bg_type'] = in_array($body['unifiedBgType'], $allowed_bg_types, true) ? $body['unifiedBgType'] : 'none'; }
+        if (isset($body['unifiedBgColor'])) { $input['unified_bg_color'] = sanitize_text_field($body['unifiedBgColor']); }
+        if (isset($body['unifiedBgGradient'])) { $input['unified_bg_gradient'] = sanitize_text_field($body['unifiedBgGradient']); }
+        if (isset($body['unifiedBgImageUrl'])) { $input['unified_bg_image_url'] = esc_url_raw($body['unifiedBgImageUrl']); }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2527,6 +2567,19 @@ class WPSG_REST {
             'tileGlowSpread'             => $merged['tile_glow_spread'] ?? 12,
             'tileHoverBounce'            => $merged['tile_hover_bounce'] ?? true,
             'masonryColumns'             => $merged['masonry_columns'] ?? 0,
+            // Viewport backgrounds
+            'imageBgType'                => $merged['image_bg_type'] ?? 'none',
+            'imageBgColor'               => $merged['image_bg_color'] ?? '#1a1a2e',
+            'imageBgGradient'            => $merged['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'imageBgImageUrl'            => $merged['image_bg_image_url'] ?? '',
+            'videoBgType'                => $merged['video_bg_type'] ?? 'none',
+            'videoBgColor'               => $merged['video_bg_color'] ?? '#0d0d0d',
+            'videoBgGradient'            => $merged['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+            'videoBgImageUrl'            => $merged['video_bg_image_url'] ?? '',
+            'unifiedBgType'              => $merged['unified_bg_type'] ?? 'none',
+            'unifiedBgColor'             => $merged['unified_bg_color'] ?? '#1a1a2e',
+            'unifiedBgGradient'          => $merged['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'unifiedBgImageUrl'          => $merged['unified_bg_image_url'] ?? '',
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

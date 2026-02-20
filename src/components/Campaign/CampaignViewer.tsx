@@ -27,6 +27,16 @@ function renderAdapter(id: string, media: MediaItem[], settings: GalleryBehavior
   }
 }
 
+/** Return a CSS background style object from viewport background settings. */
+function resolveViewportBg(type: string, color: string, gradient: string, imageUrl: string) {
+  switch (type) {
+    case 'solid':    return { background: color };
+    case 'gradient': return { background: gradient };
+    case 'image':    return { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' };
+    default:         return {};
+  }
+}
+
 const VideoCarousel = lazy(() => import('./VideoCarousel').then((m) => ({ default: m.VideoCarousel })));
 const ImageCarousel = lazy(() => import('./ImageCarousel').then((m) => ({ default: m.ImageCarousel })));
 const CompactGridGallery = lazy(() =>
@@ -201,20 +211,37 @@ export function CampaignViewer({
                     (a, b) => a.order - b.order,
                   );
                   if (allMedia.length === 0) return null;
-                  return renderAdapter(galleryBehaviorSettings.unifiedGalleryAdapterId, allMedia, galleryBehaviorSettings);
+                  const s = galleryBehaviorSettings;
+                  const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
+                  const inner = renderAdapter(s.unifiedGalleryAdapterId, allMedia, s);
+                  return s.unifiedBgType !== 'none'
+                    ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+                    : inner;
                 })()
               ) : (
                 // Per-type mode: each media kind uses its own adapter
                 <>
                   {campaign.videos.length > 0 && (() => {
-                    const id = galleryBehaviorSettings.videoGalleryAdapterId;
-                    if (id === 'classic') return <VideoCarousel videos={campaign.videos} settings={galleryBehaviorSettings} />;
-                    return renderAdapter(id, campaign.videos, galleryBehaviorSettings);
+                    const s = galleryBehaviorSettings;
+                    const id = s.videoGalleryAdapterId;
+                    const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
+                    const inner = id === 'classic'
+                      ? <VideoCarousel videos={campaign.videos} settings={s} />
+                      : renderAdapter(id, campaign.videos, s);
+                    return s.videoBgType !== 'none'
+                      ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+                      : inner;
                   })()}
                   {campaign.images.length > 0 && (() => {
-                    const id = galleryBehaviorSettings.imageGalleryAdapterId;
-                    if (id === 'classic') return <ImageCarousel images={campaign.images} settings={galleryBehaviorSettings} />;
-                    return renderAdapter(id, campaign.images, galleryBehaviorSettings);
+                    const s = galleryBehaviorSettings;
+                    const id = s.imageGalleryAdapterId;
+                    const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
+                    const inner = id === 'classic'
+                      ? <ImageCarousel images={campaign.images} settings={s} />
+                      : renderAdapter(id, campaign.images, s);
+                    return s.imageBgType !== 'none'
+                      ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+                      : inner;
                   })()}
                 </>
               )}

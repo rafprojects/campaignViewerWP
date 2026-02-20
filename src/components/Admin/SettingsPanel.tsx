@@ -34,6 +34,7 @@ import {
   type DotNavPosition,
   type DotNavShape,
   type ShadowPreset,
+  type ViewportBgType,
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -109,6 +110,19 @@ const defaultSettings: SettingsData = {
   tileGlowSpread: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread,
   tileHoverBounce: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce,
   masonryColumns: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns,
+  // Viewport backgrounds
+  imageBgType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType,
+  imageBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgColor,
+  imageBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgGradient,
+  imageBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgImageUrl,
+  videoBgType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgType,
+  videoBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor,
+  videoBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgGradient,
+  videoBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgImageUrl,
+  unifiedBgType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgType,
+  unifiedBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
+  unifiedBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
+  unifiedBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
 };
 
 interface SettingsPanelProps {
@@ -186,6 +200,19 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   tileGlowSpread: response.tileGlowSpread ?? defaultSettings.tileGlowSpread,
   tileHoverBounce: response.tileHoverBounce ?? defaultSettings.tileHoverBounce,
   masonryColumns: response.masonryColumns ?? defaultSettings.masonryColumns,
+  // Viewport backgrounds
+  imageBgType: (response.imageBgType as ViewportBgType) ?? defaultSettings.imageBgType,
+  imageBgColor: response.imageBgColor ?? defaultSettings.imageBgColor,
+  imageBgGradient: response.imageBgGradient ?? defaultSettings.imageBgGradient,
+  imageBgImageUrl: response.imageBgImageUrl ?? defaultSettings.imageBgImageUrl,
+  videoBgType: (response.videoBgType as ViewportBgType) ?? defaultSettings.videoBgType,
+  videoBgColor: response.videoBgColor ?? defaultSettings.videoBgColor,
+  videoBgGradient: response.videoBgGradient ?? defaultSettings.videoBgGradient,
+  videoBgImageUrl: response.videoBgImageUrl ?? defaultSettings.videoBgImageUrl,
+  unifiedBgType: (response.unifiedBgType as ViewportBgType) ?? defaultSettings.unifiedBgType,
+  unifiedBgColor: response.unifiedBgColor ?? defaultSettings.unifiedBgColor,
+  unifiedBgGradient: response.unifiedBgGradient ?? defaultSettings.unifiedBgGradient,
+  unifiedBgImageUrl: response.unifiedBgImageUrl ?? defaultSettings.unifiedBgImageUrl,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -369,6 +396,122 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   max={900}
                   step={10}
                 />
+
+                <Divider label="Viewport Background" labelPosition="center" />
+
+                {/* ── Image viewport background ── */}
+                <Select
+                  label="Image Viewport Background"
+                  description="Background fill rendered behind the image gallery section."
+                  value={settings.imageBgType}
+                  onChange={(value) => updateSetting('imageBgType', (value as ViewportBgType) ?? 'none')}
+                  data={[
+                    { value: 'none', label: 'None' },
+                    { value: 'solid', label: 'Solid Color' },
+                    { value: 'gradient', label: 'Gradient' },
+                    { value: 'image', label: 'Image URL' },
+                  ]}
+                />
+                {settings.imageBgType === 'solid' && (
+                  <ColorInput
+                    label="Image Background Color"
+                    value={settings.imageBgColor}
+                    onChange={(value) => updateSetting('imageBgColor', value)}
+                    format="rgba"
+                  />
+                )}
+                {settings.imageBgType === 'gradient' && (
+                  <TextInput
+                    label="Image CSS Gradient"
+                    description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
+                    value={settings.imageBgGradient}
+                    onChange={(e) => updateSetting('imageBgGradient', e.currentTarget.value)}
+                  />
+                )}
+                {settings.imageBgType === 'image' && (
+                  <TextInput
+                    label="Image Background URL"
+                    description="Absolute URL of the background image."
+                    value={settings.imageBgImageUrl}
+                    onChange={(e) => updateSetting('imageBgImageUrl', e.currentTarget.value)}
+                  />
+                )}
+
+                {/* ── Video viewport background ── */}
+                <Select
+                  label="Video Viewport Background"
+                  description="Background fill rendered behind the video gallery section."
+                  value={settings.videoBgType}
+                  onChange={(value) => updateSetting('videoBgType', (value as ViewportBgType) ?? 'none')}
+                  data={[
+                    { value: 'none', label: 'None' },
+                    { value: 'solid', label: 'Solid Color' },
+                    { value: 'gradient', label: 'Gradient' },
+                    { value: 'image', label: 'Image URL' },
+                  ]}
+                />
+                {settings.videoBgType === 'solid' && (
+                  <ColorInput
+                    label="Video Background Color"
+                    value={settings.videoBgColor}
+                    onChange={(value) => updateSetting('videoBgColor', value)}
+                    format="rgba"
+                  />
+                )}
+                {settings.videoBgType === 'gradient' && (
+                  <TextInput
+                    label="Video CSS Gradient"
+                    description="Full CSS gradient (e.g. 'linear-gradient(135deg, #0d0d0d, #1a1a2e)')."
+                    value={settings.videoBgGradient}
+                    onChange={(e) => updateSetting('videoBgGradient', e.currentTarget.value)}
+                  />
+                )}
+                {settings.videoBgType === 'image' && (
+                  <TextInput
+                    label="Video Background URL"
+                    description="Absolute URL of the background image."
+                    value={settings.videoBgImageUrl}
+                    onChange={(e) => updateSetting('videoBgImageUrl', e.currentTarget.value)}
+                  />
+                )}
+
+                {/* ── Unified viewport background ── */}
+                <Select
+                  label="Unified Viewport Background"
+                  description="Background fill when unified gallery mode is active."
+                  value={settings.unifiedBgType}
+                  onChange={(value) => updateSetting('unifiedBgType', (value as ViewportBgType) ?? 'none')}
+                  data={[
+                    { value: 'none', label: 'None' },
+                    { value: 'solid', label: 'Solid Color' },
+                    { value: 'gradient', label: 'Gradient' },
+                    { value: 'image', label: 'Image URL' },
+                  ]}
+                />
+                {settings.unifiedBgType === 'solid' && (
+                  <ColorInput
+                    label="Unified Background Color"
+                    value={settings.unifiedBgColor}
+                    onChange={(value) => updateSetting('unifiedBgColor', value)}
+                    format="rgba"
+                  />
+                )}
+                {settings.unifiedBgType === 'gradient' && (
+                  <TextInput
+                    label="Unified CSS Gradient"
+                    description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
+                    value={settings.unifiedBgGradient}
+                    onChange={(e) => updateSetting('unifiedBgGradient', e.currentTarget.value)}
+                  />
+                )}
+                {settings.unifiedBgType === 'image' && (
+                  <TextInput
+                    label="Unified Background URL"
+                    description="Absolute URL of the background image."
+                    value={settings.unifiedBgImageUrl}
+                    onChange={(e) => updateSetting('unifiedBgImageUrl', e.currentTarget.value)}
+                  />
+                )}
 
                 <Divider label="Border Radius" labelPosition="center" />
 

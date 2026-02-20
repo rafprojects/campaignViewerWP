@@ -211,6 +211,19 @@ export interface SettingsResponse {
   tileGlowSpread?: number;
   tileHoverBounce?: boolean;
   masonryColumns?: number;
+  // Viewport backgrounds
+  imageBgType?: string;
+  imageBgColor?: string;
+  imageBgGradient?: string;
+  imageBgImageUrl?: string;
+  videoBgType?: string;
+  videoBgColor?: string;
+  videoBgGradient?: string;
+  videoBgImageUrl?: string;
+  unifiedBgType?: string;
+  unifiedBgColor?: string;
+  unifiedBgGradient?: string;
+  unifiedBgImageUrl?: string;
 }
 
 export interface SettingsUpdateRequest {
@@ -281,6 +294,19 @@ export interface SettingsUpdateRequest {
   tileGlowSpread?: number;
   tileHoverBounce?: boolean;
   masonryColumns?: number;
+  // Viewport backgrounds
+  imageBgType?: string;
+  imageBgColor?: string;
+  imageBgGradient?: string;
+  imageBgImageUrl?: string;
+  videoBgType?: string;
+  videoBgColor?: string;
+  videoBgGradient?: string;
+  videoBgImageUrl?: string;
+  unifiedBgType?: string;
+  unifiedBgColor?: string;
+  unifiedBgGradient?: string;
+  unifiedBgImageUrl?: string;
 }
 
 export class ApiError extends Error {

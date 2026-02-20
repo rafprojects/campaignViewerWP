@@ -100,6 +100,19 @@ class WPSG_Settings {
         'tile_glow_spread'           => 12,
         'tile_hover_bounce'          => true,
         'masonry_columns'            => 0,
+        // Viewport backgrounds
+        'image_bg_type'              => 'none',
+        'image_bg_color'             => '#1a1a2e',
+        'image_bg_gradient'          => 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+        'image_bg_image_url'         => '',
+        'video_bg_type'              => 'none',
+        'video_bg_color'             => '#0d0d0d',
+        'video_bg_gradient'          => 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+        'video_bg_image_url'         => '',
+        'unified_bg_type'            => 'none',
+        'unified_bg_color'           => '#1a1a2e',
+        'unified_bg_gradient'        => 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+        'unified_bg_image_url'       => '',
         'cache_ttl'                  => 3600,
     ];
 
@@ -552,6 +565,21 @@ class WPSG_Settings {
         if (isset($input['masonry_columns'])) {
             $sanitized['masonry_columns'] = max(0, min(8, intval($input['masonry_columns'])));
         }
+
+        // Viewport backgrounds.
+        $allowed_bg_types = ['none', 'solid', 'gradient', 'image'];
+        if (isset($input['image_bg_type'])) { $sanitized['image_bg_type'] = in_array($input['image_bg_type'], $allowed_bg_types, true) ? $input['image_bg_type'] : 'none'; }
+        if (isset($input['image_bg_color'])) { $sanitized['image_bg_color'] = sanitize_text_field($input['image_bg_color']); }
+        if (isset($input['image_bg_gradient'])) { $sanitized['image_bg_gradient'] = sanitize_text_field($input['image_bg_gradient']); }
+        if (isset($input['image_bg_image_url'])) { $sanitized['image_bg_image_url'] = esc_url_raw($input['image_bg_image_url']); }
+        if (isset($input['video_bg_type'])) { $sanitized['video_bg_type'] = in_array($input['video_bg_type'], $allowed_bg_types, true) ? $input['video_bg_type'] : 'none'; }
+        if (isset($input['video_bg_color'])) { $sanitized['video_bg_color'] = sanitize_text_field($input['video_bg_color']); }
+        if (isset($input['video_bg_gradient'])) { $sanitized['video_bg_gradient'] = sanitize_text_field($input['video_bg_gradient']); }
+        if (isset($input['video_bg_image_url'])) { $sanitized['video_bg_image_url'] = esc_url_raw($input['video_bg_image_url']); }
+        if (isset($input['unified_bg_type'])) { $sanitized['unified_bg_type'] = in_array($input['unified_bg_type'], $allowed_bg_types, true) ? $input['unified_bg_type'] : 'none'; }
+        if (isset($input['unified_bg_color'])) { $sanitized['unified_bg_color'] = sanitize_text_field($input['unified_bg_color']); }
+        if (isset($input['unified_bg_gradient'])) { $sanitized['unified_bg_gradient'] = sanitize_text_field($input['unified_bg_gradient']); }
+        if (isset($input['unified_bg_image_url'])) { $sanitized['unified_bg_image_url'] = esc_url_raw($input['unified_bg_image_url']); }
 
         // Boolean fields.
         $sanitized['enable_lightbox']            = !empty($input['enable_lightbox']);

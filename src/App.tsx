@@ -13,7 +13,7 @@ import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem, UploadResponse, GalleryBehaviorSettings } from './types';
+import type { Campaign, Company, MediaItem, UploadResponse, GalleryBehaviorSettings, ViewportBgType } from './types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
@@ -346,6 +346,19 @@ function AppContent({
       tileGlowSpread: response.tileGlowSpread ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread,
       tileHoverBounce: response.tileHoverBounce ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce,
       masonryColumns: response.masonryColumns ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns,
+      // Viewport backgrounds
+      imageBgType: (response.imageBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType,
+      imageBgColor: response.imageBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgColor,
+      imageBgGradient: response.imageBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgGradient,
+      imageBgImageUrl: response.imageBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgImageUrl,
+      videoBgType: (response.videoBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgType,
+      videoBgColor: response.videoBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor,
+      videoBgGradient: response.videoBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgGradient,
+      videoBgImageUrl: response.videoBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgImageUrl,
+      unifiedBgType: (response.unifiedBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgType,
+      unifiedBgColor: response.unifiedBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
+      unifiedBgGradient: response.unifiedBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
+      unifiedBgImageUrl: response.unifiedBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -819,6 +832,19 @@ function AppContent({
                     tileGlowSpread: saved.tileGlowSpread,
                     tileHoverBounce: saved.tileHoverBounce,
                     masonryColumns: saved.masonryColumns,
+                    // Viewport backgrounds
+                    imageBgType: saved.imageBgType,
+                    imageBgColor: saved.imageBgColor,
+                    imageBgGradient: saved.imageBgGradient,
+                    imageBgImageUrl: saved.imageBgImageUrl,
+                    videoBgType: saved.videoBgType,
+                    videoBgColor: saved.videoBgColor,
+                    videoBgGradient: saved.videoBgGradient,
+                    videoBgImageUrl: saved.videoBgImageUrl,
+                    unifiedBgType: saved.unifiedBgType,
+                    unifiedBgColor: saved.unifiedBgColor,
+                    unifiedBgGradient: saved.unifiedBgGradient,
+                    unifiedBgImageUrl: saved.unifiedBgImageUrl,
                   },
                   false,
                 );

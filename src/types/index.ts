@@ -96,6 +96,7 @@ export type DotNavShape = 'circle' | 'pill' | 'square';
 
 // P12-J: Shadow types
 export type ShadowPreset = 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+export type ViewportBgType = 'none' | 'solid' | 'gradient' | 'image';
 
 export interface GalleryBehaviorSettings {
   videoViewportHeight: number;
@@ -158,6 +159,19 @@ export interface GalleryBehaviorSettings {
   videoShadowPreset: ShadowPreset;
   imageShadowCustom: string;
   videoShadowCustom: string;
+  // Viewport backgrounds
+  imageBgType: ViewportBgType;
+  imageBgColor: string;
+  imageBgGradient: string;
+  imageBgImageUrl: string;
+  videoBgType: ViewportBgType;
+  videoBgColor: string;
+  videoBgGradient: string;
+  videoBgImageUrl: string;
+  unifiedBgType: ViewportBgType;
+  unifiedBgColor: string;
+  unifiedBgGradient: string;
+  unifiedBgImageUrl: string;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -202,6 +216,19 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   videoShadowPreset: 'subtle',
   imageShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
   videoShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
+  // Viewport backgrounds
+  imageBgType: 'none',
+  imageBgColor: '#1a1a2e',
+  imageBgGradient: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+  imageBgImageUrl: '',
+  videoBgType: 'none',
+  videoBgColor: '#0d0d0d',
+  videoBgGradient: 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+  videoBgImageUrl: '',
+  unifiedBgType: 'none',
+  unifiedBgColor: '#1a1a2e',
+  unifiedBgGradient: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+  unifiedBgImageUrl: '',
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',
