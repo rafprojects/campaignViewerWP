@@ -126,20 +126,52 @@ Campaigns are either active or archived — there is no way to schedule future p
 
 ---
 
+## Track P13-E — Mobile Readiness Audit
+
+### Problem
+
+The application has not been systematically verified for mobile viewports. Touch targets, responsive layouts, scroll behavior, and modal interactions may not work properly on phones and small tablets.
+
+### Objectives
+
+- Audit every user-facing view on mobile breakpoints (320px, 375px, 414px, 768px)
+- Ensure touch targets meet 44px minimum (WCAG 2.5.5)
+- Verify all modals, overlays, and drawers are usable on mobile
+- Fix any overflow, truncation, or layout-breaking issues
+- Test swipe gestures (gallery carousel) on actual touch devices or emulation
+- Ensure admin panel is functional on tablet (768px+) at minimum
+
+### Deliverables
+
+- [ ] Document audit findings per component/view
+- [ ] Fix touch target sizing issues
+- [ ] Fix modal/overlay viewport issues on mobile
+- [ ] Fix any horizontal overflow or layout breaks
+- [ ] Verify card grid responsive behavior
+- [ ] Test gallery carousel swipe on touch viewports
+- [ ] Verify admin settings panel usability on tablet
+
+**Effort:** Medium  
+**Impact:** High
+
+---
+
 ## Execution Order
 
 | Priority | Track | Status |
 |----------|-------|--------|
-| 1 | P13-A — Modal CampaignViewer | In Progress |
-| 2 | P13-B — Lazy Loading | Not Started |
-| 3 | P13-C — Admin Panel Performance | Not Started |
-| 4 | P13-D — Campaign Scheduling | Not Started |
+| 1 | P13-A — Modal CampaignViewer + Card Settings | In Progress |
+| 2 | P13-E — Mobile Readiness Audit | Not Started |
+| 3 | P13-B — Lazy Loading | Not Started |
+| 4 | P13-C — Admin Panel Performance | Not Started |
+| 5 | P13-D — Campaign Scheduling | Not Started |
 
 ---
 
 ## Progress Log
 
 - **2026-02-20:** Phase 13 initiated. Four tracks promoted from FUTURE_TASKS. P13-A prioritized.
+- **2026-02-20:** P13-A: Campaign Card settings tab (11 settings) + modal/card wiring complete. P13-E mobile readiness track added.
 
 ---
 

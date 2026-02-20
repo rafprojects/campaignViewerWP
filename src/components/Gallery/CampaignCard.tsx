@@ -1,17 +1,38 @@
 import { forwardRef } from 'react';
 import { IconLock, IconEye } from '@tabler/icons-react';
 import { Card, Image, Badge, Group, Text, Box, Stack, UnstyledButton } from '@mantine/core';
-import type { Campaign } from '@/types';
+import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import styles from './CampaignCard.module.scss';
 
 interface CampaignCardProps {
   campaign: Campaign;
   hasAccess: boolean;
   onClick: () => void;
+  settings?: GalleryBehaviorSettings;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
-  ({ campaign, hasAccess, onClick }, ref) => {
+  ({ campaign, hasAccess, onClick, settings }, ref) => {
+    const borderRadius = settings?.cardBorderRadius ?? 8;
+    const borderWidth = settings?.cardBorderWidth ?? 4;
+    const borderMode = settings?.cardBorderMode ?? 'auto';
+    // Resolve border color based on mode
+    let resolvedBorderColor = campaign.company.brandColor;
+    if (borderMode === 'single') {
+      resolvedBorderColor = settings?.cardBorderColor ?? '#228be6';
+    } else if (borderMode === 'individual' && campaign.borderColor) {
+      resolvedBorderColor = campaign.borderColor;
+    }
+    const thumbHeight = settings?.cardThumbnailHeight ?? 200;
+    const thumbFit = (settings?.cardThumbnailFit ?? 'cover') as 'cover' | 'contain';
+    const shadow = settings?.cardShadowPreset ?? 'subtle';
+    const shadowMap: Record<string, string> = {
+      none: 'none',
+      subtle: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+      medium: '0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)',
+      dramatic: '0 10px 25px rgba(0,0,0,0.2), 0 6px 10px rgba(0,0,0,0.1)',
+    };
+    const cardShadow = shadowMap[shadow] ?? shadowMap.subtle;
     return (
       <UnstyledButton
         ref={ref}
@@ -29,21 +50,22 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
         }}
       >
         <Card
-          shadow="sm"
           padding={0}
-          radius="md"
+          radius={borderRadius}
           withBorder
           style={{
             position: 'relative',
-            borderLeft: `4px solid ${campaign.company.brandColor}`,
+            borderLeft: `${borderWidth}px solid ${resolvedBorderColor}`,
+            boxShadow: cardShadow,
           }}
         >
           {/* Thumbnail Section */}
-          <Card.Section pos="relative" h={{ base: 160, sm: 200 }} component="div">
+          <Card.Section pos="relative" h={{ base: Math.round(thumbHeight * 0.8), sm: thumbHeight }} component="div">
             <Image 
               src={campaign.thumbnail} 
               alt={campaign.title}
-              h={{ base: 160, sm: 200 }}
+              h={{ base: Math.round(thumbHeight * 0.8), sm: thumbHeight }}
+              fit={thumbFit}
               loading="lazy"
               style={{ 
                 filter: hasAccess ? 'none' : 'grayscale(100%)',
@@ -154,8 +176,8 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
               style={{
                 position: 'absolute',
                 inset: 0,
-                border: `2px solid ${campaign.company.brandColor}`,
-                borderRadius: 'var(--mantine-radius-md)',
+                border: `2px solid ${resolvedBorderColor}`,
+                borderRadius: borderRadius,
                 pointerEvents: 'none',
               }}
             />

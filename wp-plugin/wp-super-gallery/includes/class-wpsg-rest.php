@@ -2201,6 +2201,20 @@ class WPSG_REST {
                 'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
                 'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
                 'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
+                // P13-A: Campaign Card
+                'cardBorderRadius'           => $settings['card_border_radius'] ?? 8,
+                'cardBorderWidth'            => $settings['card_border_width'] ?? 4,
+                'cardBorderMode'             => $settings['card_border_mode'] ?? 'auto',
+                'cardBorderColor'            => $settings['card_border_color'] ?? '#228be6',
+                'cardShadowPreset'           => $settings['card_shadow_preset'] ?? 'subtle',
+                'cardThumbnailHeight'        => $settings['card_thumbnail_height'] ?? 200,
+                'cardThumbnailFit'           => $settings['card_thumbnail_fit'] ?? 'cover',
+                'cardGridColumns'            => $settings['card_grid_columns'] ?? 0,
+                'cardGap'                    => $settings['card_gap'] ?? 16,
+                'modalCoverHeight'           => $settings['modal_cover_height'] ?? 240,
+                'modalTransition'            => $settings['modal_transition'] ?? 'pop',
+                'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
+                'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2284,6 +2298,20 @@ class WPSG_REST {
             'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
             'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
             'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
+            // P13-A: Campaign Card
+            'cardBorderRadius'           => $settings['card_border_radius'] ?? 8,
+            'cardBorderWidth'            => $settings['card_border_width'] ?? 4,
+            'cardBorderMode'             => $settings['card_border_mode'] ?? 'auto',
+            'cardBorderColor'            => $settings['card_border_color'] ?? '#228be6',
+            'cardShadowPreset'           => $settings['card_shadow_preset'] ?? 'subtle',
+            'cardThumbnailHeight'        => $settings['card_thumbnail_height'] ?? 200,
+            'cardThumbnailFit'           => $settings['card_thumbnail_fit'] ?? 'cover',
+            'cardGridColumns'            => $settings['card_grid_columns'] ?? 0,
+            'cardGap'                    => $settings['card_gap'] ?? 16,
+            'modalCoverHeight'           => $settings['modal_cover_height'] ?? 240,
+            'modalTransition'            => $settings['modal_transition'] ?? 'pop',
+            'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
+            'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2488,6 +2516,20 @@ class WPSG_REST {
         if (isset($body['unifiedBgColor'])) { $input['unified_bg_color'] = sanitize_text_field($body['unifiedBgColor']); }
         if (isset($body['unifiedBgGradient'])) { $input['unified_bg_gradient'] = sanitize_text_field($body['unifiedBgGradient']); }
         if (isset($body['unifiedBgImageUrl'])) { $input['unified_bg_image_url'] = esc_url_raw($body['unifiedBgImageUrl']); }
+        // P13-A: Campaign Card
+        if (isset($body['cardBorderRadius'])) { $input['card_border_radius'] = intval($body['cardBorderRadius']); }
+        if (isset($body['cardBorderWidth'])) { $input['card_border_width'] = intval($body['cardBorderWidth']); }
+        if (isset($body['cardBorderMode'])) { $input['card_border_mode'] = sanitize_text_field($body['cardBorderMode']); }
+        if (isset($body['cardBorderColor'])) { $input['card_border_color'] = sanitize_text_field($body['cardBorderColor']); }
+        if (isset($body['cardShadowPreset'])) { $input['card_shadow_preset'] = sanitize_text_field($body['cardShadowPreset']); }
+        if (isset($body['cardThumbnailHeight'])) { $input['card_thumbnail_height'] = intval($body['cardThumbnailHeight']); }
+        if (isset($body['cardThumbnailFit'])) { $input['card_thumbnail_fit'] = sanitize_text_field($body['cardThumbnailFit']); }
+        if (isset($body['cardGridColumns'])) { $input['card_grid_columns'] = intval($body['cardGridColumns']); }
+        if (isset($body['cardGap'])) { $input['card_gap'] = intval($body['cardGap']); }
+        if (isset($body['modalCoverHeight'])) { $input['modal_cover_height'] = intval($body['modalCoverHeight']); }
+        if (isset($body['modalTransition'])) { $input['modal_transition'] = sanitize_text_field($body['modalTransition']); }
+        if (isset($body['modalTransitionDuration'])) { $input['modal_transition_duration'] = intval($body['modalTransitionDuration']); }
+        if (isset($body['modalMaxHeight'])) { $input['modal_max_height'] = intval($body['modalMaxHeight']); }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2583,6 +2625,20 @@ class WPSG_REST {
             'unifiedBgColor'             => $merged['unified_bg_color'] ?? '#1a1a2e',
             'unifiedBgGradient'          => $merged['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
             'unifiedBgImageUrl'          => $merged['unified_bg_image_url'] ?? '',
+            // P13-A: Campaign Card
+            'cardBorderRadius'           => $merged['card_border_radius'] ?? 8,
+            'cardBorderWidth'            => $merged['card_border_width'] ?? 4,
+            'cardBorderMode'             => $merged['card_border_mode'] ?? 'auto',
+            'cardBorderColor'            => $merged['card_border_color'] ?? '#228be6',
+            'cardShadowPreset'           => $merged['card_shadow_preset'] ?? 'subtle',
+            'cardThumbnailHeight'        => $merged['card_thumbnail_height'] ?? 200,
+            'cardThumbnailFit'           => $merged['card_thumbnail_fit'] ?? 'cover',
+            'cardGridColumns'            => $merged['card_grid_columns'] ?? 0,
+            'cardGap'                    => $merged['card_gap'] ?? 16,
+            'modalCoverHeight'           => $merged['modal_cover_height'] ?? 240,
+            'modalTransition'            => $merged['modal_transition'] ?? 'pop',
+            'modalTransitionDuration'    => $merged['modal_transition_duration'] ?? 300,
+            'modalMaxHeight'             => $merged['modal_max_height'] ?? 90,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

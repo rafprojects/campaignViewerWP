@@ -22,6 +22,7 @@ import {
   IconPhoto,
   IconArrowsExchange,
   IconNavigation,
+  IconLayoutGrid,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
@@ -123,6 +124,20 @@ const defaultSettings: SettingsData = {
   unifiedBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
   unifiedBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
   unifiedBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
+  // P13-A: Campaign Card
+  cardBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderRadius,
+  cardBorderWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderWidth,
+  cardBorderMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderMode,
+  cardBorderColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderColor,
+  cardShadowPreset: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardShadowPreset,
+  cardThumbnailHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailHeight,
+  cardThumbnailFit: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailFit,
+  cardGridColumns: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGridColumns,
+  cardGap: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGap,
+  modalCoverHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalCoverHeight,
+  modalTransition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransition,
+  modalTransitionDuration: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransitionDuration,
+  modalMaxHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalMaxHeight,
 };
 
 interface SettingsPanelProps {
@@ -213,6 +228,20 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   unifiedBgColor: response.unifiedBgColor ?? defaultSettings.unifiedBgColor,
   unifiedBgGradient: response.unifiedBgGradient ?? defaultSettings.unifiedBgGradient,
   unifiedBgImageUrl: response.unifiedBgImageUrl ?? defaultSettings.unifiedBgImageUrl,
+  // P13-A: Campaign Card
+  cardBorderRadius: response.cardBorderRadius ?? defaultSettings.cardBorderRadius,
+  cardBorderWidth: response.cardBorderWidth ?? defaultSettings.cardBorderWidth,
+  cardBorderMode: (response.cardBorderMode ?? defaultSettings.cardBorderMode) as GalleryBehaviorSettings['cardBorderMode'],
+  cardBorderColor: response.cardBorderColor ?? defaultSettings.cardBorderColor,
+  cardShadowPreset: response.cardShadowPreset ?? defaultSettings.cardShadowPreset,
+  cardThumbnailHeight: response.cardThumbnailHeight ?? defaultSettings.cardThumbnailHeight,
+  cardThumbnailFit: response.cardThumbnailFit ?? defaultSettings.cardThumbnailFit,
+  cardGridColumns: response.cardGridColumns ?? defaultSettings.cardGridColumns,
+  cardGap: response.cardGap ?? defaultSettings.cardGap,
+  modalCoverHeight: response.modalCoverHeight ?? defaultSettings.modalCoverHeight,
+  modalTransition: response.modalTransition ?? defaultSettings.modalTransition,
+  modalTransitionDuration: response.modalTransitionDuration ?? defaultSettings.modalTransitionDuration,
+  modalMaxHeight: response.modalMaxHeight ?? defaultSettings.modalMaxHeight,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -318,6 +347,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               </Tabs.Tab>
               <Tabs.Tab value="navigation" leftSection={<IconNavigation size={16} />}>
                 Navigation
+              </Tabs.Tab>
+              <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
+                Cards
               </Tabs.Tab>
             </Tabs.List>
 
@@ -1164,6 +1196,146 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     />
                   </>
                 )}
+              </Stack>
+            </Tabs.Panel>
+
+            {/* ── Campaign Cards Tab ────────────────────────── */}
+            <Tabs.Panel value="cards" pt="md">
+              <Stack gap="md">
+                <Title order={4}>Card Appearance</Title>
+                <NumberInput
+                  label="Border Radius (px)"
+                  description="Corner rounding for campaign cards"
+                  value={settings.cardBorderRadius}
+                  onChange={(v) => updateSetting('cardBorderRadius', typeof v === 'number' ? v : 8)}
+                  min={0}
+                  max={24}
+                  step={1}
+                />
+                <NumberInput
+                  label="Border Width (px)"
+                  description="Left accent border thickness"
+                  value={settings.cardBorderWidth}
+                  onChange={(v) => updateSetting('cardBorderWidth', typeof v === 'number' ? v : 4)}
+                  min={0}
+                  max={8}
+                  step={1}
+                />
+                <Select
+                  label="Border Color Mode"
+                  description="How card accent border colors are determined"
+                  data={[
+                    { value: 'auto', label: 'Auto (company brand color)' },
+                    { value: 'single', label: 'Single color for all cards' },
+                    { value: 'individual', label: 'Per-card color (set in Edit Campaign)' },
+                  ]}
+                  value={settings.cardBorderMode}
+                  onChange={(v) => updateSetting('cardBorderMode', (v ?? 'auto') as GalleryBehaviorSettings['cardBorderMode'])}
+                />
+                {settings.cardBorderMode === 'single' && (
+                  <ColorInput
+                    label="Border Color"
+                    description="Accent border color applied to all campaign cards"
+                    value={settings.cardBorderColor}
+                    onChange={(v) => updateSetting('cardBorderColor', v)}
+                  />
+                )}
+                <Select
+                  label="Card Shadow"
+                  description="Depth effect for campaign cards"
+                  data={[
+                    { value: 'none', label: 'None' },
+                    { value: 'subtle', label: 'Subtle' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'dramatic', label: 'Dramatic' },
+                  ]}
+                  value={settings.cardShadowPreset}
+                  onChange={(v) => updateSetting('cardShadowPreset', v ?? 'subtle')}
+                />
+
+                <Divider label="Card Thumbnail" labelPosition="left" />
+                <NumberInput
+                  label="Thumbnail Height (px)"
+                  description="Height of the card thumbnail area"
+                  value={settings.cardThumbnailHeight}
+                  onChange={(v) => updateSetting('cardThumbnailHeight', typeof v === 'number' ? v : 200)}
+                  min={100}
+                  max={400}
+                  step={10}
+                />
+                <Select
+                  label="Thumbnail Fit"
+                  description="How the thumbnail image fills the card"
+                  data={[
+                    { value: 'cover', label: 'Cover (fill)' },
+                    { value: 'contain', label: 'Contain (fit)' },
+                  ]}
+                  value={settings.cardThumbnailFit}
+                  onChange={(v) => updateSetting('cardThumbnailFit', v ?? 'cover')}
+                />
+
+                <Divider label="Card Grid" labelPosition="left" />
+                <Select
+                  label="Cards Per Row"
+                  description="Number of columns in the card grid (Auto = responsive)"
+                  data={[
+                    { value: '0', label: 'Auto (responsive)' },
+                    { value: '2', label: '2 columns' },
+                    { value: '3', label: '3 columns' },
+                    { value: '4', label: '4 columns' },
+                  ]}
+                  value={String(settings.cardGridColumns)}
+                  onChange={(v) => updateSetting('cardGridColumns', parseInt(v ?? '0', 10))}
+                />
+                <NumberInput
+                  label="Card Gap (px)"
+                  description="Spacing between campaign cards"
+                  value={settings.cardGap}
+                  onChange={(v) => updateSetting('cardGap', typeof v === 'number' ? v : 16)}
+                  min={0}
+                  max={48}
+                  step={2}
+                />
+
+                <Divider label="Campaign Modal" labelPosition="left" />
+                <NumberInput
+                  label="Cover Image Height (px)"
+                  description="Height of the cover image in the campaign modal"
+                  value={settings.modalCoverHeight}
+                  onChange={(v) => updateSetting('modalCoverHeight', typeof v === 'number' ? v : 240)}
+                  min={100}
+                  max={400}
+                  step={10}
+                />
+                <Select
+                  label="Modal Transition"
+                  description="Animation style when opening the campaign modal"
+                  data={[
+                    { value: 'pop', label: 'Pop (scale up)' },
+                    { value: 'fade', label: 'Fade' },
+                    { value: 'slide-up', label: 'Slide Up' },
+                  ]}
+                  value={settings.modalTransition}
+                  onChange={(v) => updateSetting('modalTransition', v ?? 'pop')}
+                />
+                <NumberInput
+                  label="Modal Transition Duration (ms)"
+                  description="Length of the modal open/close animation"
+                  value={settings.modalTransitionDuration}
+                  onChange={(v) => updateSetting('modalTransitionDuration', typeof v === 'number' ? v : 300)}
+                  min={100}
+                  max={1000}
+                  step={50}
+                />
+                <NumberInput
+                  label="Modal Max Height (vh%)"
+                  description="Maximum height of the campaign modal as a percentage of viewport"
+                  value={settings.modalMaxHeight}
+                  onChange={(v) => updateSetting('modalMaxHeight', typeof v === 'number' ? v : 90)}
+                  min={50}
+                  max={100}
+                  step={5}
+                />
               </Stack>
             </Tabs.Panel>
           </Tabs>

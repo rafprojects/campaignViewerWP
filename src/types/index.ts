@@ -20,6 +20,8 @@ export interface Campaign {
   visibility: 'public' | 'private';
   createdAt: string;
   updatedAt: string;
+  /** Per-campaign border color override (used when cardBorderMode is 'individual') */
+  borderColor?: string;
 }
 
 export interface MediaItem {
@@ -172,6 +174,20 @@ export interface GalleryBehaviorSettings {
   unifiedBgColor: string;
   unifiedBgGradient: string;
   unifiedBgImageUrl: string;
+  // P13-A: Campaign Card settings
+  cardBorderRadius: number;
+  cardBorderWidth: number;
+  cardBorderMode: 'single' | 'auto' | 'individual';
+  cardBorderColor: string;
+  cardShadowPreset: string;
+  cardThumbnailHeight: number;
+  cardThumbnailFit: string;
+  cardGridColumns: number;
+  cardGap: number;
+  modalCoverHeight: number;
+  modalTransition: string;
+  modalTransitionDuration: number;
+  modalMaxHeight: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -229,6 +245,20 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   unifiedBgColor: '#1a1a2e',
   unifiedBgGradient: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
   unifiedBgImageUrl: '',
+  // P13-A: Campaign Card settings
+  cardBorderRadius: 8,
+  cardBorderWidth: 4,
+  cardBorderMode: 'auto',
+  cardBorderColor: '#228be6',
+  cardShadowPreset: 'subtle',
+  cardThumbnailHeight: 200,
+  cardThumbnailFit: 'cover',
+  cardGridColumns: 0,
+  cardGap: 16,
+  modalCoverHeight: 240,
+  modalTransition: 'pop',
+  modalTransitionDuration: 300,
+  modalMaxHeight: 90,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',

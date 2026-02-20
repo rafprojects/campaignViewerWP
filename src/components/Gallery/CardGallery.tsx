@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
@@ -33,6 +33,10 @@ export function CardGallery({
   onAddExternalMedia,
 }: CardGalleryProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  // Keep a ref to the last campaign so CampaignViewer stays mounted during close animation
+  const lastCampaignRef = useRef<Campaign | null>(null);
+  if (selectedCampaign) lastCampaignRef.current = selectedCampaign;
+  const displayedCampaign = selectedCampaign ?? lastCampaignRef.current;
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
@@ -146,13 +150,20 @@ export function CardGallery({
 
       {/* Gallery Grid */}
       <Container size="xl" component="main" py={{ base: 'lg', md: 'xl' }}>
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing={{ base: 'md', sm: 'lg' }}>
+        <SimpleGrid
+          cols={galleryBehaviorSettings.cardGridColumns > 0
+            ? galleryBehaviorSettings.cardGridColumns
+            : { base: 1, sm: 2, lg: 3 }
+          }
+          spacing={galleryBehaviorSettings.cardGap}
+        >
           {visibleCampaigns.map((campaign) => (
             <CampaignCard
               key={campaign.id}
               campaign={campaign}
               hasAccess={hasAccess(campaign.id, campaign.visibility)}
               onClick={() => setSelectedCampaign(campaign)}
+              settings={galleryBehaviorSettings}
             />
           ))}
         </SimpleGrid>
@@ -188,12 +199,13 @@ export function CardGallery({
         )}
       </Container>
 
-      {/* Campaign Viewer Modal */}
-      {selectedCampaign && (
+      {/* Campaign Viewer Modal — always mounted so open/close transitions animate */}
+      {displayedCampaign && (
         <Suspense fallback={<Center py="xl"><Loader /></Center>}>
           <CampaignViewer
-            campaign={selectedCampaign}
-            hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
+            campaign={displayedCampaign}
+            opened={!!selectedCampaign}
+            hasAccess={hasAccess(displayedCampaign.id, displayedCampaign.visibility)}
             galleryBehaviorSettings={galleryBehaviorSettings}
             isAdmin={isAdmin}
             onEditCampaign={onEditCampaign}

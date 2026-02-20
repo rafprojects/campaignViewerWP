@@ -359,6 +359,20 @@ function AppContent({
       unifiedBgColor: response.unifiedBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
       unifiedBgGradient: response.unifiedBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
       unifiedBgImageUrl: response.unifiedBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
+      // P13-A: Campaign Card
+      cardBorderRadius: response.cardBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderRadius,
+      cardBorderWidth: response.cardBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderWidth,
+      cardBorderMode: (response.cardBorderMode as GalleryBehaviorSettings['cardBorderMode']) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderMode,
+      cardBorderColor: response.cardBorderColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderColor,
+      cardShadowPreset: response.cardShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardShadowPreset,
+      cardThumbnailHeight: response.cardThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailHeight,
+      cardThumbnailFit: response.cardThumbnailFit ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailFit,
+      cardGridColumns: response.cardGridColumns ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGridColumns,
+      cardGap: response.cardGap ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGap,
+      modalCoverHeight: response.modalCoverHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalCoverHeight,
+      modalTransition: response.modalTransition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransition,
+      modalTransitionDuration: response.modalTransitionDuration ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransitionDuration,
+      modalMaxHeight: response.modalMaxHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalMaxHeight,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -845,6 +859,20 @@ function AppContent({
                     unifiedBgColor: saved.unifiedBgColor,
                     unifiedBgGradient: saved.unifiedBgGradient,
                     unifiedBgImageUrl: saved.unifiedBgImageUrl,
+                    // P13-A: Campaign Card
+                    cardBorderRadius: saved.cardBorderRadius,
+                    cardBorderWidth: saved.cardBorderWidth,
+                    cardBorderMode: saved.cardBorderMode,
+                    cardBorderColor: saved.cardBorderColor,
+                    cardShadowPreset: saved.cardShadowPreset,
+                    cardThumbnailHeight: saved.cardThumbnailHeight,
+                    cardThumbnailFit: saved.cardThumbnailFit,
+                    cardGridColumns: saved.cardGridColumns,
+                    cardGap: saved.cardGap,
+                    modalCoverHeight: saved.modalCoverHeight,
+                    modalTransition: saved.modalTransition,
+                    modalTransitionDuration: saved.modalTransitionDuration,
+                    modalMaxHeight: saved.modalMaxHeight,
                   },
                   false,
                 );

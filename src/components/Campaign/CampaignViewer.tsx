@@ -72,6 +72,7 @@ const DiamondGallery = lazy(() =>
 
 interface CampaignViewerProps {
   campaign: Campaign;
+  opened: boolean;
   hasAccess: boolean;
   galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin: boolean;
@@ -83,6 +84,7 @@ interface CampaignViewerProps {
 
 export function CampaignViewer({
   campaign,
+  opened,
   hasAccess,
   galleryBehaviorSettings,
   isAdmin,
@@ -91,29 +93,34 @@ export function CampaignViewer({
   onAddExternalMedia,
   onClose,
 }: CampaignViewerProps) {
+  const s = galleryBehaviorSettings;
+  const coverH = s.modalCoverHeight;
+  const coverHBase = Math.round(coverH * 0.67);
+  const coverHSm = Math.round(coverH * 0.83);
+  const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
   return (
     <Modal
-      opened={true}
+      opened={opened}
       onClose={onClose}
       size="xl"
       padding={0}
       withCloseButton
       closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
-      transitionProps={{ transition: 'pop', duration: 300 }}
+      transitionProps={{ transition, duration: s.modalTransitionDuration }}
       radius="lg"
       styles={{
-        content: { overflow: 'auto', maxHeight: '90vh' },
+        content: { overflow: 'auto', maxHeight: `${s.modalMaxHeight}vh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
         close: { color: 'white', background: 'rgba(0,0,0,0.45)', borderRadius: '50%', width: 36, height: 36 },
       }}
       aria-label={`Campaign details for ${campaign.title}`}
     >
       {/* Cover Image Header */}
-      <Box pos="relative" h={{ base: 160, sm: 200, md: 240 }} component="div">
+      <Box pos="relative" h={{ base: coverHBase, sm: coverHSm, md: coverH }} component="div">
         <Image
           src={campaign.coverImage}
           alt={campaign.title}
-          h={{ base: 160, sm: 200, md: 240 }}
+          h={{ base: coverHBase, sm: coverHSm, md: coverH }}
           fit="cover"
           loading="lazy"
         />

@@ -224,6 +224,20 @@ export interface SettingsResponse {
   unifiedBgColor?: string;
   unifiedBgGradient?: string;
   unifiedBgImageUrl?: string;
+  // P13-A: Campaign Card
+  cardBorderRadius?: number;
+  cardBorderWidth?: number;
+  cardBorderMode?: string;
+  cardBorderColor?: string;
+  cardShadowPreset?: string;
+  cardThumbnailHeight?: number;
+  cardThumbnailFit?: string;
+  cardGridColumns?: number;
+  cardGap?: number;
+  modalCoverHeight?: number;
+  modalTransition?: string;
+  modalTransitionDuration?: number;
+  modalMaxHeight?: number;
 }
 
 export interface SettingsUpdateRequest {
@@ -307,6 +321,20 @@ export interface SettingsUpdateRequest {
   unifiedBgColor?: string;
   unifiedBgGradient?: string;
   unifiedBgImageUrl?: string;
+  // P13-A: Campaign Card
+  cardBorderRadius?: number;
+  cardBorderWidth?: number;
+  cardBorderMode?: string;
+  cardBorderColor?: string;
+  cardShadowPreset?: string;
+  cardThumbnailHeight?: number;
+  cardThumbnailFit?: string;
+  cardGridColumns?: number;
+  cardGap?: number;
+  modalCoverHeight?: number;
+  modalTransition?: string;
+  modalTransitionDuration?: number;
+  modalMaxHeight?: number;
 }
 
 export class ApiError extends Error {

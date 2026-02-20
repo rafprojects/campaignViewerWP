@@ -1,4 +1,4 @@
-import { Button, Card, Group, Modal, Select, Stack, Text, TextInput, Textarea } from '@mantine/core';
+import { Button, Card, ColorInput, Group, Modal, Select, Stack, Text, TextInput, Textarea } from '@mantine/core';
 import type { Campaign } from '@/types';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
@@ -10,6 +10,7 @@ export interface CampaignFormState {
   status: Campaign['status'];
   visibility: Campaign['visibility'];
   tags: string;
+  borderColor?: string;
 }
 
 interface CampaignFormModalProps {
@@ -21,6 +22,8 @@ interface CampaignFormModalProps {
   onSave: () => void;
   isSaving: boolean;
   onGoToMedia?: (campaignId: string) => void;
+  /** When 'individual', show per-card border color picker */
+  cardBorderMode?: 'single' | 'auto' | 'individual';
 }
 
 export function CampaignFormModal({
@@ -32,6 +35,7 @@ export function CampaignFormModal({
   onSave,
   isSaving,
   onGoToMedia,
+  cardBorderMode,
 }: CampaignFormModalProps) {
   const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
     current: formState,
@@ -100,6 +104,15 @@ export function CampaignFormModal({
           value={formState.tags}
           onChange={(e) => onFormChange({ ...formState, tags: e.currentTarget.value })}
         />
+        {editingCampaign && cardBorderMode === 'individual' && (
+          <ColorInput
+            label="Card Border Color"
+            description="Custom accent border color for this campaign card"
+            value={formState.borderColor ?? ''}
+            onChange={(v) => onFormChange({ ...formState, borderColor: v || undefined })}
+            placeholder="Auto (company brand color)"
+          />
+        )}
         {editingCampaign && onGoToMedia && (
           <Card withBorder p="sm">
             <Group justify="space-between">

@@ -113,6 +113,20 @@ class WPSG_Settings {
         'unified_bg_color'           => '#1a1a2e',
         'unified_bg_gradient'        => 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
         'unified_bg_image_url'       => '',
+        // P13-A: Campaign Card
+        'card_border_radius'         => 8,
+        'card_border_width'          => 4,
+        'card_border_mode'           => 'auto',
+        'card_border_color'          => '#228be6',
+        'card_shadow_preset'         => 'subtle',
+        'card_thumbnail_height'      => 200,
+        'card_thumbnail_fit'         => 'cover',
+        'card_grid_columns'          => 0,
+        'card_gap'                   => 16,
+        'modal_cover_height'         => 240,
+        'modal_transition'           => 'pop',
+        'modal_transition_duration'  => 300,
+        'modal_max_height'           => 90,
         'cache_ttl'                  => 3600,
     ];
 
@@ -148,6 +162,10 @@ class WPSG_Settings {
         'dot_nav_shape'          => ['circle', 'pill', 'square'],
         'image_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
         'video_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
+        'card_shadow_preset'     => ['none', 'subtle', 'medium', 'dramatic'],
+        'card_thumbnail_fit'     => ['cover', 'contain'],
+        'card_border_mode'       => ['auto', 'single', 'individual'],
+        'modal_transition'       => ['pop', 'fade', 'slide-up'],
     ];
 
     /**
@@ -580,6 +598,47 @@ class WPSG_Settings {
         if (isset($input['unified_bg_color'])) { $sanitized['unified_bg_color'] = sanitize_text_field($input['unified_bg_color']); }
         if (isset($input['unified_bg_gradient'])) { $sanitized['unified_bg_gradient'] = sanitize_text_field($input['unified_bg_gradient']); }
         if (isset($input['unified_bg_image_url'])) { $sanitized['unified_bg_image_url'] = esc_url_raw($input['unified_bg_image_url']); }
+
+        // P13-A: Campaign Card settings.
+        if (isset($input['card_border_radius'])) {
+            $sanitized['card_border_radius'] = max(0, min(24, intval($input['card_border_radius'])));
+        }
+        if (isset($input['card_border_width'])) {
+            $sanitized['card_border_width'] = max(0, min(8, intval($input['card_border_width'])));
+        }
+        if (isset($input['card_border_mode']) && in_array($input['card_border_mode'], self::$valid_options['card_border_mode'], true)) {
+            $sanitized['card_border_mode'] = $input['card_border_mode'];
+        }
+        if (isset($input['card_border_color'])) {
+            $sanitized['card_border_color'] = sanitize_hex_color($input['card_border_color']) ?: '#228be6';
+        }
+        if (isset($input['card_shadow_preset']) && in_array($input['card_shadow_preset'], self::$valid_options['card_shadow_preset'], true)) {
+            $sanitized['card_shadow_preset'] = $input['card_shadow_preset'];
+        }
+        if (isset($input['card_thumbnail_height'])) {
+            $sanitized['card_thumbnail_height'] = max(100, min(400, intval($input['card_thumbnail_height'])));
+        }
+        if (isset($input['card_thumbnail_fit']) && in_array($input['card_thumbnail_fit'], self::$valid_options['card_thumbnail_fit'], true)) {
+            $sanitized['card_thumbnail_fit'] = $input['card_thumbnail_fit'];
+        }
+        if (isset($input['card_grid_columns'])) {
+            $sanitized['card_grid_columns'] = max(0, min(4, intval($input['card_grid_columns'])));
+        }
+        if (isset($input['card_gap'])) {
+            $sanitized['card_gap'] = max(0, min(48, intval($input['card_gap'])));
+        }
+        if (isset($input['modal_cover_height'])) {
+            $sanitized['modal_cover_height'] = max(100, min(400, intval($input['modal_cover_height'])));
+        }
+        if (isset($input['modal_transition']) && in_array($input['modal_transition'], self::$valid_options['modal_transition'], true)) {
+            $sanitized['modal_transition'] = $input['modal_transition'];
+        }
+        if (isset($input['modal_transition_duration'])) {
+            $sanitized['modal_transition_duration'] = max(100, min(1000, intval($input['modal_transition_duration'])));
+        }
+        if (isset($input['modal_max_height'])) {
+            $sanitized['modal_max_height'] = max(50, min(100, intval($input['modal_max_height'])));
+        }
 
         // Boolean fields.
         $sanitized['enable_lightbox']            = !empty($input['enable_lightbox']);
