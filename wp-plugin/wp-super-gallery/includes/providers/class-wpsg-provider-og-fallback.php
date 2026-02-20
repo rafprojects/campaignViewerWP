@@ -33,8 +33,9 @@ class WPSG_Provider_OG_Fallback implements WPSG_Provider_Handler {
         try {
             $attempts[] = $url;
             $resp = wp_remote_get($url, [
-                'timeout' => 6,
-                'headers' => [
+                'timeout'     => 6,
+                'redirection' => 0,
+                'headers'     => [
                     'Accept'     => 'text/html',
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.109 Safari/537.36',
                 ],

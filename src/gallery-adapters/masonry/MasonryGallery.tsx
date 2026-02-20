@@ -30,6 +30,7 @@ interface RpaPhoto {
   height: number;
   key: string;
   item: MediaItem;
+  alt?: string;
 }
 
 interface MasonryGalleryProps {

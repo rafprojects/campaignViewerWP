@@ -1734,6 +1734,9 @@ class WPSG_REST {
         }
 
         $parsed = wp_parse_url($url);
+        if (!is_array($parsed)) {
+            return new WP_REST_Response(['message' => 'Invalid oEmbed URL'], 400);
+        }
 
         // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
         $host = isset($parsed['host']) ? $parsed['host'] : '';
@@ -2130,7 +2133,7 @@ class WPSG_REST {
                 'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
                 'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
                 'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
-                'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 180,
+                'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 350,
                 'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
                 'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
                 'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
@@ -2213,7 +2216,7 @@ class WPSG_REST {
             'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
             'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
             'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
-            'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 180,
+            'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 350,
             'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
             'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
             'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
@@ -2512,7 +2515,7 @@ class WPSG_REST {
             'imageViewportHeight' => $merged['image_viewport_height'] ?? 420,
             'thumbnailScrollSpeed' => $merged['thumbnail_scroll_speed'] ?? 1,
             'scrollAnimationStyle' => $merged['scroll_animation_style'] ?? 'smooth',
-            'scrollAnimationDurationMs' => $merged['scroll_animation_duration_ms'] ?? 180,
+            'scrollAnimationDurationMs' => $merged['scroll_animation_duration_ms'] ?? 350,
             'scrollAnimationEasing' => $merged['scroll_animation_easing'] ?? 'ease',
             'scrollTransitionType' => $merged['scroll_transition_type'] ?? 'slide-fade',
             'imageBorderRadius' => $merged['image_border_radius'] ?? 8,
