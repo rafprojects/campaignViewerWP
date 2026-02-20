@@ -1,7 +1,7 @@
 # Phase 12 — Gallery Extensibility & Advanced Experience
 
 **Status:** Complete ✅  
-**Version target:** v0.9.2  
+**Version target:** v0.10.0  
 **Created:** February 17, 2026
 **Last updated:** February 19, 2026
 
@@ -316,7 +316,7 @@ These items are now tracked in `docs/FUTURE_TASKS.md` under **Layout Builder Epi
 
 ## Phase 12 Close-out Summary
 
-Phase 12 is complete and productionized through **v0.9.2** scope.
+Phase 12 is complete and productionized through **v0.10.0** scope.
 
 - Tracks **P12-A through P12-J** are complete.
 - Adapter system moved from foundation to practical extensibility with multiple shipping gallery styles.

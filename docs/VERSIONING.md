@@ -12,8 +12,8 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
-### v0.9.2 (February 19, 2026)
-- **PATCH**: Phase 12 close-out and gallery extensibility hardening release
+### v0.10.0 (February 19, 2026)
+- **MINOR**: Phase 12 close-out and gallery extensibility hardening release
   - Phase 12 tracks finalized with full gallery adapter expansion and documentation close-out.
   - Added/productionized adapter set: `justified` (with `mosaic` legacy alias), `masonry`, `hexagonal`, `circular`, and `diamond`.
   - Added tile appearance controls (size, X/Y spacing, border width/color, hover bounce, glow, masonry columns) across frontend + REST + WP settings sanitization.
@@ -140,7 +140,7 @@ Current development follows a phased approach:
 - **Phase 9**: ✅ Complete (Theme System — v0.7.0 release)
 - **Phase 10**: ✅ Complete (Codebase Refinement & UX Polish — v0.8.0 release)
 - **Phase 11**: ✅ Complete (UX & Discovery Improvements — v0.9.0 release)
-- **Phase 12**: ✅ Complete (Gallery Extensibility & Advanced Experience — v0.9.2 close-out)
+- **Phase 12**: ✅ Complete (Gallery Extensibility & Advanced Experience — v0.10.0 close-out)
 
 ## Branching Strategy
 
