@@ -35,16 +35,10 @@ describe('VideoCarousel', () => {
     fireEvent.click(screen.getAllByAltText('Video One')[0]);
     expect(screen.getByTitle('Video player: Video One')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByAltText('Video Two')[0]);
+    fireEvent.click(screen.getByLabelText('Next video (overlay)'));
     expect(screen.getByText('Video Two')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByAltText('Video One')[0]);
-    expect(screen.getByText('Video One')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Next video'));
-    expect(screen.getByText('Video Two')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Previous video'));
+    fireEvent.click(screen.getByLabelText('Previous video (overlay)'));
     expect(screen.getByText('Video One')).toBeInTheDocument();
   });
 

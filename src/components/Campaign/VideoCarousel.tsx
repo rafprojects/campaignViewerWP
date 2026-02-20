@@ -4,7 +4,6 @@ import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useSwipe } from '@/hooks/useSwipe';
-import { CarouselNavigation } from './CarouselNavigation';
 import { OverlayArrows } from './OverlayArrows';
 import { DotNavigator } from './DotNavigator';
 import { applyGalleryTransition } from '@/utils/galleryAnimations';
@@ -316,44 +315,6 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
         />
       )}
 
-      <CarouselNavigation
-        total={videos.length}
-        currentIndex={currentIndex}
-        onPrev={prevVideo}
-        onNext={nextVideo}
-        onSelect={(index) => {
-          if (index !== currentIndex) {
-            window.clearTimeout(exitTimerRef.current);
-            if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
-              setPreviousVideo(currentVideo);
-              exitTimerRef.current = window.setTimeout(
-                () => setPreviousVideo(null),
-                mediaTransitionDuration + 100,
-              );
-            }
-          }
-          setCurrentIndex(index);
-          setIsPlaying(false);
-        }}
-        items={videos.map((video) => ({
-          id: video.id,
-          url: video.url,
-          thumbnail: video.thumbnail,
-          caption: video.caption,
-        }))}
-        previousLabel="Previous video"
-        nextLabel="Next video"
-        thumbnailWidth={settings.videoThumbnailWidth}
-        thumbnailHeight={settings.videoThumbnailHeight}
-        thumbnailScrollSpeed={settings.thumbnailScrollSpeed}
-        thumbnailGap={settings.thumbnailGap}
-        thumbnailWheelScrollEnabled={settings.thumbnailWheelScrollEnabled}
-        thumbnailDragScrollEnabled={settings.thumbnailDragScrollEnabled}
-        thumbnailScrollButtonsVisible={settings.thumbnailScrollButtonsVisible}
-        scrollAnimationStyle={settings.scrollAnimationStyle}
-        scrollAnimationDurationMs={settings.scrollAnimationDurationMs}
-        scrollAnimationEasing={settings.scrollAnimationEasing}
-      />
     </Stack>
   );
 }

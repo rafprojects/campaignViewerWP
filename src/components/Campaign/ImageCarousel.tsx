@@ -6,7 +6,6 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type M
 import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
 import { useSwipe } from '@/hooks/useSwipe';
-import { CarouselNavigation } from './CarouselNavigation';
 import { OverlayArrows } from './OverlayArrows';
 import { DotNavigator } from './DotNavigator';
 import { applyGalleryTransition } from '@/utils/galleryAnimations';
@@ -236,43 +235,6 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
           settings={settings}
         />
       )}
-
-      <CarouselNavigation
-        total={images.length}
-        currentIndex={currentIndex}
-        onPrev={prevImage}
-        onNext={nextImage}
-        onSelect={(index) => {
-          if (index !== currentIndex) {
-            window.clearTimeout(exitTimerRef.current);
-            if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
-              setPreviousImage(currentImage);
-              exitTimerRef.current = window.setTimeout(
-                () => setPreviousImage(null),
-                mediaTransitionDuration + 100,
-              );
-            }
-          }
-          setCurrentIndex(index);
-        }}
-        items={images.map((image) => ({
-          id: image.id,
-          url: image.url,
-          caption: image.caption,
-        }))}
-        previousLabel="Previous image"
-        nextLabel="Next image"
-        thumbnailScrollSpeed={settings.thumbnailScrollSpeed}
-        thumbnailWidth={settings.imageThumbnailWidth}
-        thumbnailHeight={settings.imageThumbnailHeight}
-        thumbnailGap={settings.thumbnailGap}
-        thumbnailWheelScrollEnabled={settings.thumbnailWheelScrollEnabled}
-        thumbnailDragScrollEnabled={settings.thumbnailDragScrollEnabled}
-        thumbnailScrollButtonsVisible={settings.thumbnailScrollButtonsVisible}
-        scrollAnimationStyle={settings.scrollAnimationStyle}
-        scrollAnimationDurationMs={settings.scrollAnimationDurationMs}
-        scrollAnimationEasing={settings.scrollAnimationEasing}
-      />
 
       {/* Lightbox — Portal-based, z-index 9999, bypasses CampaignViewer Modal nesting */}
       <Lightbox

@@ -28,15 +28,11 @@ describe('ImageCarousel', () => {
 
     expect(screen.getByText('Image One')).toBeInTheDocument();
 
-    const imageTwoThumb = screen.getAllByAltText('Image Two')[0];
-    fireEvent.click(imageTwoThumb);
-    expect(screen.getByText('Image Two')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Next image'));
+    fireEvent.click(screen.getByLabelText('Next image (overlay)'));
     await waitFor(() => {
       expect(screen.getAllByAltText('Image Two')[0]).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByLabelText('Previous image'));
+    fireEvent.click(screen.getByLabelText('Previous image (overlay)'));
     await waitFor(() => {
       expect(screen.getAllByAltText('Image One')[0]).toBeInTheDocument();
     });
