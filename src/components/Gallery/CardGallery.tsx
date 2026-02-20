@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
-import type { Campaign } from '@/types';
+import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/Campaign/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -11,6 +11,7 @@ interface CardGalleryProps {
   campaigns: Campaign[];
   userPermissions: string[];
   accessMode?: 'lock' | 'hide';
+  galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin?: boolean;
   isAuthenticated?: boolean;
   onAccessModeChange?: (mode: 'lock' | 'hide') => void;
@@ -23,6 +24,7 @@ export function CardGallery({
   campaigns,
   userPermissions,
   accessMode = 'lock',
+  galleryBehaviorSettings,
   isAdmin = false,
   isAuthenticated = false,
   onAccessModeChange,
@@ -192,6 +194,7 @@ export function CardGallery({
           <CampaignViewer
             campaign={selectedCampaign}
             hasAccess={hasAccess(selectedCampaign.id, selectedCampaign.visibility)}
+            galleryBehaviorSettings={galleryBehaviorSettings}
             isAdmin={isAdmin}
             onEditCampaign={onEditCampaign}
             onArchiveCampaign={onArchiveCampaign}

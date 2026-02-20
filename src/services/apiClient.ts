@@ -152,6 +152,78 @@ export interface SettingsResponse {
   enableLightbox?: boolean;
   enableAnimations?: boolean;
   cacheTtl?: number;
+  videoViewportHeight?: number;
+  imageViewportHeight?: number;
+  thumbnailScrollSpeed?: number;
+  scrollAnimationStyle?: 'smooth' | 'instant';
+  scrollAnimationDurationMs?: number;
+  scrollAnimationEasing?: 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+  scrollTransitionType?: 'fade' | 'slide' | 'slide-fade';
+  imageBorderRadius?: number;
+  videoBorderRadius?: number;
+  transitionFadeEnabled?: boolean;
+  // P12-H
+  navArrowPosition?: 'top' | 'center' | 'bottom';
+  navArrowSize?: number;
+  navArrowColor?: string;
+  navArrowBgColor?: string;
+  navArrowBorderWidth?: number;
+  navArrowHoverScale?: number;
+  navArrowAutoHideMs?: number;
+  // P12-I
+  dotNavEnabled?: boolean;
+  dotNavPosition?: 'below' | 'overlay-bottom' | 'overlay-top';
+  dotNavSize?: number;
+  dotNavActiveColor?: string;
+  dotNavInactiveColor?: string;
+  dotNavShape?: 'circle' | 'pill' | 'square';
+  dotNavSpacing?: number;
+  dotNavActiveScale?: number;
+  // P12-A/B
+  videoThumbnailWidth?: number;
+  videoThumbnailHeight?: number;
+  imageThumbnailWidth?: number;
+  imageThumbnailHeight?: number;
+  thumbnailGap?: number;
+  thumbnailWheelScrollEnabled?: boolean;
+  thumbnailDragScrollEnabled?: boolean;
+  thumbnailScrollButtonsVisible?: boolean;
+  // P12-J
+  imageShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  imageShadowCustom?: string;
+  videoShadowCustom?: string;
+  // P12-C
+  imageGalleryAdapterId?: string;
+  videoGalleryAdapterId?: string;
+  unifiedGalleryEnabled?: boolean;
+  unifiedGalleryAdapterId?: string;
+  gridCardWidth?: number;
+  gridCardHeight?: number;
+  mosaicTargetRowHeight?: number;
+  tileSize?: number;
+  tileGapX?: number;
+  tileGapY?: number;
+  tileBorderWidth?: number;
+  tileBorderColor?: string;
+  tileGlowEnabled?: boolean;
+  tileGlowColor?: string;
+  tileGlowSpread?: number;
+  tileHoverBounce?: boolean;
+  masonryColumns?: number;
+  // Viewport backgrounds
+  imageBgType?: string;
+  imageBgColor?: string;
+  imageBgGradient?: string;
+  imageBgImageUrl?: string;
+  videoBgType?: string;
+  videoBgColor?: string;
+  videoBgGradient?: string;
+  videoBgImageUrl?: string;
+  unifiedBgType?: string;
+  unifiedBgColor?: string;
+  unifiedBgGradient?: string;
+  unifiedBgImageUrl?: string;
 }
 
 export interface SettingsUpdateRequest {
@@ -163,6 +235,78 @@ export interface SettingsUpdateRequest {
   enableLightbox?: boolean;
   enableAnimations?: boolean;
   cacheTtl?: number;
+  videoViewportHeight?: number;
+  imageViewportHeight?: number;
+  thumbnailScrollSpeed?: number;
+  scrollAnimationStyle?: 'smooth' | 'instant';
+  scrollAnimationDurationMs?: number;
+  scrollAnimationEasing?: 'ease' | 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+  scrollTransitionType?: 'fade' | 'slide' | 'slide-fade';
+  imageBorderRadius?: number;
+  videoBorderRadius?: number;
+  transitionFadeEnabled?: boolean;
+  // P12-H
+  navArrowPosition?: 'top' | 'center' | 'bottom';
+  navArrowSize?: number;
+  navArrowColor?: string;
+  navArrowBgColor?: string;
+  navArrowBorderWidth?: number;
+  navArrowHoverScale?: number;
+  navArrowAutoHideMs?: number;
+  // P12-I
+  dotNavEnabled?: boolean;
+  dotNavPosition?: 'below' | 'overlay-bottom' | 'overlay-top';
+  dotNavSize?: number;
+  dotNavActiveColor?: string;
+  dotNavInactiveColor?: string;
+  dotNavShape?: 'circle' | 'pill' | 'square';
+  dotNavSpacing?: number;
+  dotNavActiveScale?: number;
+  // P12-A/B
+  videoThumbnailWidth?: number;
+  videoThumbnailHeight?: number;
+  imageThumbnailWidth?: number;
+  imageThumbnailHeight?: number;
+  thumbnailGap?: number;
+  thumbnailWheelScrollEnabled?: boolean;
+  thumbnailDragScrollEnabled?: boolean;
+  thumbnailScrollButtonsVisible?: boolean;
+  // P12-J
+  imageShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  videoShadowPreset?: 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
+  imageShadowCustom?: string;
+  videoShadowCustom?: string;
+  // P12-C
+  imageGalleryAdapterId?: string;
+  videoGalleryAdapterId?: string;
+  unifiedGalleryEnabled?: boolean;
+  unifiedGalleryAdapterId?: string;
+  gridCardWidth?: number;
+  gridCardHeight?: number;
+  mosaicTargetRowHeight?: number;
+  tileSize?: number;
+  tileGapX?: number;
+  tileGapY?: number;
+  tileBorderWidth?: number;
+  tileBorderColor?: string;
+  tileGlowEnabled?: boolean;
+  tileGlowColor?: string;
+  tileGlowSpread?: number;
+  tileHoverBounce?: boolean;
+  masonryColumns?: number;
+  // Viewport backgrounds
+  imageBgType?: string;
+  imageBgColor?: string;
+  imageBgGradient?: string;
+  imageBgImageUrl?: string;
+  videoBgType?: string;
+  videoBgColor?: string;
+  videoBgGradient?: string;
+  videoBgImageUrl?: string;
+  unifiedBgType?: string;
+  unifiedBgColor?: string;
+  unifiedBgGradient?: string;
+  unifiedBgImageUrl?: string;
 }
 
 export class ApiError extends Error {

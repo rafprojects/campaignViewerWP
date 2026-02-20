@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '../../test/test-utils';
 import { VideoCarousel } from './VideoCarousel';
-import type { MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem } from '@/types';
 
 const videos: MediaItem[] = [
   {
@@ -35,16 +35,10 @@ describe('VideoCarousel', () => {
     fireEvent.click(screen.getAllByAltText('Video One')[0]);
     expect(screen.getByTitle('Video player: Video One')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByAltText('Video Two')[0]);
+    fireEvent.click(screen.getByLabelText('Next video (overlay)'));
     expect(screen.getByText('Video Two')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByAltText('Video One')[0]);
-    expect(screen.getByText('Video One')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Next video'));
-    expect(screen.getByText('Video Two')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Previous video'));
+    fireEvent.click(screen.getByLabelText('Previous video (overlay)'));
     expect(screen.getByText('Video One')).toBeInTheDocument();
   });
 
@@ -79,5 +73,19 @@ describe('VideoCarousel', () => {
 
     const iframe = screen.getByTitle('Video player: Video One') as HTMLIFrameElement;
     expect(iframe.src).toContain('autoplay=1');
+  });
+
+  it('uses configured video viewport height', () => {
+    render(
+      <VideoCarousel
+        videos={videos}
+        settings={{
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          videoViewportHeight: 520,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('video-player-frame')).toHaveStyle({ height: '520px' });
   });
 });

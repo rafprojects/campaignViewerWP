@@ -1,361 +1,217 @@
 # Future Tasks & Enhancements
 
-This document tracks nice-to-have features and improvements that are deferred for future consideration.
+This document tracks deferred and exploratory work that remains after the Phase 12 release.
 
-> **Note:** Several items have been promoted to [PHASE10_REPORT.md](./PHASE10_REPORT.md) for active tracking. Items marked 🔗 below have a corresponding Phase 10 task.
+> Note: Items promoted to active phase execution are moved into dedicated phase reports and removed from this backlog.
 
 ---
 
-## 🔴 High Priority
+## High Priority
 
-### Compact Sign-In Experience
+### Layout Builder Epic (Post-Phase 12 Carryover)
 
-The current sign-in form is a large `<Paper>` card rendered at the top of the app, pushing public campaigns below the fold. This harms UX for unauthenticated users who want to browse public content. Replace with a compact, non-intrusive sign-in approach.
+Phase 12 intentionally delivered adapter architecture + runtime adapter controls, while deferring the full layout-builder epic.
 
-**Viable Approaches (evaluate and pick best):**
+**Goal:** evolve from adapter switching to authored, reusable, migration-safe layout presets.
 
-1. **Collapsible header bar** — A slim banner at the top: "Sign in for private campaigns" with an inline expand toggle that reveals email/password fields in a single row.
-2. **Modal/drawer** — A small "Sign in" button/link in the header that opens a modal or side drawer with the login form, keeping the main content unobstructed.
-3. **Popover** — A "Sign in" button that opens an anchored popover with a compact login form (similar to many SaaS apps).
-4. **Floating action button (FAB)** — A persistent small button (e.g., lock icon) positioned in a corner that opens a modal on click.
+#### LB-1. Preset Data Model + Persistence
+- Define versioned preset schema (`layoutSchemaVersion`) with migration hooks
+- Add persistence strategy (WP option vs dedicated table) with indexing plan
+- Store authored constraints (tile sizing rules, spacing, focal hints, breakpoints)
 
-**Requirements:**
-- Must not push gallery content down the page
-- Public campaigns must be immediately visible without scrolling
-- Sign-in should be discoverable but non-intrusive
-- Must work well in both standalone and WP-embedded contexts
-- Maintain current AuthBar for signed-in users (it's already compact)
+**Effort:** High  
+**Impact:** High
 
-**Effort:** Low–Medium  
-**Impact:** High (UX improvement for all unauthenticated users)  
-**Notes:** The current `LoginForm` component can be adapted; the main change is presentation/trigger pattern, not auth logic.
+#### LB-2. Visual Layout Authoring Surface
+- Build canvas/editor workflow for placing/adjusting media tiles and rules
+- Add snapping/grid guides and safe-constraint validation
+- Support preview across responsive breakpoints before save
 
-### Video Player Transparent Aspect Ratio
+**Effort:** High  
+**Impact:** High
 
-The video player in the campaign video gallery must support different aspect ratios without filling the sides with a solid color. The fill should be transparent so only the video itself is visible. If necessary, the video controls should be shrunk to fit the video width.
-
-**Current problem:** Non-16:9 videos (e.g., 4:3, vertical/portrait) get solid-color bars on the sides (letterboxing/pillarboxing), which looks poor when embedded on sites with non-dark backgrounds.
-
-**Requirements:**
-- Transparent background behind the video element (no solid color fill)
-- Video controls should adapt to match the video's rendered width
-- Must work for common aspect ratios: 16:9, 4:3, 9:16 (portrait), 1:1
-- Should degrade gracefully for unknown aspect ratios
-
-**Effort:** Low  
-**Impact:** High (visual quality for all video content)  
-**Notes:** May require CSS `object-fit: contain` with transparent container, or custom player wrapper.
-
-### Advanced Video Gallery Controls & UX (Pro-Level)
-
-QA feedback identified a consistency gap across mixed-dimension videos (embedded vs uploaded): container dimensions and playback UX need more admin-level control.
-
-**Requirements:**
-- Standardize video gallery viewport behavior for consistent perceived layout
-- Expose admin-configurable options for:
-	- gallery/player height
-	- thumbnail strip scroll speed
-	- scroll animation style/duration/easing
-	- gallery card styling (radius, spacing, border/shadow presets)
-	- improved UX-oriented scroll controls (buttons, drag/scroll-wheel behavior)
-- Preserve safe defaults for non-technical users
+#### LB-3. Preset Lifecycle Management
+- Preset CRUD (create, duplicate, archive, delete)
+- Preset assignment to image/video/unified modes
+- Import/export format for moving presets across WP instances
 
 **Effort:** Medium–High  
-**Impact:** High (consistency + customization + perceived quality)
+**Impact:** High
 
-### Advanced Image Gallery Controls & UX (Pro-Level)
-
-Add equivalent UX/config control depth for image gallery behavior so image and video galleries have consistent customization capabilities.
-
-**Requirements:**
-- Expose admin-configurable options for:
-	- gallery viewport height
-	- thumbnail strip scroll speed
-	- scroll animation style/duration/easing
-	- gallery card styling (radius, spacing, border/shadow presets)
-	- enhanced UX-oriented scroll controls
-- Keep defaults aligned with existing current behavior to avoid breaking embeds
-
-**Effort:** Medium–High  
-**Impact:** High (gallery parity + design flexibility)
-
-### Campaign Card Thumbnails
-
-Campaign cards currently show a generic "WP Super Gallery" placeholder image. Cards should display a representative thumbnail from the campaign's associated media.
-
-**Requirements:**
-- Auto-select: Use the first media item's thumbnail (or cover image if set) as the card front image
-- Manual override: Allow admins to select a specific media item as the card thumbnail in campaign editing
-- Manual upload: Option to upload a custom thumbnail image as the card front
-- Fallback: Keep the current placeholder when no media or thumbnail is available
-- Performance: Use WP thumbnail sizes (e.g., `medium` or `medium_large`) to avoid loading full-size images on the gallery grid
+#### LB-4. Migration + Fallback Strategy
+- Backward-compatible migration path from adapter-only settings
+- Fallback behavior when preset is missing/invalid/corrupted
+- Admin diagnostics for migration status and conflicts
 
 **Effort:** Medium  
-**Impact:** High (visual appeal, campaign discoverability)  
-**Notes:** The `cover_image` meta field already exists but may not be populated. Could extend edit campaign modal with a "Set thumbnail" action.
+**Impact:** High
 
-### Offline / Network Failure Detection
+#### LB-5. Testing & QA for Builder
+- Add schema migration test matrix (N→N+1 version upgrades)
+- Add visual regression coverage for generated layouts
+- Add stress/performance tests for large media collections
 
-When the user goes offline or loses network connectivity, the app provides no feedback — admin actions silently fail and campaigns don't load, causing UI confusion.
+**Effort:** Medium  
+**Impact:** Medium–High
 
-**Requirements:**
-- Detect offline/online state using `navigator.onLine` + `window` events (`online`/`offline`)
-- Show a non-dismissable banner when offline: "You appear to be offline. Some features are unavailable."
-- Prevent API calls while offline (fail fast with a clear message instead of waiting for timeout)
-- Gracefully restore when connectivity returns (auto-dismiss banner, optionally revalidate SWR cache)
-- Campaign cards should show a placeholder/skeleton state instead of collapsing when data fails to load
+### Bulk Media Operations
 
-**Effort:** Low–Medium  
-**Impact:** Medium (error UX, especially for admin users)  
-**Notes:** Could use a `useOnlineStatus` hook combined with a context provider. Consider also using `CampaignViewer` as modal overlays instead of full-page repaints for better resilience.
+Phase 11 intentionally deferred bulk actions after scope freeze.
 
-### Pluggable Gallery Implementations + Layout Builder (Epic)
+- Add multi-select in admin media workflows
+- Support batch delete/move actions
+- Add clear confirmation UX and progress feedback
 
-Enable a gallery "plugin" architecture so both image and video galleries can support interchangeable layouts/styles (e.g., mosaic, masonry, filmstrip, storyboard) without hardcoding one implementation.
+**Effort:** Medium  
+**Impact:** High
 
-**Scope recommendation:** treat as an **epic** with multiple phased tasks.
+### E1. SWR for AdminPanel Data Fetching
 
-**Phase candidates:**
-1. **Gallery adapter contract** — interface for gallery capabilities, data requirements, and control schema.
-2. **Runtime gallery selector** — admin setting to choose gallery implementation per media type (image/video).
-3. **Built-in alt implementations** — at least one additional style (e.g., mosaic) for each media type.
-4. **Manual layout builder tool** — internal canvas tool to position/size/orient gallery members manually.
-5. **Schema + persistence** — save/reuse custom layouts, validation, migrations.
+`AdminPanel` still manually manages `data/loading/error` for many API calls.
 
-**Requirements:**
-- Applies to both video and image galleries
-- Supports custom layout templates and manually authored layouts
-- Maintains backward compatibility with current default gallery
+- Migrate admin resources to SWR hooks
+- Reuse cache between tab switches
+- Standardize revalidation/error behavior
 
-**Effort:** High (multi-phase)  
-**Impact:** High (platform extensibility + advanced UX)
+**Effort:** Medium  
+**Impact:** Medium
+
+### A1. Reduce App.tsx to ≤ 300 Lines (Stretch)
+
+Core decomposition is improved, but orchestration remains centralized.
+
+- Extract remaining orchestration into focused hooks/modules
+- Consider `useReducer` or lightweight state store for modal/action orchestration
+
+**Effort:** High  
+**Impact:** Medium
+
+### A2. Reduce AdminPanel.tsx to ≤ 200 Lines (Stretch)
+
+Tabs are split, but orchestration and shared flows are still concentrated.
+
+- Move cross-tab orchestration to dedicated admin state/hooks
+- Replace remaining manual API flows with shared data abstractions
+
+**Effort:** High  
+**Impact:** Medium
 
 ---
 
 ## Deferred from Phase 6
 
-### Embed & Media Providers
+### External Thumbnail Cache
 
-#### Modularize Embed Provider Handlers
+Cache external media thumbnails server-side for reliability/performance.
 
-Refactor embed provider logic into modular handlers for better maintainability.
-
-- Revisit Rumble and other non-oEmbed providers for robust previews
-- Add fallback thumbnail strategies for providers without oEmbed
-- Create provider plugin system for extensibility
-
-**Effort:** Medium  
-**Impact:** Low (maintainability improvement)  
-**Notes:** Current implementation works well, this is a code organization enhancement
-
----
-
-#### External Thumbnail Cache
-
-Cache external media thumbnails server-side to improve reliability and performance.
-
-- Fetch and store thumbnails on the server
-- Serve cached versions to reduce external dependencies
-- Periodic cache refresh mechanism
-- CDN integration option
+- Fetch/store thumbnails on server
+- Serve cached variants
+- Add refresh/expiry strategy
+- Optional CDN support
 
 **Effort:** Medium  
-**Impact:** Medium (reliability improvement)  
-**Notes:** Most useful for high-traffic sites with many external media items
-
----
+**Impact:** Medium
 
 ### Monitoring & Infrastructure
 
 #### Redis/Memcached Object Cache
-
-Optional object cache backend for high‑traffic deployments.
-
-- Configure Redis/Memcached for transients and cache groups
-- Add cache monitoring/eviction guidance
-- Document network security requirements
+- Configure object cache backends for high-traffic deployments
+- Add monitoring and eviction guidance
+- Document network/security constraints
 
 **Effort:** Medium  
-**Impact:** Medium (performance at scale)  
-**Notes:** Not needed until traffic grows
+**Impact:** Medium
 
 #### oEmbed Failure Monitoring
-
-Track repeated oEmbed failures and expose metrics for monitoring.
-
-- Expose `wpsg_oembed_failure_count` as a WP option
-- Provide a lightweight admin dashboard widget for failure trends
-- Alert on high failure rates
+- Track repeated failures (`wpsg_oembed_failure_count`)
+- Add simple admin visibility/trend view
+- Alert on sustained failure rates
 
 **Effort:** Low  
-**Impact:** Low (monitoring infrastructure)  
-**Notes:** Useful for debugging but not critical for core functionality
-
----
+**Impact:** Low
 
 #### oEmbed Rate Limiting
-
-Implement rate limiting for the public oEmbed proxy endpoint.
-
-- Prevent abuse while maintaining preview functionality
-- Consider per-IP or per-session limits
-- Configurable rate limit thresholds
-- Rate limit status in admin panel
+- Add configurable limits for public proxy usage
+- Surface status/limits in admin
 
 **Effort:** Medium  
-**Impact:** Low (abuse prevention)  
-**Notes:** Only needed if proxy endpoint is publicly accessible
-
----
+**Impact:** Low
 
 #### Admin Metric & Alerting Panel
-
-Provide a simple admin metric panel for monitoring.
-
-- Integrate `do_action('wpsg_oembed_failure', $url, $attempts)` hook
-- Allow external monitoring system integration
-- Display health status and key metrics
-- Performance monitoring dashboard
+- Integrate monitoring hooks with dashboard summaries
+- Support external monitoring integration
 
 **Effort:** Medium  
-**Impact:** Low (observability)  
-**Notes:** Advanced feature for enterprise deployments
+**Impact:** Low
 
 #### Admin Health Dashboard
-
-Provide a dedicated admin view for system health (errors, response time, cache hit rate).
-
-- Summaries of REST error counts and latency
-- Last 24h performance snapshots
-- Links to logs and diagnostics
+- REST error/latency snapshots
+- Links to diagnostics/logs
 
 **Effort:** Medium  
-**Impact:** Medium (observability)  
-**Notes:** Defer until core monitoring/alerts are stable
+**Impact:** Medium
 
 #### Usage Analytics
-
-Track campaign views and media loads for reporting.
-
-- Event schema and storage strategy
-- Privacy and data retention policy
-- Admin reporting UI
+- Define event schema + storage strategy
+- Add privacy/retention policy
+- Build admin reporting UI
 
 **Effort:** Medium  
-**Impact:** Medium (insights)  
-**Notes:** Requires product decisions on privacy and data governance
+**Impact:** Medium
 
 #### WAF Rules (Optional)
-
-Add optional WAF guidance for high‑risk deployments.
-
-- Baseline rules for REST API endpoints
-- Block SSRF patterns on oEmbed proxy
-- Rate‑limit aggressive IPs at edge
+- Baseline API rules
+- SSRF pattern blocking guidance
+- Edge rate-limit suggestions
 
 **Effort:** Low  
-**Impact:** Medium (security)  
-**Notes:** Defer until traffic/attack surface grows
-
----
+**Impact:** Medium
 
 #### Logging & Metrics Integration
-
-Ensure oEmbed failures log via `error_log()`.
-
-- Provide opt-in integration point for external metrics
-- Support StatsD/Prometheus if configured
-- Structured logging format
-- Log rotation and management
+- Opt-in external metrics integrations (StatsD/Prometheus)
+- Structured logging + retention guidance
 
 **Effort:** Medium  
-**Impact:** Low (external metrics)  
-**Notes:** Requires additional infrastructure setup
+**Impact:** Low
 
 ---
 
-### Developer Tools
+## Developer Tools
 
-#### Contributor Tooling & Documentation
+### Contributor Tooling & Documentation
 
-Improve tooling and documentation for contributors.
+- Storybook for component development
+- API docs via OpenAPI/Swagger
+- Pre-commit tooling (Husky/lint/test gates)
+- Further TypeScript strictness improvements
+- Conventional commits and contributor docs
+- ADRs and dev-setup improvements
 
-- Add Storybook for component development
-- Create API documentation with OpenAPI/Swagger
-- Add pre-commit hooks with Husky
-- Improve TypeScript strict mode compliance
-- Add conventional commits with Commitizen
-- Create contribution guidelines
-- Add architectural decision records (ADRs)
-- Improve local development setup docs
+**Effort:** Medium  
+**Impact:** Medium
 
-**Effort:** Medium
-**Impact:** Medium (maintainability, onboarding)
-**Notes:** Move from Phase 8 scope to future iteration
+### WP-CLI Commands
 
-#### WP-CLI Commands
+Add `wpsg` WP-CLI command set for admin/debug workflows.
 
-Add a `wpsg` WP-CLI command for admin operations.
-
-- View/reset `wpsg_oembed_failure_count`
-- Inspect cached oEmbed keys
-- Bulk campaign operations
-- Media library management
-- User access reports
+- Campaign/media/access operations
+- Cache diagnostics/clear commands
+- Failure counter inspection/reset
 
 **Effort:** Low  
-**Impact:** Low (developer convenience)  
-**Notes:** Useful for automation and debugging
-
-**Example Commands:**
-```bash
-wp wpsg campaigns list
-wp wpsg media rescan --campaign=123
-wp wpsg access grant --user=5 --campaign=101
-wp wpsg cache clear --type=oembed
-```
+**Impact:** Low
 
 ---
 
 ## Deferred from Phase 10
 
-### A1. Reduce App.tsx to ≤ 300 Lines (Stretch)
-
-**Current state:** ~703 lines with ~97 hooks/functions. Core decomposition completed (useCarousel, useLightbox, useDirtyGuard, ErrorBoundary extracted), but reaching ≤ 300 requires a full state-management rewrite (e.g., useReducer/Zustand) to extract the remaining orchestration logic.
-
-**Effort:** High  
-**Impact:** Medium (maintainability)
-
-### A2. Reduce AdminPanel.tsx to ≤ 200 Lines (Stretch)
-
-**Current state:** ~912 lines with ~102 hooks/functions. Tabs already split into dedicated components (CampaignsTab, MediaTab, etc.), but the file still centralizes modal orchestration, data fetching, and inter-tab communication. Reaching ≤ 200 requires extracting ~15 manual API calls into SWR + creating a shared admin state context.
-
-**Effort:** High  
-**Impact:** Medium (maintainability)
-
-### E1. SWR for AdminPanel Data Fetching
-
-AdminPanel manually manages `data`, `loading`, `error` state for ~15 API calls (~30 lines of boilerplate per resource). Migrating to SWR would provide automatic revalidation, caching, and error retry. SWR is already a project dependency used in App.tsx.
-
-**Effort:** Medium  
-**Impact:** Medium (DX, reliability)
-
-### E2. Fix N+1 Media Fetch in CardGallery
-
-`CardGallery` fetches all campaigns, then triggers per-campaign media fetches via `useSWR` inside each `CampaignCard`. For 20 campaigns = 21 HTTP requests on initial load. Requires a bulk media endpoint (`GET /campaigns/media?ids=1,2,3`) or including media summary in the campaigns list response.
-
-**Effort:** Medium (requires backend changes)  
-**Impact:** High (performance for large deployments)
-
-### Track F Feature Ideas
+### Track F Feature Ideas (Open)
 
 | Feature | Effort | Impact | Notes |
 |---------|--------|--------|-------|
-| Drag-and-drop media reordering (`@dnd-kit`) | Medium | High | Replace ↑/↓ buttons; natural UX |
 | Bulk media operations (multi-select delete/move) | Medium | High | Common admin workflow |
 | Campaign duplication ("Clone Campaign") | Low | Medium | Copy campaign + media metadata |
-| Campaign text search in gallery | Low | Medium | Client-side title/description filter |
-| Keyboard shortcuts for admin (`Ctrl+N`, `Ctrl+S`) | Low | Medium | `useHotkeys` from Mantine |
+| Keyboard shortcuts for admin (`Ctrl+N`, `Ctrl+S`) | Low | Medium | Mantine `useHotkeys` |
 | Export/import campaigns as JSON | Medium | Medium | Migration between WP instances |
 | Campaign analytics dashboard (view counts) | High | Medium | Requires event tracking backend |
 
@@ -364,47 +220,34 @@ AdminPanel manually manages `data`, `loading`, `error` state for ~15 API calls (
 ## Feature Ideas (Not Committed)
 
 ### Media Management
-
-- 🔗 Drag-and-drop media reordering — *Promoted: Phase 10 Track F*
-- 🔗 Bulk media operations (multi-select delete/move) — *Promoted: Phase 10 Track F*
-- 🔗 Media library search and filtering — *Promoted: Phase 10 Track C3*
 - Media sorting controls (alpha, type, date)
-- Media tab redesign brainstorming (drag-and-drop sorting, layout refresh)
 - Media tagging system
 - Duplicate media detection
 - Media usage tracking across campaigns
 
 ### Campaign Features
-
 - Campaign templates
-- 🔗 Campaign cloning / duplication — *Promoted: Phase 10 Track F*
 - Campaign scheduling (publish/unpublish dates)
 - Campaign categories/folders
-- 🔗 Campaign analytics (view counts, engagement) — *Promoted: Phase 10 Track F*
 
 ### Access Control
-
 - Role-based access levels (view, edit, admin)
 - Time-limited access grants
 - Access request workflow
-- Access totals (Access/No Access) summary UI
+- Access totals summary UI
 - Access audit log export
 
 ### Performance
-
 - Image optimization on upload
 - Lazy loading for large galleries
-- Virtual scrolling for long media lists
 - Progressive Web App (PWA) support
-- Admin panel loading performance strategy (profile REST calls, cache hot paths, parallelize non-blocking requests, and add perceived-performance feedback)
+- Admin panel loading performance strategy (profile REST calls, cache hot paths, parallelize non-blocking requests)
 
 ### UX Workflow
-
-- Convert settings panel from full-page view shift to an on-the-fly loading modal workflow (non-disruptive context-preserving settings)
-- Improve Admin panel tab transitions so loaded data is reused across tab switches (avoid reloading Access/Audit datasets unless filters/targets change)
+- Convert settings panel from full-page shift to non-disruptive loading modal workflow
+- Reuse loaded Admin tab data across switches when filters/targets have not changed
 
 ### Integration
-
 - Third-party OAuth providers (Google, GitHub)
 - Webhook support for campaign events
 - REST API documentation (OpenAPI/Swagger)
@@ -414,15 +257,15 @@ AdminPanel manually manages `data`, `loading`, `error` state for ~15 API calls (
 
 ## Evaluation Criteria
 
-When considering future tasks, evaluate based on:
+When considering future tasks:
 
-1. **User Impact:** How many users benefit? How significantly?
-2. **Implementation Effort:** Developer time required
-3. **Maintenance Burden:** Ongoing support and complexity
-4. **Alignment with Core Mission:** Does it enhance the core gallery functionality?
-5. **Alternative Solutions:** Can users achieve this another way?
+1. User impact
+2. Implementation effort
+3. Maintenance burden
+4. Alignment with core mission
+5. Viable alternatives
 
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: February 16, 2026 — added advanced gallery controls tasks + pluggable gallery architecture epic*
+*Last updated: February 19, 2026 — Phase 12 carryover captured; layout-builder epic expanded into actionable backlog tracks*

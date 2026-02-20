@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { ImageCarousel } from './ImageCarousel';
-import type { MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem } from '@/types';
 
 const images: MediaItem[] = [
   {
@@ -28,22 +28,20 @@ describe('ImageCarousel', () => {
 
     expect(screen.getByText('Image One')).toBeInTheDocument();
 
-    const imageTwoThumb = screen.getAllByAltText('Image Two')[0];
-    fireEvent.click(imageTwoThumb);
-    expect(screen.getByText('Image Two')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Next image'));
+    fireEvent.click(screen.getByLabelText('Next image (overlay)'));
     await waitFor(() => {
       expect(screen.getAllByAltText('Image Two')[0]).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByLabelText('Previous image'));
+    fireEvent.click(screen.getByLabelText('Previous image (overlay)'));
     await waitFor(() => {
       expect(screen.getAllByAltText('Image One')[0]).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByLabelText('Open lightbox'));
     await waitFor(() => {
-      expect(document.body.getAttribute('data-scroll-locked')).toBe('1');
+      // Lightbox is now a Portal-based overlay (not a Mantine Modal), so we
+      // verify it opened by checking the close button and image are rendered.
+      expect(screen.getByLabelText('Close lightbox')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByLabelText('Next image (lightbox)'));
     await waitFor(() => {
@@ -55,7 +53,22 @@ describe('ImageCarousel', () => {
     });
     fireEvent.click(screen.getByLabelText(/close lightbox/i));
     await waitFor(() => {
-      expect(document.body.getAttribute('data-scroll-locked')).toBeNull();
+      // After close, the portal overlay is unmounted.
+      expect(screen.queryByLabelText('Close lightbox')).toBeNull();
     });
+  });
+
+  it('uses configured image viewport height', () => {
+    render(
+      <ImageCarousel
+        images={images}
+        settings={{
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          imageViewportHeight: 500,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('image-viewer-frame')).toHaveStyle({ height: '500px' });
   });
 });

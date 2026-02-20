@@ -13,7 +13,8 @@ import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem, UploadResponse } from './types';
+import type { Campaign, Company, MediaItem, UploadResponse, GalleryBehaviorSettings, ViewportBgType } from './types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { getErrorMessage } from './utils/getErrorMessage';
@@ -238,6 +239,141 @@ function AppContent({
   );
 
   const error = campaignsError ? (campaignsError instanceof Error ? campaignsError.message : 'Failed to load campaigns') : null;
+
+  const fetchGalleryBehaviorSettings = useCallback(async () => {
+    const response = await apiClient.getSettings();
+    const resolved = {
+      videoViewportHeight:
+        response.videoViewportHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight,
+      imageViewportHeight:
+        response.imageViewportHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight,
+      thumbnailScrollSpeed:
+        response.thumbnailScrollSpeed ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollSpeed,
+      scrollAnimationStyle:
+        response.scrollAnimationStyle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle,
+      scrollAnimationDurationMs:
+        response.scrollAnimationDurationMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs,
+      scrollAnimationEasing:
+        response.scrollAnimationEasing ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing,
+      scrollTransitionType:
+        response.scrollTransitionType ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType,
+      imageBorderRadius:
+        response.imageBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius,
+      videoBorderRadius:
+        response.videoBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
+      transitionFadeEnabled:
+        response.transitionFadeEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
+      // P12-A/B
+      videoThumbnailWidth:
+        response.videoThumbnailWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailWidth,
+      videoThumbnailHeight:
+        response.videoThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailHeight,
+      imageThumbnailWidth:
+        response.imageThumbnailWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailWidth,
+      imageThumbnailHeight:
+        response.imageThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailHeight,
+      thumbnailGap:
+        response.thumbnailGap ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap,
+      thumbnailWheelScrollEnabled:
+        response.thumbnailWheelScrollEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailWheelScrollEnabled,
+      thumbnailDragScrollEnabled:
+        response.thumbnailDragScrollEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailDragScrollEnabled,
+      thumbnailScrollButtonsVisible:
+        response.thumbnailScrollButtonsVisible ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollButtonsVisible,
+      // P12-H
+      navArrowPosition:
+        response.navArrowPosition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition,
+      navArrowSize:
+        response.navArrowSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize,
+      navArrowColor:
+        response.navArrowColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowColor,
+      navArrowBgColor:
+        response.navArrowBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBgColor,
+      navArrowBorderWidth:
+        response.navArrowBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBorderWidth,
+      navArrowHoverScale:
+        response.navArrowHoverScale ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowHoverScale,
+      navArrowAutoHideMs:
+        response.navArrowAutoHideMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs,
+      // P12-I
+      dotNavEnabled:
+        response.dotNavEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavEnabled,
+      dotNavPosition:
+        response.dotNavPosition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavPosition,
+      dotNavSize:
+        response.dotNavSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSize,
+      dotNavActiveColor:
+        response.dotNavActiveColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveColor,
+      dotNavInactiveColor:
+        response.dotNavInactiveColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavInactiveColor,
+      dotNavShape:
+        response.dotNavShape ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavShape,
+      dotNavSpacing:
+        response.dotNavSpacing ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSpacing,
+      dotNavActiveScale:
+        response.dotNavActiveScale ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveScale,
+      // P12-J
+      imageShadowPreset:
+        response.imageShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset,
+      videoShadowPreset:
+        response.videoShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset,
+      imageShadowCustom:
+        response.imageShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
+      videoShadowCustom:
+        response.videoShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
+      // P12-C
+      imageGalleryAdapterId:
+        response.imageGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
+      videoGalleryAdapterId:
+        response.videoGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
+      unifiedGalleryEnabled:
+        response.unifiedGalleryEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryEnabled,
+      unifiedGalleryAdapterId:
+        response.unifiedGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryAdapterId,
+      gridCardWidth:
+        response.gridCardWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
+      gridCardHeight:
+        response.gridCardHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
+      mosaicTargetRowHeight:
+        response.mosaicTargetRowHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight,
+      tileSize: response.tileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileSize,
+      tileGapX: response.tileGapX ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapX,
+      tileGapY: response.tileGapY ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapY,
+      tileBorderWidth: response.tileBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth,
+      tileBorderColor: response.tileBorderColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderColor,
+      tileGlowEnabled: response.tileGlowEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowEnabled,
+      tileGlowColor: response.tileGlowColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowColor,
+      tileGlowSpread: response.tileGlowSpread ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread,
+      tileHoverBounce: response.tileHoverBounce ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce,
+      masonryColumns: response.masonryColumns ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns,
+      // Viewport backgrounds
+      imageBgType: (response.imageBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType,
+      imageBgColor: response.imageBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgColor,
+      imageBgGradient: response.imageBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgGradient,
+      imageBgImageUrl: response.imageBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgImageUrl,
+      videoBgType: (response.videoBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgType,
+      videoBgColor: response.videoBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor,
+      videoBgGradient: response.videoBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgGradient,
+      videoBgImageUrl: response.videoBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgImageUrl,
+      unifiedBgType: (response.unifiedBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgType,
+      unifiedBgColor: response.unifiedBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
+      unifiedBgGradient: response.unifiedBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
+      unifiedBgImageUrl: response.unifiedBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
+    } as GalleryBehaviorSettings;
+
+    return resolved;
+  }, [apiClient]);
+
+  const { data: galleryBehaviorSettings, mutate: mutateGalleryBehaviorSettings } = useSWR<GalleryBehaviorSettings>(
+    'gallery-behavior-settings',
+    fetchGalleryBehaviorSettings,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      shouldRetryOnError: false,
+      fallbackData: DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+    },
+  );
 
   useEffect(() => {
     if (isOnline && isReady) {
@@ -625,19 +761,99 @@ function AppContent({
           </Alert>
         </Container>
       )}
-      {isSettingsOpen ? (
-        <Container size="xl" py="xl">
-          <ErrorBoundary onReset={closeSettings}>
-            <Suspense fallback={<Center py={120}><Loader /></Center>}>
-              <SettingsPanel
-                apiClient={apiClient}
-                onClose={closeSettings}
-                onNotify={handleAdminNotify}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </Container>
-      ) : isAdminPanelOpen ? (
+      {isSettingsOpen && (
+        <ErrorBoundary onReset={closeSettings}>
+          <Suspense fallback={null}>
+            <SettingsPanel
+              opened={isSettingsOpen}
+              apiClient={apiClient}
+              onClose={closeSettings}
+              onNotify={handleAdminNotify}
+              initialSettings={galleryBehaviorSettings}
+              onSettingsSaved={(saved) => {
+                void mutateGalleryBehaviorSettings(
+                  {
+                    videoViewportHeight: saved.videoViewportHeight,
+                    imageViewportHeight: saved.imageViewportHeight,
+                    thumbnailScrollSpeed: saved.thumbnailScrollSpeed,
+                    scrollAnimationStyle: saved.scrollAnimationStyle,
+                    scrollAnimationDurationMs: saved.scrollAnimationDurationMs,
+                    scrollAnimationEasing: saved.scrollAnimationEasing,
+                    scrollTransitionType: saved.scrollTransitionType,
+                    imageBorderRadius: saved.imageBorderRadius,
+                    videoBorderRadius: saved.videoBorderRadius,
+                    transitionFadeEnabled: saved.transitionFadeEnabled,
+                    // P12-A/B
+                    videoThumbnailWidth: saved.videoThumbnailWidth,
+                    videoThumbnailHeight: saved.videoThumbnailHeight,
+                    imageThumbnailWidth: saved.imageThumbnailWidth,
+                    imageThumbnailHeight: saved.imageThumbnailHeight,
+                    thumbnailGap: saved.thumbnailGap,
+                    thumbnailWheelScrollEnabled: saved.thumbnailWheelScrollEnabled,
+                    thumbnailDragScrollEnabled: saved.thumbnailDragScrollEnabled,
+                    thumbnailScrollButtonsVisible: saved.thumbnailScrollButtonsVisible,
+                    // P12-H
+                    navArrowPosition: saved.navArrowPosition,
+                    navArrowSize: saved.navArrowSize,
+                    navArrowColor: saved.navArrowColor,
+                    navArrowBgColor: saved.navArrowBgColor,
+                    navArrowBorderWidth: saved.navArrowBorderWidth,
+                    navArrowHoverScale: saved.navArrowHoverScale,
+                    navArrowAutoHideMs: saved.navArrowAutoHideMs,
+                    // P12-I
+                    dotNavEnabled: saved.dotNavEnabled,
+                    dotNavPosition: saved.dotNavPosition,
+                    dotNavSize: saved.dotNavSize,
+                    dotNavActiveColor: saved.dotNavActiveColor,
+                    dotNavInactiveColor: saved.dotNavInactiveColor,
+                    dotNavShape: saved.dotNavShape,
+                    dotNavSpacing: saved.dotNavSpacing,
+                    dotNavActiveScale: saved.dotNavActiveScale,
+                    // P12-J
+                    imageShadowPreset: saved.imageShadowPreset,
+                    videoShadowPreset: saved.videoShadowPreset,
+                    imageShadowCustom: saved.imageShadowCustom,
+                    videoShadowCustom: saved.videoShadowCustom,
+                    // P12-C
+                    imageGalleryAdapterId: saved.imageGalleryAdapterId,
+                    videoGalleryAdapterId: saved.videoGalleryAdapterId,
+                    unifiedGalleryEnabled: saved.unifiedGalleryEnabled,
+                    unifiedGalleryAdapterId: saved.unifiedGalleryAdapterId,
+                    gridCardWidth: saved.gridCardWidth,
+                    gridCardHeight: saved.gridCardHeight,
+                    mosaicTargetRowHeight: saved.mosaicTargetRowHeight,
+                    tileSize: saved.tileSize,
+                    tileGapX: saved.tileGapX,
+                    tileGapY: saved.tileGapY,
+                    tileBorderWidth: saved.tileBorderWidth,
+                    tileBorderColor: saved.tileBorderColor,
+                    tileGlowEnabled: saved.tileGlowEnabled,
+                    tileGlowColor: saved.tileGlowColor,
+                    tileGlowSpread: saved.tileGlowSpread,
+                    tileHoverBounce: saved.tileHoverBounce,
+                    masonryColumns: saved.masonryColumns,
+                    // Viewport backgrounds
+                    imageBgType: saved.imageBgType,
+                    imageBgColor: saved.imageBgColor,
+                    imageBgGradient: saved.imageBgGradient,
+                    imageBgImageUrl: saved.imageBgImageUrl,
+                    videoBgType: saved.videoBgType,
+                    videoBgColor: saved.videoBgColor,
+                    videoBgGradient: saved.videoBgGradient,
+                    videoBgImageUrl: saved.videoBgImageUrl,
+                    unifiedBgType: saved.unifiedBgType,
+                    unifiedBgColor: saved.unifiedBgColor,
+                    unifiedBgGradient: saved.unifiedBgGradient,
+                    unifiedBgImageUrl: saved.unifiedBgImageUrl,
+                  },
+                  false,
+                );
+              }}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+      {isAdminPanelOpen ? (
         <Container size="xl" py="xl">
           <ErrorBoundary onReset={closeAdminPanel}>
             <Suspense fallback={<Center py={120}><Loader /></Center>}>
@@ -671,6 +887,7 @@ function AppContent({
           campaigns={campaigns || []}
           userPermissions={permissions}
           accessMode={localAccessMode}
+          galleryBehaviorSettings={galleryBehaviorSettings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
           isAdmin={isAdmin}
           isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}

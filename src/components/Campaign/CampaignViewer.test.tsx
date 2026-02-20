@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '../../test/test-utils';
 import { CampaignViewer } from './CampaignViewer';
-import type { Campaign, Company, MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type Campaign, type Company, type MediaItem } from '@/types';
 
 const company: Company = {
   id: 'acme',
@@ -41,6 +41,7 @@ describe('CampaignViewer', () => {
       <CampaignViewer
         campaign={campaign}
         hasAccess={false}
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
         isAdmin={false}
         onClose={() => undefined}
       />,
@@ -60,6 +61,7 @@ describe('CampaignViewer', () => {
       <CampaignViewer
         campaign={campaign}
         hasAccess
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
         isAdmin
         onEditCampaign={onEditCampaign}
         onArchiveCampaign={onArchiveCampaign}

@@ -1,14 +1,79 @@
 import { lazy, Suspense } from 'react';
 import { IconArrowLeft, IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
-import type { Campaign } from '@/types';
+import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
+
+/**
+ * Dispatch a gallery adapter by ID. 'classic' is handled separately in the
+ * caller because image/video carousels have different props. All other adapter
+ * IDs are resolved here. Unknown IDs fall back to CompactGridGallery.
+ */
+function renderAdapter(id: string, media: MediaItem[], settings: GalleryBehaviorSettings) {
+  switch (id) {
+    case 'justified':
+    case 'mosaic': // legacy alias → justified (fixes single-column bug)
+      return <JustifiedGallery media={media} settings={settings} />;
+    case 'masonry':
+      return <MasonryGallery media={media} settings={settings} />;
+    case 'hexagonal':
+      return <HexagonalGallery media={media} settings={settings} />;
+    case 'circular':
+      return <CircularGallery media={media} settings={settings} />;
+    case 'diamond':
+      return <DiamondGallery media={media} settings={settings} />;
+    case 'compact-grid':
+    default:
+      return <CompactGridGallery media={media} settings={settings} />;
+  }
+}
+
+/** Return a CSS background style object from viewport background settings. */
+function resolveViewportBg(type: string, color: string, gradient: string, imageUrl: string) {
+  switch (type) {
+    case 'solid':    return { background: color };
+    case 'gradient': return { background: gradient };
+    case 'image':    return { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' };
+    default:         return {};
+  }
+}
 
 const VideoCarousel = lazy(() => import('./VideoCarousel').then((m) => ({ default: m.VideoCarousel })));
 const ImageCarousel = lazy(() => import('./ImageCarousel').then((m) => ({ default: m.ImageCarousel })));
+const CompactGridGallery = lazy(() =>
+  import('@/gallery-adapters/compact-grid/CompactGridGallery').then((m) => ({
+    default: m.CompactGridGallery,
+  }))
+);
+const JustifiedGallery = lazy(() =>
+  import('@/gallery-adapters/justified/JustifiedGallery').then((m) => ({
+    default: m.JustifiedGallery,
+  }))
+);
+const MasonryGallery = lazy(() =>
+  import('@/gallery-adapters/masonry/MasonryGallery').then((m) => ({
+    default: m.MasonryGallery,
+  }))
+);
+const HexagonalGallery = lazy(() =>
+  import('@/gallery-adapters/hexagonal/HexagonalGallery').then((m) => ({
+    default: m.HexagonalGallery,
+  }))
+);
+const CircularGallery = lazy(() =>
+  import('@/gallery-adapters/circular/CircularGallery').then((m) => ({
+    default: m.CircularGallery,
+  }))
+);
+const DiamondGallery = lazy(() =>
+  import('@/gallery-adapters/diamond/DiamondGallery').then((m) => ({
+    default: m.DiamondGallery,
+  }))
+);
 
 interface CampaignViewerProps {
   campaign: Campaign;
   hasAccess: boolean;
+  galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin: boolean;
   onEditCampaign?: (campaign: Campaign) => void;
   onArchiveCampaign?: (campaign: Campaign) => void;
@@ -19,6 +84,7 @@ interface CampaignViewerProps {
 export function CampaignViewer({
   campaign,
   hasAccess,
+  galleryBehaviorSettings,
   isAdmin,
   onEditCampaign,
   onArchiveCampaign,
@@ -138,12 +204,46 @@ export function CampaignViewer({
           {/* Media Sections */}
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
             <Suspense fallback={<Center py="md"><Loader /></Center>}>
-              {campaign.videos.length > 0 && (
-                <VideoCarousel videos={campaign.videos} />
-              )}
-
-              {campaign.images.length > 0 && (
-                <ImageCarousel images={campaign.images} />
+              {galleryBehaviorSettings.unifiedGalleryEnabled ? (
+                // Unified mode: all media merged and sorted by order → single adapter
+                (() => {
+                  const allMedia = [...campaign.videos, ...campaign.images].sort(
+                    (a, b) => a.order - b.order,
+                  );
+                  if (allMedia.length === 0) return null;
+                  const s = galleryBehaviorSettings;
+                  const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
+                  const inner = renderAdapter(s.unifiedGalleryAdapterId, allMedia, s);
+                  return s.unifiedBgType !== 'none'
+                    ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+                    : inner;
+                })()
+              ) : (
+                // Per-type mode: each media kind uses its own adapter
+                <>
+                  {campaign.videos.length > 0 && (() => {
+                    const s = galleryBehaviorSettings;
+                    const id = s.videoGalleryAdapterId;
+                    const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
+                    const inner = id === 'classic'
+                      ? <VideoCarousel videos={campaign.videos} settings={s} />
+                      : renderAdapter(id, campaign.videos, s);
+                    return s.videoBgType !== 'none'
+                      ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+                      : inner;
+                  })()}
+                  {campaign.images.length > 0 && (() => {
+                    const s = galleryBehaviorSettings;
+                    const id = s.imageGalleryAdapterId;
+                    const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
+                    const inner = id === 'classic'
+                      ? <ImageCarousel images={campaign.images} settings={s} />
+                      : renderAdapter(id, campaign.images, s);
+                    return s.imageBgType !== 'none'
+                      ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+                      : inner;
+                  })()}
+                </>
               )}
             </Suspense>
           )}

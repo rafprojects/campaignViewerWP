@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '../../test/test-utils';
 import { CardGallery } from './CardGallery';
-import type { Campaign, Company, MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type Campaign, type Company, type MediaItem } from '@/types';
 
 const company: Company = {
   id: 'acme',
@@ -44,6 +44,7 @@ describe('CardGallery', () => {
           buildCampaign('2', 'Private Campaign', 'private'),
         ]}
         userPermissions={[]}
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
       />,
     );
 
@@ -60,6 +61,7 @@ describe('CardGallery', () => {
         ]}
         userPermissions={[]}
         accessMode="hide"
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
       />,
     );
 
@@ -75,6 +77,7 @@ describe('CardGallery', () => {
           buildCampaign('2', 'Private Campaign', 'private'),
         ]}
         userPermissions={['2']}
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
       />,
     );
 
@@ -93,6 +96,7 @@ describe('CardGallery', () => {
         userPermissions={[]}
         isAdmin
         accessMode="lock"
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
         onAccessModeChange={onAccessModeChange}
       />,
     );
@@ -110,6 +114,7 @@ describe('CardGallery', () => {
         ]}
         userPermissions={[]}
         accessMode="hide"
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
       />,
     );
 

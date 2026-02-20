@@ -1,16 +1,18 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { IconPlayerPlay } from '@tabler/icons-react';
 import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
-import type { MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useSwipe } from '@/hooks/useSwipe';
-import { CarouselNavigation } from './CarouselNavigation';
+import { OverlayArrows } from './OverlayArrows';
+import { DotNavigator } from './DotNavigator';
+import { applyGalleryTransition } from '@/utils/galleryAnimations';
+import { resolveBoxShadow } from '@/utils/shadowPresets';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
+  settings?: GalleryBehaviorSettings;
 }
-
-const STANDARD_PLAYER_HEIGHT = 'clamp(240px, 36vw, 420px)';
 
 function withAutoplay(url: string): string {
   try {
@@ -22,21 +24,44 @@ function withAutoplay(url: string): string {
   }
 }
 
-export function VideoCarousel({ videos }: VideoCarouselProps) {
-  const { currentIndex, setCurrentIndex, next, prev } = useCarousel(videos.length);
+export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS }: VideoCarouselProps) {
+  const { currentIndex, direction, setCurrentIndex, next, prev } = useCarousel(videos.length);
   const [isPlaying, setIsPlaying] = useState(false);
-
-  const nextVideo = useCallback(() => {
-    next();
-    setIsPlaying(false);
-  }, [next]);
-
-  const prevVideo = useCallback(() => {
-    prev();
-    setIsPlaying(false);
-  }, [prev]);
+  const [previousVideo, setPreviousVideo] = useState<MediaItem | null>(null);
+  const exitTimerRef = useRef<number>(0);
+  const enterRef = useRef<HTMLDivElement>(null);
+  const exitRef = useRef<HTMLDivElement>(null);
+  const prevIndexRef = useRef(currentIndex);
 
   const currentVideo = videos[currentIndex];
+
+  const mediaTransitionDuration = useMemo(
+    () => (settings.scrollAnimationStyle === 'instant' ? 0 : settings.scrollAnimationDurationMs),
+    [settings.scrollAnimationStyle, settings.scrollAnimationDurationMs],
+  );
+
+  const transitionType = settings.scrollTransitionType ?? 'slide-fade';
+
+  const beginTransition = useCallback(
+    (navigate: () => void) => {
+      window.clearTimeout(exitTimerRef.current);
+      if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+        setPreviousVideo(videos[currentIndex]);
+        exitTimerRef.current = window.setTimeout(
+          () => setPreviousVideo(null),
+          mediaTransitionDuration + 100,
+        );
+      }
+      navigate();
+      setIsPlaying(false);
+    },
+    [videos, currentIndex, mediaTransitionDuration, settings.scrollAnimationStyle],
+  );
+
+  const nextVideo = useCallback(() => beginTransition(next), [beginTransition, next]);
+  const prevVideo = useCallback(() => beginTransition(prev), [beginTransition, prev]);
+
+  useEffect(() => () => window.clearTimeout(exitTimerRef.current), []);
 
   const playerTitle = useMemo(
     () => `Video player: ${currentVideo.caption || 'Campaign video'}`,
@@ -44,6 +69,27 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
   );
 
   const isUploadVideo = currentVideo.source === 'upload';
+  const standardPlayerHeight = useMemo(
+    () => `${Math.max(180, Math.min(900, settings.videoViewportHeight))}px`,
+    [settings.videoViewportHeight],
+  );
+
+  // Imperative CSS transition — runs before browser paint
+  useLayoutEffect(() => {
+    if (prevIndexRef.current === currentIndex) return;
+    prevIndexRef.current = currentIndex;
+    if (mediaTransitionDuration <= 0 || direction === 0 || settings.scrollAnimationStyle === 'instant') return;
+
+    const opts = {
+      direction: direction as 1 | -1,
+      transitionType: transitionType as 'fade' | 'slide' | 'slide-fade',
+      durationMs: mediaTransitionDuration,
+      easing: settings.scrollAnimationEasing,
+      transitionFadeEnabled: settings.transitionFadeEnabled,
+    };
+
+    applyGalleryTransition(enterRef.current, exitRef.current, opts);
+  }, [currentIndex, direction, mediaTransitionDuration, transitionType, settings.scrollAnimationEasing, settings.scrollAnimationStyle, settings.transitionFadeEnabled]);
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: nextVideo,
@@ -69,11 +115,14 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
         {...swipeHandlers}
         style={{
           touchAction: 'pan-y',
-          height: STANDARD_PLAYER_HEIGHT,
-          maxHeight: STANDARD_PLAYER_HEIGHT,
-          minHeight: STANDARD_PLAYER_HEIGHT,
+          height: standardPlayerHeight,
+          maxHeight: standardPlayerHeight,
+          minHeight: standardPlayerHeight,
           width: '100%',
           backgroundColor: 'transparent',
+          overflow: 'hidden',
+          borderRadius: `${settings.videoBorderRadius}px`,
+          boxShadow: resolveBoxShadow(settings.videoShadowPreset, settings.videoShadowCustom),
         }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft') {
@@ -90,7 +139,44 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
           }
         }}
       >
-        {isPlaying ? (
+        {previousVideo && (
+          <Box
+            ref={exitRef}
+            onTransitionEnd={() => {
+              setPreviousVideo(null);
+              window.clearTimeout(exitTimerRef.current);
+            }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              willChange: 'transform, opacity',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
+            <Image
+              src={previousVideo.thumbnail || previousVideo.url}
+              alt=""
+              aria-hidden
+              h="100%"
+              fit="contain"
+            />
+          </Box>
+        )}
+
+        <Box
+          key={`${currentVideo.id}-${isPlaying ? 'playing' : 'preview'}`}
+          ref={enterRef}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            willChange: 'transform, opacity',
+            zIndex: 2,
+          }}
+        >
+          {isPlaying ? (
             isUploadVideo ? (
               <Box
                 data-testid="video-player-surface"
@@ -165,7 +251,40 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               </ActionIcon>
             </div>
           )}
+        </Box>
 
+        {/* Overlay navigation arrows */}
+        <OverlayArrows
+          onPrev={prevVideo}
+          onNext={nextVideo}
+          total={videos.length}
+          settings={settings}
+          previousLabel="Previous video (overlay)"
+          nextLabel="Next video (overlay)"
+        />
+
+        {/* Overlay dot navigator (inside viewport) */}
+        {settings.dotNavPosition !== 'below' && (
+          <DotNavigator
+            total={videos.length}
+            currentIndex={currentIndex}
+            onSelect={(index) => {
+              if (index !== currentIndex) {
+                window.clearTimeout(exitTimerRef.current);
+                if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+                  setPreviousVideo(currentVideo);
+                  exitTimerRef.current = window.setTimeout(
+                    () => setPreviousVideo(null),
+                    mediaTransitionDuration + 100,
+                  );
+                }
+              }
+              setCurrentIndex(index);
+              setIsPlaying(false);
+            }}
+            settings={settings}
+          />
+        )}
       </Box>
 
       {/* Caption */}
@@ -173,26 +292,29 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
         {currentVideo.caption || 'Untitled video'}
       </Text>
 
-      <CarouselNavigation
-        total={videos.length}
-        currentIndex={currentIndex}
-        onPrev={prevVideo}
-        onNext={nextVideo}
-        onSelect={(index) => {
-          setCurrentIndex(index);
-          setIsPlaying(false);
-        }}
-        items={videos.map((video) => ({
-          id: video.id,
-          url: video.url,
-          thumbnail: video.thumbnail,
-          caption: video.caption,
-        }))}
-        previousLabel="Previous video"
-        nextLabel="Next video"
-        thumbnailWidth={60}
-        thumbnailHeight={45}
-      />
+      {/* Dot navigator (below or overlay — overlay is rendered inside the player Box separately) */}
+      {settings.dotNavPosition === 'below' && (
+        <DotNavigator
+          total={videos.length}
+          currentIndex={currentIndex}
+          onSelect={(index) => {
+            if (index !== currentIndex) {
+              window.clearTimeout(exitTimerRef.current);
+              if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
+                setPreviousVideo(currentVideo);
+                exitTimerRef.current = window.setTimeout(
+                  () => setPreviousVideo(null),
+                  mediaTransitionDuration + 100,
+                );
+              }
+            }
+            setCurrentIndex(index);
+            setIsPlaying(false);
+          }}
+          settings={settings}
+        />
+      )}
+
     </Stack>
   );
 }

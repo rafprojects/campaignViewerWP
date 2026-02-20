@@ -481,7 +481,7 @@ class WPSG_REST {
                 $media_items = get_post_meta($post->ID, 'media_items', true);
                 $media_items = is_array($media_items) ? $media_items : [];
                 $normalized = self::normalize_media_items_types($media_items);
-                $media_by_campaign[$campaign_id] = $normalized['items'];
+                $media_by_campaign[$campaign_id] = self::enrich_media_with_dimensions($normalized['items']);
             }
         }
 
@@ -641,7 +641,7 @@ class WPSG_REST {
         // Normalize legacy media types on read for accuracy
         $updated_count = 0;
         $normalized = self::normalize_media_items_types($media_items);
-        $media_items = $normalized['items'];
+        $media_items = self::enrich_media_with_dimensions($normalized['items']);
         $updated_count = $normalized['updated'];
 
         if ($updated_count > 0) {
@@ -1406,6 +1406,35 @@ class WPSG_REST {
     }
 
     /**
+     * Enrich media items with width/height from WP attachment metadata.
+     * Items that already carry dimensions are left unchanged.
+     * Images without stored dimensions are probed via wp_get_attachment_metadata().
+     *
+     * @param array $items Normalised media items array.
+     * @return array Items with 'width' / 'height' fields populated where possible.
+     */
+    private static function enrich_media_with_dimensions(array $items): array {
+        foreach ($items as &$item) {
+            // Already has server-side dimensions — nothing to do.
+            if (!empty($item['width']) && !empty($item['height'])) {
+                continue;
+            }
+
+            $attachment_id = intval($item['attachmentId'] ?? 0);
+            if ($attachment_id > 0 && ($item['type'] ?? '') === 'image') {
+                $meta = wp_get_attachment_metadata($attachment_id);
+                if (!empty($meta['width']) && !empty($meta['height'])) {
+                    $item['width']  = intval($meta['width']);
+                    $item['height'] = intval($meta['height']);
+                }
+            }
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    /**
      * Rescan and fix media types for a single campaign.
      */
     public static function rescan_media_types() {
@@ -1705,6 +1734,9 @@ class WPSG_REST {
         }
 
         $parsed = wp_parse_url($url);
+        if (!is_array($parsed)) {
+            return new WP_REST_Response(['message' => 'Invalid oEmbed URL'], 400);
+        }
 
         // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
         $host = isset($parsed['host']) ? $parsed['host'] : '';
@@ -2076,6 +2108,13 @@ class WPSG_REST {
                 'items_per_page'    => 12,
                 'enable_lightbox'   => true,
                 'enable_animations' => true,
+                'video_viewport_height' => 420,
+                'image_viewport_height' => 420,
+                'thumbnail_scroll_speed' => 1,
+                'scroll_animation_style' => 'smooth',
+                'scroll_animation_duration_ms' => 350,
+                'scroll_animation_easing' => 'ease',
+                'scroll_transition_type' => 'slide-fade',
                 'cache_ttl'         => 3600,
             ];
         }
@@ -2090,6 +2129,78 @@ class WPSG_REST {
                 'itemsPerPage'     => $settings['items_per_page'] ?? 12,
                 'enableLightbox'   => $settings['enable_lightbox'] ?? true,
                 'enableAnimations' => $settings['enable_animations'] ?? true,
+                'videoViewportHeight' => $settings['video_viewport_height'] ?? 420,
+                'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
+                'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
+                'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
+                'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 350,
+                'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
+                'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
+                'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
+                'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
+                'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
+                // P12-H
+                'navArrowPosition'     => $settings['nav_arrow_position'] ?? 'center',
+                'navArrowSize'         => $settings['nav_arrow_size'] ?? 36,
+                'navArrowColor'        => $settings['nav_arrow_color'] ?? '#ffffff',
+                'navArrowBgColor'      => $settings['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
+                'navArrowBorderWidth'  => $settings['nav_arrow_border_width'] ?? 0,
+                'navArrowHoverScale'   => $settings['nav_arrow_hover_scale'] ?? 1.1,
+                'navArrowAutoHideMs'   => $settings['nav_arrow_auto_hide_ms'] ?? 0,
+                // P12-I
+                'dotNavEnabled'        => $settings['dot_nav_enabled'] ?? true,
+                'dotNavPosition'       => $settings['dot_nav_position'] ?? 'below',
+                'dotNavSize'           => $settings['dot_nav_size'] ?? 10,
+                'dotNavActiveColor'    => $settings['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
+                'dotNavInactiveColor'  => $settings['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
+                'dotNavShape'          => $settings['dot_nav_shape'] ?? 'circle',
+                'dotNavSpacing'        => $settings['dot_nav_spacing'] ?? 6,
+                'dotNavActiveScale'    => $settings['dot_nav_active_scale'] ?? 1.3,
+                // P12-J
+                'imageShadowPreset'    => $settings['image_shadow_preset'] ?? 'subtle',
+                'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
+                'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+                'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+                // P12-A/B
+                'videoThumbnailWidth'  => $settings['video_thumbnail_width'] ?? 60,
+                'videoThumbnailHeight' => $settings['video_thumbnail_height'] ?? 45,
+                'imageThumbnailWidth'  => $settings['image_thumbnail_width'] ?? 60,
+                'imageThumbnailHeight' => $settings['image_thumbnail_height'] ?? 60,
+                'thumbnailGap'         => $settings['thumbnail_gap'] ?? 6,
+                'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
+                'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
+                'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
+                // P12-C
+                'imageGalleryAdapterId'      => $settings['image_gallery_adapter_id'] ?? 'classic',
+                'videoGalleryAdapterId'      => $settings['video_gallery_adapter_id'] ?? 'classic',
+                'unifiedGalleryEnabled'      => $settings['unified_gallery_enabled'] ?? false,
+                'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
+                'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
+                'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
+                'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
+                'tileSize'                   => $settings['tile_size'] ?? 150,
+                'tileGapX'                   => $settings['tile_gap_x'] ?? 8,
+                'tileGapY'                   => $settings['tile_gap_y'] ?? 8,
+                'tileBorderWidth'            => $settings['tile_border_width'] ?? 0,
+                'tileBorderColor'            => $settings['tile_border_color'] ?? '#ffffff',
+                'tileGlowEnabled'            => $settings['tile_glow_enabled'] ?? false,
+                'tileGlowColor'              => $settings['tile_glow_color'] ?? '#7c9ef8',
+                'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
+                'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
+                'masonryColumns'             => $settings['masonry_columns'] ?? 0,
+                // Viewport backgrounds
+                'imageBgType'                => $settings['image_bg_type'] ?? 'none',
+                'imageBgColor'               => $settings['image_bg_color'] ?? '#1a1a2e',
+                'imageBgGradient'            => $settings['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+                'imageBgImageUrl'            => $settings['image_bg_image_url'] ?? '',
+                'videoBgType'                => $settings['video_bg_type'] ?? 'none',
+                'videoBgColor'               => $settings['video_bg_color'] ?? '#0d0d0d',
+                'videoBgGradient'            => $settings['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+                'videoBgImageUrl'            => $settings['video_bg_image_url'] ?? '',
+                'unifiedBgType'              => $settings['unified_bg_type'] ?? 'none',
+                'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
+                'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+                'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2101,6 +2212,78 @@ class WPSG_REST {
             'itemsPerPage'     => $settings['items_per_page'] ?? 12,
             'enableLightbox'   => $settings['enable_lightbox'] ?? true,
             'enableAnimations' => $settings['enable_animations'] ?? true,
+            'videoViewportHeight' => $settings['video_viewport_height'] ?? 420,
+            'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
+            'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
+            'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
+            'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 350,
+            'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
+            'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
+            'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
+            'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
+            'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
+            // P12-H
+            'navArrowPosition'     => $settings['nav_arrow_position'] ?? 'center',
+            'navArrowSize'         => $settings['nav_arrow_size'] ?? 36,
+            'navArrowColor'        => $settings['nav_arrow_color'] ?? '#ffffff',
+            'navArrowBgColor'      => $settings['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
+            'navArrowBorderWidth'  => $settings['nav_arrow_border_width'] ?? 0,
+            'navArrowHoverScale'   => $settings['nav_arrow_hover_scale'] ?? 1.1,
+            'navArrowAutoHideMs'   => $settings['nav_arrow_auto_hide_ms'] ?? 0,
+            // P12-I
+            'dotNavEnabled'        => $settings['dot_nav_enabled'] ?? true,
+            'dotNavPosition'       => $settings['dot_nav_position'] ?? 'below',
+            'dotNavSize'           => $settings['dot_nav_size'] ?? 10,
+            'dotNavActiveColor'    => $settings['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
+            'dotNavInactiveColor'  => $settings['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
+            'dotNavShape'          => $settings['dot_nav_shape'] ?? 'circle',
+            'dotNavSpacing'        => $settings['dot_nav_spacing'] ?? 6,
+            'dotNavActiveScale'    => $settings['dot_nav_active_scale'] ?? 1.3,
+            // P12-J
+            'imageShadowPreset'    => $settings['image_shadow_preset'] ?? 'subtle',
+            'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
+            'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            // P12-A/B
+            'videoThumbnailWidth'  => $settings['video_thumbnail_width'] ?? 60,
+            'videoThumbnailHeight' => $settings['video_thumbnail_height'] ?? 45,
+            'imageThumbnailWidth'  => $settings['image_thumbnail_width'] ?? 60,
+            'imageThumbnailHeight' => $settings['image_thumbnail_height'] ?? 60,
+            'thumbnailGap'         => $settings['thumbnail_gap'] ?? 6,
+            'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
+            'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
+            'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
+            // P12-C
+            'imageGalleryAdapterId'      => $settings['image_gallery_adapter_id'] ?? 'classic',
+            'videoGalleryAdapterId'      => $settings['video_gallery_adapter_id'] ?? 'classic',
+            'unifiedGalleryEnabled'      => $settings['unified_gallery_enabled'] ?? false,
+            'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
+            'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
+            'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
+            'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
+            'tileSize'                   => $settings['tile_size'] ?? 150,
+            'tileGapX'                   => $settings['tile_gap_x'] ?? 8,
+            'tileGapY'                   => $settings['tile_gap_y'] ?? 8,
+            'tileBorderWidth'            => $settings['tile_border_width'] ?? 0,
+            'tileBorderColor'            => $settings['tile_border_color'] ?? '#ffffff',
+            'tileGlowEnabled'            => $settings['tile_glow_enabled'] ?? false,
+            'tileGlowColor'              => $settings['tile_glow_color'] ?? '#7c9ef8',
+            'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
+            'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
+            'masonryColumns'             => $settings['masonry_columns'] ?? 0,
+            // Viewport backgrounds
+            'imageBgType'                => $settings['image_bg_type'] ?? 'none',
+            'imageBgColor'               => $settings['image_bg_color'] ?? '#1a1a2e',
+            'imageBgGradient'            => $settings['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'imageBgImageUrl'            => $settings['image_bg_image_url'] ?? '',
+            'videoBgType'                => $settings['video_bg_type'] ?? 'none',
+            'videoBgColor'               => $settings['video_bg_color'] ?? '#0d0d0d',
+            'videoBgGradient'            => $settings['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+            'videoBgImageUrl'            => $settings['video_bg_image_url'] ?? '',
+            'unifiedBgType'              => $settings['unified_bg_type'] ?? 'none',
+            'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
+            'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2143,6 +2326,168 @@ class WPSG_REST {
         if (isset($body['enableAnimations'])) {
             $input['enable_animations'] = (bool) $body['enableAnimations'];
         }
+        if (isset($body['videoViewportHeight'])) {
+            $input['video_viewport_height'] = intval($body['videoViewportHeight']);
+        }
+        if (isset($body['imageViewportHeight'])) {
+            $input['image_viewport_height'] = intval($body['imageViewportHeight']);
+        }
+        if (isset($body['thumbnailScrollSpeed'])) {
+            $input['thumbnail_scroll_speed'] = floatval($body['thumbnailScrollSpeed']);
+        }
+        if (isset($body['scrollAnimationStyle'])) {
+            $input['scroll_animation_style'] = sanitize_text_field($body['scrollAnimationStyle']);
+        }
+        if (isset($body['scrollAnimationDurationMs'])) {
+            $input['scroll_animation_duration_ms'] = intval($body['scrollAnimationDurationMs']);
+        }
+        if (isset($body['scrollAnimationEasing'])) {
+            $input['scroll_animation_easing'] = sanitize_text_field($body['scrollAnimationEasing']);
+        }
+        if (isset($body['scrollTransitionType'])) {
+            $input['scroll_transition_type'] = sanitize_text_field($body['scrollTransitionType']);
+        }
+        if (isset($body['imageBorderRadius'])) {
+            $input['image_border_radius'] = intval($body['imageBorderRadius']);
+        }
+        if (isset($body['videoBorderRadius'])) {
+            $input['video_border_radius'] = intval($body['videoBorderRadius']);
+        }
+        if (isset($body['transitionFadeEnabled'])) {
+            $input['transition_fade_enabled'] = (bool) $body['transitionFadeEnabled'];
+        }
+        // P12-H: Navigation Overlay Arrows
+        if (isset($body['navArrowPosition'])) {
+            $input['nav_arrow_position'] = sanitize_text_field($body['navArrowPosition']);
+        }
+        if (isset($body['navArrowSize'])) {
+            $input['nav_arrow_size'] = intval($body['navArrowSize']);
+        }
+        if (isset($body['navArrowColor'])) {
+            $input['nav_arrow_color'] = sanitize_text_field($body['navArrowColor']);
+        }
+        if (isset($body['navArrowBgColor'])) {
+            $input['nav_arrow_bg_color'] = sanitize_text_field($body['navArrowBgColor']);
+        }
+        if (isset($body['navArrowBorderWidth'])) {
+            $input['nav_arrow_border_width'] = intval($body['navArrowBorderWidth']);
+        }
+        if (isset($body['navArrowHoverScale'])) {
+            $input['nav_arrow_hover_scale'] = floatval($body['navArrowHoverScale']);
+        }
+        if (isset($body['navArrowAutoHideMs'])) {
+            $input['nav_arrow_auto_hide_ms'] = intval($body['navArrowAutoHideMs']);
+        }
+        // P12-I: Dot Navigator
+        if (isset($body['dotNavEnabled'])) {
+            $input['dot_nav_enabled'] = (bool) $body['dotNavEnabled'];
+        }
+        if (isset($body['dotNavPosition'])) {
+            $input['dot_nav_position'] = sanitize_text_field($body['dotNavPosition']);
+        }
+        if (isset($body['dotNavSize'])) {
+            $input['dot_nav_size'] = intval($body['dotNavSize']);
+        }
+        if (isset($body['dotNavActiveColor'])) {
+            $input['dot_nav_active_color'] = sanitize_text_field($body['dotNavActiveColor']);
+        }
+        if (isset($body['dotNavInactiveColor'])) {
+            $input['dot_nav_inactive_color'] = sanitize_text_field($body['dotNavInactiveColor']);
+        }
+        if (isset($body['dotNavShape'])) {
+            $input['dot_nav_shape'] = sanitize_text_field($body['dotNavShape']);
+        }
+        if (isset($body['dotNavSpacing'])) {
+            $input['dot_nav_spacing'] = intval($body['dotNavSpacing']);
+        }
+        if (isset($body['dotNavActiveScale'])) {
+            $input['dot_nav_active_scale'] = floatval($body['dotNavActiveScale']);
+        }
+        // P12-J: Shadow & Depth
+        if (isset($body['imageShadowPreset'])) {
+            $input['image_shadow_preset'] = sanitize_text_field($body['imageShadowPreset']);
+        }
+        if (isset($body['videoShadowPreset'])) {
+            $input['video_shadow_preset'] = sanitize_text_field($body['videoShadowPreset']);
+        }
+        if (isset($body['imageShadowCustom'])) {
+            $input['image_shadow_custom'] = sanitize_text_field($body['imageShadowCustom']);
+        }
+        if (isset($body['videoShadowCustom'])) {
+            $input['video_shadow_custom'] = sanitize_text_field($body['videoShadowCustom']);
+        }
+        // P12-A/B
+        if (isset($body['videoThumbnailWidth'])) {
+            $input['video_thumbnail_width'] = intval($body['videoThumbnailWidth']);
+        }
+        if (isset($body['videoThumbnailHeight'])) {
+            $input['video_thumbnail_height'] = intval($body['videoThumbnailHeight']);
+        }
+        if (isset($body['imageThumbnailWidth'])) {
+            $input['image_thumbnail_width'] = intval($body['imageThumbnailWidth']);
+        }
+        if (isset($body['imageThumbnailHeight'])) {
+            $input['image_thumbnail_height'] = intval($body['imageThumbnailHeight']);
+        }
+        if (isset($body['thumbnailGap'])) {
+            $input['thumbnail_gap'] = intval($body['thumbnailGap']);
+        }
+        if (isset($body['thumbnailWheelScrollEnabled'])) {
+            $input['thumbnail_wheel_scroll_enabled'] = (bool) $body['thumbnailWheelScrollEnabled'];
+        }
+        if (isset($body['thumbnailDragScrollEnabled'])) {
+            $input['thumbnail_drag_scroll_enabled'] = (bool) $body['thumbnailDragScrollEnabled'];
+        }
+        if (isset($body['thumbnailScrollButtonsVisible'])) {
+            $input['thumbnail_scroll_buttons_visible'] = (bool) $body['thumbnailScrollButtonsVisible'];
+        }
+        // P12-C: Gallery Adapters
+        if (isset($body['imageGalleryAdapterId'])) {
+            $input['image_gallery_adapter_id'] = sanitize_text_field($body['imageGalleryAdapterId']);
+        }
+        if (isset($body['videoGalleryAdapterId'])) {
+            $input['video_gallery_adapter_id'] = sanitize_text_field($body['videoGalleryAdapterId']);
+        }
+        if (isset($body['unifiedGalleryEnabled'])) {
+            $input['unified_gallery_enabled'] = (bool) $body['unifiedGalleryEnabled'];
+        }
+        if (isset($body['unifiedGalleryAdapterId'])) {
+            $input['unified_gallery_adapter_id'] = sanitize_text_field($body['unifiedGalleryAdapterId']);
+        }
+        if (isset($body['mosaicTargetRowHeight'])) {
+            $input['mosaic_target_row_height'] = intval($body['mosaicTargetRowHeight']);
+        }
+        if (isset($body['gridCardWidth'])) {
+            $input['grid_card_width'] = intval($body['gridCardWidth']);
+        }
+        if (isset($body['gridCardHeight'])) {
+            $input['grid_card_height'] = intval($body['gridCardHeight']);
+        }
+        // Tile appearance
+        if (isset($body['tileSize'])) { $input['tile_size'] = intval($body['tileSize']); }
+        if (isset($body['tileGapX'])) { $input['tile_gap_x'] = intval($body['tileGapX']); }
+        if (isset($body['tileGapY'])) { $input['tile_gap_y'] = intval($body['tileGapY']); }
+        if (isset($body['tileBorderWidth'])) { $input['tile_border_width'] = intval($body['tileBorderWidth']); }
+        if (isset($body['tileBorderColor'])) { $input['tile_border_color'] = sanitize_hex_color($body['tileBorderColor']) ?: '#ffffff'; }
+        if (isset($body['tileGlowEnabled'])) { $input['tile_glow_enabled'] = (bool) $body['tileGlowEnabled']; }
+        if (isset($body['tileGlowColor'])) { $input['tile_glow_color'] = sanitize_hex_color($body['tileGlowColor']) ?: '#7c9ef8'; }
+        if (isset($body['tileGlowSpread'])) { $input['tile_glow_spread'] = intval($body['tileGlowSpread']); }
+        if (isset($body['tileHoverBounce'])) { $input['tile_hover_bounce'] = (bool) $body['tileHoverBounce']; }
+        if (isset($body['masonryColumns'])) { $input['masonry_columns'] = intval($body['masonryColumns']); }
+        // Viewport backgrounds
+        $allowed_bg_types = ['none', 'solid', 'gradient', 'image'];
+        if (isset($body['imageBgType'])) { $input['image_bg_type'] = in_array($body['imageBgType'], $allowed_bg_types, true) ? $body['imageBgType'] : 'none'; }
+        if (isset($body['imageBgColor'])) { $input['image_bg_color'] = sanitize_text_field($body['imageBgColor']); }
+        if (isset($body['imageBgGradient'])) { $input['image_bg_gradient'] = sanitize_text_field($body['imageBgGradient']); }
+        if (isset($body['imageBgImageUrl'])) { $input['image_bg_image_url'] = esc_url_raw($body['imageBgImageUrl']); }
+        if (isset($body['videoBgType'])) { $input['video_bg_type'] = in_array($body['videoBgType'], $allowed_bg_types, true) ? $body['videoBgType'] : 'none'; }
+        if (isset($body['videoBgColor'])) { $input['video_bg_color'] = sanitize_text_field($body['videoBgColor']); }
+        if (isset($body['videoBgGradient'])) { $input['video_bg_gradient'] = sanitize_text_field($body['videoBgGradient']); }
+        if (isset($body['videoBgImageUrl'])) { $input['video_bg_image_url'] = esc_url_raw($body['videoBgImageUrl']); }
+        if (isset($body['unifiedBgType'])) { $input['unified_bg_type'] = in_array($body['unifiedBgType'], $allowed_bg_types, true) ? $body['unifiedBgType'] : 'none'; }
+        if (isset($body['unifiedBgColor'])) { $input['unified_bg_color'] = sanitize_text_field($body['unifiedBgColor']); }
+        if (isset($body['unifiedBgGradient'])) { $input['unified_bg_gradient'] = sanitize_text_field($body['unifiedBgGradient']); }
+        if (isset($body['unifiedBgImageUrl'])) { $input['unified_bg_image_url'] = esc_url_raw($body['unifiedBgImageUrl']); }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2166,6 +2511,78 @@ class WPSG_REST {
             'itemsPerPage'     => $merged['items_per_page'],
             'enableLightbox'   => $merged['enable_lightbox'],
             'enableAnimations' => $merged['enable_animations'],
+            'videoViewportHeight' => $merged['video_viewport_height'] ?? 420,
+            'imageViewportHeight' => $merged['image_viewport_height'] ?? 420,
+            'thumbnailScrollSpeed' => $merged['thumbnail_scroll_speed'] ?? 1,
+            'scrollAnimationStyle' => $merged['scroll_animation_style'] ?? 'smooth',
+            'scrollAnimationDurationMs' => $merged['scroll_animation_duration_ms'] ?? 350,
+            'scrollAnimationEasing' => $merged['scroll_animation_easing'] ?? 'ease',
+            'scrollTransitionType' => $merged['scroll_transition_type'] ?? 'slide-fade',
+            'imageBorderRadius' => $merged['image_border_radius'] ?? 8,
+            'videoBorderRadius' => $merged['video_border_radius'] ?? 8,
+            'transitionFadeEnabled' => $merged['transition_fade_enabled'] ?? true,
+            // P12-H
+            'navArrowPosition'     => $merged['nav_arrow_position'] ?? 'center',
+            'navArrowSize'         => $merged['nav_arrow_size'] ?? 36,
+            'navArrowColor'        => $merged['nav_arrow_color'] ?? '#ffffff',
+            'navArrowBgColor'      => $merged['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
+            'navArrowBorderWidth'  => $merged['nav_arrow_border_width'] ?? 0,
+            'navArrowHoverScale'   => $merged['nav_arrow_hover_scale'] ?? 1.1,
+            'navArrowAutoHideMs'   => $merged['nav_arrow_auto_hide_ms'] ?? 0,
+            // P12-I
+            'dotNavEnabled'        => $merged['dot_nav_enabled'] ?? true,
+            'dotNavPosition'       => $merged['dot_nav_position'] ?? 'below',
+            'dotNavSize'           => $merged['dot_nav_size'] ?? 10,
+            'dotNavActiveColor'    => $merged['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
+            'dotNavInactiveColor'  => $merged['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
+            'dotNavShape'          => $merged['dot_nav_shape'] ?? 'circle',
+            'dotNavSpacing'        => $merged['dot_nav_spacing'] ?? 6,
+            'dotNavActiveScale'    => $merged['dot_nav_active_scale'] ?? 1.3,
+            // P12-J
+            'imageShadowPreset'    => $merged['image_shadow_preset'] ?? 'subtle',
+            'videoShadowPreset'    => $merged['video_shadow_preset'] ?? 'subtle',
+            'imageShadowCustom'    => $merged['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            'videoShadowCustom'    => $merged['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
+            // P12-A/B
+            'videoThumbnailWidth'  => $merged['video_thumbnail_width'] ?? 60,
+            'videoThumbnailHeight' => $merged['video_thumbnail_height'] ?? 45,
+            'imageThumbnailWidth'  => $merged['image_thumbnail_width'] ?? 60,
+            'imageThumbnailHeight' => $merged['image_thumbnail_height'] ?? 60,
+            'thumbnailGap'         => $merged['thumbnail_gap'] ?? 6,
+            'thumbnailWheelScrollEnabled'   => $merged['thumbnail_wheel_scroll_enabled'] ?? true,
+            'thumbnailDragScrollEnabled'    => $merged['thumbnail_drag_scroll_enabled'] ?? true,
+            'thumbnailScrollButtonsVisible' => $merged['thumbnail_scroll_buttons_visible'] ?? false,
+            // P12-C
+            'imageGalleryAdapterId'      => $merged['image_gallery_adapter_id'] ?? 'classic',
+            'videoGalleryAdapterId'      => $merged['video_gallery_adapter_id'] ?? 'classic',
+            'unifiedGalleryEnabled'      => $merged['unified_gallery_enabled'] ?? false,
+            'unifiedGalleryAdapterId'    => $merged['unified_gallery_adapter_id'] ?? 'compact-grid',
+            'gridCardWidth'              => $merged['grid_card_width'] ?? 160,
+            'gridCardHeight'             => $merged['grid_card_height'] ?? 224,
+            'mosaicTargetRowHeight'      => $merged['mosaic_target_row_height'] ?? 200,
+            'tileSize'                   => $merged['tile_size'] ?? 150,
+            'tileGapX'                   => $merged['tile_gap_x'] ?? 8,
+            'tileGapY'                   => $merged['tile_gap_y'] ?? 8,
+            'tileBorderWidth'            => $merged['tile_border_width'] ?? 0,
+            'tileBorderColor'            => $merged['tile_border_color'] ?? '#ffffff',
+            'tileGlowEnabled'            => $merged['tile_glow_enabled'] ?? false,
+            'tileGlowColor'              => $merged['tile_glow_color'] ?? '#7c9ef8',
+            'tileGlowSpread'             => $merged['tile_glow_spread'] ?? 12,
+            'tileHoverBounce'            => $merged['tile_hover_bounce'] ?? true,
+            'masonryColumns'             => $merged['masonry_columns'] ?? 0,
+            // Viewport backgrounds
+            'imageBgType'                => $merged['image_bg_type'] ?? 'none',
+            'imageBgColor'               => $merged['image_bg_color'] ?? '#1a1a2e',
+            'imageBgGradient'            => $merged['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'imageBgImageUrl'            => $merged['image_bg_image_url'] ?? '',
+            'videoBgType'                => $merged['video_bg_type'] ?? 'none',
+            'videoBgColor'               => $merged['video_bg_color'] ?? '#0d0d0d',
+            'videoBgGradient'            => $merged['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
+            'videoBgImageUrl'            => $merged['video_bg_image_url'] ?? '',
+            'unifiedBgType'              => $merged['unified_bg_type'] ?? 'none',
+            'unifiedBgColor'             => $merged['unified_bg_color'] ?? '#1a1a2e',
+            'unifiedBgGradient'          => $merged['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
+            'unifiedBgImageUrl'          => $merged['unified_bg_image_url'] ?? '',
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }

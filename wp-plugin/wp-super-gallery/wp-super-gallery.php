@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Super Gallery
  * Description: Embeddable campaign gallery with Shadow DOM rendering.
- * Version: 0.9.0
+ * Version: 0.10.0
  * Author: WP Super Gallery
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.9.0');
+define('WPSG_VERSION', '0.10.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 

@@ -13,6 +13,8 @@
 
 import mantineCoreStyles from '@mantine/core/styles.css?inline';
 import mantineNotificationsStyles from '@mantine/notifications/styles.css?inline';
+import rowsPhotoAlbumStyles from 'react-photo-album/rows.css?inline';
+import masonryPhotoAlbumStyles from 'react-photo-album/masonry.css?inline';
 import globalStyles from './styles/global.scss?inline';
 import campaignCardStyles from './components/Gallery/CampaignCard.module.scss?inline';
 import cardGalleryStyles from './components/Gallery/CardGallery.module.scss?inline';
@@ -21,6 +23,8 @@ import campaignViewerStyles from './components/Campaign/CampaignViewer.module.sc
 export const shadowStyles = [
   mantineCoreStyles,
   mantineNotificationsStyles,
+  rowsPhotoAlbumStyles,
+  masonryPhotoAlbumStyles,
   globalStyles,
   campaignCardStyles,
   cardGalleryStyles,
