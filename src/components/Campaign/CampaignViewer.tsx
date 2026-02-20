@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { IconArrowLeft, IconCalendar, IconTag } from '@tabler/icons-react';
+import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
 
@@ -95,21 +95,25 @@ export function CampaignViewer({
     <Modal
       opened={true}
       onClose={onClose}
-      fullScreen
+      size="xl"
       padding={0}
-      withCloseButton={false}
-      transitionProps={{ transition: 'fade', duration: 200 }}
+      withCloseButton
+      closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
+      transitionProps={{ transition: 'pop', duration: 300 }}
+      radius="lg"
       styles={{
-        content: { overflow: 'auto' },
+        content: { overflow: 'auto', maxHeight: '90vh' },
+        header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
+        close: { color: 'white', background: 'rgba(0,0,0,0.45)', borderRadius: '50%', width: 36, height: 36 },
       }}
       aria-label={`Campaign details for ${campaign.title}`}
     >
       {/* Cover Image Header */}
-      <Box pos="relative" h={{ base: 220, sm: 280, md: 320 }} component="div">
-        <Image 
+      <Box pos="relative" h={{ base: 160, sm: 200, md: 240 }} component="div">
+        <Image
           src={campaign.coverImage}
           alt={campaign.title}
-          h={{ base: 220, sm: 280, md: 320 }}
+          h={{ base: 160, sm: 200, md: 240 }}
           fit="cover"
           loading="lazy"
         />
@@ -124,28 +128,11 @@ export function CampaignViewer({
           }}
         />
 
-        {/* Back button */}
-        <Button
-          pos="absolute"
-          top={{ base: 12, sm: 16 }}
-          left={{ base: 12, sm: 16 }}
-          leftSection={<IconArrowLeft size={20} />}
-          onClick={onClose}
-          variant="light"
-          color="dark"
-          radius="xl"
-          aria-label="Back to gallery"
-          size="sm"
-          style={{ minHeight: 44 }}
-        >
-          Back
-        </Button>
-
         {/* Company badge */}
         <Badge
           pos="absolute"
           top={16}
-          right={16}
+          left={16}
           style={{ backgroundColor: campaign.company.brandColor }}
           size="lg"
         >
@@ -157,7 +144,7 @@ export function CampaignViewer({
 
         {/* Title and meta overlay */}
         <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
-          <Title order={1} size="h1" mb="sm">
+          <Title order={2} size="h3" mb="sm">
             {campaign.title}
           </Title>
           <Group gap="lg" wrap="wrap">
