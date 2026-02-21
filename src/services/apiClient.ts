@@ -252,6 +252,9 @@ export interface SettingsResponse {
   // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth?: number;
   appPadding?: number;
+  wpFullBleedDesktop?: boolean;
+  wpFullBleedTablet?: boolean;
+  wpFullBleedMobile?: boolean;
   imageTileSize?: number;
   videoTileSize?: number;
 }
@@ -365,6 +368,9 @@ export interface SettingsUpdateRequest {
   // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth?: number;
   appPadding?: number;
+  wpFullBleedDesktop?: boolean;
+  wpFullBleedTablet?: boolean;
+  wpFullBleedMobile?: boolean;
   imageTileSize?: number;
   videoTileSize?: number;
 }

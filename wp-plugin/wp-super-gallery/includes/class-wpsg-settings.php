@@ -141,6 +141,9 @@ class WPSG_Settings {
         // P13-E: App width, padding & per-gallery tile sizes
         'app_max_width'              => 1200,
         'app_padding'                => 16,
+        'wp_full_bleed_desktop'      => false,
+        'wp_full_bleed_tablet'       => false,
+        'wp_full_bleed_mobile'       => false,
         'image_tile_size'            => 150,
         'video_tile_size'            => 150,
         'cache_ttl'                  => 3600,
@@ -694,6 +697,15 @@ class WPSG_Settings {
         }
         if (isset($input['app_padding'])) {
             $sanitized['app_padding'] = max(0, min(100, intval($input['app_padding'])));
+        }
+        if (isset($input['wp_full_bleed_desktop'])) {
+            $sanitized['wp_full_bleed_desktop'] = (bool) $input['wp_full_bleed_desktop'];
+        }
+        if (isset($input['wp_full_bleed_tablet'])) {
+            $sanitized['wp_full_bleed_tablet'] = (bool) $input['wp_full_bleed_tablet'];
+        }
+        if (isset($input['wp_full_bleed_mobile'])) {
+            $sanitized['wp_full_bleed_mobile'] = (bool) $input['wp_full_bleed_mobile'];
         }
         if (isset($input['image_tile_size'])) {
             $sanitized['image_tile_size'] = max(60, min(400, intval($input['image_tile_size'])));

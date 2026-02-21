@@ -152,6 +152,9 @@ const defaultSettings: SettingsData = {
   // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
   appPadding: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding,
+  wpFullBleedDesktop: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedDesktop,
+  wpFullBleedTablet: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedTablet,
+  wpFullBleedMobile: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedMobile,
   imageTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
   videoTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
 };
@@ -272,6 +275,9 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth: response.appMaxWidth ?? defaultSettings.appMaxWidth,
   appPadding: response.appPadding ?? defaultSettings.appPadding,
+  wpFullBleedDesktop: response.wpFullBleedDesktop ?? defaultSettings.wpFullBleedDesktop,
+  wpFullBleedTablet: response.wpFullBleedTablet ?? defaultSettings.wpFullBleedTablet,
+  wpFullBleedMobile: response.wpFullBleedMobile ?? defaultSettings.wpFullBleedMobile,
   imageTileSize: response.imageTileSize ?? defaultSettings.imageTileSize,
   videoTileSize: response.videoTileSize ?? defaultSettings.videoTileSize,
 });
@@ -434,6 +440,31 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   step={4}
                   placeholder="16"
                 />
+
+                {/* WP Full Bleed: counteracts WordPress block-theme container padding
+                    (.has-global-padding / .is-layout-constrained) by wrapping the shortcode
+                    output in an alignfull div with per-breakpoint negative-margin CSS rules.
+                    Server-rendered in PHP — requires page refresh to take effect. */}
+                <Switch
+                  label="WP Full Bleed — Desktop (≥ 1024px)"
+                  description="Break out of the WordPress page container padding on desktop viewports. Requires page refresh."
+                  checked={settings.wpFullBleedDesktop}
+                  onChange={(e) => updateSetting('wpFullBleedDesktop', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="WP Full Bleed — Tablet (768–1023px)"
+                  description="Break out of the WordPress page container padding on tablet viewports. Requires page refresh."
+                  checked={settings.wpFullBleedTablet}
+                  onChange={(e) => updateSetting('wpFullBleedTablet', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="WP Full Bleed — Mobile (< 768px)"
+                  description="Break out of the WordPress page container padding on mobile viewports. Requires page refresh."
+                  checked={settings.wpFullBleedMobile}
+                  onChange={(e) => updateSetting('wpFullBleedMobile', e.currentTarget.checked)}
+                />
+
+                <Divider label="Header Visibility" labelPosition="center" />
 
                 <Switch
                   label="Show Gallery Title"

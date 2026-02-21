@@ -2229,6 +2229,9 @@ class WPSG_REST {
                 // P13-E: App width, padding & per-gallery tile sizes
                 'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
                 'appPadding'                 => $settings['app_padding'] ?? 16,
+                'wpFullBleedDesktop'         => $settings['wp_full_bleed_desktop'] ?? false,
+                'wpFullBleedTablet'          => $settings['wp_full_bleed_tablet'] ?? false,
+                'wpFullBleedMobile'          => $settings['wp_full_bleed_mobile'] ?? false,
                 'imageTileSize'              => $settings['image_tile_size'] ?? 150,
                 'videoTileSize'              => $settings['video_tile_size'] ?? 150,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
@@ -2342,6 +2345,9 @@ class WPSG_REST {
             // P13-E: App width, padding & per-gallery tile sizes
             'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
             'appPadding'                 => $settings['app_padding'] ?? 16,
+            'wpFullBleedDesktop'         => $settings['wp_full_bleed_desktop'] ?? false,
+            'wpFullBleedTablet'          => $settings['wp_full_bleed_tablet'] ?? false,
+            'wpFullBleedMobile'          => $settings['wp_full_bleed_mobile'] ?? false,
             'imageTileSize'              => $settings['image_tile_size'] ?? 150,
             'videoTileSize'              => $settings['video_tile_size'] ?? 150,
         ];
@@ -2576,6 +2582,9 @@ class WPSG_REST {
         // P13-E: App width, padding & per-gallery tile sizes
         if (isset($body['appMaxWidth'])) { $input['app_max_width'] = intval($body['appMaxWidth']); }
         if (isset($body['appPadding'])) { $input['app_padding'] = intval($body['appPadding']); }
+        if (isset($body['wpFullBleedDesktop'])) { $input['wp_full_bleed_desktop'] = (bool) $body['wpFullBleedDesktop']; }
+        if (isset($body['wpFullBleedTablet'])) { $input['wp_full_bleed_tablet'] = (bool) $body['wpFullBleedTablet']; }
+        if (isset($body['wpFullBleedMobile'])) { $input['wp_full_bleed_mobile'] = (bool) $body['wpFullBleedMobile']; }
         if (isset($body['imageTileSize'])) { $input['image_tile_size'] = intval($body['imageTileSize']); }
         if (isset($body['videoTileSize'])) { $input['video_tile_size'] = intval($body['videoTileSize']); }
         if (isset($body['cacheTtl'])) {
@@ -2701,6 +2710,9 @@ class WPSG_REST {
             // P13-E: App width, padding & per-gallery tile sizes
             'appMaxWidth'                => $merged['app_max_width'] ?? 1200,
             'appPadding'                 => $merged['app_padding'] ?? 16,
+            'wpFullBleedDesktop'         => $merged['wp_full_bleed_desktop'] ?? false,
+            'wpFullBleedTablet'          => $merged['wp_full_bleed_tablet'] ?? false,
+            'wpFullBleedMobile'          => $merged['wp_full_bleed_mobile'] ?? false,
             'imageTileSize'              => $merged['image_tile_size'] ?? 150,
             'videoTileSize'              => $merged['video_tile_size'] ?? 150,
             'cacheTtl'         => $merged['cache_ttl'],

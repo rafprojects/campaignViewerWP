@@ -140,7 +140,94 @@ class WPSG_Embed {
             'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';' .
             '</script>';
 
-        return $config_script . '<div class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '"></div>';
+        /**
+         * P13-E: WP Full Bleed — per-breakpoint edge-to-edge layout.
+         *
+         * PROBLEM:
+         * WordPress Block Themes (FSE) wrap shortcode output in a container such as
+         *   <div class="entry-content has-global-padding is-layout-constrained">
+         *
+         * Two WP classes create the issue:
+         *  1. `.has-global-padding` adds horizontal padding via CSS variables:
+         *       padding-left:  var(--wp--style--root--padding-left)
+         *       padding-right: var(--wp--style--root--padding-right)
+         *  2. `.is-layout-constrained` applies max-width on direct children:
+         *       > * { max-width: var(--wp--style--global--content-size) }
+         *     This prevents children from growing wider than the content area.
+         *
+         * SOLUTION (3 parts):
+         *  A. Wrap shortcode output in `<div class="alignfull wpsg-full-bleed">`.
+         *     WordPress's own `alignfull` class removes `is-layout-constrained`'s
+         *     max-width restriction, allowing the element to span the full viewport.
+         *     Without alignfull, negative margins alone are clamped by the max-width.
+         *
+         *  B. For breakpoints where bleed is ON: apply negative margins that exactly
+         *     cancel the parent's has-global-padding values, using WP's own CSS vars:
+         *       margin-left:  calc(-1 * var(--wp--style--root--padding-left, 0px))
+         *       margin-right: calc(-1 * var(--wp--style--root--padding-right, 0px))
+         *     This makes the element flush with the viewport edge.
+         *
+         *  C. For breakpoints where bleed is OFF: re-constrain the element by
+         *     restoring max-width + centering (since alignfull removed these globally):
+         *       max-width: var(--wp--style--global--content-size, ...) !important
+         *       margin-left: auto !important; margin-right: auto !important
+         *     This ensures the element stays within WP's normal content width at
+         *     viewports where the admin doesn't want full bleed.
+         *
+         * WHY THIS APPROACH:
+         *  - Using WP CSS variables means it auto-adapts to any block theme's spacing.
+         *  - alignfull is the only reliable escape from is-layout-constrained;
+         *    alternatives like max-width:none !important alone fail because the
+         *    constrained layout's specificity varies across themes.
+         *  - The re-constrain rules for OFF breakpoints are essential because
+         *    alignfull is all-or-nothing — it removes constraints at every viewport.
+         *  - Server-rendered (PHP), not client-controlled: changing these settings
+         *    requires a page refresh since it modifies the HTML outside the React
+         *    Shadow DOM boundary.
+         *
+         * BREAKPOINTS:  Desktop ≥ 1024px | Tablet 768–1023px | Mobile < 768px
+         */
+        $bleed_desktop = !empty($settings['wp_full_bleed_desktop']);
+        $bleed_tablet  = !empty($settings['wp_full_bleed_tablet']);
+        $bleed_mobile  = !empty($settings['wp_full_bleed_mobile']);
+        $any_bleed = $bleed_desktop || $bleed_tablet || $bleed_mobile;
+
+        $bleed_style = '';
+        $bleed_open = '';
+        $bleed_close = '';
+        if ($any_bleed) {
+            // Bleed ON rule: negative margins cancel parent padding.
+            $neg_margins = 'margin-left:calc(-1 * var(--wp--style--root--padding-left,0px));'
+                . 'margin-right:calc(-1 * var(--wp--style--root--padding-right,0px));';
+            // Bleed OFF rule: re-constrain to WP content width (undo alignfull at this breakpoint).
+            // Falls back through --global--content-size → --global--wide-size → 1200px.
+            $constrain = 'max-width:var(--wp--style--global--content-size,var(--wp--style--global--wide-size,1200px)) !important;'
+                . 'margin-left:auto !important;margin-right:auto !important;';
+            $rules = [];
+            // Each breakpoint always gets a rule — either bleed or re-constrain.
+            if ($bleed_desktop) {
+                $rules[] = '@media(min-width:1024px){.wpsg-full-bleed{' . $neg_margins . '}}';
+            } else {
+                $rules[] = '@media(min-width:1024px){.wpsg-full-bleed{' . $constrain . '}}';
+            }
+            if ($bleed_tablet) {
+                $rules[] = '@media(min-width:768px) and (max-width:1023px){.wpsg-full-bleed{' . $neg_margins . '}}';
+            } else {
+                $rules[] = '@media(min-width:768px) and (max-width:1023px){.wpsg-full-bleed{' . $constrain . '}}';
+            }
+            if ($bleed_mobile) {
+                $rules[] = '@media(max-width:767px){.wpsg-full-bleed{' . $neg_margins . '}}';
+            } else {
+                $rules[] = '@media(max-width:767px){.wpsg-full-bleed{' . $constrain . '}}';
+            }
+            $bleed_style = '<style>' . implode('', $rules) . '</style>';
+            // alignfull is required to escape is-layout-constrained (see docblock above).
+            // wpsg-full-bleed is our own class targeted by the media-query rules.
+            $bleed_open = '<div class="alignfull wpsg-full-bleed">';
+            $bleed_close = '</div>';
+        }
+
+        return $config_script . $bleed_style . $bleed_open . '<div class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '"></div>' . $bleed_close;
     }
 
     private static function get_manifest() {

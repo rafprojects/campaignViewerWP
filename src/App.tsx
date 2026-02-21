@@ -387,6 +387,9 @@ function AppContent({
       // P13-E: App width, padding & per-gallery tile sizes
       appMaxWidth: response.appMaxWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
       appPadding: response.appPadding ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding,
+      wpFullBleedDesktop: response.wpFullBleedDesktop ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedDesktop,
+      wpFullBleedTablet: response.wpFullBleedTablet ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedTablet,
+      wpFullBleedMobile: response.wpFullBleedMobile ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedMobile,
       imageTileSize: response.imageTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
       videoTileSize: response.videoTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
     } as GalleryBehaviorSettings;
@@ -913,6 +916,9 @@ function AppContent({
                     // P13-E: App width, padding & per-gallery tile sizes
                     appMaxWidth: saved.appMaxWidth,
                     appPadding: saved.appPadding,
+                    wpFullBleedDesktop: saved.wpFullBleedDesktop,
+                    wpFullBleedTablet: saved.wpFullBleedTablet,
+                    wpFullBleedMobile: saved.wpFullBleedMobile,
                     imageTileSize: saved.imageTileSize,
                     videoTileSize: saved.videoTileSize,
                   },

@@ -204,6 +204,20 @@ export interface GalleryBehaviorSettings {
   // P13-E: Container padding (px). Controls horizontal padding on all containers.
   // Default 16 (matches Mantine spacing-md). Set to 0 for true edge-to-edge.
   appPadding: number;
+  /**
+   * P13-E: WP Full Bleed — break out of WordPress block theme container padding.
+   *
+   * WP block themes apply `.has-global-padding` + `.is-layout-constrained` on the
+   * parent element, adding horizontal padding and capping child max-width.
+   * These settings inject an `alignfull` wrapper in the PHP shortcode output with
+   * CSS media-query rules that apply negative margins (bleed ON) or re-constrain
+   * (bleed OFF) at each breakpoint. Server-rendered — requires page refresh.
+   *
+   * See: class-wpsg-embed.php render_shortcode() for the full implementation.
+   */
+  wpFullBleedDesktop: boolean; // ≥ 1024px
+  wpFullBleedTablet: boolean;  // 768–1023px
+  wpFullBleedMobile: boolean;  // < 768px
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: number;
   videoTileSize: number;
@@ -293,6 +307,10 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   appMaxWidth: 1200,
   // P13-E: Container horizontal padding (px)
   appPadding: 16,
+  // P13-E: WP Full Bleed (per breakpoint)
+  wpFullBleedDesktop: false,
+  wpFullBleedTablet: false,
+  wpFullBleedMobile: false,
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: 150,
   videoTileSize: 150,

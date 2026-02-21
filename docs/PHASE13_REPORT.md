@@ -3,7 +3,7 @@
 **Status:** In Progress  
 **Version target:** v0.11.0  
 **Created:** February 20, 2026  
-**Last updated:** February 20, 2026
+**Last updated:** February 21, 2026
 
 ---
 
@@ -192,6 +192,40 @@ The application has not been systematically verified for mobile viewports. Touch
 - [x] Hide keyboard hints on touch devices (KeyboardHintOverlay)
 - [x] Add safe-area-inset support (Lightbox caption)
 
+### Post-Audit Additions
+
+#### CampaignViewer modal & filter fixes
+- CampaignViewer: `useMediaQuery` for reactive `fullScreen` (≤768px), radius=0 on mobile, 100dvh maxHeight
+- CardGallery: fix filter tab strip overflow with `minWidth:0` + `overflow:hidden`
+- AuthBar: mobile redesign — collapsed overflow Menu on ≤576px
+
+#### Header visibility toggles
+5 new boolean settings with full-stack wiring (types → apiClient → App → SettingsPanel → PHP):
+- `showGalleryTitle`, `showGallerySubtitle`, `showAccessMode`, `showFilterTabs`, `showSearchBox`
+
+#### App layout controls
+- **appMaxWidth** (0–3000px, default 1200): Container max-width. Set to 0 for full-width using Mantine `fluid` prop.
+- **appPadding** (0–100px, default 16): Overrides Mantine Container's default `padding-inline` on all containers (App, CardGallery, AuthBar). Set to 0 for true edge-to-edge content.
+- **Compact grid mobile scaling**: CSS `min()` clamps card sizes on mobile
+- **Sticky settings footer**: `position: sticky; bottom: 0` for save/reset buttons
+- **Justified/masonry fix**: Normalized photo dimensions to consistent reference height
+- **Per-gallery tile sizes**: Split `tileSize` into `imageTileSize` / `videoTileSize`
+
+#### Lightbox animation
+- 250ms fade+scale open/close via 4-phase state machine (closed→entering→open→exiting→closed)
+
+#### WP Full Bleed — responsive breakpoints
+WordPress block themes apply `.has-global-padding` with `padding-left/right` to the container housing the shortcode. The `is-layout-constrained` class also enforces `max-width` on direct children. To counteract this:
+- Wrapper div with `class="alignfull wpsg-full-bleed"` overrides constrained layout
+- Injected `<style>` block applies negative margins via media queries per breakpoint
+- 3 independent switch settings in Settings → General tab:
+  - `wpFullBleedDesktop` (≥ 1024px)
+  - `wpFullBleedTablet` (768–1023px)
+  - `wpFullBleedMobile` (< 768px)
+- Uses WP's own CSS variables (`--wp--style--root--padding-left/right`) so it adapts to any theme
+
+**Commits:** `25e4f63`, `f65559e`, `42997d4`, `f108692`, (current)
+
 **Effort:** Medium  
 **Impact:** High
 
@@ -306,7 +340,7 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 | 2 | P13-F — Card Gallery Pagination | ✅ Complete |
 | 3 | P13-E — Mobile Readiness Audit | ✅ Complete |
 | 4 | P13-B — Lazy Loading | Not Started |
-| 5 | P13-C — Admin Panel Performance | Not Started |
+| 5 | P13-C — Admin Panel Performance | In Progress |
 | 6 | P13-D — Campaign Scheduling | Not Started |
 
 ---
@@ -319,6 +353,10 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 - **2026-02-20:** P13-F complete — Full implementation: 3 display modes, rows×columns pagination math, OverlayArrows, DotNavigator, slide animation, keyboard nav, responsive recalc. 4 new settings full stack. 9 new tests (187 total). Commit: `fdbeecc`.
 - **2026-02-20:** Settings panel reorganized from 5 tabs (General/Gallery/Transitions/Navigation/Cards) to 3 tabs (General/Campaign Cards/Media Gallery) with Accordion sections. Transitions + Navigation absorbed into Media Gallery. Commit: `ecd7c58`.
 - **2026-02-20:** P13-E mobile readiness audit — 17 issues found (6 critical, 9 moderate, 2 minor), all fixed. Touch targets (44px min), dvh viewport units, responsive modals, safe-area-insets, touch-device detection. 14 files changed, 187 tests passing, build clean.
+- **2026-02-20:** P13-E post-audit — CampaignViewer modal offscreen fix, filter strip overflow fix, AuthBar mobile redesign, 5 header visibility toggles, app width control, compact grid scaling, sticky settings footer, justified/masonry fix, per-gallery tile sizes.
+- **2026-02-21:** P13-E fix appMaxWidth=0 full-width (Container `fluid` prop), add lightbox 250ms fade+scale animation.
+- **2026-02-21:** P13-E add `appPadding` setting (override Mantine Container padding-inline), `wpFullBleed` responsive breakpoints (desktop/tablet/mobile) to counteract WordPress `.has-global-padding` via negative-margin wrapper with `alignfull` class and media-query `<style>` injection. Detailed code documentation added to `class-wpsg-embed.php` explaining the 3-part alignfull + negative-margin + re-constrain approach.
+- **2026-02-21:** P13-C — Admin Panel Loading Performance — track started.
 
 ---
 
