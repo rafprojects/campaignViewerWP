@@ -243,6 +243,12 @@ export interface SettingsResponse {
   cardRowsPerPage?: number;
   cardPageDotNav?: boolean;
   cardPageTransitionMs?: number;
+  // P13-E: Header visibility toggles
+  showGalleryTitle?: boolean;
+  showGallerySubtitle?: boolean;
+  showAccessMode?: boolean;
+  showFilterTabs?: boolean;
+  showSearchBox?: boolean;
 }
 
 export interface SettingsUpdateRequest {
@@ -345,6 +351,12 @@ export interface SettingsUpdateRequest {
   cardRowsPerPage?: number;
   cardPageDotNav?: boolean;
   cardPageTransitionMs?: number;
+  // P13-E: Header visibility toggles
+  showGalleryTitle?: boolean;
+  showGallerySubtitle?: boolean;
+  showAccessMode?: boolean;
+  showFilterTabs?: boolean;
+  showSearchBox?: boolean;
 }
 
 export class ApiError extends Error {

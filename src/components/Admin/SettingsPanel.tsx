@@ -142,6 +142,12 @@ const defaultSettings: SettingsData = {
   cardRowsPerPage: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardRowsPerPage,
   cardPageDotNav: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageDotNav,
   cardPageTransitionMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageTransitionMs,
+  // P13-E: Header visibility toggles
+  showGalleryTitle: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGalleryTitle,
+  showGallerySubtitle: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGallerySubtitle,
+  showAccessMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
+  showFilterTabs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
+  showSearchBox: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
 };
 
 interface SettingsPanelProps {
@@ -251,6 +257,12 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   cardRowsPerPage: response.cardRowsPerPage ?? defaultSettings.cardRowsPerPage,
   cardPageDotNav: response.cardPageDotNav ?? defaultSettings.cardPageDotNav,
   cardPageTransitionMs: response.cardPageTransitionMs ?? defaultSettings.cardPageTransitionMs,
+  // P13-E: Header visibility toggles
+  showGalleryTitle: response.showGalleryTitle ?? defaultSettings.showGalleryTitle,
+  showGallerySubtitle: response.showGallerySubtitle ?? defaultSettings.showGallerySubtitle,
+  showAccessMode: response.showAccessMode ?? defaultSettings.showAccessMode,
+  showFilterTabs: response.showFilterTabs ?? defaultSettings.showFilterTabs,
+  showSearchBox: response.showSearchBox ?? defaultSettings.showSearchBox,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -386,6 +398,39 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   min={1}
                   max={100}
                   step={1}
+                />
+
+                <Divider label="Header Visibility" labelPosition="center" />
+
+                <Switch
+                  label="Show Gallery Title"
+                  description='Show the "Campaign Gallery" heading.'
+                  checked={settings.showGalleryTitle}
+                  onChange={(e) => updateSetting('showGalleryTitle', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Gallery Subtitle"
+                  description="Show the subtitle text beneath the title."
+                  checked={settings.showGallerySubtitle}
+                  onChange={(e) => updateSetting('showGallerySubtitle', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Access Mode"
+                  description="Show the Lock / Hide access-mode toggle (admin only)."
+                  checked={settings.showAccessMode}
+                  onChange={(e) => updateSetting('showAccessMode', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Filter Tabs"
+                  description="Show the campaign filter tab strip."
+                  checked={settings.showFilterTabs}
+                  onChange={(e) => updateSetting('showFilterTabs', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Search Box"
+                  description="Show the campaign search input."
+                  checked={settings.showSearchBox}
+                  onChange={(e) => updateSetting('showSearchBox', e.currentTarget.checked)}
                 />
               </Stack>
             </Tabs.Panel>

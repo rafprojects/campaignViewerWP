@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
 
 /**
@@ -98,6 +99,8 @@ export function CampaignViewer({
   const coverHBase = Math.round(coverH * 0.67);
   const coverHSm = Math.round(coverH * 0.83);
   const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
+  // Reactive media query so fullScreen updates on orientation changes / resizes
+  const isMobile = useMediaQuery('(max-width: 48em)'); // ≤ 768px
   return (
     <Modal
       opened={opened}
@@ -107,10 +110,12 @@ export function CampaignViewer({
       withCloseButton
       closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
       transitionProps={{ transition, duration: s.modalTransitionDuration }}
-      radius="lg"
-      fullScreen={typeof window !== 'undefined' && window.innerWidth < 576}
+      radius={isMobile ? 0 : 'lg'}
+      fullScreen={!!isMobile}
       styles={{
-        content: { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
+        content: isMobile
+          ? { overflow: 'auto', maxHeight: '100dvh' }
+          : { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
         close: { color: 'white', background: 'rgba(0,0,0,0.45)', borderRadius: '50%', width: 36, height: 36 },
       }}

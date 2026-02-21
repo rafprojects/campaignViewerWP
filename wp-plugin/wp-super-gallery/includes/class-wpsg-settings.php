@@ -132,6 +132,12 @@ class WPSG_Settings {
         'card_rows_per_page'         => 3,
         'card_page_dot_nav'          => false,
         'card_page_transition_ms'    => 300,
+        // P13-E: Header visibility toggles
+        'show_gallery_title'         => true,
+        'show_gallery_subtitle'      => true,
+        'show_access_mode'           => true,
+        'show_filter_tabs'           => true,
+        'show_search_box'            => true,
         'cache_ttl'                  => 3600,
     ];
 
@@ -658,6 +664,23 @@ class WPSG_Settings {
         }
         if (isset($input['card_page_transition_ms'])) {
             $sanitized['card_page_transition_ms'] = max(100, min(800, intval($input['card_page_transition_ms'])));
+        }
+
+        // P13-E: Header visibility toggles.
+        if (isset($input['show_gallery_title'])) {
+            $sanitized['show_gallery_title'] = (bool) $input['show_gallery_title'];
+        }
+        if (isset($input['show_gallery_subtitle'])) {
+            $sanitized['show_gallery_subtitle'] = (bool) $input['show_gallery_subtitle'];
+        }
+        if (isset($input['show_access_mode'])) {
+            $sanitized['show_access_mode'] = (bool) $input['show_access_mode'];
+        }
+        if (isset($input['show_filter_tabs'])) {
+            $sanitized['show_filter_tabs'] = (bool) $input['show_filter_tabs'];
+        }
+        if (isset($input['show_search_box'])) {
+            $sanitized['show_search_box'] = (bool) $input['show_search_box'];
         }
 
         // Boolean fields.

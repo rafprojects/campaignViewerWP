@@ -193,6 +193,12 @@ export interface GalleryBehaviorSettings {
   cardRowsPerPage: number;
   cardPageDotNav: boolean;
   cardPageTransitionMs: number;
+  // P13-E: Header visibility toggles
+  showGalleryTitle: boolean;
+  showGallerySubtitle: boolean;
+  showAccessMode: boolean;
+  showFilterTabs: boolean;
+  showSearchBox: boolean;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -269,6 +275,12 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardRowsPerPage: 3,
   cardPageDotNav: false,
   cardPageTransitionMs: 300,
+  // P13-E: Header visibility toggles
+  showGalleryTitle: true,
+  showGallerySubtitle: true,
+  showAccessMode: true,
+  showFilterTabs: true,
+  showSearchBox: true,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',

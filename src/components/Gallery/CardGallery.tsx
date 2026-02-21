@@ -187,14 +187,17 @@ export function CardGallery({
         <Container size="xl" py={{ base: 'sm', md: 'md' }}>
           <Stack gap="lg">
             {/* Title and subtitle */}
+            {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+              {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
               <Stack gap={0}>
-                <Title order={1} size="h3">Campaign Gallery</Title>
-                <Text c="dimmed" size="sm">Browse and access your campaign media</Text>
+                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3">Campaign Gallery</Title>}
+                {galleryBehaviorSettings.showGallerySubtitle && <Text c="dimmed" size="sm">Browse and access your campaign media</Text>}
               </Stack>
+              )}
 
               {/* Admin controls */}
-              {isAdmin && (
+              {isAdmin && galleryBehaviorSettings.showAccessMode && (
                 <Group gap="sm" align="center">
                   <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
                   <SegmentedControl
@@ -210,10 +213,13 @@ export function CardGallery({
                 </Group>
               )}
             </Group>
+            )}
 
             {/* Filter tabs */}
-            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
-              <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters" style={{ flex: '1 1 auto' }}>
+            {(galleryBehaviorSettings.showFilterTabs || galleryBehaviorSettings.showSearchBox) && (
+            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md" style={{ overflow: 'hidden' }}>
+              {galleryBehaviorSettings.showFilterTabs && (
+              <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
                 <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
                   <Tabs.Tab value="all">All</Tabs.Tab>
                   <Tabs.Tab value="accessible">My Access</Tabs.Tab>
@@ -224,6 +230,8 @@ export function CardGallery({
                   ))}
                 </Tabs.List>
               </Tabs>
+              )}
+              {galleryBehaviorSettings.showSearchBox && (
               <TextInput
                 placeholder="Search campaigns..."
                 leftSection={<IconSearch size={16} />}
@@ -233,7 +241,9 @@ export function CardGallery({
                 size="sm"
                 aria-label="Search campaigns by title, description, or tags"
               />
+              )}
             </Group>
+            )}
 
             {/* Hidden notice */}
             {showHiddenNotice && (

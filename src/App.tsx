@@ -378,6 +378,12 @@ function AppContent({
       cardRowsPerPage: response.cardRowsPerPage ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardRowsPerPage,
       cardPageDotNav: response.cardPageDotNav ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageDotNav,
       cardPageTransitionMs: response.cardPageTransitionMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageTransitionMs,
+      // P13-E: Header visibility toggles
+      showGalleryTitle: response.showGalleryTitle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGalleryTitle,
+      showGallerySubtitle: response.showGallerySubtitle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGallerySubtitle,
+      showAccessMode: response.showAccessMode ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
+      showFilterTabs: response.showFilterTabs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
+      showSearchBox: response.showSearchBox ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -882,6 +888,12 @@ function AppContent({
                     cardRowsPerPage: saved.cardRowsPerPage,
                     cardPageDotNav: saved.cardPageDotNav,
                     cardPageTransitionMs: saved.cardPageTransitionMs,
+                    // P13-E: Header visibility toggles
+                    showGalleryTitle: saved.showGalleryTitle,
+                    showGallerySubtitle: saved.showGallerySubtitle,
+                    showAccessMode: saved.showAccessMode,
+                    showFilterTabs: saved.showFilterTabs,
+                    showSearchBox: saved.showSearchBox,
                   },
                   false,
                 );

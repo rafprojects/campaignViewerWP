@@ -2220,6 +2220,12 @@ class WPSG_REST {
                 'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
                 'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
                 'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
+                // P13-E: Header visibility toggles
+                'showGalleryTitle'           => $settings['show_gallery_title'] ?? true,
+                'showGallerySubtitle'        => $settings['show_gallery_subtitle'] ?? true,
+                'showAccessMode'             => $settings['show_access_mode'] ?? true,
+                'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
+                'showSearchBox'              => $settings['show_search_box'] ?? true,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2322,6 +2328,12 @@ class WPSG_REST {
             'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
             'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
             'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
+            // P13-E: Header visibility toggles
+            'showGalleryTitle'           => $settings['show_gallery_title'] ?? true,
+            'showGallerySubtitle'        => $settings['show_gallery_subtitle'] ?? true,
+            'showAccessMode'             => $settings['show_access_mode'] ?? true,
+            'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
+            'showSearchBox'              => $settings['show_search_box'] ?? true,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2545,6 +2557,12 @@ class WPSG_REST {
         if (isset($body['cardRowsPerPage'])) { $input['card_rows_per_page'] = intval($body['cardRowsPerPage']); }
         if (isset($body['cardPageDotNav'])) { $input['card_page_dot_nav'] = (bool) $body['cardPageDotNav']; }
         if (isset($body['cardPageTransitionMs'])) { $input['card_page_transition_ms'] = intval($body['cardPageTransitionMs']); }
+        // P13-E: Header visibility toggles
+        if (isset($body['showGalleryTitle'])) { $input['show_gallery_title'] = (bool) $body['showGalleryTitle']; }
+        if (isset($body['showGallerySubtitle'])) { $input['show_gallery_subtitle'] = (bool) $body['showGallerySubtitle']; }
+        if (isset($body['showAccessMode'])) { $input['show_access_mode'] = (bool) $body['showAccessMode']; }
+        if (isset($body['showFilterTabs'])) { $input['show_filter_tabs'] = (bool) $body['showFilterTabs']; }
+        if (isset($body['showSearchBox'])) { $input['show_search_box'] = (bool) $body['showSearchBox']; }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2659,6 +2677,12 @@ class WPSG_REST {
             'cardRowsPerPage'            => $merged['card_rows_per_page'] ?? 3,
             'cardPageDotNav'             => $merged['card_page_dot_nav'] ?? false,
             'cardPageTransitionMs'       => $merged['card_page_transition_ms'] ?? 300,
+            // P13-E: Header visibility toggles
+            'showGalleryTitle'           => $merged['show_gallery_title'] ?? true,
+            'showGallerySubtitle'        => $merged['show_gallery_subtitle'] ?? true,
+            'showAccessMode'             => $merged['show_access_mode'] ?? true,
+            'showFilterTabs'             => $merged['show_filter_tabs'] ?? true,
+            'showSearchBox'              => $merged['show_search_box'] ?? true,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }
