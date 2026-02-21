@@ -22,6 +22,9 @@ export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
   useEffect(() => {
     if (!visible) return;
 
+    // Don't show keyboard hints on touch devices
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+
     // Already shown this session
     try {
       if (sessionStorage.getItem(SESSION_KEY)) return;

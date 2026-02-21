@@ -69,10 +69,11 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
   );
 
   const isUploadVideo = currentVideo.source === 'upload';
-  const standardPlayerHeight = useMemo(
-    () => `${Math.max(180, Math.min(900, settings.videoViewportHeight))}px`,
-    [settings.videoViewportHeight],
-  );
+  const standardPlayerHeight = useMemo(() => {
+    const base = Math.max(180, Math.min(900, settings.videoViewportHeight));
+    const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    return w < 576 ? `${Math.round(base * 0.55)}px` : w < 768 ? `${Math.round(base * 0.75)}px` : `${base}px`;
+  }, [settings.videoViewportHeight]);
 
   // Imperative CSS transition — runs before browser paint
   useLayoutEffect(() => {

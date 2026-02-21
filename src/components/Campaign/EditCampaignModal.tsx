@@ -91,7 +91,8 @@ export function EditCampaignModal({
       opened={opened}
       onClose={guardedClose}
       title={`Edit Campaign: ${campaign?.title ?? ''}`}
-      size="xl"
+      size={typeof window !== 'undefined' && window.innerWidth < 576 ? '100%' : 'xl'}
+      fullScreen={typeof window !== 'undefined' && window.innerWidth < 576}
       zIndex={300}
     >
       <Tabs value={editMediaTab} onChange={onEditMediaTabChange} aria-label="Edit campaign tabs">

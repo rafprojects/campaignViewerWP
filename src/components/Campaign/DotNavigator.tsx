@@ -114,19 +114,32 @@ export function DotNavigator({ total, currentIndex, onSelect, settings }: DotNav
             aria-label={`Go to slide ${item.index + 1}`}
             onClick={() => onSelect(item.index)}
             style={{
-              display: 'inline-block',
-              width: dotWidth,
-              height: settings.dotNavSize,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: Math.max(44, dotWidth),
+              height: Math.max(44, settings.dotNavSize),
               borderRadius: shapeRadius,
-              backgroundColor: isActive ? settings.dotNavActiveColor : settings.dotNavInactiveColor,
+              backgroundColor: 'transparent',
               border: 'none',
               padding: 0,
               cursor: 'pointer',
               transform: `scale(${scale})`,
-              transition: 'transform 200ms ease, background-color 200ms ease',
+              transition: 'transform 200ms ease',
               pointerEvents: 'auto',
             }}
-          />
+          >
+            <span
+              style={{
+                display: 'block',
+                width: dotWidth,
+                height: settings.dotNavSize,
+                borderRadius: shapeRadius,
+                backgroundColor: isActive ? settings.dotNavActiveColor : settings.dotNavInactiveColor,
+                transition: 'background-color 200ms ease',
+              }}
+            />
+          </button>
         );
       })}
     </div>

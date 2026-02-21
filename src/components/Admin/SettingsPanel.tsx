@@ -331,7 +331,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           <Title order={3}>Display Settings</Title>
         </Group>
       }
-      size="lg"
+      size={typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 'lg'}
+      fullScreen={typeof window !== 'undefined' && window.innerWidth < 576}
       centered
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}

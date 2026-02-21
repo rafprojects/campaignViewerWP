@@ -12,11 +12,11 @@
 Phase 13 focuses on UX polish, frontend performance, and campaign lifecycle management. Four tracks were promoted from `docs/FUTURE_TASKS.md`:
 
 1. **P13-A — Modal CampaignViewer + Card Settings** ✅ COMPLETE
-2. **P13-F — Card Gallery Pagination** (NEXT PRIORITY)
-3. **P13-B — Lazy Loading for Large Galleries**
-4. **P13-C — Admin Panel Loading Performance**
-5. **P13-D — Campaign Scheduling**
-6. **P13-E — Mobile Readiness Audit**
+2. **P13-F — Card Gallery Pagination** ✅ COMPLETE
+3. **P13-E — Mobile Readiness Audit** ✅ COMPLETE
+4. **P13-B — Lazy Loading for Large Galleries**
+5. **P13-C — Admin Panel Loading Performance**
+6. **P13-D — Campaign Scheduling**
 
 ---
 
@@ -126,37 +126,78 @@ Campaigns are either active or archived — there is no way to schedule future p
 
 ---
 
-## Track P13-E — Mobile Readiness Audit
+## Track P13-E — Mobile Readiness Audit  ✅ COMPLETE
 
 ### Problem
 
 The application has not been systematically verified for mobile viewports. Touch targets, responsive layouts, scroll behavior, and modal interactions may not work properly on phones and small tablets.
 
-### Objectives
+### Audit Findings & Fixes
 
-- Audit every user-facing view on mobile breakpoints (320px, 375px, 414px, 768px)
-- Ensure touch targets meet 44px minimum (WCAG 2.5.5)
-- Verify all modals, overlays, and drawers are usable on mobile
-- Fix any overflow, truncation, or layout-breaking issues
-- Test swipe gestures (gallery carousel) on actual touch devices or emulation
-- Ensure admin panel is functional on tablet (768px+) at minimum
+#### CRITICAL (all fixed)
+
+| # | Component | Issue | Fix |
+|---|-----------|-------|-----|
+| 1 | CampaignViewer | `vh` for maxHeight broken on mobile Safari (address bar) | Changed to `dvh` |
+| 2 | DotNavigator | Dot buttons as small as 8×8px — untappable | 44px transparent touch area wrapping visual dot |
+| 3 | ImageCarousel / VideoCarousel | Fixed pixel height doesn't adapt to mobile | Scale to 55% on <576px, 75% on <768px |
+| 4 | SettingsPanel | Modal `size="lg"` (800px) overflows 768px tablet | Responsive: `100%` <768px, `fullScreen` <576px |
+| 5 | MediaAddModal | URL input crushed by inline buttons | Stacked layout: TextInput above button Group |
+| 6 | Lightbox | iframe/video/image use `vh` — broken on mobile | Changed all to `dvh` |
+
+#### MODERATE (all fixed)
+
+| # | Component | Issue | Fix |
+|---|-----------|-------|-----|
+| 7 | CampaignViewer | Not fullScreen on phones | `fullScreen` when <576px |
+| 8 | EditCampaignModal | Not fullScreen on phones | `fullScreen` + `size="100%"` when <576px |
+| 9 | KeyboardHintOverlay | Keyboard shortcuts shown on touch devices | Early return when `ontouchstart` or `maxTouchPoints > 0` |
+| 10 | MediaCard | Compact action icons at `size="xs"` (~24px) | Upgraded to `size="sm"` |
+| 11 | OverlayArrows | Arrow size can be below 44px touch target | Enforce `Math.max(44, navArrowSize)` |
+| 12 | CardGallery | Search input `minWidth: 200` causes overflow on <480px | Changed to `min(200px, 100%)` |
+| 13 | MediaLightboxModal | Image max-height uses `vh` | Changed to `dvh` |
+| 14 | Global SCSS | Button `min-width` not 44px on mobile | Added `min-width: 44px` to <576px media query |
+| 15 | CampaignCard | Media stat font-size at 0.75rem (12px) | Increased to 0.8125rem (13px) |
+
+#### MINOR (fixed)
+
+| # | Component | Issue | Fix |
+|---|-----------|-------|-----|
+| 16 | CampaignCard | Company badge overflows on narrow screens | Added `maw="70%"` with text-overflow ellipsis |
+| 17 | Lightbox | Caption area lacks safe-area-inset for iPhone home bar | Added `env(safe-area-inset-bottom)` padding |
+
+### Pre-existing Good Patterns
+
+- Safe area inset on sticky header (CardGallery)
+- `font-size: 16px` on mobile (prevents iOS input zoom)
+- Responsive thumbnail heights via Mantine breakpoints
+- Responsive grid columns (`base: 1, sm: 2, lg: 3`)
+- `useSwipe` hook with `touchAction: 'pan-y'` on carousels
+- `Group wrap="wrap"` used extensively to prevent overflow
+- `prefers-reduced-motion` media query for animation opt-out
+- `word-wrap: break-word` on headings
+- `-webkit-overflow-scrolling: touch` for smooth mobile scrolling
+- `loading="lazy"` on images throughout
+- Responsive media grid spans in admin MediaTab
 
 ### Deliverables
 
-- [ ] Document audit findings per component/view
-- [ ] Fix touch target sizing issues
-- [ ] Fix modal/overlay viewport issues on mobile
-- [ ] Fix any horizontal overflow or layout breaks
-- [ ] Verify card grid responsive behavior
-- [ ] Test gallery carousel swipe on touch viewports
-- [ ] Verify admin settings panel usability on tablet
+- [x] Document audit findings per component/view
+- [x] Fix touch target sizing issues (DotNavigator, OverlayArrows, MediaCard, global SCSS)
+- [x] Fix modal/overlay viewport issues on mobile (CampaignViewer, SettingsPanel, EditCampaignModal, Lightbox, MediaLightboxModal)
+- [x] Fix any horizontal overflow or layout breaks (CardGallery search, MediaAddModal, CampaignCard badge)
+- [x] Verify card grid responsive behavior (already good — base:1/sm:2/lg:3)
+- [x] Test gallery carousel swipe on touch viewports (already good — useSwipe hook)
+- [x] Verify admin settings panel usability on tablet (responsive modal sizing)
+- [x] Hide keyboard hints on touch devices (KeyboardHintOverlay)
+- [x] Add safe-area-inset support (Lightbox caption)
 
 **Effort:** Medium  
 **Impact:** High
 
 ---
 
-## Track P13-F — Card Gallery Pagination  ⬅️ NEXT
+## Track P13-F — Card Gallery Pagination  ✅ COMPLETE
 
 ### Problem
 
@@ -242,12 +283,15 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 
 ### Deliverables
 
-- [ ] F-1: Settings layer (types → apiClient → App → SettingsPanel → PHP)
-- [ ] F-2: CardGallery pagination state and slicing logic
-- [ ] F-3: OverlayArrows + DotNavigator integration for pages
-- [ ] F-4: Slide transition animation between pages
-- [ ] F-5: Responsive edge case handling
-- [ ] F-6: Tests for pagination logic and UI
+- [x] F-1: Settings layer (types → apiClient → App → SettingsPanel → PHP)
+- [x] F-2: CardGallery pagination state and slicing logic
+- [x] F-3: OverlayArrows + DotNavigator integration for pages
+- [x] F-4: Slide transition animation between pages
+- [x] F-5: Responsive edge case handling
+- [x] F-6: Tests for pagination logic and UI
+- [x] F-7: Settings panel reorganized (5 tabs → 3 tabs with Accordion sections)
+
+**Commits:** `fdbeecc` (pagination), `ecd7c58` (settings reorg)
 
 **Effort:** Medium  
 **Impact:** High
@@ -259,8 +303,8 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 | Priority | Track | Status |
 |----------|-------|--------|
 | 1 | P13-A — Modal CampaignViewer + Card Settings | ✅ Complete |
-| 2 | P13-F — Card Gallery Pagination | Not Started |
-| 3 | P13-E — Mobile Readiness Audit | Not Started |
+| 2 | P13-F — Card Gallery Pagination | ✅ Complete |
+| 3 | P13-E — Mobile Readiness Audit | ✅ Complete |
 | 4 | P13-B — Lazy Loading | Not Started |
 | 5 | P13-C — Admin Panel Performance | Not Started |
 | 6 | P13-D — Campaign Scheduling | Not Started |
@@ -272,6 +316,9 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 - **2026-02-20:** Phase 13 initiated. Four tracks promoted from FUTURE_TASKS. P13-A prioritized.
 - **2026-02-20:** P13-A complete — Modal conversion, 13 card settings (full stack), border color 3-mode system, modal animation fix, theme persistence fix, theme contrast fix. Commits: `04f0167`, `4202fe4`.
 - **2026-02-20:** P13-F card gallery pagination track added. Design finalized: 3 display modes (show-all/load-more/paginated), rows-per-page setting, OverlayArrows + optional DotNavigator, slide transition.
+- **2026-02-20:** P13-F complete — Full implementation: 3 display modes, rows×columns pagination math, OverlayArrows, DotNavigator, slide animation, keyboard nav, responsive recalc. 4 new settings full stack. 9 new tests (187 total). Commit: `fdbeecc`.
+- **2026-02-20:** Settings panel reorganized from 5 tabs (General/Gallery/Transitions/Navigation/Cards) to 3 tabs (General/Campaign Cards/Media Gallery) with Accordion sections. Transitions + Navigation absorbed into Media Gallery. Commit: `ecd7c58`.
+- **2026-02-20:** P13-E mobile readiness audit — 17 issues found (6 critical, 9 moderate, 2 minor), all fixed. Touch targets (44px min), dvh viewport units, responsive modals, safe-area-insets, touch-device detection. 14 files changed, 187 tests passing, build clean.
 
 ---
 

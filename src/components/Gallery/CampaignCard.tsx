@@ -129,7 +129,8 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
               pos="absolute"
               top={12}
               left={12}
-              style={{ backgroundColor: campaign.company.brandColor }}
+              maw="70%"
+              style={{ backgroundColor: campaign.company.brandColor, overflow: 'hidden', textOverflow: 'ellipsis' }}
             >
               <Group gap={6}>
                 <span>{campaign.company.logo}</span>

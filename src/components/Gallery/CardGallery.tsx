@@ -229,7 +229,7 @@ export function CardGallery({
                 leftSection={<IconSearch size={16} />}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                style={{ minWidth: 200, maxWidth: 280 }}
+                style={{ minWidth: 'min(200px, 100%)', maxWidth: 280 }}
                 size="sm"
                 aria-label="Search campaigns by title, description, or tags"
               />

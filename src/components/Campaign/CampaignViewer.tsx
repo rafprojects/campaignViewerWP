@@ -108,8 +108,9 @@ export function CampaignViewer({
       closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
       transitionProps={{ transition, duration: s.modalTransitionDuration }}
       radius="lg"
+      fullScreen={typeof window !== 'undefined' && window.innerWidth < 576}
       styles={{
-        content: { overflow: 'auto', maxHeight: `${s.modalMaxHeight}vh` },
+        content: { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
         close: { color: 'white', background: 'rgba(0,0,0,0.45)', borderRadius: '50%', width: 36, height: 36 },
       }}

@@ -114,7 +114,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
                 style={{
                   width: '90vw',
                   maxWidth: 1100,
-                  height: '70vh',
+                  height: '70dvh',
                   border: 'none',
                   borderRadius: 4,
                   display: 'block',
@@ -129,7 +129,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   maxWidth: '90vw',
-                  maxHeight: '85vh',
+                  maxHeight: '85dvh',
                   borderRadius: 4,
                   display: 'block',
                 }}
@@ -143,7 +143,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
               onClick={(e) => e.stopPropagation()}
               style={{
                 maxWidth: '90vw',
-                maxHeight: '85vh',
+                maxHeight: '85dvh',
                 objectFit: 'contain',
                 borderRadius: 4,
                 display: 'block',
@@ -195,7 +195,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
           left={0}
           right={0}
           p="lg"
-          style={{ pointerEvents: 'none' }}
+          style={{ pointerEvents: 'none', paddingBottom: 'calc(var(--mantine-spacing-lg) + env(safe-area-inset-bottom, 0px))' }}
         >
           <Stack gap="xs">
             {current.caption && (
