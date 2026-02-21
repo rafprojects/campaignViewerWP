@@ -180,11 +180,16 @@ export function CardGallery({
     opacity: slideDirection ? 0.3 : 1,
   } : {};
 
+  const containerSize = galleryBehaviorSettings.appMaxWidth > 0
+    ? galleryBehaviorSettings.appMaxWidth
+    : undefined;
+  const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
+
   return (
     <Box className={styles.gallery}>
       {/* Header */}
       <Box component="header" className={styles.header}>
-        <Container size="xl" py={{ base: 'sm', md: 'md' }}>
+        <Container size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }}>
           <Stack gap="lg">
             {/* Title and subtitle */}
             {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
@@ -256,7 +261,7 @@ export function CardGallery({
       </Box>
 
       {/* Gallery Grid */}
-      <Container size="xl" component="main" py={{ base: 'lg', md: 'xl' }}>
+      <Container size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }}>
         {/* Pagination wrapper — relative for overlay arrows */}
         <Box
           ref={gridContainerRef}

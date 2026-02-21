@@ -52,14 +52,21 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
   const gap = settings.thumbnailGap ?? 6;
   const targetRowHeight = settings.mosaicTargetRowHeight ?? 200;
 
-  const photos: RpaPhoto[] = enriched.map((item) => ({
-    src: item.thumbnail || item.url,
-    width: item.width,
-    height: item.height,
-    key: item.id,
-    item,
-    alt: item.caption || item.title || '',
-  }));
+  // Normalize all photos to a consistent reference height so large-resolution
+  // images don't dominate the layout. react-photo-album uses width/height
+  // ratios for row packing — absolute values don't matter, only ratios do.
+  const NORMALIZE_HEIGHT = 400;
+  const photos: RpaPhoto[] = enriched.map((item) => {
+    const ratio = item.width / item.height;
+    return {
+      src: item.thumbnail || item.url,
+      width: Math.round(NORMALIZE_HEIGHT * ratio),
+      height: NORMALIZE_HEIGHT,
+      key: item.id,
+      item,
+      alt: item.caption || item.title || '',
+    };
+  });
 
   return (
     <Stack gap="md">

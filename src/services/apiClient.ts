@@ -249,6 +249,10 @@ export interface SettingsResponse {
   showAccessMode?: boolean;
   showFilterTabs?: boolean;
   showSearchBox?: boolean;
+  // P13-E: App width & per-gallery tile sizes
+  appMaxWidth?: number;
+  imageTileSize?: number;
+  videoTileSize?: number;
 }
 
 export interface SettingsUpdateRequest {
@@ -357,6 +361,10 @@ export interface SettingsUpdateRequest {
   showAccessMode?: boolean;
   showFilterTabs?: boolean;
   showSearchBox?: boolean;
+  // P13-E: App width & per-gallery tile sizes
+  appMaxWidth?: number;
+  imageTileSize?: number;
+  videoTileSize?: number;
 }
 
 export class ApiError extends Error {

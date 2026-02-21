@@ -199,6 +199,11 @@ export interface GalleryBehaviorSettings {
   showAccessMode: boolean;
   showFilterTabs: boolean;
   showSearchBox: boolean;
+  // P13-E: App width control (0 = full width / edge-to-edge)
+  appMaxWidth: number;
+  // P13-E: Per-gallery tile sizes (shape adapters)
+  imageTileSize: number;
+  videoTileSize: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -281,6 +286,11 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   showAccessMode: true,
   showFilterTabs: true,
   showSearchBox: true,
+  // P13-E: App width control (0 = full width)
+  appMaxWidth: 1200,
+  // P13-E: Per-gallery tile sizes (shape adapters)
+  imageTileSize: 150,
+  videoTileSize: 150,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',

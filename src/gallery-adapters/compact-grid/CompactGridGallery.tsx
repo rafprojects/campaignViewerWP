@@ -49,11 +49,11 @@ export function CompactGridGallery({ media, settings }: CompactGridGalleryProps)
         </Group>
       </Title>
 
-      {/* Responsive auto-fill grid */}
+      {/* Responsive auto-fill grid — use min() to ensure cards scale down on mobile */}
       <Box
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(auto-fill, minmax(${cardWidth}px, 1fr))`,
+          gridTemplateColumns: `repeat(auto-fill, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), 1fr))`,
           gap: `${gap}px`,
         }}
       >

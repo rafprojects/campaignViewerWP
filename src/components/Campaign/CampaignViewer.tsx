@@ -224,10 +224,12 @@ export function CampaignViewer({
                   {campaign.videos.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
                     const id = s.videoGalleryAdapterId;
+                    // Override tileSize with per-gallery videoTileSize for shape adapters
+                    const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
                     const inner = id === 'classic'
-                      ? <VideoCarousel videos={campaign.videos} settings={s} />
-                      : renderAdapter(id, campaign.videos, s);
+                      ? <VideoCarousel videos={campaign.videos} settings={videoSettings} />
+                      : renderAdapter(id, campaign.videos, videoSettings);
                     return s.videoBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;
@@ -235,10 +237,12 @@ export function CampaignViewer({
                   {campaign.images.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
                     const id = s.imageGalleryAdapterId;
+                    // Override tileSize with per-gallery imageTileSize for shape adapters
+                    const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
                     const inner = id === 'classic'
-                      ? <ImageCarousel images={campaign.images} settings={s} />
-                      : renderAdapter(id, campaign.images, s);
+                      ? <ImageCarousel images={campaign.images} settings={imageSettings} />
+                      : renderAdapter(id, campaign.images, imageSettings);
                     return s.imageBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;

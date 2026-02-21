@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Accordion,
+  Box,
   Button,
   Group,
   Stack,
@@ -148,6 +149,10 @@ const defaultSettings: SettingsData = {
   showAccessMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
   showFilterTabs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
   showSearchBox: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
+  // P13-E: App width & per-gallery tile sizes
+  appMaxWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
+  imageTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
+  videoTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
 };
 
 interface SettingsPanelProps {
@@ -263,6 +268,10 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   showAccessMode: response.showAccessMode ?? defaultSettings.showAccessMode,
   showFilterTabs: response.showFilterTabs ?? defaultSettings.showFilterTabs,
   showSearchBox: response.showSearchBox ?? defaultSettings.showSearchBox,
+  // P13-E: App width & per-gallery tile sizes
+  appMaxWidth: response.appMaxWidth ?? defaultSettings.appMaxWidth,
+  imageTileSize: response.imageTileSize ?? defaultSettings.imageTileSize,
+  videoTileSize: response.videoTileSize ?? defaultSettings.videoTileSize,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -401,6 +410,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 />
 
                 <Divider label="Header Visibility" labelPosition="center" />
+
+                <NumberInput
+                  label="App Max Width (px)"
+                  description="Maximum width of the gallery container. Set to 0 for full-width (edge-to-edge). Default 1200px."
+                  value={settings.appMaxWidth}
+                  onChange={(value) => updateSetting('appMaxWidth', typeof value === 'number' ? value : defaultSettings.appMaxWidth)}
+                  min={0}
+                  max={3000}
+                  step={50}
+                  placeholder="0 = full width"
+                />
 
                 <Switch
                   label="Show Gallery Title"
@@ -1016,15 +1036,42 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         : ['hexagonal', 'circular', 'diamond'].includes(settings.imageGalleryAdapterId) ||
                           ['hexagonal', 'circular', 'diamond'].includes(settings.videoGalleryAdapterId)
                       ) && (
-                        <NumberInput
-                          label="Tile Size (px)"
-                          description="Width and height of each shape tile."
-                          value={settings.tileSize}
-                          onChange={(value) =>
-                            updateSetting('tileSize', typeof value === 'number' ? value : defaultSettings.tileSize)
-                          }
-                          min={60} max={400} step={10}
-                        />
+                        settings.unifiedGalleryEnabled ? (
+                          <NumberInput
+                            label="Tile Size (px)"
+                            description="Width and height of each shape tile (unified gallery)."
+                            value={settings.tileSize}
+                            onChange={(value) =>
+                              updateSetting('tileSize', typeof value === 'number' ? value : defaultSettings.tileSize)
+                            }
+                            min={60} max={400} step={10}
+                          />
+                        ) : (
+                          <Group grow>
+                            {['hexagonal', 'circular', 'diamond'].includes(settings.imageGalleryAdapterId) && (
+                              <NumberInput
+                                label="Image Tile Size (px)"
+                                description="Shape tile size for the image gallery."
+                                value={settings.imageTileSize}
+                                onChange={(value) =>
+                                  updateSetting('imageTileSize', typeof value === 'number' ? value : defaultSettings.imageTileSize)
+                                }
+                                min={60} max={400} step={10}
+                              />
+                            )}
+                            {['hexagonal', 'circular', 'diamond'].includes(settings.videoGalleryAdapterId) && (
+                              <NumberInput
+                                label="Video Tile Size (px)"
+                                description="Shape tile size for the video gallery."
+                                value={settings.videoTileSize}
+                                onChange={(value) =>
+                                  updateSetting('videoTileSize', typeof value === 'number' ? value : defaultSettings.videoTileSize)
+                                }
+                                min={60} max={400} step={10}
+                              />
+                            )}
+                          </Group>
+                        )
                       )}
                     </Stack>
                   </Accordion.Panel>
@@ -1483,18 +1530,29 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             </Tabs.Panel>
           </Tabs>
 
-          {/* ── Footer ─────────────────────────────────────── */}
-          <Divider />
-          <Group justify="flex-end" gap="sm">
-            {hasChanges && (
-              <Button variant="subtle" onClick={handleReset} disabled={isSaving}>
-                Reset
+          {/* ── Footer (sticky) ─────────────────────────────── */}
+          <Box
+            style={{
+              position: 'sticky',
+              bottom: 0,
+              zIndex: 10,
+              background: 'var(--mantine-color-body)',
+              borderTop: '1px solid var(--mantine-color-default-border)',
+              padding: 'var(--mantine-spacing-sm) 0',
+              marginTop: 'var(--mantine-spacing-md)',
+            }}
+          >
+            <Group justify="flex-end" gap="sm">
+              {hasChanges && (
+                <Button variant="subtle" onClick={handleReset} disabled={isSaving}>
+                  Reset
+                </Button>
+              )}
+              <Button onClick={handleSave} loading={isSaving} disabled={!hasChanges}>
+                Save Changes
               </Button>
-            )}
-            <Button onClick={handleSave} loading={isSaving} disabled={!hasChanges}>
-              Save Changes
-            </Button>
-          </Group>
+            </Group>
+          </Box>
         </Stack>
       )}
     </Modal>

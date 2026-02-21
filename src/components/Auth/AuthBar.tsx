@@ -5,6 +5,7 @@ import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabl
 interface AuthBarProps {
   email: string;
   isAdmin: boolean;
+  appMaxWidth?: number;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
   onLogout: () => void;
@@ -13,11 +14,14 @@ interface AuthBarProps {
 export function AuthBar({
   email,
   isAdmin,
+  appMaxWidth,
   onOpenAdminPanel,
   onOpenSettings,
   onLogout,
 }: AuthBarProps) {
   const isMobile = useMediaQuery('(max-width: 36em)'); // ≤ 576px
+  const containerSize = appMaxWidth && appMaxWidth > 0 ? appMaxWidth : undefined;
+  const containerFluid = !appMaxWidth || appMaxWidth === 0;
 
   return (
     <Box
@@ -32,7 +36,7 @@ export function AuthBar({
         borderBottom: '1px solid var(--wpsg-color-border)',
       }}
     >
-    <Container size="xl" py="sm">
+    <Container size={containerSize} fluid={containerFluid} py="sm">
       <Group justify="space-between" wrap="nowrap" gap="sm">
         <Text size="sm" truncate style={{ minWidth: 0 }}>
           Signed in as {email}

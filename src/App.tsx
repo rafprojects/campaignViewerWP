@@ -384,6 +384,10 @@ function AppContent({
       showAccessMode: response.showAccessMode ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
       showFilterTabs: response.showFilterTabs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
       showSearchBox: response.showSearchBox ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
+      // P13-E: App width & per-gallery tile sizes
+      appMaxWidth: response.appMaxWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
+      imageTileSize: response.imageTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
+      videoTileSize: response.videoTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -733,11 +737,18 @@ function AppContent({
     setActionMessage(message);
   }, []);
 
+  // Resolve Container max-width from settings (0 = full-width / edge-to-edge)
+  const resolvedSettings = galleryBehaviorSettings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
+  const appContainerSize = resolvedSettings.appMaxWidth > 0
+    ? resolvedSettings.appMaxWidth
+    : undefined; // undefined → use fluid prop
+  const appContainerFluid = resolvedSettings.appMaxWidth === 0;
+
   return (
     <div className="wp-super-gallery">
       {hasProvider && !isAuthenticated && isReady && (
         <>
-          <Container size="xl" py="sm">
+          <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
             <Alert color="blue" variant="light" role="status" aria-live="polite">
               <Group justify="space-between" align="center" wrap="wrap" gap="sm">
                 <Text size="sm">Sign in to access private campaigns.</Text>
@@ -756,13 +767,14 @@ function AppContent({
         <AuthBar
           email={user.email}
           isAdmin={isAdmin}
+          appMaxWidth={resolvedSettings.appMaxWidth}
           onOpenAdminPanel={openAdminPanel}
           onOpenSettings={openSettings}
           onLogout={() => void logout()}
         />
       )}
       {actionMessage && (
-        <Container size="xl" py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
           <Alert
             color={actionMessage.type === 'error' ? 'red' : 'green'}
             role={actionMessage.type === 'error' ? 'alert' : 'status'}
@@ -773,14 +785,14 @@ function AppContent({
         </Container>
       )}
       {!isOnline && (
-        <Container size="xl" py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
           <Alert color="orange" role="alert" aria-live="assertive">
             You appear to be offline. Some features are unavailable.
           </Alert>
         </Container>
       )}
       {error && (
-        <Container size="xl" py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
           <Alert color="red" role="alert" aria-live="assertive">
             {error}
           </Alert>
@@ -894,6 +906,10 @@ function AppContent({
                     showAccessMode: saved.showAccessMode,
                     showFilterTabs: saved.showFilterTabs,
                     showSearchBox: saved.showSearchBox,
+                    // P13-E: App width & per-gallery tile sizes
+                    appMaxWidth: saved.appMaxWidth,
+                    imageTileSize: saved.imageTileSize,
+                    videoTileSize: saved.videoTileSize,
                   },
                   false,
                 );
@@ -903,7 +919,7 @@ function AppContent({
         </ErrorBoundary>
       )}
       {isAdminPanelOpen ? (
-        <Container size="xl" py="xl">
+        <Container size={appContainerSize} py="xl">
           <ErrorBoundary onReset={closeAdminPanel}>
             <Suspense fallback={<Center py={120}><Loader /></Center>}>
               <AdminPanel
