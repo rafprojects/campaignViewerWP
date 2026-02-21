@@ -201,6 +201,9 @@ export interface GalleryBehaviorSettings {
   showSearchBox: boolean;
   // P13-E: App width control (0 = full width / edge-to-edge)
   appMaxWidth: number;
+  // P13-E: Container padding (px). Controls horizontal padding on all containers.
+  // Default 16 (matches Mantine spacing-md). Set to 0 for true edge-to-edge.
+  appPadding: number;
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: number;
   videoTileSize: number;
@@ -288,6 +291,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   showSearchBox: true,
   // P13-E: App width control (0 = full width)
   appMaxWidth: 1200,
+  // P13-E: Container horizontal padding (px)
+  appPadding: 16,
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: 150,
   videoTileSize: 150,

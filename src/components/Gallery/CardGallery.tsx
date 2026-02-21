@@ -184,12 +184,13 @@ export function CardGallery({
     ? galleryBehaviorSettings.appMaxWidth
     : undefined;
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
+  const containerPaddingStyle = { paddingInline: galleryBehaviorSettings.appPadding };
 
   return (
     <Box className={styles.gallery}>
       {/* Header */}
       <Box component="header" className={styles.header}>
-        <Container size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }}>
+        <Container size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
           <Stack gap="lg">
             {/* Title and subtitle */}
             {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
@@ -261,7 +262,7 @@ export function CardGallery({
       </Box>
 
       {/* Gallery Grid */}
-      <Container size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }}>
+      <Container size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
         {/* Pagination wrapper — relative for overlay arrows */}
         <Box
           ref={gridContainerRef}

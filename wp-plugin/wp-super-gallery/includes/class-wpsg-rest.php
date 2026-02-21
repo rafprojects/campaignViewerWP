@@ -2226,8 +2226,9 @@ class WPSG_REST {
                 'showAccessMode'             => $settings['show_access_mode'] ?? true,
                 'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
                 'showSearchBox'              => $settings['show_search_box'] ?? true,
-                // P13-E: App width & per-gallery tile sizes
+                // P13-E: App width, padding & per-gallery tile sizes
                 'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
+                'appPadding'                 => $settings['app_padding'] ?? 16,
                 'imageTileSize'              => $settings['image_tile_size'] ?? 150,
                 'videoTileSize'              => $settings['video_tile_size'] ?? 150,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
@@ -2338,8 +2339,9 @@ class WPSG_REST {
             'showAccessMode'             => $settings['show_access_mode'] ?? true,
             'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
             'showSearchBox'              => $settings['show_search_box'] ?? true,
-            // P13-E: App width & per-gallery tile sizes
+            // P13-E: App width, padding & per-gallery tile sizes
             'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
+            'appPadding'                 => $settings['app_padding'] ?? 16,
             'imageTileSize'              => $settings['image_tile_size'] ?? 150,
             'videoTileSize'              => $settings['video_tile_size'] ?? 150,
         ];
@@ -2571,8 +2573,9 @@ class WPSG_REST {
         if (isset($body['showAccessMode'])) { $input['show_access_mode'] = (bool) $body['showAccessMode']; }
         if (isset($body['showFilterTabs'])) { $input['show_filter_tabs'] = (bool) $body['showFilterTabs']; }
         if (isset($body['showSearchBox'])) { $input['show_search_box'] = (bool) $body['showSearchBox']; }
-        // P13-E: App width & per-gallery tile sizes
+        // P13-E: App width, padding & per-gallery tile sizes
         if (isset($body['appMaxWidth'])) { $input['app_max_width'] = intval($body['appMaxWidth']); }
+        if (isset($body['appPadding'])) { $input['app_padding'] = intval($body['appPadding']); }
         if (isset($body['imageTileSize'])) { $input['image_tile_size'] = intval($body['imageTileSize']); }
         if (isset($body['videoTileSize'])) { $input['video_tile_size'] = intval($body['videoTileSize']); }
         if (isset($body['cacheTtl'])) {
@@ -2695,8 +2698,9 @@ class WPSG_REST {
             'showAccessMode'             => $merged['show_access_mode'] ?? true,
             'showFilterTabs'             => $merged['show_filter_tabs'] ?? true,
             'showSearchBox'              => $merged['show_search_box'] ?? true,
-            // P13-E: App width & per-gallery tile sizes
+            // P13-E: App width, padding & per-gallery tile sizes
             'appMaxWidth'                => $merged['app_max_width'] ?? 1200,
+            'appPadding'                 => $merged['app_padding'] ?? 16,
             'imageTileSize'              => $merged['image_tile_size'] ?? 150,
             'videoTileSize'              => $merged['video_tile_size'] ?? 150,
             'cacheTtl'         => $merged['cache_ttl'],

@@ -149,8 +149,9 @@ const defaultSettings: SettingsData = {
   showAccessMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
   showFilterTabs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
   showSearchBox: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
-  // P13-E: App width & per-gallery tile sizes
+  // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
+  appPadding: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding,
   imageTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
   videoTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
 };
@@ -268,8 +269,9 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
   showAccessMode: response.showAccessMode ?? defaultSettings.showAccessMode,
   showFilterTabs: response.showFilterTabs ?? defaultSettings.showFilterTabs,
   showSearchBox: response.showSearchBox ?? defaultSettings.showSearchBox,
-  // P13-E: App width & per-gallery tile sizes
+  // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth: response.appMaxWidth ?? defaultSettings.appMaxWidth,
+  appPadding: response.appPadding ?? defaultSettings.appPadding,
   imageTileSize: response.imageTileSize ?? defaultSettings.imageTileSize,
   videoTileSize: response.videoTileSize ?? defaultSettings.videoTileSize,
 });
@@ -420,6 +422,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   max={3000}
                   step={50}
                   placeholder="0 = full width"
+                />
+
+                <NumberInput
+                  label="Container Padding (px)"
+                  description="Horizontal padding inside the container. Set to 0 for true edge-to-edge content. Default 16px."
+                  value={settings.appPadding}
+                  onChange={(value) => updateSetting('appPadding', typeof value === 'number' ? value : defaultSettings.appPadding)}
+                  min={0}
+                  max={100}
+                  step={4}
+                  placeholder="16"
                 />
 
                 <Switch

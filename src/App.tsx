@@ -384,8 +384,9 @@ function AppContent({
       showAccessMode: response.showAccessMode ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
       showFilterTabs: response.showFilterTabs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
       showSearchBox: response.showSearchBox ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
-      // P13-E: App width & per-gallery tile sizes
+      // P13-E: App width, padding & per-gallery tile sizes
       appMaxWidth: response.appMaxWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
+      appPadding: response.appPadding ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding,
       imageTileSize: response.imageTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
       videoTileSize: response.videoTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
     } as GalleryBehaviorSettings;
@@ -743,12 +744,14 @@ function AppContent({
     ? resolvedSettings.appMaxWidth
     : undefined; // undefined → use fluid prop
   const appContainerFluid = resolvedSettings.appMaxWidth === 0;
+  // Override Mantine Container's default horizontal padding
+  const appContainerPaddingStyle = { paddingInline: resolvedSettings.appPadding };
 
   return (
     <div className="wp-super-gallery">
       {hasProvider && !isAuthenticated && isReady && (
         <>
-          <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
+          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
             <Alert color="blue" variant="light" role="status" aria-live="polite">
               <Group justify="space-between" align="center" wrap="wrap" gap="sm">
                 <Text size="sm">Sign in to access private campaigns.</Text>
@@ -768,13 +771,14 @@ function AppContent({
           email={user.email}
           isAdmin={isAdmin}
           appMaxWidth={resolvedSettings.appMaxWidth}
+          appPadding={resolvedSettings.appPadding}
           onOpenAdminPanel={openAdminPanel}
           onOpenSettings={openSettings}
           onLogout={() => void logout()}
         />
       )}
       {actionMessage && (
-        <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
           <Alert
             color={actionMessage.type === 'error' ? 'red' : 'green'}
             role={actionMessage.type === 'error' ? 'alert' : 'status'}
@@ -785,14 +789,14 @@ function AppContent({
         </Container>
       )}
       {!isOnline && (
-        <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
           <Alert color="orange" role="alert" aria-live="assertive">
             You appear to be offline. Some features are unavailable.
           </Alert>
         </Container>
       )}
       {error && (
-        <Container size={appContainerSize} fluid={appContainerFluid} py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
           <Alert color="red" role="alert" aria-live="assertive">
             {error}
           </Alert>
@@ -906,8 +910,9 @@ function AppContent({
                     showAccessMode: saved.showAccessMode,
                     showFilterTabs: saved.showFilterTabs,
                     showSearchBox: saved.showSearchBox,
-                    // P13-E: App width & per-gallery tile sizes
+                    // P13-E: App width, padding & per-gallery tile sizes
                     appMaxWidth: saved.appMaxWidth,
+                    appPadding: saved.appPadding,
                     imageTileSize: saved.imageTileSize,
                     videoTileSize: saved.videoTileSize,
                   },
@@ -919,7 +924,7 @@ function AppContent({
         </ErrorBoundary>
       )}
       {isAdminPanelOpen ? (
-        <Container size={appContainerSize} py="xl">
+        <Container size={appContainerSize} py="xl" style={appContainerPaddingStyle}>
           <ErrorBoundary onReset={closeAdminPanel}>
             <Suspense fallback={<Center py={120}><Loader /></Center>}>
               <AdminPanel

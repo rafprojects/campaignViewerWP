@@ -138,8 +138,9 @@ class WPSG_Settings {
         'show_access_mode'           => true,
         'show_filter_tabs'           => true,
         'show_search_box'            => true,
-        // P13-E: App width & per-gallery tile sizes
+        // P13-E: App width, padding & per-gallery tile sizes
         'app_max_width'              => 1200,
+        'app_padding'                => 16,
         'image_tile_size'            => 150,
         'video_tile_size'            => 150,
         'cache_ttl'                  => 3600,
@@ -687,9 +688,12 @@ class WPSG_Settings {
             $sanitized['show_search_box'] = (bool) $input['show_search_box'];
         }
 
-        // P13-E: App width & per-gallery tile sizes.
+        // P13-E: App width, padding & per-gallery tile sizes.
         if (isset($input['app_max_width'])) {
             $sanitized['app_max_width'] = max(0, min(3000, intval($input['app_max_width'])));
+        }
+        if (isset($input['app_padding'])) {
+            $sanitized['app_padding'] = max(0, min(100, intval($input['app_padding'])));
         }
         if (isset($input['image_tile_size'])) {
             $sanitized['image_tile_size'] = max(60, min(400, intval($input['image_tile_size'])));

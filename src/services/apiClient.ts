@@ -249,8 +249,9 @@ export interface SettingsResponse {
   showAccessMode?: boolean;
   showFilterTabs?: boolean;
   showSearchBox?: boolean;
-  // P13-E: App width & per-gallery tile sizes
+  // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth?: number;
+  appPadding?: number;
   imageTileSize?: number;
   videoTileSize?: number;
 }
@@ -361,8 +362,9 @@ export interface SettingsUpdateRequest {
   showAccessMode?: boolean;
   showFilterTabs?: boolean;
   showSearchBox?: boolean;
-  // P13-E: App width & per-gallery tile sizes
+  // P13-E: App width, padding & per-gallery tile sizes
   appMaxWidth?: number;
+  appPadding?: number;
   imageTileSize?: number;
   videoTileSize?: number;
 }

@@ -6,6 +6,7 @@ interface AuthBarProps {
   email: string;
   isAdmin: boolean;
   appMaxWidth?: number;
+  appPadding?: number;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
   onLogout: () => void;
@@ -15,6 +16,7 @@ export function AuthBar({
   email,
   isAdmin,
   appMaxWidth,
+  appPadding,
   onOpenAdminPanel,
   onOpenSettings,
   onLogout,
@@ -22,6 +24,7 @@ export function AuthBar({
   const isMobile = useMediaQuery('(max-width: 36em)'); // ≤ 576px
   const containerSize = appMaxWidth && appMaxWidth > 0 ? appMaxWidth : undefined;
   const containerFluid = !appMaxWidth || appMaxWidth === 0;
+  const containerPaddingStyle = appPadding != null ? { paddingInline: appPadding } : undefined;
 
   return (
     <Box
@@ -36,7 +39,7 @@ export function AuthBar({
         borderBottom: '1px solid var(--wpsg-color-border)',
       }}
     >
-    <Container size={containerSize} fluid={containerFluid} py="sm">
+    <Container size={containerSize} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
       <Group justify="space-between" wrap="nowrap" gap="sm">
         <Text size="sm" truncate style={{ minWidth: 0 }}>
           Signed in as {email}
