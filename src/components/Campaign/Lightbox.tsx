@@ -8,12 +8,14 @@
  * The Portal inherits getRootElement() from the nearest MantineProvider, so
  * it correctly targets the shadow DOM mount point in WP plugin mode.
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import { useSwipe } from '@/hooks/useSwipe';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
+
+const TRANSITION_MS = 250;
 
 export interface LightboxProps {
   isOpen: boolean;
@@ -27,6 +29,24 @@ export interface LightboxProps {
 export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose }: LightboxProps) {
   const current = media[currentIndex];
 
+  // Animation state: 'closed' → 'entering' → 'open' → 'exiting' → 'closed'
+  const [phase, setPhase] = useState<'closed' | 'entering' | 'open' | 'exiting'>('closed');
+
+  useEffect(() => {
+    if (isOpen) {
+      setPhase('entering');
+      const raf = requestAnimationFrame(() => {
+        // Force reflow, then transition to open
+        requestAnimationFrame(() => setPhase('open'));
+      });
+      return () => cancelAnimationFrame(raf);
+    } else if (phase === 'open' || phase === 'entering') {
+      setPhase('exiting');
+      const timer = setTimeout(() => setPhase('closed'), TRANSITION_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const swipeHandlers = useSwipe({
     onSwipeLeft: onNext,
     onSwipeRight: onPrev,
@@ -34,7 +54,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
 
   // Keyboard navigation (Escape, arrow keys)
   useEffect(() => {
-    if (!isOpen) return;
+    if (phase === 'closed') return;
 
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -55,9 +75,11 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose, onPrev, onNext]);
+  }, [phase, onClose, onPrev, onNext]);
 
-  if (!isOpen || !current) return null;
+  if (phase === 'closed' || !current) return null;
+
+  const visible = phase === 'open';
 
   return (
     <Portal>
@@ -74,6 +96,8 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
           zIndex: 9999,
           background: 'rgba(0,0,0,0.93)',
           touchAction: 'pan-y',
+          opacity: visible ? 1 : 0,
+          transition: `opacity ${TRANSITION_MS}ms ease`,
         }}
       >
         {/* Close button */}
@@ -101,6 +125,8 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            transform: visible ? 'scale(1)' : 'scale(0.92)',
+            transition: `transform ${TRANSITION_MS}ms ease`,
           }}
         >
           {current.type === 'video' ? (
@@ -114,7 +140,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
                 style={{
                   width: '90vw',
                   maxWidth: 1100,
-                  height: '70vh',
+                  height: '70dvh',
                   border: 'none',
                   borderRadius: 4,
                   display: 'block',
@@ -129,7 +155,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   maxWidth: '90vw',
-                  maxHeight: '85vh',
+                  maxHeight: '85dvh',
                   borderRadius: 4,
                   display: 'block',
                 }}
@@ -143,7 +169,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
               onClick={(e) => e.stopPropagation()}
               style={{
                 maxWidth: '90vw',
-                maxHeight: '85vh',
+                maxHeight: '85dvh',
                 objectFit: 'contain',
                 borderRadius: 4,
                 display: 'block',
@@ -195,7 +221,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
           left={0}
           right={0}
           p="lg"
-          style={{ pointerEvents: 'none' }}
+          style={{ pointerEvents: 'none', paddingBottom: 'calc(var(--mantine-spacing-lg) + env(safe-area-inset-bottom, 0px))' }}
         >
           <Stack gap="xs">
             {current.caption && (

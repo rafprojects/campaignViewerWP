@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
-import type { Campaign, CampaignAccessGrant } from '@/types';
+import type { Campaign } from '@/types';
 import {
   Tabs,
   Button,
@@ -30,26 +30,22 @@ import { AdminCampaignRestoreModal } from './AdminCampaignRestoreModal';
 import { ArchiveCompanyModal } from './ArchiveCompanyModal';
 import { QuickAddUserModal } from './QuickAddUserModal';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import {
+  useAdminCampaigns,
+  useAccessGrants,
+  useCompanies,
+  useAuditEntries,
+  prefetchAllCampaignMedia,
+  prefetchAllCampaignAccess,
+  prefetchAllCampaignAudit,
+  type AdminCampaign,
+  type CompanyInfo,
+  type CompanyAccessGrant as CompanyAccessGrantType,
+} from '@/hooks/useAdminSWR';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 
-type AdminCampaign = Pick<Campaign, 'id' | 'title' | 'description' | 'status' | 'visibility' | 'createdAt' | 'updatedAt'> & {
-  companyId: string;
-  companyName?: string;
-  tags: string[];
-};
-
-interface ApiCampaignResponse {
-  items: AdminCampaign[];
-}
-
-interface AuditEntry {
-  id: string;
-  action: string;
-  details: Record<string, unknown>;
-  userId: number;
-  createdAt: string;
-}
+// Types moved to useAdminSWR.ts hook — only keep AccessViewMode, WpUser locally.
 
 interface WpUser {
   id: number;
@@ -58,35 +54,6 @@ interface WpUser {
   login: string;
   isAdmin: boolean;
 }
-
-interface CompanyInfo {
-  id: number;
-  name: string;
-  slug: string;
-  campaignCount: number;
-  activeCampaigns: number;
-  archivedCampaigns: number;
-  accessGrantCount: number;
-  campaigns: Array<{ id: number; title: string; status: string }>;
-}
-
-interface CompanyAccessGrant extends CampaignAccessGrant {
-  companyId?: number;
-  companyName?: string;
-  campaignTitle?: string;
-  campaignStatus?: string;
-}
-
-type ListResponse<T> = T[] | { items?: T[]; entries?: T[]; grants?: T[]; data?: T[] };
-
-const normalizeListResponse = <T,>(response: ListResponse<T>): T[] => {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response.items)) return response.items;
-  if (Array.isArray(response.entries)) return response.entries;
-  if (Array.isArray(response.grants)) return response.grants;
-  if (Array.isArray(response.data)) return response.data;
-  return [];
-};
 
 type AccessViewMode = 'campaign' | 'company' | 'all';
 
@@ -104,15 +71,32 @@ const emptyForm: CampaignFormState = {
   status: 'draft' as Campaign['status'],
   visibility: 'private' as Campaign['visibility'],
   tags: '',
+  publishAt: '',
+  unpublishAt: '',
 };
+
+/** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
+function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string; color: string } | null {
+  const now = Date.now();
+  if (publishAt && new Date(publishAt).getTime() > now) {
+    return { text: 'Scheduled', color: 'blue' };
+  }
+  if (unpublishAt) {
+    const end = new Date(unpublishAt).getTime();
+    if (end <= now) return { text: 'Expired', color: 'red' };
+    // Within 24h of expiry
+    if (end - now < 86_400_000) return { text: 'Expiring soon', color: 'orange' };
+  }
+  return null;
+}
 
 const campaignFormReducer = (_state: CampaignFormState, next: CampaignFormState): CampaignFormState => next;
 
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<string | null>('campaigns');
-  const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // P13-C: SWR-cached campaign list — no duplicate fetch, instant re-open.
+  const { campaigns, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient);
 
   const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
   const [formState, dispatchFormState] = useReducer(campaignFormReducer, { ...emptyForm });
@@ -122,8 +106,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   
 
   const [accessCampaignId, setAccessCampaignId] = useState<string>('');
-  const [accessEntries, setAccessEntries] = useState<CompanyAccessGrant[]>([]);
-  const [accessLoading, setAccessLoading] = useState(false);
   const [accessUserId, setAccessUserId] = useState('');
   const [accessSource, setAccessSource] = useState<'company' | 'campaign'>('campaign');
   const [accessAction, setAccessAction] = useState<'grant' | 'deny'>('grant');
@@ -131,11 +113,19 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   
   // Company management state
   const [accessViewMode, setAccessViewMode] = useState<AccessViewMode>('campaign');
-  const [companies, setCompanies] = useState<CompanyInfo[]>([]);
-  const [companiesLoading, setCompaniesLoading] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [confirmArchiveCompany, setConfirmArchiveCompany] = useState<CompanyInfo | null>(null);
   const [archiveRevokeAccess, setArchiveRevokeAccess] = useState(false);
+
+  // P13-C: SWR-cached access, companies, and audit data.
+  const accessTargetId = accessViewMode === 'campaign' ? accessCampaignId : selectedCompanyId;
+  const { accessEntries, accessLoading, mutateAccess } = useAccessGrants(
+    apiClient,
+    accessViewMode,
+    activeTab === 'access' ? accessTargetId : '', // only fetch when access tab active
+  );
+  const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
+  const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, companiesEnabled);
   
   // User search state for searchable picker
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -159,8 +149,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [quickAddTestMode, setQuickAddTestMode] = useState(false);
 
   const [auditCampaignId, setAuditCampaignId] = useState<string>('');
-  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
-  const [auditLoading, setAuditLoading] = useState(false);
+  // P13-C: SWR-cached audit entries — only fetches when audit tab is active.
+  const { auditEntries, auditLoading } = useAuditEntries(
+    apiClient,
+    activeTab === 'audit' ? auditCampaignId : '',
+  );
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<AdminCampaign | null>(null);
@@ -168,23 +161,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
-
-  const loadCampaigns = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get<ApiCampaignResponse>('/wp-json/wp-super-gallery/v1/campaigns?per_page=50');
-      setCampaigns(response.items ?? []);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Failed to load campaigns'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiClient]);
-
-  useEffect(() => {
-    void loadCampaigns();
-  }, [loadCampaigns]);
 
   // Cleanup blur timeout on unmount
   useEffect(() => {
@@ -215,26 +191,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [activeTab, auditCampaignId, campaigns]);
 
-  // Load companies list
-  const loadCompanies = useCallback(async () => {
-    setCompaniesLoading(true);
-    try {
-      const response = await apiClient.get<CompanyInfo[]>('/wp-json/wp-super-gallery/v1/companies');
-      setCompanies(response ?? []);
-    } catch {
-      setCompanies([]);
-    } finally {
-      setCompaniesLoading(false);
-    }
-  }, [apiClient]);
-
-  // Load companies when switching to access tab with company/all view
-  useEffect(() => {
-    if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all')) {
-      void loadCompanies();
-    }
-  }, [activeTab, accessViewMode, loadCompanies]);
-
   // Auto-select first company when in company/all mode
   useEffect(() => {
     if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) {
@@ -242,49 +198,46 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
 
-  // Load access when campaign selected (campaign mode)
-  const loadAccess = useCallback(async (campaignId: string) => {
-    if (!campaignId) return;
-    setAccessLoading(true);
-    try {
-      const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access`);
-      setAccessEntries(normalizeListResponse(response));
-    } catch (err) {
-      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load access entries.') });
-      setAccessEntries([]);
-    } finally {
-      setAccessLoading(false);
-    }
-  }, [apiClient, onNotify]);
-
-  // Load company access when company selected (company/all mode)
-  const loadCompanyAccess = useCallback(async (companyId: string, includeCampaigns: boolean) => {
-    if (!companyId) return;
-    setAccessLoading(true);
-    try {
-      const url = `/wp-json/wp-super-gallery/v1/companies/${companyId}/access${includeCampaigns ? '?include_campaigns=true' : ''}`;
-      const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(url);
-      setAccessEntries(normalizeListResponse(response));
-    } catch (err) {
-      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load company access entries.') });
-      setAccessEntries([]);
-    } finally {
-      setAccessLoading(false);
-    }
-  }, [apiClient, onNotify]);
-
-  // Load access based on view mode
+  // Prefetch media for all campaigns when the media tab opens (Option B).
+  // This runs in the background with staggered requests so switching between
+  // campaigns in the media selector is instant (SWR cache hit).
+  const mediaPrefetchedRef = useRef(false);
+  const cancelMediaPrefetchRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (activeTab !== 'access') return;
-    
-    if (accessViewMode === 'campaign' && accessCampaignId) {
-      void loadAccess(accessCampaignId);
-    } else if (accessViewMode === 'company' && selectedCompanyId) {
-      void loadCompanyAccess(selectedCompanyId, false);
-    } else if (accessViewMode === 'all' && selectedCompanyId) {
-      void loadCompanyAccess(selectedCompanyId, true);
+    if (activeTab === 'media' && campaigns.length > 0 && !mediaPrefetchedRef.current) {
+      mediaPrefetchedRef.current = true;
+      cancelMediaPrefetchRef.current = prefetchAllCampaignMedia(apiClient, campaigns.map((c) => String(c.id)));
     }
-  }, [activeTab, accessViewMode, accessCampaignId, selectedCompanyId, loadAccess, loadCompanyAccess]);
+  }, [activeTab, campaigns, apiClient]);
+
+  // Prefetch access grants for all campaigns when the access tab opens.
+  const accessPrefetchedRef = useRef(false);
+  const cancelAccessPrefetchRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (activeTab === 'access' && campaigns.length > 0 && !accessPrefetchedRef.current) {
+      accessPrefetchedRef.current = true;
+      cancelAccessPrefetchRef.current = prefetchAllCampaignAccess(apiClient, campaigns.map((c) => String(c.id)));
+    }
+  }, [activeTab, campaigns, apiClient]);
+
+  // Prefetch audit entries for all campaigns when the audit tab opens.
+  const auditPrefetchedRef = useRef(false);
+  const cancelAuditPrefetchRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (activeTab === 'audit' && campaigns.length > 0 && !auditPrefetchedRef.current) {
+      auditPrefetchedRef.current = true;
+      cancelAuditPrefetchRef.current = prefetchAllCampaignAudit(apiClient, campaigns.map((c) => String(c.id)));
+    }
+  }, [activeTab, campaigns, apiClient]);
+
+  // Cancel any in-flight prefetch timers on unmount.
+  useEffect(() => {
+    return () => {
+      cancelMediaPrefetchRef.current?.();
+      cancelAccessPrefetchRef.current?.();
+      cancelAuditPrefetchRef.current?.();
+    };
+  }, []);
 
   // Search users when query changes
   useEffect(() => {
@@ -338,13 +291,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           source: accessSource,
           action: accessSource === 'company' ? 'grant' : accessAction,
         });
-        await loadAccess(accessCampaignId);
+        await mutateAccess();
       } else {
         // Company/All mode: use company access endpoint
         await apiClient.post(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access`, {
           userId,
         });
-        await loadCompanyAccess(selectedCompanyId, accessViewMode === 'all');
+        await mutateAccess();
       }
       onNotify({ type: 'success', text: 'Access updated.' });
       setAccessUserId('');
@@ -358,29 +311,25 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   };
 
-  const handleRevokeAccess = useCallback(async (entry: CompanyAccessGrant) => {
+  const handleRevokeAccess = useCallback(async (entry: CompanyAccessGrantType) => {
     setAccessSaving(true);
     try {
       if (accessViewMode === 'campaign') {
         if (!accessCampaignId) return;
         await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access/${entry.userId}`);
-        await loadAccess(accessCampaignId);
       } else if (entry.source === 'company' && selectedCompanyId) {
-        // Revoke company-level access
         await apiClient.delete(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access/${entry.userId}`);
-        await loadCompanyAccess(selectedCompanyId, accessViewMode === 'all');
       } else if (entry.source === 'campaign' && entry.campaignId) {
-        // Revoke campaign-level access (from All view)
         await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${entry.campaignId}/access/${entry.userId}`);
-        await loadCompanyAccess(selectedCompanyId, accessViewMode === 'all');
       }
+      await mutateAccess();
       onNotify({ type: 'success', text: 'Access revoked.' });
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to revoke access.') });
     } finally {
       setAccessSaving(false);
     }
-  }, [accessCampaignId, accessViewMode, apiClient, loadAccess, loadCompanyAccess, onNotify, selectedCompanyId]);
+  }, [accessCampaignId, accessViewMode, apiClient, mutateAccess, onNotify, selectedCompanyId]);
 
   // Handle archive company (bulk archive all campaigns)
   const handleArchiveCompany = async () => {
@@ -393,12 +342,12 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       onNotify({ type: 'success', text: `Archived ${response.archivedCount} campaigns.` });
       setConfirmArchiveCompany(null);
       setArchiveRevokeAccess(false);
-      // Reload data
-      await loadCompanies();
-      await loadCampaigns();
-      if (selectedCompanyId) {
-        await loadCompanyAccess(selectedCompanyId, accessViewMode === 'all');
-      }
+      // Revalidate cached data
+      await Promise.all([
+        mutateCompanies(),
+        mutateCampaigns(),
+        selectedCompanyId ? mutateAccess() : Promise.resolve(),
+      ]);
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive company.') });
     } finally {
@@ -443,9 +392,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         });
       }
 
-      // Reload access if we're on a campaign that was granted access
+      // Revalidate access if we granted access to a campaign
       if (response.accessGranted && accessCampaignId) {
-        await loadAccess(accessCampaignId);
+        await mutateAccess();
       }
 
       // Clear form after success
@@ -473,26 +422,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     setQuickAddTestMode(false);
   };
 
-  // Load audit when campaign selected
-  const loadAudit = useCallback(async (campaignId: string) => {
-    if (!campaignId) return;
-    setAuditLoading(true);
-    try {
-      const response = await apiClient.get<ListResponse<AuditEntry>>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`);
-      setAuditEntries(normalizeListResponse(response));
-    } catch (err) {
-      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to load audit entries.') });
-      setAuditEntries([]);
-    } finally {
-      setAuditLoading(false);
-    }
-  }, [apiClient, onNotify]);
-
-  useEffect(() => {
-    if (activeTab === 'audit' && auditCampaignId) {
-      void loadAudit(auditCampaignId);
-    }
-  }, [activeTab, auditCampaignId, loadAudit]);
+  // loadAudit removed — SWR hook handles fetching automatically when auditCampaignId changes.
 
   const handleEdit = (campaign: AdminCampaign) => {
     setEditingCampaign(campaign);
@@ -503,6 +433,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       status: campaign.status ?? 'draft',
       visibility: campaign.visibility ?? 'private',
       tags: (campaign.tags ?? []).join(', '),
+      publishAt: campaign.publishAt ?? '',
+      unpublishAt: campaign.unpublishAt ?? '',
     });
     setCampaignFormOpen(true);
   };
@@ -528,6 +460,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       status: formState.status,
       visibility: formState.visibility,
       tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      publishAt: formState.publishAt || '',
+      unpublishAt: formState.unpublishAt || '',
     };
     try {
       if (editingCampaign) {
@@ -538,7 +472,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         onNotify({ type: 'success', text: 'Campaign created.' });
       }
       closeCampaignForm();
-      await loadCampaigns();
+      await mutateCampaigns();
       onCampaignsUpdated();
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save campaign.') });
@@ -553,7 +487,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/archive`, {});
       onNotify({ type: 'success', text: 'Campaign archived.' });
-      await loadCampaigns();
+      await mutateCampaigns();
       onCampaignsUpdated();
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive campaign.') });
@@ -568,7 +502,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     try {
       await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/restore`, {});
       onNotify({ type: 'success', text: 'Campaign restored.' });
-      await loadCampaigns();
+      await mutateCampaigns();
       onCampaignsUpdated();
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to restore campaign.') });
@@ -613,9 +547,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           </Box>
         </Table.Td>
         <Table.Td>
-          <Badge color={c.status === 'active' ? 'teal' : c.status === 'archived' ? 'gray' : 'yellow'}>
-            {c.status}
-          </Badge>
+          <Group gap={4} wrap="wrap">
+            <Badge color={c.status === 'active' ? 'teal' : c.status === 'archived' ? 'gray' : 'yellow'}>
+              {c.status}
+            </Badge>
+            {(() => {
+              const sched = scheduleLabel(c.publishAt, c.unpublishAt);
+              return sched ? <Badge variant="light" color={sched.color} size="xs">{sched.text}</Badge> : null;
+            })()}
+          </Group>
         </Table.Td>
         <Table.Td>
           <Badge variant="light">{c.visibility}</Badge>

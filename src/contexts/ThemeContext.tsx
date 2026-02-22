@@ -43,13 +43,29 @@ const STORAGE_KEY = 'wpsg-theme-id';
 
 /**
  * Determine the initial theme ID from (in priority order):
- *  1. WP config injection (global variable or data attribute)
- *  2. WP __WPSG_CONFIG__.theme (embed shortcode injection)
- *  3. User's localStorage preference (if persistence allowed)
+ *  1. User's localStorage preference (if persistence allowed — user's choice wins)
+ *  2. WP config injection (global variable or data attribute)
+ *  3. WP __WPSG_CONFIG__.theme (embed shortcode injection)
  *  4. DEFAULT_THEME_ID fallback
+ *
+ * When persistence is disabled (admin locked theme), localStorage is
+ * skipped and the WP-injected theme takes precedence.
  */
 function resolveInitialThemeId(allowPersistence: boolean): string {
-  // 1. WP injected config (set by PHP on the embed container)
+  // 1. User's localStorage preference (when persistence is allowed)
+  // Checked first so user's explicit choice overrides admin defaults
+  if (allowPersistence && typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored && hasTheme(stored)) {
+        return stored;
+      }
+    } catch {
+      // Storage blocked — fall through
+    }
+  }
+
+  // 2. WP injected config (set by PHP on the embed container)
   const wpConfigId: string | null | undefined =
     (typeof window !== 'undefined'
       ? window.__wpsgThemeId
@@ -60,7 +76,7 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
     return wpConfigId;
   }
 
-  // 2. __WPSG_CONFIG__.theme (set by WP embed shortcode)
+  // 3. __WPSG_CONFIG__.theme (set by WP embed shortcode)
   if (typeof window !== 'undefined') {
     const configTheme = window.__WPSG_CONFIG__?.theme;
     if (configTheme && hasTheme(configTheme)) {
@@ -68,19 +84,7 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
     }
   }
 
-  // 3. LocalStorage persistence
-  if (allowPersistence && typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && hasTheme(stored)) {
-        return stored;
-      }
-    } catch {
-      // Storage blocked — silently fall through
-    }
-  }
-
-  // 3. Default fallback
+  // 4. Default fallback
   return DEFAULT_THEME_ID;
 }
 

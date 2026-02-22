@@ -110,9 +110,9 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
             </Group>
           ) : (
             /* Compact/Small: hover overlay for actions */
-            <Group justify="center" mt={4} gap={2}>
-              <ActionIcon size="xs" variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={12} /></ActionIcon>
-              <ActionIcon size="xs" variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={12} /></ActionIcon>
+            <Group justify="center" mt={4} gap={4}>
+              <ActionIcon size="sm" variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={14} /></ActionIcon>
+              <ActionIcon size="sm" variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={14} /></ActionIcon>
             </Group>
           )}
         </Card>

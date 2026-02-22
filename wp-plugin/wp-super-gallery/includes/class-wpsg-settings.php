@@ -113,6 +113,39 @@ class WPSG_Settings {
         'unified_bg_color'           => '#1a1a2e',
         'unified_bg_gradient'        => 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
         'unified_bg_image_url'       => '',
+        // P13-A: Campaign Card
+        'card_border_radius'         => 8,
+        'card_border_width'          => 4,
+        'card_border_mode'           => 'auto',
+        'card_border_color'          => '#228be6',
+        'card_shadow_preset'         => 'subtle',
+        'card_thumbnail_height'      => 200,
+        'card_thumbnail_fit'         => 'cover',
+        'card_grid_columns'          => 0,
+        'card_gap'                   => 16,
+        'modal_cover_height'         => 240,
+        'modal_transition'           => 'pop',
+        'modal_transition_duration'  => 300,
+        'modal_max_height'           => 90,
+        // P13-F: Card Gallery Pagination
+        'card_display_mode'          => 'load-more',
+        'card_rows_per_page'         => 3,
+        'card_page_dot_nav'          => false,
+        'card_page_transition_ms'    => 300,
+        // P13-E: Header visibility toggles
+        'show_gallery_title'         => true,
+        'show_gallery_subtitle'      => true,
+        'show_access_mode'           => true,
+        'show_filter_tabs'           => true,
+        'show_search_box'            => true,
+        // P13-E: App width, padding & per-gallery tile sizes
+        'app_max_width'              => 1200,
+        'app_padding'                => 16,
+        'wp_full_bleed_desktop'      => false,
+        'wp_full_bleed_tablet'       => false,
+        'wp_full_bleed_mobile'       => false,
+        'image_tile_size'            => 150,
+        'video_tile_size'            => 150,
         'cache_ttl'                  => 3600,
     ];
 
@@ -148,6 +181,11 @@ class WPSG_Settings {
         'dot_nav_shape'          => ['circle', 'pill', 'square'],
         'image_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
         'video_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
+        'card_shadow_preset'     => ['none', 'subtle', 'medium', 'dramatic'],
+        'card_thumbnail_fit'     => ['cover', 'contain'],
+        'card_border_mode'       => ['auto', 'single', 'individual'],
+        'modal_transition'       => ['pop', 'fade', 'slide-up'],
+        'card_display_mode'      => ['show-all', 'load-more', 'paginated'],
     ];
 
     /**
@@ -580,6 +618,101 @@ class WPSG_Settings {
         if (isset($input['unified_bg_color'])) { $sanitized['unified_bg_color'] = sanitize_text_field($input['unified_bg_color']); }
         if (isset($input['unified_bg_gradient'])) { $sanitized['unified_bg_gradient'] = sanitize_text_field($input['unified_bg_gradient']); }
         if (isset($input['unified_bg_image_url'])) { $sanitized['unified_bg_image_url'] = esc_url_raw($input['unified_bg_image_url']); }
+
+        // P13-A: Campaign Card settings.
+        if (isset($input['card_border_radius'])) {
+            $sanitized['card_border_radius'] = max(0, min(24, intval($input['card_border_radius'])));
+        }
+        if (isset($input['card_border_width'])) {
+            $sanitized['card_border_width'] = max(0, min(8, intval($input['card_border_width'])));
+        }
+        if (isset($input['card_border_mode']) && in_array($input['card_border_mode'], self::$valid_options['card_border_mode'], true)) {
+            $sanitized['card_border_mode'] = $input['card_border_mode'];
+        }
+        if (isset($input['card_border_color'])) {
+            $sanitized['card_border_color'] = sanitize_hex_color($input['card_border_color']) ?: '#228be6';
+        }
+        if (isset($input['card_shadow_preset']) && in_array($input['card_shadow_preset'], self::$valid_options['card_shadow_preset'], true)) {
+            $sanitized['card_shadow_preset'] = $input['card_shadow_preset'];
+        }
+        if (isset($input['card_thumbnail_height'])) {
+            $sanitized['card_thumbnail_height'] = max(100, min(400, intval($input['card_thumbnail_height'])));
+        }
+        if (isset($input['card_thumbnail_fit']) && in_array($input['card_thumbnail_fit'], self::$valid_options['card_thumbnail_fit'], true)) {
+            $sanitized['card_thumbnail_fit'] = $input['card_thumbnail_fit'];
+        }
+        if (isset($input['card_grid_columns'])) {
+            $sanitized['card_grid_columns'] = max(0, min(4, intval($input['card_grid_columns'])));
+        }
+        if (isset($input['card_gap'])) {
+            $sanitized['card_gap'] = max(0, min(48, intval($input['card_gap'])));
+        }
+        if (isset($input['modal_cover_height'])) {
+            $sanitized['modal_cover_height'] = max(100, min(400, intval($input['modal_cover_height'])));
+        }
+        if (isset($input['modal_transition']) && in_array($input['modal_transition'], self::$valid_options['modal_transition'], true)) {
+            $sanitized['modal_transition'] = $input['modal_transition'];
+        }
+        if (isset($input['modal_transition_duration'])) {
+            $sanitized['modal_transition_duration'] = max(100, min(1000, intval($input['modal_transition_duration'])));
+        }
+        if (isset($input['modal_max_height'])) {
+            $sanitized['modal_max_height'] = max(50, min(100, intval($input['modal_max_height'])));
+        }
+
+        // P13-F: Card Gallery Pagination.
+        if (isset($input['card_display_mode']) && in_array($input['card_display_mode'], self::$valid_options['card_display_mode'], true)) {
+            $sanitized['card_display_mode'] = $input['card_display_mode'];
+        }
+        if (isset($input['card_rows_per_page'])) {
+            $sanitized['card_rows_per_page'] = max(1, min(10, intval($input['card_rows_per_page'])));
+        }
+        if (isset($input['card_page_dot_nav'])) {
+            $sanitized['card_page_dot_nav'] = (bool) $input['card_page_dot_nav'];
+        }
+        if (isset($input['card_page_transition_ms'])) {
+            $sanitized['card_page_transition_ms'] = max(100, min(800, intval($input['card_page_transition_ms'])));
+        }
+
+        // P13-E: Header visibility toggles.
+        if (isset($input['show_gallery_title'])) {
+            $sanitized['show_gallery_title'] = (bool) $input['show_gallery_title'];
+        }
+        if (isset($input['show_gallery_subtitle'])) {
+            $sanitized['show_gallery_subtitle'] = (bool) $input['show_gallery_subtitle'];
+        }
+        if (isset($input['show_access_mode'])) {
+            $sanitized['show_access_mode'] = (bool) $input['show_access_mode'];
+        }
+        if (isset($input['show_filter_tabs'])) {
+            $sanitized['show_filter_tabs'] = (bool) $input['show_filter_tabs'];
+        }
+        if (isset($input['show_search_box'])) {
+            $sanitized['show_search_box'] = (bool) $input['show_search_box'];
+        }
+
+        // P13-E: App width, padding & per-gallery tile sizes.
+        if (isset($input['app_max_width'])) {
+            $sanitized['app_max_width'] = max(0, min(3000, intval($input['app_max_width'])));
+        }
+        if (isset($input['app_padding'])) {
+            $sanitized['app_padding'] = max(0, min(100, intval($input['app_padding'])));
+        }
+        if (isset($input['wp_full_bleed_desktop'])) {
+            $sanitized['wp_full_bleed_desktop'] = (bool) $input['wp_full_bleed_desktop'];
+        }
+        if (isset($input['wp_full_bleed_tablet'])) {
+            $sanitized['wp_full_bleed_tablet'] = (bool) $input['wp_full_bleed_tablet'];
+        }
+        if (isset($input['wp_full_bleed_mobile'])) {
+            $sanitized['wp_full_bleed_mobile'] = (bool) $input['wp_full_bleed_mobile'];
+        }
+        if (isset($input['image_tile_size'])) {
+            $sanitized['image_tile_size'] = max(60, min(400, intval($input['image_tile_size'])));
+        }
+        if (isset($input['video_tile_size'])) {
+            $sanitized['video_tile_size'] = max(60, min(400, intval($input['video_tile_size'])));
+        }
 
         // Boolean fields.
         $sanitized['enable_lightbox']            = !empty($input['enable_lightbox']);

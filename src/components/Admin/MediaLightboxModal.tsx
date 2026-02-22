@@ -39,7 +39,7 @@ export function MediaLightboxModal({
             src={currentItem.url}
             alt={currentItem.caption || 'Media preview'}
             fit="contain"
-            mah="80vh"
+            mah="80dvh"
           />
           <ActionIcon
             variant="filled"

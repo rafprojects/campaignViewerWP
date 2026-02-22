@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Super Gallery
  * Description: Embeddable campaign gallery with Shadow DOM rendering.
- * Version: 0.10.0
+ * Version: 0.11.0
  * Author: WP Super Gallery
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.10.0');
+define('WPSG_VERSION', '0.11.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -37,6 +37,7 @@ function wpsg_deactivate() {
     // Roles and capabilities are kept on deactivation
     // Only remove on uninstall if desired
     wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
+    wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -77,6 +78,71 @@ add_action('init', ['WPSG_Maintenance', 'register']);
 add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
 add_action('init', ['WPSG_Sentry', 'init']);
+
+// P13-D: Campaign schedule auto-archive cron.
+add_action('init', 'wpsg_register_schedule_cron');
+add_action('wpsg_schedule_auto_archive', 'wpsg_run_schedule_auto_archive');
+
+function wpsg_register_schedule_cron() {
+    if (!wp_next_scheduled('wpsg_schedule_auto_archive')) {
+        wp_schedule_event(time(), 'hourly', 'wpsg_schedule_auto_archive');
+    }
+}
+
+function wpsg_run_schedule_auto_archive() {
+    $now = gmdate('Y-m-d H:i:s'); // UTC datetime — matches stored format
+    $archived_count = 0;
+
+    // Process in batches of 100 until none remain.
+    do {
+        $query = new WP_Query([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'publish',
+            'posts_per_page' => 100,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => 'unpublish_at',
+                    'value'   => '',
+                    'compare' => '!=',
+                ],
+                [
+                    'key'     => 'unpublish_at',
+                    'value'   => $now,
+                    'compare' => '<',
+                    'type'    => 'DATETIME',
+                ],
+                [
+                    'relation' => 'OR',
+                    ['key' => 'status', 'value' => 'archived', 'compare' => '!='],
+                    ['key' => 'status', 'compare' => 'NOT EXISTS'],
+                ],
+            ],
+        ]);
+
+        foreach ($query->posts as $post_id) {
+            update_post_meta($post_id, 'status', 'archived');
+            $archived_count++;
+        }
+    } while (!empty($query->posts));
+
+    // Clear campaign transient + timeout caches once after all updates.
+    if ($archived_count > 0) {
+        global $wpdb;
+        $like = $wpdb->esc_like('_transient_wpsg_campaigns_') . '%';
+        $timeout_like = $wpdb->esc_like('_transient_timeout_wpsg_campaigns_') . '%';
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+                $like,
+                $timeout_like
+            )
+        );
+    }
+}
+
 add_filter('rest_pre_serve_request', 'wpsg_add_cors_headers', 10, 4);
 add_action('send_headers', 'wpsg_add_security_headers');
 

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
-import { IconArrowLeft, IconCalendar, IconTag } from '@tabler/icons-react';
+import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
 
 /**
@@ -72,6 +73,7 @@ const DiamondGallery = lazy(() =>
 
 interface CampaignViewerProps {
   campaign: Campaign;
+  opened: boolean;
   hasAccess: boolean;
   galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin: boolean;
@@ -83,6 +85,7 @@ interface CampaignViewerProps {
 
 export function CampaignViewer({
   campaign,
+  opened,
   hasAccess,
   galleryBehaviorSettings,
   isAdmin,
@@ -91,25 +94,39 @@ export function CampaignViewer({
   onAddExternalMedia,
   onClose,
 }: CampaignViewerProps) {
+  const s = galleryBehaviorSettings;
+  const coverH = s.modalCoverHeight;
+  const coverHBase = Math.round(coverH * 0.67);
+  const coverHSm = Math.round(coverH * 0.83);
+  const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
+  // Reactive media query so fullScreen updates on orientation changes / resizes
+  const isMobile = useMediaQuery('(max-width: 48em)'); // ≤ 768px
   return (
     <Modal
-      opened={true}
+      opened={opened}
       onClose={onClose}
-      fullScreen
+      size="xl"
       padding={0}
-      withCloseButton={false}
-      transitionProps={{ transition: 'fade', duration: 200 }}
+      withCloseButton
+      closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
+      transitionProps={{ transition, duration: s.modalTransitionDuration }}
+      radius={isMobile ? 0 : 'lg'}
+      fullScreen={!!isMobile}
       styles={{
-        content: { overflow: 'auto' },
+        content: isMobile
+          ? { overflow: 'auto', maxHeight: '100dvh' }
+          : { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
+        header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
+        close: { color: 'white', background: 'rgba(0,0,0,0.45)', borderRadius: '50%', width: 36, height: 36 },
       }}
       aria-label={`Campaign details for ${campaign.title}`}
     >
       {/* Cover Image Header */}
-      <Box pos="relative" h={{ base: 220, sm: 280, md: 320 }} component="div">
-        <Image 
+      <Box pos="relative" h={{ base: coverHBase, sm: coverHSm, md: coverH }} component="div">
+        <Image
           src={campaign.coverImage}
           alt={campaign.title}
-          h={{ base: 220, sm: 280, md: 320 }}
+          h={{ base: coverHBase, sm: coverHSm, md: coverH }}
           fit="cover"
           loading="lazy"
         />
@@ -124,28 +141,11 @@ export function CampaignViewer({
           }}
         />
 
-        {/* Back button */}
-        <Button
-          pos="absolute"
-          top={{ base: 12, sm: 16 }}
-          left={{ base: 12, sm: 16 }}
-          leftSection={<IconArrowLeft size={20} />}
-          onClick={onClose}
-          variant="light"
-          color="dark"
-          radius="xl"
-          aria-label="Back to gallery"
-          size="sm"
-          style={{ minHeight: 44 }}
-        >
-          Back
-        </Button>
-
         {/* Company badge */}
         <Badge
           pos="absolute"
           top={16}
-          right={16}
+          left={16}
           style={{ backgroundColor: campaign.company.brandColor }}
           size="lg"
         >
@@ -157,7 +157,7 @@ export function CampaignViewer({
 
         {/* Title and meta overlay */}
         <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
-          <Title order={1} size="h1" mb="sm">
+          <Title order={2} size="h3" mb="sm">
             {campaign.title}
           </Title>
           <Group gap="lg" wrap="wrap">
@@ -224,10 +224,12 @@ export function CampaignViewer({
                   {campaign.videos.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
                     const id = s.videoGalleryAdapterId;
+                    // Override tileSize with per-gallery videoTileSize for shape adapters
+                    const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
                     const inner = id === 'classic'
-                      ? <VideoCarousel videos={campaign.videos} settings={s} />
-                      : renderAdapter(id, campaign.videos, s);
+                      ? <VideoCarousel videos={campaign.videos} settings={videoSettings} />
+                      : renderAdapter(id, campaign.videos, videoSettings);
                     return s.videoBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;
@@ -235,10 +237,12 @@ export function CampaignViewer({
                   {campaign.images.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
                     const id = s.imageGalleryAdapterId;
+                    // Override tileSize with per-gallery imageTileSize for shape adapters
+                    const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
                     const inner = id === 'classic'
-                      ? <ImageCarousel images={campaign.images} settings={s} />
-                      : renderAdapter(id, campaign.images, s);
+                      ? <ImageCarousel images={campaign.images} settings={imageSettings} />
+                      : renderAdapter(id, campaign.images, imageSettings);
                     return s.imageBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;

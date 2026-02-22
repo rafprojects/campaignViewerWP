@@ -359,6 +359,39 @@ function AppContent({
       unifiedBgColor: response.unifiedBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
       unifiedBgGradient: response.unifiedBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
       unifiedBgImageUrl: response.unifiedBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
+      // P13-A: Campaign Card
+      cardBorderRadius: response.cardBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderRadius,
+      cardBorderWidth: response.cardBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderWidth,
+      cardBorderMode: (response.cardBorderMode as GalleryBehaviorSettings['cardBorderMode']) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderMode,
+      cardBorderColor: response.cardBorderColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderColor,
+      cardShadowPreset: response.cardShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardShadowPreset,
+      cardThumbnailHeight: response.cardThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailHeight,
+      cardThumbnailFit: response.cardThumbnailFit ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailFit,
+      cardGridColumns: response.cardGridColumns ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGridColumns,
+      cardGap: response.cardGap ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGap,
+      modalCoverHeight: response.modalCoverHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalCoverHeight,
+      modalTransition: response.modalTransition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransition,
+      modalTransitionDuration: response.modalTransitionDuration ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransitionDuration,
+      modalMaxHeight: response.modalMaxHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalMaxHeight,
+      // P13-F: Card Gallery Pagination
+      cardDisplayMode: (response.cardDisplayMode as GalleryBehaviorSettings['cardDisplayMode']) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardDisplayMode,
+      cardRowsPerPage: response.cardRowsPerPage ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardRowsPerPage,
+      cardPageDotNav: response.cardPageDotNav ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageDotNav,
+      cardPageTransitionMs: response.cardPageTransitionMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageTransitionMs,
+      // P13-E: Header visibility toggles
+      showGalleryTitle: response.showGalleryTitle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGalleryTitle,
+      showGallerySubtitle: response.showGallerySubtitle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGallerySubtitle,
+      showAccessMode: response.showAccessMode ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
+      showFilterTabs: response.showFilterTabs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
+      showSearchBox: response.showSearchBox ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
+      // P13-E: App width, padding & per-gallery tile sizes
+      appMaxWidth: response.appMaxWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
+      appPadding: response.appPadding ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding,
+      wpFullBleedDesktop: response.wpFullBleedDesktop ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedDesktop,
+      wpFullBleedTablet: response.wpFullBleedTablet ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedTablet,
+      wpFullBleedMobile: response.wpFullBleedMobile ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedMobile,
+      imageTileSize: response.imageTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
+      videoTileSize: response.videoTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
     } as GalleryBehaviorSettings;
 
     return resolved;
@@ -708,11 +741,20 @@ function AppContent({
     setActionMessage(message);
   }, []);
 
+  // Resolve Container max-width from settings (0 = full-width / edge-to-edge)
+  const resolvedSettings = galleryBehaviorSettings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
+  const appContainerSize = resolvedSettings.appMaxWidth > 0
+    ? resolvedSettings.appMaxWidth
+    : undefined; // undefined → use fluid prop
+  const appContainerFluid = resolvedSettings.appMaxWidth === 0;
+  // Override Mantine Container's default horizontal padding
+  const appContainerPaddingStyle = { paddingInline: resolvedSettings.appPadding };
+
   return (
     <div className="wp-super-gallery">
       {hasProvider && !isAuthenticated && isReady && (
         <>
-          <Container size="xl" py="sm">
+          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
             <Alert color="blue" variant="light" role="status" aria-live="polite">
               <Group justify="space-between" align="center" wrap="wrap" gap="sm">
                 <Text size="sm">Sign in to access private campaigns.</Text>
@@ -731,13 +773,15 @@ function AppContent({
         <AuthBar
           email={user.email}
           isAdmin={isAdmin}
+          appMaxWidth={resolvedSettings.appMaxWidth}
+          appPadding={resolvedSettings.appPadding}
           onOpenAdminPanel={openAdminPanel}
           onOpenSettings={openSettings}
           onLogout={() => void logout()}
         />
       )}
       {actionMessage && (
-        <Container size="xl" py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
           <Alert
             color={actionMessage.type === 'error' ? 'red' : 'green'}
             role={actionMessage.type === 'error' ? 'alert' : 'status'}
@@ -748,14 +792,14 @@ function AppContent({
         </Container>
       )}
       {!isOnline && (
-        <Container size="xl" py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
           <Alert color="orange" role="alert" aria-live="assertive">
             You appear to be offline. Some features are unavailable.
           </Alert>
         </Container>
       )}
       {error && (
-        <Container size="xl" py="sm">
+        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
           <Alert color="red" role="alert" aria-live="assertive">
             {error}
           </Alert>
@@ -845,6 +889,38 @@ function AppContent({
                     unifiedBgColor: saved.unifiedBgColor,
                     unifiedBgGradient: saved.unifiedBgGradient,
                     unifiedBgImageUrl: saved.unifiedBgImageUrl,
+                    // P13-A: Campaign Card
+                    cardBorderRadius: saved.cardBorderRadius,
+                    cardBorderWidth: saved.cardBorderWidth,
+                    cardBorderMode: saved.cardBorderMode,
+                    cardBorderColor: saved.cardBorderColor,
+                    cardShadowPreset: saved.cardShadowPreset,
+                    cardThumbnailHeight: saved.cardThumbnailHeight,
+                    cardThumbnailFit: saved.cardThumbnailFit,
+                    cardGridColumns: saved.cardGridColumns,
+                    cardGap: saved.cardGap,
+                    modalCoverHeight: saved.modalCoverHeight,
+                    modalTransition: saved.modalTransition,
+                    modalTransitionDuration: saved.modalTransitionDuration,
+                    modalMaxHeight: saved.modalMaxHeight,
+                    cardDisplayMode: saved.cardDisplayMode,
+                    cardRowsPerPage: saved.cardRowsPerPage,
+                    cardPageDotNav: saved.cardPageDotNav,
+                    cardPageTransitionMs: saved.cardPageTransitionMs,
+                    // P13-E: Header visibility toggles
+                    showGalleryTitle: saved.showGalleryTitle,
+                    showGallerySubtitle: saved.showGallerySubtitle,
+                    showAccessMode: saved.showAccessMode,
+                    showFilterTabs: saved.showFilterTabs,
+                    showSearchBox: saved.showSearchBox,
+                    // P13-E: App width, padding & per-gallery tile sizes
+                    appMaxWidth: saved.appMaxWidth,
+                    appPadding: saved.appPadding,
+                    wpFullBleedDesktop: saved.wpFullBleedDesktop,
+                    wpFullBleedTablet: saved.wpFullBleedTablet,
+                    wpFullBleedMobile: saved.wpFullBleedMobile,
+                    imageTileSize: saved.imageTileSize,
+                    videoTileSize: saved.videoTileSize,
                   },
                   false,
                 );
@@ -854,7 +930,7 @@ function AppContent({
         </ErrorBoundary>
       )}
       {isAdminPanelOpen ? (
-        <Container size="xl" py="xl">
+        <Container size={appContainerSize} py="xl" style={appContainerPaddingStyle}>
           <ErrorBoundary onReset={closeAdminPanel}>
             <Suspense fallback={<Center py={120}><Loader /></Center>}>
               <AdminPanel

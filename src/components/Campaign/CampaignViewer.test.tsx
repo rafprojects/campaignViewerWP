@@ -40,6 +40,7 @@ describe('CampaignViewer', () => {
     render(
       <CampaignViewer
         campaign={campaign}
+        opened
         hasAccess={false}
         galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
         isAdmin={false}
@@ -60,6 +61,7 @@ describe('CampaignViewer', () => {
     render(
       <CampaignViewer
         campaign={campaign}
+        opened
         hasAccess
         galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
         isAdmin

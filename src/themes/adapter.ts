@@ -33,7 +33,7 @@ function generateComponentOverrides(
 ): NonNullable<MantineThemeOverride['components']> {
   return {
     Button: {
-      defaultProps: { variant: 'filled' },
+      defaultProps: { variant: 'filled', autoContrast: true },
       styles: () => ({
         root: {
           fontWeight: 600,
@@ -64,7 +64,7 @@ function generateComponentOverrides(
     Input: {
       styles: () => ({
         input: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surface2,
           borderColor: rc.border,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
@@ -76,7 +76,7 @@ function generateComponentOverrides(
     TextInput: {
       styles: () => ({
         input: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surface2,
           borderColor: rc.border,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
@@ -89,7 +89,7 @@ function generateComponentOverrides(
     PasswordInput: {
       styles: () => ({
         input: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surface2,
           borderColor: rc.border,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
@@ -252,7 +252,7 @@ function generateComponentOverrides(
     Select: {
       styles: () => ({
         input: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surface2,
           borderColor: rc.border,
           color: rc.text,
         },

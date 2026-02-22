@@ -224,6 +224,39 @@ export interface SettingsResponse {
   unifiedBgColor?: string;
   unifiedBgGradient?: string;
   unifiedBgImageUrl?: string;
+  // P13-A: Campaign Card
+  cardBorderRadius?: number;
+  cardBorderWidth?: number;
+  cardBorderMode?: string;
+  cardBorderColor?: string;
+  cardShadowPreset?: string;
+  cardThumbnailHeight?: number;
+  cardThumbnailFit?: string;
+  cardGridColumns?: number;
+  cardGap?: number;
+  modalCoverHeight?: number;
+  modalTransition?: string;
+  modalTransitionDuration?: number;
+  modalMaxHeight?: number;
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode?: string;
+  cardRowsPerPage?: number;
+  cardPageDotNav?: boolean;
+  cardPageTransitionMs?: number;
+  // P13-E: Header visibility toggles
+  showGalleryTitle?: boolean;
+  showGallerySubtitle?: boolean;
+  showAccessMode?: boolean;
+  showFilterTabs?: boolean;
+  showSearchBox?: boolean;
+  // P13-E: App width, padding & per-gallery tile sizes
+  appMaxWidth?: number;
+  appPadding?: number;
+  wpFullBleedDesktop?: boolean;
+  wpFullBleedTablet?: boolean;
+  wpFullBleedMobile?: boolean;
+  imageTileSize?: number;
+  videoTileSize?: number;
 }
 
 export interface SettingsUpdateRequest {
@@ -307,6 +340,39 @@ export interface SettingsUpdateRequest {
   unifiedBgColor?: string;
   unifiedBgGradient?: string;
   unifiedBgImageUrl?: string;
+  // P13-A: Campaign Card
+  cardBorderRadius?: number;
+  cardBorderWidth?: number;
+  cardBorderMode?: string;
+  cardBorderColor?: string;
+  cardShadowPreset?: string;
+  cardThumbnailHeight?: number;
+  cardThumbnailFit?: string;
+  cardGridColumns?: number;
+  cardGap?: number;
+  modalCoverHeight?: number;
+  modalTransition?: string;
+  modalTransitionDuration?: number;
+  modalMaxHeight?: number;
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode?: string;
+  cardRowsPerPage?: number;
+  cardPageDotNav?: boolean;
+  cardPageTransitionMs?: number;
+  // P13-E: Header visibility toggles
+  showGalleryTitle?: boolean;
+  showGallerySubtitle?: boolean;
+  showAccessMode?: boolean;
+  showFilterTabs?: boolean;
+  showSearchBox?: boolean;
+  // P13-E: App width, padding & per-gallery tile sizes
+  appMaxWidth?: number;
+  appPadding?: number;
+  wpFullBleedDesktop?: boolean;
+  wpFullBleedTablet?: boolean;
+  wpFullBleedMobile?: boolean;
+  imageTileSize?: number;
+  videoTileSize?: number;
 }
 
 export class ApiError extends Error {

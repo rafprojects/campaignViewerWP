@@ -20,6 +20,12 @@ export interface Campaign {
   visibility: 'public' | 'private';
   createdAt: string;
   updatedAt: string;
+  /** Per-campaign border color override (used when cardBorderMode is 'individual') */
+  borderColor?: string;
+  /** P13-D: Optional ISO 8601 scheduled-publish date. */
+  publishAt?: string;
+  /** P13-D: Optional ISO 8601 auto-unpublish date. */
+  unpublishAt?: string;
 }
 
 export interface MediaItem {
@@ -172,6 +178,53 @@ export interface GalleryBehaviorSettings {
   unifiedBgColor: string;
   unifiedBgGradient: string;
   unifiedBgImageUrl: string;
+  // P13-A: Campaign Card settings
+  cardBorderRadius: number;
+  cardBorderWidth: number;
+  cardBorderMode: 'single' | 'auto' | 'individual';
+  cardBorderColor: string;
+  cardShadowPreset: string;
+  cardThumbnailHeight: number;
+  cardThumbnailFit: string;
+  cardGridColumns: number;
+  cardGap: number;
+  modalCoverHeight: number;
+  modalTransition: string;
+  modalTransitionDuration: number;
+  modalMaxHeight: number;
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode: 'show-all' | 'load-more' | 'paginated';
+  cardRowsPerPage: number;
+  cardPageDotNav: boolean;
+  cardPageTransitionMs: number;
+  // P13-E: Header visibility toggles
+  showGalleryTitle: boolean;
+  showGallerySubtitle: boolean;
+  showAccessMode: boolean;
+  showFilterTabs: boolean;
+  showSearchBox: boolean;
+  // P13-E: App width control (0 = full width / edge-to-edge)
+  appMaxWidth: number;
+  // P13-E: Container padding (px). Controls horizontal padding on all containers.
+  // Default 16 (matches Mantine spacing-md). Set to 0 for true edge-to-edge.
+  appPadding: number;
+  /**
+   * P13-E: WP Full Bleed — break out of WordPress block theme container padding.
+   *
+   * WP block themes apply `.has-global-padding` + `.is-layout-constrained` on the
+   * parent element, adding horizontal padding and capping child max-width.
+   * These settings inject an `alignfull` wrapper in the PHP shortcode output with
+   * CSS media-query rules that apply negative margins (bleed ON) or re-constrain
+   * (bleed OFF) at each breakpoint. Server-rendered — requires page refresh.
+   *
+   * See: class-wpsg-embed.php render_shortcode() for the full implementation.
+   */
+  wpFullBleedDesktop: boolean; // ≥ 1024px
+  wpFullBleedTablet: boolean;  // 768–1023px
+  wpFullBleedMobile: boolean;  // < 768px
+  // P13-E: Per-gallery tile sizes (shape adapters)
+  imageTileSize: number;
+  videoTileSize: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -229,6 +282,42 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   unifiedBgColor: '#1a1a2e',
   unifiedBgGradient: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
   unifiedBgImageUrl: '',
+  // P13-A: Campaign Card settings
+  cardBorderRadius: 8,
+  cardBorderWidth: 4,
+  cardBorderMode: 'auto',
+  cardBorderColor: '#228be6',
+  cardShadowPreset: 'subtle',
+  cardThumbnailHeight: 200,
+  cardThumbnailFit: 'cover',
+  cardGridColumns: 0,
+  cardGap: 16,
+  modalCoverHeight: 240,
+  modalTransition: 'pop',
+  modalTransitionDuration: 300,
+  modalMaxHeight: 90,
+  // P13-F: Card Gallery Pagination
+  cardDisplayMode: 'load-more',
+  cardRowsPerPage: 3,
+  cardPageDotNav: false,
+  cardPageTransitionMs: 300,
+  // P13-E: Header visibility toggles
+  showGalleryTitle: true,
+  showGallerySubtitle: true,
+  showAccessMode: true,
+  showFilterTabs: true,
+  showSearchBox: true,
+  // P13-E: App width control (0 = full width)
+  appMaxWidth: 1200,
+  // P13-E: Container horizontal padding (px)
+  appPadding: 16,
+  // P13-E: WP Full Bleed (per breakpoint)
+  wpFullBleedDesktop: false,
+  wpFullBleedTablet: false,
+  wpFullBleedMobile: false,
+  // P13-E: Per-gallery tile sizes (shape adapters)
+  imageTileSize: 150,
+  videoTileSize: 150,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',

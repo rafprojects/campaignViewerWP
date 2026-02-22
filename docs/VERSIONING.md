@@ -12,6 +12,17 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.11.0 (February 22, 2026)
+- **MINOR**: Phase 13 — UX Polish, Performance & Campaign Scheduling
+  - **P13-A**: CampaignViewer converted from fullscreen modal to centered animated modal; 13 card/grid/modal settings added full-stack (border radius, width, mode, color, shadow, thumbnail height/fit, columns, gap, cover height, transition, duration, max height); border color 3-mode system (auto/single/individual) with per-card ColorInput.
+  - **P13-F**: Card gallery pagination with 3 display modes (show-all/load-more/paginated), rows-per-page setting, OverlayArrows + DotNavigator, GPU-accelerated slide transition, keyboard navigation, responsive recalculation.
+  - **P13-E**: Mobile readiness audit — 17 issues fixed (44px touch targets, dvh units, responsive modals, safe-area-insets); post-audit fixes for filter overflow, AuthBar mobile redesign, header toggles, appPadding/appMaxWidth/wpFullBleed responsive breakpoints.
+  - **P13-C**: SWR migration for all admin data fetching (campaigns, media, access, audit), skeleton loading states, background prefetch on tab open, ~130 lines of manual state/effects removed.
+  - **P13-B**: LazyImage progressive rendering (skeleton → fade-in → error fallback) in all 6 tile gallery adapters.
+  - **P13-D**: Campaign scheduling full-stack — `publishAt`/`unpublishAt` ISO 8601 dates, server-side meta_query filtering for non-admin users, admin datetime-local form inputs, schedule badges (Scheduled/Expired/Expiring soon), hourly WP-Cron auto-archive.
+  - Settings panel reorganized from 5 tabs to 3 with Accordion sections.
+  - Added `@mantine/dates` and `dayjs` dependencies.
+
 ### v0.10.0 (February 19, 2026)
 - **MINOR**: Phase 12 close-out and gallery extensibility hardening release
   - Phase 12 tracks finalized with full gallery adapter expansion and documentation close-out.
@@ -141,6 +152,7 @@ Current development follows a phased approach:
 - **Phase 10**: ✅ Complete (Codebase Refinement & UX Polish — v0.8.0 release)
 - **Phase 11**: ✅ Complete (UX & Discovery Improvements — v0.9.0 release)
 - **Phase 12**: ✅ Complete (Gallery Extensibility & Advanced Experience — v0.10.0 close-out)
+- **Phase 13**: ✅ Complete (UX Polish, Performance & Campaign Scheduling — v0.11.0 release)
 
 ## Branching Strategy
 

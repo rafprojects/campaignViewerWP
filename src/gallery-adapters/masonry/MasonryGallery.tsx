@@ -20,6 +20,7 @@ import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
+import { LazyImage } from '@/components/Gallery/LazyImage';
 import { buildBoxShadowStyles } from '@/gallery-adapters/_shared/tileHoverStyles';
 
 const SCOPE = 'masonry';
@@ -63,14 +64,21 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
         return 4;
       };
 
-  const photos: RpaPhoto[] = enriched.map((item) => ({
-    src: item.thumbnail || item.url,
-    width: item.width,
-    height: item.height,
-    key: item.id,
-    item,
-    alt: item.caption || item.title || '',
-  }));
+  // Normalize all photos to a consistent reference height so large-resolution
+  // images don't dominate the layout. react-photo-album uses width/height
+  // ratios for column packing — absolute values don't matter, only ratios do.
+  const NORMALIZE_HEIGHT = 400;
+  const photos: RpaPhoto[] = enriched.map((item) => {
+    const ratio = item.width / item.height;
+    return {
+      src: item.thumbnail || item.url,
+      width: Math.round(NORMALIZE_HEIGHT * ratio),
+      height: NORMALIZE_HEIGHT,
+      key: item.id,
+      item,
+      alt: item.caption || item.title || '',
+    };
+  });
 
   return (
     <Stack gap="md">
@@ -106,9 +114,13 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
                   display: 'block',
                   width: '100%',
                   breakInside: 'avoid',
+                  background: 'var(--wpsg-color-surface, #1a1a2e)',
                 }}
               />
             );
+          },
+          image({ style: imgStyle, ...imgProps }) {
+            return <LazyImage {...imgProps} style={imgStyle} />;
           },
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;

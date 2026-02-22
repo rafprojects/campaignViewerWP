@@ -397,7 +397,7 @@ class WPSG_REST {
 
         // Generate cache key based on user ID and query parameters
         $user_id = get_current_user_id();
-        $is_admin = current_user_can('manage_options');
+        $is_admin = current_user_can('manage_options') || current_user_can('manage_wpsg');
         $search_key = $search ? md5($search) : 'none';
         $cache_key = sprintf(
             'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s_%s',
@@ -468,6 +468,25 @@ class WPSG_REST {
                     $accessible_ids = array_map('intval', $accessible_ids);
                 }
                 $args['post__in'] = $accessible_ids;
+            }
+
+            // P13-D: Hide campaigns outside their scheduled window.
+            $now = gmdate('Y-m-d H:i:s'); // UTC datetime — matches stored format
+            $meta_query[] = [
+                'relation' => 'OR',
+                ['key' => 'publish_at', 'compare' => 'NOT EXISTS'],
+                ['key' => 'publish_at', 'value' => '', 'compare' => '='],
+                ['key' => 'publish_at', 'value' => $now, 'compare' => '<=', 'type' => 'DATETIME'],
+            ];
+            $meta_query[] = [
+                'relation' => 'OR',
+                ['key' => 'unpublish_at', 'compare' => 'NOT EXISTS'],
+                ['key' => 'unpublish_at', 'value' => '', 'compare' => '='],
+                ['key' => 'unpublish_at', 'value' => $now, 'compare' => '>=', 'type' => 'DATETIME'],
+            ];
+            $args['meta_query'] = $meta_query;
+            if (count($meta_query) > 1 && !isset($meta_query['relation'])) {
+                $args['meta_query']['relation'] = 'AND';
             }
         }
 
@@ -2201,6 +2220,39 @@ class WPSG_REST {
                 'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
                 'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
                 'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
+                // P13-A: Campaign Card
+                'cardBorderRadius'           => $settings['card_border_radius'] ?? 8,
+                'cardBorderWidth'            => $settings['card_border_width'] ?? 4,
+                'cardBorderMode'             => $settings['card_border_mode'] ?? 'auto',
+                'cardBorderColor'            => $settings['card_border_color'] ?? '#228be6',
+                'cardShadowPreset'           => $settings['card_shadow_preset'] ?? 'subtle',
+                'cardThumbnailHeight'        => $settings['card_thumbnail_height'] ?? 200,
+                'cardThumbnailFit'           => $settings['card_thumbnail_fit'] ?? 'cover',
+                'cardGridColumns'            => $settings['card_grid_columns'] ?? 0,
+                'cardGap'                    => $settings['card_gap'] ?? 16,
+                'modalCoverHeight'           => $settings['modal_cover_height'] ?? 240,
+                'modalTransition'            => $settings['modal_transition'] ?? 'pop',
+                'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
+                'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
+                // P13-F: Card Gallery Pagination
+                'cardDisplayMode'            => $settings['card_display_mode'] ?? 'load-more',
+                'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
+                'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
+                'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
+                // P13-E: Header visibility toggles
+                'showGalleryTitle'           => $settings['show_gallery_title'] ?? true,
+                'showGallerySubtitle'        => $settings['show_gallery_subtitle'] ?? true,
+                'showAccessMode'             => $settings['show_access_mode'] ?? true,
+                'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
+                'showSearchBox'              => $settings['show_search_box'] ?? true,
+                // P13-E: App width, padding & per-gallery tile sizes
+                'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
+                'appPadding'                 => $settings['app_padding'] ?? 16,
+                'wpFullBleedDesktop'         => $settings['wp_full_bleed_desktop'] ?? false,
+                'wpFullBleedTablet'          => $settings['wp_full_bleed_tablet'] ?? false,
+                'wpFullBleedMobile'          => $settings['wp_full_bleed_mobile'] ?? false,
+                'imageTileSize'              => $settings['image_tile_size'] ?? 150,
+                'videoTileSize'              => $settings['video_tile_size'] ?? 150,
                 'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
             ], 200);
         }
@@ -2284,6 +2336,39 @@ class WPSG_REST {
             'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
             'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
             'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
+            // P13-A: Campaign Card
+            'cardBorderRadius'           => $settings['card_border_radius'] ?? 8,
+            'cardBorderWidth'            => $settings['card_border_width'] ?? 4,
+            'cardBorderMode'             => $settings['card_border_mode'] ?? 'auto',
+            'cardBorderColor'            => $settings['card_border_color'] ?? '#228be6',
+            'cardShadowPreset'           => $settings['card_shadow_preset'] ?? 'subtle',
+            'cardThumbnailHeight'        => $settings['card_thumbnail_height'] ?? 200,
+            'cardThumbnailFit'           => $settings['card_thumbnail_fit'] ?? 'cover',
+            'cardGridColumns'            => $settings['card_grid_columns'] ?? 0,
+            'cardGap'                    => $settings['card_gap'] ?? 16,
+            'modalCoverHeight'           => $settings['modal_cover_height'] ?? 240,
+            'modalTransition'            => $settings['modal_transition'] ?? 'pop',
+            'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
+            'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
+            // P13-F: Card Gallery Pagination
+            'cardDisplayMode'            => $settings['card_display_mode'] ?? 'load-more',
+            'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
+            'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
+            'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
+            // P13-E: Header visibility toggles
+            'showGalleryTitle'           => $settings['show_gallery_title'] ?? true,
+            'showGallerySubtitle'        => $settings['show_gallery_subtitle'] ?? true,
+            'showAccessMode'             => $settings['show_access_mode'] ?? true,
+            'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
+            'showSearchBox'              => $settings['show_search_box'] ?? true,
+            // P13-E: App width, padding & per-gallery tile sizes
+            'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
+            'appPadding'                 => $settings['app_padding'] ?? 16,
+            'wpFullBleedDesktop'         => $settings['wp_full_bleed_desktop'] ?? false,
+            'wpFullBleedTablet'          => $settings['wp_full_bleed_tablet'] ?? false,
+            'wpFullBleedMobile'          => $settings['wp_full_bleed_mobile'] ?? false,
+            'imageTileSize'              => $settings['image_tile_size'] ?? 150,
+            'videoTileSize'              => $settings['video_tile_size'] ?? 150,
         ];
 
         return new WP_REST_Response($public_settings, 200);
@@ -2488,6 +2573,39 @@ class WPSG_REST {
         if (isset($body['unifiedBgColor'])) { $input['unified_bg_color'] = sanitize_text_field($body['unifiedBgColor']); }
         if (isset($body['unifiedBgGradient'])) { $input['unified_bg_gradient'] = sanitize_text_field($body['unifiedBgGradient']); }
         if (isset($body['unifiedBgImageUrl'])) { $input['unified_bg_image_url'] = esc_url_raw($body['unifiedBgImageUrl']); }
+        // P13-A: Campaign Card
+        if (isset($body['cardBorderRadius'])) { $input['card_border_radius'] = intval($body['cardBorderRadius']); }
+        if (isset($body['cardBorderWidth'])) { $input['card_border_width'] = intval($body['cardBorderWidth']); }
+        if (isset($body['cardBorderMode'])) { $input['card_border_mode'] = sanitize_text_field($body['cardBorderMode']); }
+        if (isset($body['cardBorderColor'])) { $input['card_border_color'] = sanitize_text_field($body['cardBorderColor']); }
+        if (isset($body['cardShadowPreset'])) { $input['card_shadow_preset'] = sanitize_text_field($body['cardShadowPreset']); }
+        if (isset($body['cardThumbnailHeight'])) { $input['card_thumbnail_height'] = intval($body['cardThumbnailHeight']); }
+        if (isset($body['cardThumbnailFit'])) { $input['card_thumbnail_fit'] = sanitize_text_field($body['cardThumbnailFit']); }
+        if (isset($body['cardGridColumns'])) { $input['card_grid_columns'] = intval($body['cardGridColumns']); }
+        if (isset($body['cardGap'])) { $input['card_gap'] = intval($body['cardGap']); }
+        if (isset($body['modalCoverHeight'])) { $input['modal_cover_height'] = intval($body['modalCoverHeight']); }
+        if (isset($body['modalTransition'])) { $input['modal_transition'] = sanitize_text_field($body['modalTransition']); }
+        if (isset($body['modalTransitionDuration'])) { $input['modal_transition_duration'] = intval($body['modalTransitionDuration']); }
+        if (isset($body['modalMaxHeight'])) { $input['modal_max_height'] = intval($body['modalMaxHeight']); }
+        // P13-F: Card Gallery Pagination
+        if (isset($body['cardDisplayMode'])) { $input['card_display_mode'] = sanitize_text_field($body['cardDisplayMode']); }
+        if (isset($body['cardRowsPerPage'])) { $input['card_rows_per_page'] = intval($body['cardRowsPerPage']); }
+        if (isset($body['cardPageDotNav'])) { $input['card_page_dot_nav'] = (bool) $body['cardPageDotNav']; }
+        if (isset($body['cardPageTransitionMs'])) { $input['card_page_transition_ms'] = intval($body['cardPageTransitionMs']); }
+        // P13-E: Header visibility toggles
+        if (isset($body['showGalleryTitle'])) { $input['show_gallery_title'] = (bool) $body['showGalleryTitle']; }
+        if (isset($body['showGallerySubtitle'])) { $input['show_gallery_subtitle'] = (bool) $body['showGallerySubtitle']; }
+        if (isset($body['showAccessMode'])) { $input['show_access_mode'] = (bool) $body['showAccessMode']; }
+        if (isset($body['showFilterTabs'])) { $input['show_filter_tabs'] = (bool) $body['showFilterTabs']; }
+        if (isset($body['showSearchBox'])) { $input['show_search_box'] = (bool) $body['showSearchBox']; }
+        // P13-E: App width, padding & per-gallery tile sizes
+        if (isset($body['appMaxWidth'])) { $input['app_max_width'] = intval($body['appMaxWidth']); }
+        if (isset($body['appPadding'])) { $input['app_padding'] = intval($body['appPadding']); }
+        if (isset($body['wpFullBleedDesktop'])) { $input['wp_full_bleed_desktop'] = (bool) $body['wpFullBleedDesktop']; }
+        if (isset($body['wpFullBleedTablet'])) { $input['wp_full_bleed_tablet'] = (bool) $body['wpFullBleedTablet']; }
+        if (isset($body['wpFullBleedMobile'])) { $input['wp_full_bleed_mobile'] = (bool) $body['wpFullBleedMobile']; }
+        if (isset($body['imageTileSize'])) { $input['image_tile_size'] = intval($body['imageTileSize']); }
+        if (isset($body['videoTileSize'])) { $input['video_tile_size'] = intval($body['videoTileSize']); }
         if (isset($body['cacheTtl'])) {
             $input['cache_ttl'] = intval($body['cacheTtl']);
         }
@@ -2583,6 +2701,39 @@ class WPSG_REST {
             'unifiedBgColor'             => $merged['unified_bg_color'] ?? '#1a1a2e',
             'unifiedBgGradient'          => $merged['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
             'unifiedBgImageUrl'          => $merged['unified_bg_image_url'] ?? '',
+            // P13-A: Campaign Card
+            'cardBorderRadius'           => $merged['card_border_radius'] ?? 8,
+            'cardBorderWidth'            => $merged['card_border_width'] ?? 4,
+            'cardBorderMode'             => $merged['card_border_mode'] ?? 'auto',
+            'cardBorderColor'            => $merged['card_border_color'] ?? '#228be6',
+            'cardShadowPreset'           => $merged['card_shadow_preset'] ?? 'subtle',
+            'cardThumbnailHeight'        => $merged['card_thumbnail_height'] ?? 200,
+            'cardThumbnailFit'           => $merged['card_thumbnail_fit'] ?? 'cover',
+            'cardGridColumns'            => $merged['card_grid_columns'] ?? 0,
+            'cardGap'                    => $merged['card_gap'] ?? 16,
+            'modalCoverHeight'           => $merged['modal_cover_height'] ?? 240,
+            'modalTransition'            => $merged['modal_transition'] ?? 'pop',
+            'modalTransitionDuration'    => $merged['modal_transition_duration'] ?? 300,
+            'modalMaxHeight'             => $merged['modal_max_height'] ?? 90,
+            // P13-F: Card Gallery Pagination
+            'cardDisplayMode'            => $merged['card_display_mode'] ?? 'load-more',
+            'cardRowsPerPage'            => $merged['card_rows_per_page'] ?? 3,
+            'cardPageDotNav'             => $merged['card_page_dot_nav'] ?? false,
+            'cardPageTransitionMs'       => $merged['card_page_transition_ms'] ?? 300,
+            // P13-E: Header visibility toggles
+            'showGalleryTitle'           => $merged['show_gallery_title'] ?? true,
+            'showGallerySubtitle'        => $merged['show_gallery_subtitle'] ?? true,
+            'showAccessMode'             => $merged['show_access_mode'] ?? true,
+            'showFilterTabs'             => $merged['show_filter_tabs'] ?? true,
+            'showSearchBox'              => $merged['show_search_box'] ?? true,
+            // P13-E: App width, padding & per-gallery tile sizes
+            'appMaxWidth'                => $merged['app_max_width'] ?? 1200,
+            'appPadding'                 => $merged['app_padding'] ?? 16,
+            'wpFullBleedDesktop'         => $merged['wp_full_bleed_desktop'] ?? false,
+            'wpFullBleedTablet'          => $merged['wp_full_bleed_tablet'] ?? false,
+            'wpFullBleedMobile'          => $merged['wp_full_bleed_mobile'] ?? false,
+            'imageTileSize'              => $merged['image_tile_size'] ?? 150,
+            'videoTileSize'              => $merged['video_tile_size'] ?? 150,
             'cacheTtl'         => $merged['cache_ttl'],
         ], 200);
     }
@@ -2858,6 +3009,18 @@ class WPSG_REST {
         return array_values(array_merge($company_grants, $campaign_grants));
     }
 
+    /**
+     * Read a stored Y-m-d H:i:s UTC meta value and return ISO 8601 string (or '').
+     */
+    private static function meta_to_iso8601($post_id, $meta_key) {
+        $value = (string) get_post_meta($post_id, $meta_key, true);
+        if ($value === '') {
+            return '';
+        }
+        $ts = strtotime($value . ' UTC');
+        return $ts !== false ? gmdate('c', $ts) : '';
+    }
+
     private static function format_campaign($post) {
         $company_term = self::get_company_term($post->ID);
         $company_id = $company_term ? $company_term->slug : '';
@@ -2874,6 +3037,8 @@ class WPSG_REST {
             'status' => (string) get_post_meta($post->ID, 'status', true) ?: 'draft',
             'visibility' => (string) get_post_meta($post->ID, 'visibility', true) ?: 'private',
             'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
+            'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
+            'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
             'createdAt' => get_post_time('c', true, $post),
             'updatedAt' => get_post_modified_time('c', true, $post),
         ];
@@ -2905,6 +3070,32 @@ class WPSG_REST {
         }
         if ($thumbnail_id > 0) {
             set_post_thumbnail($post_id, $thumbnail_id);
+        }
+
+        // P13-D: Campaign scheduling dates (UTC datetime or empty to clear).
+        $publish_at = $request->get_param('publishAt');
+        if (!is_null($publish_at)) {
+            $publish_at = sanitize_text_field($publish_at);
+            if ($publish_at === '') {
+                delete_post_meta($post_id, 'publish_at');
+            } else {
+                $ts = strtotime($publish_at);
+                if ($ts !== false) {
+                    update_post_meta($post_id, 'publish_at', gmdate('Y-m-d H:i:s', $ts));
+                }
+            }
+        }
+        $unpublish_at = $request->get_param('unpublishAt');
+        if (!is_null($unpublish_at)) {
+            $unpublish_at = sanitize_text_field($unpublish_at);
+            if ($unpublish_at === '') {
+                delete_post_meta($post_id, 'unpublish_at');
+            } else {
+                $ts = strtotime($unpublish_at);
+                if ($ts !== false) {
+                    update_post_meta($post_id, 'unpublish_at', gmdate('Y-m-d H:i:s', $ts));
+                }
+            }
         }
     }
 

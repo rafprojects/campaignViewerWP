@@ -12,6 +12,7 @@ import { IconCircles, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
+import { LazyImage } from '@/components/Gallery/LazyImage';
 import { buildTileStyles } from '@/gallery-adapters/_shared/tileHoverStyles';
 
 const SCOPE = 'circle';
@@ -72,14 +73,13 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
                 overflow: 'hidden',
                 padding: 0,
                 border: 'none',
-                background: 'none',
+                background: 'var(--wpsg-color-surface, #1a1a2e)',
                 flexShrink: 0,
               }}
             >
-              <img
+              <LazyImage
                 src={thumbSrc}
                 alt={label}
-                loading="lazy"
                 style={{
                   position: 'absolute', inset: 0,
                   width: '100%', height: '100%',

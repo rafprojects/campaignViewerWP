@@ -85,12 +85,11 @@ describe('SettingsPanel', () => {
 
     // Tab buttons visible
     expect(screen.getByRole('tab', { name: /General/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Gallery/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Transitions/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Navigation/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Campaign Cards/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Media Gallery/i })).toBeDefined();
   });
 
-  it('shows gallery tab settings when Gallery tab is clicked', async () => {
+  it('shows gallery tab settings when Media Gallery tab is clicked', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
@@ -99,7 +98,7 @@ describe('SettingsPanel', () => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
 
-    clickTab('Gallery');
+    clickTab('Media Gallery');
 
     expect(screen.getByText('Enable Lightbox')).toBeDefined();
     expect(screen.getByText('Enable Animations')).toBeDefined();
@@ -160,8 +159,8 @@ describe('SettingsPanel', () => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
 
-    // Navigate to Gallery tab to find switches
-    clickTab('Gallery');
+    // Navigate to Media Gallery tab to find switches
+    clickTab('Media Gallery');
 
     // Toggle "Enable Lightbox" via hidden checkbox input
     const switches = getSwitchInputs();
@@ -196,8 +195,8 @@ describe('SettingsPanel', () => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
 
-    // Navigate to Gallery tab to find switches
-    clickTab('Gallery');
+    // Navigate to Media Gallery tab to find switches
+    clickTab('Media Gallery');
 
     // Toggle "Enable Animations" via hidden checkbox
     const switches = getSwitchInputs();
@@ -224,8 +223,8 @@ describe('SettingsPanel', () => {
       expect(screen.getByText('Display Settings')).toBeDefined();
     });
 
-    // Navigate to Gallery tab to find switches
-    clickTab('Gallery');
+    // Navigate to Media Gallery tab to find switches
+    clickTab('Media Gallery');
 
     // Make a change
     const switches = getSwitchInputs();

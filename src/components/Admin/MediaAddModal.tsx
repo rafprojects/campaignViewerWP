@@ -118,7 +118,7 @@ export function MediaAddModal({
         </Paper>
 
         <Text fw={600}>Add External URL</Text>
-        <Group wrap="wrap" gap="sm">
+        <Stack gap="sm">
           <TextInput
             label="External URL"
             value={externalUrl}
@@ -127,13 +127,15 @@ export function MediaAddModal({
             error={externalError}
             aria-label="External media URL"
           />
-          <Button onClick={onFetchOEmbed} loading={externalLoading} aria-label="Preview external media">
-            Preview
-          </Button>
-          <Button onClick={onAddExternal} disabled={!externalUrl} aria-label="Add external media">
-            Add
-          </Button>
-        </Group>
+          <Group gap="sm">
+            <Button onClick={onFetchOEmbed} loading={externalLoading} aria-label="Preview external media">
+              Preview
+            </Button>
+            <Button onClick={onAddExternal} disabled={!externalUrl} aria-label="Add external media">
+              Add
+            </Button>
+          </Group>
+        </Stack>
 
         {externalPreview && (
           <Card mt="sm">

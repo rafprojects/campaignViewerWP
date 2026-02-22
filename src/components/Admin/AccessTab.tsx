@@ -15,6 +15,7 @@ import {
   ScrollArea,
   SegmentedControl,
   Select,
+  Skeleton,
   Stack,
   Table,
   Text,
@@ -234,7 +235,29 @@ export function AccessTab({
             </Group>
 
             {accessLoading ? (
-              <Center py="md"><Loader /></Center>
+              <Table verticalSpacing="xs" aria-label="Loading access entries" style={{ minWidth: 640 }}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>User</Table.Th>
+                    <Table.Th>Access Type</Table.Th>
+                    <Table.Th>Granted</Table.Th>
+                    <Table.Th w={80}>Revoke</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Table.Tr key={i}>
+                      <Table.Td>
+                        <Skeleton height={14} width="50%" mb={4} />
+                        <Skeleton height={10} width="70%" />
+                      </Table.Td>
+                      <Table.Td><Skeleton height={22} width={80} radius="xl" /></Table.Td>
+                      <Table.Td><Skeleton height={14} width={100} /></Table.Td>
+                      <Table.Td><Skeleton height={28} width={28} circle /></Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
             ) : accessEntriesCount === 0 ? (
               <Text c="dimmed" ta="center" py="md">
                 {accessViewMode === 'campaign'

@@ -227,7 +227,6 @@ Add `wpsg` WP-CLI command set for admin/debug workflows.
 
 ### Campaign Features
 - Campaign templates
-- Campaign scheduling (publish/unpublish dates)
 - Campaign categories/folders
 
 ### Access Control
@@ -239,9 +238,7 @@ Add `wpsg` WP-CLI command set for admin/debug workflows.
 
 ### Performance
 - Image optimization on upload
-- Lazy loading for large galleries
 - Progressive Web App (PWA) support
-- Admin panel loading performance strategy (profile REST calls, cache hot paths, parallelize non-blocking requests)
 
 ### UX Workflow
 - Convert settings panel from full-page shift to non-disruptive loading modal workflow
@@ -268,4 +265,4 @@ When considering future tasks:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: February 19, 2026 — Phase 12 carryover captured; layout-builder epic expanded into actionable backlog tracks*
+*Last updated: February 20, 2026 — Phase 13 tracks promoted (lazy loading, admin perf, campaign scheduling)*

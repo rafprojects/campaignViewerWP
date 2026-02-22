@@ -61,10 +61,11 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
     onSwipeRight: prevImage,
   });
 
-  const standardViewerHeight = useMemo(
-    () => `${Math.max(180, Math.min(900, settings.imageViewportHeight))}px`,
-    [settings.imageViewportHeight],
-  );
+  const standardViewerHeight = useMemo(() => {
+    const base = Math.max(180, Math.min(900, settings.imageViewportHeight));
+    const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    return w < 576 ? `${Math.round(base * 0.55)}px` : w < 768 ? `${Math.round(base * 0.75)}px` : `${base}px`;
+  }, [settings.imageViewportHeight]);
 
   // Imperative CSS transition — runs before browser paint
   useLayoutEffect(() => {

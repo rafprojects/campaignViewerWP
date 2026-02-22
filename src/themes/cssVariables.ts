@@ -55,6 +55,7 @@ export function generateCssVariables(
   vars.push(`${PREFIX}-color-error: ${rc.error};`);
   vars.push(`${PREFIX}-color-info: ${rc.info};`);
   vars.push(`${PREFIX}-color-accent: ${rc.accent};`);
+  vars.push(`${PREFIX}-color-input: ${rc.surface2};`);
 
   // Primary shade array (for advanced usage)
   for (let i = 0; i < rc.primary.length; i++) {

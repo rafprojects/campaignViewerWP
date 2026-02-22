@@ -112,9 +112,9 @@ test('admin actions call REST endpoints', async ({ page }) => {
   });
 
   const openCampaign = async () => {
-    const backToGallery = page.getByRole('button', { name: 'Back to Gallery' });
-    if (await backToGallery.isVisible()) {
-      await backToGallery.click();
+    const closeViewer = page.getByRole('button', { name: 'Close campaign viewer' });
+    if (await closeViewer.isVisible()) {
+      await closeViewer.click();
     }
     await page.getByText('Admin Campaign').click();
   };
