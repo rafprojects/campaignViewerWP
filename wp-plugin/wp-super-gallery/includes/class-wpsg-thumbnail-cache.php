@@ -113,6 +113,12 @@ class WPSG_Thumbnail_Cache {
             return ['cached' => false, 'error' => 'Empty response body'];
         }
 
+        // Enforce maximum download size (default 5 MB).
+        $max_size = intval(apply_filters('wpsg_thumbnail_max_download_size', 5 * 1024 * 1024));
+        if (strlen($body) > $max_size) {
+            return ['cached' => false, 'error' => 'Thumbnail exceeds maximum size of ' . size_format($max_size)];
+        }
+
         // Validate content type is an image.
         $content_type = wp_remote_retrieve_header($response, 'content-type');
         if ($content_type && strpos($content_type, 'image/') !== 0) {
@@ -162,7 +168,8 @@ class WPSG_Thumbnail_Cache {
         }
 
         $entry = $cache_index[$hash];
-        $ttl = intval(get_option(self::TTL_OPTION, self::DEFAULT_TTL));
+        $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
+        $ttl = intval($settings['thumbnail_cache_ttl'] ?? self::DEFAULT_TTL);
         $age = time() - intval($entry['cached_at']);
 
         // Check expiry.
@@ -272,7 +279,10 @@ class WPSG_Thumbnail_Cache {
             'totalSize'  => $total_size,
             'oldest'     => $oldest,
             'newest'     => $newest,
-            'ttl'        => intval(get_option(self::TTL_OPTION, self::DEFAULT_TTL)),
+            'ttl'        => intval(
+                (class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [])['thumbnail_cache_ttl']
+                ?? self::DEFAULT_TTL
+            ),
         ];
     }
 
@@ -309,7 +319,8 @@ class WPSG_Thumbnail_Cache {
      */
     public static function cleanup_expired() {
         $cache_index = get_option('wpsg_thumbnail_cache_index', []);
-        $ttl = intval(get_option(self::TTL_OPTION, self::DEFAULT_TTL));
+        $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
+        $ttl = intval($settings['thumbnail_cache_ttl'] ?? self::DEFAULT_TTL);
         $now = time();
         $changed = false;
 
@@ -362,7 +373,7 @@ class WPSG_Thumbnail_Cache {
         }
 
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         return in_array($ext, $allowed, true) ? $ext : 'jpg';
     }
 }

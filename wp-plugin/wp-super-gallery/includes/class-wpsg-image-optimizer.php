@@ -24,7 +24,7 @@ class WPSG_Image_Optimizer {
     public static function register() {
         // Register custom image sizes for gallery variants.
         add_action('after_setup_theme', [self::class, 'register_image_sizes']);
-        // Hook into attachment upload to optimize.
+        // Hook into attachment upload to optimize (global: all WP uploads when enabled).
         add_filter('wp_handle_upload', [self::class, 'optimize_on_upload'], 10, 2);
         // Add WebP mime type support.
         add_filter('upload_mimes', [self::class, 'add_webp_mime'], 10, 1);
@@ -124,7 +124,7 @@ class WPSG_Image_Optimizer {
             return $resized;
         }
 
-        // Save over original (original preserved in WP backup metadata).
+        // Save over original — may permanently replace source if WP backup metadata is absent.
         $saved = $editor->save($file);
         if (is_wp_error($saved)) {
             return $saved;
@@ -173,12 +173,9 @@ class WPSG_Image_Optimizer {
     /**
      * Get optimization statistics.
      *
-     * @return array{total_optimized: int, total_saved_bytes: int, webp_count: int}
+     * @return array{optimizedCount: int, webpCount: int, totalImages: int}
      */
     public static function get_stats() {
-        $upload_dir = wp_upload_dir();
-        $base_dir = $upload_dir['basedir'];
-
         $webp_count = 0;
         $wpsg_sizes = 0;
 

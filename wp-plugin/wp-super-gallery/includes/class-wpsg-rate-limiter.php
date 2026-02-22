@@ -61,24 +61,46 @@ class WPSG_Rate_Limiter {
     }
 
     /**
-     * Get user's real IP address, accounting for proxies.
+     * Get user's real IP address, accounting for trusted proxies.
+     *
+     * Only honours forwarded headers (X-Forwarded-For, X-Real-IP) when
+     * REMOTE_ADDR is in the trusted-proxies list. This prevents trivial
+     * IP spoofing by untrusted clients.
      *
      * @return string
      */
     public static function get_client_ip() {
-        $headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'];
-        foreach ($headers as $header) {
-            if (!empty($_SERVER[$header])) {
-                $ip = sanitize_text_field(wp_unslash($_SERVER[$header]));
-                // X-Forwarded-For may contain multiple IPs; take the first.
-                if (strpos($ip, ',') !== false) {
-                    $ip = trim(explode(',', $ip)[0]);
-                }
-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
+        $remote_addr = isset($_SERVER['REMOTE_ADDR'])
+            ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']))
+            : '0.0.0.0';
+
+        /**
+         * Filter the list of trusted proxy IPs.
+         *
+         * When REMOTE_ADDR matches an entry, forwarded headers are used
+         * to determine the real client IP.
+         *
+         * @param string[] $proxies Array of trusted proxy IPs.
+         */
+        $trusted_proxies = (array) apply_filters('wpsg_rate_limiter_trusted_proxies', []);
+
+        // Only check forwarded headers when behind a trusted proxy.
+        if (in_array($remote_addr, $trusted_proxies, true)) {
+            $forwarded_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP'];
+            foreach ($forwarded_headers as $header) {
+                if (!empty($_SERVER[$header])) {
+                    $ip = sanitize_text_field(wp_unslash($_SERVER[$header]));
+                    // X-Forwarded-For may contain multiple IPs; take the first.
+                    if (strpos($ip, ',') !== false) {
+                        $ip = trim(explode(',', $ip)[0]);
+                    }
+                    if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                        return $ip;
+                    }
                 }
             }
         }
-        return '0.0.0.0';
+
+        return filter_var($remote_addr, FILTER_VALIDATE_IP) ? $remote_addr : '0.0.0.0';
     }
 }

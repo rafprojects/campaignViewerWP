@@ -3,6 +3,7 @@
  * Plugin Name: WP Super Gallery
  * Description: Embeddable campaign gallery with Shadow DOM rendering.
  * Version: 0.12.0
+ * Requires PHP: 8.0
  * Author: WP Super Gallery
  */
 
