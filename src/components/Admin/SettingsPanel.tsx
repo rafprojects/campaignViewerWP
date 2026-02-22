@@ -23,6 +23,7 @@ import {
   IconSettings,
   IconPhoto,
   IconLayoutGrid,
+  IconAdjustments,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
@@ -39,6 +40,7 @@ import {
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 
 export interface SettingsData extends GalleryBehaviorSettings {
   galleryLayout: 'grid' | 'masonry' | 'carousel';
@@ -47,116 +49,13 @@ export interface SettingsData extends GalleryBehaviorSettings {
   enableAnimations: boolean;
 }
 
+/** Extra SettingsPanel-only defaults that extend GalleryBehaviorSettings */
 const defaultSettings: SettingsData = {
+  ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   galleryLayout: 'grid',
   itemsPerPage: 12,
   enableLightbox: true,
   enableAnimations: true,
-  videoViewportHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight,
-  imageViewportHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight,
-  thumbnailScrollSpeed: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollSpeed,
-  scrollAnimationStyle: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle,
-  scrollAnimationDurationMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs,
-  scrollAnimationEasing: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing,
-  scrollTransitionType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType,
-  imageBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius,
-  videoBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
-  transitionFadeEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
-  // P12-A/B
-  videoThumbnailWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailWidth,
-  videoThumbnailHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailHeight,
-  imageThumbnailWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailWidth,
-  imageThumbnailHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailHeight,
-  thumbnailGap: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap,
-  thumbnailWheelScrollEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailWheelScrollEnabled,
-  thumbnailDragScrollEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailDragScrollEnabled,
-  thumbnailScrollButtonsVisible: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollButtonsVisible,
-  // P12-H
-  navArrowPosition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition,
-  navArrowSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize,
-  navArrowColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowColor,
-  navArrowBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBgColor,
-  navArrowBorderWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBorderWidth,
-  navArrowHoverScale: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowHoverScale,
-  navArrowAutoHideMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs,
-  // P12-I
-  dotNavEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavEnabled,
-  dotNavPosition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavPosition,
-  dotNavSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSize,
-  dotNavActiveColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveColor,
-  dotNavInactiveColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavInactiveColor,
-  dotNavShape: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavShape,
-  dotNavSpacing: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSpacing,
-  dotNavActiveScale: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveScale,
-  // P12-J
-  imageShadowPreset: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset,
-  videoShadowPreset: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset,
-  imageShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
-  videoShadowCustom: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
-  // P12-C
-  imageGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
-  videoGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
-  unifiedGalleryEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryEnabled,
-  unifiedGalleryAdapterId: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryAdapterId,
-  gridCardWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
-  gridCardHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
-  mosaicTargetRowHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight,
-  tileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileSize,
-  tileGapX: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapX,
-  tileGapY: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapY,
-  tileBorderWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth,
-  tileBorderColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderColor,
-  tileGlowEnabled: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowEnabled,
-  tileGlowColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowColor,
-  tileGlowSpread: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread,
-  tileHoverBounce: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce,
-  masonryColumns: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns,
-  // Viewport backgrounds
-  imageBgType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType,
-  imageBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgColor,
-  imageBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgGradient,
-  imageBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgImageUrl,
-  videoBgType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgType,
-  videoBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor,
-  videoBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgGradient,
-  videoBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgImageUrl,
-  unifiedBgType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgType,
-  unifiedBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
-  unifiedBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
-  unifiedBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
-  // P13-A: Campaign Card
-  cardBorderRadius: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderRadius,
-  cardBorderWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderWidth,
-  cardBorderMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderMode,
-  cardBorderColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderColor,
-  cardShadowPreset: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardShadowPreset,
-  cardThumbnailHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailHeight,
-  cardThumbnailFit: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailFit,
-  cardGridColumns: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGridColumns,
-  cardGap: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGap,
-  modalCoverHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalCoverHeight,
-  modalTransition: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransition,
-  modalTransitionDuration: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransitionDuration,
-  modalMaxHeight: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalMaxHeight,
-  // P13-F: Card Gallery Pagination
-  cardDisplayMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardDisplayMode,
-  cardRowsPerPage: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardRowsPerPage,
-  cardPageDotNav: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageDotNav,
-  cardPageTransitionMs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageTransitionMs,
-  // P13-E: Header visibility toggles
-  showGalleryTitle: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGalleryTitle,
-  showGallerySubtitle: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGallerySubtitle,
-  showAccessMode: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
-  showFilterTabs: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
-  showSearchBox: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
-  // P13-E: App width, padding & per-gallery tile sizes
-  appMaxWidth: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
-  appPadding: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding,
-  wpFullBleedDesktop: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedDesktop,
-  wpFullBleedTablet: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedTablet,
-  wpFullBleedMobile: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedMobile,
-  imageTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
-  videoTileSize: DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
 };
 
 interface SettingsPanelProps {
@@ -170,116 +69,11 @@ interface SettingsPanelProps {
 }
 
 const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettings']>>): SettingsData => ({
+  ...mergeSettingsWithDefaults(response as Partial<GalleryBehaviorSettings>),
   galleryLayout: (response.galleryLayout as SettingsData['galleryLayout']) ?? defaultSettings.galleryLayout,
   itemsPerPage: response.itemsPerPage ?? defaultSettings.itemsPerPage,
   enableLightbox: response.enableLightbox ?? defaultSettings.enableLightbox,
   enableAnimations: response.enableAnimations ?? defaultSettings.enableAnimations,
-  videoViewportHeight: response.videoViewportHeight ?? defaultSettings.videoViewportHeight,
-  imageViewportHeight: response.imageViewportHeight ?? defaultSettings.imageViewportHeight,
-  thumbnailScrollSpeed: response.thumbnailScrollSpeed ?? defaultSettings.thumbnailScrollSpeed,
-  scrollAnimationStyle: response.scrollAnimationStyle ?? defaultSettings.scrollAnimationStyle,
-  scrollAnimationDurationMs:
-    response.scrollAnimationDurationMs ?? defaultSettings.scrollAnimationDurationMs,
-  scrollAnimationEasing: response.scrollAnimationEasing ?? defaultSettings.scrollAnimationEasing,
-  scrollTransitionType: response.scrollTransitionType ?? defaultSettings.scrollTransitionType,
-  imageBorderRadius: response.imageBorderRadius ?? defaultSettings.imageBorderRadius,
-  videoBorderRadius: response.videoBorderRadius ?? defaultSettings.videoBorderRadius,
-  transitionFadeEnabled: response.transitionFadeEnabled ?? defaultSettings.transitionFadeEnabled,
-  // P12-A/B
-  videoThumbnailWidth: response.videoThumbnailWidth ?? defaultSettings.videoThumbnailWidth,
-  videoThumbnailHeight: response.videoThumbnailHeight ?? defaultSettings.videoThumbnailHeight,
-  imageThumbnailWidth: response.imageThumbnailWidth ?? defaultSettings.imageThumbnailWidth,
-  imageThumbnailHeight: response.imageThumbnailHeight ?? defaultSettings.imageThumbnailHeight,
-  thumbnailGap: response.thumbnailGap ?? defaultSettings.thumbnailGap,
-  thumbnailWheelScrollEnabled: response.thumbnailWheelScrollEnabled ?? defaultSettings.thumbnailWheelScrollEnabled,
-  thumbnailDragScrollEnabled: response.thumbnailDragScrollEnabled ?? defaultSettings.thumbnailDragScrollEnabled,
-  thumbnailScrollButtonsVisible: response.thumbnailScrollButtonsVisible ?? defaultSettings.thumbnailScrollButtonsVisible,
-  // P12-H
-  navArrowPosition: (response.navArrowPosition as NavArrowPosition) ?? defaultSettings.navArrowPosition,
-  navArrowSize: response.navArrowSize ?? defaultSettings.navArrowSize,
-  navArrowColor: response.navArrowColor ?? defaultSettings.navArrowColor,
-  navArrowBgColor: response.navArrowBgColor ?? defaultSettings.navArrowBgColor,
-  navArrowBorderWidth: response.navArrowBorderWidth ?? defaultSettings.navArrowBorderWidth,
-  navArrowHoverScale: response.navArrowHoverScale ?? defaultSettings.navArrowHoverScale,
-  navArrowAutoHideMs: response.navArrowAutoHideMs ?? defaultSettings.navArrowAutoHideMs,
-  // P12-I
-  dotNavEnabled: response.dotNavEnabled ?? defaultSettings.dotNavEnabled,
-  dotNavPosition: (response.dotNavPosition as DotNavPosition) ?? defaultSettings.dotNavPosition,
-  dotNavSize: response.dotNavSize ?? defaultSettings.dotNavSize,
-  dotNavActiveColor: response.dotNavActiveColor ?? defaultSettings.dotNavActiveColor,
-  dotNavInactiveColor: response.dotNavInactiveColor ?? defaultSettings.dotNavInactiveColor,
-  dotNavShape: (response.dotNavShape as DotNavShape) ?? defaultSettings.dotNavShape,
-  dotNavSpacing: response.dotNavSpacing ?? defaultSettings.dotNavSpacing,
-  dotNavActiveScale: response.dotNavActiveScale ?? defaultSettings.dotNavActiveScale,
-  // P12-J
-  imageShadowPreset: (response.imageShadowPreset as ShadowPreset) ?? defaultSettings.imageShadowPreset,
-  videoShadowPreset: (response.videoShadowPreset as ShadowPreset) ?? defaultSettings.videoShadowPreset,
-  imageShadowCustom: response.imageShadowCustom ?? defaultSettings.imageShadowCustom,
-  videoShadowCustom: response.videoShadowCustom ?? defaultSettings.videoShadowCustom,
-  // P12-C
-  imageGalleryAdapterId: response.imageGalleryAdapterId ?? defaultSettings.imageGalleryAdapterId,
-  videoGalleryAdapterId: response.videoGalleryAdapterId ?? defaultSettings.videoGalleryAdapterId,
-  unifiedGalleryEnabled: response.unifiedGalleryEnabled ?? defaultSettings.unifiedGalleryEnabled,
-  unifiedGalleryAdapterId: response.unifiedGalleryAdapterId ?? defaultSettings.unifiedGalleryAdapterId,
-  gridCardWidth: response.gridCardWidth ?? defaultSettings.gridCardWidth,
-  gridCardHeight: response.gridCardHeight ?? defaultSettings.gridCardHeight,
-  mosaicTargetRowHeight: response.mosaicTargetRowHeight ?? defaultSettings.mosaicTargetRowHeight,
-  tileSize: response.tileSize ?? defaultSettings.tileSize,
-  tileGapX: response.tileGapX ?? defaultSettings.tileGapX,
-  tileGapY: response.tileGapY ?? defaultSettings.tileGapY,
-  tileBorderWidth: response.tileBorderWidth ?? defaultSettings.tileBorderWidth,
-  tileBorderColor: response.tileBorderColor ?? defaultSettings.tileBorderColor,
-  tileGlowEnabled: response.tileGlowEnabled ?? defaultSettings.tileGlowEnabled,
-  tileGlowColor: response.tileGlowColor ?? defaultSettings.tileGlowColor,
-  tileGlowSpread: response.tileGlowSpread ?? defaultSettings.tileGlowSpread,
-  tileHoverBounce: response.tileHoverBounce ?? defaultSettings.tileHoverBounce,
-  masonryColumns: response.masonryColumns ?? defaultSettings.masonryColumns,
-  // Viewport backgrounds
-  imageBgType: (response.imageBgType as ViewportBgType) ?? defaultSettings.imageBgType,
-  imageBgColor: response.imageBgColor ?? defaultSettings.imageBgColor,
-  imageBgGradient: response.imageBgGradient ?? defaultSettings.imageBgGradient,
-  imageBgImageUrl: response.imageBgImageUrl ?? defaultSettings.imageBgImageUrl,
-  videoBgType: (response.videoBgType as ViewportBgType) ?? defaultSettings.videoBgType,
-  videoBgColor: response.videoBgColor ?? defaultSettings.videoBgColor,
-  videoBgGradient: response.videoBgGradient ?? defaultSettings.videoBgGradient,
-  videoBgImageUrl: response.videoBgImageUrl ?? defaultSettings.videoBgImageUrl,
-  unifiedBgType: (response.unifiedBgType as ViewportBgType) ?? defaultSettings.unifiedBgType,
-  unifiedBgColor: response.unifiedBgColor ?? defaultSettings.unifiedBgColor,
-  unifiedBgGradient: response.unifiedBgGradient ?? defaultSettings.unifiedBgGradient,
-  unifiedBgImageUrl: response.unifiedBgImageUrl ?? defaultSettings.unifiedBgImageUrl,
-  // P13-A: Campaign Card
-  cardBorderRadius: response.cardBorderRadius ?? defaultSettings.cardBorderRadius,
-  cardBorderWidth: response.cardBorderWidth ?? defaultSettings.cardBorderWidth,
-  cardBorderMode: (response.cardBorderMode ?? defaultSettings.cardBorderMode) as GalleryBehaviorSettings['cardBorderMode'],
-  cardBorderColor: response.cardBorderColor ?? defaultSettings.cardBorderColor,
-  cardShadowPreset: response.cardShadowPreset ?? defaultSettings.cardShadowPreset,
-  cardThumbnailHeight: response.cardThumbnailHeight ?? defaultSettings.cardThumbnailHeight,
-  cardThumbnailFit: response.cardThumbnailFit ?? defaultSettings.cardThumbnailFit,
-  cardGridColumns: response.cardGridColumns ?? defaultSettings.cardGridColumns,
-  cardGap: response.cardGap ?? defaultSettings.cardGap,
-  modalCoverHeight: response.modalCoverHeight ?? defaultSettings.modalCoverHeight,
-  modalTransition: response.modalTransition ?? defaultSettings.modalTransition,
-  modalTransitionDuration: response.modalTransitionDuration ?? defaultSettings.modalTransitionDuration,
-  modalMaxHeight: response.modalMaxHeight ?? defaultSettings.modalMaxHeight,
-  // P13-F: Card Gallery Pagination
-  cardDisplayMode: (response.cardDisplayMode ?? defaultSettings.cardDisplayMode) as GalleryBehaviorSettings['cardDisplayMode'],
-  cardRowsPerPage: response.cardRowsPerPage ?? defaultSettings.cardRowsPerPage,
-  cardPageDotNav: response.cardPageDotNav ?? defaultSettings.cardPageDotNav,
-  cardPageTransitionMs: response.cardPageTransitionMs ?? defaultSettings.cardPageTransitionMs,
-  // P13-E: Header visibility toggles
-  showGalleryTitle: response.showGalleryTitle ?? defaultSettings.showGalleryTitle,
-  showGallerySubtitle: response.showGallerySubtitle ?? defaultSettings.showGallerySubtitle,
-  showAccessMode: response.showAccessMode ?? defaultSettings.showAccessMode,
-  showFilterTabs: response.showFilterTabs ?? defaultSettings.showFilterTabs,
-  showSearchBox: response.showSearchBox ?? defaultSettings.showSearchBox,
-  // P13-E: App width, padding & per-gallery tile sizes
-  appMaxWidth: response.appMaxWidth ?? defaultSettings.appMaxWidth,
-  appPadding: response.appPadding ?? defaultSettings.appPadding,
-  wpFullBleedDesktop: response.wpFullBleedDesktop ?? defaultSettings.wpFullBleedDesktop,
-  wpFullBleedTablet: response.wpFullBleedTablet ?? defaultSettings.wpFullBleedTablet,
-  wpFullBleedMobile: response.wpFullBleedMobile ?? defaultSettings.wpFullBleedMobile,
-  imageTileSize: response.imageTileSize ?? defaultSettings.imageTileSize,
-  videoTileSize: response.videoTileSize ?? defaultSettings.videoTileSize,
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
@@ -384,6 +178,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               <Tabs.Tab value="gallery" leftSection={<IconPhoto size={16} />}>
                 Media Gallery
               </Tabs.Tab>
+              {settings.advancedSettingsEnabled && (
+                <Tabs.Tab value="advanced" leftSection={<IconAdjustments size={16} />}>
+                  Advanced
+                </Tabs.Tab>
+              )}
             </Tabs.List>
 
             {/* ── General Tab ───────────────────────────────────── */}
@@ -495,6 +294,15 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   description="Show the campaign search input."
                   checked={settings.showSearchBox}
                   onChange={(e) => updateSetting('showSearchBox', e.currentTarget.checked)}
+                />
+
+                <Divider label="Developer" labelPosition="center" />
+
+                <Switch
+                  label="Enable Advanced Settings"
+                  description="Unlock the Advanced tab with granular control over card opacities, tile dimensions, lightbox behavior, breakpoints, and more."
+                  checked={settings.advancedSettingsEnabled}
+                  onChange={(e) => updateSetting('advancedSettingsEnabled', e.currentTarget.checked)}
                 />
               </Stack>
             </Tabs.Panel>
@@ -1572,6 +1380,283 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 </Accordion.Item>
               </Accordion>
             </Tabs.Panel>
+
+            {/* ── Advanced Tab (only visible when toggle is on) ─── */}
+            {settings.advancedSettingsEnabled && (
+              <Tabs.Panel value="advanced" pt="md">
+                <Text size="sm" c="dimmed" mb="md">
+                  Fine-grained controls for power users. These settings override internal defaults
+                  across all gallery components. Change with care.
+                </Text>
+                <Accordion variant="separated">
+                  {/* ── Card Appearance (advanced) ── */}
+                  <Accordion.Item value="adv-card">
+                    <Accordion.Control>Card Appearance</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <Text size="sm" fw={500}>Locked Card Opacity</Text>
+                        <Slider
+                          value={settings.cardLockedOpacity}
+                          onChange={(v) => updateSetting('cardLockedOpacity', v)}
+                          min={0} max={1} step={0.05}
+                          marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
+                        />
+                        <Text size="sm" fw={500}>Gradient Start Opacity</Text>
+                        <Slider
+                          value={settings.cardGradientStartOpacity}
+                          onChange={(v) => updateSetting('cardGradientStartOpacity', v)}
+                          min={0} max={1} step={0.05}
+                        />
+                        <Text size="sm" fw={500}>Gradient End Opacity</Text>
+                        <Slider
+                          value={settings.cardGradientEndOpacity}
+                          onChange={(v) => updateSetting('cardGradientEndOpacity', v)}
+                          min={0} max={1} step={0.05}
+                        />
+                        <NumberInput label="Lock Icon Size (px)" value={settings.cardLockIconSize}
+                          onChange={(v) => updateSetting('cardLockIconSize', typeof v === 'number' ? v : 32)} min={12} max={64} />
+                        <NumberInput label="Access Icon Size (px)" value={settings.cardAccessIconSize}
+                          onChange={(v) => updateSetting('cardAccessIconSize', typeof v === 'number' ? v : 14)} min={8} max={32} />
+                        <NumberInput label="Badge Offset Y (px)" value={settings.cardBadgeOffsetY}
+                          onChange={(v) => updateSetting('cardBadgeOffsetY', typeof v === 'number' ? v : 8)} min={0} max={32} />
+                        <NumberInput label="Company Badge Max Width (px)" value={settings.cardCompanyBadgeMaxWidth}
+                          onChange={(v) => updateSetting('cardCompanyBadgeMaxWidth', typeof v === 'number' ? v : 160)} min={60} max={400} />
+                        <NumberInput label="Thumbnail Hover Transition (ms)" value={settings.cardThumbnailHoverTransitionMs}
+                          onChange={(v) => updateSetting('cardThumbnailHoverTransitionMs', typeof v === 'number' ? v : 300)} min={0} max={1000} />
+                        <Text size="sm" fw={500}>Page Transition Opacity</Text>
+                        <Slider
+                          value={settings.cardPageTransitionOpacity}
+                          onChange={(v) => updateSetting('cardPageTransitionOpacity', v)}
+                          min={0} max={1} step={0.05}
+                        />
+                        <TextInput label="Auto Columns Breakpoints" description="Format: 480:1,768:2,1024:3,1280:4"
+                          value={settings.cardAutoColumnsBreakpoints}
+                          onChange={(e) => updateSetting('cardAutoColumnsBreakpoints', e.currentTarget.value)} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* ── Gallery Text (advanced) ── */}
+                  <Accordion.Item value="adv-text">
+                    <Accordion.Control>Gallery Text</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <TextInput label="Gallery Title" description="Main heading text shown above the gallery."
+                          value={settings.galleryTitleText}
+                          onChange={(e) => updateSetting('galleryTitleText', e.currentTarget.value)} />
+                        <TextInput label="Gallery Subtitle" description="Subtitle text shown beneath the title."
+                          value={settings.gallerySubtitleText}
+                          onChange={(e) => updateSetting('gallerySubtitleText', e.currentTarget.value)} />
+                        <TextInput label="Campaign About Heading" description='Heading for the campaign description section (default "About").'
+                          value={settings.campaignAboutHeadingText}
+                          onChange={(e) => updateSetting('campaignAboutHeadingText', e.currentTarget.value)} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* ── Modal / Viewer (advanced) ── */}
+                  <Accordion.Item value="adv-modal">
+                    <Accordion.Control>Modal / Viewer</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <Text size="sm" fw={500}>Cover Mobile Ratio</Text>
+                        <Slider value={settings.modalCoverMobileRatio} onChange={(v) => updateSetting('modalCoverMobileRatio', v)}
+                          min={0.2} max={1} step={0.05} />
+                        <Text size="sm" fw={500}>Cover Tablet Ratio</Text>
+                        <Slider value={settings.modalCoverTabletRatio} onChange={(v) => updateSetting('modalCoverTabletRatio', v)}
+                          min={0.2} max={1} step={0.05} />
+                        <NumberInput label="Close Button Size (px)" value={settings.modalCloseButtonSize}
+                          onChange={(v) => updateSetting('modalCloseButtonSize', typeof v === 'number' ? v : 36)} min={20} max={64} />
+                        <TextInput label="Close Button Background" value={settings.modalCloseButtonBgColor}
+                          onChange={(e) => updateSetting('modalCloseButtonBgColor', e.currentTarget.value)} />
+                        <NumberInput label="Content Max Width (px)" value={settings.modalContentMaxWidth}
+                          onChange={(v) => updateSetting('modalContentMaxWidth', typeof v === 'number' ? v : 900)} min={400} max={2000} />
+                        <Text size="sm" fw={500}>Description Line Height</Text>
+                        <Slider value={settings.campaignDescriptionLineHeight}
+                          onChange={(v) => updateSetting('campaignDescriptionLineHeight', v)}
+                          min={1} max={3} step={0.1} />
+                        <NumberInput label="Mobile Breakpoint (px)" value={settings.modalMobileBreakpoint}
+                          onChange={(v) => updateSetting('modalMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* ── Upload / Media (advanced) ── */}
+                  <Accordion.Item value="adv-upload">
+                    <Accordion.Control>Upload / Media</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <NumberInput label="Upload Max Size (MB)" value={settings.uploadMaxSizeMb}
+                          onChange={(v) => updateSetting('uploadMaxSizeMb', typeof v === 'number' ? v : 50)} min={1} max={500} />
+                        <TextInput label="Allowed Upload Types" description="Comma-separated MIME patterns (e.g. image/*,video/*)"
+                          value={settings.uploadAllowedTypes}
+                          onChange={(e) => updateSetting('uploadAllowedTypes', e.currentTarget.value)} />
+                        <NumberInput label="Library Page Size" value={settings.libraryPageSize}
+                          onChange={(v) => updateSetting('libraryPageSize', typeof v === 'number' ? v : 20)} min={5} max={100} />
+                        <NumberInput label="Media List Page Size" value={settings.mediaListPageSize}
+                          onChange={(v) => updateSetting('mediaListPageSize', typeof v === 'number' ? v : 50)} min={10} max={200} />
+                        <NumberInput label="Compact Card Height (px)" value={settings.mediaCompactCardHeight}
+                          onChange={(v) => updateSetting('mediaCompactCardHeight', typeof v === 'number' ? v : 100)} min={40} max={300} />
+                        <NumberInput label="Small Card Height (px)" value={settings.mediaSmallCardHeight}
+                          onChange={(v) => updateSetting('mediaSmallCardHeight', typeof v === 'number' ? v : 80)} min={40} max={300} />
+                        <NumberInput label="Medium Card Height (px)" value={settings.mediaMediumCardHeight}
+                          onChange={(v) => updateSetting('mediaMediumCardHeight', typeof v === 'number' ? v : 240)} min={100} max={600} />
+                        <NumberInput label="Large Card Height (px)" value={settings.mediaLargeCardHeight}
+                          onChange={(v) => updateSetting('mediaLargeCardHeight', typeof v === 'number' ? v : 340)} min={100} max={800} />
+                        <NumberInput label="Media List Min Width (px)" value={settings.mediaListMinWidth}
+                          onChange={(v) => updateSetting('mediaListMinWidth', typeof v === 'number' ? v : 600)} min={300} max={1200} />
+                        <NumberInput label="SWR Deduping Interval (ms)" value={settings.swrDedupingIntervalMs}
+                          onChange={(v) => updateSetting('swrDedupingIntervalMs', typeof v === 'number' ? v : 5000)} min={0} max={30000} />
+                        <NumberInput label="Notification Dismiss (ms)" value={settings.notificationDismissMs}
+                          onChange={(v) => updateSetting('notificationDismissMs', typeof v === 'number' ? v : 4000)} min={1000} max={30000} />
+                        <Divider label="Image Optimization" labelPosition="center" />
+                        <Switch label="Optimize on Upload" description="Automatically resize and compress images on upload."
+                          checked={settings.optimizeOnUpload}
+                          onChange={(e) => updateSetting('optimizeOnUpload', e.currentTarget.checked)} />
+                        <NumberInput label="Max Width (px)" value={settings.optimizeMaxWidth}
+                          onChange={(v) => updateSetting('optimizeMaxWidth', typeof v === 'number' ? v : 1920)} min={100} max={4096} />
+                        <NumberInput label="Max Height (px)" value={settings.optimizeMaxHeight}
+                          onChange={(v) => updateSetting('optimizeMaxHeight', typeof v === 'number' ? v : 1920)} min={100} max={4096} />
+                        <NumberInput label="Quality (%)" value={settings.optimizeQuality}
+                          onChange={(v) => updateSetting('optimizeQuality', typeof v === 'number' ? v : 82)} min={10} max={100} />
+                        <Switch label="WebP Conversion" description="Generate WebP copies alongside originals."
+                          checked={settings.optimizeWebpEnabled}
+                          onChange={(e) => updateSetting('optimizeWebpEnabled', e.currentTarget.checked)} />
+                        <NumberInput label="Thumbnail Cache TTL (s)" description="How long cached external thumbnails are kept (seconds)."
+                          value={settings.thumbnailCacheTtl}
+                          onChange={(v) => updateSetting('thumbnailCacheTtl', typeof v === 'number' ? v : 86400)} min={0} max={604800} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* ── Tile / Adapter (advanced) ── */}
+                  <Accordion.Item value="adv-tile">
+                    <Accordion.Control>Tile / Adapter</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <Text size="sm" fw={500}>Hover Overlay Opacity</Text>
+                        <Slider value={settings.tileHoverOverlayOpacity} onChange={(v) => updateSetting('tileHoverOverlayOpacity', v)}
+                          min={0} max={1} step={0.05} />
+                        <Text size="sm" fw={500}>Bounce Scale (Hover)</Text>
+                        <Slider value={settings.tileBounceScaleHover} onChange={(v) => updateSetting('tileBounceScaleHover', v)}
+                          min={1} max={1.3} step={0.01} />
+                        <Text size="sm" fw={500}>Bounce Scale (Active)</Text>
+                        <Slider value={settings.tileBounceScaleActive} onChange={(v) => updateSetting('tileBounceScaleActive', v)}
+                          min={0.9} max={1.1} step={0.01} />
+                        <NumberInput label="Bounce Duration (ms)" value={settings.tileBounceDurationMs}
+                          onChange={(v) => updateSetting('tileBounceDurationMs', typeof v === 'number' ? v : 300)} min={0} max={1000} />
+                        <NumberInput label="Base Transition Duration (ms)" value={settings.tileBaseTransitionDurationMs}
+                          onChange={(v) => updateSetting('tileBaseTransitionDurationMs', typeof v === 'number' ? v : 250)} min={0} max={1000} />
+                        <NumberInput label="Tile Transition Duration (ms)" value={settings.tileTransitionDurationMs}
+                          onChange={(v) => updateSetting('tileTransitionDurationMs', typeof v === 'number' ? v : 200)} min={0} max={1000} />
+                        <Text size="sm" fw={500}>Hex Vertical Overlap Ratio</Text>
+                        <Slider value={settings.hexVerticalOverlapRatio} onChange={(v) => updateSetting('hexVerticalOverlapRatio', v)}
+                          min={0} max={0.5} step={0.01} />
+                        <Text size="sm" fw={500}>Diamond Vertical Overlap Ratio</Text>
+                        <Slider value={settings.diamondVerticalOverlapRatio} onChange={(v) => updateSetting('diamondVerticalOverlapRatio', v)}
+                          min={0} max={0.5} step={0.01} />
+                        <TextInput label="Hex Clip Path" value={settings.hexClipPath}
+                          onChange={(e) => updateSetting('hexClipPath', e.currentTarget.value)} />
+                        <TextInput label="Diamond Clip Path" value={settings.diamondClipPath}
+                          onChange={(e) => updateSetting('diamondClipPath', e.currentTarget.value)} />
+                        <NumberInput label="Default Per Row" value={settings.tileDefaultPerRow}
+                          onChange={(v) => updateSetting('tileDefaultPerRow', typeof v === 'number' ? v : 5)} min={1} max={12} />
+                        <NumberInput label="Photo Normalize Height (px)" value={settings.photoNormalizeHeight}
+                          onChange={(v) => updateSetting('photoNormalizeHeight', typeof v === 'number' ? v : 300)} min={100} max={800} />
+                        <TextInput label="Masonry Auto Column Breakpoints" description="Format: 480:2,768:3,1024:4,1280:5"
+                          value={settings.masonryAutoColumnBreakpoints}
+                          onChange={(e) => updateSetting('masonryAutoColumnBreakpoints', e.currentTarget.value)} />
+                        <TextInput label="Grid Card Hover Shadow" value={settings.gridCardHoverShadow}
+                          onChange={(e) => updateSetting('gridCardHoverShadow', e.currentTarget.value)} />
+                        <TextInput label="Grid Card Default Shadow" value={settings.gridCardDefaultShadow}
+                          onChange={(e) => updateSetting('gridCardDefaultShadow', e.currentTarget.value)} />
+                        <Text size="sm" fw={500}>Grid Card Hover Scale</Text>
+                        <Slider value={settings.gridCardHoverScale} onChange={(v) => updateSetting('gridCardHoverScale', v)}
+                          min={1} max={1.2} step={0.01} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* ── Lightbox (advanced) ── */}
+                  <Accordion.Item value="adv-lightbox">
+                    <Accordion.Control>Lightbox</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <NumberInput label="Transition Duration (ms)" value={settings.lightboxTransitionMs}
+                          onChange={(v) => updateSetting('lightboxTransitionMs', typeof v === 'number' ? v : 250)} min={0} max={1000} />
+                        <TextInput label="Backdrop Color" value={settings.lightboxBackdropColor}
+                          onChange={(e) => updateSetting('lightboxBackdropColor', e.currentTarget.value)} />
+                        <Text size="sm" fw={500}>Entry Scale</Text>
+                        <Slider value={settings.lightboxEntryScale} onChange={(v) => updateSetting('lightboxEntryScale', v)}
+                          min={0.5} max={1} step={0.01} />
+                        <NumberInput label="Video Max Width (px)" value={settings.lightboxVideoMaxWidth}
+                          onChange={(v) => updateSetting('lightboxVideoMaxWidth', typeof v === 'number' ? v : 900)} min={300} max={1920} />
+                        <NumberInput label="Video Height (px)" value={settings.lightboxVideoHeight}
+                          onChange={(v) => updateSetting('lightboxVideoHeight', typeof v === 'number' ? v : 506)} min={200} max={1080} />
+                        <TextInput label="Media Max Height" description="CSS value, e.g. 85vh"
+                          value={settings.lightboxMediaMaxHeight}
+                          onChange={(e) => updateSetting('lightboxMediaMaxHeight', e.currentTarget.value)} />
+                        <NumberInput label="Z-Index" value={settings.lightboxZIndex}
+                          onChange={(v) => updateSetting('lightboxZIndex', typeof v === 'number' ? v : 1000)} min={1} max={10000} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* ── Navigation (advanced) ── */}
+                  <Accordion.Item value="adv-nav">
+                    <Accordion.Control>Navigation</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <NumberInput label="Max Visible Dots" value={settings.dotNavMaxVisibleDots}
+                          onChange={(v) => updateSetting('dotNavMaxVisibleDots', typeof v === 'number' ? v : 7)} min={3} max={20} />
+                        <NumberInput label="Arrow Edge Inset (px)" value={settings.navArrowEdgeInset}
+                          onChange={(v) => updateSetting('navArrowEdgeInset', typeof v === 'number' ? v : 8)} min={0} max={48} />
+                        <NumberInput label="Arrow Min Hit Target (px)" value={settings.navArrowMinHitTarget}
+                          onChange={(v) => updateSetting('navArrowMinHitTarget', typeof v === 'number' ? v : 44)} min={24} max={80} />
+                        <NumberInput label="Arrow Fade Duration (ms)" value={settings.navArrowFadeDurationMs}
+                          onChange={(v) => updateSetting('navArrowFadeDurationMs', typeof v === 'number' ? v : 200)} min={0} max={1000} />
+                        <NumberInput label="Arrow Scale Transition (ms)" value={settings.navArrowScaleTransitionMs}
+                          onChange={(v) => updateSetting('navArrowScaleTransitionMs', typeof v === 'number' ? v : 150)} min={0} max={1000} />
+                        <Text size="sm" fw={500}>Viewport Height Mobile Ratio</Text>
+                        <Slider value={settings.viewportHeightMobileRatio}
+                          onChange={(v) => updateSetting('viewportHeightMobileRatio', v)}
+                          min={0.3} max={1} step={0.05} />
+                        <Text size="sm" fw={500}>Viewport Height Tablet Ratio</Text>
+                        <Slider value={settings.viewportHeightTabletRatio}
+                          onChange={(v) => updateSetting('viewportHeightTabletRatio', v)}
+                          min={0.3} max={1} step={0.05} />
+                        <NumberInput label="Search Input Min Width (px)" value={settings.searchInputMinWidth}
+                          onChange={(v) => updateSetting('searchInputMinWidth', typeof v === 'number' ? v : 200)} min={100} max={400} />
+                        <NumberInput label="Search Input Max Width (px)" value={settings.searchInputMaxWidth}
+                          onChange={(v) => updateSetting('searchInputMaxWidth', typeof v === 'number' ? v : 280)} min={150} max={600} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* ── System (advanced) ── */}
+                  <Accordion.Item value="adv-system">
+                    <Accordion.Control>System</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <NumberInput label="Expiry Warning Threshold (ms)" description="How early to show token-expiry warnings."
+                          value={settings.expiryWarningThresholdMs}
+                          onChange={(v) => updateSetting('expiryWarningThresholdMs', typeof v === 'number' ? v : 300000)} min={0} max={600000} />
+                        <NumberInput label="Admin Search Debounce (ms)" value={settings.adminSearchDebounceMs}
+                          onChange={(v) => updateSetting('adminSearchDebounceMs', typeof v === 'number' ? v : 300)} min={0} max={2000} />
+                        <NumberInput label="Min Password Length" value={settings.loginMinPasswordLength}
+                          onChange={(v) => updateSetting('loginMinPasswordLength', typeof v === 'number' ? v : 1)} min={1} max={32} />
+                        <NumberInput label="Login Form Max Width (px)" value={settings.loginFormMaxWidth}
+                          onChange={(v) => updateSetting('loginFormMaxWidth', typeof v === 'number' ? v : 400)} min={200} max={800} />
+                        <NumberInput label="Auth Bar Backdrop Blur (px)" value={settings.authBarBackdropBlur}
+                          onChange={(v) => updateSetting('authBarBackdropBlur', typeof v === 'number' ? v : 8)} min={0} max={24} />
+                        <NumberInput label="Auth Bar Mobile Breakpoint (px)" value={settings.authBarMobileBreakpoint}
+                          onChange={(v) => updateSetting('authBarMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              </Tabs.Panel>
+            )}
           </Tabs>
 
           {/* ── Footer (sticky) ─────────────────────────────── */}

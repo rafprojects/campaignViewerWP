@@ -25,6 +25,25 @@ class WPSG_CPT {
             'hierarchical' => false,
         ]);
 
+        // P14-G: Campaign tags (non-hierarchical, like WordPress post tags).
+        register_taxonomy('wpsg_campaign_tag', self::POST_TYPE, [
+            'label' => 'Campaign Tags',
+            'public' => false,
+            'show_ui' => true,
+            'show_in_rest' => true,
+            'hierarchical' => false,
+            'show_admin_column' => true,
+        ]);
+
+        // P14-G: Media tags (attached to attachments for cross-campaign organization).
+        register_taxonomy('wpsg_media_tag', 'attachment', [
+            'label' => 'Media Tags',
+            'public' => false,
+            'show_ui' => true,
+            'show_in_rest' => true,
+            'hierarchical' => false,
+        ]);
+
         register_post_meta(self::POST_TYPE, 'visibility', [
             'type' => 'string',
             'single' => true,

@@ -13,11 +13,12 @@ import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient, ApiError } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem, UploadResponse, GalleryBehaviorSettings, ViewportBgType } from './types';
+import type { Campaign, Company, MediaItem, UploadResponse, GalleryBehaviorSettings } from './types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { getErrorMessage } from './utils/getErrorMessage';
+import { mergeSettingsWithDefaults } from './utils/mergeSettingsWithDefaults';
 import { sortByOrder } from './utils/sortByOrder';
 import { useXhrUpload } from './hooks/useXhrUpload';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -242,159 +243,7 @@ function AppContent({
 
   const fetchGalleryBehaviorSettings = useCallback(async () => {
     const response = await apiClient.getSettings();
-    const resolved = {
-      videoViewportHeight:
-        response.videoViewportHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight,
-      imageViewportHeight:
-        response.imageViewportHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight,
-      thumbnailScrollSpeed:
-        response.thumbnailScrollSpeed ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollSpeed,
-      scrollAnimationStyle:
-        response.scrollAnimationStyle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle,
-      scrollAnimationDurationMs:
-        response.scrollAnimationDurationMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs,
-      scrollAnimationEasing:
-        response.scrollAnimationEasing ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing,
-      scrollTransitionType:
-        response.scrollTransitionType ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType,
-      imageBorderRadius:
-        response.imageBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius,
-      videoBorderRadius:
-        response.videoBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius,
-      transitionFadeEnabled:
-        response.transitionFadeEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.transitionFadeEnabled,
-      // P12-A/B
-      videoThumbnailWidth:
-        response.videoThumbnailWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailWidth,
-      videoThumbnailHeight:
-        response.videoThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailHeight,
-      imageThumbnailWidth:
-        response.imageThumbnailWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailWidth,
-      imageThumbnailHeight:
-        response.imageThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailHeight,
-      thumbnailGap:
-        response.thumbnailGap ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap,
-      thumbnailWheelScrollEnabled:
-        response.thumbnailWheelScrollEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailWheelScrollEnabled,
-      thumbnailDragScrollEnabled:
-        response.thumbnailDragScrollEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailDragScrollEnabled,
-      thumbnailScrollButtonsVisible:
-        response.thumbnailScrollButtonsVisible ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollButtonsVisible,
-      // P12-H
-      navArrowPosition:
-        response.navArrowPosition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition,
-      navArrowSize:
-        response.navArrowSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize,
-      navArrowColor:
-        response.navArrowColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowColor,
-      navArrowBgColor:
-        response.navArrowBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBgColor,
-      navArrowBorderWidth:
-        response.navArrowBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBorderWidth,
-      navArrowHoverScale:
-        response.navArrowHoverScale ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowHoverScale,
-      navArrowAutoHideMs:
-        response.navArrowAutoHideMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs,
-      // P12-I
-      dotNavEnabled:
-        response.dotNavEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavEnabled,
-      dotNavPosition:
-        response.dotNavPosition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavPosition,
-      dotNavSize:
-        response.dotNavSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSize,
-      dotNavActiveColor:
-        response.dotNavActiveColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveColor,
-      dotNavInactiveColor:
-        response.dotNavInactiveColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavInactiveColor,
-      dotNavShape:
-        response.dotNavShape ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavShape,
-      dotNavSpacing:
-        response.dotNavSpacing ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSpacing,
-      dotNavActiveScale:
-        response.dotNavActiveScale ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavActiveScale,
-      // P12-J
-      imageShadowPreset:
-        response.imageShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset,
-      videoShadowPreset:
-        response.videoShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset,
-      imageShadowCustom:
-        response.imageShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowCustom,
-      videoShadowCustom:
-        response.videoShadowCustom ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom,
-      // P12-C
-      imageGalleryAdapterId:
-        response.imageGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageGalleryAdapterId,
-      videoGalleryAdapterId:
-        response.videoGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoGalleryAdapterId,
-      unifiedGalleryEnabled:
-        response.unifiedGalleryEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryEnabled,
-      unifiedGalleryAdapterId:
-        response.unifiedGalleryAdapterId ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedGalleryAdapterId,
-      gridCardWidth:
-        response.gridCardWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth,
-      gridCardHeight:
-        response.gridCardHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight,
-      mosaicTargetRowHeight:
-        response.mosaicTargetRowHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight,
-      tileSize: response.tileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileSize,
-      tileGapX: response.tileGapX ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapX,
-      tileGapY: response.tileGapY ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapY,
-      tileBorderWidth: response.tileBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth,
-      tileBorderColor: response.tileBorderColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderColor,
-      tileGlowEnabled: response.tileGlowEnabled ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowEnabled,
-      tileGlowColor: response.tileGlowColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowColor,
-      tileGlowSpread: response.tileGlowSpread ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread,
-      tileHoverBounce: response.tileHoverBounce ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce,
-      masonryColumns: response.masonryColumns ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns,
-      // Viewport backgrounds
-      imageBgType: (response.imageBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType,
-      imageBgColor: response.imageBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgColor,
-      imageBgGradient: response.imageBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgGradient,
-      imageBgImageUrl: response.imageBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgImageUrl,
-      videoBgType: (response.videoBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgType,
-      videoBgColor: response.videoBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor,
-      videoBgGradient: response.videoBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgGradient,
-      videoBgImageUrl: response.videoBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgImageUrl,
-      unifiedBgType: (response.unifiedBgType as ViewportBgType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgType,
-      unifiedBgColor: response.unifiedBgColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgColor,
-      unifiedBgGradient: response.unifiedBgGradient ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient,
-      unifiedBgImageUrl: response.unifiedBgImageUrl ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgImageUrl,
-      // P13-A: Campaign Card
-      cardBorderRadius: response.cardBorderRadius ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderRadius,
-      cardBorderWidth: response.cardBorderWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderWidth,
-      cardBorderMode: (response.cardBorderMode as GalleryBehaviorSettings['cardBorderMode']) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderMode,
-      cardBorderColor: response.cardBorderColor ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderColor,
-      cardShadowPreset: response.cardShadowPreset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardShadowPreset,
-      cardThumbnailHeight: response.cardThumbnailHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailHeight,
-      cardThumbnailFit: response.cardThumbnailFit ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailFit,
-      cardGridColumns: response.cardGridColumns ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGridColumns,
-      cardGap: response.cardGap ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardGap,
-      modalCoverHeight: response.modalCoverHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalCoverHeight,
-      modalTransition: response.modalTransition ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransition,
-      modalTransitionDuration: response.modalTransitionDuration ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalTransitionDuration,
-      modalMaxHeight: response.modalMaxHeight ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.modalMaxHeight,
-      // P13-F: Card Gallery Pagination
-      cardDisplayMode: (response.cardDisplayMode as GalleryBehaviorSettings['cardDisplayMode']) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardDisplayMode,
-      cardRowsPerPage: response.cardRowsPerPage ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardRowsPerPage,
-      cardPageDotNav: response.cardPageDotNav ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageDotNav,
-      cardPageTransitionMs: response.cardPageTransitionMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardPageTransitionMs,
-      // P13-E: Header visibility toggles
-      showGalleryTitle: response.showGalleryTitle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGalleryTitle,
-      showGallerySubtitle: response.showGallerySubtitle ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGallerySubtitle,
-      showAccessMode: response.showAccessMode ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showAccessMode,
-      showFilterTabs: response.showFilterTabs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showFilterTabs,
-      showSearchBox: response.showSearchBox ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showSearchBox,
-      // P13-E: App width, padding & per-gallery tile sizes
-      appMaxWidth: response.appMaxWidth ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth,
-      appPadding: response.appPadding ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding,
-      wpFullBleedDesktop: response.wpFullBleedDesktop ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedDesktop,
-      wpFullBleedTablet: response.wpFullBleedTablet ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedTablet,
-      wpFullBleedMobile: response.wpFullBleedMobile ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.wpFullBleedMobile,
-      imageTileSize: response.imageTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize,
-      videoTileSize: response.videoTileSize ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize,
-    } as GalleryBehaviorSettings;
-
-    return resolved;
+    return mergeSettingsWithDefaults(response as Partial<GalleryBehaviorSettings>);
   }, [apiClient]);
 
   const { data: galleryBehaviorSettings, mutate: mutateGalleryBehaviorSettings } = useSWR<GalleryBehaviorSettings>(
@@ -816,112 +665,7 @@ function AppContent({
               initialSettings={galleryBehaviorSettings}
               onSettingsSaved={(saved) => {
                 void mutateGalleryBehaviorSettings(
-                  {
-                    videoViewportHeight: saved.videoViewportHeight,
-                    imageViewportHeight: saved.imageViewportHeight,
-                    thumbnailScrollSpeed: saved.thumbnailScrollSpeed,
-                    scrollAnimationStyle: saved.scrollAnimationStyle,
-                    scrollAnimationDurationMs: saved.scrollAnimationDurationMs,
-                    scrollAnimationEasing: saved.scrollAnimationEasing,
-                    scrollTransitionType: saved.scrollTransitionType,
-                    imageBorderRadius: saved.imageBorderRadius,
-                    videoBorderRadius: saved.videoBorderRadius,
-                    transitionFadeEnabled: saved.transitionFadeEnabled,
-                    // P12-A/B
-                    videoThumbnailWidth: saved.videoThumbnailWidth,
-                    videoThumbnailHeight: saved.videoThumbnailHeight,
-                    imageThumbnailWidth: saved.imageThumbnailWidth,
-                    imageThumbnailHeight: saved.imageThumbnailHeight,
-                    thumbnailGap: saved.thumbnailGap,
-                    thumbnailWheelScrollEnabled: saved.thumbnailWheelScrollEnabled,
-                    thumbnailDragScrollEnabled: saved.thumbnailDragScrollEnabled,
-                    thumbnailScrollButtonsVisible: saved.thumbnailScrollButtonsVisible,
-                    // P12-H
-                    navArrowPosition: saved.navArrowPosition,
-                    navArrowSize: saved.navArrowSize,
-                    navArrowColor: saved.navArrowColor,
-                    navArrowBgColor: saved.navArrowBgColor,
-                    navArrowBorderWidth: saved.navArrowBorderWidth,
-                    navArrowHoverScale: saved.navArrowHoverScale,
-                    navArrowAutoHideMs: saved.navArrowAutoHideMs,
-                    // P12-I
-                    dotNavEnabled: saved.dotNavEnabled,
-                    dotNavPosition: saved.dotNavPosition,
-                    dotNavSize: saved.dotNavSize,
-                    dotNavActiveColor: saved.dotNavActiveColor,
-                    dotNavInactiveColor: saved.dotNavInactiveColor,
-                    dotNavShape: saved.dotNavShape,
-                    dotNavSpacing: saved.dotNavSpacing,
-                    dotNavActiveScale: saved.dotNavActiveScale,
-                    // P12-J
-                    imageShadowPreset: saved.imageShadowPreset,
-                    videoShadowPreset: saved.videoShadowPreset,
-                    imageShadowCustom: saved.imageShadowCustom,
-                    videoShadowCustom: saved.videoShadowCustom,
-                    // P12-C
-                    imageGalleryAdapterId: saved.imageGalleryAdapterId,
-                    videoGalleryAdapterId: saved.videoGalleryAdapterId,
-                    unifiedGalleryEnabled: saved.unifiedGalleryEnabled,
-                    unifiedGalleryAdapterId: saved.unifiedGalleryAdapterId,
-                    gridCardWidth: saved.gridCardWidth,
-                    gridCardHeight: saved.gridCardHeight,
-                    mosaicTargetRowHeight: saved.mosaicTargetRowHeight,
-                    tileSize: saved.tileSize,
-                    tileGapX: saved.tileGapX,
-                    tileGapY: saved.tileGapY,
-                    tileBorderWidth: saved.tileBorderWidth,
-                    tileBorderColor: saved.tileBorderColor,
-                    tileGlowEnabled: saved.tileGlowEnabled,
-                    tileGlowColor: saved.tileGlowColor,
-                    tileGlowSpread: saved.tileGlowSpread,
-                    tileHoverBounce: saved.tileHoverBounce,
-                    masonryColumns: saved.masonryColumns,
-                    // Viewport backgrounds
-                    imageBgType: saved.imageBgType,
-                    imageBgColor: saved.imageBgColor,
-                    imageBgGradient: saved.imageBgGradient,
-                    imageBgImageUrl: saved.imageBgImageUrl,
-                    videoBgType: saved.videoBgType,
-                    videoBgColor: saved.videoBgColor,
-                    videoBgGradient: saved.videoBgGradient,
-                    videoBgImageUrl: saved.videoBgImageUrl,
-                    unifiedBgType: saved.unifiedBgType,
-                    unifiedBgColor: saved.unifiedBgColor,
-                    unifiedBgGradient: saved.unifiedBgGradient,
-                    unifiedBgImageUrl: saved.unifiedBgImageUrl,
-                    // P13-A: Campaign Card
-                    cardBorderRadius: saved.cardBorderRadius,
-                    cardBorderWidth: saved.cardBorderWidth,
-                    cardBorderMode: saved.cardBorderMode,
-                    cardBorderColor: saved.cardBorderColor,
-                    cardShadowPreset: saved.cardShadowPreset,
-                    cardThumbnailHeight: saved.cardThumbnailHeight,
-                    cardThumbnailFit: saved.cardThumbnailFit,
-                    cardGridColumns: saved.cardGridColumns,
-                    cardGap: saved.cardGap,
-                    modalCoverHeight: saved.modalCoverHeight,
-                    modalTransition: saved.modalTransition,
-                    modalTransitionDuration: saved.modalTransitionDuration,
-                    modalMaxHeight: saved.modalMaxHeight,
-                    cardDisplayMode: saved.cardDisplayMode,
-                    cardRowsPerPage: saved.cardRowsPerPage,
-                    cardPageDotNav: saved.cardPageDotNav,
-                    cardPageTransitionMs: saved.cardPageTransitionMs,
-                    // P13-E: Header visibility toggles
-                    showGalleryTitle: saved.showGalleryTitle,
-                    showGallerySubtitle: saved.showGallerySubtitle,
-                    showAccessMode: saved.showAccessMode,
-                    showFilterTabs: saved.showFilterTabs,
-                    showSearchBox: saved.showSearchBox,
-                    // P13-E: App width, padding & per-gallery tile sizes
-                    appMaxWidth: saved.appMaxWidth,
-                    appPadding: saved.appPadding,
-                    wpFullBleedDesktop: saved.wpFullBleedDesktop,
-                    wpFullBleedTablet: saved.wpFullBleedTablet,
-                    wpFullBleedMobile: saved.wpFullBleedMobile,
-                    imageTileSize: saved.imageTileSize,
-                    videoTileSize: saved.videoTileSize,
-                  },
+                  mergeSettingsWithDefaults(saved),
                   false,
                 );
               }}

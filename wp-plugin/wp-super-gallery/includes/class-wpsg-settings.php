@@ -29,6 +29,11 @@ class WPSG_Settings {
     /**
      * Default settings values.
      *
+     * The $defaults array is the single source of truth for ALL settings.
+     * Snake-case keys are auto-converted to camelCase for the REST/JS layer
+     * via snake_to_camel(). Adding a key here automatically wires it into
+     * get_public_settings(), update_settings(), and sanitize_settings().
+     *
      * @var array
      */
     private static $defaults = [
@@ -42,7 +47,7 @@ class WPSG_Settings {
         'enable_animations'          => true,
         'video_viewport_height'      => 420,
         'image_viewport_height'      => 420,
-        'thumbnail_scroll_speed'     => 1,
+        'thumbnail_scroll_speed'     => 1.0,
         'scroll_animation_style'     => 'smooth',
         'scroll_animation_duration_ms' => 350,
         'scroll_animation_easing'    => 'ease',
@@ -147,6 +152,122 @@ class WPSG_Settings {
         'image_tile_size'            => 150,
         'video_tile_size'            => 150,
         'cache_ttl'                  => 3600,
+        // P14-C: Thumbnail cache TTL (seconds).
+        'thumbnail_cache_ttl'        => 86400,
+        // P14-F: Image optimization on upload.
+        'optimize_on_upload'         => false,
+        'optimize_max_width'         => 1920,
+        'optimize_max_height'        => 1920,
+        'optimize_quality'           => 82,
+        'optimize_webp_enabled'      => false,
+        // ── P14-B: Advanced Settings toggle ───────────────────
+        'advanced_settings_enabled'  => false,
+        // ── P14-B: Card Appearance (advanced) ─────────────────
+        'card_locked_opacity'            => 0.5,
+        'card_gradient_start_opacity'    => 0.0,
+        'card_gradient_end_opacity'      => 0.85,
+        'card_lock_icon_size'            => 32,
+        'card_access_icon_size'          => 14,
+        'card_badge_offset_y'            => 8,
+        'card_company_badge_max_width'   => 160,
+        'card_thumbnail_hover_transition_ms' => 300,
+        // ── P14-B: Gallery Text (advanced) ────────────────────
+        'gallery_title_text'             => 'Gallery',
+        'gallery_subtitle_text'          => '',
+        'campaign_about_heading_text'    => 'About',
+        // ── P14-B: Modal / Viewer (advanced) ──────────────────
+        'modal_cover_mobile_ratio'       => 0.6,
+        'modal_cover_tablet_ratio'       => 0.75,
+        'modal_close_button_size'        => 36,
+        'modal_close_button_bg_color'    => 'rgba(0,0,0,0.5)',
+        'modal_content_max_width'        => 900,
+        'campaign_description_line_height' => 1.6,
+        'modal_mobile_breakpoint'        => 768,
+        'card_page_transition_opacity'   => 0.3,
+        // ── P14-B: Upload / Media (advanced) ──────────────────
+        'upload_max_size_mb'             => 50,
+        'upload_allowed_types'           => 'image/*,video/*',
+        'library_page_size'              => 20,
+        'media_list_page_size'           => 50,
+        'media_compact_card_height'      => 100,
+        'media_small_card_height'        => 80,
+        'media_medium_card_height'       => 240,
+        'media_large_card_height'        => 340,
+        'media_list_min_width'           => 600,
+        'swr_deduping_interval_ms'       => 5000,
+        'notification_dismiss_ms'        => 4000,
+        // ── P14-B: Tile / Adapter (advanced) ──────────────────
+        'tile_hover_overlay_opacity'     => 0.6,
+        'tile_bounce_scale_hover'        => 1.08,
+        'tile_bounce_scale_active'       => 1.02,
+        'tile_bounce_duration_ms'        => 300,
+        'tile_base_transition_duration_ms' => 250,
+        'hex_vertical_overlap_ratio'     => 0.25,
+        'diamond_vertical_overlap_ratio' => 0.45,
+        'hex_clip_path'                  => 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+        'diamond_clip_path'              => 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+        'tile_default_per_row'           => 5,
+        'photo_normalize_height'         => 300,
+        'masonry_auto_column_breakpoints' => '480:2,768:3,1024:4,1280:5',
+        'grid_card_hover_shadow'         => '0 4px 12px rgba(0,0,0,0.3)',
+        'grid_card_default_shadow'       => '0 2px 8px rgba(0,0,0,0.15)',
+        'grid_card_hover_scale'          => 1.02,
+        'tile_transition_duration_ms'    => 200,
+        // ── P14-B: Lightbox (advanced) ────────────────────────
+        'lightbox_transition_ms'         => 250,
+        'lightbox_backdrop_color'        => 'rgba(0,0,0,0.92)',
+        'lightbox_entry_scale'           => 0.92,
+        'lightbox_video_max_width'       => 900,
+        'lightbox_video_height'          => 506,
+        'lightbox_media_max_height'      => '85vh',
+        'lightbox_z_index'               => 1000,
+        // ── P14-B: Navigation (advanced) ──────────────────────
+        'dot_nav_max_visible_dots'       => 7,
+        'nav_arrow_edge_inset'           => 8,
+        'nav_arrow_min_hit_target'       => 44,
+        'nav_arrow_fade_duration_ms'     => 200,
+        'nav_arrow_scale_transition_ms'  => 150,
+        'viewport_height_mobile_ratio'   => 0.65,
+        'viewport_height_tablet_ratio'   => 0.8,
+        'search_input_min_width'         => 200,
+        'search_input_max_width'         => 280,
+        // ── P14-B: System (advanced) ──────────────────────────
+        'expiry_warning_threshold_ms'    => 300000,
+        'admin_search_debounce_ms'       => 300,
+        'login_min_password_length'      => 1,
+        'login_form_max_width'           => 400,
+        'auth_bar_backdrop_blur'         => 8,
+        'auth_bar_mobile_breakpoint'     => 768,
+        'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
+    ];
+
+    /**
+     * Settings that are admin-only (not exposed to public/anonymous users).
+     *
+     * @var string[]
+     */
+    private static $admin_only_fields = [
+        'auth_provider',
+        'api_base',
+        'allow_user_theme_override',
+        'cache_ttl',
+        'thumbnail_cache_ttl',
+        'optimize_on_upload',
+        'optimize_max_width',
+        'optimize_max_height',
+        'optimize_quality',
+        'optimize_webp_enabled',
+        'advanced_settings_enabled',
+        'upload_max_size_mb',
+        'upload_allowed_types',
+        'swr_deduping_interval_ms',
+        'notification_dismiss_ms',
+        'expiry_warning_threshold_ms',
+        'admin_search_debounce_ms',
+        'login_min_password_length',
+        'login_form_max_width',
+        'auth_bar_backdrop_blur',
+        'auth_bar_mobile_breakpoint',
     ];
 
     /**
@@ -186,6 +307,126 @@ class WPSG_Settings {
         'card_border_mode'       => ['auto', 'single', 'individual'],
         'modal_transition'       => ['pop', 'fade', 'slide-up'],
         'card_display_mode'      => ['show-all', 'load-more', 'paginated'],
+        'image_bg_type'          => ['none', 'solid', 'gradient', 'image'],
+        'video_bg_type'          => ['none', 'solid', 'gradient', 'image'],
+        'unified_bg_type'        => ['none', 'solid', 'gradient', 'image'],
+        'image_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
+        'video_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
+        'unified_gallery_adapter_id' => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
+    ];
+
+    /**
+     * Min/max ranges for numeric settings.
+     * Keys not listed here have no range clamping beyond type coercion.
+     *
+     * @var array<string, array{0: int|float, 1: int|float}>
+     */
+    private static $field_ranges = [
+        'items_per_page'              => [1, 100],
+        'video_viewport_height'       => [180, 900],
+        'image_viewport_height'       => [180, 900],
+        'thumbnail_scroll_speed'      => [0.25, 3],
+        'scroll_animation_duration_ms' => [0, 2000],
+        'image_border_radius'         => [0, 48],
+        'video_border_radius'         => [0, 48],
+        'video_thumbnail_width'       => [30, 200],
+        'video_thumbnail_height'      => [30, 200],
+        'image_thumbnail_width'       => [30, 200],
+        'image_thumbnail_height'      => [30, 200],
+        'thumbnail_gap'               => [0, 24],
+        'nav_arrow_size'              => [20, 64],
+        'nav_arrow_border_width'      => [0, 6],
+        'nav_arrow_hover_scale'       => [1.0, 1.5],
+        'nav_arrow_auto_hide_ms'      => [0, 10000],
+        'dot_nav_size'                => [4, 24],
+        'dot_nav_spacing'             => [2, 20],
+        'dot_nav_active_scale'        => [1.0, 2.0],
+        'mosaic_target_row_height'    => [60, 600],
+        'grid_card_width'             => [80, 400],
+        'grid_card_height'            => [80, 600],
+        'tile_size'                   => [60, 400],
+        'tile_gap_x'                  => [0, 60],
+        'tile_gap_y'                  => [0, 60],
+        'tile_border_width'           => [0, 20],
+        'tile_glow_spread'            => [2, 60],
+        'masonry_columns'             => [0, 8],
+        'card_border_radius'          => [0, 24],
+        'card_border_width'           => [0, 8],
+        'card_thumbnail_height'       => [100, 400],
+        'card_grid_columns'           => [0, 4],
+        'card_gap'                    => [0, 48],
+        'modal_cover_height'          => [100, 400],
+        'modal_transition_duration'   => [100, 1000],
+        'modal_max_height'            => [50, 100],
+        'card_rows_per_page'          => [1, 10],
+        'card_page_transition_ms'     => [100, 800],
+        'app_max_width'               => [0, 3000],
+        'app_padding'                 => [0, 100],
+        'image_tile_size'             => [60, 400],
+        'video_tile_size'             => [60, 400],
+        'cache_ttl'                   => [0, 604800],
+        // P14 ranges
+        'thumbnail_cache_ttl'         => [0, 604800],
+        'optimize_max_width'          => [100, 4096],
+        'optimize_max_height'         => [100, 4096],
+        'optimize_quality'            => [10, 100],
+        // Advanced setting ranges
+        'card_locked_opacity'         => [0, 1],
+        'card_gradient_start_opacity' => [0, 1],
+        'card_gradient_end_opacity'   => [0, 1],
+        'card_lock_icon_size'         => [12, 64],
+        'card_access_icon_size'       => [8, 32],
+        'card_badge_offset_y'         => [0, 32],
+        'card_company_badge_max_width' => [60, 400],
+        'card_thumbnail_hover_transition_ms' => [0, 1000],
+        'modal_cover_mobile_ratio'    => [0.2, 1],
+        'modal_cover_tablet_ratio'    => [0.2, 1],
+        'modal_close_button_size'     => [20, 64],
+        'modal_content_max_width'     => [400, 2000],
+        'campaign_description_line_height' => [1.0, 3.0],
+        'modal_mobile_breakpoint'     => [320, 1280],
+        'card_page_transition_opacity' => [0, 1],
+        'upload_max_size_mb'          => [1, 500],
+        'library_page_size'           => [5, 100],
+        'media_list_page_size'        => [10, 200],
+        'media_compact_card_height'   => [40, 300],
+        'media_small_card_height'     => [40, 300],
+        'media_medium_card_height'    => [100, 600],
+        'media_large_card_height'     => [100, 800],
+        'media_list_min_width'        => [200, 1200],
+        'swr_deduping_interval_ms'    => [0, 60000],
+        'notification_dismiss_ms'     => [1000, 30000],
+        'tile_hover_overlay_opacity'  => [0, 1],
+        'tile_bounce_scale_hover'     => [1.0, 1.5],
+        'tile_bounce_scale_active'    => [0.8, 1.2],
+        'tile_bounce_duration_ms'     => [0, 1000],
+        'tile_base_transition_duration_ms' => [0, 1000],
+        'hex_vertical_overlap_ratio'  => [0, 0.5],
+        'diamond_vertical_overlap_ratio' => [0, 0.8],
+        'tile_default_per_row'        => [1, 12],
+        'photo_normalize_height'      => [100, 800],
+        'grid_card_hover_scale'       => [1.0, 1.3],
+        'tile_transition_duration_ms' => [0, 1000],
+        'lightbox_transition_ms'      => [0, 1000],
+        'lightbox_entry_scale'        => [0.5, 1.0],
+        'lightbox_video_max_width'    => [300, 2000],
+        'lightbox_video_height'       => [200, 1200],
+        'lightbox_z_index'            => [1, 100000],
+        'dot_nav_max_visible_dots'    => [3, 20],
+        'nav_arrow_edge_inset'        => [0, 48],
+        'nav_arrow_min_hit_target'    => [24, 80],
+        'nav_arrow_fade_duration_ms'  => [0, 1000],
+        'nav_arrow_scale_transition_ms' => [0, 1000],
+        'viewport_height_mobile_ratio' => [0.3, 1.0],
+        'viewport_height_tablet_ratio' => [0.3, 1.0],
+        'search_input_min_width'      => [100, 600],
+        'search_input_max_width'      => [100, 800],
+        'expiry_warning_threshold_ms' => [60000, 3600000],
+        'admin_search_debounce_ms'    => [50, 2000],
+        'login_min_password_length'   => [1, 32],
+        'login_form_max_width'        => [200, 800],
+        'auth_bar_backdrop_blur'      => [0, 24],
+        'auth_bar_mobile_breakpoint'  => [320, 1280],
     ];
 
     /**
@@ -349,6 +590,69 @@ class WPSG_Settings {
             return $settings[$key];
         }
         return $default !== null ? $default : (self::$defaults[$key] ?? null);
+    }
+
+    // =========================================================================
+    // DRY snake_case ↔ camelCase conversion (B-8)
+    // =========================================================================
+
+    /**
+     * Convert a snake_case key to camelCase.
+     *
+     * @param string $key Snake-case key, e.g. 'video_viewport_height'.
+     * @return string CamelCase key, e.g. 'videoViewportHeight'.
+     */
+    public static function snake_to_camel($key) {
+        return lcfirst(str_replace('_', '', ucwords($key, '_')));
+    }
+
+    /**
+     * Convert stored PHP settings to a camelCase JS-ready array.
+     *
+     * Uses $defaults as the registry: every key in $defaults is included.
+     * Admin-only fields are omitted unless $admin is true.
+     *
+     * @param array $settings Settings array (snake_case keys).
+     * @param bool  $admin    Whether to include admin-only fields.
+     * @return array Associative array with camelCase keys.
+     */
+    public static function to_js($settings, $admin = false) {
+        $result = [];
+        foreach (self::$defaults as $snake => $default) {
+            if (!$admin && in_array($snake, self::$admin_only_fields, true)) {
+                continue;
+            }
+            $result[self::snake_to_camel($snake)] = $settings[$snake] ?? $default;
+        }
+        return $result;
+    }
+
+    /**
+     * Convert a camelCase JS request body to snake_case input for sanitization.
+     *
+     * Only includes keys that exist in both the request body and $defaults.
+     *
+     * @param array $body Decoded JSON body (camelCase keys).
+     * @return array Associative array with snake_case keys.
+     */
+    public static function from_js($body) {
+        $input = [];
+        foreach (self::$defaults as $snake => $default) {
+            $camel = self::snake_to_camel($snake);
+            if (array_key_exists($camel, $body)) {
+                $input[$snake] = $body[$camel];
+            }
+        }
+        return $input;
+    }
+
+    /**
+     * Get the defaults array (useful for React-side reference).
+     *
+     * @return array
+     */
+    public static function get_defaults() {
+        return self::$defaults;
     }
 
     /**
@@ -556,7 +860,9 @@ class WPSG_Settings {
                 ? $input['video_gallery_adapter_id']
                 : 'classic';
         }
-        $sanitized['unified_gallery_enabled'] = !empty($input['unified_gallery_enabled']);
+        if (isset($input['unified_gallery_enabled'])) {
+            $sanitized['unified_gallery_enabled'] = (bool) $input['unified_gallery_enabled'];
+        }
         if (isset($input['unified_gallery_adapter_id'])) {
             $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
             $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], $valid_adapters, true)
@@ -714,15 +1020,67 @@ class WPSG_Settings {
             $sanitized['video_tile_size'] = max(60, min(400, intval($input['video_tile_size'])));
         }
 
-        // Boolean fields.
-        $sanitized['enable_lightbox']            = !empty($input['enable_lightbox']);
-        $sanitized['enable_animations']          = !empty($input['enable_animations']);
-        $sanitized['allow_user_theme_override']  = !empty($input['allow_user_theme_override']);
+        // Boolean fields — conditional to avoid resetting on partial updates.
+        if (isset($input['enable_lightbox'])) {
+            $sanitized['enable_lightbox'] = (bool) $input['enable_lightbox'];
+        }
+        if (isset($input['enable_animations'])) {
+            $sanitized['enable_animations'] = (bool) $input['enable_animations'];
+        }
+        if (isset($input['allow_user_theme_override'])) {
+            $sanitized['allow_user_theme_override'] = (bool) $input['allow_user_theme_override'];
+        }
 
         // Cache TTL - integer, 0 means disabled, max 1 week.
         if (isset($input['cache_ttl'])) {
             $ttl = intval($input['cache_ttl']);
             $sanitized['cache_ttl'] = max(0, min(604800, $ttl));
+        }
+
+        // ── Generic fallback for P14+ settings not explicitly handled above ──
+        // Infers sanitization from the default value's PHP type and applies
+        // range clamping from $field_ranges when available.  Select fields
+        // are validated against $valid_options.
+        foreach ($input as $key => $value) {
+            if (isset($sanitized[$key])) {
+                continue; // Already handled by explicit rule above.
+            }
+            if (!array_key_exists($key, self::$defaults)) {
+                continue; // Unknown setting — skip.
+            }
+
+            // Select / enum validation.
+            if (isset(self::$valid_options[$key])) {
+                $sanitized[$key] = in_array($value, self::$valid_options[$key], true)
+                    ? $value
+                    : self::$defaults[$key];
+                continue;
+            }
+
+            $default = self::$defaults[$key];
+
+            if (is_bool($default)) {
+                $sanitized[$key] = (bool) $value;
+            } elseif (is_int($default)) {
+                $val = intval($value);
+                if (isset(self::$field_ranges[$key])) {
+                    $val = max((int) self::$field_ranges[$key][0], min((int) self::$field_ranges[$key][1], $val));
+                }
+                $sanitized[$key] = $val;
+            } elseif (is_float($default)) {
+                $val = floatval($value);
+                if (isset(self::$field_ranges[$key])) {
+                    $val = max((float) self::$field_ranges[$key][0], min((float) self::$field_ranges[$key][1], $val));
+                }
+                $sanitized[$key] = $val;
+            } else {
+                // String — sanitize_text_field for most; esc_url_raw for URLs.
+                if (str_ends_with($key, '_url') || str_ends_with($key, '_image_url')) {
+                    $sanitized[$key] = esc_url_raw((string) $value);
+                } else {
+                    $sanitized[$key] = sanitize_text_field((string) $value);
+                }
+            }
         }
 
         return $sanitized;
