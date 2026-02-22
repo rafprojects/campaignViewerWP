@@ -12,6 +12,16 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.12.0 (February 22, 2026)
+- **MINOR**: Phase 14 — Infrastructure Hardening, Advanced Settings & Backend Utilities
+  - **P14-A**: Security hardening — 4 Critical + 6 High findings fixed (dead code removal, POST_TYPE constant, stale closure fix, oEmbed response leak, status/visibility allowlist, CORS headers, WP_DEBUG gate, URI sanitization, DDL identifier validation).
+  - **P14-B**: Settings DRY refactor — `to_js()`/`from_js()` auto snake↔camel conversion, generic fallback sanitizer, `mergeSettingsWithDefaults()` React utility. Deleted 586 lines PHP + 240 lines React of triplicated mapping. ~70 new advanced settings behind `advancedSettingsEnabled` toggle.
+  - **P14-C**: External thumbnail cache — `WPSG_Thumbnail_Cache` with download/cache/cleanup/refresh, daily cron, REST endpoints.
+  - **P14-D**: oEmbed monitoring & rate limiting — per-IP transient limiter, per-provider failure tracking, `get_health_data()` aggregation, REST health endpoint.
+  - **P14-F**: Image optimization — auto-resize/compress on upload with optional WebP conversion via GD library.
+  - **P14-G**: Media & campaign tagging — `wpsg_campaign_tag` and `wpsg_media_tag` taxonomies with REST endpoints.
+  - Advanced Settings UI tab in SettingsPanel with 8 Accordion sections (Card, Text, Modal, Upload/Media, Tile/Adapter, Lightbox, Navigation, System).
+
 ### v0.11.0 (February 22, 2026)
 - **MINOR**: Phase 13 — UX Polish, Performance & Campaign Scheduling
   - **P13-A**: CampaignViewer converted from fullscreen modal to centered animated modal; 13 card/grid/modal settings added full-stack (border radius, width, mode, color, shadow, thumbnail height/fit, columns, gap, cover height, transition, duration, max height); border color 3-mode system (auto/single/individual) with per-card ColorInput.

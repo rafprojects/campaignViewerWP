@@ -2,7 +2,8 @@
 /**
  * Plugin Name: WP Super Gallery
  * Description: Embeddable campaign gallery with Shadow DOM rendering.
- * Version: 0.11.0
+ * Version: 0.12.0
+ * Requires PHP: 8.0
  * Author: WP Super Gallery
  */
 
@@ -10,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.11.0');
+define('WPSG_VERSION', '0.12.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -23,6 +24,9 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-monitoring.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-alerts.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-sentry.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-thumbnail-cache.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rate-limiter.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-image-optimizer.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');
@@ -38,6 +42,7 @@ function wpsg_deactivate() {
     // Only remove on uninstall if desired
     wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
     wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
+    wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -161,10 +166,9 @@ function wpsg_add_cors_headers($served, $result, $request, $server) {
             header('Access-Control-Allow-Credentials: true');
         }
         header('Vary: Origin');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
     }
-
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
 
     return $served;
 }
@@ -217,3 +221,7 @@ function wpsg_should_add_security_headers() {
 if (is_admin()) {
     WPSG_Settings::init();
 }
+
+// P14-C/D/E/F: Register infrastructure.
+WPSG_Thumbnail_Cache::register();
+WPSG_Image_Optimizer::register();

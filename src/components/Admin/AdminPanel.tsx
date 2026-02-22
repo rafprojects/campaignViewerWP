@@ -424,7 +424,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   // loadAudit removed — SWR hook handles fetching automatically when auditCampaignId changes.
 
-  const handleEdit = (campaign: AdminCampaign) => {
+  const handleEdit = useCallback((campaign: AdminCampaign) => {
     setEditingCampaign(campaign);
     dispatchFormState({
       title: campaign.title ?? '',
@@ -437,7 +437,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       unpublishAt: campaign.unpublishAt ?? '',
     });
     setCampaignFormOpen(true);
-  };
+  }, []);
 
   const handleCreate = () => {
     setEditingCampaign(null);
@@ -579,9 +579,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Table.Td>
       </Table.Tr>
     ));
-  }, [campaigns]);
-
-  
+  }, [campaigns, handleEdit, restoringIds, archivingIds, setConfirmRestore, setConfirmArchive]);
 
   const accessRows = useMemo(() => {
     return accessEntries.map((a) => (

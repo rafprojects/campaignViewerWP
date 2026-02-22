@@ -1,6 +1,6 @@
 # Future Tasks & Enhancements
 
-This document tracks deferred and exploratory work that remains after the Phase 12 release.
+This document tracks deferred and exploratory work that remains after the Phase 13 release.
 
 > Note: Items promoted to active phase execution are moved into dedicated phase reports and removed from this backlog.
 
@@ -65,17 +65,6 @@ Phase 11 intentionally deferred bulk actions after scope freeze.
 **Effort:** Medium  
 **Impact:** High
 
-### E1. SWR for AdminPanel Data Fetching
-
-`AdminPanel` still manually manages `data/loading/error` for many API calls.
-
-- Migrate admin resources to SWR hooks
-- Reuse cache between tab switches
-- Standardize revalidation/error behavior
-
-**Effort:** Medium  
-**Impact:** Medium
-
 ### A1. Reduce App.tsx to ≤ 300 Lines (Stretch)
 
 Core decomposition is improved, but orchestration remains centralized.
@@ -100,53 +89,12 @@ Tabs are split, but orchestration and shared flows are still concentrated.
 
 ## Deferred from Phase 6
 
-### External Thumbnail Cache
-
-Cache external media thumbnails server-side for reliability/performance.
-
-- Fetch/store thumbnails on server
-- Serve cached variants
-- Add refresh/expiry strategy
-- Optional CDN support
-
-**Effort:** Medium  
-**Impact:** Medium
-
 ### Monitoring & Infrastructure
 
 #### Redis/Memcached Object Cache
 - Configure object cache backends for high-traffic deployments
 - Add monitoring and eviction guidance
 - Document network/security constraints
-
-**Effort:** Medium  
-**Impact:** Medium
-
-#### oEmbed Failure Monitoring
-- Track repeated failures (`wpsg_oembed_failure_count`)
-- Add simple admin visibility/trend view
-- Alert on sustained failure rates
-
-**Effort:** Low  
-**Impact:** Low
-
-#### oEmbed Rate Limiting
-- Add configurable limits for public proxy usage
-- Surface status/limits in admin
-
-**Effort:** Medium  
-**Impact:** Low
-
-#### Admin Metric & Alerting Panel
-- Integrate monitoring hooks with dashboard summaries
-- Support external monitoring integration
-
-**Effort:** Medium  
-**Impact:** Low
-
-#### Admin Health Dashboard
-- REST error/latency snapshots
-- Links to diagnostics/logs
 
 **Effort:** Medium  
 **Impact:** Medium
@@ -221,7 +169,6 @@ Add `wpsg` WP-CLI command set for admin/debug workflows.
 
 ### Media Management
 - Media sorting controls (alpha, type, date)
-- Media tagging system
 - Duplicate media detection
 - Media usage tracking across campaigns
 
@@ -237,7 +184,6 @@ Add `wpsg` WP-CLI command set for admin/debug workflows.
 - Access audit log export
 
 ### Performance
-- Image optimization on upload
 - Progressive Web App (PWA) support
 
 ### UX Workflow
@@ -265,4 +211,4 @@ When considering future tasks:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: February 20, 2026 — Phase 13 tracks promoted (lazy loading, admin perf, campaign scheduling)*
+*Last updated: February 22, 2026 — Phase 14 tracks promoted (external thumbnail cache, oEmbed monitoring/rate-limiting, admin metrics/health, image optimization, media & campaign tagging). Removed E1 SWR (completed in P13-C).*

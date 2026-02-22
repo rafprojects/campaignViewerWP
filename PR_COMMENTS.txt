@@ -1,0 +1,391 @@
+wp-plugin/wp-super-gallery/wp-super-gallery.php
+ * Plugin Name: WP Super Gallery
+ * Description: Embeddable campaign gallery with Shadow DOM rendering.
+- * Version: 0.11.0
+ * Version: 0.12.0
+Copilot AI
+11 minutes ago
+The plugin uses PHP 8+ functions (e.g., str_ends_with in settings sanitization) but the plugin header doesn’t declare a minimum PHP requirement. Add a Requires PHP: header (and ensure it matches the actual minimum), or avoid PHP 8-only functions / add polyfills if older PHP versions are supported.
+
+Suggested change
+- * Version: 0.12.0
+ * Version: 0.12.0
+ * Requires PHP: 8.0
+ 
+ 
+ 
+wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php
+Comment on lines +291 to +350
+        // P14-D/E: Health & monitoring endpoints (admin only).
+        register_rest_route('wp-super-gallery/v1', '/admin/health', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_health_data'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/oembed-failures', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_oembed_failures'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'reset_oembed_failures'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        // P14-C: Thumbnail cache management (admin only).
+        register_rest_route('wp-super-gallery/v1', '/admin/thumbnail-cache', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_thumbnail_cache_stats'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'clear_thumbnail_cache'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/thumbnail-cache/refresh', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'refresh_thumbnail_cache'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        // P14-G: Campaign tags.
+        register_rest_route('wp-super-gallery/v1', '/tags/campaign', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_campaign_tags'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/tags/media', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_media_tags'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+Copilot AI
+12 minutes ago
+New REST routes were added (/admin/health, /admin/oembed-failures, /admin/thumbnail-cache*, /tags/*) but the PHPUnit route tests (e.g. tests/WPSG_REST_Routes_Test.php) don’t appear to cover them. Please add tests that assert these routes are registered and enforce the intended admin-only permissions.
+
+
+
+wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php
+Comment on lines +1816 to +1824
+        // P14-D: Rate limiting — exempt authenticated admins.
+        if (!current_user_can('manage_options')) {
+            $ip = WPSG_Rate_Limiter::get_client_ip();
+            $rate_check = WPSG_Rate_Limiter::check($ip, 'oembed');
+            if (!$rate_check['allowed']) {
+                $response = new WP_REST_Response(['message' => 'Too many requests'], 429);
+                $response->header('Retry-After', (string) ($rate_check['retry_after'] ?? 60));
+                return $response;
+            }
+Copilot AI
+12 minutes ago
+The new oEmbed rate limiting behavior (429 + Retry-After header, admin exemption) isn’t covered by the existing oEmbed proxy tests. Adding a test that exercises repeated requests from the same IP and asserts the 429 response and headers would help prevent regressions.
+
+
+
+wp-plugin/wp-super-gallery/includes/class-wpsg-thumbnail-cache.php
+        }
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+Copilot AI
+12 minutes ago
+The thumbnail cache currently allows svg in the extension allowlist. Caching and serving untrusted SVGs from the uploads domain can enable stored XSS (SVG scripts execute in many browsers depending on headers). Safer defaults are to disallow SVG here or sanitize/serve with restrictive headers if SVG support is required.
+
+Suggested change
+        - $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        // Disallow SVG in cached thumbnails to avoid potential stored XSS via SVG scripts.
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+		
+		
+		
+		
+wp-plugin/wp-super-gallery/includes/class-wpsg-rate-limiter.php
+Comment on lines +69 to +82
+        $headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'];
+        foreach ($headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ip = sanitize_text_field(wp_unslash($_SERVER[$header]));
+                // X-Forwarded-For may contain multiple IPs; take the first.
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+        return '0.0.0.0';
+Copilot AI
+13 minutes ago
+get_client_ip() trusts X-Forwarded-For / X-Real-IP unconditionally. On hosts without a trusted reverse proxy config, these headers are user-controlled and allow trivial rate-limit bypass by spoofing the IP. Consider using REMOTE_ADDR by default and only honoring forwarded headers when running behind a known proxy (or provide an explicit allowlist / filter for trusted proxies).
+Suggested change
+-        $headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'];
+-        foreach ($headers as $header) {
+-            if (!empty($_SERVER[$header])) {
+-                $ip = sanitize_text_field(wp_unslash($_SERVER[$header]));
+-                // X-Forwarded-For may contain multiple IPs; take the first.
+-                if (strpos($ip, ',') !== false) {
+-                    $ip = trim(explode(',', $ip)[0]);
+-                }
+-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+-                    return $ip;
+-                }
+-            }
+-        }
+-        return '0.0.0.0';
+        // Always start from REMOTE_ADDR.
+        $remote_addr = '';
+        if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
+            $remote_addr = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+        }
+        if ( ! filter_var( $remote_addr, FILTER_VALIDATE_IP ) ) {
+            // If REMOTE_ADDR is not a valid IP, fall back to a safe default.
+            return '0.0.0.0';
+        }
+        /**
+         * Filter the list of trusted proxy IPs / CIDR ranges.
+         *
+         * When REMOTE_ADDR matches one of these, X-Forwarded-For / X-Real-IP
+         * will be honored to determine the real client IP. By default this is
+         * empty, meaning forwarded headers are ignored for security.
+         *
+         * @since 1.0.0
+         *
+         * @param string[] $proxies Array of IPs or CIDR ranges (e.g. '192.0.2.0/24').
+         */
+        $trusted_proxies = apply_filters( 'wpsg_rate_limiter_trusted_proxies', array() );
+        if ( ! is_array( $trusted_proxies ) ) {
+            $trusted_proxies = array();
+        }
+        // Helper to check if an IP is within the trusted proxies list.
+        $is_trusted_proxy = static function ( $ip, array $proxies ) {
+            foreach ( $proxies as $proxy ) {
+                $proxy = trim( (string) $proxy );
+                if ( $proxy === '' ) {
+                    continue;
+                }
+                // Exact IP match.
+                if ( $proxy === $ip ) {
+                    return true;
+                }
+                // CIDR notation, e.g. 192.0.2.0/24
+                if ( strpos( $proxy, '/' ) !== false ) {
+                    list( $subnet, $mask ) = explode( '/', $proxy, 2 );
+                    if ( ! filter_var( $subnet, FILTER_VALIDATE_IP ) ) {
+                        continue;
+                    }
+                    $mask = (int) $mask;
+                    if ( $mask < 0 || ( filter_var( $subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) && $mask > 32 ) ) {
+                        continue;
+                    }
+                    // Only handle IPv4 CIDRs here for simplicity.
+                    if ( filter_var( $subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) && filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+                        $ip_long     = ip2long( $ip );
+                        $subnet_long = ip2long( $subnet );
+                        $mask_long   = -1 << ( 32 - $mask );
+                        if ( ( $ip_long & $mask_long ) === ( $subnet_long & $mask_long ) ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        };
+        // Only trust forwarded headers when behind a trusted proxy.
+        if ( $is_trusted_proxy( $remote_addr, $trusted_proxies ) ) {
+            // Prefer X-Forwarded-For, then X-Real-IP.
+            $forwarded_headers = array( 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP' );
+            foreach ( $forwarded_headers as $header ) {
+                if ( empty( $_SERVER[ $header ] ) ) {
+                    continue;
+                }
+                $ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+                // X-Forwarded-For may contain multiple IPs; take the first.
+                if ( strpos( $ip, ',' ) !== false ) {
+                    $parts = explode( ',', $ip );
+                    $ip    = trim( $parts[0] );
+                }
+                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+                    return $ip;
+                }
+            }
+        }
+        // Default: return the validated REMOTE_ADDR.
+        return $remote_addr;
+
+
+
+wp-plugin/wp-super-gallery/includes/class-wpsg-image-optimizer.php
+Comment on lines +3 to +31
+ * Image Optimization on Upload — P14-F
+ *
+ * Auto-generates optimized image variants when media is uploaded
+ * through the WPSG plugin. Supports WebP conversion and max dimension
+ * constraints. Leverages WordPress image editor API.
+ *
+ * @package WP_Super_Gallery
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class WPSG_Image_Optimizer {
+    const MAX_WIDTH_DEFAULT  = 1920;
+    const MAX_HEIGHT_DEFAULT = 1920;
+    const QUALITY_DEFAULT    = 82;
+
+    /**
+     * Register optimization hooks.
+     */
+    public static function register() {
+        // Register custom image sizes for gallery variants.
+        add_action('after_setup_theme', [self::class, 'register_image_sizes']);
+        // Hook into attachment upload to optimize.
+        add_filter('wp_handle_upload', [self::class, 'optimize_on_upload'], 10, 2);
+        // Add WebP mime type support.
+        add_filter('upload_mimes', [self::class, 'add_webp_mime'], 10, 1);
+    }
+Copilot AI
+14 minutes ago
+The file header/docstring suggests optimization only applies to uploads “through the WPSG plugin”, but the implementation hooks the global wp_handle_upload filter, which will affect all WordPress uploads when enabled. Either scope the optimization to WPSG-specific uploads/contexts, or update the documentation to reflect the actual behavior so site admins aren’t surprised.
+
+
+
+
+wp-plugin/wp-super-gallery/includes/class-wpsg-image-optimizer.php
+            return $resized;
+        }
+
+        // Save over original (original preserved in WP backup metadata).
+Copilot AI
+14 minutes ago
+constrain_image() overwrites the original uploaded file in-place, but the comment claims “original preserved in WP backup metadata”. WordPress does not generally keep an original backup on upload (outside of big-image scaling behavior), so this may permanently discard the source image. If preserving originals is desired, save to a new file and update attachment metadata accordingly; otherwise adjust the comment to avoid implying the original is retained.
+
+Suggested change
+        - // Save over original (original preserved in WP backup metadata).
+        // Save over original file in-place (may permanently replace the source image).
+		
+		
+
+wp-plugin/wp-super-gallery/includes/class-wpsg-thumbnail-cache.php
+class WPSG_Thumbnail_Cache {
+    const UPLOAD_DIR   = 'wpsg-thumbnails';
+    const META_KEY     = '_wpsg_cached_thumbnail';
+    const TTL_OPTION   = 'wpsg_thumbnail_cache_ttl';
+Copilot AI
+14 minutes ago
+WPSG_Thumbnail_Cache reads TTL from the standalone option wpsg_thumbnail_cache_ttl, but the admin setting being added/updated elsewhere is thumbnail_cache_ttl inside WPSG_Settings (and nothing in the code writes to wpsg_thumbnail_cache_ttl). As a result, the Advanced UI TTL will not affect cache expiry/cleanup. Consider sourcing TTL from WPSG_Settings (or aligning the option name and updating it when settings are saved).
+
+Suggested change
+    - const TTL_OPTION   = 'wpsg_thumbnail_cache_ttl';
+    const TTL_OPTION   = 'thumbnail_cache_ttl';
+	
+	
+	
+wp-plugin/wp-super-gallery/includes/class-wpsg-thumbnail-cache.php
+Comment on lines +95 to +123
+        // Download the thumbnail.
+        $response = wp_remote_get($url, [
+            'timeout'   => 15,
+            'sslverify' => true,
+            'headers'   => ['Accept' => 'image/*'],
+        ]);
+
+        if (is_wp_error($response)) {
+            return ['cached' => false, 'error' => $response->get_error_message()];
+        }
+
+        $status = wp_remote_retrieve_response_code($response);
+        if ($status < 200 || $status >= 300) {
+            return ['cached' => false, 'error' => 'HTTP ' . $status];
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        if (empty($body)) {
+            return ['cached' => false, 'error' => 'Empty response body'];
+        }
+
+        // Validate content type is an image.
+        $content_type = wp_remote_retrieve_header($response, 'content-type');
+        if ($content_type && strpos($content_type, 'image/') !== 0) {
+            return ['cached' => false, 'error' => 'Content is not an image'];
+        }
+
+        // Write to cache directory.
+        $written = file_put_contents($filepath, $body);
+Copilot AI
+15 minutes ago
+cache_thumbnail() downloads the full remote image body into memory (wp_remote_retrieve_body) and writes it directly to disk with no size cap. A large/abusive thumbnail URL could cause memory or disk exhaustion. Consider streaming to a temp file (e.g. using download_url() or wp_remote_get with streaming) and enforcing a maximum size via Content-Length and/or a hard byte limit before persisting.
+
+
+
+
+wp-plugin/wp-super-gallery/includes/class-wpsg-image-optimizer.php
+Comment on lines +178 to +219
+    public static function get_stats() {
+        $upload_dir = wp_upload_dir();
+        $base_dir = $upload_dir['basedir'];
+
+        $webp_count = 0;
+        $wpsg_sizes = 0;
+
+        // Count WebP files and wpsg-specific sizes.
+        $attachments = get_posts([
+            'post_type'      => 'attachment',
+            'post_mime_type' => 'image',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+        ]);
+
+        foreach ($attachments as $id) {
+            $metadata = wp_get_attachment_metadata($id);
+            if (!is_array($metadata) || empty($metadata['sizes'])) {
+                continue;
+            }
+
+            if (isset($metadata['sizes']['wpsg_gallery'])) {
+                $wpsg_sizes++;
+            }
+
+            // Check for WebP variant.
+            $file = get_attached_file($id);
+            if ($file) {
+                $info = pathinfo($file);
+                $webp = $info['dirname'] . '/' . $info['filename'] . '.webp';
+                if (file_exists($webp)) {
+                    $webp_count++;
+                }
+            }
+        }
+
+        return [
+            'optimizedCount' => $wpsg_sizes,
+            'webpCount'      => $webp_count,
+            'totalImages'    => count($attachments),
+        ];
+Copilot AI
+15 minutes ago
+get_stats() declares a return shape including total_optimized / total_saved_bytes, but the implementation returns optimizedCount, webpCount, and totalImages, and also defines $base_dir without using it. Please align the docblock/return keys (or update the implementation to match) and remove the unused variable to avoid confusion for API consumers.
+
+
+
+

@@ -5,6 +5,61 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-02-22
+
+### Added - Phase 14: Infrastructure Hardening, Advanced Settings & Backend Utilities
+
+#### Security Hardening (P14-A)
+- **A-1**: Removed dead Odysee code in `can_view_campaign()` guard.
+- **A-2**: Added `WPSG_CPT::POST_TYPE` constant, refactored 10 string-literal references.
+- **A-4**: Fixed `campaignsRows` useMemo stale closure in AdminPanel — added missing deps + `useCallback` for `handleEdit`.
+- **B-1**: Removed `attempts` field from public oEmbed fallback response to avoid leaking internal retry info.
+- **B-2**: Added allowlist validation for campaign `status` and `visibility` with 400 rejection; callers check return and rollback on create.
+- **B-4**: Moved CORS `Allow-Methods`/`Allow-Headers` inside origin check so they aren't sent to disallowed origins.
+- **B-5**: Gated `simulateEmailFailure` behind `WP_DEBUG`.
+- **B-6**: Sanitized `$_SERVER['REQUEST_URI']` in `class-wpsg-embed.php`.
+- **B-7**: Added regex validation for DDL identifiers in `class-wpsg-db.php`.
+
+#### External Thumbnail Cache (P14-C)
+- New `WPSG_Thumbnail_Cache` class: downloads and caches external thumbnails to `wp-content/uploads/wpsg-thumbnails/`.
+- Hooked into `wpsg_oembed_success` for automatic caching; daily cron cleanup of expired entries.
+- REST endpoints: `GET /admin/thumbnail-cache` (stats), `DELETE /admin/thumbnail-cache` (clear), `POST /admin/thumbnail-cache/refresh`.
+
+#### oEmbed Monitoring & Rate Limiting (P14-D)
+- New `WPSG_Rate_Limiter` class: per-IP transient-based rate limiting for public oEmbed proxy (30 req/60 s, admins exempt).
+- Extended `WPSG_Monitoring` with per-provider oEmbed failure tracking, `get_health_data()` aggregation.
+- Rest endpoints: `GET /admin/health`, `GET|DELETE /admin/oembed-failures`.
+
+#### Image Optimization (P14-F)
+- New `WPSG_Image_Optimizer` class: hooks `wp_handle_upload` to auto-resize and compress images; optional WebP conversion.
+- Controlled by `optimize_on_upload`, `optimize_max_width`, `optimize_max_height`, `optimize_quality`, `optimize_webp_enabled` settings.
+
+#### Media & Campaign Tagging (P14-G)
+- Registered `wpsg_campaign_tag` and `wpsg_media_tag` taxonomies in `WPSG_CPT`.
+- REST endpoints: `GET /tags/campaign`, `GET /tags/media`.
+
+#### Advanced Settings System (P14-B)
+- ~70 new settings (Card Appearance, Gallery Text, Modal/Viewer, Upload/Media, Tile/Adapter, Lightbox, Navigation, System) added to PHP `$defaults` registry.
+- All gated behind `advancedSettingsEnabled` toggle — controls remain hidden until enabled.
+- Generic fallback sanitizer: auto-detects type from `$defaults` (bool/int/float/string/URL/enum) with `$field_ranges` clamping.
+- `$admin_only_fields` array controls which settings are excluded from public API responses.
+
+### Changed
+
+#### Settings DRY Refactor (P14-B-8)
+- **PHP**: Added `WPSG_Settings::to_js()` / `from_js()` helpers with auto snake↔camel conversion. Rewrote `get_public_settings()` (12 lines) and `update_settings()` (15 lines). Deleted 586 lines of triplicated manual mapping code.
+- **React**: Created `mergeSettingsWithDefaults()` utility, replacing ~240 lines of manual `response.field ?? DEFAULT.field` chains in `App.tsx` and `SettingsPanel.tsx`. `defaultSettings` in SettingsPanel now spreads `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`.
+- **apiClient**: Replaced duplicate `SettingsUpdateRequest` interface with `Partial<SettingsResponse>`.
+- Added ~70 new fields to `GalleryBehaviorSettings`, `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`, and `SettingsResponse`.
+
+#### Advanced Settings UI
+- New "Advanced" tab in SettingsPanel (visible only when toggle is on) with Accordion sections: Card Appearance, Gallery Text, Modal/Viewer, Upload/Media & Image Optimization, Tile/Adapter, Lightbox, Navigation, System.
+- "Enable Advanced Settings" toggle added to General tab under new "Developer" divider.
+
+### Fixed
+- `REST class-wpsg-rest.php`: Removed 586 lines of orphaned old settings mapping code left after DRY refactor.
+- Cleaned up duplicate `campaign_exists` method produced during REST refactor.
+
 ## [0.11.0] - 2026-02-22
 
 ### Added - Phase 13: UX Polish, Performance & Campaign Scheduling

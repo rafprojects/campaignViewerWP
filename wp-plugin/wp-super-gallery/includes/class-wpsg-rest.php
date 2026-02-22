@@ -287,6 +287,67 @@ class WPSG_REST {
                 'permission_callback' => [self::class, 'rate_limit_public'],
             ],
         ]);
+
+        // P14-D/E: Health & monitoring endpoints (admin only).
+        register_rest_route('wp-super-gallery/v1', '/admin/health', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_health_data'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/oembed-failures', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_oembed_failures'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'reset_oembed_failures'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        // P14-C: Thumbnail cache management (admin only).
+        register_rest_route('wp-super-gallery/v1', '/admin/thumbnail-cache', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_thumbnail_cache_stats'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'clear_thumbnail_cache'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/thumbnail-cache/refresh', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'refresh_thumbnail_cache'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        // P14-G: Campaign tags.
+        register_rest_route('wp-super-gallery/v1', '/tags/campaign', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_campaign_tags'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/tags/media', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_media_tags'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
     }
 
     public static function rate_limit_public($request) {
@@ -551,7 +612,11 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
         }
 
-        self::apply_campaign_meta($post_id, $request);
+        $meta_result = self::apply_campaign_meta($post_id, $request);
+        if ($meta_result instanceof WP_REST_Response) {
+            wp_delete_post($post_id, true);
+            return $meta_result;
+        }
         self::assign_company($post_id, $request->get_param('company'));
         self::add_audit_entry($post_id, 'campaign.created', [
             'title' => $title,
@@ -572,9 +637,6 @@ class WPSG_REST {
         $user_id = get_current_user_id();
         if (!self::can_view_campaign($post_id, $user_id)) {
             return new WP_REST_Response(['message' => 'Forbidden'], 403);
-                        if (!preg_match('/^[a-zA-Z0-9_:-]+$/', $embed_slug)) {
-                            return new WP_Error('invalid_url', 'Invalid Odysee video ID format');
-                        }
         }
 
         return new WP_REST_Response(self::format_campaign($post), 200);
@@ -602,7 +664,10 @@ class WPSG_REST {
         }
         wp_update_post($update);
 
-        self::apply_campaign_meta($post_id, $request);
+        $meta_result = self::apply_campaign_meta($post_id, $request);
+        if ($meta_result instanceof WP_REST_Response) {
+            return $meta_result;
+        }
         self::assign_company($post_id, $request->get_param('company'));
 
         self::add_audit_entry($post_id, 'campaign.updated', [
@@ -1747,6 +1812,18 @@ class WPSG_REST {
 
     public static function proxy_oembed() {
         $request = func_get_arg(0);
+
+        // P14-D: Rate limiting — exempt authenticated admins.
+        if (!current_user_can('manage_options')) {
+            $ip = WPSG_Rate_Limiter::get_client_ip();
+            $rate_check = WPSG_Rate_Limiter::check($ip, 'oembed');
+            if (!$rate_check['allowed']) {
+                $response = new WP_REST_Response(['message' => 'Too many requests'], 429);
+                $response->header('Retry-After', (string) ($rate_check['retry_after'] ?? 60));
+                return $response;
+            }
+        }
+
         $url = esc_url_raw($request->get_param('url'));
         if (empty($url)) {
             return new WP_REST_Response(['message' => 'url is required'], 400);
@@ -1861,13 +1938,14 @@ class WPSG_REST {
 
             // Successful fetch: cache for longer TTL
             set_transient($cache_key, $result, 6 * HOUR_IN_SECONDS);
+            // P14-C/D: Fire success hook for thumbnail caching.
+            do_action('wpsg_oembed_success', $url, $result);
             return new WP_REST_Response($result, 200);
         }
 
         // Cache generic failure to avoid repeated immediate retries
         $fallback = [
             'message' => 'Unable to fetch oEmbed',
-            'attempts' => $attempts,
         ];
         $fallback['_wpsg_status'] = 502;
         // Log and metric: record generic fallback cache
@@ -1998,9 +2076,12 @@ class WPSG_REST {
         // Note: wp_new_user_notification() with 'user' param sends a password reset link, not the password
         $email_sent = false;
         
-        // Allow testing email failure scenario via request param
-        $simulate_param = $request->get_param('simulateEmailFailure');
-        $simulate_email_failure = ($simulate_param === true || $simulate_param === 'true');
+        // Allow testing email failure scenario via request param (debug only)
+        $simulate_email_failure = false;
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $simulate_param = $request->get_param('simulateEmailFailure');
+            $simulate_email_failure = ($simulate_param === true || $simulate_param === 'true');
+        }
         
         if (!$simulate_email_failure) {
             try {
@@ -2112,630 +2193,49 @@ class WPSG_REST {
      * Get public display settings for frontend consumption.
      * Admins get all settings; non-admins get display settings only.
      *
+     * Uses WPSG_Settings::to_js() for DRY snake→camel conversion.
+     *
      * @return WP_REST_Response Settings data.
      */
     public static function get_public_settings() {
-        // Use WPSG_Settings if available, otherwise return defaults.
         if (class_exists('WPSG_Settings')) {
             $settings = WPSG_Settings::get_settings();
         } else {
-            $settings = [
-                'auth_provider'     => 'wp-jwt',
-                'api_base'          => '',
-                'theme'             => 'dark',
-                'gallery_layout'    => 'grid',
-                'items_per_page'    => 12,
-                'enable_lightbox'   => true,
-                'enable_animations' => true,
-                'video_viewport_height' => 420,
-                'image_viewport_height' => 420,
-                'thumbnail_scroll_speed' => 1,
-                'scroll_animation_style' => 'smooth',
-                'scroll_animation_duration_ms' => 350,
-                'scroll_animation_easing' => 'ease',
-                'scroll_transition_type' => 'slide-fade',
-                'cache_ttl'         => 3600,
-            ];
+            $settings = [];
         }
 
-        // Admins get full settings; others get display settings only.
-        if (current_user_can('manage_options')) {
-            return new WP_REST_Response([
-                'authProvider'     => $settings['auth_provider'] ?? 'wp-jwt',
-                'apiBase'          => $settings['api_base'] ?? '',
-                'theme'            => $settings['theme'] ?? 'dark',
-                'galleryLayout'    => $settings['gallery_layout'] ?? 'grid',
-                'itemsPerPage'     => $settings['items_per_page'] ?? 12,
-                'enableLightbox'   => $settings['enable_lightbox'] ?? true,
-                'enableAnimations' => $settings['enable_animations'] ?? true,
-                'videoViewportHeight' => $settings['video_viewport_height'] ?? 420,
-                'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
-                'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
-                'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
-                'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 350,
-                'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
-                'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
-                'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
-                'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
-                'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
-                // P12-H
-                'navArrowPosition'     => $settings['nav_arrow_position'] ?? 'center',
-                'navArrowSize'         => $settings['nav_arrow_size'] ?? 36,
-                'navArrowColor'        => $settings['nav_arrow_color'] ?? '#ffffff',
-                'navArrowBgColor'      => $settings['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
-                'navArrowBorderWidth'  => $settings['nav_arrow_border_width'] ?? 0,
-                'navArrowHoverScale'   => $settings['nav_arrow_hover_scale'] ?? 1.1,
-                'navArrowAutoHideMs'   => $settings['nav_arrow_auto_hide_ms'] ?? 0,
-                // P12-I
-                'dotNavEnabled'        => $settings['dot_nav_enabled'] ?? true,
-                'dotNavPosition'       => $settings['dot_nav_position'] ?? 'below',
-                'dotNavSize'           => $settings['dot_nav_size'] ?? 10,
-                'dotNavActiveColor'    => $settings['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
-                'dotNavInactiveColor'  => $settings['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
-                'dotNavShape'          => $settings['dot_nav_shape'] ?? 'circle',
-                'dotNavSpacing'        => $settings['dot_nav_spacing'] ?? 6,
-                'dotNavActiveScale'    => $settings['dot_nav_active_scale'] ?? 1.3,
-                // P12-J
-                'imageShadowPreset'    => $settings['image_shadow_preset'] ?? 'subtle',
-                'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
-                'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
-                'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
-                // P12-A/B
-                'videoThumbnailWidth'  => $settings['video_thumbnail_width'] ?? 60,
-                'videoThumbnailHeight' => $settings['video_thumbnail_height'] ?? 45,
-                'imageThumbnailWidth'  => $settings['image_thumbnail_width'] ?? 60,
-                'imageThumbnailHeight' => $settings['image_thumbnail_height'] ?? 60,
-                'thumbnailGap'         => $settings['thumbnail_gap'] ?? 6,
-                'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
-                'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
-                'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
-                // P12-C
-                'imageGalleryAdapterId'      => $settings['image_gallery_adapter_id'] ?? 'classic',
-                'videoGalleryAdapterId'      => $settings['video_gallery_adapter_id'] ?? 'classic',
-                'unifiedGalleryEnabled'      => $settings['unified_gallery_enabled'] ?? false,
-                'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
-                'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
-                'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
-                'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
-                'tileSize'                   => $settings['tile_size'] ?? 150,
-                'tileGapX'                   => $settings['tile_gap_x'] ?? 8,
-                'tileGapY'                   => $settings['tile_gap_y'] ?? 8,
-                'tileBorderWidth'            => $settings['tile_border_width'] ?? 0,
-                'tileBorderColor'            => $settings['tile_border_color'] ?? '#ffffff',
-                'tileGlowEnabled'            => $settings['tile_glow_enabled'] ?? false,
-                'tileGlowColor'              => $settings['tile_glow_color'] ?? '#7c9ef8',
-                'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
-                'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
-                'masonryColumns'             => $settings['masonry_columns'] ?? 0,
-                // Viewport backgrounds
-                'imageBgType'                => $settings['image_bg_type'] ?? 'none',
-                'imageBgColor'               => $settings['image_bg_color'] ?? '#1a1a2e',
-                'imageBgGradient'            => $settings['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
-                'imageBgImageUrl'            => $settings['image_bg_image_url'] ?? '',
-                'videoBgType'                => $settings['video_bg_type'] ?? 'none',
-                'videoBgColor'               => $settings['video_bg_color'] ?? '#0d0d0d',
-                'videoBgGradient'            => $settings['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
-                'videoBgImageUrl'            => $settings['video_bg_image_url'] ?? '',
-                'unifiedBgType'              => $settings['unified_bg_type'] ?? 'none',
-                'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
-                'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
-                'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
-                // P13-A: Campaign Card
-                'cardBorderRadius'           => $settings['card_border_radius'] ?? 8,
-                'cardBorderWidth'            => $settings['card_border_width'] ?? 4,
-                'cardBorderMode'             => $settings['card_border_mode'] ?? 'auto',
-                'cardBorderColor'            => $settings['card_border_color'] ?? '#228be6',
-                'cardShadowPreset'           => $settings['card_shadow_preset'] ?? 'subtle',
-                'cardThumbnailHeight'        => $settings['card_thumbnail_height'] ?? 200,
-                'cardThumbnailFit'           => $settings['card_thumbnail_fit'] ?? 'cover',
-                'cardGridColumns'            => $settings['card_grid_columns'] ?? 0,
-                'cardGap'                    => $settings['card_gap'] ?? 16,
-                'modalCoverHeight'           => $settings['modal_cover_height'] ?? 240,
-                'modalTransition'            => $settings['modal_transition'] ?? 'pop',
-                'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
-                'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
-                // P13-F: Card Gallery Pagination
-                'cardDisplayMode'            => $settings['card_display_mode'] ?? 'load-more',
-                'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
-                'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
-                'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
-                // P13-E: Header visibility toggles
-                'showGalleryTitle'           => $settings['show_gallery_title'] ?? true,
-                'showGallerySubtitle'        => $settings['show_gallery_subtitle'] ?? true,
-                'showAccessMode'             => $settings['show_access_mode'] ?? true,
-                'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
-                'showSearchBox'              => $settings['show_search_box'] ?? true,
-                // P13-E: App width, padding & per-gallery tile sizes
-                'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
-                'appPadding'                 => $settings['app_padding'] ?? 16,
-                'wpFullBleedDesktop'         => $settings['wp_full_bleed_desktop'] ?? false,
-                'wpFullBleedTablet'          => $settings['wp_full_bleed_tablet'] ?? false,
-                'wpFullBleedMobile'          => $settings['wp_full_bleed_mobile'] ?? false,
-                'imageTileSize'              => $settings['image_tile_size'] ?? 150,
-                'videoTileSize'              => $settings['video_tile_size'] ?? 150,
-                'cacheTtl'         => $settings['cache_ttl'] ?? 3600,
-            ], 200);
-        }
-
-        // Public users only see display-related settings.
-        $public_settings = [
-            'theme'            => $settings['theme'] ?? 'dark',
-            'galleryLayout'    => $settings['gallery_layout'] ?? 'grid',
-            'itemsPerPage'     => $settings['items_per_page'] ?? 12,
-            'enableLightbox'   => $settings['enable_lightbox'] ?? true,
-            'enableAnimations' => $settings['enable_animations'] ?? true,
-            'videoViewportHeight' => $settings['video_viewport_height'] ?? 420,
-            'imageViewportHeight' => $settings['image_viewport_height'] ?? 420,
-            'thumbnailScrollSpeed' => $settings['thumbnail_scroll_speed'] ?? 1,
-            'scrollAnimationStyle' => $settings['scroll_animation_style'] ?? 'smooth',
-            'scrollAnimationDurationMs' => $settings['scroll_animation_duration_ms'] ?? 350,
-            'scrollAnimationEasing' => $settings['scroll_animation_easing'] ?? 'ease',
-            'scrollTransitionType' => $settings['scroll_transition_type'] ?? 'slide-fade',
-            'imageBorderRadius' => $settings['image_border_radius'] ?? 8,
-            'videoBorderRadius' => $settings['video_border_radius'] ?? 8,
-            'transitionFadeEnabled' => $settings['transition_fade_enabled'] ?? true,
-            // P12-H
-            'navArrowPosition'     => $settings['nav_arrow_position'] ?? 'center',
-            'navArrowSize'         => $settings['nav_arrow_size'] ?? 36,
-            'navArrowColor'        => $settings['nav_arrow_color'] ?? '#ffffff',
-            'navArrowBgColor'      => $settings['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
-            'navArrowBorderWidth'  => $settings['nav_arrow_border_width'] ?? 0,
-            'navArrowHoverScale'   => $settings['nav_arrow_hover_scale'] ?? 1.1,
-            'navArrowAutoHideMs'   => $settings['nav_arrow_auto_hide_ms'] ?? 0,
-            // P12-I
-            'dotNavEnabled'        => $settings['dot_nav_enabled'] ?? true,
-            'dotNavPosition'       => $settings['dot_nav_position'] ?? 'below',
-            'dotNavSize'           => $settings['dot_nav_size'] ?? 10,
-            'dotNavActiveColor'    => $settings['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
-            'dotNavInactiveColor'  => $settings['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
-            'dotNavShape'          => $settings['dot_nav_shape'] ?? 'circle',
-            'dotNavSpacing'        => $settings['dot_nav_spacing'] ?? 6,
-            'dotNavActiveScale'    => $settings['dot_nav_active_scale'] ?? 1.3,
-            // P12-J
-            'imageShadowPreset'    => $settings['image_shadow_preset'] ?? 'subtle',
-            'videoShadowPreset'    => $settings['video_shadow_preset'] ?? 'subtle',
-            'imageShadowCustom'    => $settings['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
-            'videoShadowCustom'    => $settings['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
-            // P12-A/B
-            'videoThumbnailWidth'  => $settings['video_thumbnail_width'] ?? 60,
-            'videoThumbnailHeight' => $settings['video_thumbnail_height'] ?? 45,
-            'imageThumbnailWidth'  => $settings['image_thumbnail_width'] ?? 60,
-            'imageThumbnailHeight' => $settings['image_thumbnail_height'] ?? 60,
-            'thumbnailGap'         => $settings['thumbnail_gap'] ?? 6,
-            'thumbnailWheelScrollEnabled'   => $settings['thumbnail_wheel_scroll_enabled'] ?? true,
-            'thumbnailDragScrollEnabled'    => $settings['thumbnail_drag_scroll_enabled'] ?? true,
-            'thumbnailScrollButtonsVisible' => $settings['thumbnail_scroll_buttons_visible'] ?? false,
-            // P12-C
-            'imageGalleryAdapterId'      => $settings['image_gallery_adapter_id'] ?? 'classic',
-            'videoGalleryAdapterId'      => $settings['video_gallery_adapter_id'] ?? 'classic',
-            'unifiedGalleryEnabled'      => $settings['unified_gallery_enabled'] ?? false,
-            'unifiedGalleryAdapterId'    => $settings['unified_gallery_adapter_id'] ?? 'compact-grid',
-            'gridCardWidth'              => $settings['grid_card_width'] ?? 160,
-            'gridCardHeight'             => $settings['grid_card_height'] ?? 224,
-            'mosaicTargetRowHeight'      => $settings['mosaic_target_row_height'] ?? 200,
-            'tileSize'                   => $settings['tile_size'] ?? 150,
-            'tileGapX'                   => $settings['tile_gap_x'] ?? 8,
-            'tileGapY'                   => $settings['tile_gap_y'] ?? 8,
-            'tileBorderWidth'            => $settings['tile_border_width'] ?? 0,
-            'tileBorderColor'            => $settings['tile_border_color'] ?? '#ffffff',
-            'tileGlowEnabled'            => $settings['tile_glow_enabled'] ?? false,
-            'tileGlowColor'              => $settings['tile_glow_color'] ?? '#7c9ef8',
-            'tileGlowSpread'             => $settings['tile_glow_spread'] ?? 12,
-            'tileHoverBounce'            => $settings['tile_hover_bounce'] ?? true,
-            'masonryColumns'             => $settings['masonry_columns'] ?? 0,
-            // Viewport backgrounds
-            'imageBgType'                => $settings['image_bg_type'] ?? 'none',
-            'imageBgColor'               => $settings['image_bg_color'] ?? '#1a1a2e',
-            'imageBgGradient'            => $settings['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
-            'imageBgImageUrl'            => $settings['image_bg_image_url'] ?? '',
-            'videoBgType'                => $settings['video_bg_type'] ?? 'none',
-            'videoBgColor'               => $settings['video_bg_color'] ?? '#0d0d0d',
-            'videoBgGradient'            => $settings['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
-            'videoBgImageUrl'            => $settings['video_bg_image_url'] ?? '',
-            'unifiedBgType'              => $settings['unified_bg_type'] ?? 'none',
-            'unifiedBgColor'             => $settings['unified_bg_color'] ?? '#1a1a2e',
-            'unifiedBgGradient'          => $settings['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
-            'unifiedBgImageUrl'          => $settings['unified_bg_image_url'] ?? '',
-            // P13-A: Campaign Card
-            'cardBorderRadius'           => $settings['card_border_radius'] ?? 8,
-            'cardBorderWidth'            => $settings['card_border_width'] ?? 4,
-            'cardBorderMode'             => $settings['card_border_mode'] ?? 'auto',
-            'cardBorderColor'            => $settings['card_border_color'] ?? '#228be6',
-            'cardShadowPreset'           => $settings['card_shadow_preset'] ?? 'subtle',
-            'cardThumbnailHeight'        => $settings['card_thumbnail_height'] ?? 200,
-            'cardThumbnailFit'           => $settings['card_thumbnail_fit'] ?? 'cover',
-            'cardGridColumns'            => $settings['card_grid_columns'] ?? 0,
-            'cardGap'                    => $settings['card_gap'] ?? 16,
-            'modalCoverHeight'           => $settings['modal_cover_height'] ?? 240,
-            'modalTransition'            => $settings['modal_transition'] ?? 'pop',
-            'modalTransitionDuration'    => $settings['modal_transition_duration'] ?? 300,
-            'modalMaxHeight'             => $settings['modal_max_height'] ?? 90,
-            // P13-F: Card Gallery Pagination
-            'cardDisplayMode'            => $settings['card_display_mode'] ?? 'load-more',
-            'cardRowsPerPage'            => $settings['card_rows_per_page'] ?? 3,
-            'cardPageDotNav'             => $settings['card_page_dot_nav'] ?? false,
-            'cardPageTransitionMs'       => $settings['card_page_transition_ms'] ?? 300,
-            // P13-E: Header visibility toggles
-            'showGalleryTitle'           => $settings['show_gallery_title'] ?? true,
-            'showGallerySubtitle'        => $settings['show_gallery_subtitle'] ?? true,
-            'showAccessMode'             => $settings['show_access_mode'] ?? true,
-            'showFilterTabs'             => $settings['show_filter_tabs'] ?? true,
-            'showSearchBox'              => $settings['show_search_box'] ?? true,
-            // P13-E: App width, padding & per-gallery tile sizes
-            'appMaxWidth'                => $settings['app_max_width'] ?? 1200,
-            'appPadding'                 => $settings['app_padding'] ?? 16,
-            'wpFullBleedDesktop'         => $settings['wp_full_bleed_desktop'] ?? false,
-            'wpFullBleedTablet'          => $settings['wp_full_bleed_tablet'] ?? false,
-            'wpFullBleedMobile'          => $settings['wp_full_bleed_mobile'] ?? false,
-            'imageTileSize'              => $settings['image_tile_size'] ?? 150,
-            'videoTileSize'              => $settings['video_tile_size'] ?? 150,
-        ];
-
-        return new WP_REST_Response($public_settings, 200);
+        $is_admin = current_user_can('manage_options');
+        return new WP_REST_Response(
+            WPSG_Settings::to_js($settings, $is_admin),
+            200
+        );
     }
 
     /**
      * Update settings (admin only).
      *
-     * @param WP_REST_Request $request Request object.
+     * Uses WPSG_Settings::from_js() for DRY camel→snake conversion
+     * and WPSG_Settings::to_js() for the response.
+     *
      * @return WP_REST_Response Updated settings.
      */
-    public static function update_settings($request) {
+    public static function update_settings() {
         if (!class_exists('WPSG_Settings')) {
             return new WP_REST_Response(['error' => 'Settings not available'], 500);
         }
 
+        $request = func_get_arg(0);
         $body = $request->get_json_params();
-
-        // Map camelCase from frontend to snake_case for PHP.
-        $input = [];
-
-        if (isset($body['authProvider'])) {
-            $input['auth_provider'] = sanitize_text_field($body['authProvider']);
-        }
-        if (isset($body['apiBase'])) {
-            $input['api_base'] = esc_url_raw($body['apiBase']);
-        }
-        if (isset($body['theme'])) {
-            $input['theme'] = sanitize_text_field($body['theme']);
-        }
-        if (isset($body['galleryLayout'])) {
-            $input['gallery_layout'] = sanitize_text_field($body['galleryLayout']);
-        }
-        if (isset($body['itemsPerPage'])) {
-            $input['items_per_page'] = intval($body['itemsPerPage']);
-        }
-        if (isset($body['enableLightbox'])) {
-            $input['enable_lightbox'] = (bool) $body['enableLightbox'];
-        }
-        if (isset($body['enableAnimations'])) {
-            $input['enable_animations'] = (bool) $body['enableAnimations'];
-        }
-        if (isset($body['videoViewportHeight'])) {
-            $input['video_viewport_height'] = intval($body['videoViewportHeight']);
-        }
-        if (isset($body['imageViewportHeight'])) {
-            $input['image_viewport_height'] = intval($body['imageViewportHeight']);
-        }
-        if (isset($body['thumbnailScrollSpeed'])) {
-            $input['thumbnail_scroll_speed'] = floatval($body['thumbnailScrollSpeed']);
-        }
-        if (isset($body['scrollAnimationStyle'])) {
-            $input['scroll_animation_style'] = sanitize_text_field($body['scrollAnimationStyle']);
-        }
-        if (isset($body['scrollAnimationDurationMs'])) {
-            $input['scroll_animation_duration_ms'] = intval($body['scrollAnimationDurationMs']);
-        }
-        if (isset($body['scrollAnimationEasing'])) {
-            $input['scroll_animation_easing'] = sanitize_text_field($body['scrollAnimationEasing']);
-        }
-        if (isset($body['scrollTransitionType'])) {
-            $input['scroll_transition_type'] = sanitize_text_field($body['scrollTransitionType']);
-        }
-        if (isset($body['imageBorderRadius'])) {
-            $input['image_border_radius'] = intval($body['imageBorderRadius']);
-        }
-        if (isset($body['videoBorderRadius'])) {
-            $input['video_border_radius'] = intval($body['videoBorderRadius']);
-        }
-        if (isset($body['transitionFadeEnabled'])) {
-            $input['transition_fade_enabled'] = (bool) $body['transitionFadeEnabled'];
-        }
-        // P12-H: Navigation Overlay Arrows
-        if (isset($body['navArrowPosition'])) {
-            $input['nav_arrow_position'] = sanitize_text_field($body['navArrowPosition']);
-        }
-        if (isset($body['navArrowSize'])) {
-            $input['nav_arrow_size'] = intval($body['navArrowSize']);
-        }
-        if (isset($body['navArrowColor'])) {
-            $input['nav_arrow_color'] = sanitize_text_field($body['navArrowColor']);
-        }
-        if (isset($body['navArrowBgColor'])) {
-            $input['nav_arrow_bg_color'] = sanitize_text_field($body['navArrowBgColor']);
-        }
-        if (isset($body['navArrowBorderWidth'])) {
-            $input['nav_arrow_border_width'] = intval($body['navArrowBorderWidth']);
-        }
-        if (isset($body['navArrowHoverScale'])) {
-            $input['nav_arrow_hover_scale'] = floatval($body['navArrowHoverScale']);
-        }
-        if (isset($body['navArrowAutoHideMs'])) {
-            $input['nav_arrow_auto_hide_ms'] = intval($body['navArrowAutoHideMs']);
-        }
-        // P12-I: Dot Navigator
-        if (isset($body['dotNavEnabled'])) {
-            $input['dot_nav_enabled'] = (bool) $body['dotNavEnabled'];
-        }
-        if (isset($body['dotNavPosition'])) {
-            $input['dot_nav_position'] = sanitize_text_field($body['dotNavPosition']);
-        }
-        if (isset($body['dotNavSize'])) {
-            $input['dot_nav_size'] = intval($body['dotNavSize']);
-        }
-        if (isset($body['dotNavActiveColor'])) {
-            $input['dot_nav_active_color'] = sanitize_text_field($body['dotNavActiveColor']);
-        }
-        if (isset($body['dotNavInactiveColor'])) {
-            $input['dot_nav_inactive_color'] = sanitize_text_field($body['dotNavInactiveColor']);
-        }
-        if (isset($body['dotNavShape'])) {
-            $input['dot_nav_shape'] = sanitize_text_field($body['dotNavShape']);
-        }
-        if (isset($body['dotNavSpacing'])) {
-            $input['dot_nav_spacing'] = intval($body['dotNavSpacing']);
-        }
-        if (isset($body['dotNavActiveScale'])) {
-            $input['dot_nav_active_scale'] = floatval($body['dotNavActiveScale']);
-        }
-        // P12-J: Shadow & Depth
-        if (isset($body['imageShadowPreset'])) {
-            $input['image_shadow_preset'] = sanitize_text_field($body['imageShadowPreset']);
-        }
-        if (isset($body['videoShadowPreset'])) {
-            $input['video_shadow_preset'] = sanitize_text_field($body['videoShadowPreset']);
-        }
-        if (isset($body['imageShadowCustom'])) {
-            $input['image_shadow_custom'] = sanitize_text_field($body['imageShadowCustom']);
-        }
-        if (isset($body['videoShadowCustom'])) {
-            $input['video_shadow_custom'] = sanitize_text_field($body['videoShadowCustom']);
-        }
-        // P12-A/B
-        if (isset($body['videoThumbnailWidth'])) {
-            $input['video_thumbnail_width'] = intval($body['videoThumbnailWidth']);
-        }
-        if (isset($body['videoThumbnailHeight'])) {
-            $input['video_thumbnail_height'] = intval($body['videoThumbnailHeight']);
-        }
-        if (isset($body['imageThumbnailWidth'])) {
-            $input['image_thumbnail_width'] = intval($body['imageThumbnailWidth']);
-        }
-        if (isset($body['imageThumbnailHeight'])) {
-            $input['image_thumbnail_height'] = intval($body['imageThumbnailHeight']);
-        }
-        if (isset($body['thumbnailGap'])) {
-            $input['thumbnail_gap'] = intval($body['thumbnailGap']);
-        }
-        if (isset($body['thumbnailWheelScrollEnabled'])) {
-            $input['thumbnail_wheel_scroll_enabled'] = (bool) $body['thumbnailWheelScrollEnabled'];
-        }
-        if (isset($body['thumbnailDragScrollEnabled'])) {
-            $input['thumbnail_drag_scroll_enabled'] = (bool) $body['thumbnailDragScrollEnabled'];
-        }
-        if (isset($body['thumbnailScrollButtonsVisible'])) {
-            $input['thumbnail_scroll_buttons_visible'] = (bool) $body['thumbnailScrollButtonsVisible'];
-        }
-        // P12-C: Gallery Adapters
-        if (isset($body['imageGalleryAdapterId'])) {
-            $input['image_gallery_adapter_id'] = sanitize_text_field($body['imageGalleryAdapterId']);
-        }
-        if (isset($body['videoGalleryAdapterId'])) {
-            $input['video_gallery_adapter_id'] = sanitize_text_field($body['videoGalleryAdapterId']);
-        }
-        if (isset($body['unifiedGalleryEnabled'])) {
-            $input['unified_gallery_enabled'] = (bool) $body['unifiedGalleryEnabled'];
-        }
-        if (isset($body['unifiedGalleryAdapterId'])) {
-            $input['unified_gallery_adapter_id'] = sanitize_text_field($body['unifiedGalleryAdapterId']);
-        }
-        if (isset($body['mosaicTargetRowHeight'])) {
-            $input['mosaic_target_row_height'] = intval($body['mosaicTargetRowHeight']);
-        }
-        if (isset($body['gridCardWidth'])) {
-            $input['grid_card_width'] = intval($body['gridCardWidth']);
-        }
-        if (isset($body['gridCardHeight'])) {
-            $input['grid_card_height'] = intval($body['gridCardHeight']);
-        }
-        // Tile appearance
-        if (isset($body['tileSize'])) { $input['tile_size'] = intval($body['tileSize']); }
-        if (isset($body['tileGapX'])) { $input['tile_gap_x'] = intval($body['tileGapX']); }
-        if (isset($body['tileGapY'])) { $input['tile_gap_y'] = intval($body['tileGapY']); }
-        if (isset($body['tileBorderWidth'])) { $input['tile_border_width'] = intval($body['tileBorderWidth']); }
-        if (isset($body['tileBorderColor'])) { $input['tile_border_color'] = sanitize_hex_color($body['tileBorderColor']) ?: '#ffffff'; }
-        if (isset($body['tileGlowEnabled'])) { $input['tile_glow_enabled'] = (bool) $body['tileGlowEnabled']; }
-        if (isset($body['tileGlowColor'])) { $input['tile_glow_color'] = sanitize_hex_color($body['tileGlowColor']) ?: '#7c9ef8'; }
-        if (isset($body['tileGlowSpread'])) { $input['tile_glow_spread'] = intval($body['tileGlowSpread']); }
-        if (isset($body['tileHoverBounce'])) { $input['tile_hover_bounce'] = (bool) $body['tileHoverBounce']; }
-        if (isset($body['masonryColumns'])) { $input['masonry_columns'] = intval($body['masonryColumns']); }
-        // Viewport backgrounds
-        $allowed_bg_types = ['none', 'solid', 'gradient', 'image'];
-        if (isset($body['imageBgType'])) { $input['image_bg_type'] = in_array($body['imageBgType'], $allowed_bg_types, true) ? $body['imageBgType'] : 'none'; }
-        if (isset($body['imageBgColor'])) { $input['image_bg_color'] = sanitize_text_field($body['imageBgColor']); }
-        if (isset($body['imageBgGradient'])) { $input['image_bg_gradient'] = sanitize_text_field($body['imageBgGradient']); }
-        if (isset($body['imageBgImageUrl'])) { $input['image_bg_image_url'] = esc_url_raw($body['imageBgImageUrl']); }
-        if (isset($body['videoBgType'])) { $input['video_bg_type'] = in_array($body['videoBgType'], $allowed_bg_types, true) ? $body['videoBgType'] : 'none'; }
-        if (isset($body['videoBgColor'])) { $input['video_bg_color'] = sanitize_text_field($body['videoBgColor']); }
-        if (isset($body['videoBgGradient'])) { $input['video_bg_gradient'] = sanitize_text_field($body['videoBgGradient']); }
-        if (isset($body['videoBgImageUrl'])) { $input['video_bg_image_url'] = esc_url_raw($body['videoBgImageUrl']); }
-        if (isset($body['unifiedBgType'])) { $input['unified_bg_type'] = in_array($body['unifiedBgType'], $allowed_bg_types, true) ? $body['unifiedBgType'] : 'none'; }
-        if (isset($body['unifiedBgColor'])) { $input['unified_bg_color'] = sanitize_text_field($body['unifiedBgColor']); }
-        if (isset($body['unifiedBgGradient'])) { $input['unified_bg_gradient'] = sanitize_text_field($body['unifiedBgGradient']); }
-        if (isset($body['unifiedBgImageUrl'])) { $input['unified_bg_image_url'] = esc_url_raw($body['unifiedBgImageUrl']); }
-        // P13-A: Campaign Card
-        if (isset($body['cardBorderRadius'])) { $input['card_border_radius'] = intval($body['cardBorderRadius']); }
-        if (isset($body['cardBorderWidth'])) { $input['card_border_width'] = intval($body['cardBorderWidth']); }
-        if (isset($body['cardBorderMode'])) { $input['card_border_mode'] = sanitize_text_field($body['cardBorderMode']); }
-        if (isset($body['cardBorderColor'])) { $input['card_border_color'] = sanitize_text_field($body['cardBorderColor']); }
-        if (isset($body['cardShadowPreset'])) { $input['card_shadow_preset'] = sanitize_text_field($body['cardShadowPreset']); }
-        if (isset($body['cardThumbnailHeight'])) { $input['card_thumbnail_height'] = intval($body['cardThumbnailHeight']); }
-        if (isset($body['cardThumbnailFit'])) { $input['card_thumbnail_fit'] = sanitize_text_field($body['cardThumbnailFit']); }
-        if (isset($body['cardGridColumns'])) { $input['card_grid_columns'] = intval($body['cardGridColumns']); }
-        if (isset($body['cardGap'])) { $input['card_gap'] = intval($body['cardGap']); }
-        if (isset($body['modalCoverHeight'])) { $input['modal_cover_height'] = intval($body['modalCoverHeight']); }
-        if (isset($body['modalTransition'])) { $input['modal_transition'] = sanitize_text_field($body['modalTransition']); }
-        if (isset($body['modalTransitionDuration'])) { $input['modal_transition_duration'] = intval($body['modalTransitionDuration']); }
-        if (isset($body['modalMaxHeight'])) { $input['modal_max_height'] = intval($body['modalMaxHeight']); }
-        // P13-F: Card Gallery Pagination
-        if (isset($body['cardDisplayMode'])) { $input['card_display_mode'] = sanitize_text_field($body['cardDisplayMode']); }
-        if (isset($body['cardRowsPerPage'])) { $input['card_rows_per_page'] = intval($body['cardRowsPerPage']); }
-        if (isset($body['cardPageDotNav'])) { $input['card_page_dot_nav'] = (bool) $body['cardPageDotNav']; }
-        if (isset($body['cardPageTransitionMs'])) { $input['card_page_transition_ms'] = intval($body['cardPageTransitionMs']); }
-        // P13-E: Header visibility toggles
-        if (isset($body['showGalleryTitle'])) { $input['show_gallery_title'] = (bool) $body['showGalleryTitle']; }
-        if (isset($body['showGallerySubtitle'])) { $input['show_gallery_subtitle'] = (bool) $body['showGallerySubtitle']; }
-        if (isset($body['showAccessMode'])) { $input['show_access_mode'] = (bool) $body['showAccessMode']; }
-        if (isset($body['showFilterTabs'])) { $input['show_filter_tabs'] = (bool) $body['showFilterTabs']; }
-        if (isset($body['showSearchBox'])) { $input['show_search_box'] = (bool) $body['showSearchBox']; }
-        // P13-E: App width, padding & per-gallery tile sizes
-        if (isset($body['appMaxWidth'])) { $input['app_max_width'] = intval($body['appMaxWidth']); }
-        if (isset($body['appPadding'])) { $input['app_padding'] = intval($body['appPadding']); }
-        if (isset($body['wpFullBleedDesktop'])) { $input['wp_full_bleed_desktop'] = (bool) $body['wpFullBleedDesktop']; }
-        if (isset($body['wpFullBleedTablet'])) { $input['wp_full_bleed_tablet'] = (bool) $body['wpFullBleedTablet']; }
-        if (isset($body['wpFullBleedMobile'])) { $input['wp_full_bleed_mobile'] = (bool) $body['wpFullBleedMobile']; }
-        if (isset($body['imageTileSize'])) { $input['image_tile_size'] = intval($body['imageTileSize']); }
-        if (isset($body['videoTileSize'])) { $input['video_tile_size'] = intval($body['videoTileSize']); }
-        if (isset($body['cacheTtl'])) {
-            $input['cache_ttl'] = intval($body['cacheTtl']);
-        }
-
-        // Use WPSG_Settings sanitization.
+        $input = WPSG_Settings::from_js($body);
         $sanitized = WPSG_Settings::sanitize_settings($input);
-
-        // Merge with existing settings.
         $current = WPSG_Settings::get_settings();
         $merged = array_merge($current, $sanitized);
-
-        // Save to WordPress options.
         update_option(WPSG_Settings::OPTION_NAME, $merged);
 
-        // Return updated settings in frontend format.
-        return new WP_REST_Response([
-            'authProvider'     => $merged['auth_provider'],
-            'apiBase'          => $merged['api_base'],
-            'theme'            => $merged['theme'],
-            'galleryLayout'    => $merged['gallery_layout'],
-            'itemsPerPage'     => $merged['items_per_page'],
-            'enableLightbox'   => $merged['enable_lightbox'],
-            'enableAnimations' => $merged['enable_animations'],
-            'videoViewportHeight' => $merged['video_viewport_height'] ?? 420,
-            'imageViewportHeight' => $merged['image_viewport_height'] ?? 420,
-            'thumbnailScrollSpeed' => $merged['thumbnail_scroll_speed'] ?? 1,
-            'scrollAnimationStyle' => $merged['scroll_animation_style'] ?? 'smooth',
-            'scrollAnimationDurationMs' => $merged['scroll_animation_duration_ms'] ?? 350,
-            'scrollAnimationEasing' => $merged['scroll_animation_easing'] ?? 'ease',
-            'scrollTransitionType' => $merged['scroll_transition_type'] ?? 'slide-fade',
-            'imageBorderRadius' => $merged['image_border_radius'] ?? 8,
-            'videoBorderRadius' => $merged['video_border_radius'] ?? 8,
-            'transitionFadeEnabled' => $merged['transition_fade_enabled'] ?? true,
-            // P12-H
-            'navArrowPosition'     => $merged['nav_arrow_position'] ?? 'center',
-            'navArrowSize'         => $merged['nav_arrow_size'] ?? 36,
-            'navArrowColor'        => $merged['nav_arrow_color'] ?? '#ffffff',
-            'navArrowBgColor'      => $merged['nav_arrow_bg_color'] ?? 'rgba(0,0,0,0.45)',
-            'navArrowBorderWidth'  => $merged['nav_arrow_border_width'] ?? 0,
-            'navArrowHoverScale'   => $merged['nav_arrow_hover_scale'] ?? 1.1,
-            'navArrowAutoHideMs'   => $merged['nav_arrow_auto_hide_ms'] ?? 0,
-            // P12-I
-            'dotNavEnabled'        => $merged['dot_nav_enabled'] ?? true,
-            'dotNavPosition'       => $merged['dot_nav_position'] ?? 'below',
-            'dotNavSize'           => $merged['dot_nav_size'] ?? 10,
-            'dotNavActiveColor'    => $merged['dot_nav_active_color'] ?? 'var(--wpsg-color-primary)',
-            'dotNavInactiveColor'  => $merged['dot_nav_inactive_color'] ?? 'rgba(128,128,128,0.4)',
-            'dotNavShape'          => $merged['dot_nav_shape'] ?? 'circle',
-            'dotNavSpacing'        => $merged['dot_nav_spacing'] ?? 6,
-            'dotNavActiveScale'    => $merged['dot_nav_active_scale'] ?? 1.3,
-            // P12-J
-            'imageShadowPreset'    => $merged['image_shadow_preset'] ?? 'subtle',
-            'videoShadowPreset'    => $merged['video_shadow_preset'] ?? 'subtle',
-            'imageShadowCustom'    => $merged['image_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
-            'videoShadowCustom'    => $merged['video_shadow_custom'] ?? '0 2px 8px rgba(0,0,0,0.15)',
-            // P12-A/B
-            'videoThumbnailWidth'  => $merged['video_thumbnail_width'] ?? 60,
-            'videoThumbnailHeight' => $merged['video_thumbnail_height'] ?? 45,
-            'imageThumbnailWidth'  => $merged['image_thumbnail_width'] ?? 60,
-            'imageThumbnailHeight' => $merged['image_thumbnail_height'] ?? 60,
-            'thumbnailGap'         => $merged['thumbnail_gap'] ?? 6,
-            'thumbnailWheelScrollEnabled'   => $merged['thumbnail_wheel_scroll_enabled'] ?? true,
-            'thumbnailDragScrollEnabled'    => $merged['thumbnail_drag_scroll_enabled'] ?? true,
-            'thumbnailScrollButtonsVisible' => $merged['thumbnail_scroll_buttons_visible'] ?? false,
-            // P12-C
-            'imageGalleryAdapterId'      => $merged['image_gallery_adapter_id'] ?? 'classic',
-            'videoGalleryAdapterId'      => $merged['video_gallery_adapter_id'] ?? 'classic',
-            'unifiedGalleryEnabled'      => $merged['unified_gallery_enabled'] ?? false,
-            'unifiedGalleryAdapterId'    => $merged['unified_gallery_adapter_id'] ?? 'compact-grid',
-            'gridCardWidth'              => $merged['grid_card_width'] ?? 160,
-            'gridCardHeight'             => $merged['grid_card_height'] ?? 224,
-            'mosaicTargetRowHeight'      => $merged['mosaic_target_row_height'] ?? 200,
-            'tileSize'                   => $merged['tile_size'] ?? 150,
-            'tileGapX'                   => $merged['tile_gap_x'] ?? 8,
-            'tileGapY'                   => $merged['tile_gap_y'] ?? 8,
-            'tileBorderWidth'            => $merged['tile_border_width'] ?? 0,
-            'tileBorderColor'            => $merged['tile_border_color'] ?? '#ffffff',
-            'tileGlowEnabled'            => $merged['tile_glow_enabled'] ?? false,
-            'tileGlowColor'              => $merged['tile_glow_color'] ?? '#7c9ef8',
-            'tileGlowSpread'             => $merged['tile_glow_spread'] ?? 12,
-            'tileHoverBounce'            => $merged['tile_hover_bounce'] ?? true,
-            'masonryColumns'             => $merged['masonry_columns'] ?? 0,
-            // Viewport backgrounds
-            'imageBgType'                => $merged['image_bg_type'] ?? 'none',
-            'imageBgColor'               => $merged['image_bg_color'] ?? '#1a1a2e',
-            'imageBgGradient'            => $merged['image_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
-            'imageBgImageUrl'            => $merged['image_bg_image_url'] ?? '',
-            'videoBgType'                => $merged['video_bg_type'] ?? 'none',
-            'videoBgColor'               => $merged['video_bg_color'] ?? '#0d0d0d',
-            'videoBgGradient'            => $merged['video_bg_gradient'] ?? 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%)',
-            'videoBgImageUrl'            => $merged['video_bg_image_url'] ?? '',
-            'unifiedBgType'              => $merged['unified_bg_type'] ?? 'none',
-            'unifiedBgColor'             => $merged['unified_bg_color'] ?? '#1a1a2e',
-            'unifiedBgGradient'          => $merged['unified_bg_gradient'] ?? 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
-            'unifiedBgImageUrl'          => $merged['unified_bg_image_url'] ?? '',
-            // P13-A: Campaign Card
-            'cardBorderRadius'           => $merged['card_border_radius'] ?? 8,
-            'cardBorderWidth'            => $merged['card_border_width'] ?? 4,
-            'cardBorderMode'             => $merged['card_border_mode'] ?? 'auto',
-            'cardBorderColor'            => $merged['card_border_color'] ?? '#228be6',
-            'cardShadowPreset'           => $merged['card_shadow_preset'] ?? 'subtle',
-            'cardThumbnailHeight'        => $merged['card_thumbnail_height'] ?? 200,
-            'cardThumbnailFit'           => $merged['card_thumbnail_fit'] ?? 'cover',
-            'cardGridColumns'            => $merged['card_grid_columns'] ?? 0,
-            'cardGap'                    => $merged['card_gap'] ?? 16,
-            'modalCoverHeight'           => $merged['modal_cover_height'] ?? 240,
-            'modalTransition'            => $merged['modal_transition'] ?? 'pop',
-            'modalTransitionDuration'    => $merged['modal_transition_duration'] ?? 300,
-            'modalMaxHeight'             => $merged['modal_max_height'] ?? 90,
-            // P13-F: Card Gallery Pagination
-            'cardDisplayMode'            => $merged['card_display_mode'] ?? 'load-more',
-            'cardRowsPerPage'            => $merged['card_rows_per_page'] ?? 3,
-            'cardPageDotNav'             => $merged['card_page_dot_nav'] ?? false,
-            'cardPageTransitionMs'       => $merged['card_page_transition_ms'] ?? 300,
-            // P13-E: Header visibility toggles
-            'showGalleryTitle'           => $merged['show_gallery_title'] ?? true,
-            'showGallerySubtitle'        => $merged['show_gallery_subtitle'] ?? true,
-            'showAccessMode'             => $merged['show_access_mode'] ?? true,
-            'showFilterTabs'             => $merged['show_filter_tabs'] ?? true,
-            'showSearchBox'              => $merged['show_search_box'] ?? true,
-            // P13-E: App width, padding & per-gallery tile sizes
-            'appMaxWidth'                => $merged['app_max_width'] ?? 1200,
-            'appPadding'                 => $merged['app_padding'] ?? 16,
-            'wpFullBleedDesktop'         => $merged['wp_full_bleed_desktop'] ?? false,
-            'wpFullBleedTablet'          => $merged['wp_full_bleed_tablet'] ?? false,
-            'wpFullBleedMobile'          => $merged['wp_full_bleed_mobile'] ?? false,
-            'imageTileSize'              => $merged['image_tile_size'] ?? 150,
-            'videoTileSize'              => $merged['video_tile_size'] ?? 150,
-            'cacheTtl'         => $merged['cache_ttl'],
-        ], 200);
+        return new WP_REST_Response(
+            WPSG_Settings::to_js($merged, true),
+            200
+        );
     }
 
     private static function campaign_exists($post_id) {
@@ -3051,10 +2551,18 @@ class WPSG_REST {
         $cover_image_param = $request->get_param('coverImage');
         $thumbnail_id = intval($request->get_param('thumbnailId'));
 
+        $allowed_visibility = ['public', 'private'];
         if (!empty($visibility)) {
+            if (!in_array($visibility, $allowed_visibility, true)) {
+                return new WP_REST_Response(['message' => 'Invalid visibility value'], 400);
+            }
             update_post_meta($post_id, 'visibility', $visibility);
         }
+        $allowed_status = ['draft', 'active', 'archived'];
         if (!empty($status)) {
+            if (!in_array($status, $allowed_status, true)) {
+                return new WP_REST_Response(['message' => 'Invalid status value'], 400);
+            }
             update_post_meta($post_id, 'status', $status);
         }
         if (is_array($tags)) {
@@ -3351,5 +2859,91 @@ class WPSG_REST {
         }
 
         return new WP_Error('invalid_url', 'Provider not supported');
+    }
+
+    // --- P14-C: Thumbnail cache endpoints ---
+
+    public static function get_thumbnail_cache_stats() {
+        $stats = WPSG_Thumbnail_Cache::get_stats();
+        return new WP_REST_Response($stats, 200);
+    }
+
+    public static function clear_thumbnail_cache() {
+        $removed = WPSG_Thumbnail_Cache::clear_all();
+        return new WP_REST_Response(['cleared' => $removed], 200);
+    }
+
+    public static function refresh_thumbnail_cache() {
+        $result = WPSG_Thumbnail_Cache::refresh_all();
+        return new WP_REST_Response($result, 200);
+    }
+
+    // --- P14-D/E: Health & monitoring endpoints ---
+
+    public static function get_health_data() {
+        $health = WPSG_Monitoring::get_health_data();
+        return new WP_REST_Response($health, 200);
+    }
+
+    public static function get_oembed_failures() {
+        $failures = WPSG_Monitoring::get_oembed_failures();
+        return new WP_REST_Response($failures, 200);
+    }
+
+    public static function reset_oembed_failures() {
+        $request = func_get_arg(0);
+        $provider = sanitize_text_field($request->get_param('provider') ?? '');
+        WPSG_Monitoring::reset_oembed_failures($provider ?: null);
+        return new WP_REST_Response(['reset' => true], 200);
+    }
+
+    // --- P14-G: Tag endpoints ---
+
+    public static function list_campaign_tags() {
+        $terms = get_terms([
+            'taxonomy'   => 'wpsg_campaign_tag',
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ]);
+
+        if (is_wp_error($terms)) {
+            return new WP_REST_Response([], 200);
+        }
+
+        $result = array_map(function ($term) {
+            return [
+                'id'    => $term->term_id,
+                'name'  => $term->name,
+                'slug'  => $term->slug,
+                'count' => $term->count,
+            ];
+        }, $terms);
+
+        return new WP_REST_Response($result, 200);
+    }
+
+    public static function list_media_tags() {
+        $terms = get_terms([
+            'taxonomy'   => 'wpsg_media_tag',
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ]);
+
+        if (is_wp_error($terms)) {
+            return new WP_REST_Response([], 200);
+        }
+
+        $result = array_map(function ($term) {
+            return [
+                'id'    => $term->term_id,
+                'name'  => $term->name,
+                'slug'  => $term->slug,
+                'count' => $term->count,
+            ];
+        }, $terms);
+
+        return new WP_REST_Response($result, 200);
     }
 }
