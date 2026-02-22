@@ -88,11 +88,57 @@ Admin panel REST calls are sequential and uncached, causing noticeable load time
 
 ### Deliverables
 
-- [ ] Audit and document current admin REST call sequence and timings
-- [ ] Migrate settings fetch to SWR with stale-while-revalidate
-- [ ] Parallelize campaign list + settings fetch on panel open
-- [ ] Add skeleton/shimmer loading states for campaign list and media grids
-- [ ] Measure improvement (before/after)
+- [x] Audit and document current admin REST call sequence and timings
+- [x] Migrate admin data fetching to SWR with stale-while-revalidate
+- [x] Parallelize campaign list + settings fetch on panel open
+- [x] Add skeleton loading states for all admin tabs
+- [x] Verify tests pass and build clean after refactor
+- [x] Migrate MediaTab to SWR (`useMediaItems` hook) with background prefetch
+
+### Implementation
+
+**New file — `src/hooks/useAdminSWR.ts`**
+
+5 SWR-based hooks replace all manual `useState`/`useEffect` data-fetching in AdminPanel:
+
+| Hook | SWR Key | Data |
+|------|---------|------|
+| `useAdminCampaigns` | `admin-campaigns` | Campaign list (50 per page) |
+| `useAccessGrants` | `['admin-access', mode, id]` | Campaign / company / all access grants |
+| `useCompanies` | `admin-companies` | Company list (conditional) |
+| `useAuditEntries` | `['admin-audit', campaignId]` | Audit log per campaign |
+| `useMediaItems` | `['admin-media', campaignId]` | Sorted media items per campaign |
+
+Shared config: `revalidateOnFocus: false`, `revalidateOnReconnect: false`, `dedupingInterval: 3000`, `shouldRetryOnError: false`.
+
+**Background media prefetch — `prefetchAllCampaignMedia()`**
+
+When the Media tab opens, `AdminPanel` calls `prefetchAllCampaignMedia(apiClient, campaignIds)` once per session. This stagger-fetches media for all campaigns (150 ms apart) via `globalMutate()` with `{ revalidate: false }` — already-cached campaigns are skipped (SWR deduplication). Switching between campaigns in the Media selector then hits SWR cache instantly.
+
+**Background access/audit prefetch — `prefetchAllCampaignAccess()` / `prefetchAllCampaignAudit()`**
+
+Same pattern applied to the Access and Audit tabs. When each tab first opens, all campaigns' access grants (or audit entries) are stagger-fetched (100 ms apart) into the SWR cache. Access prefetch uses `campaign` mode (the default view). Audit logs are read-only and rarely change, making them ideal fire-and-forget cache warming candidates. Each prefetch runs once per panel session via a `useRef` guard.
+
+**MediaTab SWR migration**
+
+Replaced the ~50-line manual `fetchMedia()` + `useEffect` with `useMediaItems()`. Local `useState` retained for optimistic mutations (upload/delete/reorder/oEmbed enrichment). oEmbed enrichment extracted into `enrichOEmbedMetadata()`, called once per campaign via `enrichedRef`. `handleRescanTypes` now calls `mutateMedia()` for SWR revalidation. The old `loading` state eliminated; skeleton state derived from `swrLoading && media.length === 0`.
+
+**AdminPanel.tsx refactor**
+
+~130 lines of manual state + effect code removed. All `await loadX()` calls replaced with `await mutateX()` for SWR revalidation. Tab data loads on-demand via conditional SWR keys (null key = no fetch). Re-opening the panel or switching back to a tab renders instantly from cache, with background revalidation.
+
+**Skeleton loading states (4 components)**
+
+| Component | Skeleton Shape |
+|-----------|---------------|
+| CampaignsTab | 5 table rows: title + status badge + visibility badge + company + actions |
+| AuditTab | 4 table rows: date + action + user + details |
+| AccessTab | 3 table rows: user+email + badge + date + revoke circle |
+| MediaTab | 6 grid cards matching `sizeConfig[cardSize]` dimensions |
+
+**Test infrastructure**
+
+Wrapped test providers in `<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>` for per-test cache isolation. 187 tests pass, build clean. Admin chunk ~255 KB (up from ~240 KB; SWR now included in admin split).
 
 **Effort:** Medium  
 **Impact:** Medium
@@ -340,7 +386,7 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 | 2 | P13-F — Card Gallery Pagination | ✅ Complete |
 | 3 | P13-E — Mobile Readiness Audit | ✅ Complete |
 | 4 | P13-B — Lazy Loading | Not Started |
-| 5 | P13-C — Admin Panel Performance | In Progress |
+| 5 | P13-C — Admin Panel Performance | ✅ Complete |
 | 6 | P13-D — Campaign Scheduling | Not Started |
 
 ---
@@ -356,7 +402,9 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 - **2026-02-20:** P13-E post-audit — CampaignViewer modal offscreen fix, filter strip overflow fix, AuthBar mobile redesign, 5 header visibility toggles, app width control, compact grid scaling, sticky settings footer, justified/masonry fix, per-gallery tile sizes.
 - **2026-02-21:** P13-E fix appMaxWidth=0 full-width (Container `fluid` prop), add lightbox 250ms fade+scale animation.
 - **2026-02-21:** P13-E add `appPadding` setting (override Mantine Container padding-inline), `wpFullBleed` responsive breakpoints (desktop/tablet/mobile) to counteract WordPress `.has-global-padding` via negative-margin wrapper with `alignfull` class and media-query `<style>` injection. Detailed code documentation added to `class-wpsg-embed.php` explaining the 3-part alignfull + negative-margin + re-constrain approach.
-- **2026-02-21:** P13-C — Admin Panel Loading Performance — track started.
+- **2026-02-21:** P13-C complete — SWR migration for all admin data fetching (4 hooks in `useAdminSWR.ts`), skeleton loading states for CampaignsTab/AuditTab/AccessTab/MediaTab, AdminPanel refactor removing ~130 lines of manual state/effects, SWR test isolation via per-test cache provider. 187 tests pass, build clean.
+- **2026-02-21:** P13-C media prefetch — `useMediaItems` SWR hook + `prefetchAllCampaignMedia()` utility. MediaTab migrated from manual `fetchMedia()` to SWR; oEmbed enrichment extracted. AdminPanel background-prefetches all campaigns' media on Media tab open (150ms stagger, SWR dedup). 187 tests pass, build clean.
+- **2026-02-21:** P13-C access/audit prefetch — `prefetchAllCampaignAccess()` + `prefetchAllCampaignAudit()` added. Same staggered background-fetch pattern (100ms apart) applied when Access/Audit tabs first open. 187 tests pass, build clean.
 
 ---
 

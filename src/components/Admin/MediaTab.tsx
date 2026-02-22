@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
-import { Button, Grid, Image, Text, Group, Loader, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton } from '@mantine/core';
 import {
   DndContext,
   DragOverlay,
@@ -33,7 +33,7 @@ import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { sortByOrder } from '@/utils/sortByOrder';
+import { useMediaItems } from '@/hooks/useAdminSWR';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
@@ -45,8 +45,11 @@ const LIST_PAGE_SIZE = 50;
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
+  // P13-C: SWR-cached media fetch — instant render on campaign revisit.
+  // Local state holds the working copy for optimistic mutations (upload, delete,
+  // reorder, oEmbed enrichment). SWR data seeds it on mount / campaign change.
+  const { mediaItems, mediaLoading: swrLoading, mutateMedia } = useMediaItems(apiClient, campaignId);
   const [media, setMedia] = useState<MediaItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -131,9 +134,23 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     large: { span: { base: 12, sm: 6 }, height: 240 },
   }), []);
 
+  // Sync local media state from SWR cache. This fires on initial load,
+  // campaign switch, and background revalidation. OEmbed enrichment runs
+  // once after the first sync for the current campaign.
+  const enrichedRef = useRef<string>(''); // tracks campaignId already enriched
   useEffect(() => {
-    void fetchMedia();
-  }, [campaignId]);
+    if (mediaItems.length > 0 || !swrLoading) {
+      setMedia(mediaItems);
+      // Run oEmbed enrichment once per campaign after initial data arrives
+      if (campaignId && mediaItems.length > 0 && enrichedRef.current !== campaignId) {
+        enrichedRef.current = campaignId;
+        void enrichOEmbedMetadata(mediaItems);
+      }
+    }
+  }, [mediaItems, swrLoading, campaignId]);
+
+  // Show skeleton only on first load (SWR loading and no cached data yet)
+  const effectiveLoading = swrLoading && media.length === 0;
 
   function getMediaTypeFromUrl(url: string): 'image' | 'video' {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
@@ -145,55 +162,38 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     return 'video';
   }
 
-  async function fetchMedia() {
-    if (!campaignId) {
-      setMedia([]);
-      return;
-    }
+  /** Enrich external media items that are missing thumbnail / caption via oEmbed. */
+  async function enrichOEmbedMetadata(items: MediaItem[]) {
+    const needs = items.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));
+    if (needs.length === 0) return;
 
-    setLoading(true);
     try {
-      const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
-        `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`,
-      );
-      const items = Array.isArray(response) ? response : response.items ?? [];
-      const sorted = sortByOrder(items);
-      setMedia(sorted);
-
-      const needs = sorted.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));
-      if (needs.length > 0) {
-        try {
-          await Promise.all(
-            needs.map(async (it) => {
-              try {
-                const data = await apiClient.get<OEmbedResponse>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(it.url)}`);
-                if (data) {
-                  const nextThumb = it.thumbnail || data.thumbnail_url;
-                  const nextCaption = it.caption || data.title || '';
-                  setMedia((prev) =>
-                    prev.map((p) => (p.id === it.id ? { ...p, thumbnail: nextThumb ?? p.thumbnail, caption: nextCaption } : p)),
-                  );
-                  if (nextThumb || nextCaption) {
-                    await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${it.id}`, {
-                      thumbnail: nextThumb,
-                      caption: nextCaption,
-                    });
-                  }
-                }
-              } catch (e) {
-                console.warn('oEmbed fetch failed for', it.url, e);
+      await Promise.all(
+        needs.map(async (it) => {
+          try {
+            const data = await apiClient.get<OEmbedResponse>(
+              `/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(it.url)}`,
+            );
+            if (data) {
+              const nextThumb = it.thumbnail || data.thumbnail_url;
+              const nextCaption = it.caption || data.title || '';
+              setMedia((prev) =>
+                prev.map((p) => (p.id === it.id ? { ...p, thumbnail: nextThumb ?? p.thumbnail, caption: nextCaption } : p)),
+              );
+              if (nextThumb || nextCaption) {
+                await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${it.id}`, {
+                  thumbnail: nextThumb,
+                  caption: nextCaption,
+                });
               }
-            }),
-          );
-        } catch (e) {
-          console.warn('Error fetching oEmbed metadata', e);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      showNotification({ title: 'Error', message: 'Failed to load media', color: 'red' });
-    } finally {
-      setLoading(false);
+            }
+          } catch (e) {
+            console.warn('oEmbed fetch failed for', it.url, e);
+          }
+        }),
+      );
+    } catch (e) {
+      console.warn('Error fetching oEmbed metadata', e);
     }
   }
 
@@ -402,7 +402,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       );
       if (result.updated > 0) {
         showNotification({ title: 'Rescan Complete', message: `Updated ${result.updated} of ${result.total} media items.` });
-        await fetchMedia();
+        await mutateMedia();
       } else {
         showNotification({ title: 'Rescan Complete', message: 'All media types are correct.' });
       }
@@ -699,8 +699,14 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         </Group>
       </Group>
 
-      {loading ? (
-        <Loader />
+      {effectiveLoading ? (
+        <Grid>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Grid.Col key={i} span={sizeConfig[cardSize]?.span ?? sizeConfig.medium.span}>
+              <Skeleton height={sizeConfig[cardSize]?.height ?? 170} radius="md" />
+            </Grid.Col>
+          ))}
+        </Grid>
       ) : (
         <DndContext
           sensors={sensors}

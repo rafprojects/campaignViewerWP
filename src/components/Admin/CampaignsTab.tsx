@@ -1,5 +1,30 @@
-import { Center, Loader, Table, Text } from '@mantine/core';
+import { Group, Skeleton, Table, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
+
+/** P13-C: Skeleton rows displayed while campaign list loads. */
+function CampaignSkeletonRows() {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Table.Tr key={i}>
+          <Table.Td>
+            <Skeleton height={14} width="60%" mb={6} />
+            <Skeleton height={10} width="80%" />
+          </Table.Td>
+          <Table.Td><Skeleton height={22} width={60} radius="xl" /></Table.Td>
+          <Table.Td><Skeleton height={22} width={56} radius="xl" /></Table.Td>
+          <Table.Td><Skeleton height={14} width={80} /></Table.Td>
+          <Table.Td>
+            <Group gap="xs">
+              <Skeleton height={28} width={60} radius="sm" />
+              <Skeleton height={28} width={70} radius="sm" />
+            </Group>
+          </Table.Td>
+        </Table.Tr>
+      ))}
+    </>
+  );
+}
 
 interface CampaignsTabProps {
   isLoading: boolean;
@@ -8,10 +33,6 @@ interface CampaignsTabProps {
 }
 
 export function CampaignsTab({ isLoading, error, campaignsRows }: CampaignsTabProps) {
-  if (isLoading) {
-    return <Center><Loader /></Center>;
-  }
-
   if (error) {
     return <Text c="red" role="alert" aria-live="assertive">{error}</Text>;
   }
@@ -28,7 +49,7 @@ export function CampaignsTab({ isLoading, error, campaignsRows }: CampaignsTabPr
             <Table.Th>Actions</Table.Th>
           </Table.Tr>
         </Table.Thead>
-        <Table.Tbody>{campaignsRows}</Table.Tbody>
+        <Table.Tbody>{isLoading ? <CampaignSkeletonRows /> : campaignsRows}</Table.Tbody>
       </Table>
     </Table.ScrollContainer>
   );
