@@ -3,6 +3,15 @@ import type { Campaign } from '@/types';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
+/** Convert an ISO 8601 date string to the `datetime-local` input value format (YYYY-MM-DDTHH:MM). */
+function toLocalInputValue(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export interface CampaignFormState {
   title: string;
   description: string;
@@ -11,6 +20,10 @@ export interface CampaignFormState {
   visibility: Campaign['visibility'];
   tags: string;
   borderColor?: string;
+  /** P13-D: ISO 8601 scheduled-publish date (empty = immediate). */
+  publishAt: string;
+  /** P13-D: ISO 8601 auto-unpublish date (empty = never). */
+  unpublishAt: string;
 }
 
 interface CampaignFormModalProps {
@@ -104,6 +117,22 @@ export function CampaignFormModal({
           value={formState.tags}
           onChange={(e) => onFormChange({ ...formState, tags: e.currentTarget.value })}
         />
+        <Group grow wrap="wrap" gap="sm">
+          <TextInput
+            type="datetime-local"
+            label="Publish At"
+            description="Campaign becomes visible at this date/time (leave empty for immediate)"
+            value={formState.publishAt ? toLocalInputValue(formState.publishAt) : ''}
+            onChange={(e) => onFormChange({ ...formState, publishAt: e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '' })}
+          />
+          <TextInput
+            type="datetime-local"
+            label="Unpublish At"
+            description="Campaign is hidden after this date/time (leave empty for never)"
+            value={formState.unpublishAt ? toLocalInputValue(formState.unpublishAt) : ''}
+            onChange={(e) => onFormChange({ ...formState, unpublishAt: e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '' })}
+          />
+        </Group>
         {editingCampaign && cardBorderMode === 'individual' && (
           <ColorInput
             label="Card Border Color"

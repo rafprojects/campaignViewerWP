@@ -41,6 +41,10 @@ export interface AdminCampaign {
   companyId: string;
   companyName?: string;
   tags: string[];
+  /** P13-D: Optional ISO 8601 scheduled-publish date. */
+  publishAt?: string;
+  /** P13-D: Optional ISO 8601 auto-unpublish date. */
+  unpublishAt?: string;
 }
 
 interface ApiCampaignResponse {

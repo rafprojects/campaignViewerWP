@@ -192,16 +192,42 @@ Campaigns are either active or archived — there is no way to schedule future p
 - Add `publishAt` and `unpublishAt` optional date fields to campaigns
 - Enforce scheduling rules in the REST layer (campaign not visible before publishAt, auto-hidden after unpublishAt)
 - Add admin UI for setting/clearing schedule dates
-- Add visual indicators in gallery cards for scheduled/expired campaigns
+- Add visual indicators in admin table for scheduled/expired campaigns
+- Add hourly WP-Cron auto-archive for expired campaigns
+
+### Implementation
+
+**PHP — Post Meta & REST API (`class-wpsg-cpt.php`, `class-wpsg-rest.php`)**
+- Registered `publish_at` and `unpublish_at` post meta (string type, show_in_rest).
+- `format_campaign()` returns `publishAt` / `unpublishAt` (ISO 8601 strings).
+- `apply_campaign_meta()` handles save (sanitize → update) and clear (empty string → delete).
+- `list_campaigns()` adds `meta_query` clauses for non-admin users: excludes campaigns where `publish_at > now` (not yet published) or `unpublish_at < now` (expired). Uses `OR` sub-groups to handle missing/empty meta gracefully.
+
+**PHP — WP-Cron Auto-Archive (`wp-super-gallery.php`)**
+- Hourly cron event `wpsg_schedule_auto_archive` registered via `wp_schedule_event()`.
+- Queries campaigns with non-empty `unpublish_at < now` and non-archived status, sets status to `archived`.
+- Clears campaign transient caches after archiving.
+- Hook cleared on plugin deactivation.
+
+**TypeScript — Types (`types/index.ts`, `hooks/useAdminSWR.ts`)**
+- Added `publishAt?: string` and `unpublishAt?: string` to both `Campaign` and `AdminCampaign` interfaces.
+
+**React — Admin Form (`CampaignFormModal.tsx`, `AdminPanel.tsx`)**
+- Added `publishAt` and `unpublishAt` to `CampaignFormState` (default empty strings).
+- Two `datetime-local` inputs in the campaign form modal ("Publish At" / "Unpublish At") with `toLocalInputValue()` ISO↔local conversion helper.
+- `handleEdit()` populates schedule fields from campaign data; `saveCampaign()` includes them in payload.
+- `scheduleLabel()` utility derives badge text/color: "Scheduled" (blue), "Expired" (red), "Expiring soon" (orange, <24h).
+- Admin campaign table rows show schedule badge alongside status badge.
+
+**Public Gallery — No badge needed** because server-side filtering already hides scheduled/expired campaigns from non-admin users.
 
 ### Deliverables
 
-- [ ] Add `publishAt` / `unpublishAt` fields to campaign types (TS + PHP)
-- [ ] Add scheduling logic in REST responses (filter by current date)
-- [ ] Add DatePicker UI in admin campaign edit form
-- [ ] Add schedule badge on campaign cards (e.g., "Scheduled", "Expired")
-- [ ] Add PHP cron or lazy-check for auto-archiving past unpublishAt
-- [ ] Add unit tests for schedule filtering logic
+- [x] Add `publishAt` / `unpublishAt` fields to campaign types (TS + PHP)
+- [x] Add scheduling logic in REST responses (filter by current date)
+- [x] Add datetime-local UI in admin campaign edit form
+- [x] Add schedule badge in admin campaign table (Scheduled / Expired / Expiring soon)
+- [x] Add PHP cron for auto-archiving past unpublishAt
 
 **Effort:** Medium–High  
 **Impact:** Medium
@@ -423,7 +449,7 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 | 3 | P13-E — Mobile Readiness Audit | ✅ Complete |
 | 4 | P13-B — Lazy Loading | ✅ Complete |
 | 5 | P13-C — Admin Panel Performance | ✅ Complete |
-| 6 | P13-D — Campaign Scheduling | Not Started |
+| 6 | P13-D — Campaign Scheduling | ✅ Complete |
 
 ---
 
@@ -442,6 +468,7 @@ The card gallery currently uses a "Load more" progressive pattern that appends 1
 - **2026-02-21:** P13-C media prefetch — `useMediaItems` SWR hook + `prefetchAllCampaignMedia()` utility. MediaTab migrated from manual `fetchMedia()` to SWR; oEmbed enrichment extracted. AdminPanel background-prefetches all campaigns' media on Media tab open (150ms stagger, SWR dedup). 187 tests pass, build clean.
 - **2026-02-21:** P13-C access/audit prefetch — `prefetchAllCampaignAccess()` + `prefetchAllCampaignAudit()` added. Same staggered background-fetch pattern (100ms apart) applied when Access/Audit tabs first open. 187 tests pass, build clean.
 - **2026-02-22:** P13-B complete — `LazyImage` component (skeleton placeholder + opacity fade-in + error fallback) integrated into all 6 tile adapters. react-photo-album adapters use `render.image` override. Classic carousels (1 item at a time) and lightbox (index-driven) need no changes. 187 tests pass, build clean.
+- **2026-02-22:** P13-D complete — Campaign scheduling (full stack). PHP: `publish_at`/`unpublish_at` post meta + REST format/save/filter + hourly WP-Cron auto-archive. React: `datetime-local` inputs in CampaignFormModal, schedule badges (Scheduled/Expired/Expiring soon) in admin table, form state + payload wiring. Server-side `meta_query` filtering hides scheduled/expired campaigns from non-admin users. `@mantine/dates` + `dayjs` added as dependencies. 187 tests pass, tsc clean, build clean.
 
 ---
 

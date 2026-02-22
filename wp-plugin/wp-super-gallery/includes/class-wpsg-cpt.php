@@ -97,6 +97,22 @@ class WPSG_CPT {
             'default' => [],
         ]);
 
+        // P13-D: Campaign scheduling — optional ISO 8601 date strings.
+        // null/empty = no schedule constraint.
+        register_post_meta('wpsg_campaign', 'publish_at', [
+            'type' => 'string',
+            'single' => true,
+            'show_in_rest' => true,
+            'default' => '',
+        ]);
+
+        register_post_meta('wpsg_campaign', 'unpublish_at', [
+            'type' => 'string',
+            'single' => true,
+            'show_in_rest' => true,
+            'default' => '',
+        ]);
+
         register_term_meta('wpsg_company', 'access_grants', [
             'type' => 'array',
             'single' => true,

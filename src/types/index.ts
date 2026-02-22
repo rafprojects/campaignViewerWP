@@ -22,6 +22,10 @@ export interface Campaign {
   updatedAt: string;
   /** Per-campaign border color override (used when cardBorderMode is 'individual') */
   borderColor?: string;
+  /** P13-D: Optional ISO 8601 scheduled-publish date. */
+  publishAt?: string;
+  /** P13-D: Optional ISO 8601 auto-unpublish date. */
+  unpublishAt?: string;
 }
 
 export interface MediaItem {

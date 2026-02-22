@@ -71,7 +71,24 @@ const emptyForm: CampaignFormState = {
   status: 'draft' as Campaign['status'],
   visibility: 'private' as Campaign['visibility'],
   tags: '',
+  publishAt: '',
+  unpublishAt: '',
 };
+
+/** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
+function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string; color: string } | null {
+  const now = Date.now();
+  if (publishAt && new Date(publishAt).getTime() > now) {
+    return { text: 'Scheduled', color: 'blue' };
+  }
+  if (unpublishAt) {
+    const end = new Date(unpublishAt).getTime();
+    if (end <= now) return { text: 'Expired', color: 'red' };
+    // Within 24h of expiry
+    if (end - now < 86_400_000) return { text: 'Expiring soon', color: 'orange' };
+  }
+  return null;
+}
 
 const campaignFormReducer = (_state: CampaignFormState, next: CampaignFormState): CampaignFormState => next;
 
@@ -404,6 +421,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       status: campaign.status ?? 'draft',
       visibility: campaign.visibility ?? 'private',
       tags: (campaign.tags ?? []).join(', '),
+      publishAt: campaign.publishAt ?? '',
+      unpublishAt: campaign.unpublishAt ?? '',
     });
     setCampaignFormOpen(true);
   };
@@ -429,6 +448,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       status: formState.status,
       visibility: formState.visibility,
       tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      publishAt: formState.publishAt || '',
+      unpublishAt: formState.unpublishAt || '',
     };
     try {
       if (editingCampaign) {
@@ -514,9 +535,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           </Box>
         </Table.Td>
         <Table.Td>
-          <Badge color={c.status === 'active' ? 'teal' : c.status === 'archived' ? 'gray' : 'yellow'}>
-            {c.status}
-          </Badge>
+          <Group gap={4} wrap="wrap">
+            <Badge color={c.status === 'active' ? 'teal' : c.status === 'archived' ? 'gray' : 'yellow'}>
+              {c.status}
+            </Badge>
+            {(() => {
+              const sched = scheduleLabel(c.publishAt, c.unpublishAt);
+              return sched ? <Badge variant="light" color={sched.color} size="xs">{sched.text}</Badge> : null;
+            })()}
+          </Group>
         </Table.Td>
         <Table.Td>
           <Badge variant="light">{c.visibility}</Badge>

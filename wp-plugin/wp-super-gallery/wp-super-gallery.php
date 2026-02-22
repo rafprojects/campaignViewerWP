@@ -37,6 +37,7 @@ function wpsg_deactivate() {
     // Roles and capabilities are kept on deactivation
     // Only remove on uninstall if desired
     wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
+    wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -77,6 +78,59 @@ add_action('init', ['WPSG_Maintenance', 'register']);
 add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
 add_action('init', ['WPSG_Sentry', 'init']);
+
+// P13-D: Campaign schedule auto-archive cron.
+add_action('init', 'wpsg_register_schedule_cron');
+add_action('wpsg_schedule_auto_archive', 'wpsg_run_schedule_auto_archive');
+
+function wpsg_register_schedule_cron() {
+    if (!wp_next_scheduled('wpsg_schedule_auto_archive')) {
+        wp_schedule_event(time(), 'hourly', 'wpsg_schedule_auto_archive');
+    }
+}
+
+function wpsg_run_schedule_auto_archive() {
+    $now = gmdate('c');
+
+    // Find published campaigns whose unpublish_at has passed.
+    $query = new WP_Query([
+        'post_type'      => 'wpsg_campaign',
+        'post_status'    => 'publish',
+        'posts_per_page' => 100,
+        'meta_query'     => [
+            'relation' => 'AND',
+            [
+                'key'     => 'unpublish_at',
+                'value'   => '',
+                'compare' => '!=',
+            ],
+            [
+                'key'     => 'unpublish_at',
+                'value'   => $now,
+                'compare' => '<',
+                'type'    => 'CHAR',
+            ],
+            [
+                'relation' => 'OR',
+                ['key' => 'status', 'value' => 'archived', 'compare' => '!='],
+                ['key' => 'status', 'compare' => 'NOT EXISTS'],
+            ],
+        ],
+    ]);
+
+    foreach ($query->posts as $post) {
+        update_post_meta($post->ID, 'status', 'archived');
+        // Clear campaign transient caches.
+        global $wpdb;
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+                '_transient_wpsg_campaigns_%'
+            )
+        );
+    }
+}
+
 add_filter('rest_pre_serve_request', 'wpsg_add_cors_headers', 10, 4);
 add_action('send_headers', 'wpsg_add_security_headers');
 

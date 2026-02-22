@@ -469,6 +469,25 @@ class WPSG_REST {
                 }
                 $args['post__in'] = $accessible_ids;
             }
+
+            // P13-D: Hide campaigns outside their scheduled window.
+            $now = gmdate('c'); // ISO 8601 UTC
+            $meta_query[] = [
+                'relation' => 'OR',
+                ['key' => 'publish_at', 'compare' => 'NOT EXISTS'],
+                ['key' => 'publish_at', 'value' => '', 'compare' => '='],
+                ['key' => 'publish_at', 'value' => $now, 'compare' => '<=', 'type' => 'CHAR'],
+            ];
+            $meta_query[] = [
+                'relation' => 'OR',
+                ['key' => 'unpublish_at', 'compare' => 'NOT EXISTS'],
+                ['key' => 'unpublish_at', 'value' => '', 'compare' => '='],
+                ['key' => 'unpublish_at', 'value' => $now, 'compare' => '>=', 'type' => 'CHAR'],
+            ];
+            $args['meta_query'] = $meta_query;
+            if (count($meta_query) > 1 && !isset($meta_query['relation'])) {
+                $args['meta_query']['relation'] = 'AND';
+            }
         }
 
         $query = new WP_Query($args);
@@ -3006,6 +3025,8 @@ class WPSG_REST {
             'status' => (string) get_post_meta($post->ID, 'status', true) ?: 'draft',
             'visibility' => (string) get_post_meta($post->ID, 'visibility', true) ?: 'private',
             'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
+            'publishAt' => (string) get_post_meta($post->ID, 'publish_at', true),
+            'unpublishAt' => (string) get_post_meta($post->ID, 'unpublish_at', true),
             'createdAt' => get_post_time('c', true, $post),
             'updatedAt' => get_post_modified_time('c', true, $post),
         ];
@@ -3037,6 +3058,26 @@ class WPSG_REST {
         }
         if ($thumbnail_id > 0) {
             set_post_thumbnail($post_id, $thumbnail_id);
+        }
+
+        // P13-D: Campaign scheduling dates (ISO 8601 strings or empty to clear).
+        $publish_at = $request->get_param('publishAt');
+        if (!is_null($publish_at)) {
+            $publish_at = sanitize_text_field($publish_at);
+            if ($publish_at === '') {
+                delete_post_meta($post_id, 'publish_at');
+            } else {
+                update_post_meta($post_id, 'publish_at', $publish_at);
+            }
+        }
+        $unpublish_at = $request->get_param('unpublishAt');
+        if (!is_null($unpublish_at)) {
+            $unpublish_at = sanitize_text_field($unpublish_at);
+            if ($unpublish_at === '') {
+                delete_post_meta($post_id, 'unpublish_at');
+            } else {
+                update_post_meta($post_id, 'unpublish_at', $unpublish_at);
+            }
         }
     }
 
