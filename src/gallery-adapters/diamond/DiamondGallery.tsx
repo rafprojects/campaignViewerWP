@@ -16,6 +16,7 @@ import { IconDiamond, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
+import { LazyImage } from '@/components/Gallery/LazyImage';
 import { buildTileStyles } from '@/gallery-adapters/_shared/tileHoverStyles';
 
 const SCOPE = 'diamond';
@@ -114,13 +115,12 @@ export function DiamondGallery({ media, settings }: DiamondGalleryProps) {
                       position: 'relative',
                       overflow: 'hidden',
                       padding: 0,
-                      background: 'none',
+                      background: 'var(--wpsg-color-surface, #1a1a2e)',
                     }}
                   >
-                    <img
+                    <LazyImage
                       src={thumbSrc}
                       alt={label}
-                      loading="lazy"
                       style={{
                         position: 'absolute', inset: 0,
                         width: '100%', height: '100%',

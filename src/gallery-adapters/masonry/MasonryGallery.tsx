@@ -20,6 +20,7 @@ import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
+import { LazyImage } from '@/components/Gallery/LazyImage';
 import { buildBoxShadowStyles } from '@/gallery-adapters/_shared/tileHoverStyles';
 
 const SCOPE = 'masonry';
@@ -113,9 +114,13 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
                   display: 'block',
                   width: '100%',
                   breakInside: 'avoid',
+                  background: 'var(--wpsg-color-surface, #1a1a2e)',
                 }}
               />
             );
+          },
+          image({ style: imgStyle, ...imgProps }) {
+            return <LazyImage {...imgProps} style={imgStyle} />;
           },
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;

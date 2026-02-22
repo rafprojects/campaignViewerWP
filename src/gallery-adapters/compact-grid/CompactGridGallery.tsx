@@ -15,6 +15,7 @@ import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react'
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
+import { LazyImage } from '@/components/Gallery/LazyImage';
 
 interface CompactGridGalleryProps {
   media: MediaItem[];
@@ -132,17 +133,16 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
       }}
     >
       {/* Cover thumbnail */}
-      <img
+      <LazyImage
         src={thumbSrc}
         alt={item.caption || ''}
-        loading="lazy"
         style={{
           width: '100%',
           height: '100%',
           objectFit: 'cover',
           display: 'block',
           transform: hovered ? 'scale(1.05)' : 'scale(1)',
-          transition: 'transform 0.3s ease',
+          transition: 'transform 0.3s ease, opacity 0.2s ease',
         }}
       />
 
