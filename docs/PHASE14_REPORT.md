@@ -35,7 +35,7 @@ Two findings from the codebase review were already fixed during PR review before
 
 ---
 
-## Track P14-A — Security & Correctness Hardening  🔧 IN PROGRESS
+## Track P14-A — Security & Correctness Hardening  ✅ COMPLETE
 
 ### Problem
 
@@ -56,29 +56,23 @@ The codebase review identified 3 remaining Critical bugs and 6 remaining High-se
 
 #### High-Severity Fixes
 
-- [ ] **B-1:** Remove internal endpoint URLs from public oEmbed error response (`attempts` array)  
-  **File:** `class-wpsg-rest.php` L1886–1893  
-  **Fix:** Remove `attempts` from response, or gate behind `current_user_can('manage_options')`
+- [x] **B-1:** Remove internal endpoint URLs from public oEmbed error response (`attempts` array)  
+  **File:** `class-wpsg-rest.php` — Removed `attempts` from fallback response object
 
-- [ ] **B-2:** Add allowlist validation for `status` and `visibility` meta values  
-  **File:** `class-wpsg-rest.php` L3140–3145  
-  **Fix:** `in_array($status, ['draft','active','archived'], true)` — reject unknown values
+- [x] **B-2:** Add allowlist validation for `status` and `visibility` meta values  
+  **File:** `class-wpsg-rest.php` — Added `in_array()` validation with 400 error on invalid values; callers check return and roll back on create
 
-- [ ] **B-4:** Move CORS `Allow-Methods` / `Allow-Headers` inside origin allowlist check  
-  **File:** `wp-super-gallery.php` L135–136  
-  **Fix:** Emit only when origin matches allowed list
+- [x] **B-4:** Move CORS `Allow-Methods` / `Allow-Headers` inside origin allowlist check  
+  **File:** `wp-super-gallery.php` — Headers now only emitted when origin matches
 
-- [ ] **B-5:** Gate `simulateEmailFailure` testing backdoor behind `WP_DEBUG`  
-  **File:** `class-wpsg-rest.php` L2002–2003  
-  **Fix:** `if (defined('WP_DEBUG') && WP_DEBUG)` guard, or remove entirely
+- [x] **B-5:** Gate `simulateEmailFailure` testing backdoor behind `WP_DEBUG`  
+  **File:** `class-wpsg-rest.php` — `defined('WP_DEBUG') && WP_DEBUG` guard added
 
-- [ ] **B-6:** Sanitize `$_SERVER['REQUEST_URI']` in embed handler  
-  **File:** `class-wpsg-embed.php` L51  
-  **Fix:** `sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']))`
+- [x] **B-6:** Sanitize `$_SERVER['REQUEST_URI']` in embed handler  
+  **File:** `class-wpsg-embed.php` — Added `sanitize_text_field(wp_unslash(...))`
 
-- [ ] **B-7:** Validate DDL identifiers in `ensure_index()` to prevent latent SQL injection  
-  **File:** `class-wpsg-db.php` L49  
-  **Fix:** Regex validation `[a-zA-Z0-9_]+` for `$index_name` and `$columns_sql`
+- [x] **B-7:** Validate DDL identifiers in `ensure_index()` to prevent latent SQL injection  
+  **File:** `class-wpsg-db.php` — Added regex validation for `$index_name` and `$columns_sql`
 
 **Effort:** Medium  
 **Impact:** Critical — security and correctness

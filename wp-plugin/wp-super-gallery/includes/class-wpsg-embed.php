@@ -44,7 +44,7 @@ class WPSG_Embed {
             return;
         }
 
-        $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        $uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
         if (empty($uri)) {
             return;
         }

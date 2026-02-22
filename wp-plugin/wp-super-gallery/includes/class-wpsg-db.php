@@ -34,6 +34,15 @@ class WPSG_DB {
     }
 
     private static function ensure_index($table, $index_name, $columns_sql) {
+        // Validate identifiers to prevent SQL injection.
+        // prepare() cannot be used for DDL identifiers (table/index/column names).
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $index_name)) {
+            return;
+        }
+        if (!preg_match('/^\([a-zA-Z0-9_,\s\(\)]+\)$/', $columns_sql)) {
+            return;
+        }
+
         global $wpdb;
 
         $existing = $wpdb->get_var(

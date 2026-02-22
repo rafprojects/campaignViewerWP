@@ -551,7 +551,11 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
         }
 
-        self::apply_campaign_meta($post_id, $request);
+        $meta_result = self::apply_campaign_meta($post_id, $request);
+        if ($meta_result instanceof WP_REST_Response) {
+            wp_delete_post($post_id, true);
+            return $meta_result;
+        }
         self::assign_company($post_id, $request->get_param('company'));
         self::add_audit_entry($post_id, 'campaign.created', [
             'title' => $title,
@@ -599,7 +603,10 @@ class WPSG_REST {
         }
         wp_update_post($update);
 
-        self::apply_campaign_meta($post_id, $request);
+        $meta_result = self::apply_campaign_meta($post_id, $request);
+        if ($meta_result instanceof WP_REST_Response) {
+            return $meta_result;
+        }
         self::assign_company($post_id, $request->get_param('company'));
 
         self::add_audit_entry($post_id, 'campaign.updated', [
@@ -1864,7 +1871,6 @@ class WPSG_REST {
         // Cache generic failure to avoid repeated immediate retries
         $fallback = [
             'message' => 'Unable to fetch oEmbed',
-            'attempts' => $attempts,
         ];
         $fallback['_wpsg_status'] = 502;
         // Log and metric: record generic fallback cache
@@ -1995,9 +2001,12 @@ class WPSG_REST {
         // Note: wp_new_user_notification() with 'user' param sends a password reset link, not the password
         $email_sent = false;
         
-        // Allow testing email failure scenario via request param
-        $simulate_param = $request->get_param('simulateEmailFailure');
-        $simulate_email_failure = ($simulate_param === true || $simulate_param === 'true');
+        // Allow testing email failure scenario via request param (debug only)
+        $simulate_email_failure = false;
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $simulate_param = $request->get_param('simulateEmailFailure');
+            $simulate_email_failure = ($simulate_param === true || $simulate_param === 'true');
+        }
         
         if (!$simulate_email_failure) {
             try {
@@ -3048,10 +3057,18 @@ class WPSG_REST {
         $cover_image_param = $request->get_param('coverImage');
         $thumbnail_id = intval($request->get_param('thumbnailId'));
 
+        $allowed_visibility = ['public', 'private'];
         if (!empty($visibility)) {
+            if (!in_array($visibility, $allowed_visibility, true)) {
+                return new WP_REST_Response(['message' => 'Invalid visibility value'], 400);
+            }
             update_post_meta($post_id, 'visibility', $visibility);
         }
+        $allowed_status = ['draft', 'active', 'archived'];
         if (!empty($status)) {
+            if (!in_array($status, $allowed_status, true)) {
+                return new WP_REST_Response(['message' => 'Invalid status value'], 400);
+            }
             update_post_meta($post_id, 'status', $status);
         }
         if (is_array($tags)) {

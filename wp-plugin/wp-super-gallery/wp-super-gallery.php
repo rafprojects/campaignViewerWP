@@ -161,10 +161,9 @@ function wpsg_add_cors_headers($served, $result, $request, $server) {
             header('Access-Control-Allow-Credentials: true');
         }
         header('Vary: Origin');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
     }
-
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
 
     return $served;
 }
