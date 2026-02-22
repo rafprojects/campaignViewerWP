@@ -15,7 +15,7 @@ Phase 13 focuses on UX polish, frontend performance, and campaign lifecycle mana
 2. **P13-F — Card Gallery Pagination** ✅ COMPLETE
 3. **P13-E — Mobile Readiness Audit** ✅ COMPLETE
 4. **P13-B — Lazy Loading for Large Galleries**
-5. **P13-C — Admin Panel Loading Performance**
+5. **P13-C — Admin Panel Loading Performance** ✅ COMPLETE
 6. **P13-D — Campaign Scheduling**
 
 ---
@@ -73,7 +73,7 @@ Galleries with many media items render all DOM elements upfront, causing slow in
 
 ---
 
-## Track P13-C — Admin Panel Loading Performance
+## Track P13-C — Admin Panel Loading Performance  ✅ COMPLETE
 
 ### Problem
 
@@ -94,6 +94,7 @@ Admin panel REST calls are sequential and uncached, causing noticeable load time
 - [x] Add skeleton loading states for all admin tabs
 - [x] Verify tests pass and build clean after refactor
 - [x] Migrate MediaTab to SWR (`useMediaItems` hook) with background prefetch
+- [x] Background prefetch for access grants and audit entries on tab open
 
 ### Implementation
 
@@ -138,7 +139,9 @@ Replaced the ~50-line manual `fetchMedia()` + `useEffect` with `useMediaItems()`
 
 **Test infrastructure**
 
-Wrapped test providers in `<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>` for per-test cache isolation. 187 tests pass, build clean. Admin chunk ~255 KB (up from ~240 KB; SWR now included in admin split).
+Wrapped test providers in `<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>` for per-test cache isolation. 187 tests pass, build clean. Admin chunk ~256 KB (up from ~240 KB; SWR now included in admin split).
+
+**Commit:** `baa9cda`
 
 **Effort:** Medium  
 **Impact:** Medium
@@ -270,7 +273,7 @@ WordPress block themes apply `.has-global-padding` with `padding-left/right` to 
   - `wpFullBleedMobile` (< 768px)
 - Uses WP's own CSS variables (`--wp--style--root--padding-left/right`) so it adapts to any theme
 
-**Commits:** `25e4f63`, `f65559e`, `42997d4`, `f108692`, (current)
+**Commits:** `25e4f63`, `f65559e`, `42997d4`, `f108692`, `23d50f9`
 
 **Effort:** Medium  
 **Impact:** High
