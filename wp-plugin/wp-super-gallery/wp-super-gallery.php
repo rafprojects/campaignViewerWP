@@ -90,42 +90,54 @@ function wpsg_register_schedule_cron() {
 }
 
 function wpsg_run_schedule_auto_archive() {
-    $now = gmdate('c');
+    $now = gmdate('Y-m-d H:i:s'); // UTC datetime — matches stored format
+    $archived_count = 0;
 
-    // Find published campaigns whose unpublish_at has passed.
-    $query = new WP_Query([
-        'post_type'      => 'wpsg_campaign',
-        'post_status'    => 'publish',
-        'posts_per_page' => 100,
-        'meta_query'     => [
-            'relation' => 'AND',
-            [
-                'key'     => 'unpublish_at',
-                'value'   => '',
-                'compare' => '!=',
+    // Process in batches of 100 until none remain.
+    do {
+        $query = new WP_Query([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'publish',
+            'posts_per_page' => 100,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => 'unpublish_at',
+                    'value'   => '',
+                    'compare' => '!=',
+                ],
+                [
+                    'key'     => 'unpublish_at',
+                    'value'   => $now,
+                    'compare' => '<',
+                    'type'    => 'DATETIME',
+                ],
+                [
+                    'relation' => 'OR',
+                    ['key' => 'status', 'value' => 'archived', 'compare' => '!='],
+                    ['key' => 'status', 'compare' => 'NOT EXISTS'],
+                ],
             ],
-            [
-                'key'     => 'unpublish_at',
-                'value'   => $now,
-                'compare' => '<',
-                'type'    => 'CHAR',
-            ],
-            [
-                'relation' => 'OR',
-                ['key' => 'status', 'value' => 'archived', 'compare' => '!='],
-                ['key' => 'status', 'compare' => 'NOT EXISTS'],
-            ],
-        ],
-    ]);
+        ]);
 
-    foreach ($query->posts as $post) {
-        update_post_meta($post->ID, 'status', 'archived');
-        // Clear campaign transient caches.
+        foreach ($query->posts as $post_id) {
+            update_post_meta($post_id, 'status', 'archived');
+            $archived_count++;
+        }
+    } while (!empty($query->posts));
+
+    // Clear campaign transient + timeout caches once after all updates.
+    if ($archived_count > 0) {
         global $wpdb;
+        $like = $wpdb->esc_like('_transient_wpsg_campaigns_') . '%';
+        $timeout_like = $wpdb->esc_like('_transient_timeout_wpsg_campaigns_') . '%';
         $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-                '_transient_wpsg_campaigns_%'
+                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+                $like,
+                $timeout_like
             )
         );
     }

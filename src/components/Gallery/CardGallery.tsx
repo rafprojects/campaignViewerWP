@@ -140,13 +140,25 @@ export function CardGallery({
   const hasMore = displayMode === 'load-more' && visibleCount < filteredCampaigns.length;
 
   // Page navigation handlers
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear any pending transition timeout on unmount.
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    };
+  }, []);
+
   const goToPage = useCallback((page: number) => {
     if (isAnimating || page < 0 || page >= totalPages || page === currentPage) return;
     const dir = page > currentPage ? 'left' : 'right';
     setSlideDirection(dir);
     setIsAnimating(true);
+    // Clear any prior pending transition before starting a new one.
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     const duration = galleryBehaviorSettings.cardPageTransitionMs ?? 300;
-    setTimeout(() => {
+    transitionTimerRef.current = setTimeout(() => {
+      transitionTimerRef.current = null;
       setCurrentPage(page);
       setSlideDirection(null);
       setIsAnimating(false);

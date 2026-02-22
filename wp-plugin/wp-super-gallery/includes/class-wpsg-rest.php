@@ -397,7 +397,7 @@ class WPSG_REST {
 
         // Generate cache key based on user ID and query parameters
         $user_id = get_current_user_id();
-        $is_admin = current_user_can('manage_options');
+        $is_admin = current_user_can('manage_options') || current_user_can('manage_wpsg');
         $search_key = $search ? md5($search) : 'none';
         $cache_key = sprintf(
             'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s_%s',
@@ -471,18 +471,18 @@ class WPSG_REST {
             }
 
             // P13-D: Hide campaigns outside their scheduled window.
-            $now = gmdate('c'); // ISO 8601 UTC
+            $now = gmdate('Y-m-d H:i:s'); // UTC datetime — matches stored format
             $meta_query[] = [
                 'relation' => 'OR',
                 ['key' => 'publish_at', 'compare' => 'NOT EXISTS'],
                 ['key' => 'publish_at', 'value' => '', 'compare' => '='],
-                ['key' => 'publish_at', 'value' => $now, 'compare' => '<=', 'type' => 'CHAR'],
+                ['key' => 'publish_at', 'value' => $now, 'compare' => '<=', 'type' => 'DATETIME'],
             ];
             $meta_query[] = [
                 'relation' => 'OR',
                 ['key' => 'unpublish_at', 'compare' => 'NOT EXISTS'],
                 ['key' => 'unpublish_at', 'value' => '', 'compare' => '='],
-                ['key' => 'unpublish_at', 'value' => $now, 'compare' => '>=', 'type' => 'CHAR'],
+                ['key' => 'unpublish_at', 'value' => $now, 'compare' => '>=', 'type' => 'DATETIME'],
             ];
             $args['meta_query'] = $meta_query;
             if (count($meta_query) > 1 && !isset($meta_query['relation'])) {
@@ -3009,6 +3009,18 @@ class WPSG_REST {
         return array_values(array_merge($company_grants, $campaign_grants));
     }
 
+    /**
+     * Read a stored Y-m-d H:i:s UTC meta value and return ISO 8601 string (or '').
+     */
+    private static function meta_to_iso8601($post_id, $meta_key) {
+        $value = (string) get_post_meta($post_id, $meta_key, true);
+        if ($value === '') {
+            return '';
+        }
+        $ts = strtotime($value . ' UTC');
+        return $ts !== false ? gmdate('c', $ts) : '';
+    }
+
     private static function format_campaign($post) {
         $company_term = self::get_company_term($post->ID);
         $company_id = $company_term ? $company_term->slug : '';
@@ -3025,8 +3037,8 @@ class WPSG_REST {
             'status' => (string) get_post_meta($post->ID, 'status', true) ?: 'draft',
             'visibility' => (string) get_post_meta($post->ID, 'visibility', true) ?: 'private',
             'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
-            'publishAt' => (string) get_post_meta($post->ID, 'publish_at', true),
-            'unpublishAt' => (string) get_post_meta($post->ID, 'unpublish_at', true),
+            'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
+            'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
             'createdAt' => get_post_time('c', true, $post),
             'updatedAt' => get_post_modified_time('c', true, $post),
         ];
@@ -3060,14 +3072,17 @@ class WPSG_REST {
             set_post_thumbnail($post_id, $thumbnail_id);
         }
 
-        // P13-D: Campaign scheduling dates (ISO 8601 strings or empty to clear).
+        // P13-D: Campaign scheduling dates (UTC datetime or empty to clear).
         $publish_at = $request->get_param('publishAt');
         if (!is_null($publish_at)) {
             $publish_at = sanitize_text_field($publish_at);
             if ($publish_at === '') {
                 delete_post_meta($post_id, 'publish_at');
             } else {
-                update_post_meta($post_id, 'publish_at', $publish_at);
+                $ts = strtotime($publish_at);
+                if ($ts !== false) {
+                    update_post_meta($post_id, 'publish_at', gmdate('Y-m-d H:i:s', $ts));
+                }
             }
         }
         $unpublish_at = $request->get_param('unpublishAt');
@@ -3076,7 +3091,10 @@ class WPSG_REST {
             if ($unpublish_at === '') {
                 delete_post_meta($post_id, 'unpublish_at');
             } else {
-                update_post_meta($post_id, 'unpublish_at', $unpublish_at);
+                $ts = strtotime($unpublish_at);
+                if ($ts !== false) {
+                    update_post_meta($post_id, 'unpublish_at', gmdate('Y-m-d H:i:s', $ts));
+                }
             }
         }
     }
