@@ -213,26 +213,32 @@ export function useAuditEntries(apiClient: ApiClient, campaignId: string) {
  * with a 100ms stagger so switching campaigns in the Access selector is instant.
  * Only prefetches in 'campaign' mode — company/all modes depend on a selected
  * company, which isn't known until the user picks one.
+ *
+ * Returns a cancel function that clears all pending timeouts (call on unmount).
  */
 export function prefetchAllCampaignAccess(
   apiClient: ApiClient,
   campaignIds: string[],
-) {
+): () => void {
+  const timers: ReturnType<typeof setTimeout>[] = [];
   campaignIds.forEach((id, index) => {
-    setTimeout(() => {
-      const key = ['admin-access', 'campaign', id];
-      void globalMutate(
-        key,
-        async () => {
-          const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
-            `/wp-json/wp-super-gallery/v1/campaigns/${id}/access`,
-          );
-          return normalizeListResponse(response);
-        },
-        { revalidate: false },
-      );
-    }, index * 100);
+    timers.push(
+      setTimeout(() => {
+        const key = ['admin-access', 'campaign', id];
+        void globalMutate(
+          key,
+          async () => {
+            const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
+              `/wp-json/wp-super-gallery/v1/campaigns/${id}/access`,
+            );
+            return normalizeListResponse(response);
+          },
+          { revalidate: false },
+        );
+      }, index * 100),
+    );
   });
+  return () => timers.forEach(clearTimeout);
 }
 
 /**
@@ -240,26 +246,32 @@ export function prefetchAllCampaignAccess(
  *
  * Called when the Audit tab first opens. Stagger 100ms apart. Audit logs
  * are read-only and rarely change, so this is a safe fire-and-forget cache warm.
+ *
+ * Returns a cancel function that clears all pending timeouts (call on unmount).
  */
 export function prefetchAllCampaignAudit(
   apiClient: ApiClient,
   campaignIds: string[],
-) {
+): () => void {
+  const timers: ReturnType<typeof setTimeout>[] = [];
   campaignIds.forEach((id, index) => {
-    setTimeout(() => {
-      const key = ['admin-audit', id];
-      void globalMutate(
-        key,
-        async () => {
-          const response = await apiClient.get<ListResponse<AuditEntry>>(
-            `/wp-json/wp-super-gallery/v1/campaigns/${id}/audit`,
-          );
-          return normalizeListResponse(response);
-        },
-        { revalidate: false },
-      );
-    }, index * 100);
+    timers.push(
+      setTimeout(() => {
+        const key = ['admin-audit', id];
+        void globalMutate(
+          key,
+          async () => {
+            const response = await apiClient.get<ListResponse<AuditEntry>>(
+              `/wp-json/wp-super-gallery/v1/campaigns/${id}/audit`,
+            );
+            return normalizeListResponse(response);
+          },
+          { revalidate: false },
+        );
+      }, index * 100),
+    );
   });
+  return () => timers.forEach(clearTimeout);
 }
 
 // ── Media Items ────────────────────────────────────────────────────────────────
@@ -305,31 +317,34 @@ export function useMediaItems(apiClient: ApiClient, campaignId: string) {
  *
  * After prefetch completes, switching between campaigns in the Media tab
  * renders instantly from cache.
+ *
+ * Returns a cancel function that clears all pending timeouts (call on unmount).
  */
 export function prefetchAllCampaignMedia(
   apiClient: ApiClient,
   campaignIds: string[],
-) {
+): () => void {
+  const timers: ReturnType<typeof setTimeout>[] = [];
   campaignIds.forEach((id, index) => {
-    setTimeout(() => {
-      const key = mediaItemsKey(id);
-      if (!key) return;
-      // globalMutate with a fetcher populates the SWR cache without
-      // requiring a mounted hook. The { revalidate: false } option means
-      // "only fetch if not already cached" — avoids redundant requests.
-      void globalMutate(
-        key,
-        async () => {
-          const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
-            `/wp-json/wp-super-gallery/v1/campaigns/${id}/media`,
-          );
-          const items = Array.isArray(response) ? response : response.items ?? [];
-          return sortByOrder(items);
-        },
-        { revalidate: false },
-      );
-    }, index * 150); // 150ms stagger between requests
+    timers.push(
+      setTimeout(() => {
+        const key = mediaItemsKey(id);
+        if (!key) return;
+        void globalMutate(
+          key,
+          async () => {
+            const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
+              `/wp-json/wp-super-gallery/v1/campaigns/${id}/media`,
+            );
+            const items = Array.isArray(response) ? response : response.items ?? [];
+            return sortByOrder(items);
+          },
+          { revalidate: false },
+        );
+      }, index * 150),
+    );
   });
+  return () => timers.forEach(clearTimeout);
 }
 
 // Re-export the mutator type for convenience

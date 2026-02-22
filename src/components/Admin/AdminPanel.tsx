@@ -202,30 +202,42 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   // This runs in the background with staggered requests so switching between
   // campaigns in the media selector is instant (SWR cache hit).
   const mediaPrefetchedRef = useRef(false);
+  const cancelMediaPrefetchRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (activeTab === 'media' && campaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
-      void prefetchAllCampaignMedia(apiClient, campaigns.map((c) => String(c.id)));
+      cancelMediaPrefetchRef.current = prefetchAllCampaignMedia(apiClient, campaigns.map((c) => String(c.id)));
     }
   }, [activeTab, campaigns, apiClient]);
 
   // Prefetch access grants for all campaigns when the access tab opens.
   const accessPrefetchedRef = useRef(false);
+  const cancelAccessPrefetchRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (activeTab === 'access' && campaigns.length > 0 && !accessPrefetchedRef.current) {
       accessPrefetchedRef.current = true;
-      void prefetchAllCampaignAccess(apiClient, campaigns.map((c) => String(c.id)));
+      cancelAccessPrefetchRef.current = prefetchAllCampaignAccess(apiClient, campaigns.map((c) => String(c.id)));
     }
   }, [activeTab, campaigns, apiClient]);
 
   // Prefetch audit entries for all campaigns when the audit tab opens.
   const auditPrefetchedRef = useRef(false);
+  const cancelAuditPrefetchRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (activeTab === 'audit' && campaigns.length > 0 && !auditPrefetchedRef.current) {
       auditPrefetchedRef.current = true;
-      void prefetchAllCampaignAudit(apiClient, campaigns.map((c) => String(c.id)));
+      cancelAuditPrefetchRef.current = prefetchAllCampaignAudit(apiClient, campaigns.map((c) => String(c.id)));
     }
   }, [activeTab, campaigns, apiClient]);
+
+  // Cancel any in-flight prefetch timers on unmount.
+  useEffect(() => {
+    return () => {
+      cancelMediaPrefetchRef.current?.();
+      cancelAccessPrefetchRef.current?.();
+      cancelAuditPrefetchRef.current?.();
+    };
+  }, []);
 
   // Search users when query changes
   useEffect(() => {
