@@ -572,9 +572,6 @@ class WPSG_REST {
         $user_id = get_current_user_id();
         if (!self::can_view_campaign($post_id, $user_id)) {
             return new WP_REST_Response(['message' => 'Forbidden'], 403);
-                        if (!preg_match('/^[a-zA-Z0-9_:-]+$/', $embed_slug)) {
-                            return new WP_Error('invalid_url', 'Invalid Odysee video ID format');
-                        }
         }
 
         return new WP_REST_Response(self::format_campaign($post), 200);
