@@ -5,6 +5,24 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-02-22
+
+### Added - Phase 13: UX Polish, Performance & Campaign Scheduling
+- **P13-A — Modal CampaignViewer + Card Settings**: Converted CampaignViewer from fullscreen to centered animated modal; added 13 configurable card/grid/modal settings full-stack (border radius, width, mode, color, shadow, thumbnail height/fit, columns, gap, cover height, transition, duration, max height); border color 3-mode system (auto/single/individual) with per-card ColorInput.
+- **P13-F — Card Gallery Pagination**: Three display modes (show-all, load-more, paginated), rows-per-page setting, OverlayArrows + DotNavigator, GPU-accelerated slide transition, keyboard navigation, responsive recalculation.
+- **P13-E — Mobile Readiness Audit**: 17 mobile issues fixed (44px touch targets, dvh viewport units, responsive modals, safe-area-insets, touch detection); post-audit: filter overflow fix, AuthBar mobile redesign, 5 header visibility toggles, `appPadding`/`appMaxWidth`/`wpFullBleed` responsive breakpoints, lightbox animation.
+- **P13-C — Admin Panel Performance**: Migrated all admin data fetching to SWR (campaigns, media, access, audit hooks in `useAdminSWR.ts`), added skeleton loading states for all tabs, background prefetch on tab open with staggered dedup, removed ~130 lines of manual state/effects.
+- **P13-B — Lazy Loading**: `LazyImage` component (skeleton placeholder → opacity fade-in → error fallback) integrated into all 6 tile gallery adapters via render overrides.
+- **P13-D — Campaign Scheduling**: Full-stack `publishAt`/`unpublishAt` ISO 8601 date fields — PHP post meta registration, REST format/save/filter, server-side `meta_query` filtering (non-admin only), admin `datetime-local` form inputs, schedule badges (Scheduled/Expired/Expiring soon) in admin table, hourly WP-Cron auto-archive.
+
+### Changed
+- Settings panel reorganized from 5 tabs (General/Gallery/Transitions/Navigation/Cards) to 3 tabs (General/Campaign Cards/Media Gallery) with Accordion sections.
+- Admin campaign table rows now show schedule status badges alongside campaign status.
+- CampaignFormModal extended with schedule date inputs and `toLocalInputValue()` ISO↔local conversion.
+
+### Added (Dependencies)
+- `@mantine/dates` ^7.17.8 and `dayjs` ^1.11.19 for date handling.
+
 ## [0.10.0] - 2026-02-19
 
 ### Added - Phase 12: Gallery Extensibility & Advanced Experience (Close-out)
@@ -213,10 +231,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-See [PHASE12_REPORT.md](./docs/PHASE12_REPORT.md) for final Phase 12 execution details and carryover notes.
+See [PHASE13_REPORT.md](./docs/PHASE13_REPORT.md) for Phase 13 execution details.
 
 ---
 
+[0.11.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.9.0...v0.10.0
 [0.5.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.4.0...v0.5.0
 [0.9.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.8.0...v0.9.0
