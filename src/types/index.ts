@@ -26,6 +26,8 @@ export interface Campaign {
   publishAt?: string;
   /** P13-D: Optional ISO 8601 auto-unpublish date. */
   unpublishAt?: string;
+  /** P15-B: Optional layout template reference. */
+  layoutTemplateId?: string;
 }
 
 export interface MediaItem {
@@ -87,6 +89,139 @@ export interface OEmbedResponse {
   html?: string;
   width?: number;
   height?: number;
+}
+
+// ── P15-B: Layout Builder Data Model ──────────────────────────────
+
+/**
+ * Shape preset for a layout slot. Each maps to a CSS clip-path value.
+ * 'custom' uses the slot's own `clipPath` string.
+ */
+export type LayoutSlotShape =
+  | 'rectangle'
+  | 'circle'
+  | 'ellipse'
+  | 'hexagon'
+  | 'diamond'
+  | 'custom';
+
+/**
+ * A single media slot inside a layout template.
+ * All position/size values are percentages (0–100) of the canvas dimensions.
+ */
+export interface LayoutSlot {
+  id: string;
+  /** % from left edge */
+  x: number;
+  /** % from top edge */
+  y: number;
+  /** % of canvas width */
+  width: number;
+  /** % of canvas height */
+  height: number;
+  /** Layer order */
+  zIndex: number;
+  /** Shape preset */
+  shape: LayoutSlotShape;
+  /** Custom CSS clip-path (used when shape === 'custom') */
+  clipPath?: string;
+  /** CSS mask-image URL */
+  maskUrl?: string;
+  /** Corner rounding in px (for rectangle shapes) */
+  borderRadius: number;
+  /** Border thickness in px (0 = none) */
+  borderWidth: number;
+  /** Border CSS color */
+  borderColor: string;
+  /** How the image fills the slot */
+  objectFit: 'cover' | 'contain' | 'fill';
+  /** CSS object-position for focal point, e.g. '50% 30%' */
+  objectPosition: string;
+  /** Fixed media binding (overrides auto-assignment) */
+  mediaId?: string;
+  /** Click behavior in rendered gallery */
+  clickAction: 'lightbox' | 'none';
+  /** Hover behavior in rendered gallery */
+  hoverEffect: 'pop' | 'glow' | 'none';
+}
+
+/** Sensible defaults for a new layout slot. */
+export const DEFAULT_LAYOUT_SLOT: LayoutSlot = {
+  id: '',
+  x: 0,
+  y: 0,
+  width: 25,
+  height: 25,
+  zIndex: 0,
+  shape: 'rectangle',
+  borderRadius: 4,
+  borderWidth: 0,
+  borderColor: '#ffffff',
+  objectFit: 'cover',
+  objectPosition: '50% 50%',
+  clickAction: 'lightbox',
+  hoverEffect: 'pop',
+};
+
+/**
+ * A decorative overlay layer rendered above slots (stretch P15-H).
+ * All position/size values are percentages (0–100) of the canvas.
+ */
+export interface LayoutOverlay {
+  id: string;
+  /** Transparent PNG/SVG URL */
+  imageUrl: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zIndex: number;
+  /** 0–1 */
+  opacity: number;
+  /** false = click-through (default) */
+  pointerEvents: boolean;
+}
+
+/**
+ * A reusable layout template that defines the visual arrangement of media slots
+ * on a fixed-ratio canvas. Stored globally in `wpsg_layout_templates` WP option.
+ */
+export interface LayoutTemplate {
+  id: string;
+  name: string;
+  /** Schema version for future migrations (starts at 1) */
+  schemaVersion: number;
+  /** Canvas width / height ratio (e.g. 16/9 ≈ 1.778) */
+  canvasAspectRatio: number;
+  /** Minimum render width in px */
+  canvasMinWidth: number;
+  /** Maximum render width in px (0 = fill container) */
+  canvasMaxWidth: number;
+  /** CSS background color for the canvas */
+  backgroundColor: string;
+  /** Ordered list of media slots */
+  slots: LayoutSlot[];
+  /** Decorative overlay layers (stretch P15-H) */
+  overlays: LayoutOverlay[];
+  /** ISO 8601 created timestamp */
+  createdAt: string;
+  /** ISO 8601 last-updated timestamp */
+  updatedAt: string;
+  /** Organizational tags */
+  tags: string[];
+}
+
+/**
+ * Per-campaign binding that references a global template and stores
+ * per-slot overrides (e.g. fixed media assignments, focal point tweaks).
+ * Stored as post_meta `_wpsg_layout_binding`.
+ */
+export interface CampaignLayoutBinding {
+  templateId: string;
+  slotOverrides: Record<string, {
+    mediaId?: string;
+    objectPosition?: string;
+  }>;
 }
 
 export type ScrollAnimationStyle = 'smooth' | 'instant';
@@ -312,6 +447,16 @@ export interface GalleryBehaviorSettings {
   authBarBackdropBlur: number;
   authBarMobileBreakpoint: number;
   cardAutoColumnsBreakpoints: string;
+  // P15-A: Per-breakpoint gallery selection
+  gallerySelectionMode: 'unified' | 'per-breakpoint';
+  desktopImageAdapterId: string;
+  desktopVideoAdapterId: string;
+  tabletImageAdapterId: string;
+  tabletVideoAdapterId: string;
+  mobileImageAdapterId: string;
+  mobileVideoAdapterId: string;
+  // P15-A: Layout builder scope
+  layoutBuilderScope: 'full' | 'viewport';
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -492,6 +637,15 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   authBarBackdropBlur: 8,
   authBarMobileBreakpoint: 768,
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
+  // P15-A: Per-breakpoint gallery selection
+  gallerySelectionMode: 'unified',
+  desktopImageAdapterId: 'classic',
+  desktopVideoAdapterId: 'classic',
+  tabletImageAdapterId: 'classic',
+  tabletVideoAdapterId: 'classic',
+  mobileImageAdapterId: 'classic',
+  mobileVideoAdapterId: 'classic',
+  layoutBuilderScope: 'full',
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',

@@ -239,6 +239,15 @@ class WPSG_Settings {
         'auth_bar_backdrop_blur'         => 8,
         'auth_bar_mobile_breakpoint'     => 768,
         'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
+        // ── P15-A: Per-breakpoint gallery selection ───────────
+        'gallery_selection_mode'         => 'unified',
+        'desktop_image_adapter_id'       => 'classic',
+        'desktop_video_adapter_id'       => 'classic',
+        'tablet_image_adapter_id'        => 'classic',
+        'tablet_video_adapter_id'        => 'classic',
+        'mobile_image_adapter_id'        => 'classic',
+        'mobile_video_adapter_id'        => 'classic',
+        'layout_builder_scope'           => 'full',
     ];
 
     /**
@@ -313,6 +322,15 @@ class WPSG_Settings {
         'image_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
         'video_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
         'unified_gallery_adapter_id' => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
+        // P15-A: Per-breakpoint gallery selection
+        'gallery_selection_mode'     => ['unified', 'per-breakpoint'],
+        'desktop_image_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
+        'desktop_video_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
+        'tablet_image_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
+        'tablet_video_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
+        'mobile_image_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
+        'mobile_video_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
+        'layout_builder_scope'       => ['full', 'viewport'],
     ];
 
     /**
@@ -868,6 +886,30 @@ class WPSG_Settings {
             $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['unified_gallery_adapter_id']
                 : 'compact-grid';
+        }
+        // P15-A: Per-breakpoint gallery selection
+        if (isset($input['gallery_selection_mode'])) {
+            $sanitized['gallery_selection_mode'] = in_array($input['gallery_selection_mode'], ['unified', 'per-breakpoint'], true)
+                ? $input['gallery_selection_mode']
+                : 'unified';
+        }
+        $bp_adapter_fields = [
+            'desktop_image_adapter_id', 'desktop_video_adapter_id',
+            'tablet_image_adapter_id',  'tablet_video_adapter_id',
+            'mobile_image_adapter_id',  'mobile_video_adapter_id',
+        ];
+        $valid_bp_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+        foreach ($bp_adapter_fields as $field) {
+            if (isset($input[$field])) {
+                $sanitized[$field] = in_array($input[$field], $valid_bp_adapters, true)
+                    ? $input[$field]
+                    : 'classic';
+            }
+        }
+        if (isset($input['layout_builder_scope'])) {
+            $sanitized['layout_builder_scope'] = in_array($input['layout_builder_scope'], ['full', 'viewport'], true)
+                ? $input['layout_builder_scope']
+                : 'full';
         }
         if (isset($input['mosaic_target_row_height'])) {
             $sanitized['mosaic_target_row_height'] = max(60, min(600, intval($input['mosaic_target_row_height'])));

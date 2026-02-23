@@ -1,8 +1,27 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
+import { useBreakpoint, type Breakpoint } from '@/hooks/useBreakpoint';
+
+/**
+ * Resolve the adapter ID to use for a given media type and breakpoint.
+ *
+ * When `gallerySelectionMode` is `'per-breakpoint'`, selects from the 6
+ * per-breakpoint adapter settings. Otherwise returns the unified setting.
+ */
+function resolveAdapterId(
+  s: GalleryBehaviorSettings,
+  mediaType: 'image' | 'video',
+  breakpoint: Breakpoint,
+): string {
+  if (s.gallerySelectionMode !== 'per-breakpoint') {
+    return mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
+  }
+  const key = `${breakpoint}${mediaType === 'image' ? 'Image' : 'Video'}AdapterId` as keyof GalleryBehaviorSettings;
+  return (s[key] as string) || (mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId);
+}
 
 /**
  * Dispatch a gallery adapter by ID. 'classic' is handled separately in the
@@ -101,6 +120,9 @@ export function CampaignViewer({
   const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
   // Reactive media query so fullScreen updates on orientation changes / resizes
   const isMobile = useMediaQuery('(max-width: 48em)'); // ≤ 768px
+  // P15-A: Per-breakpoint adapter resolution
+  const containerRef = useRef<HTMLDivElement>(null);
+  const breakpoint = useBreakpoint(containerRef);
   return (
     <Modal
       opened={opened}
@@ -182,7 +204,7 @@ export function CampaignViewer({
       </Box>
 
       {/* Content */}
-      <Box p={{ base: 'md', md: 'xl' }} style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
+      <Box ref={containerRef} p={{ base: 'md', md: 'xl' }} style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
         <Stack gap="xl">
           {/* Description */}
           <Box>
@@ -223,7 +245,7 @@ export function CampaignViewer({
                 <>
                   {campaign.videos.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
-                    const id = s.videoGalleryAdapterId;
+                    const id = resolveAdapterId(s, 'video', breakpoint);
                     // Override tileSize with per-gallery videoTileSize for shape adapters
                     const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
@@ -236,7 +258,7 @@ export function CampaignViewer({
                   })()}
                   {campaign.images.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
-                    const id = s.imageGalleryAdapterId;
+                    const id = resolveAdapterId(s, 'image', breakpoint);
                     // Override tileSize with per-gallery imageTileSize for shape adapters
                     const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);

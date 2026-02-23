@@ -27,6 +27,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-sentry.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-thumbnail-cache.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rate-limiter.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-image-optimizer.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-layout-templates.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');

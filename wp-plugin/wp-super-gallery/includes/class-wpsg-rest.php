@@ -348,6 +348,55 @@ class WPSG_REST {
                 'permission_callback' => [self::class, 'is_admin'],
             ],
         ]);
+
+        // ── P15-B: Layout Template CRUD (admin) ──────────────────
+        register_rest_route('wp-super-gallery/v1', '/admin/layout-templates', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_layout_templates'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'create_layout_template'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_layout_template'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+            [
+                'methods' => 'PUT',
+                'callback' => [self::class, 'update_layout_template'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'delete_layout_template'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/layout-templates/(?P<templateId>[a-f0-9\-]{36})/duplicate', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'duplicate_layout_template'],
+                'permission_callback' => [self::class, 'is_admin'],
+            ],
+        ]);
+
+        // P15-B: Public read-only endpoint for rendering (no auth, ID-based only).
+        register_rest_route('wp-super-gallery/v1', '/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_layout_template_public'],
+                'permission_callback' => '__return_true',
+            ],
+        ]);
     }
 
     public static function rate_limit_public($request) {
@@ -2539,6 +2588,8 @@ class WPSG_REST {
             'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
             'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
             'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
+            'layoutTemplateId' => get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: null,
+            'layoutBinding' => get_post_meta($post->ID, '_wpsg_layout_binding', true) ?: null,
             'createdAt' => get_post_time('c', true, $post),
             'updatedAt' => get_post_modified_time('c', true, $post),
         ];
@@ -2603,6 +2654,44 @@ class WPSG_REST {
                 if ($ts !== false) {
                     update_post_meta($post_id, 'unpublish_at', gmdate('Y-m-d H:i:s', $ts));
                 }
+            }
+        }
+
+        // P15-B: Layout template binding.
+        $layout_template_id = $request->get_param('layoutTemplateId');
+        if (!is_null($layout_template_id)) {
+            $layout_template_id = sanitize_text_field($layout_template_id);
+            if ($layout_template_id === '') {
+                delete_post_meta($post_id, '_wpsg_layout_binding_template_id');
+                delete_post_meta($post_id, '_wpsg_layout_binding');
+            } else {
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $layout_template_id);
+            }
+        }
+        $layout_binding = $request->get_param('layoutBinding');
+        if (!is_null($layout_binding) && is_array($layout_binding)) {
+            // Sanitize slot overrides.
+            $sanitized_binding = [
+                'templateId' => sanitize_text_field($layout_binding['templateId'] ?? ''),
+                'slotOverrides' => [],
+            ];
+            if (!empty($layout_binding['slotOverrides']) && is_array($layout_binding['slotOverrides'])) {
+                foreach ($layout_binding['slotOverrides'] as $slot_id => $overrides) {
+                    $clean = [];
+                    if (isset($overrides['mediaId'])) {
+                        $clean['mediaId'] = sanitize_text_field($overrides['mediaId']);
+                    }
+                    if (isset($overrides['objectPosition'])) {
+                        $clean['objectPosition'] = sanitize_text_field($overrides['objectPosition']);
+                    }
+                    if (!empty($clean)) {
+                        $sanitized_binding['slotOverrides'][sanitize_text_field($slot_id)] = $clean;
+                    }
+                }
+            }
+            update_post_meta($post_id, '_wpsg_layout_binding', $sanitized_binding);
+            if (!empty($sanitized_binding['templateId'])) {
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $sanitized_binding['templateId']);
             }
         }
     }
@@ -2945,5 +3034,105 @@ class WPSG_REST {
         }, $terms);
 
         return new WP_REST_Response($result, 200);
+    }
+
+    // ── P15-B: Layout Template Handlers ──────────────────────
+
+    /**
+     * List all layout templates (admin).
+     */
+    public static function list_layout_templates($request) {
+        $templates = WPSG_Layout_Templates::get_all();
+        return new WP_REST_Response(array_values($templates), 200);
+    }
+
+    /**
+     * Create a new layout template (admin).
+     */
+    public static function create_layout_template($request) {
+        $data   = $request->get_json_params();
+        $result = WPSG_Layout_Templates::create($data);
+
+        if (is_wp_error($result)) {
+            $status = $result->get_error_data()['status'] ?? 400;
+            return new WP_REST_Response(['message' => $result->get_error_message()], $status);
+        }
+
+        return new WP_REST_Response($result, 201);
+    }
+
+    /**
+     * Get a single layout template (admin).
+     */
+    public static function get_layout_template($request) {
+        $id       = $request->get_param('templateId');
+        $template = WPSG_Layout_Templates::get($id);
+
+        if (!$template) {
+            return new WP_REST_Response(['message' => 'Template not found.'], 404);
+        }
+
+        return new WP_REST_Response($template, 200);
+    }
+
+    /**
+     * Update a layout template (admin).
+     */
+    public static function update_layout_template($request) {
+        $id     = $request->get_param('templateId');
+        $data   = $request->get_json_params();
+        $result = WPSG_Layout_Templates::update($id, $data);
+
+        if (is_wp_error($result)) {
+            $status = $result->get_error_data()['status'] ?? 400;
+            return new WP_REST_Response(['message' => $result->get_error_message()], $status);
+        }
+
+        return new WP_REST_Response($result, 200);
+    }
+
+    /**
+     * Delete a layout template (admin).
+     */
+    public static function delete_layout_template($request) {
+        $id      = $request->get_param('templateId');
+        $deleted = WPSG_Layout_Templates::delete($id);
+
+        if (!$deleted) {
+            return new WP_REST_Response(['message' => 'Template not found.'], 404);
+        }
+
+        return new WP_REST_Response(['deleted' => true], 200);
+    }
+
+    /**
+     * Duplicate a layout template (admin).
+     */
+    public static function duplicate_layout_template($request) {
+        $id       = $request->get_param('templateId');
+        $data     = $request->get_json_params();
+        $new_name = sanitize_text_field($data['name'] ?? '');
+        $result   = WPSG_Layout_Templates::duplicate($id, $new_name);
+
+        if (is_wp_error($result)) {
+            $status = $result->get_error_data()['status'] ?? 400;
+            return new WP_REST_Response(['message' => $result->get_error_message()], $status);
+        }
+
+        return new WP_REST_Response($result, 201);
+    }
+
+    /**
+     * Public read-only endpoint for rendering (no auth, ID-based only).
+     */
+    public static function get_layout_template_public($request) {
+        $id       = $request->get_param('templateId');
+        $template = WPSG_Layout_Templates::get($id);
+
+        if (!$template) {
+            return new WP_REST_Response(['message' => 'Template not found.'], 404);
+        }
+
+        return new WP_REST_Response($template, 200);
     }
 }

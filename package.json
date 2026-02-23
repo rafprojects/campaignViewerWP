@@ -29,9 +29,11 @@
     "chroma-js": "^3.2.0",
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.1",
+    "immer": "^11.1.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-photo-album": "^3.5.0",
+    "react-rnd": "^10.5.2",
     "react-window": "^1.8.10",
     "swr": "^2.4.0"
   },

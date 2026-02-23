@@ -1,0 +1,139 @@
+Phase 15 Plan — Counter-Critique Review & Disposition
+Date: February 22, 2026
+Purpose: Evaluate the dispositions in PHASE15_CRITIQUE_REVIEW.md for logical consistency, technical accuracy, and alignment with project goals. Each item is assessed as AGREE WITH DISPOSITION, AGREE WITH MODIFICATION, DISAGREE, or DEFER with rationale. This review draws on best practices for React/WordPress development, performance considerations, and the plugin's embeddable nature.
+
+Item 1: Breakpoint Detection — Mantine Alignment
+Disposition in Review: ACCEPT WITH MOD — Keep ResizeObserver for embed safety; source thresholds from Mantine theme; deprecate other useMediaQuery calls in future.
+Assessment: AGREE WITH DISPOSITION
+The reasoning is sound and addresses the original critique effectively. Sourcing breakpoints from useMantineTheme() ensures consistency without hardcoding, while preserving ResizeObserver's container-specific logic is critical for shortcode embeds (a unique WP constraint overlooked in the initial critique). Deprecating inconsistent useMediaQuery instances is a proactive cleanup, appropriately scoped outside P15. No counterarguments; this balances responsiveness and embed compatibility.
+Plan update needed: None beyond what's proposed.
+
+Item 2a: WP Option Scalability
+Disposition in Review: ACCEPT — Add 200-template soft limit with admin warning.
+Assessment: AGREE WITH MODIFICATION
+The disposition correctly calculates serialized size (~2KB per template) and affirms WP options' efficiency for autoloaded data. A 200-template limit is a reasonable threshold, but it should be dynamic (e.g., based on serialized size < 500KB) to account for varying template complexity (e.g., more slots or overlays inflate size). Add a PHP check in create()/update(): if strlen(serialize($templates)) > 512000, trigger warning and suggest migration.
+Counterargument: Static count limits risk false positives/negatives; size-based is more precise and aligns with WP's max_allowed_packet concerns in the risk register.
+Plan update needed: Modify limit to size-based (e.g., 500KB) for accuracy.
+
+Item 2b: Multi-User Access Controls
+Disposition in Review: REJECT — Already gated by manage_wpsg capability.
+Assessment: AGREE WITH DISPOSITION
+Valid rejection; the custom capability follows WP RBAC standards, and assuming a shared admin environment is appropriate for this plugin's target (marketing teams on single WP installs). Per-template ownership would indeed over-engineer for most use cases. No counterarguments.
+Plan update needed: None.
+
+Item 2c: Public Endpoint Security
+Disposition in Review: ACCEPT (clarify) — Note ID-based lookup only, UUIDs unguessable; optionally restrict to referenced templates.
+Assessment: AGREE WITH DISPOSITION
+The clarification strengthens security without overcomplicating: UUIDv4's 128-bit randomness makes brute-forcing infeasible. Restricting to published-campaign-referenced templates is a good optional enhancement but not essential, as templates contain no sensitive data (just layout coords). Agree with ID-based approach over a list endpoint. No counterarguments.
+Plan update needed: None.
+
+Item 2d: Transient Cache
+Disposition in Review: REJECT — autoload=yes already optimal.
+Assessment: AGREE WITH DISPOSITION
+Correct; transients add unnecessary layers in non-object-cached environments, and autoloaded options are memory-resident. If performance issues arise, site-wide caching (e.g., via plugins) would handle it better than per-option transients. No counterarguments.
+Plan update needed: None.
+
+Item 3a: Immer.js for Undo/Redo
+Disposition in Review: LEANING ACCEPT, WANT INPUT — Weigh Immer (3KB) vs. structuredClone + vanilla.
+Assessment: AGREE WITH DISPOSITION
+The options table is well-balanced, highlighting Immer's efficiency for nested state without dismissing vanilla alternatives. Given the builder's complexity (nested slots, multi-select, history stack), Immer prevents common immutability pitfalls while keeping code readable. structuredClone is viable but verbose for deep updates, increasing maintenance risk. No strong counterarguments, but note: Browser support for structuredClone is solid (Chrome 98+, Firefox 94+, Safari 15.4+), so vanilla is feasible if dependency aversion is high.
+Recommendation on Input: Proceed with Immer.js. Its small size and proven use in state-heavy apps (e.g., Redux Toolkit) justify it for this isolated hook, enhancing developer productivity without bundle bloat.
+Plan update needed: Adopt Immer if user confirms; otherwise, document vanilla cloning pitfalls in the hook's comments.
+
+Item 3b: Accessibility (A11y)
+Disposition in Review: ACCEPT — Add keyboard nav, ARIA, screen reader to P15-C.
+Assessment: AGREE WITH DISPOSITION
+Essential addition aligning with WP accessibility guidelines (e.g., WCAG 2.1). The proposed features (arrow nudges, ARIA roles, live regions) are targeted and low-effort, integrating naturally with react-rnd's event system. No counterarguments; this fills a genuine gap.
+Plan update needed: None.
+
+Item 3c: Multi-Tab LocalStorage Conflict
+Disposition in Review: REJECT — Over-engineering for crash recovery.
+Assessment: AGREE WITH DISPOSITION
+LocalStorage as a draft recovery tool doesn't warrant full conflict resolution; the proposed check (discard mismatched IDs, offer restore for matches) is sufficient and pragmatic. Multi-tab editing is an edge case in a modal UI. No counterarguments.
+Plan update needed: None.
+
+Item 4a: Smooth Thumbnail Scroll
+Disposition in Review: ACCEPT — Add scrollIntoView to P15-E.3.
+Assessment: AGREE WITH DISPOSITION
+Simple, effective UX polish using native DOM API. No counterarguments.
+Plan update needed: None.
+
+Item 4b: CSS Aspect-Ratio
+Disposition in Review: ACCEPT — Add to P15-E.1.
+Assessment: AGREE WITH DISPOSITION
+Leverages modern CSS for cleaner code; fallback via JS height calc is easy if needed for older browsers (though WP targets modern ones). No counterarguments.
+Plan update needed: None.
+
+Item 4c: Aspect Ratio Distortion
+Disposition in Review: REJECT — Already handled by fixed aspect-ratio container.
+Assessment: AGREE WITH DISPOSITION
+The fixed aspect-ratio prevents distortion, with letterboxing handling mismatches gracefully. The original critique overstated variability within breakpoints. No counterarguments.
+Plan update needed: None.
+
+Item 4d: Empty Slot Warnings
+Disposition in Review: ACCEPT — Add mismatch notification.
+Assessment: AGREE WITH DISPOSITION
+Proactive user guidance improves adoption; low-effort info toast. No counterarguments.
+Plan update needed: None.
+
+Item 5a: Clip-Path Editor Over-Scoped
+Disposition in Review: ACCEPT — Move P15-K.3 to future phase.
+Assessment: AGREE WITH DISPOSITION
+Appropriate deferral; the editor is advanced and non-core. Preset polygons suffice for v1 stretches. No counterarguments.
+Plan update needed: None.
+
+Item 5b: Dynamic Presets
+Disposition in Review: REJECT — Static JSON → import is the established pattern.
+Assessment: AGREE WITH DISPOSITION
+Static bundling ensures consistency on install; users customize copies post-import. Dynamic WP storage adds unnecessary mutability for defaults. No counterarguments.
+Plan update needed: None.
+
+Item 6a: react-rnd Staleness
+Disposition in Review: ACKNOWLEDGED — No action (already mitigated).
+Assessment: AGREE WITH MODIFICATION
+The library's narrow scope reduces risk, but a quick check confirms: Last commit on GitHub was in 2023 (minor fixes), and it's React 18-compatible per issues. Still, add a note to test with React 19 beta during dev.
+Counterargument: While not "stale" by open-source standards (many libs go years without majors), proactive React 19 testing mitigates future-proofing concerns.
+Plan update needed: Add React 19 compatibility test to risk register.
+
+Item 6b: html-to-image vs. Canvas
+Disposition in Review: LEANING ACCEPT, WANT INPUT — Recommend skip previews for v1 (Option D).
+Assessment: AGREE WITH DISPOSITION
+Option D (skip for v1) is pragmatic; previews are polish, not MVP. If added later, html-to-image captures DOM fidelity that native canvas can't match without reimplementation. No counterarguments.
+Recommendation on Input: Skip visual previews for v1; use metadata-only in library UI. This accelerates delivery.
+Plan update needed: Defer P15-F.3 to post-v1 if user agrees.
+
+Item 7a: Debounced Resize
+Disposition in Review: REJECT — ResizeObserver rate is already appropriate.
+Assessment: AGREE WITH DISPOSITION
+Native batching (RAF-timed) avoids lag; debounce could delay adapter switches. No counterarguments.
+Plan update needed: None.
+
+Item 7b: Preview Mode Toggle
+Disposition in Review: ACCEPT — Add to P15-C.2.
+Assessment: AGREE WITH DISPOSITION
+Valuable for WYSIWYG feedback; easy toggle via state. No counterarguments.
+Plan update needed: None.
+
+Item 7c: Bounds/Overlap Warnings
+Disposition in Review: ACCEPT — Add validation to P15-B.2.
+Assessment: AGREE WITH DISPOSITION
+Complements react-rnd's runtime constraints with save-time checks. No counterarguments.
+Plan update needed: None.
+
+Item 7d: Telemetry
+Disposition in Review: REJECT — Scope creep for Phase 15.
+Assessment: AGREE WITH DISPOSITION
+Extends Phase 14; defer to usage analysis post-launch. No counterarguments.
+Plan update needed: None.
+
+Item 7e: Quick-Start Guide
+Disposition in Review: DEFER — Post-stabilization.
+Assessment: AGREE WITH DISPOSITION
+User testing will inform content; avoid premature docs. No counterarguments.
+Plan update needed: None.
+
+Item 7f: Multi-Device E2E
+Disposition in Review: ACCEPT — Add device presets to testing strategy.
+Assessment: AGREE WITH DISPOSITION
+Low-cost config enhancement; ensures breakpoint fidelity. No counterarguments.
+Plan update needed: None.
