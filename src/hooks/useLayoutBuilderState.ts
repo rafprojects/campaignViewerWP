@@ -75,6 +75,14 @@ export interface LayoutBuilderActions {
   resizeSlot: (id: string, x: number, y: number, width: number, height: number) => void;
   /** Update arbitrary slot properties. */
   updateSlot: (id: string, updates: Partial<LayoutSlot>) => void;
+  /** Nudge selected slots by a delta (arrow key). */
+  nudgeSlots: (ids: string[], dx: number, dy: number) => void;
+  /** Assign a specific media item to a slot. */
+  assignMediaToSlot: (slotId: string, mediaId: string) => void;
+  /** Clear fixed media assignment for a slot. */
+  clearSlotMedia: (slotId: string) => void;
+  /** Auto-assign media to all slots by order (sets mediaId). */
+  autoAssignMedia: (mediaIds: string[]) => void;
 
   // ── Selection ──
   /** Select a single slot (replaces selection). */
@@ -260,6 +268,48 @@ export function useLayoutBuilderState(
     [mutate],
   );
 
+  const nudgeSlots = useCallback(
+    (ids: string[], dx: number, dy: number) =>
+      mutate((d) => {
+        const idSet = new Set(ids);
+        for (const slot of d.slots) {
+          if (idSet.has(slot.id)) {
+            slot.x = Math.max(0, Math.min(100 - slot.width, slot.x + dx));
+            slot.y = Math.max(0, Math.min(100 - slot.height, slot.y + dy));
+          }
+        }
+      }),
+    [mutate],
+  );
+
+  const assignMediaToSlot = useCallback(
+    (slotId: string, mediaId: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === slotId);
+        if (slot) slot.mediaId = mediaId;
+      }),
+    [mutate],
+  );
+
+  const clearSlotMedia = useCallback(
+    (slotId: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === slotId);
+        if (slot) slot.mediaId = undefined;
+      }),
+    [mutate],
+  );
+
+  const autoAssignMedia = useCallback(
+    (mediaIds: string[]) =>
+      mutate((d) => {
+        for (let i = 0; i < d.slots.length; i++) {
+          d.slots[i].mediaId = i < mediaIds.length ? mediaIds[i] : undefined;
+        }
+      }),
+    [mutate],
+  );
+
   // ── Selection ──
 
   const selectSlot = useCallback(
@@ -355,6 +405,10 @@ export function useLayoutBuilderState(
     moveSlot,
     resizeSlot,
     updateSlot,
+    nudgeSlots,
+    assignMediaToSlot,
+    clearSlotMedia,
+    autoAssignMedia,
     // Selection
     selectSlot,
     toggleSlotSelection,

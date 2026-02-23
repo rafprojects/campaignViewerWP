@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { Text } from '@mantine/core';
 import type { LayoutSlot, MediaItem } from '@/types';
@@ -21,6 +21,10 @@ export interface LayoutSlotComponentProps {
   onResizeStop: (id: string, x: number, y: number, w: number, h: number) => void;
   onSelect: (id: string) => void;
   onToggleSelect: (id: string) => void;
+  /** Called on every drag frame (for smart guides). */
+  onDragFrame?: (id: string, pxX: number, pxY: number) => void;
+  /** Called when a media item is dropped onto this slot. */
+  onMediaDrop?: (slotId: string, mediaId: string) => void;
 }
 
 // ── Minimum slot size (px) ───────────────────────────────────
@@ -65,6 +69,8 @@ export function LayoutSlotComponent({
   onResizeStop,
   onSelect,
   onToggleSelect,
+  onDragFrame,
+  onMediaDrop,
 }: LayoutSlotComponentProps) {
   const rndRef = useRef<Rnd>(null);
   const clipPath = getClipPath(slot);
@@ -79,6 +85,41 @@ export function LayoutSlotComponent({
       }
     },
     [slot.id, onSelect, onToggleSelect],
+  );
+
+  // ── Drag frame handler (for smart guides) ──
+  const handleDrag = useCallback(
+    (_e: unknown, data: { x: number; y: number }) => {
+      onDragFrame?.(slot.id, data.x, data.y);
+    },
+    [slot.id, onDragFrame],
+  );
+
+  // ── HTML5 Drop handlers (media assignment) ──
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('application/x-wpsg-media-id')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
+      if (mediaId && onMediaDrop) {
+        onMediaDrop(slot.id, mediaId);
+      }
+    },
+    [slot.id, onMediaDrop],
   );
 
   // ── Selection border style ──
@@ -155,6 +196,7 @@ export function LayoutSlotComponent({
       minHeight={MIN_SLOT_PX}
       maxWidth={canvasWidth}
       maxHeight={canvasHeight}
+      onDrag={handleDrag}
       onDragStop={(_e, data) => {
         onDragStop(slot.id, data.x, data.y);
       }}
@@ -185,19 +227,25 @@ export function LayoutSlotComponent({
       }}
     >
       <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         style={{
           width: '100%',
           height: '100%',
           borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : 0,
           clipPath,
           overflow: 'hidden',
-          border: selectionBorder,
+          border: isDragOver
+            ? '2px dashed var(--mantine-color-green-5)'
+            : selectionBorder,
           boxSizing: 'border-box',
           position: 'relative',
           cursor: 'move',
         }}
         role="img"
         aria-label={`Slot ${index + 1}: ${mediaItem?.url ? 'assigned' : 'empty'}`}
+        tabIndex={0}
       >
         {/* Media image or placeholder */}
         {mediaItem ? (

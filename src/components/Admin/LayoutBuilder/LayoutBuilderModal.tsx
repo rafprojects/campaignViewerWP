@@ -11,6 +11,9 @@ import {
   Divider,
   Box,
   SegmentedControl,
+  NumberInput,
+  Switch,
+  Tabs,
 } from '@mantine/core';
 import {
   IconDeviceFloppy,
@@ -21,6 +24,8 @@ import {
   IconPlus,
   IconTrash,
   IconCopy,
+  IconList,
+  IconPhoto,
 } from '@tabler/icons-react';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
@@ -30,6 +35,7 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { LayoutCanvas } from './LayoutCanvas';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
+import { MediaPickerSidebar } from './MediaPickerSidebar';
 
 // ── Aspect ratio presets ─────────────────────────────────────
 
@@ -69,6 +75,9 @@ export function LayoutBuilderModal({
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [leftTab, setLeftTab] = useState<string | null>('slots');
+  const [a11yAnnouncement, setA11yAnnouncement] = useState('');
 
   // ── Close with dirty guard ──
   const handleClose = useCallback(() => {
@@ -118,6 +127,20 @@ export function LayoutBuilderModal({
     builder.duplicateSlots(ids);
   }, [builder]);
 
+  // ── A11y announce helper ──
+  const announce = useCallback((msg: string) => {
+    setA11yAnnouncement(msg);
+    // Clear after screen reader has time to read it
+    setTimeout(() => setA11yAnnouncement(''), 3000);
+  }, []);
+
+  // ── Auto-assign media ──
+  const handleAutoAssign = useCallback(() => {
+    const mediaIds = media.map((m) => m.id);
+    builder.autoAssignMedia(mediaIds);
+    announce(`Auto-assigned ${Math.min(mediaIds.length, builder.template.slots.length)} media items`);
+  }, [builder, media, announce]);
+
   // ── Keyboard shortcuts ──
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -149,6 +172,28 @@ export function LayoutBuilderModal({
       }
       if (e.key === 'Escape') {
         builder.clearSelection();
+      }
+
+      // Arrow keys: nudge selected slots
+      const step = e.shiftKey ? 0.1 : 1;
+      const ids = Array.from(builder.selectedSlotIds);
+      if (ids.length > 0) {
+        if (e.key === 'ArrowLeft') {
+          builder.nudgeSlots(ids, -step, 0);
+          e.preventDefault();
+        }
+        if (e.key === 'ArrowRight') {
+          builder.nudgeSlots(ids, step, 0);
+          e.preventDefault();
+        }
+        if (e.key === 'ArrowUp') {
+          builder.nudgeSlots(ids, 0, -step);
+          e.preventDefault();
+        }
+        if (e.key === 'ArrowDown') {
+          builder.nudgeSlots(ids, 0, step);
+          e.preventDefault();
+        }
       }
     },
     [builder, handleDeleteSelected, handleDuplicateSelected],
@@ -285,92 +330,125 @@ export function LayoutBuilderModal({
 
         {/* ── Main workspace ── */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          {/* Left toolbar — slot list + add/delete */}
+          {/* Left toolbar — slot list + media picker (tabbed) */}
           {!builder.isPreview && (
             <Box
-              w={220}
-              p="sm"
+              w={240}
               style={{
                 borderRight: '1px solid var(--mantine-color-default-border)',
                 overflowY: 'auto',
                 flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
-              <Group justify="space-between" mb="xs">
-                <Text size="sm" fw={600}>
-                  Slots ({builder.template.slots.length})
-                </Text>
-                <Group gap={4}>
-                  <Tooltip label="Add slot">
-                    <ActionIcon
-                      size="sm"
-                      variant="light"
-                      onClick={() => builder.addSlot()}
-                      aria-label="Add slot"
-                    >
-                      <IconPlus size={14} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label="Delete selected">
-                    <ActionIcon
-                      size="sm"
-                      variant="light"
-                      color="red"
-                      onClick={handleDeleteSelected}
-                      disabled={builder.selectedSlotIds.size === 0}
-                      aria-label="Delete selected slots"
-                    >
-                      <IconTrash size={14} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label="Duplicate selected">
-                    <ActionIcon
-                      size="sm"
-                      variant="light"
-                      onClick={handleDuplicateSelected}
-                      disabled={builder.selectedSlotIds.size === 0}
-                      aria-label="Duplicate selected slots"
-                    >
-                      <IconCopy size={14} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
-              </Group>
+              <Tabs
+                value={leftTab}
+                onChange={setLeftTab}
+                variant="outline"
+                styles={{
+                  root: { display: 'flex', flexDirection: 'column', height: '100%' },
+                  panel: { flex: 1, overflow: 'auto', padding: 'var(--mantine-spacing-sm)' },
+                }}
+              >
+                <Tabs.List>
+                  <Tabs.Tab value="slots" leftSection={<IconList size={14} />}>
+                    Slots
+                  </Tabs.Tab>
+                  <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
+                    Media
+                  </Tabs.Tab>
+                </Tabs.List>
 
-              <Stack gap={4}>
-                {builder.template.slots.map((slot, index) => (
-                  <Button
-                    key={slot.id}
-                    size="xs"
-                    variant={
-                      builder.selectedSlotIds.has(slot.id) ? 'filled' : 'subtle'
-                    }
-                    justify="flex-start"
-                    fullWidth
-                    onClick={(e: React.MouseEvent) => {
-                      if (e.shiftKey) {
-                        builder.toggleSlotSelection(slot.id);
-                      } else {
-                        builder.selectSlot(slot.id);
-                      }
-                    }}
-                    styles={{
-                      label: {
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      },
-                    }}
-                  >
-                    Slot {index + 1}
-                    {slot.mediaId ? ' ✓' : ''}
-                  </Button>
-                ))}
-                {builder.template.slots.length === 0 && (
-                  <Text size="xs" c="dimmed" ta="center" py="md">
-                    No slots yet. Click + to add one.
-                  </Text>
-                )}
-              </Stack>
+                <Tabs.Panel value="slots">
+                  <Group justify="space-between" mb="xs">
+                    <Text size="sm" fw={600}>
+                      Slots ({builder.template.slots.length})
+                    </Text>
+                    <Group gap={4}>
+                      <Tooltip label="Add slot">
+                        <ActionIcon
+                          size="sm"
+                          variant="light"
+                          onClick={() => builder.addSlot()}
+                          aria-label="Add slot"
+                        >
+                          <IconPlus size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="Delete selected">
+                        <ActionIcon
+                          size="sm"
+                          variant="light"
+                          color="red"
+                          onClick={handleDeleteSelected}
+                          disabled={builder.selectedSlotIds.size === 0}
+                          aria-label="Delete selected slots"
+                        >
+                          <IconTrash size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="Duplicate selected">
+                        <ActionIcon
+                          size="sm"
+                          variant="light"
+                          onClick={handleDuplicateSelected}
+                          disabled={builder.selectedSlotIds.size === 0}
+                          aria-label="Duplicate selected slots"
+                        >
+                          <IconCopy size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  </Group>
+
+                  <Stack gap={4}>
+                    {builder.template.slots.map((slot, index) => (
+                      <Button
+                        key={slot.id}
+                        size="xs"
+                        variant={
+                          builder.selectedSlotIds.has(slot.id) ? 'filled' : 'subtle'
+                        }
+                        justify="flex-start"
+                        fullWidth
+                        onClick={(e: React.MouseEvent) => {
+                          if (e.shiftKey) {
+                            builder.toggleSlotSelection(slot.id);
+                          } else {
+                            builder.selectSlot(slot.id);
+                          }
+                        }}
+                        styles={{
+                          label: {
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          },
+                        }}
+                      >
+                        Slot {index + 1}
+                        {slot.mediaId ? ' ✓' : ''}
+                      </Button>
+                    ))}
+                    {builder.template.slots.length === 0 && (
+                      <Text size="xs" c="dimmed" ta="center" py="md">
+                        No slots yet. Click + to add one.
+                      </Text>
+                    )}
+                  </Stack>
+                </Tabs.Panel>
+
+                <Tabs.Panel value="media">
+                  <MediaPickerSidebar
+                    media={media}
+                    template={builder.template}
+                    selectedSlotIds={builder.selectedSlotIds}
+                    onAssignMedia={builder.assignMediaToSlot}
+                    onClearMedia={builder.clearSlotMedia}
+                    onAutoAssign={handleAutoAssign}
+                  />
+                </Tabs.Panel>
+              </Tabs>
             </Box>
           )}
 
@@ -380,24 +458,96 @@ export function LayoutBuilderModal({
             style={{
               flex: 1,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'var(--mantine-color-dark-8)',
-              overflow: 'auto',
-              padding: 24,
+              flexDirection: 'column',
+              overflow: 'hidden',
             }}
           >
-            <LayoutCanvas
-              template={builder.template}
-              selectedSlotIds={builder.selectedSlotIds}
-              isPreview={builder.isPreview}
-              media={media}
-              onSlotMove={builder.moveSlot}
-              onSlotResize={builder.resizeSlot}
-              onSlotSelect={builder.selectSlot}
-              onSlotToggleSelect={builder.toggleSlotSelection}
-              onCanvasClick={builder.clearSelection}
-            />
+            <Box
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--mantine-color-dark-8)',
+                overflow: 'auto',
+                padding: 24,
+              }}
+            >
+              <LayoutCanvas
+                template={builder.template}
+                selectedSlotIds={builder.selectedSlotIds}
+                isPreview={builder.isPreview}
+                media={media}
+                snapEnabled={snapEnabled}
+                onSlotMove={builder.moveSlot}
+                onSlotResize={builder.resizeSlot}
+                onSlotSelect={builder.selectSlot}
+                onSlotToggleSelect={builder.toggleSlotSelection}
+                onCanvasClick={builder.clearSelection}
+                onMediaDrop={builder.assignMediaToSlot}
+                onAnnounce={announce}
+              />
+            </Box>
+
+            {/* Footer: canvas size controls */}
+            {!builder.isPreview && (
+              <Box
+                px="md"
+                py={6}
+                style={{
+                  borderTop: '1px solid var(--mantine-color-default-border)',
+                  background: 'var(--mantine-color-body)',
+                  flexShrink: 0,
+                }}
+              >
+                <Group gap="md" justify="center" wrap="nowrap">
+                  <Group gap={4} wrap="nowrap">
+                    <Text size="xs" c="dimmed">
+                      Max width:
+                    </Text>
+                    <NumberInput
+                      value={builder.template.canvasMaxWidth || 0}
+                      onChange={(val) => {
+                        const n = Number(val) || 0;
+                        builder.setTemplate({
+                          ...builder.template,
+                          canvasMaxWidth: n,
+                          updatedAt: new Date().toISOString(),
+                        });
+                      }}
+                      min={0}
+                      max={3840}
+                      step={10}
+                      size="xs"
+                      w={80}
+                      suffix="px"
+                      aria-label="Canvas max width"
+                    />
+                  </Group>
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => {
+                      builder.setTemplate({
+                        ...builder.template,
+                        canvasMaxWidth: 0,
+                        updatedAt: new Date().toISOString(),
+                      });
+                    }}
+                  >
+                    Fit to container
+                  </Button>
+                  <Divider orientation="vertical" />
+                  <Switch
+                    label="Snap"
+                    size="xs"
+                    checked={snapEnabled}
+                    onChange={(e) => setSnapEnabled(e.currentTarget.checked)}
+                    aria-label="Toggle snap guides"
+                  />
+                </Group>
+              </Box>
+            )}
           </Box>
 
           {/* Right: properties panel */}
@@ -419,6 +569,25 @@ export function LayoutBuilderModal({
               />
             </Box>
           )}
+        </div>
+
+        {/* ARIA live region for screen reader announcements */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0,0,0,0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          {a11yAnnouncement}
         </div>
       </div>
     </Modal>
