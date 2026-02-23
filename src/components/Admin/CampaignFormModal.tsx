@@ -12,6 +12,18 @@ function toLocalInputValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Available gallery adapter options for per-campaign overrides. */
+const ADAPTER_OPTIONS = [
+  { value: 'classic', label: 'Classic Carousel' },
+  { value: 'compact-grid', label: 'Compact Grid' },
+  { value: 'justified', label: 'Justified' },
+  { value: 'masonry', label: 'Masonry' },
+  { value: 'hexagonal', label: 'Hexagonal' },
+  { value: 'circular', label: 'Circular' },
+  { value: 'diamond', label: 'Diamond' },
+  { value: 'layout-builder', label: 'Layout Builder' },
+];
+
 export interface CampaignFormState {
   title: string;
   description: string;
@@ -26,6 +38,10 @@ export interface CampaignFormState {
   unpublishAt: string;
   /** P15-F.2: Layout template ID binding (empty = none). */
   layoutTemplateId: string;
+  /** Per-campaign image gallery adapter override (empty = use global default). */
+  imageAdapterId: string;
+  /** Per-campaign video gallery adapter override (empty = use global default). */
+  videoAdapterId: string;
 }
 
 interface CampaignFormModalProps {
@@ -149,6 +165,29 @@ export function CampaignFormModal({
             onChange={(v) => onFormChange({ ...formState, borderColor: v || undefined })}
             placeholder="Auto (company brand color)"
           />
+        )}
+        {/* Per-campaign gallery adapter overrides */}
+        {editingCampaign && (
+          <Group grow wrap="wrap" gap="sm">
+            <Select
+              label="Image Gallery"
+              description="Override the global image gallery type for this campaign"
+              placeholder="Default (from settings)"
+              clearable
+              data={ADAPTER_OPTIONS}
+              value={formState.imageAdapterId || null}
+              onChange={(v) => onFormChange({ ...formState, imageAdapterId: v ?? '' })}
+            />
+            <Select
+              label="Video Gallery"
+              description="Override the global video gallery type for this campaign"
+              placeholder="Default (from settings)"
+              clearable
+              data={ADAPTER_OPTIONS}
+              value={formState.videoAdapterId || null}
+              onChange={(v) => onFormChange({ ...formState, videoAdapterId: v ?? '' })}
+            />
+          </Group>
         )}
         {/* P15-F.2: Layout template assignment */}
         {layoutTemplates.length > 0 && (

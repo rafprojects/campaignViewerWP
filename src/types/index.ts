@@ -28,6 +28,10 @@ export interface Campaign {
   unpublishAt?: string;
   /** P15-B: Optional layout template reference. */
   layoutTemplateId?: string;
+  /** Per-campaign image gallery adapter override (empty = use global setting). */
+  imageAdapterId?: string;
+  /** Per-campaign video gallery adapter override (empty = use global setting). */
+  videoAdapterId?: string;
 }
 
 export interface MediaItem {

@@ -324,6 +324,8 @@ describe('CampaignFormModal layout selector', () => {
     publishAt: '',
     unpublishAt: '',
     layoutTemplateId: '',
+    imageAdapterId: '',
+    videoAdapterId: '',
   };
 
   const mockTemplates = [

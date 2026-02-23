@@ -19,7 +19,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff, IconLayoutGrid } from '@tabler/icons-react';
 import { CampaignFormModal, type CampaignFormState } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
 import { AuditTab } from './AuditTab';
@@ -77,6 +77,8 @@ const emptyForm: CampaignFormState = {
   publishAt: '',
   unpublishAt: '',
   layoutTemplateId: '',
+  imageAdapterId: '',
+  videoAdapterId: '',
 };
 
 /** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
@@ -447,6 +449,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       publishAt: campaign.publishAt ?? '',
       unpublishAt: campaign.unpublishAt ?? '',
       layoutTemplateId: campaign.layoutTemplateId ?? '',
+      imageAdapterId: campaign.imageAdapterId ?? '',
+      videoAdapterId: campaign.videoAdapterId ?? '',
     });
     setCampaignFormOpen(true);
   }, []);
@@ -475,6 +479,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       publishAt: formState.publishAt || '',
       unpublishAt: formState.unpublishAt || '',
       layoutTemplateId: formState.layoutTemplateId || '',
+      imageAdapterId: formState.imageAdapterId || '',
+      videoAdapterId: formState.videoAdapterId || '',
     };
     try {
       if (editingCampaign) {
@@ -555,7 +561,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       <Table.Tr key={c.id}>
         <Table.Td>
           <Box>
-            <Text fw={700}>{c.title}</Text>
+            <Group gap={6}>
+              <Text fw={700}>{c.title}</Text>
+              {(c.imageAdapterId || c.videoAdapterId) && (
+                <Tooltip label={`Custom gallery: ${[c.imageAdapterId && `Image: ${c.imageAdapterId}`, c.videoAdapterId && `Video: ${c.videoAdapterId}`].filter(Boolean).join(', ')}`} withArrow>
+                  <IconLayoutGrid size={14} color="var(--mantine-color-violet-5)" />
+                </Tooltip>
+              )}
+            </Group>
             <Text size="xs" c="dimmed">{c.description?.slice(0, 120)}</Text>
           </Box>
         </Table.Td>

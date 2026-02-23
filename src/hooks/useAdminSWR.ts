@@ -47,6 +47,10 @@ export interface AdminCampaign {
   unpublishAt?: string;
   /** P15-B: Optional layout template reference. */
   layoutTemplateId?: string;
+  /** Per-campaign image gallery adapter override. */
+  imageAdapterId?: string;
+  /** Per-campaign video gallery adapter override. */
+  videoAdapterId?: string;
 }
 
 interface ApiCampaignResponse {

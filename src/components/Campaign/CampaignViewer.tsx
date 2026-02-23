@@ -223,9 +223,11 @@ export function CampaignViewer({
                   if (allMedia.length === 0) return null;
                   const s = galleryBehaviorSettings;
                   const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
-                  const inner = s.unifiedGalleryAdapterId === 'layout-builder' && campaign.layoutTemplateId
+                  // Per-campaign adapter override (image adapter takes precedence in unified mode)
+                  const effectiveId = campaign.imageAdapterId || s.unifiedGalleryAdapterId;
+                  const inner = effectiveId === 'layout-builder' && campaign.layoutTemplateId
                     ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} />
-                    : renderAdapter(s.unifiedGalleryAdapterId, allMedia, s);
+                    : renderAdapter(effectiveId, allMedia, s);
                   return s.unifiedBgType !== 'none'
                     ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                     : inner;
@@ -235,7 +237,7 @@ export function CampaignViewer({
                 <>
                   {campaign.videos.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
-                    const id = resolveAdapterId(s, 'video', breakpoint);
+                    const id = campaign.videoAdapterId || resolveAdapterId(s, 'video', breakpoint);
                     // Override tileSize with per-gallery videoTileSize for shape adapters
                     const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
@@ -250,7 +252,7 @@ export function CampaignViewer({
                   })()}
                   {campaign.images.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
-                    const id = resolveAdapterId(s, 'image', breakpoint);
+                    const id = campaign.imageAdapterId || resolveAdapterId(s, 'image', breakpoint);
                     // Override tileSize with per-gallery imageTileSize for shape adapters
                     const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
