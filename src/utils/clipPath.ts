@@ -13,7 +13,7 @@ import type { LayoutSlot } from '@/types';
 export function getClipPath(slot: LayoutSlot): string | undefined {
   switch (slot.shape) {
     case 'circle':
-      return 'circle(50% at 50% 50%)';
+      return 'ellipse(50% 50% at 50% 50%)';
     case 'ellipse':
       return 'ellipse(50% 50% at 50% 50%)';
     case 'hexagon':

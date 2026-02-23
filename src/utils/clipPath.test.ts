@@ -18,7 +18,7 @@ describe('getClipPath', () => {
   });
 
   it('returns circle function for circle shape', () => {
-    expect(getClipPath(makeSlot('circle'))).toBe('circle(50% at 50% 50%)');
+    expect(getClipPath(makeSlot('circle'))).toBe('ellipse(50% 50% at 50% 50%)');
   });
 
   it('returns ellipse function for ellipse shape', () => {

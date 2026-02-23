@@ -398,8 +398,9 @@ export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListPr
         </Table.ScrollContainer>
       )}
 
-      {/* Layout Builder Modal */}
+      {/* Layout Builder Modal – key forces remount so useState re-inits */}
       <LayoutBuilderModal
+        key={editingTemplate?.id ?? 'new'}
         opened={builderOpen}
         initialTemplate={editingTemplate ?? undefined}
         apiClient={apiClient}

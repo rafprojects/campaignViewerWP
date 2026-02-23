@@ -132,7 +132,7 @@ export function LayoutSlotComponent({
           borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : 0,
           clipPath,
           ...maskStyle,
-          overflow: 'hidden',
+          overflow: clipPath ? undefined : 'hidden',
           border:
             slot.borderWidth > 0
               ? `${slot.borderWidth}px solid ${slot.borderColor}`
@@ -233,7 +233,7 @@ export function LayoutSlotComponent({
                 maskSize: 'cover',
               }
             : {}),
-          overflow: 'hidden',
+          overflow: clipPath ? undefined : 'hidden',
           border: isDragOver
             ? '2px dashed var(--mantine-color-green-5)'
             : selectionBorder,

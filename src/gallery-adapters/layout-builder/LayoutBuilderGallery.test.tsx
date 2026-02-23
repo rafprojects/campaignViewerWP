@@ -522,7 +522,7 @@ describe('LayoutBuilderGallery shape rendering', () => {
     });
 
     expect(getClipPath(makeSlot('rectangle'))).toBeUndefined();
-    expect(getClipPath(makeSlot('circle'))).toBe('circle(50% at 50% 50%)');
+    expect(getClipPath(makeSlot('circle'))).toBe('ellipse(50% 50% at 50% 50%)');
     expect(getClipPath(makeSlot('ellipse'))).toBe('ellipse(50% 50% at 50% 50%)');
     expect(getClipPath(makeSlot('hexagon'))).toContain('polygon');
     expect(getClipPath(makeSlot('diamond'))).toContain('polygon');

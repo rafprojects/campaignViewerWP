@@ -305,7 +305,7 @@ function LayoutBuilderGalleryInner({
                         ? `${slot.borderWidth}px solid ${slot.borderColor}`
                         : undefined,
                     cursor: isClickable ? 'pointer' : 'default',
-                    overflow: 'hidden',
+                    overflow: clipPath ? undefined : 'hidden',
                   }}
                   role={isClickable ? 'button' : undefined}
                   tabIndex={isClickable ? 0 : undefined}
