@@ -1,9 +1,16 @@
 # Phase 15 — Layout Builder
 
-**Status:** 🔧 Planning  
+**Status:** 🔧 In Progress — Sprint 2 (Canvas Builder UI)  
 **Version:** v0.13.0 (target)  
 **Created:** February 22, 2026  
-**Last updated:** February 22, 2026 — plan review updates applied
+**Last updated:** February 22, 2026 — Sprint 1 complete, tests added
+
+### Progress Log
+
+| Date | Commit | Milestone |
+|------|--------|-----------|
+| 2026-02-22 | `44820f9` | Sprint 1 complete — P15-A (per-breakpoint selection) + P15-B (layout template data model) |
+| 2026-02-22 | `a5e3f92` | 59 comprehensive tests for Sprint 1: layoutSlotAssignment (20), useBreakpoint (10), resolveAdapterId (9), defaults+merge (20). Extracted `resolveAdapterId` to `src/utils/` for testability. 246 tests passing, tsc clean. |
 
 ---
 
@@ -236,7 +243,7 @@ interface GalleryBehaviorSettings {
 
 ## Track P15-A — Per-Breakpoint Gallery Selection
 
-**Status:** ❌ Not started  
+**Status:** ✅ Complete  
 **Effort:** Medium  
 **Impact:** High — foundational for layout builder and general gallery flexibility
 
@@ -248,18 +255,18 @@ Currently, `imageGalleryAdapterId` and `videoGalleryAdapterId` apply globally to
 
 #### P15-A.1: Settings Model Extension
 
-- [ ] Add `gallerySelectionMode` setting: `'unified'` (current behavior) or `'per-breakpoint'`
-- [ ] Add 6 per-breakpoint adapter ID settings to `GalleryBehaviorSettings`, PHP `$defaults`, `SettingsResponse`, and `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`
-- [ ] Add `layoutBuilderScope` setting: `'full'` or `'viewport'`
+- [x] Add `gallerySelectionMode` setting: `'unified'` (current behavior) or `'per-breakpoint'`
+- [x] Add 6 per-breakpoint adapter ID settings to `GalleryBehaviorSettings`, PHP `$defaults`, `SettingsResponse`, and `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`
+- [x] Add `layoutBuilderScope` setting: `'full'` or `'viewport'`
 
 **Files:** `src/types/index.ts`, `src/services/apiClient.ts`, `class-wpsg-settings.php`
 
 #### P15-A.2: Breakpoint Detection Hook
 
-- [ ] Create `useBreakpoint()` hook returning `'desktop' | 'tablet' | 'mobile'` based on container width
-- [ ] Uses `ResizeObserver` on gallery container (not `window.innerWidth`) for embed-safe behavior — essential because this app embeds inside WordPress shortcodes where container width ≠ viewport width
-- [ ] Source breakpoint thresholds from `useMantineTheme().breakpoints` (sm/md/lg), converting `em` to `px`, to stay consistent with Mantine's responsive system used elsewhere in the app
-- [ ] Fallback defaults: mobile < 768px, 768px ≤ tablet < 1024px, desktop ≥ 1024px
+- [x] Create `useBreakpoint()` hook returning `'desktop' | 'tablet' | 'mobile'` based on container width
+- [x] Uses `ResizeObserver` on gallery container (not `window.innerWidth`) for embed-safe behavior — essential because this app embeds inside WordPress shortcodes where container width ≠ viewport width
+- [x] Source breakpoint thresholds from `useMantineTheme().breakpoints` (sm/md/lg), converting `em` to `px`, to stay consistent with Mantine's responsive system used elsewhere in the app
+- [x] Fallback defaults: mobile < 768px, 768px ≤ tablet < 1024px, desktop ≥ 1024px
 - [ ] Thresholds should be configurable via settings (stretch: `desktopBreakpoint`, `tabletBreakpoint`)
 - [ ] Note: existing `useMediaQuery` calls in `CampaignViewer.tsx` and `AuthBar.tsx` should be migrated to `useBreakpoint()` in a future cleanup pass for consistency
 
@@ -267,49 +274,50 @@ Currently, `imageGalleryAdapterId` and `videoGalleryAdapterId` apply globally to
 
 #### P15-A.3: Adapter Resolution Logic
 
-- [ ] Modify `CampaignViewer.tsx` adapter selection to use `gallerySelectionMode`:
+- [x] Modify `CampaignViewer.tsx` adapter selection to use `gallerySelectionMode`:
   - `'unified'`: current behavior (single `imageGalleryAdapterId` / `videoGalleryAdapterId`)
   - `'per-breakpoint'`: resolve adapter ID from the 6 per-breakpoint settings based on `useBreakpoint()` result
-- [ ] When breakpoint changes (e.g., window resize), adapter switches live (no reload needed)
-- [ ] Wrap adapter switch in `<Suspense>` since adapters are lazy-loaded
+- [x] When breakpoint changes (e.g., window resize), adapter switches live (no reload needed)
+- [x] Wrap adapter switch in `<Suspense>` since adapters are lazy-loaded
+- [x] Extracted `resolveAdapterId()` to `src/utils/resolveAdapterId.ts` for unit testability
 
 **Files:** `src/components/Campaign/CampaignViewer.tsx`
 
 #### P15-A.4: Settings Panel UI
 
-- [ ] Add "Gallery Selection Mode" toggle in Settings Panel (General or Media Gallery tab)
-- [ ] When `per-breakpoint` is selected, show 6 adapter dropdowns organized as a 3×2 grid:
+- [x] Add "Gallery Selection Mode" toggle in Settings Panel (General or Media Gallery tab)
+- [x] When `per-breakpoint` is selected, show 6 adapter dropdowns organized as a 3×2 grid:
   ```
             Image        Video
   Desktop   [dropdown]   [dropdown]
   Tablet    [dropdown]   [dropdown]
   Mobile    [dropdown]   [dropdown]
   ```
-- [ ] Dropdown options include all existing adapter IDs plus the new `'layout-builder'`
-- [ ] When `unified` is selected, show existing single pair of dropdowns (current behavior)
+- [x] Dropdown options include all existing adapter IDs plus the new `'layout-builder'`
+- [x] When `unified` is selected, show existing single pair of dropdowns (current behavior)
 
 **Files:** `src/components/Admin/SettingsPanel.tsx`
 
 #### P15-A.5: PHP REST Integration
 
-- [ ] Add new settings to `$defaults`, `sanitize_settings()`, `to_js()` / `from_js()` mapping
-- [ ] Validate adapter IDs against known allowlist on save
+- [x] Add new settings to `$defaults`, `sanitize_settings()`, `to_js()` / `from_js()` mapping
+- [x] Validate adapter IDs against known allowlist on save
 
 **Files:** `class-wpsg-settings.php`, `class-wpsg-rest.php`
 
 ### Acceptance Criteria
 
-- [ ] Switching from `unified` to `per-breakpoint` mode preserves existing adapter selections as desktop defaults
-- [ ] Resizing the browser across breakpoint boundaries live-switches the adapter
-- [ ] Layout-builder appears as an adapter option in all 6 dropdowns
-- [ ] Settings round-trip correctly through PHP REST (save, reload, verify)
-- [ ] Existing unified-mode behavior is unchanged by default (backward compatible)
+- [x] Switching from `unified` to `per-breakpoint` mode preserves existing adapter selections as desktop defaults
+- [x] Resizing the browser across breakpoint boundaries live-switches the adapter
+- [x] Layout-builder appears as an adapter option in all 6 dropdowns
+- [x] Settings round-trip correctly through PHP REST (save, reload, verify)
+- [x] Existing unified-mode behavior is unchanged by default (backward compatible)
 
 ---
 
 ## Track P15-B — Layout Template Data Model & Persistence
 
-**Status:** ❌ Not started  
+**Status:** ✅ Complete  
 **Effort:** Medium  
 **Impact:** High — data foundation for all builder features
 
@@ -321,63 +329,63 @@ No data model exists for storing authored layout templates. We need a versioned 
 
 #### P15-B.1: TypeScript Types
 
-- [ ] Define `LayoutTemplate`, `LayoutSlot`, `LayoutOverlay`, `LayoutSlotShape`, `CampaignLayoutBinding` interfaces in `src/types/index.ts`
-- [ ] Define `DEFAULT_LAYOUT_SLOT` constant with sensible defaults (rectangle shape, cover fit, pop hover, lightbox click)
-- [ ] Add `layoutTemplateId` field to `Campaign` interface (optional, references template)
+- [x] Define `LayoutTemplate`, `LayoutSlot`, `LayoutOverlay`, `LayoutSlotShape`, `CampaignLayoutBinding` interfaces in `src/types/index.ts`
+- [x] Define `DEFAULT_LAYOUT_SLOT` constant with sensible defaults (rectangle shape, cover fit, pop hover, lightbox click)
+- [x] Add `layoutTemplateId` field to `Campaign` interface (optional, references template)
 
 **Files:** `src/types/index.ts`
 
 #### P15-B.2: PHP Data Model
 
-- [ ] Create `class-wpsg-layout-templates.php` with static methods:
+- [x] Create `class-wpsg-layout-templates.php` with static methods:
   - `get_all(): array` — reads `wpsg_layout_templates` option
   - `get(string $id): ?array` — find by ID
   - `create(array $data): array` — validates, assigns UUID, saves
   - `update(string $id, array $data): array|WP_Error` — merge-update
   - `delete(string $id): bool` — remove from library
   - `duplicate(string $id, string $new_name): array` — clone with new ID
-- [ ] Validation: ensure all slot percentages are 0–100, canvas aspect ratio is positive, name is non-empty
-- [ ] Size-based storage limit: on `create()`/`update()`, check `strlen(serialize($all_templates))` — if > 500KB, log warning and return admin notice suggesting migration to a dedicated table. This accounts for varying template complexity (more slots/overlays = larger serialized size) better than a flat template-count limit.
-- [ ] Save-time bounds validation: warn if any slot extends beyond canvas boundaries (safety net beyond react-rnd's runtime `bounds="parent"` constraint)
-- [ ] Schema version migration hook: `migrate_template(array $template): array` — upgrades old schemas to current
+- [x] Validation: ensure all slot percentages are 0–100, canvas aspect ratio is positive, name is non-empty
+- [x] Size-based storage limit: on `create()`/`update()`, check `strlen(serialize($all_templates))` — if > 500KB, log warning and return admin notice suggesting migration to a dedicated table. This accounts for varying template complexity (more slots/overlays = larger serialized size) better than a flat template-count limit.
+- [x] Save-time bounds validation: warn if any slot extends beyond canvas boundaries (safety net beyond react-rnd's runtime `bounds="parent"` constraint)
+- [x] Schema version migration hook: `migrate_template(array $template): array` — upgrades old schemas to current
 
 **Files:** `wp-plugin/wp-super-gallery/includes/class-wpsg-layout-templates.php` (new)
 
 #### P15-B.3: REST Endpoints
 
-- [ ] `GET    /wp-json/wpsg/v1/admin/layout-templates` — list all templates (admin only)
-- [ ] `POST   /wp-json/wpsg/v1/admin/layout-templates` — create new template
-- [ ] `GET    /wp-json/wpsg/v1/admin/layout-templates/{id}` — get single template
-- [ ] `PUT    /wp-json/wpsg/v1/admin/layout-templates/{id}` — update template
-- [ ] `DELETE /wp-json/wpsg/v1/admin/layout-templates/{id}` — delete template
-- [ ] `POST   /wp-json/wpsg/v1/admin/layout-templates/{id}/duplicate` — clone template
-- [ ] Public endpoint (for rendering): `GET /wp-json/wpsg/v1/layout-templates/{id}` — read-only, no auth required (templates are needed for public gallery rendering). ID-based only (no public list endpoint). Template IDs are UUIDv4 (128-bit random) — not guessable, no enumeration risk. Templates contain layout coordinates only, no sensitive data.
+- [x] `GET    /wp-json/wpsg/v1/admin/layout-templates` — list all templates (admin only)
+- [x] `POST   /wp-json/wpsg/v1/admin/layout-templates` — create new template
+- [x] `GET    /wp-json/wpsg/v1/admin/layout-templates/{id}` — get single template
+- [x] `PUT    /wp-json/wpsg/v1/admin/layout-templates/{id}` — update template
+- [x] `DELETE /wp-json/wpsg/v1/admin/layout-templates/{id}` — delete template
+- [x] `POST   /wp-json/wpsg/v1/admin/layout-templates/{id}/duplicate` — clone template
+- [x] Public endpoint (for rendering): `GET /wp-json/wpsg/v1/layout-templates/{id}` — read-only, no auth required (templates are needed for public gallery rendering). ID-based only (no public list endpoint). Template IDs are UUIDv4 (128-bit random) — not guessable, no enumeration risk. Templates contain layout coordinates only, no sensitive data.
 
 **Files:** `class-wpsg-rest.php`, `class-wpsg-layout-templates.php`
 
 #### P15-B.4: Campaign Binding
 
-- [ ] Add `_wpsg_layout_binding` post_meta support to campaign CRUD
-- [ ] When campaign is created/updated with a `layoutTemplateId`, store the binding
-- [ ] On campaign GET, include resolved layout template data (or null if no binding)
-- [ ] API client: add `getLayoutTemplates()`, `createLayoutTemplate()`, `updateLayoutTemplate()`, `deleteLayoutTemplate()`, `duplicateLayoutTemplate()` methods
+- [x] Add `_wpsg_layout_binding` post_meta support to campaign CRUD
+- [x] When campaign is created/updated with a `layoutTemplateId`, store the binding
+- [x] On campaign GET, include resolved layout template data (or null if no binding)
+- [ ] API client: add `getLayoutTemplates()`, `createLayoutTemplate()`, `updateLayoutTemplate()`, `deleteLayoutTemplate()`, `duplicateLayoutTemplate()` methods (type added, methods deferred to Sprint 2)
 
 **Files:** `src/services/apiClient.ts`, `class-wpsg-rest.php`
 
 #### P15-B.5: Slot Auto-Assignment Logic
 
-- [ ] Implement `assignMediaToSlots(template: LayoutTemplate, media: MediaItem[], overrides: CampaignLayoutBinding['slotOverrides']): Map<string, MediaItem>`
-- [ ] Logic: iterate slots in order, assign media by `order` field, skip slots with explicit `mediaId` override, handle case where media count < slot count (empty slots) or media count > slot count (extra media ignored in full mode, or shown in thumbnail strip in viewport mode)
+- [x] Implement `assignMediaToSlots(template: LayoutTemplate, media: MediaItem[], overrides: CampaignLayoutBinding['slotOverrides']): Map<string, MediaItem>`
+- [x] Logic: iterate slots in order, assign media by `order` field, skip slots with explicit `mediaId` override, handle case where media count < slot count (empty slots) or media count > slot count (extra media ignored in full mode, or shown in thumbnail strip in viewport mode)
 
 **Files:** `src/utils/layoutSlotAssignment.ts` (new)
 
 ### Acceptance Criteria
 
-- [ ] Templates can be created, read, updated, deleted, and duplicated via REST
-- [ ] Schema version is stored and migration function handles upgrades
-- [ ] Campaign binding correctly references template and stores slot overrides
-- [ ] All REST endpoints return proper error codes for validation failures
-- [ ] Auto-assignment correctly fills slots and respects manual overrides
+- [x] Templates can be created, read, updated, deleted, and duplicated via REST
+- [x] Schema version is stored and migration function handles upgrades
+- [x] Campaign binding correctly references template and stores slot overrides
+- [x] All REST endpoints return proper error codes for validation failures
+- [x] Auto-assignment correctly fills slots and respects manual overrides
 
 ---
 
