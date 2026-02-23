@@ -507,39 +507,216 @@ describe('LayoutTemplateList import validation', () => {
   });
 });
 
-// ─── Shape clip-path tests for the adapter ───────────────────────────────────
+// ─── Shape clip-path tests — now using the shared utility ───────────────────
 
 describe('LayoutBuilderGallery shape rendering', () => {
-  it('applies correct clip-path for each shape type', () => {
-    // Test the getClipPath function logic
-    type Shape = 'rectangle' | 'circle' | 'ellipse' | 'hexagon' | 'diamond' | 'custom';
+  it('applies correct clip-path for each shape type (via shared util)', async () => {
+    const { getClipPath } = await import('@/utils/clipPath');
+    const { DEFAULT_LAYOUT_SLOT } = await import('@/types');
 
-    function getClipPath(shape: Shape, clipPath?: string): string | undefined {
-      switch (shape) {
-        case 'circle':
-          return 'circle(50% at 50% 50%)';
-        case 'ellipse':
-          return 'ellipse(50% 50% at 50% 50%)';
-        case 'hexagon':
-          return 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
-        case 'diamond':
-          return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
-        case 'custom':
-          return clipPath || undefined;
-        case 'rectangle':
-        default:
-          return undefined;
-      }
-    }
+    const makeSlot = (shape: import('@/types').LayoutSlot['shape'], clipPath?: string) => ({
+      ...DEFAULT_LAYOUT_SLOT,
+      id: 'test',
+      shape,
+      clipPath,
+    });
 
-    expect(getClipPath('rectangle')).toBeUndefined();
-    expect(getClipPath('circle')).toBe('circle(50% at 50% 50%)');
-    expect(getClipPath('ellipse')).toBe('ellipse(50% 50% at 50% 50%)');
-    expect(getClipPath('hexagon')).toContain('polygon');
-    expect(getClipPath('diamond')).toContain('polygon');
-    expect(getClipPath('custom', 'polygon(0 0, 100% 0, 100% 100%)')).toBe(
+    expect(getClipPath(makeSlot('rectangle'))).toBeUndefined();
+    expect(getClipPath(makeSlot('circle'))).toBe('circle(50% at 50% 50%)');
+    expect(getClipPath(makeSlot('ellipse'))).toBe('ellipse(50% 50% at 50% 50%)');
+    expect(getClipPath(makeSlot('hexagon'))).toContain('polygon');
+    expect(getClipPath(makeSlot('diamond'))).toContain('polygon');
+    expect(getClipPath(makeSlot('parallelogram-left'))).toContain('polygon');
+    expect(getClipPath(makeSlot('parallelogram-right'))).toContain('polygon');
+    expect(getClipPath(makeSlot('chevron'))).toContain('polygon');
+    expect(getClipPath(makeSlot('arrow'))).toContain('polygon');
+    expect(getClipPath(makeSlot('trapezoid'))).toContain('polygon');
+    expect(getClipPath(makeSlot('custom', 'polygon(0 0, 100% 0, 100% 100%)'))).toBe(
       'polygon(0 0, 100% 0, 100% 100%)',
     );
-    expect(getClipPath('custom')).toBeUndefined();
+    expect(getClipPath(makeSlot('custom'))).toBeUndefined();
+  });
+});
+
+// ─── Overlay rendering tests ─────────────────────────────────────────────────
+
+describe('LayoutBuilderGallery overlay rendering', () => {
+  const overlayTemplate = {
+    id: 'tpl-overlay',
+    name: 'Overlay Test',
+    schemaVersion: 1,
+    canvasAspectRatio: 16 / 9,
+    canvasMinWidth: 400,
+    canvasMaxWidth: 1200,
+    backgroundColor: '#000',
+    slots: [
+      {
+        id: 's1',
+        x: 10,
+        y: 10,
+        width: 30,
+        height: 40,
+        zIndex: 1,
+        shape: 'rectangle' as const,
+        borderRadius: 4,
+        borderWidth: 0,
+        borderColor: '#fff',
+        objectFit: 'cover' as const,
+        objectPosition: '50% 50%',
+        clickAction: 'lightbox' as const,
+        hoverEffect: 'pop' as const,
+      },
+    ],
+    overlays: [
+      {
+        id: 'ov1',
+        imageUrl: 'https://example.com/overlay.png',
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        zIndex: 999,
+        opacity: 0.7,
+        pointerEvents: false,
+      },
+    ],
+    createdAt: '2025-01-01T00:00:00Z',
+    updatedAt: '2025-01-01T00:00:00Z',
+    tags: [],
+  };
+
+  let originalFetch: typeof globalThis.fetch;
+  let originalRO: typeof globalThis.ResizeObserver;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    originalRO = globalThis.ResizeObserver;
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(overlayTemplate),
+    }) as unknown as typeof globalThis.fetch;
+
+    globalThis.ResizeObserver = vi.fn().mockImplementation((callback: ResizeObserverCallback) => ({
+      observe: (el: Element) => {
+        callback(
+          [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
+          {} as ResizeObserver,
+        );
+      },
+      disconnect: vi.fn(),
+      unobserve: vi.fn(),
+    })) as unknown as typeof globalThis.ResizeObserver;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    globalThis.ResizeObserver = originalRO;
+    vi.restoreAllMocks();
+  });
+
+  it('renders overlay images from template', async () => {
+    const mockMedia = [
+      { id: 'm1', type: 'image' as const, source: 'upload' as const, url: '/img1.jpg', title: 'Image 1', order: 0 },
+    ];
+
+    const defaultSettings = {
+      tileHoverBounce: false,
+      tileGlowEnabled: false,
+      tileGlowColor: '#fff',
+      tileGlowSpread: 4,
+      imageBorderRadius: 0,
+      tileBorderWidth: 0,
+      tileBorderColor: '#fff',
+    } as unknown as import('@/types').GalleryBehaviorSettings;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-overlay"
+      />,
+    );
+
+    await waitFor(() => {
+      const overlayImg = document.querySelector('img[src="https://example.com/overlay.png"]');
+      expect(overlayImg).toBeTruthy();
+    });
+  });
+
+  it('applies correct opacity to overlay wrapper', async () => {
+    const mockMedia = [
+      { id: 'm1', type: 'image' as const, source: 'upload' as const, url: '/img1.jpg', title: 'Image 1', order: 0 },
+    ];
+
+    const defaultSettings = {
+      tileHoverBounce: false,
+      tileGlowEnabled: false,
+      tileGlowColor: '#fff',
+      tileGlowSpread: 4,
+      imageBorderRadius: 0,
+      tileBorderWidth: 0,
+      tileBorderColor: '#fff',
+    } as unknown as import('@/types').GalleryBehaviorSettings;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-overlay"
+      />,
+    );
+
+    await waitFor(() => {
+      const overlayImg = document.querySelector('img[src="https://example.com/overlay.png"]') as HTMLElement;
+      expect(overlayImg).toBeTruthy();
+      // Opacity is on the parent wrapper div, not the img
+      const wrapper = overlayImg.parentElement!;
+      expect(wrapper.style.opacity).toBe('0.7');
+    });
+  });
+
+  it('sets pointer-events: none on overlay wrapper with pointerEvents=false', async () => {
+    const mockMedia = [
+      { id: 'm1', type: 'image' as const, source: 'upload' as const, url: '/img1.jpg', title: 'Image 1', order: 0 },
+    ];
+
+    const defaultSettings = {
+      tileHoverBounce: false,
+      tileGlowEnabled: false,
+      tileGlowColor: '#fff',
+      tileGlowSpread: 4,
+      imageBorderRadius: 0,
+      tileBorderWidth: 0,
+      tileBorderColor: '#fff',
+    } as unknown as import('@/types').GalleryBehaviorSettings;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-overlay"
+      />,
+    );
+
+    await waitFor(() => {
+      const overlayImg = document.querySelector('img[src="https://example.com/overlay.png"]') as HTMLElement;
+      expect(overlayImg).toBeTruthy();
+      // pointer-events is on the parent wrapper div, not the img
+      const wrapper = overlayImg.parentElement!;
+      expect(wrapper.style.pointerEvents).toBe('none');
+    });
   });
 });

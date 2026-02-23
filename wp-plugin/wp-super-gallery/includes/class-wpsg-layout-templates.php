@@ -285,7 +285,7 @@ class WPSG_Layout_Templates {
             return [];
         }
 
-        $valid_shapes  = [ 'rectangle', 'circle', 'ellipse', 'hexagon', 'diamond', 'custom' ];
+        $valid_shapes  = [ 'rectangle', 'circle', 'ellipse', 'hexagon', 'diamond', 'parallelogram-left', 'parallelogram-right', 'chevron', 'arrow', 'trapezoid', 'custom' ];
         $valid_fits    = [ 'cover', 'contain', 'fill' ];
         $valid_clicks  = [ 'lightbox', 'none' ];
         $valid_hovers  = [ 'pop', 'glow', 'none' ];

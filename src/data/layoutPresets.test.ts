@@ -89,63 +89,65 @@ describe('LAYOUT_PRESETS', () => {
   });
 });
 
-// ── Diagonal shapes clip-path tests ──────────────────────────
+// ── Per-preset slot count verification ───────────────────────
 
-describe('Diagonal shape clip-path values', () => {
-  // Import the getClipPath logic inline (it's a module-private function,
-  // so we duplicate the switch for unit testing shape→polygon mapping).
-  // This validates the contract between LayoutSlotShape type and rendering.
+describe('LAYOUT_PRESETS — per-preset slot counts', () => {
+  const expectations: Record<string, number> = {
+    'Hero + Thumbnails': 5,
+    'Magazine Spread': 5,
+    'Pinterest Board': 6,
+    'Film Strip': 5,
+    'Spotlight': 3,
+    'Grid 2×2': 4,
+    'Grid 3×3': 9,
+    'Panoramic': 4,
+    'Diagonal Cascade': 4,
+    'Photo Stack': 3,
+    'L-Shape': 4,
+    'T-Layout': 4,
+  };
 
-  function getClipPath(shape: string, clipPath?: string): string | undefined {
-    switch (shape) {
-      case 'circle':
-        return 'circle(50% at 50% 50%)';
-      case 'ellipse':
-        return 'ellipse(50% 50% at 50% 50%)';
-      case 'hexagon':
-        return 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
-      case 'diamond':
-        return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
-      case 'parallelogram-left':
-        return 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)';
-      case 'parallelogram-right':
-        return 'polygon(0% 0%, 85% 0%, 100% 100%, 15% 100%)';
-      case 'chevron':
-        return 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)';
-      case 'arrow':
-        return 'polygon(0% 0%, 70% 0%, 100% 50%, 70% 100%, 0% 100%, 30% 50%)';
-      case 'trapezoid':
-        return 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)';
-      case 'custom':
-        return clipPath || undefined;
-      case 'rectangle':
-      default:
-        return undefined;
-    }
-  }
+  it.each(Object.entries(expectations))(
+    '%s has %d slots',
+    (name, count) => {
+      const preset = LAYOUT_PRESETS.find((p) => p.name === name);
+      expect(preset).toBeDefined();
+      expect(preset!.slots).toHaveLength(count);
+    },
+  );
+});
 
+// ── Aspect ratio validation ──────────────────────────────────
+
+describe('LAYOUT_PRESETS — canvasAspectRatio values', () => {
   it.each([
-    ['parallelogram-left', 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)'],
-    ['parallelogram-right', 'polygon(0% 0%, 85% 0%, 100% 100%, 15% 100%)'],
-    ['chevron', 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)'],
-    ['arrow', 'polygon(0% 0%, 70% 0%, 100% 50%, 70% 100%, 0% 100%, 30% 50%)'],
-    ['trapezoid', 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)'],
-  ])('%s → %s', (shape, expected) => {
-    expect(getClipPath(shape)).toBe(expected);
+    ['Film Strip', 21 / 9],
+    ['Grid 2×2', 1],
+    ['Grid 3×3', 1],
+    ['Photo Stack', 1],
+    ['Pinterest Board', 4 / 3],
+    ['Panoramic', 4 / 3],
+  ])('%s has aspect ratio %f', (name, ratio) => {
+    const preset = LAYOUT_PRESETS.find((p) => p.name === name);
+    expect(preset).toBeDefined();
+    expect(preset!.canvasAspectRatio).toBeCloseTo(ratio, 3);
   });
+});
 
-  it('rectangle returns undefined (no clip)', () => {
-    expect(getClipPath('rectangle')).toBeUndefined();
-  });
+// ── Grid presets should not overlap ──────────────────────────
 
-  it('custom returns the provided clipPath', () => {
-    expect(getClipPath('custom', 'polygon(0 0, 100% 0, 100% 100%)')).toBe(
-      'polygon(0 0, 100% 0, 100% 100%)',
-    );
-  });
-
-  it('custom returns undefined when no clipPath provided', () => {
-    expect(getClipPath('custom')).toBeUndefined();
+describe('LAYOUT_PRESETS — grid presets non-overlapping', () => {
+  it('Grid 2×2 slots do not overlap', () => {
+    const preset = LAYOUT_PRESETS.find((p) => p.name === 'Grid 2×2')!;
+    for (let i = 0; i < preset.slots.length; i++) {
+      for (let j = i + 1; j < preset.slots.length; j++) {
+        const a = preset.slots[i];
+        const b = preset.slots[j];
+        const overlapX = a.x < b.x + b.width && a.x + a.width > b.x;
+        const overlapY = a.y < b.y + b.height && a.y + a.height > b.y;
+        expect(overlapX && overlapY).toBe(false);
+      }
+    }
   });
 });
 
