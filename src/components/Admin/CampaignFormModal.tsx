@@ -1,5 +1,5 @@
 import { Button, Card, ColorInput, Group, Modal, Select, Stack, Text, TextInput, Textarea } from '@mantine/core';
-import type { Campaign } from '@/types';
+import type { Campaign, LayoutTemplate } from '@/types';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
@@ -24,6 +24,8 @@ export interface CampaignFormState {
   publishAt: string;
   /** P13-D: ISO 8601 auto-unpublish date (empty = never). */
   unpublishAt: string;
+  /** P15-F.2: Layout template ID binding (empty = none). */
+  layoutTemplateId: string;
 }
 
 interface CampaignFormModalProps {
@@ -37,6 +39,10 @@ interface CampaignFormModalProps {
   onGoToMedia?: (campaignId: string) => void;
   /** When 'individual', show per-card border color picker */
   cardBorderMode?: 'single' | 'auto' | 'individual';
+  /** Available layout templates for the template selector (P15-F.2). */
+  layoutTemplates?: LayoutTemplate[];
+  /** Called when user clicks "Edit Layout" for the selected template. */
+  onEditLayout?: (templateId: string) => void;
 }
 
 export function CampaignFormModal({
@@ -49,6 +55,8 @@ export function CampaignFormModal({
   isSaving,
   onGoToMedia,
   cardBorderMode,
+  layoutTemplates = [],
+  onEditLayout,
 }: CampaignFormModalProps) {
   const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
     current: formState,
@@ -141,6 +149,33 @@ export function CampaignFormModal({
             onChange={(v) => onFormChange({ ...formState, borderColor: v || undefined })}
             placeholder="Auto (company brand color)"
           />
+        )}
+        {/* P15-F.2: Layout template assignment */}
+        {layoutTemplates.length > 0 && (
+          <Group grow wrap="wrap" gap="sm" align="flex-end">
+            <Select
+              label="Layout Template"
+              description="Assign a layout template to use the Layout Builder adapter"
+              placeholder="None (use default adapter)"
+              clearable
+              data={layoutTemplates.map((lt) => ({
+                value: lt.id,
+                label: `${lt.name} (${lt.slots.length} slots)`,
+              }))}
+              value={formState.layoutTemplateId || null}
+              onChange={(v) => onFormChange({ ...formState, layoutTemplateId: v ?? '' })}
+            />
+            {formState.layoutTemplateId && onEditLayout && (
+              <Button
+                variant="light"
+                size="sm"
+                onClick={() => onEditLayout(formState.layoutTemplateId)}
+                style={{ flex: '0 0 auto', alignSelf: 'flex-end' }}
+              >
+                Edit Layout
+              </Button>
+            )}
+          </Group>
         )}
         {editingCampaign && onGoToMedia && (
           <Card withBorder p="sm">

@@ -7,8 +7,8 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { resolveAdapterId } from '@/utils/resolveAdapterId';
 
 /**
- * Dispatch a gallery adapter by ID. 'classic' is handled separately in the
- * caller because image/video carousels have different props. All other adapter
+ * Dispatch a gallery adapter by ID. 'classic' and 'layout-builder' are handled
+ * separately in the caller because they need different props. All other adapter
  * IDs are resolved here. Unknown IDs fall back to CompactGridGallery.
  */
 function renderAdapter(id: string, media: MediaItem[], settings: GalleryBehaviorSettings) {
@@ -70,6 +70,11 @@ const CircularGallery = lazy(() =>
 const DiamondGallery = lazy(() =>
   import('@/gallery-adapters/diamond/DiamondGallery').then((m) => ({
     default: m.DiamondGallery,
+  }))
+);
+const LayoutBuilderGallery = lazy(() =>
+  import('@/gallery-adapters/layout-builder/LayoutBuilderGallery').then((m) => ({
+    default: m.LayoutBuilderGallery,
   }))
 );
 
@@ -218,7 +223,9 @@ export function CampaignViewer({
                   if (allMedia.length === 0) return null;
                   const s = galleryBehaviorSettings;
                   const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
-                  const inner = renderAdapter(s.unifiedGalleryAdapterId, allMedia, s);
+                  const inner = s.unifiedGalleryAdapterId === 'layout-builder' && campaign.layoutTemplateId
+                    ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} />
+                    : renderAdapter(s.unifiedGalleryAdapterId, allMedia, s);
                   return s.unifiedBgType !== 'none'
                     ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                     : inner;
@@ -234,7 +241,9 @@ export function CampaignViewer({
                     const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
                     const inner = id === 'classic'
                       ? <VideoCarousel videos={campaign.videos} settings={videoSettings} />
-                      : renderAdapter(id, campaign.videos, videoSettings);
+                      : id === 'layout-builder' && campaign.layoutTemplateId
+                        ? <LayoutBuilderGallery media={campaign.videos} settings={videoSettings} templateId={campaign.layoutTemplateId} />
+                        : renderAdapter(id, campaign.videos, videoSettings);
                     return s.videoBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;
@@ -247,7 +256,9 @@ export function CampaignViewer({
                     const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
                     const inner = id === 'classic'
                       ? <ImageCarousel images={campaign.images} settings={imageSettings} />
-                      : renderAdapter(id, campaign.images, imageSettings);
+                      : id === 'layout-builder' && campaign.layoutTemplateId
+                        ? <LayoutBuilderGallery media={campaign.images} settings={imageSettings} templateId={campaign.layoutTemplateId} />
+                        : renderAdapter(id, campaign.images, imageSettings);
                     return s.imageBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;

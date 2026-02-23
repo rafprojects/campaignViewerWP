@@ -45,6 +45,8 @@ export interface AdminCampaign {
   publishAt?: string;
   /** P13-D: Optional ISO 8601 auto-unpublish date. */
   unpublishAt?: string;
+  /** P15-B: Optional layout template reference. */
+  layoutTemplateId?: string;
 }
 
 interface ApiCampaignResponse {

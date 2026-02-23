@@ -24,12 +24,15 @@ import { CampaignFormModal, type CampaignFormState } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
+import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/shared/CampaignSelector';
 import { AdminCampaignArchiveModal } from './AdminCampaignArchiveModal';
 import { AdminCampaignRestoreModal } from './AdminCampaignRestoreModal';
 import { ArchiveCompanyModal } from './ArchiveCompanyModal';
 import { QuickAddUserModal } from './QuickAddUserModal';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import useSWR from 'swr';
+import type { LayoutTemplate } from '@/types';
 import {
   useAdminCampaigns,
   useAccessGrants,
@@ -73,6 +76,7 @@ const emptyForm: CampaignFormState = {
   tags: '',
   publishAt: '',
   unpublishAt: '',
+  layoutTemplateId: '',
 };
 
 /** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
@@ -97,6 +101,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   // P13-C: SWR-cached campaign list — no duplicate fetch, instant re-open.
   const { campaigns, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient);
+
+  // P15-F.2: Layout templates for campaign assignment selector
+  const { data: layoutTemplates } = useSWR<LayoutTemplate[]>(
+    'admin-layout-templates-for-form',
+    () => apiClient.getLayoutTemplates(),
+    { revalidateOnFocus: false, dedupingInterval: 60_000 },
+  );
 
   const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
   const [formState, dispatchFormState] = useReducer(campaignFormReducer, { ...emptyForm });
@@ -435,6 +446,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       tags: (campaign.tags ?? []).join(', '),
       publishAt: campaign.publishAt ?? '',
       unpublishAt: campaign.unpublishAt ?? '',
+      layoutTemplateId: campaign.layoutTemplateId ?? '',
     });
     setCampaignFormOpen(true);
   }, []);
@@ -462,6 +474,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
       publishAt: formState.publishAt || '',
       unpublishAt: formState.unpublishAt || '',
+      layoutTemplateId: formState.layoutTemplateId || '',
     };
     try {
       if (editingCampaign) {
@@ -665,6 +678,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
           <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
           <Tabs.Tab value="media">Media</Tabs.Tab>
+          <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
           <Tabs.Tab value="access">Access</Tabs.Tab>
           <Tabs.Tab value="audit">Audit</Tabs.Tab>
         </Tabs.List>
@@ -690,6 +704,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             setMediaCampaignId(campaignId);
             closeCampaignForm();
             setActiveTab('media');
+          }}
+          layoutTemplates={layoutTemplates ?? []}
+          onEditLayout={(templateId) => {
+            closeCampaignForm();
+            setActiveTab('layouts');
+            // The LayoutTemplateList will handle opening the builder
+            void templateId;
           }}
         />
 
@@ -733,6 +754,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Suspense fallback={<Center py="md"><Loader /></Center>}>
             <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
           </Suspense>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="layouts" pt="md">
+          <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} />
         </Tabs.Panel>
 
         <Tabs.Panel value="access" pt="md">
