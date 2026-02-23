@@ -14,6 +14,8 @@ import {
   NumberInput,
   Switch,
   Tabs,
+  Slider,
+  FileButton,
 } from '@mantine/core';
 import {
   IconDeviceFloppy,
@@ -26,6 +28,7 @@ import {
   IconCopy,
   IconList,
   IconPhoto,
+  IconLayersLinked,
 } from '@tabler/icons-react';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
@@ -92,6 +95,8 @@ export function LayoutBuilderModal({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
+      // Normalize z-indices to sequential integers before saving (P15-G.3)
+      builder.normalizeZIndices();
       const t = builder.template;
       let saved: LayoutTemplate;
       if (t.id) {
@@ -174,9 +179,30 @@ export function LayoutBuilderModal({
         builder.clearSelection();
       }
 
+      // Z-index shortcuts (P15-G): ] = forward, [ = backward, Shift+] = front, Shift+[ = back
+      const ids = Array.from(builder.selectedSlotIds);
+      if (ids.length > 0) {
+        if (e.key === ']' && e.shiftKey) {
+          builder.bringToFront(ids);
+          announce('Brought to front');
+          e.preventDefault();
+        } else if (e.key === ']') {
+          builder.bringForward(ids);
+          announce('Brought forward');
+          e.preventDefault();
+        } else if (e.key === '[' && e.shiftKey) {
+          builder.sendToBack(ids);
+          announce('Sent to back');
+          e.preventDefault();
+        } else if (e.key === '[') {
+          builder.sendBackward(ids);
+          announce('Sent backward');
+          e.preventDefault();
+        }
+      }
+
       // Arrow keys: nudge selected slots
       const step = e.shiftKey ? 0.1 : 1;
-      const ids = Array.from(builder.selectedSlotIds);
       if (ids.length > 0) {
         if (e.key === 'ArrowLeft') {
           builder.nudgeSlots(ids, -step, 0);
@@ -358,6 +384,9 @@ export function LayoutBuilderModal({
                   <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
                     Media
                   </Tabs.Tab>
+                  <Tabs.Tab value="overlays" leftSection={<IconLayersLinked size={14} />}>
+                    Overlays
+                  </Tabs.Tab>
                 </Tabs.List>
 
                 <Tabs.Panel value="slots">
@@ -402,34 +431,55 @@ export function LayoutBuilderModal({
                     </Group>
                   </Group>
 
+                  {/* Layer-ordered slot list (highest z-index first) */}
                   <Stack gap={4}>
-                    {builder.template.slots.map((slot, index) => (
-                      <Button
-                        key={slot.id}
-                        size="xs"
-                        variant={
-                          builder.selectedSlotIds.has(slot.id) ? 'filled' : 'subtle'
-                        }
-                        justify="flex-start"
-                        fullWidth
-                        onClick={(e: React.MouseEvent) => {
-                          if (e.shiftKey) {
-                            builder.toggleSlotSelection(slot.id);
-                          } else {
-                            builder.selectSlot(slot.id);
-                          }
-                        }}
-                        styles={{
-                          label: {
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          },
-                        }}
-                      >
-                        Slot {index + 1}
-                        {slot.mediaId ? ' ✓' : ''}
-                      </Button>
-                    ))}
+                    {[...builder.template.slots]
+                      .sort((a, b) => b.zIndex - a.zIndex)
+                      .map((slot) => {
+                        const origIndex = builder.template.slots.findIndex(
+                          (s) => s.id === slot.id,
+                        );
+                        return (
+                          <Button
+                            key={slot.id}
+                            size="xs"
+                            variant={
+                              builder.selectedSlotIds.has(slot.id) ? 'filled' : 'subtle'
+                            }
+                            justify="flex-start"
+                            fullWidth
+                            onClick={(e: React.MouseEvent) => {
+                              if (e.shiftKey) {
+                                builder.toggleSlotSelection(slot.id);
+                              } else {
+                                builder.selectSlot(slot.id);
+                              }
+                            }}
+                            styles={{
+                              label: {
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                              },
+                            }}
+                          >
+                            <span>
+                              Slot {origIndex + 1}
+                              {slot.mediaId ? ' ✓' : ''}
+                            </span>
+                            <Text
+                              component="span"
+                              size="xs"
+                              c="dimmed"
+                              style={{ fontWeight: 400 }}
+                            >
+                              z{slot.zIndex}
+                            </Text>
+                          </Button>
+                        );
+                      })}
                     {builder.template.slots.length === 0 && (
                       <Text size="xs" c="dimmed" ta="center" py="md">
                         No slots yet. Click + to add one.
@@ -447,6 +497,124 @@ export function LayoutBuilderModal({
                     onClearMedia={builder.clearSlotMedia}
                     onAutoAssign={handleAutoAssign}
                   />
+                </Tabs.Panel>
+
+                <Tabs.Panel value="overlays">
+                  <Group justify="space-between" mb="xs">
+                    <Text size="sm" fw={600}>
+                      Overlays ({builder.template.overlays.length})
+                    </Text>
+                    <FileButton
+                      accept="image/png,image/svg+xml,image/webp"
+                      onChange={(file) => {
+                        if (!file) return;
+                        const url = URL.createObjectURL(file);
+                        builder.addOverlay(url);
+                        announce('Overlay added');
+                      }}
+                    >
+                      {(props) => (
+                        <Tooltip label="Add overlay image">
+                          <ActionIcon
+                            size="sm"
+                            variant="light"
+                            {...props}
+                            aria-label="Add overlay"
+                          >
+                            <IconPlus size={14} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </FileButton>
+                  </Group>
+
+                  <TextInput
+                    placeholder="Or paste image URL…"
+                    size="xs"
+                    mb="xs"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                        builder.addOverlay(e.currentTarget.value.trim());
+                        e.currentTarget.value = '';
+                        announce('Overlay added from URL');
+                      }
+                    }}
+                    aria-label="Overlay image URL"
+                  />
+
+                  <Stack gap={4}>
+                    {builder.template.overlays.map((overlay, idx) => (
+                      <Box
+                        key={overlay.id}
+                        p="xs"
+                        style={{
+                          border: '1px solid var(--mantine-color-default-border)',
+                          borderRadius: 4,
+                        }}
+                      >
+                        <Group justify="space-between" wrap="nowrap" mb={4}>
+                          <Text size="xs" fw={500} lineClamp={1}>
+                            Overlay {idx + 1}
+                          </Text>
+                          <ActionIcon
+                            size="xs"
+                            color="red"
+                            variant="subtle"
+                            onClick={() => builder.removeOverlay(overlay.id)}
+                            aria-label={`Remove overlay ${idx + 1}`}
+                          >
+                            <IconTrash size={12} />
+                          </ActionIcon>
+                        </Group>
+                        <img
+                          src={overlay.imageUrl}
+                          alt={`Overlay ${idx + 1}`}
+                          style={{
+                            width: '100%',
+                            height: 40,
+                            objectFit: 'contain',
+                            borderRadius: 2,
+                            background: 'var(--mantine-color-dark-7)',
+                            marginBottom: 4,
+                          }}
+                        />
+                        <Text size="xs" c="dimmed" mb={2}>
+                          Opacity
+                        </Text>
+                        <Slider
+                          value={overlay.opacity}
+                          onChange={(val) =>
+                            builder.updateOverlay(overlay.id, { opacity: val })
+                          }
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          size="xs"
+                          label={(v) => `${Math.round(v * 100)}%`}
+                        />
+                        <Group gap={4} mt={4}>
+                          <Text size="xs" c="dimmed">
+                            Click-through:
+                          </Text>
+                          <Switch
+                            size="xs"
+                            checked={!overlay.pointerEvents}
+                            onChange={(e) =>
+                              builder.updateOverlay(overlay.id, {
+                                pointerEvents: !e.currentTarget.checked,
+                              })
+                            }
+                            aria-label="Toggle click-through"
+                          />
+                        </Group>
+                      </Box>
+                    ))}
+                    {builder.template.overlays.length === 0 && (
+                      <Text size="xs" c="dimmed" ta="center" py="md">
+                        No overlays. Upload a transparent PNG/SVG.
+                      </Text>
+                    )}
+                  </Stack>
                 </Tabs.Panel>
               </Tabs>
             </Box>
@@ -486,6 +654,8 @@ export function LayoutBuilderModal({
                 onCanvasClick={builder.clearSelection}
                 onMediaDrop={builder.assignMediaToSlot}
                 onAnnounce={announce}
+                onOverlayMove={builder.moveOverlay}
+                onOverlayResize={builder.resizeOverlay}
               />
             </Box>
 
@@ -566,6 +736,10 @@ export function LayoutBuilderModal({
                 onUpdate={(updates) =>
                   builder.updateSlot(selectedSlot.id, updates)
                 }
+                onBringToFront={() => builder.bringToFront([selectedSlot.id])}
+                onSendToBack={() => builder.sendToBack([selectedSlot.id])}
+                onBringForward={() => builder.bringForward([selectedSlot.id])}
+                onSendBackward={() => builder.sendBackward([selectedSlot.id])}
               />
             </Box>
           )}

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { Rnd } from 'react-rnd';
 import { Text } from '@mantine/core';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
@@ -22,6 +23,10 @@ export interface LayoutCanvasProps {
   onMediaDrop?: (slotId: string, mediaId: string) => void;
   /** Announce a11y messages. */
   onAnnounce?: (msg: string) => void;
+  /** Overlay move callback (P15-H). */
+  onOverlayMove?: (id: string, x: number, y: number) => void;
+  /** Overlay resize callback (P15-H). */
+  onOverlayResize?: (id: string, x: number, y: number, w: number, h: number) => void;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -44,6 +49,8 @@ export function LayoutCanvas({
   onCanvasClick,
   onMediaDrop,
   onAnnounce,
+  onOverlayMove,
+  onOverlayResize,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -222,6 +229,93 @@ export function LayoutCanvas({
               onDragFrame={handleDragFrame}
               onMediaDrop={onMediaDrop}
             />
+          );
+        })}
+
+        {/* Overlay layers (P15-H) */}
+        {template.overlays.map((overlay) => {
+          const oPos = pctToPx(overlay.x, overlay.y, overlay.width, overlay.height);
+
+          if (isPreview) {
+            return (
+              <div
+                key={overlay.id}
+                style={{
+                  position: 'absolute',
+                  left: oPos.x,
+                  top: oPos.y,
+                  width: oPos.width,
+                  height: oPos.height,
+                  zIndex: overlay.zIndex,
+                  opacity: overlay.opacity,
+                  pointerEvents: overlay.pointerEvents ? 'auto' : 'none',
+                }}
+              >
+                <img
+                  src={overlay.imageUrl}
+                  alt=""
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                  draggable={false}
+                />
+              </div>
+            );
+          }
+
+          return (
+            <Rnd
+              key={overlay.id}
+              position={{ x: oPos.x, y: oPos.y }}
+              size={{ width: oPos.width!, height: oPos.height! }}
+              bounds="parent"
+              minWidth={20}
+              minHeight={20}
+              maxWidth={canvasWidth}
+              maxHeight={canvasHeight}
+              onDragStop={(_e, data) => {
+                const pct = pxToPct(data.x, data.y);
+                onOverlayMove?.(overlay.id, pct.x, pct.y);
+              }}
+              onResizeStop={(_e, _dir, ref, _delta, position) => {
+                const pct = pxToPct(
+                  position.x,
+                  position.y,
+                  ref.offsetWidth,
+                  ref.offsetHeight,
+                );
+                onOverlayResize?.(
+                  overlay.id,
+                  pct.x,
+                  pct.y,
+                  pct.width!,
+                  pct.height!,
+                );
+              }}
+              style={{
+                zIndex: overlay.zIndex,
+                opacity: overlay.opacity,
+                outline: '1px dashed rgba(138, 43, 226, 0.6)',
+              }}
+              enableResizing={!isPreview}
+              disableDragging={isPreview}
+            >
+              <img
+                src={overlay.imageUrl}
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                  pointerEvents: 'none',
+                }}
+                draggable={false}
+              />
+            </Rnd>
           );
         })}
 

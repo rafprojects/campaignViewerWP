@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { produce, enableMapSet } from 'immer';
-import type { LayoutTemplate, LayoutSlot } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutOverlay } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 
 enableMapSet();
@@ -83,6 +83,30 @@ export interface LayoutBuilderActions {
   clearSlotMedia: (slotId: string) => void;
   /** Auto-assign media to all slots by order (sets mediaId). */
   autoAssignMedia: (mediaIds: string[]) => void;
+
+  // ── Z-Index reorder (P15-G) ──
+  /** Move slot(s) to the top z-index. */
+  bringToFront: (ids: string[]) => void;
+  /** Move slot(s) to the bottom z-index. */
+  sendToBack: (ids: string[]) => void;
+  /** Increase z-index by 1 (swap with the slot above). */
+  bringForward: (ids: string[]) => void;
+  /** Decrease z-index by 1 (swap with the slot below). */
+  sendBackward: (ids: string[]) => void;
+  /** Normalize z-indices to sequential 1..N (no gaps). */
+  normalizeZIndices: () => void;
+
+  // ── Overlay CRUD (P15-H) ──
+  /** Add a new overlay. Returns the overlay's ID. */
+  addOverlay: (imageUrl: string) => string;
+  /** Remove an overlay by ID. */
+  removeOverlay: (id: string) => void;
+  /** Update arbitrary overlay properties. */
+  updateOverlay: (id: string, updates: Partial<LayoutOverlay>) => void;
+  /** Move an overlay to a new position. */
+  moveOverlay: (id: string, x: number, y: number) => void;
+  /** Resize an overlay. */
+  resizeOverlay: (id: string, x: number, y: number, width: number, height: number) => void;
 
   // ── Selection ──
   /** Select a single slot (replaces selection). */
@@ -310,6 +334,164 @@ export function useLayoutBuilderState(
     [mutate],
   );
 
+  // ── Z-Index reorder (P15-G) ───────────────────────────────
+
+  const bringToFront = useCallback(
+    (ids: string[]) =>
+      mutate((d) => {
+        const idSet = new Set(ids);
+        const maxZ = Math.max(...d.slots.map((s) => s.zIndex), 0);
+        let nextZ = maxZ + 1;
+        for (const slot of d.slots) {
+          if (idSet.has(slot.id)) {
+            slot.zIndex = nextZ++;
+          }
+        }
+      }),
+    [mutate],
+  );
+
+  const sendToBack = useCallback(
+    (ids: string[]) =>
+      mutate((d) => {
+        const idSet = new Set(ids);
+        const minZ = Math.min(...d.slots.map((s) => s.zIndex), 0);
+        let nextZ = minZ - ids.length;
+        for (const slot of d.slots) {
+          if (idSet.has(slot.id)) {
+            slot.zIndex = nextZ++;
+          }
+        }
+        // Normalize so nothing goes below 0
+        const lowestZ = Math.min(...d.slots.map((s) => s.zIndex));
+        if (lowestZ < 0) {
+          const offset = -lowestZ;
+          for (const slot of d.slots) slot.zIndex += offset;
+        }
+      }),
+    [mutate],
+  );
+
+  const bringForward = useCallback(
+    (ids: string[]) =>
+      mutate((d) => {
+        const idSet = new Set(ids);
+        // Sort slots by zIndex ascending, swap each target with the one above
+        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
+        for (let i = sorted.length - 1; i >= 0; i--) {
+          if (idSet.has(sorted[i].id)) {
+            // Find the next slot above not in selected set
+            const above = sorted[i + 1];
+            if (above && !idSet.has(above.id)) {
+              const real = d.slots.find((s) => s.id === sorted[i].id)!;
+              const realAbove = d.slots.find((s) => s.id === above.id)!;
+              const tmp = real.zIndex;
+              real.zIndex = realAbove.zIndex;
+              realAbove.zIndex = tmp;
+            }
+          }
+        }
+      }),
+    [mutate],
+  );
+
+  const sendBackward = useCallback(
+    (ids: string[]) =>
+      mutate((d) => {
+        const idSet = new Set(ids);
+        // Sort slots by zIndex ascending, swap each target with the one below
+        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
+        for (let i = 0; i < sorted.length; i++) {
+          if (idSet.has(sorted[i].id)) {
+            const below = sorted[i - 1];
+            if (below && !idSet.has(below.id)) {
+              const real = d.slots.find((s) => s.id === sorted[i].id)!;
+              const realBelow = d.slots.find((s) => s.id === below.id)!;
+              const tmp = real.zIndex;
+              real.zIndex = realBelow.zIndex;
+              realBelow.zIndex = tmp;
+            }
+          }
+        }
+      }),
+    [mutate],
+  );
+
+  const normalizeZIndices = useCallback(
+    () =>
+      mutate((d) => {
+        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
+        sorted.forEach((ref, i) => {
+          const real = d.slots.find((s) => s.id === ref.id)!;
+          real.zIndex = i + 1;
+        });
+      }),
+    [mutate],
+  );
+
+  // ── Overlay CRUD (P15-H) ──────────────────────────────────
+
+  const addOverlay = useCallback(
+    (imageUrl: string): string => {
+      const newId = crypto.randomUUID?.() ?? `overlay-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      mutate((d) => {
+        const maxZ = Math.max(
+          ...d.slots.map((s) => s.zIndex),
+          ...d.overlays.map((o) => o.zIndex),
+          0,
+        );
+        d.overlays.push({
+          id: newId,
+          imageUrl,
+          x: 10,
+          y: 10,
+          width: 30,
+          height: 30,
+          zIndex: maxZ + 100, // Overlays above slots by default
+          opacity: 1,
+          pointerEvents: false,
+        });
+      });
+      return newId;
+    },
+    [mutate],
+  );
+
+  const removeOverlay = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        d.overlays = d.overlays.filter((o) => o.id !== id);
+      }),
+    [mutate],
+  );
+
+  const updateOverlay = useCallback(
+    (id: string, updates: Partial<LayoutOverlay>) =>
+      mutate((d) => {
+        const idx = d.overlays.findIndex((o) => o.id === id);
+        if (idx !== -1) Object.assign(d.overlays[idx], updates);
+      }),
+    [mutate],
+  );
+
+  const moveOverlay = useCallback(
+    (id: string, x: number, y: number) =>
+      mutate((d) => {
+        const o = d.overlays.find((ov) => ov.id === id);
+        if (o) { o.x = x; o.y = y; }
+      }),
+    [mutate],
+  );
+
+  const resizeOverlay = useCallback(
+    (id: string, x: number, y: number, width: number, height: number) =>
+      mutate((d) => {
+        const o = d.overlays.find((ov) => ov.id === id);
+        if (o) { o.x = x; o.y = y; o.width = width; o.height = height; }
+      }),
+    [mutate],
+  );
+
   // ── Selection ──
 
   const selectSlot = useCallback(
@@ -409,6 +591,18 @@ export function useLayoutBuilderState(
     assignMediaToSlot,
     clearSlotMedia,
     autoAssignMedia,
+    // Z-Index reorder
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+    normalizeZIndices,
+    // Overlay CRUD
+    addOverlay,
+    removeOverlay,
+    updateOverlay,
+    moveOverlay,
+    resizeOverlay,
     // Selection
     selectSlot,
     toggleSlotSelection,

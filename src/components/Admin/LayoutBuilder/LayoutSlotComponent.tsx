@@ -131,6 +131,14 @@ export function LayoutSlotComponent({
 
   // ── Preview mode: no chrome ──
   if (isPreview) {
+    const maskStyle = slot.maskUrl
+      ? {
+          WebkitMaskImage: `url(${slot.maskUrl})`,
+          maskImage: `url(${slot.maskUrl})`,
+          WebkitMaskSize: 'cover' as const,
+          maskSize: 'cover' as const,
+        }
+      : {};
     return (
       <div
         style={{
@@ -142,6 +150,7 @@ export function LayoutSlotComponent({
           zIndex: slot.zIndex,
           borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : 0,
           clipPath,
+          ...maskStyle,
           overflow: 'hidden',
           border:
             slot.borderWidth > 0
@@ -235,6 +244,14 @@ export function LayoutSlotComponent({
           height: '100%',
           borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : 0,
           clipPath,
+          ...(slot.maskUrl
+            ? {
+                WebkitMaskImage: `url(${slot.maskUrl})`,
+                maskImage: `url(${slot.maskUrl})`,
+                WebkitMaskSize: 'cover',
+                maskSize: 'cover',
+              }
+            : {}),
           overflow: 'hidden',
           border: isDragOver
             ? '2px dashed var(--mantine-color-green-5)'

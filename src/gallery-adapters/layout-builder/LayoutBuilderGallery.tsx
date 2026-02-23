@@ -261,6 +261,14 @@ function LayoutBuilderGalleryInner({
               const pxW = (slot.width / 100) * effectiveWidth;
               const pxH = (slot.height / 100) * canvasHeight;
               const clipPath = getClipPath(slot);
+              const maskStyle = slot.maskUrl
+                ? {
+                    WebkitMaskImage: `url(${slot.maskUrl})`,
+                    maskImage: `url(${slot.maskUrl})`,
+                    WebkitMaskSize: 'cover',
+                    maskSize: 'cover',
+                  } as React.CSSProperties
+                : {};
 
               if (!assigned) {
                 // E.4: Empty slot — gray dashed placeholder, non-interactive
@@ -275,6 +283,7 @@ function LayoutBuilderGalleryInner({
                       height: pxH,
                       zIndex: slot.zIndex,
                       clipPath,
+                      ...maskStyle,
                       borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : undefined,
                       border: '2px dashed rgba(128,128,128,0.5)',
                       background: 'rgba(128,128,128,0.15)',
@@ -314,8 +323,7 @@ function LayoutBuilderGalleryInner({
                     width: pxW,
                     height: pxH,
                     zIndex: slot.zIndex,
-                    clipPath,
-                    borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : undefined,
+                    clipPath,                    ...maskStyle,                    borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : undefined,
                     border:
                       slot.borderWidth > 0
                         ? `${slot.borderWidth}px solid ${slot.borderColor}`
@@ -383,6 +391,43 @@ function LayoutBuilderGalleryInner({
                       }}
                     />
                   )}
+                </div>
+              );
+            })}
+
+            {/* Overlay layers (P15-H) — rendered above all slots */}
+            {template.overlays.map((overlay) => {
+              const oPxX = (overlay.x / 100) * effectiveWidth;
+              const oPxY = (overlay.y / 100) * canvasHeight;
+              const oPxW = (overlay.width / 100) * effectiveWidth;
+              const oPxH = (overlay.height / 100) * canvasHeight;
+
+              return (
+                <div
+                  key={overlay.id}
+                  style={{
+                    position: 'absolute',
+                    left: oPxX,
+                    top: oPxY,
+                    width: oPxW,
+                    height: oPxH,
+                    zIndex: overlay.zIndex,
+                    opacity: overlay.opacity,
+                    pointerEvents: overlay.pointerEvents ? 'auto' : 'none',
+                  }}
+                  aria-hidden="true"
+                >
+                  <img
+                    src={overlay.imageUrl}
+                    alt=""
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      display: 'block',
+                    }}
+                    draggable={false}
+                  />
                 </div>
               );
             })}

@@ -9,7 +9,15 @@ import {
   Group,
   SegmentedControl,
   TextInput,
+  ActionIcon,
+  Tooltip,
 } from '@mantine/core';
+import {
+  IconArrowBigUpLine,
+  IconArrowBigDownLine,
+  IconArrowUp,
+  IconArrowDown,
+} from '@tabler/icons-react';
 import type { LayoutSlot, LayoutSlotShape } from '@/types';
 
 // ── Props ────────────────────────────────────────────────────
@@ -17,17 +25,22 @@ import type { LayoutSlot, LayoutSlotShape } from '@/types';
 export interface SlotPropertiesPanelProps {
   slot: LayoutSlot;
   onUpdate: (updates: Partial<LayoutSlot>) => void;
+  /** Z-index reorder callbacks (P15-G). */
+  onBringToFront?: () => void;
+  onSendToBack?: () => void;
+  onBringForward?: () => void;
+  onSendBackward?: () => void;
 }
 
 // ── Options ──────────────────────────────────────────────────
 
 const SHAPE_OPTIONS: { value: LayoutSlotShape; label: string }[] = [
-  { value: 'rectangle', label: 'Rectangle' },
-  { value: 'circle', label: 'Circle' },
-  { value: 'ellipse', label: 'Ellipse' },
-  { value: 'hexagon', label: 'Hexagon' },
-  { value: 'diamond', label: 'Diamond' },
-  { value: 'custom', label: 'Custom' },
+  { value: 'rectangle', label: '\u25ac Rectangle' },
+  { value: 'circle', label: '\u25cf Circle' },
+  { value: 'ellipse', label: '\u2b2d Ellipse' },
+  { value: 'hexagon', label: '\u2b22 Hexagon' },
+  { value: 'diamond', label: '\u25c6 Diamond' },
+  { value: 'custom', label: '\u2742 Custom' },
 ];
 
 const FIT_OPTIONS = [
@@ -60,6 +73,10 @@ const FOCAL_PRESETS = [
 export function SlotPropertiesPanel({
   slot,
   onUpdate,
+  onBringToFront,
+  onSendToBack,
+  onBringForward,
+  onSendBackward,
 }: SlotPropertiesPanelProps) {
   return (
     <Stack gap="sm">
@@ -146,6 +163,15 @@ export function SlotPropertiesPanel({
         />
       )}
 
+      {/* ── Mask URL (P15-I / P15-K) ── */}
+      <TextInput
+        label="CSS mask URL"
+        value={slot.maskUrl ?? ''}
+        onChange={(e) => onUpdate({ maskUrl: e.currentTarget.value || undefined })}
+        placeholder="URL to SVG/PNG mask"
+        size="xs"
+      />
+
       {/* ── Image Fit ── */}
       <Divider label="Image" labelPosition="left" />
       <Select
@@ -221,16 +247,40 @@ export function SlotPropertiesPanel({
         />
       </Group>
 
-      {/* ── Z-Index ── */}
+      {/* ── Z-Index / Layer Order (P15-G) ── */}
       <Divider label="Stacking" labelPosition="left" />
-      <NumberInput
-        label="Z-Index"
-        value={slot.zIndex}
-        onChange={(val) => onUpdate({ zIndex: Number(val) || 0 })}
-        min={0}
-        max={100}
-        size="xs"
-      />
+      <Group grow gap="xs">
+        <NumberInput
+          label="Z-Index"
+          value={slot.zIndex}
+          onChange={(val) => onUpdate({ zIndex: Number(val) || 0 })}
+          min={0}
+          max={100}
+          size="xs"
+        />
+      </Group>
+      <Group gap={4} justify="center">
+        <Tooltip label="Send to Back (Shift+[)">
+          <ActionIcon size="sm" variant="subtle" onClick={onSendToBack} aria-label="Send to back">
+            <IconArrowBigDownLine size={16} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Send Backward ([)">
+          <ActionIcon size="sm" variant="subtle" onClick={onSendBackward} aria-label="Send backward">
+            <IconArrowDown size={16} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Bring Forward (])">
+          <ActionIcon size="sm" variant="subtle" onClick={onBringForward} aria-label="Bring forward">
+            <IconArrowUp size={16} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Bring to Front (Shift+])">
+          <ActionIcon size="sm" variant="subtle" onClick={onBringToFront} aria-label="Bring to front">
+            <IconArrowBigUpLine size={16} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
 
       {/* ── Interaction ── */}
       <Divider label="Interaction" labelPosition="left" />
