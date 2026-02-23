@@ -403,9 +403,9 @@ export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListPr
         opened={builderOpen}
         initialTemplate={editingTemplate ?? undefined}
         apiClient={apiClient}
-        media={[]}
         onSaved={handleBuilderSaved}
         onClose={handleBuilderClose}
+        onNotify={onNotify}
       />
 
       {/* Delete confirmation */}

@@ -293,7 +293,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_health_data'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -301,12 +301,12 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_oembed_failures'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'reset_oembed_failures'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -315,12 +315,12 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_thumbnail_cache_stats'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'clear_thumbnail_cache'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -328,7 +328,7 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'refresh_thumbnail_cache'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -337,7 +337,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaign_tags'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -345,7 +345,7 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_media_tags'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -354,12 +354,12 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_layout_templates'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'create_layout_template'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -367,17 +367,17 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_layout_template'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
             [
                 'methods' => 'PUT',
                 'callback' => [self::class, 'update_layout_template'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'delete_layout_template'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
@@ -385,7 +385,7 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'duplicate_layout_template'],
-                'permission_callback' => [self::class, 'is_admin'],
+                'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 

@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import useSWR from 'swr';
 import {
   Modal,
   Group,
@@ -58,8 +59,6 @@ export interface LayoutBuilderModalProps {
   apiClient: ApiClient;
   /** Existing template to edit — undefined = new template. */
   initialTemplate?: LayoutTemplate;
-  /** Campaign media for preview assignment. */
-  media?: MediaItem[];
   onSaved?: (template: LayoutTemplate) => void;
   onNotify?: (msg: { type: 'error' | 'success'; text: string }) => void;
 }
@@ -71,13 +70,47 @@ export function LayoutBuilderModal({
   onClose,
   apiClient,
   initialTemplate,
-  media = [],
   onSaved,
   onNotify,
 }: LayoutBuilderModalProps) {
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // ── Fetch all campaign media for the builder's media picker ──
+  const { data: allCampaignMedia } = useSWR<MediaItem[]>(
+    opened ? 'builder-all-media' : null,
+    async () => {
+      const response = await apiClient.get<{ items: Array<{ id: number }> }>(
+        '/wp-json/wp-super-gallery/v1/campaigns?per_page=50',
+      );
+      const campaigns = response.items ?? [];
+      const mediaArrays = await Promise.all(
+        campaigns.map((c) =>
+          apiClient
+            .get<MediaItem[] | { items?: MediaItem[] }>(
+              `/wp-json/wp-super-gallery/v1/campaigns/${c.id}/media`,
+            )
+            .then((res) => (Array.isArray(res) ? res : res.items ?? []))
+            .catch(() => [] as MediaItem[]),
+        ),
+      );
+      // Deduplicate by ID
+      const seen = new Set<string>();
+      const result: MediaItem[] = [];
+      for (const arr of mediaArrays) {
+        for (const item of arr) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            result.push(item);
+          }
+        }
+      }
+      return result;
+    },
+    { revalidateOnFocus: false, dedupingInterval: 30_000 },
+  );
+  const media = useMemo(() => allCampaignMedia ?? [], [allCampaignMedia]);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [leftTab, setLeftTab] = useState<string | null>('slots');
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
