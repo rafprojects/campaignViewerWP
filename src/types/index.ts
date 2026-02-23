@@ -103,6 +103,11 @@ export type LayoutSlotShape =
   | 'ellipse'
   | 'hexagon'
   | 'diamond'
+  | 'parallelogram-left'
+  | 'parallelogram-right'
+  | 'chevron'
+  | 'arrow'
+  | 'trapezoid'
   | 'custom';
 
 /**

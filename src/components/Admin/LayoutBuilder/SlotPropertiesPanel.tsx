@@ -40,6 +40,11 @@ const SHAPE_OPTIONS: { value: LayoutSlotShape; label: string }[] = [
   { value: 'ellipse', label: '\u2b2d Ellipse' },
   { value: 'hexagon', label: '\u2b22 Hexagon' },
   { value: 'diamond', label: '\u25c6 Diamond' },
+  { value: 'parallelogram-left', label: '\u25b1 Parallelogram \u2190' },
+  { value: 'parallelogram-right', label: '\u25b1 Parallelogram \u2192' },
+  { value: 'chevron', label: '\u276f Chevron' },
+  { value: 'arrow', label: '\u27a4 Arrow' },
+  { value: 'trapezoid', label: '\u2b1f Trapezoid' },
   { value: 'custom', label: '\u2742 Custom' },
 ];
 

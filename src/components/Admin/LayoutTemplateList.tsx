@@ -41,7 +41,10 @@ import useSWR from 'swr';
 import type { ApiClient } from '@/services/apiClient';
 import type { LayoutTemplate } from '@/types';
 import { LayoutBuilderModal } from './LayoutBuilder';
+import { PresetGalleryModal } from './LayoutBuilder/PresetGalleryModal';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { createEmptyTemplate } from '@/hooks/useLayoutBuilderState';
+import type { LayoutPreset } from '@/data/layoutPresets';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -102,6 +105,7 @@ export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListPr
   const [editingTemplate, setEditingTemplate] = useState<LayoutTemplate | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<LayoutTemplate | null>(null);
+  const [presetGalleryOpen, setPresetGalleryOpen] = useState(false);
   const resetRef = useRef<() => void>(null);
 
   // ── Data fetching ─────────────────────────────────────────────────────────
@@ -127,6 +131,19 @@ export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListPr
 
   const handleCreate = useCallback(() => {
     setEditingTemplate(null);
+    setBuilderOpen(true);
+  }, []);
+
+  const handleCreateFromPreset = useCallback((preset: LayoutPreset) => {
+    const t = createEmptyTemplate(preset.name);
+    // Re-generate slot IDs to avoid conflicts
+    t.slots = preset.slots.map((s, i) => ({
+      ...s,
+      id: crypto.randomUUID?.() ?? `slot-${Date.now()}-${i}`,
+    }));
+    t.canvasAspectRatio = preset.canvasAspectRatio;
+    t.tags = [...preset.tags];
+    setEditingTemplate(t as LayoutTemplate);
     setBuilderOpen(true);
   }, []);
 
@@ -254,6 +271,14 @@ export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListPr
           </FileButton>
           <Button leftSection={<IconPlus size={16} />} size="sm" onClick={handleCreate}>
             New Layout
+          </Button>
+          <Button
+            variant="light"
+            leftSection={<IconLayoutDashboard size={16} />}
+            size="sm"
+            onClick={() => setPresetGalleryOpen(true)}
+          >
+            From Preset
           </Button>
         </Group>
       </Group>
@@ -392,6 +417,13 @@ export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListPr
         message={`Are you sure you want to delete "${confirmDelete?.name ?? ''}"? This cannot be undone.`}
         confirmLabel="Delete"
         confirmColor="red"
+      />
+
+      {/* Preset gallery (P15-J.2) */}
+      <PresetGalleryModal
+        opened={presetGalleryOpen}
+        onClose={() => setPresetGalleryOpen(false)}
+        onSelect={handleCreateFromPreset}
       />
     </Stack>
   );

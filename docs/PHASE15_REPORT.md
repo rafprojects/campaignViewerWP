@@ -1,9 +1,9 @@
 # Phase 15 — Layout Builder
 
-**Status:** 🔧 In Progress — Sprint 5 (Stretch: Overlap + Overlays + Shapes)  
-**Version:** v0.13.0 (target)  
+**Status:** ✅ Complete — All 6 sprints delivered  
+**Version:** v0.13.1 (stretch goals complete)  
 **Created:** February 22, 2026  
-**Last updated:** February 22, 2026 — Sprint 5 complete
+**Last updated:** February 22, 2026 — Sprint 6 complete (Phase 15 finished)
 
 ### Progress Log
 
@@ -14,7 +14,8 @@
 | 2026-02-22 | `7d528bc` | Sprint 2 complete — P15-C.1–C.5, C.8 (canvas builder UI): useLayoutBuilderState hook, LayoutBuilderModal, LayoutCanvas, LayoutSlotComponent, SlotPropertiesPanel. 246 tests passing, tsc clean. |
 | 2026-02-22 | `ce680af` | Sprint 3 complete — P15-C.6–C.7, P15-C.4a, P15-D (media picker, canvas controls, a11y, smart guides). 25 new smartGuides tests. |
 | 2026-02-22 | `1daa4bb` | Sprint 4 complete — P15-E (LayoutBuilderGallery adapter, useLayoutTemplate hook, CampaignViewer integration) + P15-F (LayoutTemplateList admin panel, campaign layout selector, import/export). 14 new tests, 271 total passing, tsc clean. |
-| 2026-02-22 | *pending* | Sprint 5 complete — P15-G (z-index reorder: bringToFront/sendToBack/bringForward/sendBackward, keyboard shortcuts, layer-ordered slot list, normalize on save) + P15-H (overlay CRUD, canvas rendering via Rnd, gallery adapter overlay rendering, overlay management tab with file upload/URL/opacity/click-through) + P15-I (shape preview icons, mask URL support). 16 new tests, 301 total passing, tsc clean. |
+| 2026-02-22 | `2fb8f54` | Sprint 5 complete — P15-G (z-index reorder: bringToFront/sendToBack/bringForward/sendBackward, keyboard shortcuts, layer-ordered slot list, normalize on save) + P15-H (overlay CRUD, canvas rendering via Rnd, gallery adapter overlay rendering, overlay management tab with file upload/URL/opacity/click-through) + P15-I (shape preview icons, mask URL support). 16 new tests, 301 total passing, tsc clean. |
+| 2026-02-22 | *pending* | Sprint 6 complete — P15-J (12 premade layout presets in `src/data/layoutPresets.ts`, PresetGalleryModal with visual mini-canvas previews, "From Preset" button in LayoutTemplateList, new slot ID generation via crypto.randomUUID()) + P15-K (5 diagonal polygon shapes: parallelogram-left/right, chevron, arrow, trapezoid added to LayoutSlotShape type, getClipPath() in both renderers, shape selector dropdown). 18 new tests, 319 total passing, tsc clean. Phase 15 complete. |
 
 ---
 
@@ -921,7 +922,7 @@ Currently all slots would be rectangular. Admins may want to mix shapes — e.g.
 
 ## Track P15-J — Stretch: Premade Templates & Algorithms
 
-**Status:** ❌ Not started  
+**Status:** ✅ Complete (J.1 + J.2 delivered; J.3 deferred)  
 **Effort:** Medium  
 **Impact:** Medium — quick-start layouts, reduces learning curve  
 **Priority:** Stretch 4
@@ -934,7 +935,7 @@ Creating layouts from scratch is time-consuming. Shipping premade templates give
 
 #### P15-J.1: Template Presets
 
-- [ ] Ship 8–12 premade template JSON definitions:
+- [x] Ship 8–12 premade template JSON definitions (12 shipped in `src/data/layoutPresets.ts`):
   1. **Hero + Thumbnails**: 1 large (60% width) + 4 small (2×2 grid in remaining 40%)
   2. **Magazine Spread**: asymmetric 3-column with varying heights
   3. **Pinterest Board**: 3-column masonry-like but with fixed positions
@@ -948,17 +949,19 @@ Creating layouts from scratch is time-consuming. Shipping premade templates give
   11. **L-Shape**: one tall image + 2 or 3 short images beside it
   12. **T-Layout**: one wide image on top + 3 columns below
 
-- [ ] Templates stored as JSON files in `src/data/layoutPresets/` directory
-- [ ] Imported at build time, no runtime fetch needed
+- [x] Templates stored as TypeScript module in `src/data/layoutPresets.ts` (single file, type-safe)
+- [x] Imported at build time, no runtime fetch needed
 
 #### P15-J.2: Template Gallery UI
 
-- [ ] "Start from Template" button in template creation flow
-- [ ] Opens a visual gallery of presets with previews
-- [ ] Clicking a preset creates a new template pre-populated with its slots
-- [ ] User can then customize (add/remove/resize slots, change properties)
+- [x] "From Preset" button in template creation flow (LayoutTemplateList.tsx)
+- [x] Opens PresetGalleryModal with visual mini-canvas previews (colored divs for slot positions)
+- [x] Clicking a preset creates a new template pre-populated with its slots (new IDs via crypto.randomUUID())
+- [x] User can then customize (add/remove/resize slots, change properties)
 
-#### P15-J.3: Algorithmic Layout Generation (advanced)
+#### P15-J.3: Algorithmic Layout Generation (advanced) — DEFERRED
+
+> **Rationale:** Algorithmic generation is a stretch within a stretch. The 12 presets cover the most common patterns. Defer to a future phase when user feedback indicates demand for auto-layout.
 
 - [ ] "Auto-layout" button in builder: given N media items, generate a balanced layout algorithmically
 - [ ] Algorithms:
@@ -969,16 +972,16 @@ Creating layouts from scratch is time-consuming. Shipping premade templates give
 
 ### Acceptance Criteria
 
-- [ ] At least 8 premade templates available on fresh install
-- [ ] Preset gallery shows visual previews
-- [ ] Creating from preset produces a fully functional layout
-- [ ] Auto-layout generates reasonable results for 2–12 media items
+- [x] At least 8 premade templates available on fresh install (12 shipped)
+- [x] Preset gallery shows visual previews (mini-canvas with colored slot divs)
+- [x] Creating from preset produces a fully functional layout
+- [ ] Auto-layout generates reasonable results for 2–12 media items (deferred — J.3)
 
 ---
 
 ## Track P15-K — Stretch: Diagonal Shapes & Advanced Masks
 
-**Status:** ❌ Not started  
+**Status:** ✅ Partial (K.1 complete, K.2 basic mask support in Sprint 5, K.3 deferred)  
 **Effort:** Medium–High  
 **Impact:** Low–Medium — niche creative use cases  
 **Priority:** Stretch 5 (lowest priority, attempt last)
@@ -991,24 +994,23 @@ Some creative layouts use diagonal lines (parallelogram-shaped images, chevron p
 
 #### P15-K.1: Diagonal Polygon Shapes
 
-- [ ] Add preset polygon shapes to the shape selector:
+- [x] Add preset polygon shapes to the shape selector:
   - **Parallelogram left**: `polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)`
   - **Parallelogram right**: `polygon(0% 0%, 85% 0%, 100% 100%, 15% 100%)`
   - **Chevron right**: `polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)`
   - **Arrow**: `polygon(0% 0%, 70% 0%, 100% 50%, 70% 100%, 0% 100%, 30% 50%)`
   - **Trapezoid**: `polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)`
-- [ ] Each generates the appropriate CSS `clip-path` polygon
+- [x] Each generates the appropriate CSS `clip-path` polygon in both LayoutSlotComponent.tsx and LayoutBuilderGallery.tsx
 
 #### P15-K.2: CSS Mask Support
 
-- [ ] Add "Mask" option to slot properties
-- [ ] Mask types:
-  - **None**: no mask
+- [x] Add "Mask URL" option to slot properties (SlotPropertiesPanel — TextInput for mask URL)
+- [x] Mask types delivered:
+  - **None**: no mask (default)
   - **URL**: CSS `mask-image: url(...)` — user provides SVG/PNG mask URL
-  - **Gradient**: CSS `mask-image: linear-gradient(...)` — fade edges
-  - **Radial**: CSS `mask-image: radial-gradient(...)` — vignette effect
-- [ ] Mask position / size / repeat controls
-- [ ] Requires `-webkit-mask-image` prefix for Safari compatibility
+- [ ] Gradient & Radial mask types (deferred — can be achieved via URL with gradient SVGs)
+- [ ] Mask position / size / repeat controls (deferred)
+- [x] Requires `-webkit-mask-image` prefix for Safari compatibility — implemented in both renderers
 
 #### P15-K.3: Visual Clip-Path Editor — DEFERRED to future phase
 
@@ -1020,10 +1022,10 @@ Some creative layouts use diagonal lines (parallelogram-shaped images, chevron p
 
 ### Acceptance Criteria
 
-- [ ] Diagonal preset shapes render correctly
-- [ ] CSS masks apply and display correctly (including Safari with prefix)
-- [ ] Clip-path editor produces valid CSS values
-- [ ] All shapes/masks persist in template data and render in finalized mode
+- [x] Diagonal preset shapes render correctly (5 shapes in getClipPath)
+- [x] CSS masks apply and display correctly (including Safari with -webkit- prefix)
+- [ ] Clip-path editor produces valid CSS values (deferred — K.3)
+- [x] All shapes/masks persist in template data and render in finalized mode
 
 ---
 
@@ -1153,7 +1155,9 @@ Some creative layouts use diagonal lines (parallelogram-shaped images, chevron p
 | `src/gallery-adapters/layout-builder/LayoutBuilderGallery.tsx` | P15-E | Finalized adapter rendering |
 | `src/hooks/useLayoutTemplate.ts` | P15-E | SWR-based template data fetching |
 | `src/components/Admin/LayoutTemplateList.tsx` | P15-F | Template library grid/list |
-| `src/data/layoutPresets/*.json` | P15-J | Premade template definitions |
+| `src/data/layoutPresets.ts` | P15-J | 12 premade template definitions (TypeScript module) |
+| `src/data/layoutPresets.test.ts` | P15-J/K | 18 tests for presets + diagonal shapes |
+| `src/components/Admin/LayoutBuilder/PresetGalleryModal.tsx` | P15-J | Visual preset picker with mini-canvas previews |
 
 ---
 

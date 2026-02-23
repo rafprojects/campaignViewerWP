@@ -111,16 +111,17 @@ describe('useLayoutBuilderState — Overlay CRUD (P15-H)', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    let overlayId: string;
+    let overlayId = '';
     act(() => {
       overlayId = result.current.addOverlay('https://example.com/overlay.png');
     });
+    expect(overlayId).toBeTruthy();
     expect(result.current.template.overlays).toHaveLength(1);
     const overlay = result.current.template.overlays[0];
+    expect(overlay.id).toBe(overlayId);
     expect(overlay.imageUrl).toBe('https://example.com/overlay.png');
     expect(overlay.opacity).toBe(1);
     expect(overlay.pointerEvents).toBe(false);
-    expect(overlay.id).toBeTruthy();
   });
 
   it('removeOverlay removes by id', () => {

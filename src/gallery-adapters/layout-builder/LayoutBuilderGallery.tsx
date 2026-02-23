@@ -38,6 +38,16 @@ function getClipPath(slot: LayoutSlot): string | undefined {
       return 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
     case 'diamond':
       return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+    case 'parallelogram-left':
+      return 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)';
+    case 'parallelogram-right':
+      return 'polygon(0% 0%, 85% 0%, 100% 100%, 15% 100%)';
+    case 'chevron':
+      return 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)';
+    case 'arrow':
+      return 'polygon(0% 0%, 70% 0%, 100% 50%, 70% 100%, 0% 100%, 30% 50%)';
+    case 'trapezoid':
+      return 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)';
     case 'custom':
       return slot.clipPath || undefined;
     case 'rectangle':
