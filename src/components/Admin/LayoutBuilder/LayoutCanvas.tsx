@@ -27,6 +27,8 @@ export interface LayoutCanvasProps {
   onOverlayMove?: (id: string, x: number, y: number) => void;
   /** Overlay resize callback (P15-H). */
   onOverlayResize?: (id: string, x: number, y: number, w: number, h: number) => void;
+  /** When false, overlay Rnd elements are hidden in edit mode so slots below are reachable. */
+  overlaysVisible?: boolean;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -51,6 +53,7 @@ export function LayoutCanvas({
   onAnnounce,
   onOverlayMove,
   onOverlayResize,
+  overlaysVisible = true,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -200,8 +203,12 @@ export function LayoutCanvas({
             ? 'none'
             : '2px solid var(--mantine-color-default-border)',
           borderRadius: 4,
-          overflow: 'hidden',
+          // In edit mode use overflow:visible so Rnd resize handles at the
+          // canvas edge remain reachable (they would be clipped with 'hidden').
+          overflow: isPreview ? 'hidden' : 'visible',
           boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          // Provide a clip boundary visually while keeping overflow:visible
+          clipPath: isPreview ? undefined : 'none',
         }}
       >
         {template.slots.map((slot, index) => {
@@ -234,6 +241,10 @@ export function LayoutCanvas({
 
         {/* Overlay layers (P15-H) */}
         {template.overlays.map((overlay) => {
+          // In edit mode, hide overlays while working on slots if the user
+          // toggled them off — they're always shown in preview/campaign view.
+          if (!isPreview && !overlaysVisible) return null;
+
           const oPos = pctToPx(overlay.x, overlay.y, overlay.width, overlay.height);
 
           if (isPreview) {
@@ -309,7 +320,9 @@ export function LayoutCanvas({
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain',
+                  // 'fill' ensures the image covers its bounding box exactly,
+                  // so the dashed outline matches the visual content area.
+                  objectFit: 'fill',
                   display: 'block',
                   pointerEvents: 'none',
                 }}

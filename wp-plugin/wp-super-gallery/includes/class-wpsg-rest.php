@@ -389,6 +389,28 @@ class WPSG_REST {
             ],
         ]);
 
+        // P15-H: Overlay image library (admin, campaign-agnostic).
+        register_rest_route('wp-super-gallery/v1', '/admin/overlay-library', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_overlay_library'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'upload_overlay'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/overlay-library/(?P<id>[a-f0-9\-]{36})', [
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_overlay'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // P15-B: Public read-only endpoint for rendering (no auth, ID-based only).
         register_rest_route('wp-super-gallery/v1', '/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
             [
@@ -3143,6 +3165,56 @@ class WPSG_REST {
         }
 
         return new WP_REST_Response($result, 201);
+    }
+
+    // ── Overlay Library (P15-H) ──────────────────────────────
+
+    /**
+     * List all overlay library items.
+     */
+    public static function list_overlay_library( $request ) {
+        $items = WPSG_Overlay_Library::get_all();
+        return new WP_REST_Response( $items, 200 );
+    }
+
+    /**
+     * Upload a new overlay image (file upload) or register a URL.
+     *
+     * Accepts multipart/form-data with a 'file' field, or a JSON body
+     * with { url, name } to register an external URL.
+     */
+    public static function upload_overlay( $request ) {
+        // File upload path.
+        if ( ! empty( $_FILES['file'] ) ) {
+            $url = WPSG_Overlay_Library::handle_upload( $_FILES['file'] );
+            if ( is_wp_error( $url ) ) {
+                return new WP_REST_Response( [ 'message' => $url->get_error_message() ], 400 );
+            }
+            $name = sanitize_text_field( $request->get_param( 'name' ) ?? basename( $_FILES['file']['name'] ) );
+        } else {
+            // URL-only path.
+            $data = $request->get_json_params() ?? [];
+            $url  = esc_url_raw( $data['url'] ?? '' );
+            $name = sanitize_text_field( $data['name'] ?? '' );
+            if ( empty( $url ) ) {
+                return new WP_REST_Response( [ 'message' => 'A file or URL is required.' ], 400 );
+            }
+        }
+
+        $entry = WPSG_Overlay_Library::add( [ 'url' => $url, 'name' => $name ] );
+        return new WP_REST_Response( $entry, 201 );
+    }
+
+    /**
+     * Remove an overlay library entry.
+     */
+    public static function delete_overlay( $request ) {
+        $id      = $request->get_param( 'id' );
+        $deleted = WPSG_Overlay_Library::remove( $id );
+        if ( ! $deleted ) {
+            return new WP_REST_Response( [ 'message' => 'Overlay not found.' ], 404 );
+        }
+        return new WP_REST_Response( [ 'deleted' => true ], 200 );
     }
 
     /**
