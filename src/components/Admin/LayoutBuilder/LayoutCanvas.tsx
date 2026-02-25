@@ -20,7 +20,7 @@ export interface LayoutCanvasProps {
   onSlotSelect: (id: string) => void;
   onSlotToggleSelect: (id: string) => void;
   onCanvasClick: () => void;
-  onMediaDrop?: (slotId: string, mediaId: string) => void;
+  onMediaDrop?: (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) => void;
   /** Announce a11y messages. */
   onAnnounce?: (msg: string) => void;
   /** Overlay move callback (P15-H). */
@@ -62,7 +62,7 @@ export function LayoutCanvas({
   const canvasHeight = Math.round(canvasWidth / template.canvasAspectRatio);
 
   // Auto-assign media to slots for preview
-  const mediaAssignments = useMemo(
+  const { assignments: mediaAssignments } = useMemo(
     () => assignMediaToSlots(template, media),
     [template, media],
   );

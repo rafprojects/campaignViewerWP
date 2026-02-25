@@ -29,8 +29,8 @@ export interface MediaPickerSidebarProps {
   media: MediaItem[];
   template: LayoutTemplate;
   selectedSlotIds: Set<string>;
-  /** Called to assign a media item to a specific slot. */
-  onAssignMedia: (slotId: string, mediaId: string) => void;
+  /** Called to assign a media item to a specific slot (with cross-campaign metadata). */
+  onAssignMedia: (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) => void;
   /** Called to clear a slot's fixed media assignment. */
   onClearMedia: (slotId: string) => void;
   /** Called to auto-assign all media in order. */
@@ -39,14 +39,17 @@ export interface MediaPickerSidebarProps {
 
 // ── Helpers ──────────────────────────────────────────────────
 
-/** Build a reverse map: mediaId → slotIndex (1-based) for badge display. */
+/** Build a reverse map: mediaId → slotIndex[] (1-based) for badge display.
+ *  A single media item can be assigned to multiple slots. */
 function buildMediaSlotMap(
   slots: LayoutSlot[],
-): Map<string, number> {
-  const map = new Map<string, number>();
+): Map<string, number[]> {
+  const map = new Map<string, number[]>();
   slots.forEach((slot, idx) => {
     if (slot.mediaId) {
-      map.set(slot.mediaId, idx + 1);
+      const existing = map.get(slot.mediaId) ?? [];
+      existing.push(idx + 1);
+      map.set(slot.mediaId, existing);
     }
   });
   return map;
@@ -78,15 +81,22 @@ export function MediaPickerSidebar({
   const handleMediaClick = useCallback(
     (mediaItem: MediaItem) => {
       if (!singleSelectedSlotId) return;
-      onAssignMedia(singleSelectedSlotId, mediaItem.id);
+      onAssignMedia(singleSelectedSlotId, mediaItem.id, {
+        attachmentId: mediaItem.attachmentId,
+        url: mediaItem.url,
+      });
     },
     [singleSelectedSlotId, onAssignMedia],
   );
 
-  // Handle drag start: store mediaId in dataTransfer
+  // Handle drag start: store mediaId + metadata in dataTransfer
   const handleDragStart = useCallback(
     (e: React.DragEvent<HTMLButtonElement>, mediaItem: MediaItem) => {
       e.dataTransfer.setData('application/x-wpsg-media-id', mediaItem.id);
+      e.dataTransfer.setData('application/x-wpsg-media-meta', JSON.stringify({
+        attachmentId: mediaItem.attachmentId,
+        url: mediaItem.url,
+      }));
       e.dataTransfer.effectAllowed = 'copy';
     },
     [],
@@ -167,7 +177,7 @@ export function MediaPickerSidebar({
       <ScrollArea style={{ flex: 1 }} offsetScrollbars>
         <Stack gap={4}>
           {media.map((item) => {
-            const assignedToSlot = mediaSlotMap.get(item.id);
+            const assignedToSlots = mediaSlotMap.get(item.id);
             return (
               <UnstyledButton
                 key={item.id}
@@ -186,8 +196,8 @@ export function MediaPickerSidebar({
                   opacity: singleSelectedSlotId ? 1 : 0.7,
                 }}
                 aria-label={`${item.title || 'Media item'} — ${
-                  assignedToSlot
-                    ? `assigned to slot ${assignedToSlot}`
+                  assignedToSlots && assignedToSlots.length > 0
+                    ? `assigned to slot${assignedToSlots.length > 1 ? 's' : ''} ${assignedToSlots.join(', ')}`
                     : 'unassigned'
                 }`}
               >
@@ -211,9 +221,9 @@ export function MediaPickerSidebar({
                       : ''}
                   </Text>
                 </Stack>
-                {assignedToSlot !== undefined && (
-                  <Badge size="xs" variant="filled" color="blue" circle>
-                    {assignedToSlot}
+                {assignedToSlots && assignedToSlots.length > 0 && (
+                  <Badge size="xs" variant="filled" color="blue" style={assignedToSlots.length > 1 ? { borderRadius: 8, minWidth: 'auto', paddingInline: 6 } : undefined}>
+                    {assignedToSlots.join(',')}
                   </Badge>
                 )}
               </UnstyledButton>

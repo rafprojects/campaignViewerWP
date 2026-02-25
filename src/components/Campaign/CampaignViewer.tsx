@@ -213,7 +213,14 @@ export function CampaignViewer({
 
           {/* Media Sections */}
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
-            <Suspense fallback={<Center py="md"><Loader /></Center>}>
+            <Suspense fallback={
+              <Center py="xl" mih={200}>
+                <Stack align="center" gap="xs">
+                  <Loader size="md" />
+                  <Text size="sm" c="dimmed">Loading gallery…</Text>
+                </Stack>
+              </Center>
+            }>
               {galleryBehaviorSettings.unifiedGalleryEnabled ? (
                 // Unified mode: all media merged and sorted by order → single adapter
                 (() => {
@@ -226,7 +233,7 @@ export function CampaignViewer({
                   // Per-campaign adapter override (image adapter takes precedence in unified mode)
                   const effectiveId = campaign.imageAdapterId || s.unifiedGalleryAdapterId;
                   const inner = effectiveId === 'layout-builder' && campaign.layoutTemplateId
-                    ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} />
+                    ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
                     : renderAdapter(effectiveId, allMedia, s);
                   return s.unifiedBgType !== 'none'
                     ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
@@ -244,7 +251,7 @@ export function CampaignViewer({
                     const inner = id === 'classic'
                       ? <VideoCarousel videos={campaign.videos} settings={videoSettings} />
                       : id === 'layout-builder' && campaign.layoutTemplateId
-                        ? <LayoutBuilderGallery media={campaign.videos} settings={videoSettings} templateId={campaign.layoutTemplateId} />
+                        ? <LayoutBuilderGallery media={campaign.videos} settings={videoSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
                         : renderAdapter(id, campaign.videos, videoSettings);
                     return s.videoBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
@@ -259,7 +266,7 @@ export function CampaignViewer({
                     const inner = id === 'classic'
                       ? <ImageCarousel images={campaign.images} settings={imageSettings} />
                       : id === 'layout-builder' && campaign.layoutTemplateId
-                        ? <LayoutBuilderGallery media={campaign.images} settings={imageSettings} templateId={campaign.layoutTemplateId} />
+                        ? <LayoutBuilderGallery media={campaign.images} settings={imageSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
                         : renderAdapter(id, campaign.images, imageSettings);
                     return s.imageBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>

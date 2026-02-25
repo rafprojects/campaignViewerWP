@@ -31,13 +31,14 @@ function makeTemplate(slots: LayoutSlot[], partial?: Partial<LayoutTemplate>): L
   };
 }
 
-function makeMedia(id: string, order: number): MediaItem {
+function makeMedia(id: string, order: number, extra?: Partial<MediaItem>): MediaItem {
   return {
     id,
     type: 'image',
     source: 'upload',
     url: `https://example.com/${id}.jpg`,
     order,
+    ...extra,
   };
 }
 
@@ -49,7 +50,7 @@ describe('assignMediaToSlots', () => {
     const template = makeTemplate(slots);
     const media = [makeMedia('m1', 1), makeMedia('m2', 2), makeMedia('m3', 3)];
 
-    const result = assignMediaToSlots(template, media);
+    const { assignments: result } = assignMediaToSlots(template, media);
 
     expect(result.get('s1')?.id).toBe('m1');
     expect(result.get('s2')?.id).toBe('m2');
@@ -62,7 +63,7 @@ describe('assignMediaToSlots', () => {
     // Media provided out of order
     const media = [makeMedia('m-last', 99), makeMedia('m-first', 1)];
 
-    const result = assignMediaToSlots(template, media);
+    const { assignments: result } = assignMediaToSlots(template, media);
 
     expect(result.get('s1')?.id).toBe('m-first');
     expect(result.get('s2')?.id).toBe('m-last');
@@ -73,7 +74,7 @@ describe('assignMediaToSlots', () => {
     const template = makeTemplate(slots);
     const media = [makeMedia('m1', 1)];
 
-    const result = assignMediaToSlots(template, media);
+    const { assignments: result } = assignMediaToSlots(template, media);
 
     expect(result.get('s1')?.id).toBe('m1');
     expect(result.get('s2')).toBeUndefined();
@@ -87,7 +88,7 @@ describe('assignMediaToSlots', () => {
     const template = makeTemplate(slots);
     const media = [makeMedia('m1', 1), makeMedia('m2', 2), makeMedia('m3', 3)];
 
-    const result = assignMediaToSlots(template, media);
+    const { assignments: result } = assignMediaToSlots(template, media);
 
     expect(result.size).toBe(1);
     expect(result.get('s1')?.id).toBe('m1');
@@ -101,7 +102,7 @@ describe('assignMediaToSlots', () => {
     const template = makeTemplate(slots);
     const media = [makeMedia('m1', 1), makeMedia('m2', 2), makeMedia('m3', 3)];
 
-    const result = assignMediaToSlots(template, media);
+    const { assignments: result } = assignMediaToSlots(template, media);
 
     // s1 gets m3 (fixed binding), s2 gets m1 (lowest order available)
     expect(result.get('s1')?.id).toBe('m3');
@@ -116,7 +117,7 @@ describe('assignMediaToSlots', () => {
       s1: { mediaId: 'm2' },
     };
 
-    const result = assignMediaToSlots(template, media, overrides);
+    const { assignments: result } = assignMediaToSlots(template, media, overrides);
 
     // s1 → m2 (override), s2 → m1 (auto, first unused)
     expect(result.get('s1')?.id).toBe('m2');
@@ -131,7 +132,7 @@ describe('assignMediaToSlots', () => {
       s1: { mediaId: 'm2' },
     };
 
-    const result = assignMediaToSlots(template, media, overrides);
+    const { assignments: result } = assignMediaToSlots(template, media, overrides);
 
     expect(result.get('s1')?.id).toBe('m2');
   });
@@ -144,20 +145,24 @@ describe('assignMediaToSlots', () => {
       s1: { mediaId: 'nonexistent' },
     };
 
-    const result = assignMediaToSlots(template, media, overrides);
+    const { assignments: result, summary } = assignMediaToSlots(template, media, overrides);
 
     // s1: override target not found → falls to auto-assign
     // s2: auto-assign
     // Both m1 and m2 should be assigned
     expect(result.get('s1')?.id).toBe('m1');
     expect(result.get('s2')?.id).toBe('m2');
+    // summary should report the cleared binding
+    expect(summary.cleared).toHaveLength(1);
+    expect(summary.cleared[0].slotIndex).toBe(1);
+    expect(summary.autoFilled).toHaveLength(2);
   });
 
   it('handles empty slots array', () => {
     const template = makeTemplate([]);
     const media = [makeMedia('m1', 1)];
 
-    const result = assignMediaToSlots(template, media);
+    const { assignments: result } = assignMediaToSlots(template, media);
 
     expect(result.size).toBe(0);
   });
@@ -166,11 +171,12 @@ describe('assignMediaToSlots', () => {
     const slots = [makeSlot({ id: 's1' }), makeSlot({ id: 's2' })];
     const template = makeTemplate(slots);
 
-    const result = assignMediaToSlots(template, []);
+    const { assignments: result, summary } = assignMediaToSlots(template, []);
 
     expect(result.size).toBe(2);
     expect(result.get('s1')).toBeUndefined();
     expect(result.get('s2')).toBeUndefined();
+    expect(summary.empty).toEqual([1, 2]);
   });
 
   it('does not double-assign media when multiple slots reference the same mediaId', () => {
@@ -182,7 +188,7 @@ describe('assignMediaToSlots', () => {
     const template = makeTemplate(slots);
     const media = [makeMedia('m1', 1), makeMedia('m2', 2)];
 
-    const result = assignMediaToSlots(template, media);
+    const { assignments: result } = assignMediaToSlots(template, media);
 
     // s1 gets m1 (first pass picks it), s2 also references m1 but it's already used
     // s2 and s3 get auto-assigned from remaining
@@ -191,6 +197,143 @@ describe('assignMediaToSlots', () => {
     // (both find it in sortedMedia). Let's verify the actual behavior.
     expect(result.has('s2')).toBe(true);
     expect(result.has('s3')).toBe(true);
+  });
+
+  it('keeps matching bindings, clears missing, auto-fills remaining (cross-campaign scenario)', () => {
+    // Template slots: s1→chair, s2→table, s3→dog, s4→cat
+    const slots = [
+      makeSlot({ id: 's1', mediaId: 'chair' }),
+      makeSlot({ id: 's2', mediaId: 'table' }),
+      makeSlot({ id: 's3', mediaId: 'dog' }),
+      makeSlot({ id: 's4', mediaId: 'cat' }),
+    ];
+    const template = makeTemplate(slots);
+    // Campaign only has: skunk(order 1), dog(order 2), deer(order 3), cat(order 4)
+    const media = [
+      makeMedia('skunk', 1),
+      makeMedia('dog', 2),
+      makeMedia('deer', 3),
+      makeMedia('cat', 4),
+    ];
+
+    const { assignments: result, summary } = assignMediaToSlots(template, media);
+
+    // s3→dog and s4→cat should be kept (exist in campaign)
+    expect(result.get('s3')?.id).toBe('dog');
+    expect(result.get('s4')?.id).toBe('cat');
+    expect(summary.kept).toHaveLength(2);
+
+    // s1 and s2 had bindings to chair/table (not in campaign) → cleared
+    expect(summary.cleared).toHaveLength(2);
+    expect(summary.cleared.map((c) => c.originalMediaId)).toContain('chair');
+    expect(summary.cleared.map((c) => c.originalMediaId)).toContain('table');
+
+    // Remaining media (skunk order 1, deer order 3) auto-fills s1 then s2
+    expect(result.get('s1')?.id).toBe('skunk');
+    expect(result.get('s2')?.id).toBe('deer');
+    expect(summary.autoFilled).toHaveLength(2);
+    expect(summary.empty).toHaveLength(0);
+  });
+
+  it('pins valid bindings and backfills invalid ones (user exact example)', () => {
+    // Campaign media ordered: dog(1), cat(2), mouse(3), skunk(4), deer(5), bug(6)
+    // Template assigns: slot1→mouse, slot2→dog, slot3→chair, slot4→table, slot5→deer
+    // chair and table are NOT in campaign → should be replaced with next available
+    // Expected: slot1→mouse, slot2→dog, slot3→cat, slot4→skunk, slot5→deer
+    const slots = [
+      makeSlot({ id: 's1', mediaId: 'mouse' }),
+      makeSlot({ id: 's2', mediaId: 'dog' }),
+      makeSlot({ id: 's3', mediaId: 'chair' }),
+      makeSlot({ id: 's4', mediaId: 'table' }),
+      makeSlot({ id: 's5', mediaId: 'deer' }),
+    ];
+    const template = makeTemplate(slots);
+    const media = [
+      makeMedia('dog', 1),
+      makeMedia('cat', 2),
+      makeMedia('mouse', 3),
+      makeMedia('skunk', 4),
+      makeMedia('deer', 5),
+      makeMedia('bug', 6),
+    ];
+
+    const { assignments: result, summary } = assignMediaToSlots(template, media);
+
+    // Valid bindings should be pinned (mouse, dog, deer)
+    expect(result.get('s1')?.id).toBe('mouse');
+    expect(result.get('s2')?.id).toBe('dog');
+    expect(result.get('s5')?.id).toBe('deer');
+    expect(summary.kept).toHaveLength(3);
+
+    // Invalid bindings (chair, table) should be cleared
+    expect(summary.cleared).toHaveLength(2);
+    expect(summary.cleared.map((c) => c.originalMediaId)).toEqual(
+      expect.arrayContaining(['chair', 'table']),
+    );
+
+    // Remaining campaign media in order: cat(2), skunk(4), bug(6)
+    // Auto-fill: slot3→cat, slot4→skunk
+    expect(result.get('s3')?.id).toBe('cat');
+    expect(result.get('s4')?.id).toBe('skunk');
+    expect(summary.autoFilled).toHaveLength(2);
+    expect(summary.empty).toHaveLength(0);
+  });
+
+  it('matches by attachmentId when exact mediaId not found (cross-campaign)', () => {
+    // Layout was built with media from Campaign A (IDs start with "ca-")
+    // but the gallery renders in Campaign B (IDs start with "cb-")
+    // Same underlying WP attachments → same attachmentId
+    const slots = [
+      makeSlot({ id: 's1', mediaId: 'ca-x', mediaAttachmentId: 100, mediaUrl: 'https://example.com/x.jpg' }),
+      makeSlot({ id: 's2', mediaId: 'ca-b', mediaAttachmentId: 202, mediaUrl: 'https://example.com/b.jpg' }),
+      makeSlot({ id: 's3', mediaId: 'ca-a', mediaAttachmentId: 201, mediaUrl: 'https://example.com/a.jpg' }),
+      makeSlot({ id: 's4', mediaId: 'ca-c', mediaAttachmentId: 203, mediaUrl: 'https://example.com/c.jpg' }),
+    ];
+    const template = makeTemplate(slots);
+    // Campaign B has the same images with different IDs but same attachmentIds
+    const media = [
+      makeMedia('cb-a', 1, { attachmentId: 201, url: 'https://example.com/a.jpg' }),
+      makeMedia('cb-b', 2, { attachmentId: 202, url: 'https://example.com/b.jpg' }),
+      makeMedia('cb-c', 3, { attachmentId: 203, url: 'https://example.com/c.jpg' }),
+      makeMedia('cb-d', 4, { attachmentId: 204, url: 'https://example.com/d.jpg' }),
+    ];
+
+    const { assignments: result, summary } = assignMediaToSlots(template, media);
+
+    // s2 (attachmentId 202) → cb-b, s3 (201) → cb-a, s4 (203) → cb-c — all matched by attachmentId
+    expect(result.get('s2')?.id).toBe('cb-b');
+    expect(result.get('s3')?.id).toBe('cb-a');
+    expect(result.get('s4')?.id).toBe('cb-c');
+    expect(summary.kept).toHaveLength(3);
+
+    // s1 (attachmentId 100) has no match in Campaign B → cleared + auto-filled with cb-d
+    expect(result.get('s1')?.id).toBe('cb-d');
+    expect(summary.cleared).toHaveLength(1);
+    expect(summary.autoFilled).toHaveLength(1);
+  });
+
+  it('matches by URL when attachmentId is missing (cross-campaign)', () => {
+    // External media without attachmentId — falls back to URL matching
+    const slots = [
+      makeSlot({ id: 's1', mediaId: 'other-1', mediaUrl: 'https://cdn.example.com/photo-a.jpg' }),
+      makeSlot({ id: 's2', mediaId: 'other-2', mediaUrl: 'https://cdn.example.com/photo-x.jpg' }),
+    ];
+    const template = makeTemplate(slots);
+    const media = [
+      makeMedia('camp-1', 1, { url: 'https://cdn.example.com/photo-a.jpg' }),
+      makeMedia('camp-2', 2, { url: 'https://cdn.example.com/photo-b.jpg' }),
+    ];
+
+    const { assignments: result, summary } = assignMediaToSlots(template, media);
+
+    // s1 URL matches camp-1 → kept
+    expect(result.get('s1')?.id).toBe('camp-1');
+    expect(summary.kept).toHaveLength(1);
+
+    // s2 URL doesn't match any campaign media → cleared, auto-filled with camp-2
+    expect(result.get('s2')?.id).toBe('camp-2');
+    expect(summary.cleared).toHaveLength(1);
+    expect(summary.autoFilled).toHaveLength(1);
   });
 });
 
@@ -201,7 +344,7 @@ describe('getUnassignedMedia', () => {
     const slots = [makeSlot({ id: 's1' })];
     const template = makeTemplate(slots);
     const media = [makeMedia('m1', 1), makeMedia('m2', 2), makeMedia('m3', 3)];
-    const assignments = assignMediaToSlots(template, media);
+    const { assignments } = assignMediaToSlots(template, media);
 
     const unassigned = getUnassignedMedia(template, media, assignments);
 
@@ -213,7 +356,7 @@ describe('getUnassignedMedia', () => {
     const slots = [makeSlot({ id: 's1' }), makeSlot({ id: 's2' })];
     const template = makeTemplate(slots);
     const media = [makeMedia('m1', 1), makeMedia('m2', 2)];
-    const assignments = assignMediaToSlots(template, media);
+    const { assignments } = assignMediaToSlots(template, media);
 
     const unassigned = getUnassignedMedia(template, media, assignments);
 
@@ -223,7 +366,7 @@ describe('getUnassignedMedia', () => {
   it('returns all media when no slots exist', () => {
     const template = makeTemplate([]);
     const media = [makeMedia('m1', 1), makeMedia('m2', 2)];
-    const assignments = assignMediaToSlots(template, media);
+    const { assignments } = assignMediaToSlots(template, media);
 
     const unassigned = getUnassignedMedia(template, media, assignments);
 
@@ -234,7 +377,7 @@ describe('getUnassignedMedia', () => {
     const slots = [makeSlot({ id: 's1' })];
     const template = makeTemplate(slots);
     const media = [makeMedia('z', 3), makeMedia('a', 1), makeMedia('b', 2)];
-    const assignments = assignMediaToSlots(template, media);
+    const { assignments } = assignMediaToSlots(template, media);
 
     const unassigned = getUnassignedMedia(template, media, assignments);
 

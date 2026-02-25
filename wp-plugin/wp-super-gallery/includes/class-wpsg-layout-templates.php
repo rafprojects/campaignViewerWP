@@ -307,6 +307,8 @@ class WPSG_Layout_Templates {
                 'objectFit'      => in_array( $s['objectFit'] ?? '', $valid_fits, true ) ? $s['objectFit'] : 'cover',
                 'objectPosition' => sanitize_text_field( $s['objectPosition'] ?? '50% 50%' ),
                 'mediaId'        => isset( $s['mediaId'] ) ? sanitize_text_field( $s['mediaId'] ) : null,
+                'mediaAttachmentId' => isset( $s['mediaAttachmentId'] ) ? intval( $s['mediaAttachmentId'] ) : null,
+                'mediaUrl'       => isset( $s['mediaUrl'] ) ? esc_url_raw( $s['mediaUrl'] ) : null,
                 'clickAction'    => in_array( $s['clickAction'] ?? '', $valid_clicks, true ) ? $s['clickAction'] : 'lightbox',
                 'hoverEffect'    => in_array( $s['hoverEffect'] ?? '', $valid_hovers, true ) ? $s['hoverEffect'] : 'pop',
             ];

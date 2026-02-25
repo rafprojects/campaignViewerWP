@@ -148,6 +148,10 @@ export interface LayoutSlot {
   objectPosition: string;
   /** Fixed media binding (overrides auto-assignment) */
   mediaId?: string;
+  /** WP attachment post ID for cross-campaign matching (same image → same attachmentId). */
+  mediaAttachmentId?: number;
+  /** Media URL for cross-campaign matching fallback. */
+  mediaUrl?: string;
   /** Click behavior in rendered gallery */
   clickAction: 'lightbox' | 'none';
   /** Hover behavior in rendered gallery */

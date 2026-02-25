@@ -25,7 +25,7 @@ export interface LayoutSlotComponentProps {
   /** Called on every drag frame (for smart guides). */
   onDragFrame?: (id: string, pxX: number, pxY: number) => void;
   /** Called when a media item is dropped onto this slot. */
-  onMediaDrop?: (slotId: string, mediaId: string) => void;
+  onMediaDrop?: (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) => void;
 }
 
 // ── Minimum slot size (px) ───────────────────────────────────
@@ -97,7 +97,12 @@ export function LayoutSlotComponent({
       setIsDragOver(false);
       const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
       if (mediaId && onMediaDrop) {
-        onMediaDrop(slot.id, mediaId);
+        let meta: { attachmentId?: number; url?: string } | undefined;
+        try {
+          const raw = e.dataTransfer.getData('application/x-wpsg-media-meta');
+          if (raw) meta = JSON.parse(raw);
+        } catch { /* ignore parse errors */ }
+        onMediaDrop(slot.id, mediaId, meta);
       }
     },
     [slot.id, onMediaDrop],

@@ -17,6 +17,7 @@ import {
   Tabs,
   Slider,
   FileButton,
+  Select,
 } from '@mantine/core';
 import {
   IconDeviceFloppy,
@@ -40,6 +41,7 @@ import {
 import { LayoutCanvas } from './LayoutCanvas';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { MediaPickerSidebar } from './MediaPickerSidebar';
+import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 
 // ── Aspect ratio presets ─────────────────────────────────────
 
@@ -77,40 +79,32 @@ export function LayoutBuilderModal({
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ── Fetch all campaign media for the builder's media picker ──
-  const { data: allCampaignMedia } = useSWR<MediaItem[]>(
-    opened ? 'builder-all-media' : null,
+  // ── Fetch campaign list for the media picker ──
+  const { data: campaigns } = useSWR<Array<{ id: number; title: string }>>(
+    opened ? 'builder-campaigns' : null,
     async () => {
-      const response = await apiClient.get<{ items: Array<{ id: number }> }>(
+      const response = await apiClient.get<{ items: Array<{ id: number; title: string }> }>(
         '/wp-json/wp-super-gallery/v1/campaigns?per_page=50',
       );
-      const campaigns = response.items ?? [];
-      const mediaArrays = await Promise.all(
-        campaigns.map((c) =>
-          apiClient
-            .get<MediaItem[] | { items?: MediaItem[] }>(
-              `/wp-json/wp-super-gallery/v1/campaigns/${c.id}/media`,
-            )
-            .then((res) => (Array.isArray(res) ? res : res.items ?? []))
-            .catch(() => [] as MediaItem[]),
-        ),
-      );
-      // Deduplicate by ID
-      const seen = new Set<string>();
-      const result: MediaItem[] = [];
-      for (const arr of mediaArrays) {
-        for (const item of arr) {
-          if (!seen.has(item.id)) {
-            seen.add(item.id);
-            result.push(item);
-          }
-        }
-      }
-      return result;
+      return response.items ?? [];
     },
     { revalidateOnFocus: false, dedupingInterval: 30_000 },
   );
-  const media = useMemo(() => allCampaignMedia ?? [], [allCampaignMedia]);
+
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+
+  // ── Fetch media for the selected campaign ──
+  const { data: campaignMedia } = useSWR<MediaItem[]>(
+    selectedCampaignId ? `builder-campaign-media-${selectedCampaignId}` : null,
+    async () => {
+      const res = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
+        `/wp-json/wp-super-gallery/v1/campaigns/${selectedCampaignId}/media`,
+      );
+      return Array.isArray(res) ? res : res.items ?? [];
+    },
+    { revalidateOnFocus: false, dedupingInterval: 30_000 },
+  );
+  const media = useMemo(() => campaignMedia ?? [], [campaignMedia]);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [leftTab, setLeftTab] = useState<string | null>('slots');
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
@@ -131,12 +125,24 @@ export function LayoutBuilderModal({
       // Normalize z-indices to sequential integers before saving (P15-G.3)
       builder.normalizeZIndices();
       const t = builder.template;
+
+      // ── DEBUG: Log what we're about to save ──
+      debugGroup('[WPSG] Layout Save — pre-flight');
+      debugLog('Slots being sent:', t.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
+      debugGroupEnd();
+
       let saved: LayoutTemplate;
       if (t.id) {
         saved = await apiClient.updateLayoutTemplate(t.id, t);
       } else {
         saved = await apiClient.createLayoutTemplate(t);
       }
+
+      // ── DEBUG: Log what came back from the server ──
+      debugGroup('[WPSG] Layout Save — response');
+      debugLog('Slots returned:', saved.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
+      debugGroupEnd();
+
       builder.setTemplate(saved);
       builder.markSaved();
       onSaved?.(saved);
@@ -175,7 +181,7 @@ export function LayoutBuilderModal({
   // ── Auto-assign media ──
   const handleAutoAssign = useCallback(() => {
     const mediaIds = media.map((m) => m.id);
-    builder.autoAssignMedia(mediaIds);
+    builder.autoAssignMedia(mediaIds, media);
     announce(`Auto-assigned ${Math.min(mediaIds.length, builder.template.slots.length)} media items`);
   }, [builder, media, announce]);
 
@@ -522,6 +528,20 @@ export function LayoutBuilderModal({
                 </Tabs.Panel>
 
                 <Tabs.Panel value="media">
+                  <Select
+                    size="xs"
+                    mb="sm"
+                    placeholder="Choose a campaign…"
+                    value={selectedCampaignId}
+                    onChange={setSelectedCampaignId}
+                    data={(campaigns ?? []).map((c) => ({
+                      value: String(c.id),
+                      label: c.title,
+                    }))}
+                    clearable
+                    searchable
+                    aria-label="Select campaign for media"
+                  />
                   <MediaPickerSidebar
                     media={media}
                     template={builder.template}

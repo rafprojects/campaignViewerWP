@@ -15,9 +15,9 @@
  *
  * Adapter ID: `'layout-builder'`
  */
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Box, Center, Loader, Text, Stack } from '@mantine/core';
-import { IconLayoutDashboard, IconAlertTriangle } from '@tabler/icons-react';
+import { IconLayoutDashboard, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings, MediaItem, LayoutTemplate, CampaignLayoutBinding } from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@/hooks/useCarousel';
@@ -36,6 +36,8 @@ export interface LayoutBuilderGalleryProps {
   templateId: string;
   /** Per-campaign slot overrides (media binding, focal point). */
   slotOverrides?: CampaignLayoutBinding['slotOverrides'];
+  /** When true, show admin-level assignment info banners. */
+  isAdmin?: boolean;
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -45,6 +47,7 @@ export function LayoutBuilderGallery({
   settings,
   templateId,
   slotOverrides = {},
+  isAdmin = false,
 }: LayoutBuilderGalleryProps) {
   const { template, isLoading, error } = useLayoutTemplate(templateId);
 
@@ -65,8 +68,11 @@ export function LayoutBuilderGallery({
 
   if (isLoading) {
     return (
-      <Center py="xl">
-        <Loader size="lg" aria-label="Loading layout template" />
+      <Center py="xl" mih={200}>
+        <Stack align="center" gap="xs">
+          <Loader size="md" aria-label="Loading layout template" />
+          <Text size="sm" c="dimmed">Loading gallery…</Text>
+        </Stack>
       </Center>
     );
   }
@@ -88,6 +94,7 @@ export function LayoutBuilderGallery({
       media={media}
       settings={settings}
       slotOverrides={slotOverrides}
+      isAdmin={isAdmin}
       lightboxOpen={lightboxOpen}
       currentIndex={currentIndex}
       onOpenAt={openAt}
@@ -105,6 +112,7 @@ interface InnerProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
   slotOverrides: CampaignLayoutBinding['slotOverrides'];
+  isAdmin: boolean;
   lightboxOpen: boolean;
   currentIndex: number;
   onOpenAt: (index: number) => void;
@@ -118,6 +126,7 @@ function LayoutBuilderGalleryInner({
   media,
   settings,
   slotOverrides,
+  isAdmin,
   lightboxOpen,
   currentIndex,
   onOpenAt,
@@ -142,7 +151,7 @@ function LayoutBuilderGalleryInner({
   }, []);
 
   // ── Media assignment ──────────────────────────────────────────────────────
-  const assignments = useMemo(
+  const { assignments, summary } = useMemo(
     () => assignMediaToSlots(template, media, slotOverrides),
     [template, media, slotOverrides],
   );
@@ -161,7 +170,7 @@ function LayoutBuilderGalleryInner({
   const canvasHeight = effectiveWidth / (template.canvasAspectRatio || 16 / 9);
 
   // ── Hover styles ──────────────────────────────────────────────────────────
-  // We generate two sets — drop-shadow for clip-path shapes, box-shadow for rectangles
+  // Two sets — drop-shadow for clip-path shapes (on wrapper div), box-shadow for rectangles.
   const hoverStylesCss = useMemo(() => {
     const dropShadow = buildTileStyles({ scope: 'lb', settings });
     const boxShadow = buildBoxShadowStyles('lb-rect', settings);
@@ -205,6 +214,47 @@ function LayoutBuilderGalleryInner({
           {mediaCount > slotCount
             ? `${mediaCount - slotCount} media item(s) have no slot — they won't be displayed.`
             : `${slotCount - mediaCount} slot(s) have no media — they'll appear as placeholders.`}
+        </Box>
+      )}
+
+      {/* Admin: slot assignment summary */}
+      {isAdmin && (summary.cleared.length > 0 || summary.autoFilled.length > 0 || summary.empty.length > 0) && (
+        <Box
+          style={{
+            display: 'flex',
+            gap: 8,
+            padding: '8px 12px',
+            borderRadius: 6,
+            background: 'var(--mantine-color-blue-light)',
+            color: 'var(--mantine-color-blue-9)',
+            fontSize: '0.8125rem',
+            lineHeight: 1.5,
+          }}
+        >
+          <IconInfoCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <strong>Slot assignment info</strong>
+            {summary.kept.length > 0 && (
+              <div>
+                Kept bindings: {summary.kept.map((k) => `slot ${k.slotIndex} \u2192 ${k.mediaTitle}`).join(', ')}
+              </div>
+            )}
+            {summary.cleared.length > 0 && (
+              <div>
+                Cleared (media not in campaign): {summary.cleared.map((c) => `slot ${c.slotIndex}`).join(', ')}
+              </div>
+            )}
+            {summary.autoFilled.length > 0 && (
+              <div>
+                Auto-filled from remaining media: {summary.autoFilled.map((a) => `slot ${a.slotIndex} \u2192 ${a.mediaTitle}`).join(', ')}
+              </div>
+            )}
+            {summary.empty.length > 0 && (
+              <div>
+                Empty (no media remaining): slot{summary.empty.length > 1 ? 's' : ''} {summary.empty.join(', ')}
+              </div>
+            )}
+          </div>
         </Box>
       )}
 
@@ -280,7 +330,8 @@ function LayoutBuilderGalleryInner({
               const lightboxIndex = mediaIndexMap.get(assigned.id) ?? 0;
               const isClickable = slot.clickAction === 'lightbox';
 
-              // Choose hover class — clip-path shapes use drop-shadow, rectangles use box-shadow
+              // Choose hover class — drop-shadow for clip-path (on wrapper),
+              // box-shadow for rectangles (direct).
               const hoverClass =
                 slot.hoverEffect !== 'none'
                   ? usesClipPath(slot)
@@ -288,6 +339,104 @@ function LayoutBuilderGalleryInner({
                     : 'wpsg-tile-lb-rect'
                   : '';
 
+              // Media content (shared by clip-path wrapper and rectangle paths)
+              const slotMedia = assigned.type === 'video' ? (
+                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                  <LazyImage
+                    src={assigned.thumbnail || assigned.url}
+                    alt={assigned.title || 'Video'}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: slot.objectFit,
+                      objectPosition: slot.objectPosition,
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.25)',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white" opacity={0.85}>
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+              ) : (
+                <LazyImage
+                  src={assigned.thumbnail || assigned.url}
+                  alt={assigned.title || 'Image'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: slot.objectFit,
+                    objectPosition: slot.objectPosition,
+                  }}
+                />
+              );
+
+              // Interaction props (shared)
+              const interactionProps = {
+                role: isClickable ? ('button' as const) : undefined,
+                tabIndex: isClickable ? 0 : undefined,
+                'aria-label': isClickable
+                  ? `View ${assigned.title || 'media'} in lightbox`
+                  : undefined,
+                onClick: isClickable ? () => onOpenAt(lightboxIndex) : undefined,
+                onKeyDown: isClickable
+                  ? (e: React.KeyboardEvent<HTMLDivElement>) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onOpenAt(lightboxIndex);
+                      }
+                    }
+                  : undefined,
+              };
+
+              // Clip-path shapes: outer wrapper gets hover filter (drop-shadow),
+              // inner div gets clip-path so the shadow isn't clipped away.
+              if (clipPath) {
+                return (
+                  <div
+                    key={slot.id}
+                    className={hoverClass}
+                    style={{
+                      position: 'absolute',
+                      left: pxX,
+                      top: pxY,
+                      width: pxW,
+                      height: pxH,
+                      zIndex: slot.zIndex,
+                      cursor: isClickable ? 'pointer' : 'default',
+                    }}
+                    {...interactionProps}
+                  >
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        clipPath,
+                        ...maskStyle,
+                        border:
+                          slot.borderWidth > 0
+                            ? `${slot.borderWidth}px solid ${slot.borderColor}`
+                            : undefined,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {slotMedia}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Rectangle slots: box-shadow works directly on the element.
               return (
                 <div
                   key={slot.id}
@@ -299,74 +448,18 @@ function LayoutBuilderGalleryInner({
                     width: pxW,
                     height: pxH,
                     zIndex: slot.zIndex,
-                    clipPath,                    ...maskStyle,                    borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : undefined,
+                    borderRadius: slot.borderRadius,
+                    ...maskStyle,
                     border:
                       slot.borderWidth > 0
                         ? `${slot.borderWidth}px solid ${slot.borderColor}`
                         : undefined,
                     cursor: isClickable ? 'pointer' : 'default',
-                    overflow: clipPath ? undefined : 'hidden',
+                    overflow: 'hidden',
                   }}
-                  role={isClickable ? 'button' : undefined}
-                  tabIndex={isClickable ? 0 : undefined}
-                  aria-label={
-                    isClickable
-                      ? `View ${assigned.title || 'media'} in lightbox`
-                      : undefined
-                  }
-                  onClick={isClickable ? () => onOpenAt(lightboxIndex) : undefined}
-                  onKeyDown={
-                    isClickable
-                      ? (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onOpenAt(lightboxIndex);
-                          }
-                        }
-                      : undefined
-                  }
+                  {...interactionProps}
                 >
-                  {assigned.type === 'video' ? (
-                    // Video thumbnail with play indicator
-                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                      <LazyImage
-                        src={assigned.thumbnail || assigned.url}
-                        alt={assigned.title || 'Video'}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: slot.objectFit,
-                          objectPosition: slot.objectPosition,
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: 'rgba(0,0,0,0.25)',
-                          pointerEvents: 'none',
-                        }}
-                      >
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="white" opacity={0.85}>
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                    </div>
-                  ) : (
-                    <LazyImage
-                      src={assigned.thumbnail || assigned.url}
-                      alt={assigned.title || 'Image'}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: slot.objectFit,
-                        objectPosition: slot.objectPosition,
-                      }}
-                    />
-                  )}
+                  {slotMedia}
                 </div>
               );
             })}

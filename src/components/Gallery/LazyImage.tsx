@@ -19,6 +19,10 @@ interface LazyImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'onLo
   style?: CSSProperties;
   /** Fade-in duration in ms. Default 200. */
   fadeDuration?: number;
+  /** Called once when the image successfully loads (after fade-in starts). */
+  onLoaded?: () => void;
+  /** Override native loading attribute. Default "lazy". */
+  loading?: 'lazy' | 'eager';
 }
 
 export function LazyImage({
@@ -26,23 +30,29 @@ export function LazyImage({
   alt = '',
   style,
   fadeDuration = 200,
+  onLoaded,
+  loading = 'lazy',
   ...rest
 }: LazyImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
 
-  const handleLoad = useCallback(() => setLoaded(true), []);
+  const handleLoad = useCallback(() => {
+    setLoaded(true);
+    onLoaded?.();
+  }, [onLoaded]);
   const handleError = useCallback(() => {
     setErrored(true);
     setLoaded(true); // show fallback without skeleton
-  }, []);
+    onLoaded?.();
+  }, [onLoaded]);
 
   return (
     <img
       {...rest}
       src={errored ? FALLBACK_IMAGE_SRC : src}
       alt={alt}
-      loading="lazy"
+      loading={loading}
       onLoad={handleLoad}
       onError={handleError}
       style={{

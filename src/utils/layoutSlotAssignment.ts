@@ -1,48 +1,106 @@
 import type { LayoutTemplate, LayoutSlot, MediaItem, CampaignLayoutBinding } from '@/types';
+import { debugGroup, debugLog, debugGroupEnd } from './debug';
+
+// ── Assignment summary (for admin notification) ─────────────────────────────
+
+/** Describes what happened during media→slot assignment for admin messaging. */
+export interface SlotAssignmentSummary {
+  /** Slots whose template/override binding matched campaign media — kept as-is. */
+  kept: { slotIndex: number; mediaTitle: string }[];
+  /** Slots whose template/override binding did NOT match campaign media — cleared. */
+  cleared: { slotIndex: number; originalMediaId: string }[];
+  /** Cleared slots that were auto-filled from remaining campaign media. */
+  autoFilled: { slotIndex: number; mediaTitle: string }[];
+  /** Slots left empty (no media remaining to fill them). */
+  empty: number[];
+}
+
+/** Return value of `assignMediaToSlots`. */
+export interface SlotAssignmentResult {
+  assignments: Map<string, MediaItem | undefined>;
+  summary: SlotAssignmentSummary;
+}
 
 /**
  * Assigns media items to layout template slots.
  *
  * Logic:
  * 1. Iterate slots in their array order.
- * 2. If the slot has an explicit override (via `slotOverrides[slot.id].mediaId`),
- *    find and assign that specific media item.
- * 3. Otherwise, assign the next available media item by `order` field.
- * 4. Slots that exceed the available media count remain empty (undefined value).
- * 5. Extra media items beyond the slot count are ignored in "full" mode,
- *    or can be shown in the thumbnail strip in "viewport" mode (handled by caller).
+ * 2. If the slot has an explicit override (via `slotOverrides[slot.id].mediaId`
+ *    or `slot.mediaId`) AND that media exists in the campaign, keep the binding.
+ * 3. If the bound media is NOT in the campaign, clear the binding and mark it
+ *    for auto-fill from remaining campaign media (sorted by `order`).
+ * 4. Unbound slots are auto-filled from remaining media.
+ * 5. Slots that still have no media after auto-fill remain empty (placeholder).
+ * 6. Returns both the assignment map and a summary for admin notification.
  *
  * @param template  - The layout template defining the slots.
  * @param media     - Available media items (will be sorted by `order`).
  * @param overrides - Per-slot overrides from the campaign binding.
- * @returns Map from slot ID → assigned MediaItem (or undefined for empty slots).
+ * @returns Assignment map + summary describing what happened.
  */
 export function assignMediaToSlots(
   template: LayoutTemplate,
   media: MediaItem[],
   overrides: CampaignLayoutBinding['slotOverrides'] = {},
-): Map<string, MediaItem | undefined> {
+): SlotAssignmentResult {
   const result = new Map<string, MediaItem | undefined>();
+  const summary: SlotAssignmentSummary = { kept: [], cleared: [], autoFilled: [], empty: [] };
+
+  // ── DEBUG: Log inputs so we can trace assignment issues ──
+  debugGroup('[WPSG] assignMediaToSlots');
+  debugLog('Slots:', template.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
+  debugLog('Campaign media (by order):', [...media].sort((a, b) => a.order - b.order).map((m) => `${m.id} (order ${m.order}, ${m.title ?? m.url})`));
+  debugLog('Overrides:', Object.entries(overrides).length > 0 ? overrides : '(none)');
 
   // Sort media by their order field.
   const sortedMedia = [...media].sort((a, b) => a.order - b.order);
 
+  // Build lookup helpers for cross-campaign matching.
+  // The same WP attachment can have different media IDs in different campaigns,
+  // so we fall back to attachmentId or URL matching when exact ID fails.
+  const mediaByAttachmentId = new Map<number, MediaItem>();
+  const mediaByUrl = new Map<string, MediaItem>();
+  for (const m of sortedMedia) {
+    if (m.attachmentId != null && !mediaByAttachmentId.has(m.attachmentId)) {
+      mediaByAttachmentId.set(m.attachmentId, m);
+    }
+    if (m.url && !mediaByUrl.has(m.url)) {
+      mediaByUrl.set(m.url, m);
+    }
+  }
+
   // Track which media IDs have been used (by override or auto-assignment).
   const usedMediaIds = new Set<string>();
 
-  // First pass: resolve explicit overrides.
-  for (const slot of template.slots) {
+  // First pass: resolve explicit bindings (overrides take precedence over template).
+  for (let i = 0; i < template.slots.length; i++) {
+    const slot = template.slots[i];
     const override = overrides[slot.id];
     const fixedMediaId = override?.mediaId ?? slot.mediaId;
 
     if (fixedMediaId) {
-      const item = sortedMedia.find((m) => m.id === fixedMediaId);
+      // 1) Exact ID match
+      let item = sortedMedia.find((m) => m.id === fixedMediaId);
+
+      // 2) Cross-campaign fallback: match by WP attachment ID
+      if (!item && slot.mediaAttachmentId != null) {
+        item = mediaByAttachmentId.get(slot.mediaAttachmentId);
+      }
+
+      // 3) Cross-campaign fallback: match by URL
+      if (!item && slot.mediaUrl) {
+        item = mediaByUrl.get(slot.mediaUrl);
+      }
+
       if (item) {
         result.set(slot.id, item);
         usedMediaIds.add(item.id);
+        summary.kept.push({ slotIndex: i + 1, mediaTitle: item.title || item.url });
+      } else {
+        // Binding references media not in this campaign — clear it.
+        summary.cleared.push({ slotIndex: i + 1, originalMediaId: fixedMediaId });
       }
-      // If the specified mediaId isn't found, the slot will be filled in auto-assign
-      // pass (if possible) or left empty.
     }
   }
 
@@ -50,20 +108,32 @@ export function assignMediaToSlots(
   const availableMedia = sortedMedia.filter((m) => !usedMediaIds.has(m.id));
   let autoIndex = 0;
 
-  for (const slot of template.slots) {
+  for (let i = 0; i < template.slots.length; i++) {
+    const slot = template.slots[i];
     if (result.has(slot.id)) {
-      continue; // Already assigned by override.
+      continue; // Already assigned by binding.
     }
 
     if (autoIndex < availableMedia.length) {
-      result.set(slot.id, availableMedia[autoIndex]);
+      const item = availableMedia[autoIndex];
+      result.set(slot.id, item);
       autoIndex++;
+      summary.autoFilled.push({ slotIndex: i + 1, mediaTitle: item.title || item.url });
     } else {
       result.set(slot.id, undefined); // No media left for this slot.
+      summary.empty.push(i + 1);
     }
   }
 
-  return result;
+  // ── DEBUG: Log results ──
+  debugLog('Final assignments:', Array.from(result.entries()).map(([slotId, item]) => {
+    const idx = template.slots.findIndex((s) => s.id === slotId) + 1;
+    return `slot ${idx} → ${item ? `${item.id} (${item.title ?? item.url})` : '(empty)'}`;
+  }));
+  debugLog('Summary:', JSON.stringify(summary, null, 2));
+  debugGroupEnd();
+
+  return { assignments: result, summary };
 }
 
 /**

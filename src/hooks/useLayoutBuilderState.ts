@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { produce, enableMapSet } from 'immer';
-import type { LayoutTemplate, LayoutSlot, LayoutOverlay } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutOverlay, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 
 enableMapSet();
@@ -77,12 +77,12 @@ export interface LayoutBuilderActions {
   updateSlot: (id: string, updates: Partial<LayoutSlot>) => void;
   /** Nudge selected slots by a delta (arrow key). */
   nudgeSlots: (ids: string[], dx: number, dy: number) => void;
-  /** Assign a specific media item to a slot. */
-  assignMediaToSlot: (slotId: string, mediaId: string) => void;
+  /** Assign a specific media item to a slot (with optional cross-campaign metadata). */
+  assignMediaToSlot: (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) => void;
   /** Clear fixed media assignment for a slot. */
   clearSlotMedia: (slotId: string) => void;
-  /** Auto-assign media to all slots by order (sets mediaId). */
-  autoAssignMedia: (mediaIds: string[]) => void;
+  /** Auto-assign media to all slots by order (sets mediaId + cross-campaign metadata). */
+  autoAssignMedia: (mediaIds: string[], mediaItems?: MediaItem[]) => void;
 
   // ── Z-Index reorder (P15-G) ──
   /** Move slot(s) to the top z-index. */
@@ -307,10 +307,14 @@ export function useLayoutBuilderState(
   );
 
   const assignMediaToSlot = useCallback(
-    (slotId: string, mediaId: string) =>
+    (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) =>
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === slotId);
-        if (slot) slot.mediaId = mediaId;
+        if (slot) {
+          slot.mediaId = mediaId;
+          slot.mediaAttachmentId = meta?.attachmentId;
+          slot.mediaUrl = meta?.url;
+        }
       }),
     [mutate],
   );
@@ -319,16 +323,29 @@ export function useLayoutBuilderState(
     (slotId: string) =>
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === slotId);
-        if (slot) slot.mediaId = undefined;
+        if (slot) {
+          slot.mediaId = undefined;
+          slot.mediaAttachmentId = undefined;
+          slot.mediaUrl = undefined;
+        }
       }),
     [mutate],
   );
 
   const autoAssignMedia = useCallback(
-    (mediaIds: string[]) =>
+    (mediaIds: string[], mediaItems?: MediaItem[]) =>
       mutate((d) => {
         for (let i = 0; i < d.slots.length; i++) {
-          d.slots[i].mediaId = i < mediaIds.length ? mediaIds[i] : undefined;
+          if (i < mediaIds.length) {
+            d.slots[i].mediaId = mediaIds[i];
+            const item = mediaItems?.find((m) => m.id === mediaIds[i]);
+            d.slots[i].mediaAttachmentId = item?.attachmentId;
+            d.slots[i].mediaUrl = item?.url;
+          } else {
+            d.slots[i].mediaId = undefined;
+            d.slots[i].mediaAttachmentId = undefined;
+            d.slots[i].mediaUrl = undefined;
+          }
         }
       }),
     [mutate],
