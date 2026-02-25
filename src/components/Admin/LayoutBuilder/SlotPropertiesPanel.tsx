@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import {
   Stack,
   Text,
@@ -11,6 +12,7 @@ import {
   TextInput,
   ActionIcon,
   Tooltip,
+  Switch,
 } from '@mantine/core';
 import {
   IconArrowBigUpLine,
@@ -83,6 +85,15 @@ export function SlotPropertiesPanel({
   onBringForward,
   onSendBackward,
 }: SlotPropertiesPanelProps) {
+  const [lockSizeRatio, setLockSizeRatio] = useState(false);
+  const aspectRatio = useMemo(() => {
+    const safeWidth = slot.width > 0 ? slot.width : 1;
+    const safeHeight = slot.height > 0 ? slot.height : 1;
+    return safeHeight / safeWidth;
+  }, [slot.width, slot.height]);
+
+  const clampPct = (value: number) => Math.max(1, Math.min(100, value));
+
   return (
     <Stack gap="sm">
       <Text size="sm" fw={700}>
@@ -116,11 +127,25 @@ export function SlotPropertiesPanel({
 
       {/* ── Size ── */}
       <Divider label="Size" labelPosition="left" />
+      <Switch
+        size="xs"
+        label="Lock width/height ratio"
+        checked={lockSizeRatio}
+        onChange={(e) => setLockSizeRatio(e.currentTarget.checked)}
+      />
       <Group grow gap="xs">
         <NumberInput
           label="Width %"
           value={slot.width}
-          onChange={(val) => onUpdate({ width: Number(val) || 1 })}
+          onChange={(val) => {
+            const width = clampPct(Number(val) || 1);
+            if (!lockSizeRatio) {
+              onUpdate({ width });
+              return;
+            }
+            const height = clampPct(Number((width * aspectRatio).toFixed(2)));
+            onUpdate({ width, height });
+          }}
           min={1}
           max={100}
           step={0.5}
@@ -130,7 +155,15 @@ export function SlotPropertiesPanel({
         <NumberInput
           label="Height %"
           value={slot.height}
-          onChange={(val) => onUpdate({ height: Number(val) || 1 })}
+          onChange={(val) => {
+            const height = clampPct(Number(val) || 1);
+            if (!lockSizeRatio) {
+              onUpdate({ height });
+              return;
+            }
+            const width = clampPct(Number((height / aspectRatio).toFixed(2)));
+            onUpdate({ width, height });
+          }}
           min={1}
           max={100}
           step={0.5}

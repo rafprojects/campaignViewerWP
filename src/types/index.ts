@@ -212,6 +212,12 @@ export interface LayoutTemplate {
   canvasMaxWidth: number;
   /** CSS background color for the canvas */
   backgroundColor: string;
+  /** Optional background image URL (layered on top of backgroundColor) */
+  backgroundImage?: string;
+  /** How the background image fills the canvas (default: 'cover') */
+  backgroundImageFit?: 'cover' | 'contain' | 'fill';
+  /** Background image opacity 0–1 (default: 1) */
+  backgroundImageOpacity?: number;
   /** Ordered list of media slots */
   slots: LayoutSlot[];
   /** Decorative overlay layers (stretch P15-H) */

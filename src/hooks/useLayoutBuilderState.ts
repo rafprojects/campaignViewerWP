@@ -93,8 +93,14 @@ export interface LayoutBuilderActions {
   bringForward: (ids: string[]) => void;
   /** Decrease z-index by 1 (swap with the slot below). */
   sendBackward: (ids: string[]) => void;
-  /** Normalize z-indices to sequential 1..N (no gaps). */
-  normalizeZIndices: () => void;
+  /** Normalize z-indices to sequential 1..N (no gaps). Returns the normalized template synchronously. */
+  normalizeZIndices: () => LayoutTemplate;
+  /** Update canvas background image URL ('' = none). */
+  setBackgroundImage: (url: string) => void;
+  /** Update background image fit mode. */
+  setBackgroundImageFit: (fit: 'cover' | 'contain' | 'fill') => void;
+  /** Update background image opacity. */
+  setBackgroundImageOpacity: (opacity: number) => void;
 
   // ── Overlay CRUD (P15-H) ──
   /** Add a new overlay. Returns the overlay's ID. */
@@ -192,6 +198,21 @@ export function useLayoutBuilderState(
 
   const setBackgroundColor = useCallback(
     (color: string) => mutate((d) => { d.backgroundColor = color; }),
+    [mutate],
+  );
+
+  const setBackgroundImage = useCallback(
+    (url: string) => mutate((d) => { d.backgroundImage = url || undefined; }),
+    [mutate],
+  );
+
+  const setBackgroundImageFit = useCallback(
+    (fit: 'cover' | 'contain' | 'fill') => mutate((d) => { d.backgroundImageFit = fit; }),
+    [mutate],
+  );
+
+  const setBackgroundImageOpacity = useCallback(
+    (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }),
     [mutate],
   );
 
@@ -435,15 +456,27 @@ export function useLayoutBuilderState(
   );
 
   const normalizeZIndices = useCallback(
-    () =>
+    (): LayoutTemplate => {
+      // Produce the normalized template synchronously so the caller can use it
+      // immediately (React state updates are async and would be read stale).
+      const normalized = produce(template, (d) => {
+        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
+        sorted.forEach((ref, i) => {
+          const real = d.slots.find((s) => s.id === ref.id)!;
+          real.zIndex = i + 1;
+        });
+      });
+      // Also apply to React state for consistency (won't affect in-flight save).
       mutate((d) => {
         const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
         sorted.forEach((ref, i) => {
           const real = d.slots.find((s) => s.id === ref.id)!;
           real.zIndex = i + 1;
         });
-      }),
-    [mutate],
+      });
+      return normalized;
+    },
+    [template, mutate],
   );
 
   // ── Overlay CRUD (P15-H) ──────────────────────────────────
@@ -596,6 +629,9 @@ export function useLayoutBuilderState(
     setName,
     setAspectRatio,
     setBackgroundColor,
+    setBackgroundImage,
+    setBackgroundImageFit,
+    setBackgroundImageOpacity,
     // Slot CRUD
     addSlot,
     removeSlots,

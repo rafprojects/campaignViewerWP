@@ -29,6 +29,8 @@ export interface LayoutCanvasProps {
   onOverlayResize?: (id: string, x: number, y: number, w: number, h: number) => void;
   /** When false, overlay Rnd elements are hidden in edit mode so slots below are reachable. */
   overlaysVisible?: boolean;
+  /** Snap detection distance in canvas pixels (default: 5). Higher = snaps from further away. */
+  snapThresholdPx?: number;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -54,6 +56,7 @@ export function LayoutCanvas({
   onOverlayMove,
   onOverlayResize,
   overlaysVisible = true,
+  snapThresholdPx = 5,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -125,7 +128,7 @@ export function LayoutCanvas({
         .filter((s) => s.id !== slotId)
         .map((s) => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
 
-      const result = computeGuides(dragging, others, { width: canvasWidth, height: canvasHeight });
+      const result = computeGuides(dragging, others, { width: canvasWidth, height: canvasHeight }, snapThresholdPx);
       lastGuideResultRef.current = { snapX: result.snapX, snapY: result.snapY };
       setActiveGuides(result.guides);
     },
@@ -211,6 +214,33 @@ export function LayoutCanvas({
           clipPath: isPreview ? undefined : 'none',
         }}
       >
+        {/* Background image layer (below slots) */}
+        {template.backgroundImage && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: 'none',
+              borderRadius: isPreview ? 0 : 2,
+              overflow: 'hidden',
+            }}
+          >
+            <img
+              src={template.backgroundImage}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: template.backgroundImageFit ?? 'cover',
+                objectPosition: 'center',
+                opacity: template.backgroundImageOpacity ?? 1,
+                display: 'block',
+              }}
+              draggable={false}
+            />
+          </div>
+        )}
         {template.slots.map((slot, index) => {
           const pos = pctToPx(slot.x, slot.y, slot.width, slot.height);
           const assignedMedia = mediaAssignments.get(slot.id);

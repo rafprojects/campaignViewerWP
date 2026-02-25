@@ -265,8 +265,17 @@ class WPSG_Layout_Templates {
             'canvasAspectRatio' => floatval( $data['canvasAspectRatio'] ?? ( 16 / 9 ) ),
             'canvasMinWidth'    => max( 0, intval( $data['canvasMinWidth'] ?? 320 ) ),
             'canvasMaxWidth'    => max( 0, intval( $data['canvasMaxWidth'] ?? 0 ) ),
-            'backgroundColor'   => sanitize_text_field( $data['backgroundColor'] ?? '#1a1a2e' ),
-            'slots'             => self::sanitize_slots( $data['slots'] ?? [] ),
+            'backgroundColor'      => sanitize_text_field( $data['backgroundColor'] ?? '#1a1a2e' ),
+            'backgroundImage'      => isset( $data['backgroundImage'] ) && $data['backgroundImage'] !== ''
+                ? esc_url_raw( $data['backgroundImage'] )
+                : null,
+            'backgroundImageFit'   => in_array( $data['backgroundImageFit'] ?? '', [ 'cover', 'contain', 'fill' ], true )
+                ? $data['backgroundImageFit']
+                : 'cover',
+            'backgroundImageOpacity' => isset( $data['backgroundImageOpacity'] )
+                ? max( 0, min( 1, floatval( $data['backgroundImageOpacity'] ) ) )
+                : 1,
+            'slots'                => self::sanitize_slots( $data['slots'] ?? [] ),
             'overlays'          => self::sanitize_overlays( $data['overlays'] ?? [] ),
             'createdAt'         => $data['createdAt'] ?? $now,
             'updatedAt'         => $now,
@@ -326,10 +335,18 @@ class WPSG_Layout_Templates {
             return [];
         }
 
-        return array_values( array_map( function ( $o ) {
+        return array_values( array_filter( array_map( function ( $o ) {
+            $image_url = esc_url_raw( $o['imageUrl'] ?? '' );
+
+            // Never persist blob URLs; they are local-tab only and break
+            // when viewed later in campaign rendering.
+            if ( strpos( $image_url, 'blob:' ) === 0 ) {
+                return null;
+            }
+
             return [
                 'id'            => sanitize_text_field( $o['id'] ?? wp_generate_uuid4() ),
-                'imageUrl'      => esc_url_raw( $o['imageUrl'] ?? '' ),
+                'imageUrl'      => $image_url,
                 'x'             => self::clamp_pct( $o['x'] ?? 0 ),
                 'y'             => self::clamp_pct( $o['y'] ?? 0 ),
                 'width'         => self::clamp_pct( $o['width'] ?? 100 ),
@@ -338,7 +355,9 @@ class WPSG_Layout_Templates {
                 'opacity'       => max( 0, min( 1, floatval( $o['opacity'] ?? 1 ) ) ),
                 'pointerEvents' => (bool) ( $o['pointerEvents'] ?? false ),
             ];
-        }, $overlays ) );
+        }, $overlays ), static function ( $o ) {
+            return is_array( $o );
+        } ) );
     }
 
     /**
@@ -385,6 +404,13 @@ class WPSG_Layout_Templates {
         // v0 → v1: no-op (initial version).
         if ( $version < 1 ) {
             $template['schemaVersion'] = 1;
+        }
+
+        // Sanitize persisted overlays from older editor states where blob URLs
+        // may have been saved. Blob URLs are tab-local and invalid for later
+        // campaign rendering.
+        if ( isset( $template['overlays'] ) && is_array( $template['overlays'] ) ) {
+            $template['overlays'] = self::sanitize_overlays( $template['overlays'] );
         }
 
         // Future migrations go here:

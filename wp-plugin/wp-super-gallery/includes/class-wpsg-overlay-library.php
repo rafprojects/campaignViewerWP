@@ -96,6 +96,13 @@ class WPSG_Overlay_Library {
     public static function handle_upload( array $file ) {
         // Allowed MIME types for overlays.
         $allowed_types = [ 'image/png', 'image/svg+xml', 'image/webp', 'image/gif' ];
+        // WordPress expects "extension => mime" for upload mimes.
+        $allowed_mimes = [
+            'png'  => 'image/png',
+            'svg'  => 'image/svg+xml',
+            'webp' => 'image/webp',
+            'gif'  => 'image/gif',
+        ];
 
         if ( ! function_exists( 'wp_handle_upload' ) ) {
             require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -114,18 +121,20 @@ class WPSG_Overlay_Library {
         $overrides = [
             'test_form'   => false,
             'test_type'   => true,
-            'mimes'       => array_combine( $allowed_types, $allowed_types ),
+            'mimes'       => $allowed_mimes,
             'upload_error_handler' => null,
         ];
 
         // Temporarily override WordPress upload directory.
-        $upload_dir_filter = function () use ( $target_dir, $target_url ) {
+        $base_dir = $upload_dir['basedir'];
+        $base_url = $upload_dir['baseurl'];
+        $upload_dir_filter = function () use ( $target_dir, $target_url, $base_dir, $base_url ) {
             return [
                 'path'    => $target_dir,
                 'url'     => $target_url,
                 'subdir'  => '/' . self::UPLOAD_SUBDIR,
-                'basedir' => wp_upload_dir()['basedir'],
-                'baseurl' => wp_upload_dir()['baseurl'],
+                'basedir' => $base_dir,
+                'baseurl' => $base_url,
                 'error'   => false,
             ];
         };

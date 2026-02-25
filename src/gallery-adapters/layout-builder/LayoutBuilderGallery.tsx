@@ -218,7 +218,7 @@ function LayoutBuilderGalleryInner({
       )}
 
       {/* Admin: slot assignment summary */}
-      {isAdmin && (summary.cleared.length > 0 || summary.autoFilled.length > 0 || summary.empty.length > 0) && (
+        {isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
         <Box
           style={{
             display: 'flex',
@@ -277,6 +277,26 @@ function LayoutBuilderGalleryInner({
             role="img"
             aria-label={`Layout gallery: ${template.name}`}
           >
+            {/* Background image layer (below slots) */}
+            {template.backgroundImage && (
+              <img
+                src={template.backgroundImage}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: template.backgroundImageFit ?? 'cover',
+                  objectPosition: 'center',
+                  opacity: template.backgroundImageOpacity ?? 1,
+                  zIndex: 0,
+                  pointerEvents: 'none',
+                  display: 'block',
+                }}
+                draggable={false}
+              />
+            )}
             {template.slots.map((rawSlot) => {
               const slot = resolveSlotWithOverrides(rawSlot, slotOverrides);
               const assigned = assignments.get(slot.id);
@@ -423,9 +443,16 @@ function LayoutBuilderGalleryInner({
                         height: '100%',
                         clipPath,
                         ...maskStyle,
-                        border:
+                        // filter: drop-shadow is applied AFTER clip-path in the
+                        // CSS rendering pipeline, so the shadow follows the
+                        // clipped shape boundary (unlike inset box-shadow which
+                        // is clipped along with the element's painted output).
+                        filter:
                           slot.borderWidth > 0
-                            ? `${slot.borderWidth}px solid ${slot.borderColor}`
+                            ? (() => {
+                                const blur = Math.max(1, Math.ceil(slot.borderWidth / 2));
+                                return `drop-shadow(0 0 ${blur}px ${slot.borderColor}) drop-shadow(0 0 ${blur}px ${slot.borderColor})`;
+                              })()
                             : undefined,
                         overflow: 'hidden',
                       }}
@@ -466,6 +493,12 @@ function LayoutBuilderGalleryInner({
 
             {/* Overlay layers (P15-H) — rendered above all slots */}
             {template.overlays.map((overlay) => {
+              // Blob URLs are only valid in the browser tab that created them
+              // and should never be persisted for campaign rendering.
+              if (overlay.imageUrl?.startsWith('blob:')) {
+                return null;
+              }
+
               const oPxX = (overlay.x / 100) * effectiveWidth;
               const oPxY = (overlay.y / 100) * canvasHeight;
               const oPxW = (overlay.width / 100) * effectiveWidth;

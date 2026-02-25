@@ -31,6 +31,7 @@ export interface LayoutSlotComponentProps {
 // ── Minimum slot size (px) ───────────────────────────────────
 
 const MIN_SLOT_PX = 30;
+const DRAG_COMMIT_THRESHOLD_PX = 5;
 
 // ── Component ────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export function LayoutSlotComponent({
   onMediaDrop,
 }: LayoutSlotComponentProps) {
   const rndRef = useRef<Rnd>(null);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const clipPath = getClipPath(slot);
 
   const handleMouseDown = useCallback(
@@ -108,12 +110,53 @@ export function LayoutSlotComponent({
     [slot.id, onMediaDrop],
   );
 
-  // ── Selection border style ──
-  const selectionBorder = isSelected
-    ? '2px solid var(--mantine-color-blue-5)'
-    : slot.borderWidth > 0
+  const hasClipOrMask = Boolean(clipPath || slot.maskUrl);
+
+  // ── Rectangle border + selection ring (box-shadow works for un-clipped elements)
+  const regularBorder =
+    slot.borderWidth > 0 && !hasClipOrMask
       ? `${slot.borderWidth}px solid ${slot.borderColor}`
-      : '1px dashed var(--mantine-color-dark-3)';
+      : !isSelected
+        ? '1px dashed var(--mantine-color-dark-3)'
+        : undefined;
+
+  const regularBoxShadow =
+    !hasClipOrMask && isSelected ? '0 0 0 2px var(--mantine-color-blue-5)' : undefined;
+
+  // ── Shape border + selection ring via CSS filter (applied AFTER clip-path)
+  // drop-shadow() follows the clipped visual boundary, unlike box-shadow which
+  // is clipped along with the element's rendered output.
+  const shapeFilterParts: string[] = [];
+  if (hasClipOrMask) {
+    if (slot.borderWidth > 0) {
+      const blur = Math.max(1, Math.ceil(slot.borderWidth / 2));
+      shapeFilterParts.push(
+        `drop-shadow(0 0 ${blur}px ${slot.borderColor})`,
+        `drop-shadow(0 0 ${blur}px ${slot.borderColor})`,
+      );
+    }
+    if (isSelected) {
+      shapeFilterParts.push(
+        'drop-shadow(0 0 2px var(--mantine-color-blue-5))',
+        'drop-shadow(0 0 2px var(--mantine-color-blue-5))',
+      );
+    }
+  }
+  const shapeFilter = shapeFilterParts.length > 0 ? shapeFilterParts.join(' ') : undefined;
+
+  // ── Dynamic handle styles: dim on non-focused slots ──────────────────────
+  const cornerHandle: React.CSSProperties = {
+    width: 8,
+    height: 8,
+    background: isSelected ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-dark-4)',
+    borderRadius: '50%',
+    border: isSelected ? '1.5px solid #fff' : '1px solid rgba(255,255,255,0.35)',
+    zIndex: 10,
+    opacity: isSelected ? 1 : 0.3,
+    transition: 'opacity 0.15s',
+  };
+  const barHandleH: React.CSSProperties = { height: 4, cursor: 'ns-resize', opacity: isSelected ? 1 : 0.2 };
+  const barHandleV: React.CSSProperties = { width: 4, cursor: 'ew-resize', opacity: isSelected ? 1 : 0.2 };
 
   // ── Preview mode: no chrome ──
   if (isPreview) {
@@ -138,10 +181,17 @@ export function LayoutSlotComponent({
           clipPath,
           ...maskStyle,
           overflow: clipPath ? undefined : 'hidden',
-          border:
-            slot.borderWidth > 0
-              ? `${slot.borderWidth}px solid ${slot.borderColor}`
-              : undefined,
+          border: slot.borderWidth > 0 && !hasClipOrMask
+            ? `${slot.borderWidth}px solid ${slot.borderColor}`
+            : undefined,
+          // For clip-path shapes, drop-shadow filter follows the visual shape boundary
+          // (it is applied after clip-path in the CSS rendering pipeline).
+          filter: hasClipOrMask && slot.borderWidth > 0
+            ? (() => {
+                const blur = Math.max(1, Math.ceil(slot.borderWidth / 2));
+                return `drop-shadow(0 0 ${blur}px ${slot.borderColor}) drop-shadow(0 0 ${blur}px ${slot.borderColor})`;
+              })()
+            : undefined,
           cursor: slot.clickAction === 'lightbox' ? 'pointer' : 'default',
         }}
         role="img"
@@ -191,8 +241,22 @@ export function LayoutSlotComponent({
       minHeight={MIN_SLOT_PX}
       maxWidth={canvasWidth}
       maxHeight={canvasHeight}
+      onDragStart={(_e, data) => {
+        dragStartRef.current = { x: data.x, y: data.y };
+      }}
       onDrag={handleDrag}
       onDragStop={(_e, data) => {
+        const start = dragStartRef.current;
+        dragStartRef.current = null;
+        if (start) {
+          const dx = data.x - start.x;
+          const dy = data.y - start.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < DRAG_COMMIT_THRESHOLD_PX) {
+            // Treat tiny movement as a click/focus, not a committed reposition.
+            return;
+          }
+        }
         onDragStop(slot.id, data.x, data.y);
       }}
       onResizeStop={(_e, _dir, ref, _delta, position) => {
@@ -211,14 +275,14 @@ export function LayoutSlotComponent({
         zIndex: slot.zIndex,
       }}
       resizeHandleStyles={{
-        topLeft: handleStyle,
-        topRight: handleStyle,
-        bottomLeft: handleStyle,
-        bottomRight: handleStyle,
-        top: barHandleHorizontal,
-        bottom: barHandleHorizontal,
-        left: barHandleVertical,
-        right: barHandleVertical,
+        topLeft: cornerHandle,
+        topRight: cornerHandle,
+        bottomLeft: cornerHandle,
+        bottomRight: cornerHandle,
+        top: barHandleH,
+        bottom: barHandleH,
+        left: barHandleV,
+        right: barHandleV,
       }}
     >
       <div
@@ -241,7 +305,9 @@ export function LayoutSlotComponent({
           overflow: clipPath ? undefined : 'hidden',
           border: isDragOver
             ? '2px dashed var(--mantine-color-green-5)'
-            : selectionBorder,
+            : regularBorder,
+          boxShadow: regularBoxShadow,
+          filter: shapeFilter,
           boxSizing: 'border-box',
           position: 'relative',
           cursor: 'move',
@@ -316,23 +382,4 @@ export function LayoutSlotComponent({
   );
 }
 
-// ── Resize handle styles ─────────────────────────────────────
-
-const handleStyle: React.CSSProperties = {
-  width: 8,
-  height: 8,
-  background: 'var(--mantine-color-blue-5)',
-  borderRadius: '50%',
-  border: '1.5px solid #fff',
-  zIndex: 10,
-};
-
-const barHandleHorizontal: React.CSSProperties = {
-  height: 4,
-  cursor: 'ns-resize',
-};
-
-const barHandleVertical: React.CSSProperties = {
-  width: 4,
-  cursor: 'ew-resize',
-};
+// Handle styles are now computed per-slot inside the component (see cornerHandle / barHandleH / barHandleV).

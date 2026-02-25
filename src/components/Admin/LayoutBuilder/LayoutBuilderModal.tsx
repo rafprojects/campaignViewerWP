@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import {
   Modal,
@@ -19,6 +19,7 @@ import {
   FileButton,
   Select,
   Loader,
+  ColorInput,
 } from '@mantine/core';
 import {
   IconDeviceFloppy,
@@ -33,6 +34,9 @@ import {
   IconPhoto,
   IconLayersLinked,
   IconUpload,
+  IconPin,
+  IconPinFilled,
+  IconBackground,
 } from '@tabler/icons-react';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
@@ -103,6 +107,34 @@ export function LayoutBuilderModal({
   );
 
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const campaignSelectionStorageKey = useMemo(
+    () => `wpsg_layout_builder_campaign_${initialTemplate?.id ?? 'new'}`,
+    [initialTemplate?.id],
+  );
+
+  // Restore campaign selection when editor opens.
+  useEffect(() => {
+    if (!opened || !campaigns || campaigns.length === 0) return;
+
+    const saved = localStorage.getItem(campaignSelectionStorageKey);
+    const hasSaved = saved && campaigns.some((c) => String(c.id) === saved);
+
+    if (hasSaved) {
+      setSelectedCampaignId(saved);
+      return;
+    }
+
+    setSelectedCampaignId((curr) => {
+      if (curr && campaigns.some((c) => String(c.id) === curr)) return curr;
+      return String(campaigns[0].id);
+    });
+  }, [opened, campaigns, campaignSelectionStorageKey]);
+
+  // Persist campaign selection per-layout while editing.
+  useEffect(() => {
+    if (!selectedCampaignId) return;
+    localStorage.setItem(campaignSelectionStorageKey, selectedCampaignId);
+  }, [selectedCampaignId, campaignSelectionStorageKey]);
 
   // ── Fetch media for the selected campaign ──
   const { data: campaignMedia } = useSWR<MediaItem[]>(
@@ -124,9 +156,12 @@ export function LayoutBuilderModal({
     { revalidateOnFocus: false, dedupingInterval: 60_000 },
   );
   const [isUploadingOverlay, setIsUploadingOverlay] = useState(false);
+  const [isUploadingBg, setIsUploadingBg] = useState(false);
 
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [snapThreshold, setSnapThreshold] = useState(5);
   const [overlaysVisible, setOverlaysVisible] = useState(true);
+  const [isPanelPinned, setIsPanelPinned] = useState(false);
   const [leftTab, setLeftTab] = useState<string | null>('slots');
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
 
@@ -143,9 +178,10 @@ export function LayoutBuilderModal({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      // Normalize z-indices to sequential integers before saving (P15-G.3)
-      builder.normalizeZIndices();
-      const t = builder.template;
+      // normalizeZIndices returns the normalized template synchronously; using
+      // its return value avoids reading stale React state immediately after the
+      // dispatch (which would miss the normalization and save old z-indices).
+      const t = builder.normalizeZIndices();
 
       // ── DEBUG: Log what we're about to save ──
       debugGroup('[WPSG] Layout Save — pre-flight');
@@ -260,6 +296,33 @@ export function LayoutBuilderModal({
       }
     },
     [apiClient, mutateOverlayLibrary, onNotify],
+  );
+
+  // ── Background image upload ──
+  const handleUploadBgImage = useCallback(
+    async (file: File | null) => {
+      if (!file) return;
+      setIsUploadingBg(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
+        const entry = await apiClient.postForm<OverlayLibraryItem>(
+          '/wp-json/wp-super-gallery/v1/admin/overlay-library',
+          formData,
+        );
+        builder.setBackgroundImage(entry.url);
+        announce('Background image uploaded and applied');
+      } catch (err) {
+        onNotify?.({
+          type: 'error',
+          text: err instanceof Error ? err.message : 'Background image upload failed',
+        });
+      } finally {
+        setIsUploadingBg(false);
+      }
+    },
+    [apiClient, builder, announce, onNotify],
   );
 
   // ── Auto-assign media ──
@@ -478,7 +541,7 @@ export function LayoutBuilderModal({
         </Box>
 
         {/* ── Main workspace ── */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
           {/* Left toolbar — slot list + media picker (tabbed) */}
           {!builder.isPreview && (
             <Box
@@ -509,6 +572,9 @@ export function LayoutBuilderModal({
                   </Tabs.Tab>
                   <Tabs.Tab value="overlays" leftSection={<IconLayersLinked size={14} />}>
                     Overlays
+                  </Tabs.Tab>
+                  <Tabs.Tab value="bg" leftSection={<IconBackground size={14} />}>
+                    BG
                   </Tabs.Tab>
                 </Tabs.List>
 
@@ -819,6 +885,23 @@ export function LayoutBuilderModal({
                                 marginBottom: 4,
                               }}
                             />
+                            <Button
+                              size="xs"
+                              variant="light"
+                              fullWidth
+                              mb={4}
+                              onClick={() => {
+                                builder.updateOverlay(overlay.id, {
+                                  x: 0,
+                                  y: 0,
+                                  width: 100,
+                                  height: 100,
+                                });
+                                announce(`Overlay ${idx + 1} filled canvas`);
+                              }}
+                            >
+                              Fill canvas
+                            </Button>
                             <Text size="xs" c="dimmed" mb={2}>
                               Opacity
                             </Text>
@@ -854,6 +937,129 @@ export function LayoutBuilderModal({
                     </>
                   )}
                 </Tabs.Panel>
+
+                {/* \u2500\u2500 Background tab \u2500\u2500 */}
+                <Tabs.Panel value="bg">
+                  <Stack gap="sm">
+                    {/* Canvas background color */}
+                    <div>
+                      <Text size="xs" fw={500} mb={4}>Background Color</Text>
+                      <ColorInput
+                        size="xs"
+                        value={builder.template.backgroundColor}
+                        onChange={builder.setBackgroundColor}
+                        format="hex"
+                        swatches={['#1a1a2e', '#0d1117', '#000000', '#ffffff', '#16213e', 'transparent']}
+                      />
+                    </div>
+
+                    <Divider />
+
+                    {/* Background image */}
+                    <Text size="xs" fw={500}>Background Image</Text>
+                    <Text size="xs" c="dimmed" mt={-6}>
+                      Layered on top of color (supports transparency)
+                    </Text>
+
+                    {builder.template.backgroundImage ? (
+                      <Box>
+                        <div
+                          style={{
+                            background: 'var(--mantine-color-dark-7)',
+                            height: 80,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                            marginBottom: 6,
+                          }}
+                        >
+                          <img
+                            src={builder.template.backgroundImage}
+                            alt="Background preview"
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                          />
+                        </div>
+                        <Button
+                          size="xs"
+                          color="red"
+                          variant="light"
+                          fullWidth
+                          leftSection={<IconTrash size={12} />}
+                          onClick={() => builder.setBackgroundImage('')}
+                          mb={4}
+                        >
+                          Remove background image
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Text size="xs" c="dimmed">No background image set.</Text>
+                    )}
+
+                    {/* Upload */}
+                    <FileButton accept="image/*" onChange={handleUploadBgImage} disabled={isUploadingBg}>
+                      {(props) => (
+                        <Button
+                          size="xs"
+                          variant="light"
+                          fullWidth
+                          leftSection={isUploadingBg ? <Loader size={10} /> : <IconUpload size={12} />}
+                          {...props}
+                          disabled={isUploadingBg}
+                          aria-label="Upload background image"
+                        >
+                          Upload image
+                        </Button>
+                      )}
+                    </FileButton>
+
+                    {/* URL input */}
+                    <TextInput
+                      placeholder="Or paste image URL\u2026"
+                      size="xs"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          builder.setBackgroundImage(e.currentTarget.value.trim());
+                          announce('Background image set from URL');
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                      aria-label="Background image URL"
+                    />
+
+                    {/* Fit + opacity — shown only when image is present */}
+                    {builder.template.backgroundImage && (
+                      <>
+                        <Select
+                          size="xs"
+                          label="Image fit"
+                          value={builder.template.backgroundImageFit ?? 'cover'}
+                          onChange={(val) =>
+                            builder.setBackgroundImageFit((val ?? 'cover') as 'cover' | 'contain' | 'fill')
+                          }
+                          data={[
+                            { value: 'cover', label: 'Cover (fill, crop)' },
+                            { value: 'contain', label: 'Contain (letterbox)' },
+                            { value: 'fill', label: 'Fill (stretch)' },
+                          ]}
+                        />
+                        <div>
+                          <Text size="xs" c="dimmed" mb={2}>Image opacity</Text>
+                          <Slider
+                            value={builder.template.backgroundImageOpacity ?? 1}
+                            onChange={(val) => builder.setBackgroundImageOpacity(val)}
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            size="xs"
+                            label={(v) => `${Math.round(v * 100)}%`}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </Stack>
+                </Tabs.Panel>
               </Tabs>
             </Box>
           )}
@@ -885,6 +1091,7 @@ export function LayoutBuilderModal({
                 isPreview={builder.isPreview}
                 media={media}
                 snapEnabled={snapEnabled}
+                snapThresholdPx={snapThreshold}
                 onSlotMove={builder.moveSlot}
                 onSlotResize={builder.resizeSlot}
                 onSlotSelect={builder.selectSlot}
@@ -947,20 +1154,54 @@ export function LayoutBuilderModal({
                     Fit to container
                   </Button>
                   <Divider orientation="vertical" />
-                  <Switch
-                    label="Snap"
-                    size="xs"
-                    checked={snapEnabled}
-                    onChange={(e) => setSnapEnabled(e.currentTarget.checked)}
-                    aria-label="Toggle snap guides"
-                  />
+                  {/* Overlay visibility toggle */}
+                  <Tooltip label={overlaysVisible ? 'Hide overlays (work on slots)' : 'Show overlays'}>
+                    <ActionIcon
+                      size="sm"
+                      variant={overlaysVisible ? 'subtle' : 'filled'}
+                      color={overlaysVisible ? undefined : 'orange'}
+                      onClick={() => setOverlaysVisible((v) => !v)}
+                      aria-label={overlaysVisible ? 'Hide overlays' : 'Show overlays'}
+                    >
+                      {overlaysVisible ? <IconEye size={14} /> : <IconEyeOff size={14} />}
+                    </ActionIcon>
+                  </Tooltip>
+                  <Divider orientation="vertical" />
+                  {/* Snap toggle + sensitivity slider */}
+                  <Group gap={6} wrap="nowrap">
+                    <Switch
+                      label="Snap"
+                      size="xs"
+                      checked={snapEnabled}
+                      onChange={(e) => setSnapEnabled(e.currentTarget.checked)}
+                      aria-label="Toggle snap guides"
+                    />
+                    {snapEnabled && (
+                      <>
+                        <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                          Sensitivity:
+                        </Text>
+                        <Slider
+                          value={snapThreshold}
+                          onChange={setSnapThreshold}
+                          min={2}
+                          max={30}
+                          step={1}
+                          size="xs"
+                          w={80}
+                          label={(v) => `${v}px`}
+                          aria-label="Snap sensitivity"
+                        />
+                      </>
+                    )}
+                  </Group>
                 </Group>
               </Box>
             )}
           </Box>
 
-          {/* Right: properties panel */}
-          {!builder.isPreview && selectedSlot && (
+          {/* Right: properties panel ─ pinned (docked) mode */}
+          {!builder.isPreview && selectedSlot && isPanelPinned && (
             <Box
               w={280}
               p="sm"
@@ -970,6 +1211,62 @@ export function LayoutBuilderModal({
                 flexShrink: 0,
               }}
             >
+              <Group justify="space-between" mb="xs">
+                <Text size="xs" fw={600} c="dimmed">SLOT PROPERTIES</Text>
+                <Tooltip label="Unpin panel (float over canvas)">
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => setIsPanelPinned(false)}
+                    aria-label="Unpin properties panel"
+                  >
+                    <IconPinFilled size={12} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+              <SlotPropertiesPanel
+                slot={selectedSlot}
+                onUpdate={(updates) =>
+                  builder.updateSlot(selectedSlot.id, updates)
+                }
+                onBringToFront={() => builder.bringToFront([selectedSlot.id])}
+                onSendToBack={() => builder.sendToBack([selectedSlot.id])}
+                onBringForward={() => builder.bringForward([selectedSlot.id])}
+                onSendBackward={() => builder.sendBackward([selectedSlot.id])}
+              />
+            </Box>
+          )}
+
+          {/* Right: properties panel ─ floating (default) mode */}
+          {!builder.isPreview && selectedSlot && !isPanelPinned && (
+            <Box
+              p="sm"
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: 280,
+                overflowY: 'auto',
+                zIndex: 50,
+                background: 'var(--mantine-color-body)',
+                borderLeft: '1px solid var(--mantine-color-default-border)',
+                boxShadow: '-4px 0 20px rgba(0,0,0,0.35)',
+              }}
+            >
+              <Group justify="space-between" mb="xs">
+                <Text size="xs" fw={600} c="dimmed">SLOT PROPERTIES</Text>
+                <Tooltip label="Pin panel (dock to side)">
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => setIsPanelPinned(true)}
+                    aria-label="Pin properties panel"
+                  >
+                    <IconPin size={12} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
               <SlotPropertiesPanel
                 slot={selectedSlot}
                 onUpdate={(updates) =>
