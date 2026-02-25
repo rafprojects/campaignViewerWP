@@ -271,11 +271,13 @@ export function LayoutCanvas({
 
         {/* Overlay layers (P15-H) */}
         {template.overlays.map((overlay) => {
-          // In edit mode, hide overlays while working on slots if the user
-          // toggled them off — they're always shown in preview/campaign view.
-          if (!isPreview && !overlaysVisible) return null;
-
           const oPos = pctToPx(overlay.x, overlay.y, overlay.width, overlay.height);
+
+          // When 'overlaysVisible' is false in edit mode, render a ghost rather
+          // than hiding entirely. The ghost is fully pointer-events:none so slots
+          // underneath remain interactive, but shows the overlay at 10% opacity
+          // so the designer can see where it sits while arranging slots.
+          const isGhost = !isPreview && !overlaysVisible;
 
           if (isPreview) {
             return (
@@ -298,9 +300,34 @@ export function LayoutCanvas({
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'contain',
+                    objectFit: 'fill',
                     display: 'block',
                   }}
+                  draggable={false}
+                />
+              </div>
+            );
+          }
+
+          if (isGhost) {
+            return (
+              <div
+                key={overlay.id}
+                style={{
+                  position: 'absolute',
+                  left: oPos.x,
+                  top: oPos.y,
+                  width: oPos.width,
+                  height: oPos.height,
+                  zIndex: overlay.zIndex,
+                  opacity: 0.1,
+                  pointerEvents: 'none',
+                }}
+              >
+                <img
+                  src={overlay.imageUrl}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
                   draggable={false}
                 />
               </div>
@@ -341,8 +368,8 @@ export function LayoutCanvas({
                 opacity: overlay.opacity,
                 outline: '1px dashed rgba(138, 43, 226, 0.6)',
               }}
-              enableResizing={!isPreview}
-              disableDragging={isPreview}
+              enableResizing
+              disableDragging={false}
             >
               <img
                 src={overlay.imageUrl}
