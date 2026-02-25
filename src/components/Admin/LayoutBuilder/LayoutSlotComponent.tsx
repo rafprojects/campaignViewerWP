@@ -112,39 +112,24 @@ export function LayoutSlotComponent({
 
   const hasClipOrMask = Boolean(clipPath || slot.maskUrl);
 
-  // ── Rectangle border + selection ring (box-shadow works for un-clipped elements)
-  const regularBorder =
-    slot.borderWidth > 0 && !hasClipOrMask
+  // CSS props for mask-image shapes (applied identically to all mask layers).
+  const maskCssProps: React.CSSProperties = slot.maskUrl
+    ? {
+        WebkitMaskImage: `url(${slot.maskUrl})`,
+        maskImage: `url(${slot.maskUrl})`,
+        WebkitMaskSize: 'cover' as const,
+        maskSize: 'cover' as const,
+      }
+    : {};
+
+  // ── Rectangle: standard CSS border + selection box-shadow ─────────────
+  const rectBorder =
+    slot.borderWidth > 0
       ? `${slot.borderWidth}px solid ${slot.borderColor}`
-      : !isSelected
-        ? '1px dashed var(--mantine-color-dark-3)'
-        : undefined;
+      : '1px dashed var(--mantine-color-dark-3)';
+  const rectBoxShadow = isSelected ? '0 0 0 2px var(--mantine-color-blue-5)' : undefined;
 
-  const regularBoxShadow =
-    !hasClipOrMask && isSelected ? '0 0 0 2px var(--mantine-color-blue-5)' : undefined;
-
-  // ── Shape border + selection ring via CSS filter (applied AFTER clip-path)
-  // drop-shadow() follows the clipped visual boundary, unlike box-shadow which
-  // is clipped along with the element's rendered output.
-  const shapeFilterParts: string[] = [];
-  if (hasClipOrMask) {
-    if (slot.borderWidth > 0) {
-      const blur = Math.max(1, Math.ceil(slot.borderWidth / 2));
-      shapeFilterParts.push(
-        `drop-shadow(0 0 ${blur}px ${slot.borderColor})`,
-        `drop-shadow(0 0 ${blur}px ${slot.borderColor})`,
-      );
-    }
-    if (isSelected) {
-      shapeFilterParts.push(
-        'drop-shadow(0 0 2px var(--mantine-color-blue-5))',
-        'drop-shadow(0 0 2px var(--mantine-color-blue-5))',
-      );
-    }
-  }
-  const shapeFilter = shapeFilterParts.length > 0 ? shapeFilterParts.join(' ') : undefined;
-
-  // ── Dynamic handle styles: dim on non-focused slots ──────────────────────
+  // ── Dynamic handle styles: dim on non-focused slots ─────────────────────
   const cornerHandle: React.CSSProperties = {
     width: 8,
     height: 8,
@@ -160,14 +145,81 @@ export function LayoutSlotComponent({
 
   // ── Preview mode: no chrome ──
   if (isPreview) {
-    const maskStyle = slot.maskUrl
-      ? {
-          WebkitMaskImage: `url(${slot.maskUrl})`,
-          maskImage: `url(${slot.maskUrl})`,
-          WebkitMaskSize: 'cover' as const,
-          maskSize: 'cover' as const,
-        }
-      : {};
+    const cursor = slot.clickAction === 'lightbox' ? 'pointer' : 'default';
+    const ariaLabel = `Slot ${index + 1}: ${mediaItem?.url ? 'assigned' : 'empty'}`;
+    const imageEl = mediaItem ? (
+      <img
+        src={mediaItem.url}
+        alt=""
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: slot.objectFit,
+          objectPosition: slot.objectPosition,
+          display: 'block',
+        }}
+        draggable={false}
+      />
+    ) : (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'rgba(128,128,128,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text size="xs" c="dimmed">
+          Empty
+        </Text>
+      </div>
+    );
+
+    if (hasClipOrMask) {
+      // ── Double-container border for clip-path / mask shapes ──────────
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            left: pixelX,
+            top: pixelY,
+            width: pixelWidth,
+            height: pixelHeight,
+            zIndex: slot.zIndex,
+            cursor,
+          }}
+          role="img"
+          aria-label={ariaLabel}
+        >
+          {slot.borderWidth > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                clipPath,
+                ...maskCssProps,
+                backgroundColor: slot.borderColor,
+              }}
+            />
+          )}
+          <div
+            style={{
+              position: 'absolute',
+              inset: slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0,
+              clipPath,
+              ...maskCssProps,
+              overflow: 'hidden',
+            }}
+          >
+            {imageEl}
+          </div>
+        </div>
+      );
+    }
+
+    // ── Rectangle preview slot ────────────────────────────────────────
     return (
       <div
         style={{
@@ -177,55 +229,17 @@ export function LayoutSlotComponent({
           width: pixelWidth,
           height: pixelHeight,
           zIndex: slot.zIndex,
-          borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : 0,
-          clipPath,
-          ...maskStyle,
-          overflow: clipPath ? undefined : 'hidden',
-          border: slot.borderWidth > 0 && !hasClipOrMask
+          borderRadius: slot.borderRadius,
+          overflow: 'hidden',
+          border: slot.borderWidth > 0
             ? `${slot.borderWidth}px solid ${slot.borderColor}`
             : undefined,
-          // For clip-path shapes, drop-shadow filter follows the visual shape boundary
-          // (it is applied after clip-path in the CSS rendering pipeline).
-          filter: hasClipOrMask && slot.borderWidth > 0
-            ? (() => {
-                const blur = Math.max(1, Math.ceil(slot.borderWidth / 2));
-                return `drop-shadow(0 0 ${blur}px ${slot.borderColor}) drop-shadow(0 0 ${blur}px ${slot.borderColor})`;
-              })()
-            : undefined,
-          cursor: slot.clickAction === 'lightbox' ? 'pointer' : 'default',
+          cursor,
         }}
         role="img"
-        aria-label={`Slot ${index + 1}: ${mediaItem?.url ? 'assigned' : 'empty'}`}
+        aria-label={ariaLabel}
       >
-        {mediaItem ? (
-          <img
-            src={mediaItem.url}
-            alt=""
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: slot.objectFit,
-              objectPosition: slot.objectPosition,
-              display: 'block',
-            }}
-            draggable={false}
-          />
-        ) : (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              background: 'rgba(128,128,128,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text size="xs" c="dimmed">
-              Empty
-            </Text>
-          </div>
-        )}
+        {imageEl}
       </div>
     );
   }
@@ -285,101 +299,187 @@ export function LayoutSlotComponent({
         right: barHandleV,
       }}
     >
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : 0,
-          clipPath,
-          ...(slot.maskUrl
-            ? {
-                WebkitMaskImage: `url(${slot.maskUrl})`,
-                maskImage: `url(${slot.maskUrl})`,
-                WebkitMaskSize: 'cover',
-                maskSize: 'cover',
-              }
-            : {}),
-          overflow: clipPath ? undefined : 'hidden',
-          border: isDragOver
-            ? '2px dashed var(--mantine-color-green-5)'
-            : regularBorder,
-          boxShadow: regularBoxShadow,
-          filter: shapeFilter,
-          boxSizing: 'border-box',
-          position: 'relative',
-          cursor: 'move',
-        }}
-        role="img"
-        aria-label={`Slot ${index + 1}: ${mediaItem?.url ? 'assigned' : 'empty'}`}
-        tabIndex={0}
-      >
-        {/* Media image or placeholder */}
-        {mediaItem ? (
-          <img
-            src={mediaItem.url}
-            alt=""
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: slot.objectFit,
-              objectPosition: slot.objectPosition,
-              display: 'block',
-              pointerEvents: 'none',
-            }}
-            draggable={false}
-          />
-        ) : (
+      {hasClipOrMask ? (
+        /* ── Clip-path / mask: double-container border technique ──────────────
+         * Outer: full bounding box, clipped to shape, background = borderColor
+         * Inner: inset by borderWidth, same clip-path, overflow:hidden, image
+         * This is the only reliable CSS approach for borders on arbitrary shapes.
+         * Selection ring is shown as a rectangular bounding-box glow outside Rnd
+         * (standard design-tool pattern; shape-following is SVG-only territory). */
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            cursor: 'move',
+            // Rectangular selection ring outside the bounding box (standard UX pattern)
+            boxShadow: isSelected
+              ? '0 0 0 2px var(--mantine-color-blue-5), 0 0 8px rgba(51,154,240,0.35)'
+              : undefined,
+          }}
+        >
+          {/* 1. Border fill: full size, clipped, shows borderColor as background */}
           <div
             style={{
-              width: '100%',
-              height: '100%',
-              background:
-                'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(128,128,128,0.08) 8px, rgba(128,128,128,0.08) 16px)',
+              position: 'absolute',
+              inset: 0,
+              clipPath,
+              ...maskCssProps,
+              backgroundColor: slot.borderWidth > 0 && !isDragOver ? slot.borderColor : 'transparent',
+            }}
+          />
+
+          {/* 2. Image layer: inset by borderWidth, same clip, contains media */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            style={{
+              position: 'absolute',
+              inset: slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0,
+              clipPath,
+              ...maskCssProps,
+              overflow: 'hidden',
+              outline: isDragOver ? '3px dashed var(--mantine-color-green-5)' : undefined,
+            }}
+            role="img"
+            aria-label={`Slot ${index + 1}: ${mediaItem?.url ? 'assigned' : 'empty'}`}
+            tabIndex={0}
+          >
+            {mediaItem ? (
+              <img
+                src={mediaItem.url}
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: slot.objectFit,
+                  objectPosition: slot.objectPosition,
+                  display: 'block',
+                  pointerEvents: 'none',
+                }}
+                draggable={false}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  background:
+                    'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(128,128,128,0.08) 8px, rgba(128,128,128,0.08) 16px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text size="xs" c="dimmed" style={{ userSelect: 'none', pointerEvents: 'none' }}>
+                  {index + 1}
+                </Text>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Index badge – at bounding-box level so always visible */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 4,
+              left: 4,
+              background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
+              color: '#fff',
+              fontSize: 10,
+              fontWeight: 700,
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              zIndex: 3,
             }}
           >
-            <Text
-              size="xs"
-              c="dimmed"
-              style={{ userSelect: 'none', pointerEvents: 'none' }}
-            >
-              {index + 1}
-            </Text>
+            {index + 1}
           </div>
-        )}
-
-        {/* Slot index badge */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 4,
-            left: 4,
-            background: isSelected
-              ? 'var(--mantine-color-blue-6)'
-              : 'rgba(0,0,0,0.6)',
-            color: '#fff',
-            fontSize: 10,
-            fontWeight: 700,
-            width: 18,
-            height: 18,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-          {index + 1}
         </div>
-      </div>
+      ) : (
+        /* ── Rectangle: CSS border + overflow ────────────────────────────── */
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: slot.borderRadius,
+            overflow: 'hidden',
+            border: isDragOver ? '2px dashed var(--mantine-color-green-5)' : rectBorder,
+            boxShadow: rectBoxShadow,
+            boxSizing: 'border-box',
+            position: 'relative',
+            cursor: 'move',
+          }}
+          role="img"
+          aria-label={`Slot ${index + 1}: ${mediaItem?.url ? 'assigned' : 'empty'}`}
+          tabIndex={0}
+        >
+          {mediaItem ? (
+            <img
+              src={mediaItem.url}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: slot.objectFit,
+                objectPosition: slot.objectPosition,
+                display: 'block',
+                pointerEvents: 'none',
+              }}
+              draggable={false}
+            />
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                background:
+                  'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(128,128,128,0.08) 8px, rgba(128,128,128,0.08) 16px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text size="xs" c="dimmed" style={{ userSelect: 'none', pointerEvents: 'none' }}>
+                {index + 1}
+              </Text>
+            </div>
+          )}
+
+          {/* Index badge */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 4,
+              left: 4,
+              background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
+              color: '#fff',
+              fontSize: 10,
+              fontWeight: 700,
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >
+            {index + 1}
+          </div>
+        </div>
+      )}
     </Rnd>
   );
 }
-
-// Handle styles are now computed per-slot inside the component (see cornerHandle / barHandleH / barHandleV).

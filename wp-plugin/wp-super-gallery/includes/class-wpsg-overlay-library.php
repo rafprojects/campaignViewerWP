@@ -94,14 +94,29 @@ class WPSG_Overlay_Library {
      * @return string|WP_Error  Public URL on success, WP_Error on failure.
      */
     public static function handle_upload( array $file ) {
-        // Allowed MIME types for overlays.
-        $allowed_types = [ 'image/png', 'image/svg+xml', 'image/webp', 'image/gif' ];
+        // Allowed MIME types — covers overlays (transparent formats) and
+        // background images (any common image format).
+        $allowed_types = [
+            'image/png',
+            'image/svg+xml',
+            'image/webp',
+            'image/gif',
+            'image/jpeg',
+            'image/jpg',
+            'image/avif',
+            'image/tiff',
+        ];
         // WordPress expects "extension => mime" for upload mimes.
         $allowed_mimes = [
             'png'  => 'image/png',
             'svg'  => 'image/svg+xml',
             'webp' => 'image/webp',
             'gif'  => 'image/gif',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'avif' => 'image/avif',
+            'tif'  => 'image/tiff',
+            'tiff' => 'image/tiff',
         ];
 
         if ( ! function_exists( 'wp_handle_upload' ) ) {
@@ -150,7 +165,7 @@ class WPSG_Overlay_Library {
         if ( ! in_array( $result['type'] ?? '', $allowed_types, true ) ) {
             // Remove the uploaded file.
             @unlink( $result['file'] );
-            return new WP_Error( 'wpsg_overlay_type', 'Only PNG, SVG, WebP, or GIF images are allowed.' );
+            return new WP_Error( 'wpsg_overlay_type', 'Unsupported image type. Allowed: PNG, SVG, WebP, GIF, JPEG, AVIF.' );
         }
 
         return $result['url'];

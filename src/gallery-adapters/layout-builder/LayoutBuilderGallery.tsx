@@ -419,9 +419,12 @@ function LayoutBuilderGalleryInner({
                   : undefined,
               };
 
-              // Clip-path shapes: outer wrapper gets hover filter (drop-shadow),
-              // inner div gets clip-path so the shadow isn't clipped away.
+              // Clip-path shapes: double-container border technique.
+              // Outer div holds absolute positioning only (no clip).
+              // Inside: a border-color fill layer + an inset image layer, both
+              // using the same clip-path so the border follows the shape edge.
               if (clipPath) {
+                const inset = slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0;
                 return (
                   <div
                     key={slot.id}
@@ -437,23 +440,25 @@ function LayoutBuilderGalleryInner({
                     }}
                     {...interactionProps}
                   >
+                    {/* Border fill layer */}
+                    {slot.borderWidth > 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          clipPath,
+                          ...maskStyle,
+                          backgroundColor: slot.borderColor,
+                        }}
+                      />
+                    )}
+                    {/* Image layer, inset to reveal border strip */}
                     <div
                       style={{
-                        width: '100%',
-                        height: '100%',
+                        position: 'absolute',
+                        inset,
                         clipPath,
                         ...maskStyle,
-                        // filter: drop-shadow is applied AFTER clip-path in the
-                        // CSS rendering pipeline, so the shadow follows the
-                        // clipped shape boundary (unlike inset box-shadow which
-                        // is clipped along with the element's painted output).
-                        filter:
-                          slot.borderWidth > 0
-                            ? (() => {
-                                const blur = Math.max(1, Math.ceil(slot.borderWidth / 2));
-                                return `drop-shadow(0 0 ${blur}px ${slot.borderColor}) drop-shadow(0 0 ${blur}px ${slot.borderColor})`;
-                              })()
-                            : undefined,
                         overflow: 'hidden',
                       }}
                     >

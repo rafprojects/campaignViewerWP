@@ -1,0 +1,145 @@
+The border property does not follow a clip-path or mask-image because the border is rendered on the element’s original rectangular bounding box before the clipping or masking is applied. As a result, the border is typically clipped away entirely, leaving no visible outline along the custom shape (circle, diamond, hexagon, etc.).
+Below are the most reliable, production-ready approaches to add clean borders to these shaped images in a React image gallery. I prioritize methods that maintain performance, responsiveness, and precise control over border thickness, color, and style.
+1. SVG Wrapper (Recommended for Precision and Flexibility)
+SVG provides the most accurate borders because the stroke follows the exact geometry of the path/polygon with constant width and perfect corner handling (stroke-linejoin, stroke-linecap). It works seamlessly with both clipPath (for the image) and custom masks.
+Implementation in React (reusable component):
+tsxinterface ShapedImageProps {
+  src: string;
+  shape: 'circle' | 'diamond' | 'hexagon' /* etc. */;
+  width?: number;
+  height?: number;
+  borderColor?: string;
+  borderWidth?: number;
+}
+
+const ShapedImage: React.FC<ShapedImageProps> = ({
+  src,
+  shape,
+  width = 200,
+  height = 200,
+  borderColor = '#000',
+  borderWidth = 8,
+}) => {
+  // Define paths/polygons for each shape (or load from a map/object)
+  const getShapePath = () => {
+    if (shape === 'diamond') return 'M100,10 L190,100 L100,190 L10,100 Z';
+    if (shape === 'hexagon') return 'M50,10 L150,10 L190,100 L150,190 L50,190 L10,100 Z';
+    // circle uses <circle> instead
+    return ''; // fallback
+  };
+
+  return (
+    <svg width={width} height={height} viewBox="0 0 200 200">
+      <defs>
+        <clipPath id={`shape-${shape}`}>
+          {shape === 'circle' ? (
+            <circle cx="100" cy="100" r="90" />
+          ) : (
+            <path d={getShapePath()} />
+          )}
+        </clipPath>
+      </defs>
+
+      {/* Border layer – stroked path follows the exact shape */}
+      {shape === 'circle' ? (
+        <circle
+          cx="100"
+          cy="100"
+          r="90"
+          fill="none"
+          stroke={borderColor}
+          strokeWidth={borderWidth}
+        />
+      ) : (
+        <path
+          d={getShapePath()}
+          fill="none"
+          stroke={borderColor}
+          strokeWidth={borderWidth}
+          strokeLinejoin="round"
+        />
+      )}
+
+      {/* Clipped image */}
+      <image
+        href={src}
+        width="200"
+        height="200"
+        clipPath={`url(#shape-${shape})`}
+        preserveAspectRatio="xMidYMid cover"
+      />
+    </svg>
+  );
+};
+Advantages: Uniform border thickness on all edges/angles, crisp at any scale, supports dashed borders via stroke-dasharray, easy to animate.
+When to use: Any complex or custom shape, production galleries.
+2. CSS Pseudo-Element Layering (Pure CSS, Lightweight)
+Duplicate the shape on a ::before pseudo-element that sits behind the image and is slightly enlarged.
+CSS.shape-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); /* diamond example */
+  overflow: hidden; /* optional safety */
+}
+
+.shape-container::before {
+  content: '';
+  position: absolute;
+  inset: -10px;           /* negative = outer border; adjust for thickness */
+  background: #ff0000;    /* border color */
+  clip-path: inherit;     /* same shape */
+  z-index: -1;
+}
+
+.shape-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+In React, apply via className or style (or styled-components/emotion).
+Advantages: No extra markup or SVG overhead; works with existing mask/clip-path setup.
+Limitations: Border thickness is not perfectly uniform on angled shapes (slightly thicker on diagonals); best for small borders (4–12 px).
+3. Outer/Inner Container Pair (Explicit Sizing)
+Use two nested elements with identical clip-path values but different sizes.
+CSS.outer {
+  position: relative;
+  width: 220px;   /* image size + 2 × border */
+  height: 220px;
+  background: #ff0000; /* border color */
+  clip-path: polygon(...); /* your shape */
+}
+
+.inner {
+  position: absolute;
+  top: 10px;      /* = border width */
+  left: 10px;
+  width: 200px;
+  height: 200px;
+  clip-path: polygon(...); /* identical shape */
+  overflow: hidden;
+}
+
+.inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+Advantages: Simple, predictable, works with any existing mask.
+Limitations: Requires manual size/position syncing; less ideal for responsive or dynamic galleries.
+4. Quick Approximations (When Exact Geometry Is Not Critical)
+
+Filter drop-shadow (single element):
+filter: drop-shadow(0 0 0 8px #ff0000); on the clipped container. Multiple layered drop-shadows can thicken the effect. Good for glow-style outlines.
+For circles only: border-radius: 50%; border: 8px solid #ff0000; works natively—no extra work needed.
+
+Additional Tips for Your React Gallery
+
+Store shape definitions (clip-path strings, SVG paths) in a config object or Map keyed by shape name for easy switching.
+Make the border width/color props controllable per image (e.g., via state in your manipulator).
+For responsiveness, use percentage-based clip-path or viewBox="0 0 1 1" in SVG + width: 100%.
+Test in Safari/Chrome/Firefox—clip-path and SVG stroke have excellent support; avoid relying on experimental properties like border-shape (still in draft as of 2026).
+Performance: SVG and pseudo-element approaches are both lightweight for galleries of dozens of images.
+
+The SVG method will give you the cleanest, most professional results with the least maintenance, especially since you already support arbitrary custom shapes. Start there and fall back to the pseudo-element approach if you prefer to stay 100% CSS. If you share a minimal code snippet of your current mask/clip implementation, I can provide a more tailored adaptation.

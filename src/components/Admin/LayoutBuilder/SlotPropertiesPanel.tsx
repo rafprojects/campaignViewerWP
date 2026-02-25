@@ -69,10 +69,21 @@ const HOVER_OPTIONS = [
 
 // ── Focal point presets (3×3 grid) ───────────────────────────
 
-const FOCAL_PRESETS = [
-  '0% 0%', '50% 0%', '100% 0%',
-  '0% 50%', '50% 50%', '100% 50%',
-  '0% 100%', '50% 100%', '100% 100%',
+/**
+ * Each preset is a CSS object-position value: "X% Y%".
+ * First value = horizontal (0% = left, 50% = center, 100% = right).
+ * Second value = vertical  (0% = top,  50% = center, 100% = bottom).
+ */
+const FOCAL_PRESETS: Array<{ pos: string; label: string; dotX: string; dotY: string }> = [
+  { pos: '0% 0%',   label: 'Top left',     dotX: '20%',  dotY: '20%'  },
+  { pos: '50% 0%',  label: 'Top center',   dotX: '50%',  dotY: '20%'  },
+  { pos: '100% 0%', label: 'Top right',    dotX: '80%',  dotY: '20%'  },
+  { pos: '0% 50%',  label: 'Left center',  dotX: '20%',  dotY: '50%'  },
+  { pos: '50% 50%', label: 'Center',       dotX: '50%',  dotY: '50%'  },
+  { pos: '100% 50%',label: 'Right center', dotX: '80%',  dotY: '50%'  },
+  { pos: '0% 100%', label: 'Bottom left',  dotX: '20%',  dotY: '80%'  },
+  { pos: '50% 100%',label: 'Bottom center',dotX: '50%',  dotY: '80%'  },
+  { pos: '100% 100%',label:'Bottom right', dotX: '80%',  dotY: '80%'  },
 ];
 
 // ── Component ────────────────────────────────────────────────
@@ -96,10 +107,6 @@ export function SlotPropertiesPanel({
 
   return (
     <Stack gap="sm">
-      <Text size="sm" fw={700}>
-        Slot Properties
-      </Text>
-
       {/* ── Position ── */}
       <Divider label="Position" labelPosition="left" />
       <Group grow gap="xs">
@@ -227,6 +234,7 @@ export function SlotPropertiesPanel({
         Focal Point
       </Text>
       <div
+        title="Click a position to set which part of the image stays in frame. The dot ● shows where focus is anchored."
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -234,29 +242,51 @@ export function SlotPropertiesPanel({
           width: 90,
         }}
       >
-        {FOCAL_PRESETS.map((pos) => (
-          <button
-            key={pos}
-            type="button"
-            onClick={() => onUpdate({ objectPosition: pos })}
-            style={{
-              width: 28,
-              height: 28,
-              border:
-                slot.objectPosition === pos
+        {FOCAL_PRESETS.map(({ pos, label, dotX, dotY }) => {
+          const isActive = slot.objectPosition === pos;
+          return (
+            <button
+              key={pos}
+              type="button"
+              title={label}
+              onClick={() => onUpdate({ objectPosition: pos })}
+              style={{
+                width: 28,
+                height: 28,
+                border: isActive
                   ? '2px solid var(--mantine-color-blue-5)'
                   : '1px solid var(--mantine-color-dark-4)',
-              borderRadius: 3,
-              background:
-                slot.objectPosition === pos
-                  ? 'var(--mantine-color-blue-light)'
-                  : 'transparent',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-            aria-label={`Focal point ${pos}`}
-          />
-        ))}
+                borderRadius: 3,
+                background: isActive
+                  ? 'var(--mantine-color-blue-7)'
+                  : 'var(--mantine-color-dark-6)',
+                cursor: 'pointer',
+                padding: 0,
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              aria-label={label}
+              aria-pressed={isActive}
+            >
+              {/* Position dot */}
+              <span
+                style={{
+                  position: 'absolute',
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: isActive
+                    ? '#fff'
+                    : 'var(--mantine-color-dark-1)',
+                  left: dotX,
+                  top: dotY,
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'none',
+                }}
+              />
+            </button>
+          );
+        })}
       </div>
       <TextInput
         value={slot.objectPosition}
