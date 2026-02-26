@@ -656,16 +656,28 @@ export function LayoutBuilderModal({
                     onToggleOverlayLocked={builder.toggleOverlayLocked}
                     onReorderLayers={builder.reorderLayers}
                     onBringToFront={(id) => {
-                      if (builder.template.slots.some((s) => s.id === id)) builder.bringToFront([id]);
+                      if (
+                        builder.template.slots.some((s) => s.id === id) ||
+                        builder.template.overlays.some((o) => o.id === id)
+                      ) builder.bringToFront([id]);
                     }}
                     onSendToBack={(id) => {
-                      if (builder.template.slots.some((s) => s.id === id)) builder.sendToBack([id]);
+                      if (
+                        builder.template.slots.some((s) => s.id === id) ||
+                        builder.template.overlays.some((o) => o.id === id)
+                      ) builder.sendToBack([id]);
                     }}
                     onBringForward={(id) => {
-                      if (builder.template.slots.some((s) => s.id === id)) builder.bringForward([id]);
+                      if (
+                        builder.template.slots.some((s) => s.id === id) ||
+                        builder.template.overlays.some((o) => o.id === id)
+                      ) builder.bringForward([id]);
                     }}
                     onSendBackward={(id) => {
-                      if (builder.template.slots.some((s) => s.id === id)) builder.sendBackward([id]);
+                      if (
+                        builder.template.slots.some((s) => s.id === id) ||
+                        builder.template.overlays.some((o) => o.id === id)
+                      ) builder.sendBackward([id]);
                     }}
                   />
                 </Tabs.Panel>

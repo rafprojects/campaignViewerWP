@@ -118,19 +118,24 @@ export function LayerPanel({
       }
       case 'l':
       case 'L': {
+        e.preventDefault();
         const cur = layers[selectedIndex];
         if (cur.kind === 'slot') onToggleSlotLocked(cur.id);
         else if (cur.kind === 'overlay') onToggleOverlayLocked(cur.id);
         break;
       }
       case 'f':
-      case 'F':
+      case 'F': {
+        e.preventDefault();
         onBringToFront(layers[selectedIndex].id);
         break;
+      }
       case 'b':
-      case 'B':
+      case 'B': {
+        e.preventDefault();
         onSendToBack(layers[selectedIndex].id);
         break;
+      }
       case 'Delete':
       case 'Backspace':
         // Deletion handled by parent — just clear selection signal

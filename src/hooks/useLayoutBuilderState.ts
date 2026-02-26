@@ -398,12 +398,17 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        const maxZ = Math.max(...d.slots.map((s) => s.zIndex), 0);
+        const maxZ = Math.max(
+          ...d.slots.map((s) => s.zIndex),
+          ...d.overlays.map((o) => o.zIndex),
+          0,
+        );
         let nextZ = maxZ + 1;
         for (const slot of d.slots) {
-          if (idSet.has(slot.id)) {
-            slot.zIndex = nextZ++;
-          }
+          if (idSet.has(slot.id)) slot.zIndex = nextZ++;
+        }
+        for (const overlay of d.overlays) {
+          if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
         }
       }),
     [mutate],
@@ -413,18 +418,27 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        const minZ = Math.min(...d.slots.map((s) => s.zIndex), 0);
+        const minZ = Math.min(
+          ...d.slots.map((s) => s.zIndex),
+          ...d.overlays.map((o) => o.zIndex),
+          0,
+        );
         let nextZ = minZ - ids.length;
         for (const slot of d.slots) {
-          if (idSet.has(slot.id)) {
-            slot.zIndex = nextZ++;
-          }
+          if (idSet.has(slot.id)) slot.zIndex = nextZ++;
         }
-        // Normalize so nothing goes below 0
-        const lowestZ = Math.min(...d.slots.map((s) => s.zIndex));
-        if (lowestZ < 0) {
-          const offset = -lowestZ;
+        for (const overlay of d.overlays) {
+          if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
+        }
+        // Normalize so nothing goes below 1
+        const lowestZ = Math.min(
+          ...d.slots.map((s) => s.zIndex),
+          ...d.overlays.map((o) => o.zIndex),
+        );
+        if (lowestZ < 1) {
+          const offset = 1 - lowestZ;
           for (const slot of d.slots) slot.zIndex += offset;
+          for (const overlay of d.overlays) overlay.zIndex += offset;
         }
       }),
     [mutate],
@@ -434,18 +448,22 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        // Sort slots by zIndex ascending, swap each target with the one above
-        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
-        for (let i = sorted.length - 1; i >= 0; i--) {
-          if (idSet.has(sorted[i].id)) {
-            // Find the next slot above not in selected set
-            const above = sorted[i + 1];
+        // Merge slots + overlays, sort by zIndex ascending, swap target with item above
+        type ZItem = { id: string; zIndex: number };
+        const all: ZItem[] = [
+          ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
+          ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
+        ].sort((a, b) => a.zIndex - b.zIndex);
+
+        for (let i = all.length - 1; i >= 0; i--) {
+          if (idSet.has(all[i].id)) {
+            const above = all[i + 1];
             if (above && !idSet.has(above.id)) {
-              const real = d.slots.find((s) => s.id === sorted[i].id)!;
-              const realAbove = d.slots.find((s) => s.id === above.id)!;
-              const tmp = real.zIndex;
-              real.zIndex = realAbove.zIndex;
-              realAbove.zIndex = tmp;
+              const itemA = [...d.slots, ...d.overlays].find((x) => x.id === all[i].id)!;
+              const itemB = [...d.slots, ...d.overlays].find((x) => x.id === above.id)!;
+              const tmp = itemA.zIndex;
+              itemA.zIndex = itemB.zIndex;
+              itemB.zIndex = tmp;
             }
           }
         }
@@ -457,17 +475,21 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        // Sort slots by zIndex ascending, swap each target with the one below
-        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
-        for (let i = 0; i < sorted.length; i++) {
-          if (idSet.has(sorted[i].id)) {
-            const below = sorted[i - 1];
+        type ZItem = { id: string; zIndex: number };
+        const all: ZItem[] = [
+          ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
+          ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
+        ].sort((a, b) => a.zIndex - b.zIndex);
+
+        for (let i = 0; i < all.length; i++) {
+          if (idSet.has(all[i].id)) {
+            const below = all[i - 1];
             if (below && !idSet.has(below.id)) {
-              const real = d.slots.find((s) => s.id === sorted[i].id)!;
-              const realBelow = d.slots.find((s) => s.id === below.id)!;
-              const tmp = real.zIndex;
-              real.zIndex = realBelow.zIndex;
-              realBelow.zIndex = tmp;
+              const itemA = [...d.slots, ...d.overlays].find((x) => x.id === all[i].id)!;
+              const itemB = [...d.slots, ...d.overlays].find((x) => x.id === below.id)!;
+              const tmp = itemA.zIndex;
+              itemA.zIndex = itemB.zIndex;
+              itemB.zIndex = tmp;
             }
           }
         }
