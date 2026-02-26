@@ -354,7 +354,8 @@ The library grid (thumbnail + add-to-canvas button) remains. Per Decision E, the
 
 ## Track P17-E — True Dockable Panels (dockview)
 
-**New dependency:** `dockview` (~38KB gzip, zero peer deps beyond React, TypeScript-first)
+**New dependency:** `dockview` (~38KB gzip, TypeScript-first)  
+**Peer requirement:** React >= 16.8 (uses hooks internally). Project is React 18.3.1 — satisfied.
 
 ### Builder shell change
 
