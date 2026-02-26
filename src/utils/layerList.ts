@@ -71,9 +71,8 @@ export function getLayerName(item: LayerItem, template: LayoutTemplate): string 
   if (item.kind === 'slot') {
     return `Media Layer ${item.index + 1}`;
   }
-  // graphic layer — find position in overlays array for 1-based label
-  const overlayIdx = template.overlays.findIndex((o) => o.id === item.id);
-  return `Graphic Layer ${overlayIdx >= 0 ? overlayIdx + 1 : item.arrayIndex + 1}`;
+  // graphic layer — use stored 0-based arrayIndex for 1-based label
+  return `Graphic Layer ${item.arrayIndex + 1}`;
 }
 
 // ── buildLayerList ───────────────────────────────────────────────────────────
@@ -192,12 +191,7 @@ export function computeReorderedZIndices(
     insertAt = targetIdx;
   }
 
-  if (draggedIdx === insertAt) {
-    // No change in position
-    reordered.splice(insertAt, 0, dragged);
-    return new Map(reordered.map((l) => [l.id, l.zIndex]));
-  }
-
+  // Insert the dragged item at the computed position
   reordered.splice(insertAt, 0, dragged);
 
   // Assign sequential z-indices: top of list (index 0) gets the highest value.
