@@ -116,7 +116,6 @@ export function LayerRow({
   return (
     <Group
       gap={4}
-      px={6}
       py={4}
       data-layer-id={item.id}
       draggable={!isBackground}
@@ -127,12 +126,22 @@ export function LayerRow({
       onClick={() => onSelect(item.id)}
       style={{
         cursor: isBackground ? 'default' : 'grab',
-        backgroundColor: isSelected ? 'var(--mantine-color-blue-light)' : dragOver ? 'var(--mantine-color-gray-1)' : 'transparent',
-        borderRadius: 4,
+        // Selection: 3px solid left accent + coloured bg row.
+        // `blue-filled` resolves to the solid Mantine blue in both light & dark.
+        borderLeft: isSelected
+          ? '3px solid var(--mantine-color-blue-filled)'
+          : '3px solid transparent',
+        borderRadius: isSelected ? '0 4px 4px 0' : 4,
+        // Reduce left padding when border is visible so text stays at 6px from edge.
+        paddingLeft: isSelected ? 3 : 6,
+        paddingRight: 6,
+        backgroundColor: isSelected
+          ? 'var(--mantine-color-blue-light)'
+          : dragOver ? 'var(--mantine-color-gray-light)' : 'transparent',
         userSelect: 'none',
         opacity: visible ? 1 : 0.45,
         borderTop: dragOver ? '2px solid var(--mantine-color-blue-5)' : '2px solid transparent',
-        transition: 'background-color 120ms, opacity 120ms',
+        transition: 'background-color 120ms, opacity 120ms, border-left-color 80ms',
       }}
     >
       {/* Drag handle */}
@@ -164,6 +173,7 @@ export function LayerRow({
       ) : (
         <Text
           size="xs"
+          fw={isSelected ? 600 : 400}
           onDoubleClick={startEdit}
           style={{
             flex: 1,
@@ -171,6 +181,7 @@ export function LayerRow({
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
             lineHeight: '22px',
+            color: isSelected ? 'var(--mantine-color-blue-filled)' : undefined,
           }}
           title={displayName}
         >

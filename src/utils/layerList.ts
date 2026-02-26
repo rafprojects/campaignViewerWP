@@ -69,11 +69,11 @@ export function getLayerName(item: LayerItem, template: LayoutTemplate): string 
   }
   if (item.name) return item.name;
   if (item.kind === 'slot') {
-    return `Slot ${item.index + 1}`;
+    return `Media Layer ${item.index + 1}`;
   }
-  // overlay — find position in overlays array for 1-based label
+  // graphic layer — find position in overlays array for 1-based label
   const overlayIdx = template.overlays.findIndex((o) => o.id === item.id);
-  return `Overlay ${overlayIdx >= 0 ? overlayIdx + 1 : item.arrayIndex + 1}`;
+  return `Graphic Layer ${overlayIdx >= 0 ? overlayIdx + 1 : item.arrayIndex + 1}`;
 }
 
 // ── buildLayerList ───────────────────────────────────────────────────────────

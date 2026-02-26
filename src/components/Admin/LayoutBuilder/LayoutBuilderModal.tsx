@@ -164,6 +164,9 @@ export function LayoutBuilderModal({
   const [overlaysVisible, setOverlaysVisible] = useState(true);
   const [isPanelPinned, setIsPanelPinned] = useState(false);
   const [leftTab, setLeftTab] = useState<string | null>('layers');
+  // ── Layer panel selection (overlay + background tracked locally; slot uses builder state) ──
+  const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
+  const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
 
   // ── Close with dirty guard ──
@@ -620,8 +623,31 @@ export function LayoutBuilderModal({
                         ? [...builder.selectedSlotIds][0]
                         : null
                     }
-                    onSelectSlot={builder.selectSlot}
-                    onClearSelection={builder.clearSelection}
+                    selectedOverlayId={selectedOverlayId}
+                    isBackgroundSelected={isBackgroundSelected}
+                    onSelectSlot={(id) => {
+                      // Selecting a slot clears graphic-layer + bg selection
+                      setSelectedOverlayId(null);
+                      setIsBackgroundSelected(false);
+                      builder.selectSlot(id);
+                    }}
+                    onSelectOverlay={(id) => {
+                      setSelectedOverlayId(id);
+                      setIsBackgroundSelected(false);
+                      builder.clearSelection();
+                    }}
+                    onSelectBackground={() => {
+                      setSelectedOverlayId(null);
+                      setIsBackgroundSelected(true);
+                      builder.clearSelection();
+                      // Open BG tab so controls are immediately visible
+                      setLeftTab('bg');
+                    }}
+                    onClearSelection={() => {
+                      setSelectedOverlayId(null);
+                      setIsBackgroundSelected(false);
+                      builder.clearSelection();
+                    }}
                     onRenameSlot={builder.renameSlot}
                     onRenameOverlay={builder.renameOverlay}
                     onToggleSlotVisible={builder.toggleSlotVisible}
@@ -630,9 +656,7 @@ export function LayoutBuilderModal({
                     onToggleOverlayLocked={builder.toggleOverlayLocked}
                     onReorderLayers={builder.reorderLayers}
                     onBringToFront={(id) => {
-                      // Determine type from template
                       if (builder.template.slots.some((s) => s.id === id)) builder.bringToFront([id]);
-                      // Overlays don't yet have individual front/back — no-op for now
                     }}
                     onSendToBack={(id) => {
                       if (builder.template.slots.some((s) => s.id === id)) builder.sendToBack([id]);

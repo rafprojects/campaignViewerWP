@@ -158,28 +158,28 @@ describe('getLayerName', () => {
     expect(getLayerName(bg, tpl)).toBe('Background');
   });
 
-  it('returns "Slot 1" for first slot with no name', () => {
+  it('returns "Media Layer 1" for first slot with no name', () => {
     const layers = buildLayerList(tpl);
     const s1 = layers.find((l) => l.id === 's1')!;
-    expect(getLayerName(s1, tpl)).toBe('Slot 1');
+    expect(getLayerName(s1, tpl)).toBe('Media Layer 1');
   });
 
-  it('returns "Slot 2" for second slot', () => {
+  it('returns "Media Layer 2" for second slot', () => {
     const layers = buildLayerList(tpl);
     const s2 = layers.find((l) => l.id === 's2')!;
-    expect(getLayerName(s2, tpl)).toBe('Slot 2');
+    expect(getLayerName(s2, tpl)).toBe('Media Layer 2');
   });
 
-  it('returns "Overlay 1" for first overlay', () => {
+  it('returns "Graphic Layer 1" for first overlay', () => {
     const layers = buildLayerList(tpl);
     const o1 = layers.find((l) => l.id === 'o1')!;
-    expect(getLayerName(o1, tpl)).toBe('Overlay 1');
+    expect(getLayerName(o1, tpl)).toBe('Graphic Layer 1');
   });
 
-  it('returns "Overlay 2" for second overlay', () => {
+  it('returns "Graphic Layer 2" for second overlay', () => {
     const layers = buildLayerList(tpl);
     const o2 = layers.find((l) => l.id === 'o2')!;
-    expect(getLayerName(o2, tpl)).toBe('Overlay 2');
+    expect(getLayerName(o2, tpl)).toBe('Graphic Layer 2');
   });
 
   it('returns explicit name when set on slot', () => {

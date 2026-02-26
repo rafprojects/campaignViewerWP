@@ -8,8 +8,16 @@ import type { LayoutTemplate } from '@/types';
 
 export interface LayerPanelProps {
   template: LayoutTemplate;
+  /** ID of the currently-selected slot (from builder state). */
   selectedSlotId?: string | null;
+  /** ID of the currently-selected graphic layer / overlay (local modal state). */
+  selectedOverlayId?: string | null;
+  /** Whether the Background row is currently selected. */
+  isBackgroundSelected?: boolean;
   onSelectSlot: (id: string) => void;
+  onSelectOverlay: (id: string) => void;
+  /** Called when the user clicks the Background row. */
+  onSelectBackground?: () => void;
   onClearSelection: () => void;
   onRenameSlot: (id: string, name: string) => void;
   onRenameOverlay: (id: string, name: string) => void;
@@ -29,7 +37,11 @@ export interface LayerPanelProps {
 export function LayerPanel({
   template,
   selectedSlotId,
+  selectedOverlayId,
+  isBackgroundSelected,
   onSelectSlot,
+  onSelectOverlay,
+  onSelectBackground,
   onClearSelection,
   onRenameSlot,
   onRenameOverlay,
@@ -70,22 +82,30 @@ export function LayerPanel({
   }
 
   // ── Keyboard navigation ───────────────────────────────────
+  // Determine the single active ID across all layer types for navigation.
+  const activeLayerId = selectedSlotId ?? selectedOverlayId ?? (isBackgroundSelected ? 'background' : null);
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    const selectedIndex = layers.findIndex((l) => l.id === selectedSlotId);
+    const selectedIndex = layers.findIndex((l) => l.id === activeLayerId);
     if (selectedIndex < 0) return;
+
+    function selectLayer(item: (typeof layers)[0]) {
+      if (item.kind === 'slot') onSelectSlot(item.id);
+      else if (item.kind === 'overlay') onSelectOverlay(item.id);
+      else onSelectBackground?.();
+    }
 
     switch (e.key) {
       case 'ArrowUp': {
         e.preventDefault();
         const prev = layers[selectedIndex - 1];
-        if (prev) onSelectSlot(prev.id);
+        if (prev) selectLayer(prev);
         break;
       }
       case 'ArrowDown': {
         e.preventDefault();
         const next = layers[selectedIndex + 1];
-        if (next) onSelectSlot(next.id);
+        if (next) selectLayer(next);
         break;
       }
       case ' ':
@@ -148,13 +168,21 @@ export function LayerPanel({
         <Stack gap={0} py={4}>
           {layers.map((item) => {
             const isBackground = item.kind === 'background';
+            const isSelected =
+              (item.kind === 'slot' && item.id === selectedSlotId) ||
+              (item.kind === 'overlay' && item.id === selectedOverlayId) ||
+              (item.kind === 'background' && !!isBackgroundSelected);
             return (
               <LayerRow
                 key={item.id}
                 item={item}
                 template={template}
-                isSelected={!isBackground && item.id === selectedSlotId}
-                onSelect={isBackground ? () => {} : onSelectSlot}
+                isSelected={isSelected}
+                onSelect={() => {
+                  if (isBackground) onSelectBackground?.();
+                  else if (item.kind === 'overlay') onSelectOverlay(item.id);
+                  else onSelectSlot(item.id);
+                }}
                 onRename={(id, name) => {
                   if (item.kind === 'slot') onRenameSlot(id, name);
                   else if (item.kind === 'overlay') onRenameOverlay(id, name);
