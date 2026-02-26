@@ -127,13 +127,17 @@ export function LayerPanel({
       case 'f':
       case 'F': {
         e.preventDefault();
-        onBringToFront(layers[selectedIndex].id);
+        const cur = layers[selectedIndex];
+        if (cur.kind === 'background') break;
+        onBringToFront(cur.id);
         break;
       }
       case 'b':
       case 'B': {
         e.preventDefault();
-        onSendToBack(layers[selectedIndex].id);
+        const cur = layers[selectedIndex];
+        if (cur.kind === 'background') break;
+        onSendToBack(cur.id);
         break;
       }
       case 'Delete':
