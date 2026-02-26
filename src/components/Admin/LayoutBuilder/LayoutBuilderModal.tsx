@@ -6,19 +6,11 @@ import {
   Button,
   TextInput,
   ActionIcon,
-  Stack,
   Text,
   Tooltip,
   Divider,
   Box,
   SegmentedControl,
-  NumberInput,
-  Switch,
-  Tabs,
-  Slider,
-  Select,
-  ColorInput,
-  Accordion,
 } from '@mantine/core';
 import {
   IconDeviceFloppy,
@@ -26,13 +18,6 @@ import {
   IconArrowForwardUp,
   IconEye,
   IconEyeOff,
-  IconPlus,
-  IconTrash,
-  IconCopy,
-  IconList,
-  IconPhoto,
-  IconPin,
-  IconPinFilled,
 } from '@tabler/icons-react';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
@@ -40,22 +25,26 @@ import {
   useLayoutBuilderState,
   createEmptyTemplate,
 } from '@/hooks/useLayoutBuilderState';
-import { LayoutCanvas } from './LayoutCanvas';
-import { SlotPropertiesPanel } from './SlotPropertiesPanel';
-import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
-import { AssetUploader } from './AssetUploader';
-import { MediaPickerSidebar } from './MediaPickerSidebar';
-import { LayerPanel } from './LayerPanel';
+import { DockviewReact, type DockviewReadyEvent, type DockviewApi } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
+import {
+  BuilderDockContext,
+  type BuilderDockContextValue,
+  type OverlayLibraryItem,
+} from './BuilderDockContext';
+import { LayoutBuilderLayersPanel } from './LayoutBuilderLayersPanel';
+import { LayoutBuilderMediaPanel } from './LayoutBuilderMediaPanel';
+import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
+import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 
-// ── Overlay library type ──────────────────────────────────────
+// ── Dockview panel components (stable reference outside component) ──────────
 
-interface OverlayLibraryItem {
-  id: string;
-  url: string;
-  name: string;
-  uploadedAt: string;
-}
+const dockComponents = {
+  layers: LayoutBuilderLayersPanel,
+  media: LayoutBuilderMediaPanel,
+  canvas: LayoutBuilderCanvasPanel,
+  properties: LayoutBuilderPropertiesPanel,
+};
 
 // ── Aspect ratio presets ─────────────────────────────────────
 
@@ -90,7 +79,7 @@ export function LayoutBuilderModal({
   onNotify,
 }: LayoutBuilderModalProps) {
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const dockApiRef = useRef<DockviewApi | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // ── Fetch campaign list for the media picker ──
@@ -168,8 +157,6 @@ export function LayoutBuilderModal({
     }
   });
   const bgSectionRef = useRef<HTMLDivElement>(null);
-  const [isPanelPinned, setIsPanelPinned] = useState(false);
-  const [leftTab, setLeftTab] = useState<'layers' | 'media'>('layers');
   // ── Layer panel selection (overlay + background tracked locally; slot uses builder state) ──
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
   const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
@@ -438,6 +425,44 @@ export function LayoutBuilderModal({
       ? builder.template.overlays[selectedOverlayIndex]
       : undefined;
 
+  // ── Dockview ready handler (P17-E) ──
+  const handleDockReady = useCallback((event: DockviewReadyEvent) => {
+    dockApiRef.current = event.api;
+    const LAYOUT_KEY = 'wpsg_builder_layout';
+    const saved = localStorage.getItem(LAYOUT_KEY);
+    if (saved) {
+      try {
+        event.api.fromJSON(JSON.parse(saved));
+        event.api.onDidLayoutChange(() => {
+          try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(event.api.toJSON())); } catch { /* ignore */ }
+        });
+        return;
+      } catch { /* fall through to default layout */ }
+    }
+    // Default layout: Layers+Media tabs left | Canvas centre | Properties right
+    const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
+    event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
+    const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
+    event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
+    event.api.onDidLayoutChange(() => {
+      try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(event.api.toJSON())); } catch { /* ignore */ }
+    });
+  }, []);
+
+  // ── Context value for dock panels (P17-E) ──
+  const contextValue: BuilderDockContextValue = {
+    builder, isSaving, media, campaigns, selectedCampaignId, setSelectedCampaignId,
+    overlayLibrary, isUploadingOverlay, isUploadingBg,
+    selectedSlot, selectedOverlayId, setSelectedOverlayId, selectedOverlay,
+    selectedOverlayIndex, isBackgroundSelected, setIsBackgroundSelected,
+    snapEnabled, setSnapEnabled, snapThreshold, setSnapThreshold,
+    designAssetsOpen, setDesignAssetsOpen, bgSectionRef, dockApiRef,
+    announce,
+    handleSave, handleClose, handleAutoAssign, handleUploadOverlay,
+    handleAddUrlToLibrary, handleDeleteLibraryOverlay, handleUploadBgImage,
+    handleDeleteSelected, handleDuplicateSelected,
+  };
+
   return (
     <Modal
       opened={opened}
@@ -559,666 +584,16 @@ export function LayoutBuilderModal({
           </Group>
         </Box>
 
-        {/* ── Main workspace ── */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
-          {/* Left toolbar — slot list + media picker (tabbed) */}
-          {!builder.isPreview && (
-            <Box
-              w={240}
-              style={{
-                borderRight: '1px solid var(--mantine-color-default-border)',
-                overflowY: 'auto',
-                flexShrink: 0,
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <Tabs
-                value={leftTab}
-                onChange={(val) => {
-                  if (val === 'layers' || val === 'media') setLeftTab(val);
-                }}
-                variant="outline"
-                styles={{
-                  root: { display: 'flex', flexDirection: 'column', height: '100%' },
-                  panel: { flex: 1, overflow: 'auto', padding: 'var(--mantine-spacing-sm)' },
-                }}
-              >
-                <Tabs.List>
-                  <Tabs.Tab value="layers" leftSection={<IconList size={14} />}>
-                    Layers
-                  </Tabs.Tab>
-                  <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
-                    Media
-                  </Tabs.Tab>
-                </Tabs.List>
-
-                <Tabs.Panel value="layers" style={{ padding: 0 }}>
-                  {/* Slot toolbar — add/delete/duplicate remain at top */}
-                  <Group gap={4} px={6} py={4} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-                    <Tooltip label="Add slot">
-                      <ActionIcon size="sm" variant="light" onClick={() => builder.addSlot()} aria-label="Add slot">
-                        <IconPlus size={14} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Delete selected">
-                      <ActionIcon
-                        size="sm"
-                        variant="light"
-                        color="red"
-                        onClick={handleDeleteSelected}
-                        disabled={builder.selectedSlotIds.size === 0}
-                        aria-label="Delete selected slots"
-                      >
-                        <IconTrash size={14} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Duplicate selected">
-                      <ActionIcon
-                        size="sm"
-                        variant="light"
-                        onClick={handleDuplicateSelected}
-                        disabled={builder.selectedSlotIds.size === 0}
-                        aria-label="Duplicate selected slots"
-                      >
-                        <IconCopy size={14} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-
-                  {/* Unified layer list (P16-B) */}
-                  <LayerPanel
-                    template={builder.template}
-                    selectedSlotId={
-                      builder.selectedSlotIds.size === 1
-                        ? [...builder.selectedSlotIds][0]
-                        : null
-                    }
-                    selectedOverlayId={selectedOverlayId}
-                    isBackgroundSelected={isBackgroundSelected}
-                    onSelectSlot={(id) => {
-                      // Selecting a slot clears graphic-layer + bg selection
-                      setSelectedOverlayId(null);
-                      setIsBackgroundSelected(false);
-                      builder.selectSlot(id);
-                    }}
-                    onSelectOverlay={(id) => {
-                      setSelectedOverlayId(id);
-                      setIsBackgroundSelected(false);
-                      builder.clearSelection();
-                    }}
-                    onSelectBackground={() => {
-                      setSelectedOverlayId(null);
-                      setIsBackgroundSelected(true);
-                      builder.clearSelection();
-                      // Switch to media tab, expand Design Assets accordion, scroll to bg section
-                      setLeftTab('media');
-                      setDesignAssetsOpen(true);
-                      try {
-                        localStorage.setItem('wpsg_builder_design_assets_open', 'true');
-                      } catch { /* ignore */ }
-                      requestAnimationFrame(() =>
-                        bgSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
-                      );
-                    }}
-                    onClearSelection={() => {
-                      setSelectedOverlayId(null);
-                      setIsBackgroundSelected(false);
-                      builder.clearSelection();
-                    }}
-                    onRenameSlot={builder.renameSlot}
-                    onRenameOverlay={builder.renameOverlay}
-                    onToggleSlotVisible={builder.toggleSlotVisible}
-                    onToggleOverlayVisible={builder.toggleOverlayVisible}
-                    onToggleSlotLocked={builder.toggleSlotLocked}
-                    onToggleOverlayLocked={builder.toggleOverlayLocked}
-                    onReorderLayers={builder.reorderLayers}
-                    onBringToFront={(id) => {
-                      if (
-                        builder.template.slots.some((s) => s.id === id) ||
-                        builder.template.overlays.some((o) => o.id === id)
-                      ) builder.bringToFront([id]);
-                    }}
-                    onSendToBack={(id) => {
-                      if (
-                        builder.template.slots.some((s) => s.id === id) ||
-                        builder.template.overlays.some((o) => o.id === id)
-                      ) builder.sendToBack([id]);
-                    }}
-                    onBringForward={(id) => {
-                      if (
-                        builder.template.slots.some((s) => s.id === id) ||
-                        builder.template.overlays.some((o) => o.id === id)
-                      ) builder.bringForward([id]);
-                    }}
-                    onSendBackward={(id) => {
-                      if (
-                        builder.template.slots.some((s) => s.id === id) ||
-                        builder.template.overlays.some((o) => o.id === id)
-                      ) builder.sendBackward([id]);
-                    }}
-                  />
-                </Tabs.Panel>
-
-                <Tabs.Panel value="media">
-                  <Select
-                    size="xs"
-                    mb="sm"
-                    placeholder="Choose a campaign…"
-                    value={selectedCampaignId}
-                    onChange={setSelectedCampaignId}
-                    data={(campaigns ?? []).map((c) => ({
-                      value: String(c.id),
-                      label: c.title,
-                    }))}
-                    clearable
-                    searchable
-                    aria-label="Select campaign for media"
-                  />
-                  <MediaPickerSidebar
-                    media={media}
-                    template={builder.template}
-                    selectedSlotIds={builder.selectedSlotIds}
-                    onAssignMedia={builder.assignMediaToSlot}
-                    onClearMedia={builder.clearSlotMedia}
-                    onAutoAssign={handleAutoAssign}
-                  />
-
-                  {/* ── Design Assets Accordion ── */}
-                  <Accordion
-                    value={designAssetsOpen ? 'design-assets' : null}
-                    onChange={(val) => {
-                      const next = val === 'design-assets';
-                      setDesignAssetsOpen(next);
-                      try {
-                        localStorage.setItem('wpsg_builder_design_assets_open', String(next));
-                      } catch { /* ignore */ }
-                    }}
-                    mt="sm"
-                  >
-                    <Accordion.Item value="design-assets">
-                      <Accordion.Control>Design Assets</Accordion.Control>
-                      <Accordion.Panel>
-                        {/* ── Graphic Layers section ── */}
-                        <Text size="xs" fw={500} mb={4}>Graphic Layers</Text>
-                        {(overlayLibrary ?? []).length > 0 ? (
-                          <div
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: 'repeat(2, 1fr)',
-                              gap: 4,
-                              marginBottom: 8,
-                            }}
-                          >
-                            {(overlayLibrary ?? []).map((item) => (
-                              <Box
-                                key={item.id}
-                                style={{
-                                  border: '1px solid var(--mantine-color-default-border)',
-                                  borderRadius: 4,
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    background: 'var(--mantine-color-dark-7)',
-                                    height: 56,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <img
-                                    src={item.url}
-                                    alt={item.name}
-                                    style={{
-                                      maxWidth: '100%',
-                                      maxHeight: '100%',
-                                      objectFit: 'contain',
-                                    }}
-                                  />
-                                </div>
-                                <Group gap={2} p={2} wrap="nowrap">
-                                  <Tooltip label="Add to canvas">
-                                    <ActionIcon
-                                      size="xs"
-                                      variant="subtle"
-                                      style={{ flex: 1 }}
-                                      onClick={() => {
-                                        builder.addOverlay(item.url);
-                                        announce(`Overlay "${item.name}" added to canvas`);
-                                      }}
-                                      aria-label={`Use overlay ${item.name}`}
-                                    >
-                                      <IconPlus size={10} />
-                                    </ActionIcon>
-                                  </Tooltip>
-                                  <Tooltip label="Delete from library">
-                                    <ActionIcon
-                                      size="xs"
-                                      color="red"
-                                      variant="subtle"
-                                      onClick={() => handleDeleteLibraryOverlay(item.id)}
-                                      aria-label={`Delete overlay ${item.name} from library`}
-                                    >
-                                      <IconTrash size={10} />
-                                    </ActionIcon>
-                                  </Tooltip>
-                                </Group>
-                              </Box>
-                            ))}
-                          </div>
-                        ) : (
-                          <Text size="xs" c="dimmed" mb={8}>
-                            No overlays in library yet.
-                          </Text>
-                        )}
-                        <AssetUploader
-                          onFileSelect={handleUploadOverlay}
-                          onUrlSubmit={(url) => void handleAddUrlToLibrary(url)}
-                          isUploading={isUploadingOverlay}
-                          accept="image/png,image/svg+xml,image/webp,image/gif"
-                          uploadLabel="Upload to library"
-                          urlPlaceholder="Or paste image URL into library…"
-                          uploadAriaLabel="Upload overlay to library"
-                          urlAriaLabel="Overlay image URL"
-                        />
-
-                        {/* ── Background section ── */}
-                        <Divider my="sm" />
-                        <div ref={bgSectionRef}>
-                          <Text size="xs" fw={500} mb={4}>Background</Text>
-                        </div>
-                        <Stack gap="sm">
-                          <div>
-                            <Text size="xs" fw={500} mb={4}>Color</Text>
-                            <ColorInput
-                              size="xs"
-                              value={builder.template.backgroundColor}
-                              onChange={builder.setBackgroundColor}
-                              format="hex"
-                              swatches={['#1a1a2e', '#0d1117', '#000000', '#ffffff', '#16213e', 'transparent']}
-                            />
-                          </div>
-
-                          <Divider />
-
-                          <Text size="xs" fw={500}>Background Image</Text>
-                          <Text size="xs" c="dimmed" mt={-6}>
-                            Layered on top of color (supports transparency)
-                          </Text>
-
-                          {builder.template.backgroundImage ? (
-                            <Box>
-                              <div
-                                style={{
-                                  background: 'var(--mantine-color-dark-7)',
-                                  height: 80,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  borderRadius: 4,
-                                  overflow: 'hidden',
-                                  marginBottom: 6,
-                                }}
-                              >
-                                <img
-                                  src={builder.template.backgroundImage}
-                                  alt="Background preview"
-                                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                                />
-                              </div>
-                              <Button
-                                size="xs"
-                                color="red"
-                                variant="light"
-                                fullWidth
-                                leftSection={<IconTrash size={12} />}
-                                onClick={() => builder.setBackgroundImage('')}
-                                mb={4}
-                              >
-                                Remove background image
-                              </Button>
-                            </Box>
-                          ) : (
-                            <Text size="xs" c="dimmed">No background image set.</Text>
-                          )}
-
-                          <AssetUploader
-                            onFileSelect={handleUploadBgImage}
-                            onUrlSubmit={(url) => {
-                              builder.setBackgroundImage(url);
-                              announce('Background image set from URL');
-                            }}
-                            isUploading={isUploadingBg}
-                            accept="image/*"
-                            uploadLabel="Upload image"
-                            urlPlaceholder="Or paste image URL…"
-                            uploadAriaLabel="Upload background image"
-                            urlAriaLabel="Background image URL"
-                          />
-
-                          {builder.template.backgroundImage && (
-                            <>
-                              <Select
-                                size="xs"
-                                label="Image fit"
-                                value={builder.template.backgroundImageFit ?? 'cover'}
-                                onChange={(val) =>
-                                  builder.setBackgroundImageFit((val ?? 'cover') as 'cover' | 'contain' | 'fill')
-                                }
-                                data={[
-                                  { value: 'cover', label: 'Cover (fill, crop)' },
-                                  { value: 'contain', label: 'Contain (letterbox)' },
-                                  { value: 'fill', label: 'Fill (stretch)' },
-                                ]}
-                              />
-                              <div>
-                                <Text size="xs" c="dimmed" mb={2}>Image opacity</Text>
-                                <Slider
-                                  value={builder.template.backgroundImageOpacity ?? 1}
-                                  onChange={(val) => builder.setBackgroundImageOpacity(val)}
-                                  min={0}
-                                  max={1}
-                                  step={0.05}
-                                  size="xs"
-                                  label={(v) => `${Math.round(v * 100)}%`}
-                                />
-                              </div>
-                            </>
-                          )}
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  </Accordion>
-                </Tabs.Panel>
-
-              </Tabs>
-            </Box>
-          )}
-
-          {/* Center: canvas workspace */}
-          <Box
-            ref={canvasContainerRef}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-            }}
-          >
-            <Box
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--mantine-color-dark-8)',
-                overflow: 'auto',
-                padding: 24,
-              }}
-            >
-              <LayoutCanvas
-                template={builder.template}
-                selectedSlotIds={builder.selectedSlotIds}
-                isPreview={builder.isPreview}
-                media={media}
-                snapEnabled={snapEnabled}
-                snapThresholdPx={snapThreshold}
-                onSlotMove={builder.moveSlot}
-                onSlotResize={builder.resizeSlot}
-                onSlotSelect={builder.selectSlot}
-                onSlotToggleSelect={builder.toggleSlotSelection}
-                onCanvasClick={builder.clearSelection}
-                onMediaDrop={builder.assignMediaToSlot}
-                onAnnounce={announce}
-                onOverlayMove={builder.moveOverlay}
-                onOverlayResize={builder.resizeOverlay}
-              />
-            </Box>
-
-            {/* Footer: canvas size controls */}
-            {!builder.isPreview && (
-              <Box
-                px="md"
-                py={6}
-                style={{
-                  borderTop: '1px solid var(--mantine-color-default-border)',
-                  background: 'var(--mantine-color-body)',
-                  flexShrink: 0,
-                }}
-              >
-                <Group gap="md" justify="center" wrap="nowrap">
-                  <Group gap={4} wrap="nowrap">
-                    <Text size="xs" c="dimmed">
-                      Max width:
-                    </Text>
-                    <NumberInput
-                      value={builder.template.canvasMaxWidth || 0}
-                      onChange={(val) => {
-                        const n = Number(val) || 0;
-                        builder.setTemplate({
-                          ...builder.template,
-                          canvasMaxWidth: n,
-                          updatedAt: new Date().toISOString(),
-                        });
-                      }}
-                      min={0}
-                      max={3840}
-                      step={10}
-                      size="xs"
-                      w={80}
-                      suffix="px"
-                      aria-label="Canvas max width"
-                    />
-                  </Group>
-                  <Button
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => {
-                      builder.setTemplate({
-                        ...builder.template,
-                        canvasMaxWidth: 0,
-                        updatedAt: new Date().toISOString(),
-                      });
-                    }}
-                  >
-                    Fit to container
-                  </Button>
-                  <Divider orientation="vertical" />
-                  {/* Snap toggle + sensitivity slider */}
-                  <Group gap={6} wrap="nowrap">
-                    <Switch
-                      label="Snap"
-                      size="xs"
-                      checked={snapEnabled}
-                      onChange={(e) => setSnapEnabled(e.currentTarget.checked)}
-                      aria-label="Toggle snap guides"
-                    />
-                    {snapEnabled && (
-                      <>
-                        <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                          Sensitivity:
-                        </Text>
-                        <Slider
-                          value={snapThreshold}
-                          onChange={setSnapThreshold}
-                          min={2}
-                          max={30}
-                          step={1}
-                          size="xs"
-                          w={80}
-                          label={(v) => `${v}px`}
-                          aria-label="Snap sensitivity"
-                        />
-                      </>
-                    )}
-                  </Group>
-                </Group>
-              </Box>
-            )}
-          </Box>
-
-          {/* Right: properties panel ─ pinned (docked) mode */}
-          {!builder.isPreview && selectedSlot && isPanelPinned && (
-            <Box
-              w={280}
-              p="sm"
-              style={{
-                borderLeft: '1px solid var(--mantine-color-default-border)',
-                overflowY: 'auto',
-                flexShrink: 0,
-              }}
-            >
-              <Group justify="space-between" mb="xs">
-                <Text size="xs" fw={600} c="dimmed">SLOT PROPERTIES</Text>
-                <Tooltip label="Unpin panel (float over canvas)">
-                  <ActionIcon
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => setIsPanelPinned(false)}
-                    aria-label="Unpin properties panel"
-                  >
-                    <IconPinFilled size={12} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-              <SlotPropertiesPanel
-                slot={selectedSlot}
-                onUpdate={(updates) =>
-                  builder.updateSlot(selectedSlot.id, updates)
-                }
-                onBringToFront={() => builder.bringToFront([selectedSlot.id])}
-                onSendToBack={() => builder.sendToBack([selectedSlot.id])}
-                onBringForward={() => builder.bringForward([selectedSlot.id])}
-                onSendBackward={() => builder.sendBackward([selectedSlot.id])}
-              />
-            </Box>
-          )}
-
-          {/* Right: graphic layer properties panel ─ pinned (P17-D) */}
-          {!builder.isPreview && selectedOverlay && !selectedSlot && isPanelPinned && (
-            <Box
-              w={280}
-              style={{
-                borderLeft: '1px solid var(--mantine-color-default-border)',
-                overflowY: 'auto',
-                flexShrink: 0,
-              }}
-            >
-              <Group justify="space-between" p="sm" pb={0}>
-                <Text size="xs" fw={600} c="dimmed">GRAPHIC LAYER</Text>
-                <Tooltip label="Unpin panel (float over canvas)">
-                  <ActionIcon
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => setIsPanelPinned(false)}
-                    aria-label="Unpin properties panel"
-                  >
-                    <IconPinFilled size={12} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-              <GraphicLayerPropertiesPanel
-                overlay={selectedOverlay}
-                overlayIndex={selectedOverlayIndex + 1}
-                onUpdate={builder.updateOverlay}
-                onRename={builder.renameOverlay}
-                onRemove={(id) => { builder.removeOverlay(id); setSelectedOverlayId(null); }}
-                onBringToFront={(id) => builder.bringToFront([id])}
-                onSendToBack={(id) => builder.sendToBack([id])}
-                onBringForward={(id) => builder.bringForward([id])}
-                onSendBackward={(id) => builder.sendBackward([id])}
-              />
-            </Box>
-          )}
-
-          {/* Right: properties panel ─ floating (default) mode */}
-          {!builder.isPreview && selectedSlot && !isPanelPinned && (
-            <Box
-              p="sm"
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: 280,
-                overflowY: 'auto',
-                zIndex: 50,
-                background: 'var(--mantine-color-body)',
-                borderLeft: '1px solid var(--mantine-color-default-border)',
-                boxShadow: '-4px 0 20px rgba(0,0,0,0.35)',
-              }}
-            >
-              <Group justify="space-between" mb="xs">
-                <Text size="xs" fw={600} c="dimmed">SLOT PROPERTIES</Text>
-                <Tooltip label="Pin panel (dock to side)">
-                  <ActionIcon
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => setIsPanelPinned(true)}
-                    aria-label="Pin properties panel"
-                  >
-                    <IconPin size={12} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-              <SlotPropertiesPanel
-                slot={selectedSlot}
-                onUpdate={(updates) =>
-                  builder.updateSlot(selectedSlot.id, updates)
-                }
-                onBringToFront={() => builder.bringToFront([selectedSlot.id])}
-                onSendToBack={() => builder.sendToBack([selectedSlot.id])}
-                onBringForward={() => builder.bringForward([selectedSlot.id])}
-                onSendBackward={() => builder.sendBackward([selectedSlot.id])}
-              />
-            </Box>
-          )}
-
-          {/* Right: graphic layer properties panel ─ floating (P17-D) */}
-          {!builder.isPreview && selectedOverlay && !selectedSlot && !isPanelPinned && (
-            <Box
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: 280,
-                overflowY: 'auto',
-                zIndex: 50,
-                background: 'var(--mantine-color-body)',
-                borderLeft: '1px solid var(--mantine-color-default-border)',
-                boxShadow: '-4px 0 20px rgba(0,0,0,0.35)',
-              }}
-            >
-              <Group justify="space-between" p="sm" pb={0}>
-                <Text size="xs" fw={600} c="dimmed">GRAPHIC LAYER</Text>
-                <Tooltip label="Pin panel (dock to side)">
-                  <ActionIcon
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => setIsPanelPinned(true)}
-                    aria-label="Pin properties panel"
-                  >
-                    <IconPin size={12} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-              <GraphicLayerPropertiesPanel
-                overlay={selectedOverlay}
-                overlayIndex={selectedOverlayIndex + 1}
-                onUpdate={builder.updateOverlay}
-                onRename={builder.renameOverlay}
-                onRemove={(id) => { builder.removeOverlay(id); setSelectedOverlayId(null); }}
-                onBringToFront={(id) => builder.bringToFront([id])}
-                onSendToBack={(id) => builder.sendToBack([id])}
-                onBringForward={(id) => builder.bringForward([id])}
-                onSendBackward={(id) => builder.sendBackward([id])}
-              />
-            </Box>
-          )}
-        </div>
+        {/* ── Main workspace: dockview (P17-E) ── */}
+        <BuilderDockContext.Provider value={contextValue}>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <DockviewReact
+              className="dockview-theme-dark"
+              components={dockComponents}
+              onReady={handleDockReady}
+            />
+          </div>
+        </BuilderDockContext.Provider>
 
         {/* ARIA live region for screen reader announcements */}
         <div
