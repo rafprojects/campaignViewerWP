@@ -27,6 +27,12 @@ if (!globalThis.ResizeObserver) {
 	globalThis.ResizeObserver = ResizeObserver;
 }
 
+// Mantine's Combobox calls scrollIntoView on list items after dropdown opens.
+// JSDOM doesn't implement it, causing unhandled exception noise in tests.
+if (!window.HTMLElement.prototype.scrollIntoView) {
+	window.HTMLElement.prototype.scrollIntoView = function () {};
+}
+
 afterEach(() => {
 	cleanup();
 });

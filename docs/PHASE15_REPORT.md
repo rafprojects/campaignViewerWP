@@ -1,9 +1,9 @@
 # Phase 15 — Layout Builder
 
-**Status:** ✅ Complete — All 6 sprints delivered  
-**Version:** v0.13.1 (stretch goals complete)  
+**Status:** ✅ Complete — All 6 sprints delivered + QA Sprint (tests 75%+ coverage)  
+**Version:** v0.13.0 (sprint complete)  
 **Created:** February 22, 2026  
-**Last updated:** February 22, 2026 — Sprint 6 complete (Phase 15 finished)
+**Last updated:** February 26, 2026 — QA Sprint complete (539 tests, layout builder 75%+ coverage)
 
 ### Progress Log
 
@@ -15,7 +15,8 @@
 | 2026-02-22 | `ce680af` | Sprint 3 complete — P15-C.6–C.7, P15-C.4a, P15-D (media picker, canvas controls, a11y, smart guides). 25 new smartGuides tests. |
 | 2026-02-22 | `1daa4bb` | Sprint 4 complete — P15-E (LayoutBuilderGallery adapter, useLayoutTemplate hook, CampaignViewer integration) + P15-F (LayoutTemplateList admin panel, campaign layout selector, import/export). 14 new tests, 271 total passing, tsc clean. |
 | 2026-02-22 | `2fb8f54` | Sprint 5 complete — P15-G (z-index reorder: bringToFront/sendToBack/bringForward/sendBackward, keyboard shortcuts, layer-ordered slot list, normalize on save) + P15-H (overlay CRUD, canvas rendering via Rnd, gallery adapter overlay rendering, overlay management tab with file upload/URL/opacity/click-through) + P15-I (shape preview icons, mask URL support). 16 new tests, 301 total passing, tsc clean. |
-| 2026-02-22 | *pending* | Sprint 6 complete — P15-J (12 premade layout presets in `src/data/layoutPresets.ts`, PresetGalleryModal with visual mini-canvas previews, "From Preset" button in LayoutTemplateList, new slot ID generation via crypto.randomUUID()) + P15-K (5 diagonal polygon shapes: parallelogram-left/right, chevron, arrow, trapezoid added to LayoutSlotShape type, getClipPath() in both renderers, shape selector dropdown). 18 new tests, 319 total passing, tsc clean. Phase 15 complete. |
+| 2026-02-22 | `31f304a` | Sprint 6 complete — P15-J (12 premade layout presets in `src/data/layoutPresets.ts`, PresetGalleryModal with visual mini-canvas previews, "From Preset" button in LayoutTemplateList, new slot ID generation via crypto.randomUUID()) + P15-K (5 diagonal polygon shapes: parallelogram-left/right, chevron, arrow, trapezoid added to LayoutSlotShape type, getClipPath() in both renderers, shape selector dropdown). 18 new tests, 319 total passing, tsc clean. Phase 15 feature-complete. |
+| 2026-02-26 | *pending* | QA Sprint complete — 5 new layout builder test files (SmartGuides, LayoutCanvas, LayoutSlotComponent, SlotPropertiesPanel, MediaPickerSidebar) + clip-path/blob-URL coverage in LayoutBuilderGallery. 539 tests passing (up from 319). Layout builder area: statements 74%+, branches 75%+. `setup.ts` scrollIntoView polyfill added. |
 
 ---
 
@@ -1067,6 +1068,41 @@ Some creative layouts use diagonal lines (parallelogram-shaped images, chevron p
 
 ## Testing Strategy
 
+### Achieved Coverage (QA Sprint, Feb 26 2026)
+
+| File | % Stmts | % Branch | % Funcs | Notes |
+|------|---------|----------|---------|-------|
+| `clipPath.ts` | 100% | 100% | 100% | All 11 shapes |
+| `MediaPickerSidebar.tsx` | 100% | 88% | 100% | 23 tests |
+| `SlotPropertiesPanel.tsx` | 94% | 88% | 20% | 30 tests |
+| `SmartGuides.tsx` | 91% | 94% | 100% | 18 tests |
+| `useLayoutBuilderState.ts` | 99% | 92% | 100% | 62 tests |
+| `LayoutCanvas.tsx` | 77% | 79% | 33% | 34 tests |
+| `LayoutBuilderGallery.tsx` | 77% | 61% | 50% | 22 tests |
+| `LayoutSlotComponent.tsx` | 67% | 73% | 25% | 31 tests |
+| **Layout Builder area (weighted)** | **~75%** | **75%+** | — | Branch target met |
+
+**Total test suite:** 539 passing, 1 skipped (540 total), 37 test files — up from 319 tests at Sprint 6 completion.
+
+### New Test Files (QA Sprint)
+
+| File | Tests | Key Coverage |
+|------|-------|-------------|
+| `SmartGuides.test.tsx` | 18 | SVG render, line geometry, dash patterns, label text, colors per edge/center/spacing |
+| `LayoutCanvas.test.tsx` | 34 | Dimension label, canvas element role, background image, overlay ghost mode, slot rendering |
+| `LayoutSlotComponent.test.tsx` | 31 | Preview/edit modes, clip-path shapes (7), border fill layer, drag/drop handlers |
+| `SlotPropertiesPanel.test.tsx` | ~30 | X/Y/W/H inputs, lock ratio, shape select, focal point 9-dot grid, z-index actions |
+| `MediaPickerSidebar.test.tsx` | 23 | Count header, empty state, assign/drag/auto-assign, assignments panel, unassign |
+| `LayoutBuilderGallery.test.tsx` (additions) | +5 | Clip-path double-container, border fill layer, hexagon/diamond, blob-URL skip |
+
+### Notable Fixes Applied During QA
+
+- **`container.firstChild` not component root**: Mantine injects `<style>` tags as first DOM child — always use role queries or `container.querySelector`
+- **JSDOM border shorthand**: `el.style.border` returns `''` in JSDOM — use `toHaveStyle({ borderStyle: 'solid' })` instead
+- **Duplicate Mantine labels**: Divider `label="Shape"` + Select `label="Shape"` → use `getAllByLabelText`
+- **Edit mode placeholder text**: Edit mode shows slot number (`1`), not the word `"Empty"` (preview-only)
+- **scrollIntoView polyfill**: Added to `src/test/setup.ts` to suppress Mantine Combobox JSDOM exception
+
 ### Unit Tests
 
 | Area | Coverage Target |
@@ -1158,7 +1194,12 @@ Some creative layouts use diagonal lines (parallelogram-shaped images, chevron p
 | `src/data/layoutPresets.ts` | P15-J | 12 premade template definitions (TypeScript module) |
 | `src/data/layoutPresets.test.ts` | P15-J/K | 18 tests for presets + diagonal shapes |
 | `src/components/Admin/LayoutBuilder/PresetGalleryModal.tsx` | P15-J | Visual preset picker with mini-canvas previews |
+| `src/components/Admin/LayoutBuilder/SmartGuides.test.tsx` | QA | 18 tests: SVG geometry, colors, labels, empty state |
+| `src/components/Admin/LayoutBuilder/LayoutCanvas.test.tsx` | QA | 34 tests: dimension label, canvas element, bg image, overlays, slots |
+| `src/components/Admin/LayoutBuilder/LayoutSlotComponent.test.tsx` | QA | 31 tests: preview/edit modes, clip-path shapes, drop handlers |
+| `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.test.tsx` | QA | 30 tests: inputs, shape select, focal point, z-index actions |
+| `src/components/Admin/LayoutBuilder/MediaPickerSidebar.test.tsx` | QA | 23 tests: count, assign, drag, auto-assign, assignments panel |
 
 ---
 
-*Document created: February 22, 2026*
+*Document created: February 22, 2026 — Last updated: February 26, 2026 (QA Sprint)*

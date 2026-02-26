@@ -12,6 +12,21 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.13.0 (February 26, 2026)
+- **MINOR**: Phase 15 — Layout Builder (all 6 sprints + QA Sprint)
+  - **P15-A**: Per-breakpoint gallery selection — 6-way adapter config (desktop/tablet/mobile × image/video), `useBreakpoint` container-width hook.
+  - **P15-B**: Layout template data model — `LayoutTemplate`, `LayoutSlot`, `LayoutOverlay`, `CampaignLayoutBinding` interfaces; `assignMediaToSlots()` utility; PHP REST CRUD.
+  - **P15-C**: Canvas builder UI — full-screen modal, canvas workspace (react-rnd), slot component (clip-path shapes, focal point, border), properties panel, media picker sidebar, `useLayoutBuilderState` with undo/redo autosave.
+  - **P15-D**: Smart guides & snapping — SVG overlay, `computeGuides()` pure function, configurable snap threshold.
+  - **P15-E**: Finalized gallery adapter — `LayoutBuilderGallery` with pixel-accurate slot rendering, double-container clip-path border technique, overlay layers, blob-URL guard.
+  - **P15-F**: Template library — `LayoutTemplateList` CRUD, campaign layout selector, JSON import/export with schema validation.
+  - **P15-G (stretch)**: Z-index layer control — bringToFront/sendToBack/bringForward/sendBackward, keyboard shortcuts, normalize on save.
+  - **P15-H (stretch)**: Overlay transparencies — CRUD with file upload/URL, opacity slider, click-through toggle, gallery rendering.
+  - **P15-I (stretch)**: Mixed shapes — 8 shapes (circle, ellipse, hexagon, diamond, custom, mask URL); shape preview icons.
+  - **P15-J (stretch)**: Premade layout presets — 12 templates, `PresetGalleryModal` with mini-canvas previews.
+  - **P15-K (stretch)**: Diagonal shapes — 5 polygon shapes (parallelogram-left/right, chevron, arrow, trapezoid); `getClipPath()` shared utility.
+  - **QA Sprint**: 5 new layout builder test files + gallery coverage additions; 539 tests total (up from 319); layout builder ~75% statement coverage, 75%+ branch coverage.
+
 ### v0.12.0 (February 22, 2026)
 - **MINOR**: Phase 14 — Infrastructure Hardening, Advanced Settings & Backend Utilities
   - **P14-A**: Security hardening — 4 Critical + 6 High findings fixed (dead code removal, POST_TYPE constant, stale closure fix, oEmbed response leak, status/visibility allowlist, CORS headers, WP_DEBUG gate, URI sanitization, DDL identifier validation).

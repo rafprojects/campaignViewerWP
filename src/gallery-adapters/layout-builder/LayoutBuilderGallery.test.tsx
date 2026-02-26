@@ -721,4 +721,262 @@ describe('LayoutBuilderGallery overlay rendering', () => {
       expect(wrapper.style.pointerEvents).toBe('none');
     });
   });
+
+  it('skips blob: URL overlays — returns null for blob image URLs', async () => {
+    const blobTemplate = {
+      ...overlayTemplate,
+      id: 'tpl-blob',
+      overlays: [
+        {
+          id: 'ov-blob',
+          imageUrl: 'blob:https://example.com/abc-123',
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100,
+          zIndex: 999,
+          opacity: 1,
+          pointerEvents: false,
+        },
+      ],
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(blobTemplate),
+    }) as unknown as typeof globalThis.fetch;
+
+    const mockMedia = [
+      { id: 'm1', type: 'image' as const, source: 'upload' as const, url: '/img1.jpg', title: 'Image 1', order: 0 },
+    ];
+
+    const defaultSettings = {
+      tileHoverBounce: false,
+      tileGlowEnabled: false,
+      tileGlowColor: '#fff',
+      tileGlowSpread: 4,
+      imageBorderRadius: 0,
+      tileBorderWidth: 0,
+      tileBorderColor: '#fff',
+    } as unknown as import('@/types').GalleryBehaviorSettings;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-blob"
+      />,
+    );
+
+    await waitFor(() => {
+      // Canvas renders, but no img with the blob URL
+      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+    });
+
+    const blobImg = document.querySelector('img[src^="blob:"]');
+    expect(blobImg).toBeNull();
+  });
+});
+
+// ─── Clip-path shape rendering in gallery ────────────────────────────────────
+
+describe('LayoutBuilderGallery clip-path slots', () => {
+  const makeClipTemplate = (shape: string, borderWidth = 0) => ({
+    id: 'tpl-clip',
+    name: 'Clip Layout',
+    schemaVersion: 1,
+    canvasAspectRatio: 16 / 9,
+    canvasMinWidth: 400,
+    canvasMaxWidth: 1200,
+    backgroundColor: '#222',
+    slots: [
+      {
+        id: 's1',
+        x: 10,
+        y: 10,
+        width: 30,
+        height: 40,
+        zIndex: 1,
+        shape,
+        borderRadius: 0,
+        borderWidth,
+        borderColor: '#aa00cc',
+        objectFit: 'cover' as const,
+        objectPosition: '50% 50%',
+        clickAction: 'lightbox' as const,
+        hoverEffect: 'none' as const,
+        clipPath: undefined,
+        maskImage: undefined,
+      },
+    ],
+    overlays: [],
+    createdAt: '2025-01-01T00:00:00Z',
+    updatedAt: '2025-01-01T00:00:00Z',
+    tags: [],
+  });
+
+  const mockMedia = [
+    { id: 'm1', type: 'image' as const, source: 'upload' as const, url: '/img1.jpg', title: 'Circle Photo', order: 0 },
+  ];
+
+  const defaultSettings = {
+    tileHoverBounce: false,
+    tileGlowEnabled: false,
+    tileGlowColor: '#fff',
+    tileGlowSpread: 4,
+    imageBorderRadius: 0,
+    tileBorderWidth: 0,
+    tileBorderColor: '#fff',
+  } as unknown as import('@/types').GalleryBehaviorSettings;
+
+  let originalFetch: typeof globalThis.fetch;
+  let originalRO: typeof globalThis.ResizeObserver;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    originalRO = globalThis.ResizeObserver;
+
+    globalThis.ResizeObserver = vi.fn().mockImplementation((callback: ResizeObserverCallback) => ({
+      observe: (el: Element) => {
+        callback(
+          [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
+          {} as ResizeObserver,
+        );
+      },
+      disconnect: vi.fn(),
+      unobserve: vi.fn(),
+    })) as unknown as typeof globalThis.ResizeObserver;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    globalThis.ResizeObserver = originalRO;
+    vi.restoreAllMocks();
+  });
+
+  it('renders circle slot using clip-path double-container technique', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(makeClipTemplate('circle')),
+    }) as unknown as typeof globalThis.fetch;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-clip"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+    });
+
+    // The slot image should be rendered (clip-path inner div contains the img)
+    const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
+    expect(img).not.toBeNull();
+
+    // Inner image layer should have clip-path applied
+    const imageLayer = img.parentElement!;
+    expect(imageLayer.style.clipPath).toContain('ellipse');
+  });
+
+  it('renders circle slot with border — border fill layer has background color', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(makeClipTemplate('circle', 5)),
+    }) as unknown as typeof globalThis.fetch;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-clip"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+    });
+
+    const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
+    expect(img).not.toBeNull();
+
+    // Outer absolute positioning wrapper (no clipPath on it)
+    const outerWrapper = img.parentElement!.parentElement!;
+
+    // Find the border fill sibling — it comes before the image layer
+    const borderFill = outerWrapper.querySelector('div[style*="background-color"]') as HTMLElement;
+    expect(borderFill).not.toBeNull();
+    expect(borderFill.style.clipPath).toContain('ellipse');
+    expect(borderFill.style.backgroundColor).toBeTruthy();
+  });
+
+  it('renders hexagon slot using clip-path polygon', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(makeClipTemplate('hexagon')),
+    }) as unknown as typeof globalThis.fetch;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-clip"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+    });
+
+    const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
+    expect(img).not.toBeNull();
+    const imageLayer = img.parentElement!;
+    expect(imageLayer.style.clipPath).toContain('polygon');
+  });
+
+  it('renders diamond slot using clip-path polygon', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(makeClipTemplate('diamond')),
+    }) as unknown as typeof globalThis.fetch;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/gallery-adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={mockMedia}
+        settings={defaultSettings}
+        templateId="tpl-clip"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+    });
+
+    const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
+    expect(img).not.toBeNull();
+    const imageLayer = img.parentElement!;
+    expect(imageLayer.style.clipPath).toContain('polygon');
+  });
 });
