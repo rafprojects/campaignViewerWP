@@ -45,3 +45,4 @@ phpunit
 /*.png
 /*.jpg
 /*.gif
+*.txt

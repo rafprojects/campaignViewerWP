@@ -32,9 +32,10 @@ const baseSlot: LayoutSlot = {
 const mediaItem: MediaItem = {
   id: 'media-1',
   url: 'https://example.com/image.jpg',
-  thumbnailUrl: 'https://example.com/thumb.jpg',
-  filename: 'image.jpg',
-  mimeType: 'image/jpeg',
+  thumbnail: 'https://example.com/thumb.jpg',
+  type: 'image',
+  source: 'upload',
+  order: 0,
   width: 1920,
   height: 1080,
 };

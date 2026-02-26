@@ -317,9 +317,10 @@ describe('LayoutCanvas — slot rendering', () => {
     const media = [{
       id: 'img1',
       url: 'https://example.com/photo.jpg',
-      thumbnailUrl: 'https://example.com/photo-thumb.jpg',
-      filename: 'photo.jpg',
-      mimeType: 'image/jpeg',
+      thumbnail: 'https://example.com/photo-thumb.jpg',
+      type: 'image' as const,
+      source: 'upload' as const,
+      order: 0,
       width: 1920,
       height: 1080,
     }];
