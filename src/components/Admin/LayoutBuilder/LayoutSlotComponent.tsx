@@ -97,6 +97,8 @@ export function LayoutSlotComponent({
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragOver(false);
+      // P17-C: guard — only accept drops with the WPSG media MIME type
+      if (!e.dataTransfer.types.includes('application/x-wpsg-media-id')) return;
       const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
       if (mediaId && onMediaDrop) {
         let meta: { attachmentId?: number; url?: string } | undefined;
