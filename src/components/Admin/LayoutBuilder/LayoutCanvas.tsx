@@ -365,11 +365,13 @@ export function LayoutCanvas({
               }}
               style={{
                 zIndex: overlay.zIndex,
-                opacity: overlay.opacity,
+                // Ghost effect when overlay visibility is toggled off in builder.
+                opacity: !(overlay.visible ?? true) ? 0.1 : overlay.opacity,
                 outline: '1px dashed rgba(138, 43, 226, 0.6)',
+                pointerEvents: !(overlay.visible ?? true) ? 'none' : undefined,
               }}
-              enableResizing
-              disableDragging={false}
+              enableResizing={!(overlay.locked ?? false)}
+              disableDragging={overlay.locked ?? false}
             >
               <img
                 src={overlay.imageUrl}

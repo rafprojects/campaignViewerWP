@@ -2,7 +2,7 @@
  * Tests for the SmartGuides SVG overlay component.
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@/test/test-utils';
+import { render } from '@/test/test-utils';
 import '@testing-library/jest-dom/vitest';
 import { SmartGuides } from './SmartGuides';
 import type { GuideLine } from '@/utils/smartGuides';

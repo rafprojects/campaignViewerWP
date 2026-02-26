@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { produce, enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutOverlay, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
+import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 
 enableMapSet();
 
@@ -113,6 +114,25 @@ export interface LayoutBuilderActions {
   moveOverlay: (id: string, x: number, y: number) => void;
   /** Resize an overlay. */
   resizeOverlay: (id: string, x: number, y: number, width: number, height: number) => void;
+
+  // ── Layer system (P16) ──
+  /** Rename a slot (persists in template data). */
+  renameSlot: (id: string, name: string) => void;
+  /** Rename an overlay. */
+  renameOverlay: (id: string, name: string) => void;
+  /** Toggle builder-only visibility on a slot (visible: false = ghost in editor). */
+  toggleSlotVisible: (id: string) => void;
+  /** Toggle builder-only visibility on an overlay. */
+  toggleOverlayVisible: (id: string) => void;
+  /** Toggle drag/resize lock on a slot. */
+  toggleSlotLocked: (id: string) => void;
+  /** Toggle drag/resize lock on an overlay. */
+  toggleOverlayLocked: (id: string) => void;
+  /**
+   * Cross-type layer reorder: moves `draggedId` above `targetId` in the
+   * unified z-index stack. Uses `computeReorderedZIndices()` from layerList.ts.
+   */
+  reorderLayers: (draggedId: string, targetId: string) => void;
 
   // ── Selection ──
   /** Select a single slot (replaces selection). */
@@ -378,12 +398,17 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        const maxZ = Math.max(...d.slots.map((s) => s.zIndex), 0);
+        const maxZ = Math.max(
+          ...d.slots.map((s) => s.zIndex),
+          ...d.overlays.map((o) => o.zIndex),
+          0,
+        );
         let nextZ = maxZ + 1;
         for (const slot of d.slots) {
-          if (idSet.has(slot.id)) {
-            slot.zIndex = nextZ++;
-          }
+          if (idSet.has(slot.id)) slot.zIndex = nextZ++;
+        }
+        for (const overlay of d.overlays) {
+          if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
         }
       }),
     [mutate],
@@ -393,18 +418,27 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        const minZ = Math.min(...d.slots.map((s) => s.zIndex), 0);
+        const minZ = Math.min(
+          ...d.slots.map((s) => s.zIndex),
+          ...d.overlays.map((o) => o.zIndex),
+          0,
+        );
         let nextZ = minZ - ids.length;
         for (const slot of d.slots) {
-          if (idSet.has(slot.id)) {
-            slot.zIndex = nextZ++;
-          }
+          if (idSet.has(slot.id)) slot.zIndex = nextZ++;
         }
-        // Normalize so nothing goes below 0
-        const lowestZ = Math.min(...d.slots.map((s) => s.zIndex));
-        if (lowestZ < 0) {
-          const offset = -lowestZ;
+        for (const overlay of d.overlays) {
+          if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
+        }
+        // Normalize so nothing goes below 1
+        const lowestZ = Math.min(
+          ...d.slots.map((s) => s.zIndex),
+          ...d.overlays.map((o) => o.zIndex),
+        );
+        if (lowestZ < 1) {
+          const offset = 1 - lowestZ;
           for (const slot of d.slots) slot.zIndex += offset;
+          for (const overlay of d.overlays) overlay.zIndex += offset;
         }
       }),
     [mutate],
@@ -414,18 +448,25 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        // Sort slots by zIndex ascending, swap each target with the one above
-        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
-        for (let i = sorted.length - 1; i >= 0; i--) {
-          if (idSet.has(sorted[i].id)) {
-            // Find the next slot above not in selected set
-            const above = sorted[i + 1];
+        // Merge slots + overlays, sort by zIndex ascending, swap target with item above
+        type ZItem = { id: string; zIndex: number };
+        const all: ZItem[] = [
+          ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
+          ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
+        ].sort((a, b) => a.zIndex - b.zIndex);
+
+        // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
+        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
+
+        for (let i = all.length - 1; i >= 0; i--) {
+          if (idSet.has(all[i].id)) {
+            const above = all[i + 1];
             if (above && !idSet.has(above.id)) {
-              const real = d.slots.find((s) => s.id === sorted[i].id)!;
-              const realAbove = d.slots.find((s) => s.id === above.id)!;
-              const tmp = real.zIndex;
-              real.zIndex = realAbove.zIndex;
-              realAbove.zIndex = tmp;
+              const itemA = byId.get(all[i].id)!;
+              const itemB = byId.get(above.id)!;
+              const tmp = itemA.zIndex;
+              itemA.zIndex = itemB.zIndex;
+              itemB.zIndex = tmp;
             }
           }
         }
@@ -437,17 +478,24 @@ export function useLayoutBuilderState(
     (ids: string[]) =>
       mutate((d) => {
         const idSet = new Set(ids);
-        // Sort slots by zIndex ascending, swap each target with the one below
-        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
-        for (let i = 0; i < sorted.length; i++) {
-          if (idSet.has(sorted[i].id)) {
-            const below = sorted[i - 1];
+        type ZItem = { id: string; zIndex: number };
+        const all: ZItem[] = [
+          ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
+          ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
+        ].sort((a, b) => a.zIndex - b.zIndex);
+
+        // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
+        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
+
+        for (let i = 0; i < all.length; i++) {
+          if (idSet.has(all[i].id)) {
+            const below = all[i - 1];
             if (below && !idSet.has(below.id)) {
-              const real = d.slots.find((s) => s.id === sorted[i].id)!;
-              const realBelow = d.slots.find((s) => s.id === below.id)!;
-              const tmp = real.zIndex;
-              real.zIndex = realBelow.zIndex;
-              realBelow.zIndex = tmp;
+              const itemA = byId.get(all[i].id)!;
+              const itemB = byId.get(below.id)!;
+              const tmp = itemA.zIndex;
+              itemA.zIndex = itemB.zIndex;
+              itemB.zIndex = tmp;
             }
           }
         }
@@ -538,6 +586,79 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const o = d.overlays.find((ov) => ov.id === id);
         if (o) { o.x = x; o.y = y; o.width = width; o.height = height; }
+      }),
+    [mutate],
+  );
+
+  // ── Layer system (P16) ─────────────────────────────────────────────────────
+
+  const renameSlot = useCallback(
+    (id: string, name: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === id);
+        if (slot) slot.name = name;
+      }),
+    [mutate],
+  );
+
+  const renameOverlay = useCallback(
+    (id: string, name: string) =>
+      mutate((d) => {
+        const overlay = d.overlays.find((o) => o.id === id);
+        if (overlay) overlay.name = name;
+      }),
+    [mutate],
+  );
+
+  const toggleSlotVisible = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === id);
+        if (slot) slot.visible = !(slot.visible ?? true);
+      }),
+    [mutate],
+  );
+
+  const toggleOverlayVisible = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const overlay = d.overlays.find((o) => o.id === id);
+        if (overlay) overlay.visible = !(overlay.visible ?? true);
+      }),
+    [mutate],
+  );
+
+  const toggleSlotLocked = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === id);
+        if (slot) slot.locked = !(slot.locked ?? false);
+      }),
+    [mutate],
+  );
+
+  const toggleOverlayLocked = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const overlay = d.overlays.find((o) => o.id === id);
+        if (overlay) overlay.locked = !(overlay.locked ?? false);
+      }),
+    [mutate],
+  );
+
+  const reorderLayers = useCallback(
+    (draggedId: string, targetId: string) =>
+      mutate((d) => {
+        const layers = buildLayerList(d as LayoutTemplate);
+        const newZMap = computeReorderedZIndices(layers, draggedId, targetId);
+        for (const slot of d.slots) {
+          const z = newZMap.get(slot.id);
+          if (z !== undefined) slot.zIndex = z;
+        }
+        for (const overlay of d.overlays) {
+          const z = newZMap.get(overlay.id);
+          if (z !== undefined) overlay.zIndex = z;
+        }
       }),
     [mutate],
   );
@@ -656,6 +777,14 @@ export function useLayoutBuilderState(
     updateOverlay,
     moveOverlay,
     resizeOverlay,
+    // Layer system (P16)
+    renameSlot,
+    renameOverlay,
+    toggleSlotVisible,
+    toggleOverlayVisible,
+    toggleSlotLocked,
+    toggleOverlayLocked,
+    reorderLayers,
     // Selection
     selectSlot,
     toggleSlotSelection,

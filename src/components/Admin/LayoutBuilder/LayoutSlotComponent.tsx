@@ -283,10 +283,14 @@ export function LayoutSlotComponent({
         );
       }}
       onMouseDown={handleMouseDown}
-      enableResizing={!isPreview}
-      disableDragging={isPreview}
+      enableResizing={!isPreview && !(slot.locked ?? false)}
+      disableDragging={isPreview || (slot.locked ?? false)}
       style={{
         zIndex: slot.zIndex,
+        // Ghost effect when layer is hidden in builder; 10 % opacity so designer
+        // can still see its position while editing other layers.
+        opacity: !isPreview && !(slot.visible ?? true) ? 0.1 : undefined,
+        pointerEvents: !isPreview && !(slot.visible ?? true) ? 'none' : undefined,
       }}
       resizeHandleStyles={{
         topLeft: cornerHandle,

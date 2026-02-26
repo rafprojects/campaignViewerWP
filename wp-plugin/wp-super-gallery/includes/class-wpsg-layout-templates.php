@@ -320,6 +320,10 @@ class WPSG_Layout_Templates {
                 'mediaUrl'       => isset( $s['mediaUrl'] ) ? esc_url_raw( $s['mediaUrl'] ) : null,
                 'clickAction'    => in_array( $s['clickAction'] ?? '', $valid_clicks, true ) ? $s['clickAction'] : 'lightbox',
                 'hoverEffect'    => in_array( $s['hoverEffect'] ?? '', $valid_hovers, true ) ? $s['hoverEffect'] : 'pop',
+                // ── Layer system (P16) ──
+                'name'           => isset( $s['name'] ) && is_string( $s['name'] ) ? sanitize_text_field( $s['name'] ) : null,
+                'visible'        => isset( $s['visible'] ) ? (bool) $s['visible'] : true,
+                'locked'         => isset( $s['locked'] ) ? (bool) $s['locked'] : false,
             ];
         }, $slots ) );
     }
@@ -354,6 +358,10 @@ class WPSG_Layout_Templates {
                 'zIndex'        => intval( $o['zIndex'] ?? 999 ),
                 'opacity'       => max( 0, min( 1, floatval( $o['opacity'] ?? 1 ) ) ),
                 'pointerEvents' => (bool) ( $o['pointerEvents'] ?? false ),
+                // ── Layer system (P16) ──
+                'name'          => isset( $o['name'] ) && is_string( $o['name'] ) ? sanitize_text_field( $o['name'] ) : null,
+                'visible'       => isset( $o['visible'] ) ? (bool) $o['visible'] : true,
+                'locked'        => isset( $o['locked'] ) ? (bool) $o['locked'] : false,
             ];
         }, $overlays ), static function ( $o ) {
             return is_array( $o );
