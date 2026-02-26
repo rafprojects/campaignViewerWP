@@ -250,4 +250,24 @@ describe('computeReorderedZIndices', () => {
     const values = Array.from(result.values()).sort((a, b) => a - b);
     expect(values).toEqual([1, 2, 3]);
   });
+
+  it('dropping onto background row places dragged item at bottom of stack', () => {
+    // Panel order: s3(3), s2(2), s1(1), background
+    // Drag s3 (top) onto background row → s3 should become z=1
+    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 2), makeSlot('s3', 3)]);
+    const layers = buildLayerList(tpl);
+    const result = computeReorderedZIndices(layers, 's3', 'background');
+    expect(result.get('s2')).toBe(3); // was 2, now top
+    expect(result.get('s1')).toBe(2); // was 1, now middle
+    expect(result.get('s3')).toBe(1); // was 3, now bottom
+  });
+
+  it('dropping onto background row is a no-op when item is already at the bottom', () => {
+    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 2)]);
+    const layers = buildLayerList(tpl);
+    // s1 is already at the bottom (z=1)
+    const result = computeReorderedZIndices(layers, 's1', 'background');
+    expect(result.get('s1')).toBe(1);
+    expect(result.get('s2')).toBe(2);
+  });
 });

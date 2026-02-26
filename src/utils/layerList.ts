@@ -166,18 +166,38 @@ export function computeReorderedZIndices(
   );
 
   const draggedIdx = movable.findIndex((l) => l.id === draggedId);
-  const targetIdx = movable.findIndex((l) => l.id === targetId);
 
-  if (draggedIdx === -1 || targetIdx === -1 || draggedIdx === targetIdx) {
-    // Nothing to do — return current z-indices unchanged
+  if (draggedIdx === -1) {
+    // Dragged item not found — return current z-indices unchanged
     return new Map(movable.map((l) => [l.id, l.zIndex]));
   }
 
-  // Remove dragged item, insert above target
+  // Remove dragged item first so we can find the correct insertion point
   const reordered = [...movable];
   const [dragged] = reordered.splice(draggedIdx, 1);
-  const insertAt = reordered.findIndex((l) => l.id === targetId);
-  // "Above" target in the visual panel = higher z-index = insert before target
+
+  let insertAt: number;
+  if (targetId === 'background') {
+    // Dropping onto/near the Background row → place the dragged item at the
+    // bottom of the movable stack (just above background, lowest z-index).
+    insertAt = reordered.length;
+  } else {
+    const targetIdx = reordered.findIndex((l) => l.id === targetId);
+    if (targetIdx === -1) {
+      // Target not found — return current z-indices unchanged (re-add dragged)
+      reordered.splice(draggedIdx, 0, dragged);
+      return new Map(reordered.map((l) => [l.id, l.zIndex]));
+    }
+    // "Above" target in the visual panel = higher z-index = insert before target
+    insertAt = targetIdx;
+  }
+
+  if (draggedIdx === insertAt) {
+    // No change in position
+    reordered.splice(insertAt, 0, dragged);
+    return new Map(reordered.map((l) => [l.id, l.zIndex]));
+  }
+
   reordered.splice(insertAt, 0, dragged);
 
   // Assign sequential z-indices: top of list (index 0) gets the highest value.
