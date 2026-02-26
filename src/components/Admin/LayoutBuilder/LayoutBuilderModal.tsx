@@ -47,6 +47,7 @@ import {
 import { LayoutCanvas } from './LayoutCanvas';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { MediaPickerSidebar } from './MediaPickerSidebar';
+import { LayerPanel } from './LayerPanel';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 
 // ── Overlay library type ──────────────────────────────────────
@@ -162,7 +163,7 @@ export function LayoutBuilderModal({
   const [snapThreshold, setSnapThreshold] = useState(5);
   const [overlaysVisible, setOverlaysVisible] = useState(true);
   const [isPanelPinned, setIsPanelPinned] = useState(false);
-  const [leftTab, setLeftTab] = useState<string | null>('slots');
+  const [leftTab, setLeftTab] = useState<string | null>('layers');
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
 
   // ── Close with dirty guard ──
@@ -564,8 +565,8 @@ export function LayoutBuilderModal({
                 }}
               >
                 <Tabs.List>
-                  <Tabs.Tab value="slots" leftSection={<IconList size={14} />}>
-                    Slots
+                                  <Tabs.Tab value="layers" leftSection={<IconList size={14} />}>
+                    Layers
                   </Tabs.Tab>
                   <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
                     Media
@@ -578,103 +579,71 @@ export function LayoutBuilderModal({
                   </Tabs.Tab>
                 </Tabs.List>
 
-                <Tabs.Panel value="slots">
-                  <Group justify="space-between" mb="xs">
-                    <Text size="sm" fw={600}>
-                      Slots ({builder.template.slots.length})
-                    </Text>
-                    <Group gap={4}>
-                      <Tooltip label="Add slot">
-                        <ActionIcon
-                          size="sm"
-                          variant="light"
-                          onClick={() => builder.addSlot()}
-                          aria-label="Add slot"
-                        >
-                          <IconPlus size={14} />
-                        </ActionIcon>
-                      </Tooltip>
-                      <Tooltip label="Delete selected">
-                        <ActionIcon
-                          size="sm"
-                          variant="light"
-                          color="red"
-                          onClick={handleDeleteSelected}
-                          disabled={builder.selectedSlotIds.size === 0}
-                          aria-label="Delete selected slots"
-                        >
-                          <IconTrash size={14} />
-                        </ActionIcon>
-                      </Tooltip>
-                      <Tooltip label="Duplicate selected">
-                        <ActionIcon
-                          size="sm"
-                          variant="light"
-                          onClick={handleDuplicateSelected}
-                          disabled={builder.selectedSlotIds.size === 0}
-                          aria-label="Duplicate selected slots"
-                        >
-                          <IconCopy size={14} />
-                        </ActionIcon>
-                      </Tooltip>
-                    </Group>
+                <Tabs.Panel value="layers" style={{ padding: 0 }}>
+                  {/* Slot toolbar — add/delete/duplicate remain at top */}
+                  <Group gap={4} px={6} py={4} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+                    <Tooltip label="Add slot">
+                      <ActionIcon size="sm" variant="light" onClick={() => builder.addSlot()} aria-label="Add slot">
+                        <IconPlus size={14} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Delete selected">
+                      <ActionIcon
+                        size="sm"
+                        variant="light"
+                        color="red"
+                        onClick={handleDeleteSelected}
+                        disabled={builder.selectedSlotIds.size === 0}
+                        aria-label="Delete selected slots"
+                      >
+                        <IconTrash size={14} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Duplicate selected">
+                      <ActionIcon
+                        size="sm"
+                        variant="light"
+                        onClick={handleDuplicateSelected}
+                        disabled={builder.selectedSlotIds.size === 0}
+                        aria-label="Duplicate selected slots"
+                      >
+                        <IconCopy size={14} />
+                      </ActionIcon>
+                    </Tooltip>
                   </Group>
 
-                  {/* Layer-ordered slot list (highest z-index first) */}
-                  <Stack gap={4}>
-                    {[...builder.template.slots]
-                      .sort((a, b) => b.zIndex - a.zIndex)
-                      .map((slot) => {
-                        const origIndex = builder.template.slots.findIndex(
-                          (s) => s.id === slot.id,
-                        );
-                        return (
-                          <Button
-                            key={slot.id}
-                            size="xs"
-                            variant={
-                              builder.selectedSlotIds.has(slot.id) ? 'filled' : 'subtle'
-                            }
-                            justify="flex-start"
-                            fullWidth
-                            onClick={(e: React.MouseEvent) => {
-                              if (e.shiftKey) {
-                                builder.toggleSlotSelection(slot.id);
-                              } else {
-                                builder.selectSlot(slot.id);
-                              }
-                            }}
-                            styles={{
-                              label: {
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                              },
-                            }}
-                          >
-                            <span>
-                              Slot {origIndex + 1}
-                              {slot.mediaId ? ' ✓' : ''}
-                            </span>
-                            <Text
-                              component="span"
-                              size="xs"
-                              c="dimmed"
-                              style={{ fontWeight: 400 }}
-                            >
-                              z{slot.zIndex}
-                            </Text>
-                          </Button>
-                        );
-                      })}
-                    {builder.template.slots.length === 0 && (
-                      <Text size="xs" c="dimmed" ta="center" py="md">
-                        No slots yet. Click + to add one.
-                      </Text>
-                    )}
-                  </Stack>
+                  {/* Unified layer list (P16-B) */}
+                  <LayerPanel
+                    template={builder.template}
+                    selectedSlotId={
+                      builder.selectedSlotIds.size === 1
+                        ? [...builder.selectedSlotIds][0]
+                        : null
+                    }
+                    onSelectSlot={builder.selectSlot}
+                    onClearSelection={builder.clearSelection}
+                    onRenameSlot={builder.renameSlot}
+                    onRenameOverlay={builder.renameOverlay}
+                    onToggleSlotVisible={builder.toggleSlotVisible}
+                    onToggleOverlayVisible={builder.toggleOverlayVisible}
+                    onToggleSlotLocked={builder.toggleSlotLocked}
+                    onToggleOverlayLocked={builder.toggleOverlayLocked}
+                    onReorderLayers={builder.reorderLayers}
+                    onBringToFront={(id) => {
+                      // Determine type from template
+                      if (builder.template.slots.some((s) => s.id === id)) builder.bringToFront([id]);
+                      // Overlays don't yet have individual front/back — no-op for now
+                    }}
+                    onSendToBack={(id) => {
+                      if (builder.template.slots.some((s) => s.id === id)) builder.sendToBack([id]);
+                    }}
+                    onBringForward={(id) => {
+                      if (builder.template.slots.some((s) => s.id === id)) builder.bringForward([id]);
+                    }}
+                    onSendBackward={(id) => {
+                      if (builder.template.slots.some((s) => s.id === id)) builder.sendBackward([id]);
+                    }}
+                  />
                 </Tabs.Panel>
 
                 <Tabs.Panel value="media">

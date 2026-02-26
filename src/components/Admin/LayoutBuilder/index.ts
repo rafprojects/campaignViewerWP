@@ -5,3 +5,7 @@ export { LayoutSlotComponent } from './LayoutSlotComponent';
 export { SlotPropertiesPanel } from './SlotPropertiesPanel';
 export { SmartGuides } from './SmartGuides';
 export { MediaPickerSidebar } from './MediaPickerSidebar';
+export { LayerRow } from './LayerRow';
+export type { LayerRowProps } from './LayerRow';
+export { LayerPanel } from './LayerPanel';
+export type { LayerPanelProps } from './LayerPanel';

@@ -156,6 +156,13 @@ export interface LayoutSlot {
   clickAction: 'lightbox' | 'none';
   /** Hover behavior in rendered gallery */
   hoverEffect: 'pop' | 'glow' | 'none';
+  // ── Layer system (P16) ──
+  /** Human-readable label shown in the layer panel. Defaults to "Slot N" if absent. */
+  name?: string;
+  /** Builder-only visibility. false = ghost at 10% opacity in editor; no effect on gallery rendering. */
+  visible?: boolean;
+  /** Prevents drag/resize in the builder. No effect on gallery rendering. */
+  locked?: boolean;
 }
 
 /** Sensible defaults for a new layout slot. */
@@ -193,6 +200,13 @@ export interface LayoutOverlay {
   opacity: number;
   /** false = click-through (default) */
   pointerEvents: boolean;
+  // ── Layer system (P16) ──
+  /** Human-readable label shown in the layer panel. Defaults to "Overlay N" if absent. */
+  name?: string;
+  /** Builder-only visibility. false = ghost at 10% opacity in editor; no effect on gallery rendering. */
+  visible?: boolean;
+  /** Prevents drag/resize in the builder. No effect on gallery rendering. */
+  locked?: boolean;
 }
 
 /**

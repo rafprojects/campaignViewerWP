@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { produce, enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutOverlay, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
+import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 
 enableMapSet();
 
@@ -113,6 +114,25 @@ export interface LayoutBuilderActions {
   moveOverlay: (id: string, x: number, y: number) => void;
   /** Resize an overlay. */
   resizeOverlay: (id: string, x: number, y: number, width: number, height: number) => void;
+
+  // ── Layer system (P16) ──
+  /** Rename a slot (persists in template data). */
+  renameSlot: (id: string, name: string) => void;
+  /** Rename an overlay. */
+  renameOverlay: (id: string, name: string) => void;
+  /** Toggle builder-only visibility on a slot (visible: false = ghost in editor). */
+  toggleSlotVisible: (id: string) => void;
+  /** Toggle builder-only visibility on an overlay. */
+  toggleOverlayVisible: (id: string) => void;
+  /** Toggle drag/resize lock on a slot. */
+  toggleSlotLocked: (id: string) => void;
+  /** Toggle drag/resize lock on an overlay. */
+  toggleOverlayLocked: (id: string) => void;
+  /**
+   * Cross-type layer reorder: moves `draggedId` above `targetId` in the
+   * unified z-index stack. Uses `computeReorderedZIndices()` from layerList.ts.
+   */
+  reorderLayers: (draggedId: string, targetId: string) => void;
 
   // ── Selection ──
   /** Select a single slot (replaces selection). */
@@ -542,6 +562,79 @@ export function useLayoutBuilderState(
     [mutate],
   );
 
+  // ── Layer system (P16) ─────────────────────────────────────────────────────
+
+  const renameSlot = useCallback(
+    (id: string, name: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === id);
+        if (slot) slot.name = name;
+      }),
+    [mutate],
+  );
+
+  const renameOverlay = useCallback(
+    (id: string, name: string) =>
+      mutate((d) => {
+        const overlay = d.overlays.find((o) => o.id === id);
+        if (overlay) overlay.name = name;
+      }),
+    [mutate],
+  );
+
+  const toggleSlotVisible = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === id);
+        if (slot) slot.visible = !(slot.visible ?? true);
+      }),
+    [mutate],
+  );
+
+  const toggleOverlayVisible = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const overlay = d.overlays.find((o) => o.id === id);
+        if (overlay) overlay.visible = !(overlay.visible ?? true);
+      }),
+    [mutate],
+  );
+
+  const toggleSlotLocked = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const slot = d.slots.find((s) => s.id === id);
+        if (slot) slot.locked = !(slot.locked ?? false);
+      }),
+    [mutate],
+  );
+
+  const toggleOverlayLocked = useCallback(
+    (id: string) =>
+      mutate((d) => {
+        const overlay = d.overlays.find((o) => o.id === id);
+        if (overlay) overlay.locked = !(overlay.locked ?? false);
+      }),
+    [mutate],
+  );
+
+  const reorderLayers = useCallback(
+    (draggedId: string, targetId: string) =>
+      mutate((d) => {
+        const layers = buildLayerList(d as LayoutTemplate);
+        const newZMap = computeReorderedZIndices(layers, draggedId, targetId);
+        for (const slot of d.slots) {
+          const z = newZMap.get(slot.id);
+          if (z !== undefined) slot.zIndex = z;
+        }
+        for (const overlay of d.overlays) {
+          const z = newZMap.get(overlay.id);
+          if (z !== undefined) overlay.zIndex = z;
+        }
+      }),
+    [mutate],
+  );
+
   // ── Selection ──
 
   const selectSlot = useCallback(
@@ -656,6 +749,14 @@ export function useLayoutBuilderState(
     updateOverlay,
     moveOverlay,
     resizeOverlay,
+    // Layer system (P16)
+    renameSlot,
+    renameOverlay,
+    toggleSlotVisible,
+    toggleOverlayVisible,
+    toggleSlotLocked,
+    toggleOverlayLocked,
+    reorderLayers,
     // Selection
     selectSlot,
     toggleSlotSelection,
