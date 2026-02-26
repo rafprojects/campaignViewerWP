@@ -46,6 +46,7 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { LayoutCanvas } from './LayoutCanvas';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
+import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
 import { MediaPickerSidebar } from './MediaPickerSidebar';
 import { LayerPanel } from './LayerPanel';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
@@ -421,6 +422,15 @@ export function LayoutBuilderModal({
       ? builder.template.slots.find(
           (s) => s.id === Array.from(builder.selectedSlotIds)[0],
         )
+      : undefined;
+
+  // ── Get selected graphic layer (P17-D) ──
+  const selectedOverlayIndex = selectedOverlayId
+    ? builder.template.overlays.findIndex((o) => o.id === selectedOverlayId)
+    : -1;
+  const selectedOverlay =
+    selectedOverlayIndex >= 0
+      ? builder.template.overlays[selectedOverlayIndex]
       : undefined;
 
   return (
@@ -1242,6 +1252,43 @@ export function LayoutBuilderModal({
             </Box>
           )}
 
+          {/* Right: graphic layer properties panel ─ pinned (P17-D) */}
+          {!builder.isPreview && selectedOverlay && !selectedSlot && isPanelPinned && (
+            <Box
+              w={280}
+              style={{
+                borderLeft: '1px solid var(--mantine-color-default-border)',
+                overflowY: 'auto',
+                flexShrink: 0,
+              }}
+            >
+              <Group justify="space-between" p="sm" pb={0}>
+                <Text size="xs" fw={600} c="dimmed">GRAPHIC LAYER</Text>
+                <Tooltip label="Unpin panel (float over canvas)">
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => setIsPanelPinned(false)}
+                    aria-label="Unpin properties panel"
+                  >
+                    <IconPinFilled size={12} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+              <GraphicLayerPropertiesPanel
+                overlay={selectedOverlay}
+                overlayIndex={selectedOverlayIndex + 1}
+                onUpdate={builder.updateOverlay}
+                onRename={builder.renameOverlay}
+                onRemove={(id) => { builder.removeOverlay(id); setSelectedOverlayId(null); }}
+                onBringToFront={(id) => builder.bringToFront([id])}
+                onSendToBack={(id) => builder.sendToBack([id])}
+                onBringForward={(id) => builder.bringForward([id])}
+                onSendBackward={(id) => builder.sendBackward([id])}
+              />
+            </Box>
+          )}
+
           {/* Right: properties panel ─ floating (default) mode */}
           {!builder.isPreview && selectedSlot && !isPanelPinned && (
             <Box
@@ -1281,6 +1328,49 @@ export function LayoutBuilderModal({
                 onSendToBack={() => builder.sendToBack([selectedSlot.id])}
                 onBringForward={() => builder.bringForward([selectedSlot.id])}
                 onSendBackward={() => builder.sendBackward([selectedSlot.id])}
+              />
+            </Box>
+          )}
+
+          {/* Right: graphic layer properties panel ─ floating (P17-D) */}
+          {!builder.isPreview && selectedOverlay && !selectedSlot && !isPanelPinned && (
+            <Box
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: 280,
+                overflowY: 'auto',
+                zIndex: 50,
+                background: 'var(--mantine-color-body)',
+                borderLeft: '1px solid var(--mantine-color-default-border)',
+                boxShadow: '-4px 0 20px rgba(0,0,0,0.35)',
+              }}
+            >
+              <Group justify="space-between" p="sm" pb={0}>
+                <Text size="xs" fw={600} c="dimmed">GRAPHIC LAYER</Text>
+                <Tooltip label="Pin panel (dock to side)">
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => setIsPanelPinned(true)}
+                    aria-label="Pin properties panel"
+                  >
+                    <IconPin size={12} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+              <GraphicLayerPropertiesPanel
+                overlay={selectedOverlay}
+                overlayIndex={selectedOverlayIndex + 1}
+                onUpdate={builder.updateOverlay}
+                onRename={builder.renameOverlay}
+                onRemove={(id) => { builder.removeOverlay(id); setSelectedOverlayId(null); }}
+                onBringToFront={(id) => builder.bringToFront([id])}
+                onSendToBack={(id) => builder.sendToBack([id])}
+                onBringForward={(id) => builder.bringForward([id])}
+                onSendBackward={(id) => builder.sendBackward([id])}
               />
             </Box>
           )}
