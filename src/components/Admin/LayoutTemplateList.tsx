@@ -5,7 +5,7 @@
  * grid/list toggle, search/filter, and action buttons (edit, duplicate,
  * delete). Includes import/export JSON functionality.
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -94,11 +94,13 @@ function isValidTemplate(data: unknown): data is LayoutTemplate {
 interface LayoutTemplateListProps {
   apiClient: ApiClient;
   onNotify: (msg: { type: 'error' | 'success'; text: string }) => void;
+  /** If set, open the builder for this template ID as soon as data loads. */
+  initialTemplateId?: string;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListProps) {
+export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: LayoutTemplateListProps) {
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +116,18 @@ export function LayoutTemplateList({ apiClient, onNotify }: LayoutTemplateListPr
     () => apiClient.getLayoutTemplates(),
     { revalidateOnFocus: false, dedupingInterval: 30_000 },
   );
+
+  // ── Open builder for initialTemplateId once data is available ─────────────
+  const handledInitialRef = useRef(false);
+  useEffect(() => {
+    if (!initialTemplateId || !templates || handledInitialRef.current) return;
+    const target = templates.find((t) => t.id === initialTemplateId);
+    if (target) {
+      handledInitialRef.current = true;
+      setEditingTemplate(target);
+      setBuilderOpen(true);
+    }
+  }, [initialTemplateId, templates]);
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {

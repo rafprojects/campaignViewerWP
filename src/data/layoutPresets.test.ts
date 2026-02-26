@@ -1,5 +1,5 @@
 /**
- * Sprint 6 Tests: P15-J (Premade Template Presets) + P15-K (Diagonal Shapes)
+ * Phase 15 Sprint 6 Tests: P15-J (Premade Template Presets) + P15-K (Diagonal Shapes)
  */
 import { describe, it, expect } from 'vitest';
 import { LAYOUT_PRESETS, type LayoutPreset } from './layoutPresets';

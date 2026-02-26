@@ -98,6 +98,10 @@ class WPSG_Overlay_Library {
         // background images (any common image format).
         $allowed_types = [
             'image/png',
+            // SVG: allowed for admin-only overlay uploads. SVGs are passed through
+            // wp_handle_upload() which validates against the MIME allowlist, but
+            // does not strip inline scripts. Restrict callers to admin capability
+            // checks (enforced in the REST endpoint) to mitigate XSS risk.
             'image/svg+xml',
             'image/webp',
             'image/gif',
@@ -163,8 +167,10 @@ class WPSG_Overlay_Library {
 
         // Validate MIME type after upload.
         if ( ! in_array( $result['type'] ?? '', $allowed_types, true ) ) {
-            // Remove the uploaded file.
-            @unlink( $result['file'] );
+            // Remove the uploaded file using the WP helper which handles errors cleanly.
+            if ( ! empty( $result['file'] ) && file_exists( $result['file'] ) ) {
+                wp_delete_file( $result['file'] );
+            }
             return new WP_Error( 'wpsg_overlay_type', 'Unsupported image type. Allowed: PNG, SVG, WebP, GIF, JPEG, AVIF.' );
         }
 

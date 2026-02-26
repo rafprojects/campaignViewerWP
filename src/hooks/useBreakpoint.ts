@@ -14,9 +14,10 @@ function emToPx(em: string): number {
   return Number.isFinite(num) ? num * 16 : 0;
 }
 
-/** Fallback breakpoints (px) if Mantine theme breakpoints are unavailable. */
+/** Fallback breakpoints (px) if Mantine theme breakpoints are unavailable.
+ *  Align with Mantine v7 defaults: sm=48em=768px, lg=75em=1200px. */
 const FALLBACK_MOBILE_MAX = 768;
-const FALLBACK_TABLET_MAX = 1024;
+const FALLBACK_TABLET_MAX = 1200;
 
 /**
  * Determines the current {@link Breakpoint} based on the observed container width.

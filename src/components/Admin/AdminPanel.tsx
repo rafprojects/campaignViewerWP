@@ -116,7 +116,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [isSavingCampaign, setIsSavingCampaign] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState<string>('');
-  
+  // Template ID to open in the builder when switching to the layouts tab.
+  const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(null);
 
   const [accessCampaignId, setAccessCampaignId] = useState<string>('');
   const [accessUserId, setAccessUserId] = useState('');
@@ -721,9 +722,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           layoutTemplates={layoutTemplates ?? []}
           onEditLayout={(templateId) => {
             closeCampaignForm();
+            setPendingEditLayoutId(templateId);
             setActiveTab('layouts');
-            // The LayoutTemplateList will handle opening the builder
-            void templateId;
           }}
         />
 
@@ -770,7 +770,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.Panel>
 
         <Tabs.Panel value="layouts" pt="md">
-          <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} />
+          <LayoutTemplateList
+            apiClient={apiClient}
+            onNotify={onNotify}
+            initialTemplateId={pendingEditLayoutId ?? undefined}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value="access" pt="md">
