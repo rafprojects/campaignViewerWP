@@ -196,54 +196,19 @@ describe('LayoutCanvas — background image', () => {
 // ── Overlays ──────────────────────────────────────────────────────────────────
 
 describe('LayoutCanvas — overlays', () => {
-  it('renders overlay image in edit mode when overlaysVisible=true', () => {
+  it('renders overlay image in edit mode', () => {
     const { container } = renderCanvas({
       isPreview: false,
       template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: true,
     });
     const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`);
     expect(img).toBeInTheDocument();
   });
 
-  it('renders ghost overlay (10% opacity) in edit mode when overlaysVisible=false', () => {
-    const { container } = renderCanvas({
-      isPreview: false,
-      template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false,
-    });
-    // Image should still be in the DOM (ghost mode, not removed)
-    const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`);
-    expect(img).toBeInTheDocument();
-  });
-
-  it('ghost overlay container has pointer-events:none', () => {
-    const { container } = renderCanvas({
-      isPreview: false,
-      template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false,
-    });
-    const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`)!;
-    const wrapper = img.parentElement!;
-    expect(wrapper.style.pointerEvents).toBe('none');
-  });
-
-  it('ghost overlay container has opacity ~0.1', () => {
-    const { container } = renderCanvas({
-      isPreview: false,
-      template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false,
-    });
-    const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`)!;
-    const wrapper = img.parentElement!;
-    expect(parseFloat(wrapper.style.opacity)).toBeCloseTo(0.1, 1);
-  });
-
-  it('renders overlay in preview mode regardless of overlaysVisible prop', () => {
+  it('renders overlay in preview mode', () => {
     const { container } = renderCanvas({
       isPreview: true,
       template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false, // should be ignored in preview
     });
     const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`);
     expect(img).toBeInTheDocument();

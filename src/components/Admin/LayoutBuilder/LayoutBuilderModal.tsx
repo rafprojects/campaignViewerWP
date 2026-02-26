@@ -16,10 +16,9 @@ import {
   Switch,
   Tabs,
   Slider,
-  FileButton,
   Select,
-  Loader,
   ColorInput,
+  Accordion,
 } from '@mantine/core';
 import {
   IconDeviceFloppy,
@@ -32,11 +31,8 @@ import {
   IconCopy,
   IconList,
   IconPhoto,
-  IconLayersLinked,
-  IconUpload,
   IconPin,
   IconPinFilled,
-  IconBackground,
 } from '@tabler/icons-react';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
@@ -47,6 +43,7 @@ import {
 import { LayoutCanvas } from './LayoutCanvas';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
+import { AssetUploader } from './AssetUploader';
 import { MediaPickerSidebar } from './MediaPickerSidebar';
 import { LayerPanel } from './LayerPanel';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
@@ -162,9 +159,17 @@ export function LayoutBuilderModal({
 
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [snapThreshold, setSnapThreshold] = useState(5);
-  const [overlaysVisible, setOverlaysVisible] = useState(true);
+  const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('wpsg_builder_design_assets_open');
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
+  const bgSectionRef = useRef<HTMLDivElement>(null);
   const [isPanelPinned, setIsPanelPinned] = useState(false);
-  const [leftTab, setLeftTab] = useState<string | null>('layers');
+  const [leftTab, setLeftTab] = useState<'layers' | 'media'>('layers');
   // ── Layer panel selection (overlay + background tracked locally; slot uses builder state) ──
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
   const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
@@ -570,7 +575,9 @@ export function LayoutBuilderModal({
             >
               <Tabs
                 value={leftTab}
-                onChange={setLeftTab}
+                onChange={(val) => {
+                  if (val === 'layers' || val === 'media') setLeftTab(val);
+                }}
                 variant="outline"
                 styles={{
                   root: { display: 'flex', flexDirection: 'column', height: '100%' },
@@ -578,17 +585,11 @@ export function LayoutBuilderModal({
                 }}
               >
                 <Tabs.List>
-                                  <Tabs.Tab value="layers" leftSection={<IconList size={14} />}>
+                  <Tabs.Tab value="layers" leftSection={<IconList size={14} />}>
                     Layers
                   </Tabs.Tab>
                   <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
                     Media
-                  </Tabs.Tab>
-                  <Tabs.Tab value="overlays" leftSection={<IconLayersLinked size={14} />}>
-                    Overlays
-                  </Tabs.Tab>
-                  <Tabs.Tab value="bg" leftSection={<IconBackground size={14} />}>
-                    BG
                   </Tabs.Tab>
                 </Tabs.List>
 
@@ -650,8 +651,15 @@ export function LayoutBuilderModal({
                       setSelectedOverlayId(null);
                       setIsBackgroundSelected(true);
                       builder.clearSelection();
-                      // Open BG tab so controls are immediately visible
-                      setLeftTab('bg');
+                      // Switch to media tab, expand Design Assets accordion, scroll to bg section
+                      setLeftTab('media');
+                      setDesignAssetsOpen(true);
+                      try {
+                        localStorage.setItem('wpsg_builder_design_assets_open', 'true');
+                      } catch { /* ignore */ }
+                      requestAnimationFrame(() =>
+                        bgSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
+                      );
                     }}
                     onClearSelection={() => {
                       setSelectedOverlayId(null);
@@ -715,366 +723,216 @@ export function LayoutBuilderModal({
                     onClearMedia={builder.clearSlotMedia}
                     onAutoAssign={handleAutoAssign}
                   />
-                </Tabs.Panel>
 
-                <Tabs.Panel value="overlays">
-                  {/* ── Header: visibility toggle ── */}
-                  <Group justify="space-between" mb="xs">
-                    <Text size="sm" fw={600}>
-                      Overlays ({builder.template.overlays.length})
-                    </Text>
-                    <Tooltip label={overlaysVisible ? 'Hide overlays (work on slots)' : 'Show overlays'}>
-                      <ActionIcon
-                        size="sm"
-                        variant={overlaysVisible ? 'subtle' : 'filled'}
-                        color={overlaysVisible ? undefined : 'orange'}
-                        onClick={() => setOverlaysVisible((v) => !v)}
-                        aria-label={overlaysVisible ? 'Hide overlays' : 'Show overlays'}
-                      >
-                        {overlaysVisible ? <IconEye size={14} /> : <IconEyeOff size={14} />}
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-
-                  {/* ── Library section ── */}
-                  <Text size="xs" fw={500} c="dimmed" mb={6}>
-                    Library
-                  </Text>
-
-                  {/* Library thumbnail grid */}
-                  {(overlayLibrary ?? []).length > 0 ? (
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, 1fr)',
-                        gap: 4,
-                        marginBottom: 8,
-                      }}
-                    >
-                      {(overlayLibrary ?? []).map((item) => (
-                        <Box
-                          key={item.id}
-                          style={{
-                            border: '1px solid var(--mantine-color-default-border)',
-                            borderRadius: 4,
-                            overflow: 'hidden',
-                          }}
-                        >
+                  {/* ── Design Assets Accordion ── */}
+                  <Accordion
+                    value={designAssetsOpen ? 'design-assets' : null}
+                    onChange={(val) => {
+                      const next = val === 'design-assets';
+                      setDesignAssetsOpen(next);
+                      try {
+                        localStorage.setItem('wpsg_builder_design_assets_open', String(next));
+                      } catch { /* ignore */ }
+                    }}
+                    mt="sm"
+                  >
+                    <Accordion.Item value="design-assets">
+                      <Accordion.Control>Design Assets</Accordion.Control>
+                      <Accordion.Panel>
+                        {/* ── Graphic Layers section ── */}
+                        <Text size="xs" fw={500} mb={4}>Graphic Layers</Text>
+                        {(overlayLibrary ?? []).length > 0 ? (
                           <div
                             style={{
-                              background: 'var(--mantine-color-dark-7)',
-                              height: 56,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(2, 1fr)',
+                              gap: 4,
+                              marginBottom: 8,
                             }}
                           >
-                            <img
-                              src={item.url}
-                              alt={item.name}
-                              style={{
-                                maxWidth: '100%',
-                                maxHeight: '100%',
-                                objectFit: 'contain',
-                              }}
+                            {(overlayLibrary ?? []).map((item) => (
+                              <Box
+                                key={item.id}
+                                style={{
+                                  border: '1px solid var(--mantine-color-default-border)',
+                                  borderRadius: 4,
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    background: 'var(--mantine-color-dark-7)',
+                                    height: 56,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <img
+                                    src={item.url}
+                                    alt={item.name}
+                                    style={{
+                                      maxWidth: '100%',
+                                      maxHeight: '100%',
+                                      objectFit: 'contain',
+                                    }}
+                                  />
+                                </div>
+                                <Group gap={2} p={2} wrap="nowrap">
+                                  <Tooltip label="Add to canvas">
+                                    <ActionIcon
+                                      size="xs"
+                                      variant="subtle"
+                                      style={{ flex: 1 }}
+                                      onClick={() => {
+                                        builder.addOverlay(item.url);
+                                        announce(`Overlay "${item.name}" added to canvas`);
+                                      }}
+                                      aria-label={`Use overlay ${item.name}`}
+                                    >
+                                      <IconPlus size={10} />
+                                    </ActionIcon>
+                                  </Tooltip>
+                                  <Tooltip label="Delete from library">
+                                    <ActionIcon
+                                      size="xs"
+                                      color="red"
+                                      variant="subtle"
+                                      onClick={() => handleDeleteLibraryOverlay(item.id)}
+                                      aria-label={`Delete overlay ${item.name} from library`}
+                                    >
+                                      <IconTrash size={10} />
+                                    </ActionIcon>
+                                  </Tooltip>
+                                </Group>
+                              </Box>
+                            ))}
+                          </div>
+                        ) : (
+                          <Text size="xs" c="dimmed" mb={8}>
+                            No overlays in library yet.
+                          </Text>
+                        )}
+                        <AssetUploader
+                          onFileSelect={handleUploadOverlay}
+                          onUrlSubmit={(url) => void handleAddUrlToLibrary(url)}
+                          isUploading={isUploadingOverlay}
+                          accept="image/png,image/svg+xml,image/webp,image/gif"
+                          uploadLabel="Upload to library"
+                          urlPlaceholder="Or paste image URL into library…"
+                          uploadAriaLabel="Upload overlay to library"
+                          urlAriaLabel="Overlay image URL"
+                        />
+
+                        {/* ── Background section ── */}
+                        <Divider my="sm" />
+                        <div ref={bgSectionRef}>
+                          <Text size="xs" fw={500} mb={4}>Background</Text>
+                        </div>
+                        <Stack gap="sm">
+                          <div>
+                            <Text size="xs" fw={500} mb={4}>Color</Text>
+                            <ColorInput
+                              size="xs"
+                              value={builder.template.backgroundColor}
+                              onChange={builder.setBackgroundColor}
+                              format="hex"
+                              swatches={['#1a1a2e', '#0d1117', '#000000', '#ffffff', '#16213e', 'transparent']}
                             />
                           </div>
-                          <Group gap={2} p={2} wrap="nowrap">
-                            <Tooltip label="Add to canvas">
-                              <ActionIcon
-                                size="xs"
-                                variant="subtle"
-                                style={{ flex: 1 }}
-                                onClick={() => {
-                                  builder.addOverlay(item.url);
-                                  announce(`Overlay “${item.name}” added to canvas`);
+
+                          <Divider />
+
+                          <Text size="xs" fw={500}>Background Image</Text>
+                          <Text size="xs" c="dimmed" mt={-6}>
+                            Layered on top of color (supports transparency)
+                          </Text>
+
+                          {builder.template.backgroundImage ? (
+                            <Box>
+                              <div
+                                style={{
+                                  background: 'var(--mantine-color-dark-7)',
+                                  height: 80,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: 4,
+                                  overflow: 'hidden',
+                                  marginBottom: 6,
                                 }}
-                                aria-label={`Use overlay ${item.name}`}
                               >
-                                <IconPlus size={10} />
-                              </ActionIcon>
-                            </Tooltip>
-                            <Tooltip label="Delete from library">
-                              <ActionIcon
+                                <img
+                                  src={builder.template.backgroundImage}
+                                  alt="Background preview"
+                                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                />
+                              </div>
+                              <Button
                                 size="xs"
                                 color="red"
-                                variant="subtle"
-                                onClick={() => handleDeleteLibraryOverlay(item.id)}
-                                aria-label={`Delete overlay ${item.name} from library`}
+                                variant="light"
+                                fullWidth
+                                leftSection={<IconTrash size={12} />}
+                                onClick={() => builder.setBackgroundImage('')}
+                                mb={4}
                               >
-                                <IconTrash size={10} />
-                              </ActionIcon>
-                            </Tooltip>
-                          </Group>
-                        </Box>
-                      ))}
-                    </div>
-                  ) : (
-                    <Text size="xs" c="dimmed" mb={8}>
-                      No overlays in library yet.
-                    </Text>
-                  )}
-
-                  {/* Upload to library */}
-                  <FileButton
-                    accept="image/png,image/svg+xml,image/webp,image/gif"
-                    onChange={handleUploadOverlay}
-                    disabled={isUploadingOverlay}
-                  >
-                    {(props) => (
-                      <Button
-                        size="xs"
-                        variant="light"
-                        fullWidth
-                        mb={4}
-                        leftSection={
-                          isUploadingOverlay ? (
-                            <Loader size={10} />
+                                Remove background image
+                              </Button>
+                            </Box>
                           ) : (
-                            <IconUpload size={12} />
-                          )
-                        }
-                        {...props}
-                        disabled={isUploadingOverlay}
-                        aria-label="Upload overlay to library"
-                      >
-                        Upload to library
-                      </Button>
-                    )}
-                  </FileButton>
+                            <Text size="xs" c="dimmed">No background image set.</Text>
+                          )}
 
-                  <TextInput
-                    placeholder="Or paste image URL into library…"
-                    size="xs"
-                    mb="sm"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                        void handleAddUrlToLibrary(e.currentTarget.value.trim());
-                        e.currentTarget.value = '';
-                      }
-                    }}
-                    aria-label="Overlay image URL"
-                  />
-
-                  {/* ── On-canvas overlays ── */}
-                  {builder.template.overlays.length > 0 && (
-                    <>
-                      <Divider
-                        my="xs"
-                        label={`On canvas (${builder.template.overlays.length})`}
-                        labelPosition="left"
-                      />
-                      <Stack gap={4}>
-                        {builder.template.overlays.map((overlay, idx) => (
-                          <Box
-                            key={overlay.id}
-                            p="xs"
-                            style={{
-                              border: '1px solid var(--mantine-color-default-border)',
-                              borderRadius: 4,
+                          <AssetUploader
+                            onFileSelect={handleUploadBgImage}
+                            onUrlSubmit={(url) => {
+                              builder.setBackgroundImage(url);
+                              announce('Background image set from URL');
                             }}
-                          >
-                            <Group justify="space-between" wrap="nowrap" mb={4}>
-                              <Text size="xs" fw={500} lineClamp={1}>
-                                Overlay {idx + 1}
-                              </Text>
-                              <ActionIcon
+                            isUploading={isUploadingBg}
+                            accept="image/*"
+                            uploadLabel="Upload image"
+                            urlPlaceholder="Or paste image URL…"
+                            uploadAriaLabel="Upload background image"
+                            urlAriaLabel="Background image URL"
+                          />
+
+                          {builder.template.backgroundImage && (
+                            <>
+                              <Select
                                 size="xs"
-                                color="red"
-                                variant="subtle"
-                                onClick={() => builder.removeOverlay(overlay.id)}
-                                aria-label={`Remove overlay ${idx + 1} from canvas`}
-                              >
-                                <IconTrash size={12} />
-                              </ActionIcon>
-                            </Group>
-                            <img
-                              src={overlay.imageUrl}
-                              alt={`Overlay ${idx + 1}`}
-                              style={{
-                                width: '100%',
-                                height: 40,
-                                objectFit: 'contain',
-                                borderRadius: 2,
-                                background: 'var(--mantine-color-dark-7)',
-                                marginBottom: 4,
-                              }}
-                            />
-                            <Button
-                              size="xs"
-                              variant="light"
-                              fullWidth
-                              mb={4}
-                              onClick={() => {
-                                builder.updateOverlay(overlay.id, {
-                                  x: 0,
-                                  y: 0,
-                                  width: 100,
-                                  height: 100,
-                                });
-                                announce(`Overlay ${idx + 1} filled canvas`);
-                              }}
-                            >
-                              Fill canvas
-                            </Button>
-                            <Text size="xs" c="dimmed" mb={2}>
-                              Opacity
-                            </Text>
-                            <Slider
-                              value={overlay.opacity}
-                              onChange={(val) =>
-                                builder.updateOverlay(overlay.id, { opacity: val })
-                              }
-                              min={0}
-                              max={1}
-                              step={0.05}
-                              size="xs"
-                              label={(v) => `${Math.round(v * 100)}%`}
-                            />
-                            <Group gap={4} mt={4}>
-                              <Text size="xs" c="dimmed">
-                                Click-through:
-                              </Text>
-                              <Switch
-                                size="xs"
-                                checked={!overlay.pointerEvents}
-                                onChange={(e) =>
-                                  builder.updateOverlay(overlay.id, {
-                                    pointerEvents: !e.currentTarget.checked,
-                                  })
+                                label="Image fit"
+                                value={builder.template.backgroundImageFit ?? 'cover'}
+                                onChange={(val) =>
+                                  builder.setBackgroundImageFit((val ?? 'cover') as 'cover' | 'contain' | 'fill')
                                 }
-                                aria-label="Toggle click-through"
+                                data={[
+                                  { value: 'cover', label: 'Cover (fill, crop)' },
+                                  { value: 'contain', label: 'Contain (letterbox)' },
+                                  { value: 'fill', label: 'Fill (stretch)' },
+                                ]}
                               />
-                            </Group>
-                          </Box>
-                        ))}
-                      </Stack>
-                    </>
-                  )}
+                              <div>
+                                <Text size="xs" c="dimmed" mb={2}>Image opacity</Text>
+                                <Slider
+                                  value={builder.template.backgroundImageOpacity ?? 1}
+                                  onChange={(val) => builder.setBackgroundImageOpacity(val)}
+                                  min={0}
+                                  max={1}
+                                  step={0.05}
+                                  size="xs"
+                                  label={(v) => `${Math.round(v * 100)}%`}
+                                />
+                              </div>
+                            </>
+                          )}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </Accordion>
                 </Tabs.Panel>
 
-                {/* \u2500\u2500 Background tab \u2500\u2500 */}
-                <Tabs.Panel value="bg">
-                  <Stack gap="sm">
-                    {/* Canvas background color */}
-                    <div>
-                      <Text size="xs" fw={500} mb={4}>Background Color</Text>
-                      <ColorInput
-                        size="xs"
-                        value={builder.template.backgroundColor}
-                        onChange={builder.setBackgroundColor}
-                        format="hex"
-                        swatches={['#1a1a2e', '#0d1117', '#000000', '#ffffff', '#16213e', 'transparent']}
-                      />
-                    </div>
-
-                    <Divider />
-
-                    {/* Background image */}
-                    <Text size="xs" fw={500}>Background Image</Text>
-                    <Text size="xs" c="dimmed" mt={-6}>
-                      Layered on top of color (supports transparency)
-                    </Text>
-
-                    {builder.template.backgroundImage ? (
-                      <Box>
-                        <div
-                          style={{
-                            background: 'var(--mantine-color-dark-7)',
-                            height: 80,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: 4,
-                            overflow: 'hidden',
-                            marginBottom: 6,
-                          }}
-                        >
-                          <img
-                            src={builder.template.backgroundImage}
-                            alt="Background preview"
-                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                          />
-                        </div>
-                        <Button
-                          size="xs"
-                          color="red"
-                          variant="light"
-                          fullWidth
-                          leftSection={<IconTrash size={12} />}
-                          onClick={() => builder.setBackgroundImage('')}
-                          mb={4}
-                        >
-                          Remove background image
-                        </Button>
-                      </Box>
-                    ) : (
-                      <Text size="xs" c="dimmed">No background image set.</Text>
-                    )}
-
-                    {/* Upload */}
-                    <FileButton accept="image/*" onChange={handleUploadBgImage} disabled={isUploadingBg}>
-                      {(props) => (
-                        <Button
-                          size="xs"
-                          variant="light"
-                          fullWidth
-                          leftSection={isUploadingBg ? <Loader size={10} /> : <IconUpload size={12} />}
-                          {...props}
-                          disabled={isUploadingBg}
-                          aria-label="Upload background image"
-                        >
-                          Upload image
-                        </Button>
-                      )}
-                    </FileButton>
-
-                    {/* URL input */}
-                    <TextInput
-                      placeholder="Or paste image URL\u2026"
-                      size="xs"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                          builder.setBackgroundImage(e.currentTarget.value.trim());
-                          announce('Background image set from URL');
-                          e.currentTarget.value = '';
-                        }
-                      }}
-                      aria-label="Background image URL"
-                    />
-
-                    {/* Fit + opacity — shown only when image is present */}
-                    {builder.template.backgroundImage && (
-                      <>
-                        <Select
-                          size="xs"
-                          label="Image fit"
-                          value={builder.template.backgroundImageFit ?? 'cover'}
-                          onChange={(val) =>
-                            builder.setBackgroundImageFit((val ?? 'cover') as 'cover' | 'contain' | 'fill')
-                          }
-                          data={[
-                            { value: 'cover', label: 'Cover (fill, crop)' },
-                            { value: 'contain', label: 'Contain (letterbox)' },
-                            { value: 'fill', label: 'Fill (stretch)' },
-                          ]}
-                        />
-                        <div>
-                          <Text size="xs" c="dimmed" mb={2}>Image opacity</Text>
-                          <Slider
-                            value={builder.template.backgroundImageOpacity ?? 1}
-                            onChange={(val) => builder.setBackgroundImageOpacity(val)}
-                            min={0}
-                            max={1}
-                            step={0.05}
-                            size="xs"
-                            label={(v) => `${Math.round(v * 100)}%`}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </Stack>
-                </Tabs.Panel>
               </Tabs>
             </Box>
           )}
@@ -1116,7 +974,6 @@ export function LayoutBuilderModal({
                 onAnnounce={announce}
                 onOverlayMove={builder.moveOverlay}
                 onOverlayResize={builder.resizeOverlay}
-                overlaysVisible={overlaysVisible}
               />
             </Box>
 
@@ -1168,19 +1025,6 @@ export function LayoutBuilderModal({
                   >
                     Fit to container
                   </Button>
-                  <Divider orientation="vertical" />
-                  {/* Overlay visibility toggle */}
-                  <Tooltip label={overlaysVisible ? 'Hide overlays (work on slots)' : 'Show overlays'}>
-                    <ActionIcon
-                      size="sm"
-                      variant={overlaysVisible ? 'subtle' : 'filled'}
-                      color={overlaysVisible ? undefined : 'orange'}
-                      onClick={() => setOverlaysVisible((v) => !v)}
-                      aria-label={overlaysVisible ? 'Hide overlays' : 'Show overlays'}
-                    >
-                      {overlaysVisible ? <IconEye size={14} /> : <IconEyeOff size={14} />}
-                    </ActionIcon>
-                  </Tooltip>
                   <Divider orientation="vertical" />
                   {/* Snap toggle + sensitivity slider */}
                   <Group gap={6} wrap="nowrap">
