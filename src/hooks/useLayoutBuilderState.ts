@@ -455,12 +455,15 @@ export function useLayoutBuilderState(
           ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
         ].sort((a, b) => a.zIndex - b.zIndex);
 
+        // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
+        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
+
         for (let i = all.length - 1; i >= 0; i--) {
           if (idSet.has(all[i].id)) {
             const above = all[i + 1];
             if (above && !idSet.has(above.id)) {
-              const itemA = [...d.slots, ...d.overlays].find((x) => x.id === all[i].id)!;
-              const itemB = [...d.slots, ...d.overlays].find((x) => x.id === above.id)!;
+              const itemA = byId.get(all[i].id)!;
+              const itemB = byId.get(above.id)!;
               const tmp = itemA.zIndex;
               itemA.zIndex = itemB.zIndex;
               itemB.zIndex = tmp;
@@ -481,12 +484,15 @@ export function useLayoutBuilderState(
           ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
         ].sort((a, b) => a.zIndex - b.zIndex);
 
+        // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
+        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
+
         for (let i = 0; i < all.length; i++) {
           if (idSet.has(all[i].id)) {
             const below = all[i - 1];
             if (below && !idSet.has(below.id)) {
-              const itemA = [...d.slots, ...d.overlays].find((x) => x.id === all[i].id)!;
-              const itemB = [...d.slots, ...d.overlays].find((x) => x.id === below.id)!;
+              const itemA = byId.get(all[i].id)!;
+              const itemB = byId.get(below.id)!;
               const tmp = itemA.zIndex;
               itemA.zIndex = itemB.zIndex;
               itemB.zIndex = tmp;

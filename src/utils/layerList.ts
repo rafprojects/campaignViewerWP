@@ -56,8 +56,8 @@ export type LayerItem = SlotLayerItem | OverlayLayerItem | BackgroundLayerItem;
  *
  * Priority: explicit `name` field → computed fallback.
  * Fallbacks:
- *  - slot     → "Slot N"     (1-based)
- *  - overlay  → "Overlay N"  (1-based position in template.overlays[])
+ *  - slot     → "Media Layer N"   (1-based)
+ *  - overlay  → "Graphic Layer N" (1-based position in template.overlays[])
  *  - background → "Background"
  *
  * This is the **single source of truth** used by the layer panel row, the
