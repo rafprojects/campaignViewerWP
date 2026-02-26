@@ -1,47 +1,82 @@
 # Phase 17 — Builder UX: Design Assets Consolidation & Dockable Panels
 
-**Status:** 📋 Planning  
+**Status:** 📋 Planning — Signed off, ready for implementation  
 **Version:** v0.15.0 (target)  
 **Created:** February 26, 2026  
+**Last updated:** February 26, 2026 — Plan revised after review + decision session
 
 ---
 
 ## Table of Contents
 
-1. [Rationale](#rationale)
-2. [Architecture Decisions](#architecture-decisions)
-3. [Current State Audit](#current-state-audit)
-4. [Track P17-A — Design Assets Consolidation](#track-p17-a--design-assets-consolidation)
-5. [Track P17-B — AssetUploader Sub-Component](#track-p17-b--assetuploader-sub-component)
-6. [Track P17-C — Media Slot Drop Guard](#track-p17-c--media-slot-drop-guard)
-7. [Track P17-D — Overlay Properties in Right Panel](#track-p17-d--overlay-properties-in-right-panel)
-8. [Track P17-E — Dockable Panels](#track-p17-e--dockable-panels)
-9. [Open Questions / Choices](#open-questions--choices)
-10. [Execution Priority](#execution-priority)
-11. [Testing Strategy](#testing-strategy)
-12. [Risk Register](#risk-register)
+- [Phase 17 — Builder UX: Design Assets Consolidation \& Dockable Panels](#phase-17--builder-ux-design-assets-consolidation--dockable-panels)
+  - [Table of Contents](#table-of-contents)
+  - [Rationale](#rationale)
+  - [Key Decisions (Resolved)](#key-decisions-resolved)
+  - [Architecture Decisions](#architecture-decisions)
+  - [Current State Audit](#current-state-audit)
+    - [Left panel tabs (HEAD `ac06b9b`)](#left-panel-tabs-head-ac06b9b)
+    - [Right panel (as of HEAD)](#right-panel-as-of-head)
+    - [`LayoutSlotComponent` drop handler](#layoutslotcomponent-drop-handler)
+  - [Track P17-F — Type Rename (Pre-Work)](#track-p17-f--type-rename-pre-work)
+    - [Scope](#scope)
+    - [Why `template.overlays` stays](#why-templateoverlays-stays)
+    - [Files touched (~15)](#files-touched-15)
+  - [Track P17-B — AssetUploader Sub-Component](#track-p17-b--assetuploader-sub-component)
+  - [Track P17-C — Media Slot Drop Guard](#track-p17-c--media-slot-drop-guard)
+  - [Track P17-D — Graphic Layer Properties Panel](#track-p17-d--graphic-layer-properties-panel)
+    - [Props](#props)
+    - [Properties surfaced](#properties-surfaced)
+    - [Right panel hot-swap (after P17-D)](#right-panel-hot-swap-after-p17-d)
+  - [Track P17-A — Design Assets Consolidation](#track-p17-a--design-assets-consolidation)
+    - [Target left panel structure (after P17-A)](#target-left-panel-structure-after-p17-a)
+    - [Routing `setLeftTab('bg')` → `setDesignAssetsOpen(true)` + scroll](#routing-setlefttabbg--setdesignassetsopentrue--scroll)
+    - [State changes](#state-changes)
+    - [Graphic Layers library — no on-canvas cards](#graphic-layers-library--no-on-canvas-cards)
+    - [Removed: `overlaysVisible` global toggle](#removed-overlaysvisible-global-toggle)
+  - [Track P17-E — True Dockable Panels (dockview)](#track-p17-e--true-dockable-panels-dockview)
+    - [Builder shell change](#builder-shell-change)
+    - [dockview integration sketch](#dockview-integration-sketch)
+    - [Panel configuration](#panel-configuration)
+    - [Layout reset](#layout-reset)
+    - [Styling dockview to match Mantine theme](#styling-dockview-to-match-mantine-theme)
+  - [Deferred to P18 — Zoomable Canvas \& Hand Tool](#deferred-to-p18--zoomable-canvas--hand-tool)
+  - [Execution Priority](#execution-priority)
+  - [Testing Strategy](#testing-strategy)
+  - [Risk Register](#risk-register)
+  - [Modified File Inventory (projected)](#modified-file-inventory-projected)
+    - [New files](#new-files)
+    - [Modified files](#modified-files)
 
 ---
 
 ## Rationale
 
-Phase 16 delivered a unified layer panel that surfaces all elements (slots, graphic layers, background) in a single scrollable list. Two friction points remain:
+Phase 16 delivered a unified layer panel that surfaces all elements in a single scrollable list. Three friction points remain:
 
-### Friction 1 — Four tabs, two of which serve the same conceptual purpose
+**1 — Four tabs, two serving the same conceptual purpose.** `Overlays` and `BG` are both template-level design asset tools. Forcing users to know the distinction in order to find the right tab adds unnecessary cognitive load. `Media` (campaign photos/videos) belongs in its own section but does not need a full peer tab alongside design tools.
 
-The current left panel has four tabs: **Layers | Media | Overlays | BG**.
+**2 — Graphic layer properties not reachable from the layer panel.** Selecting a graphic layer row currently shows nothing in the right panel. To edit opacity or click-through, users must switch to the Overlays tab — breaking the "layer panel is the single interaction surface" principle from P16.
 
-`Overlays` and `BG` are both template-level design asset tools — the admin picks or uploads a graphic to decorate the canvas. They differ only in their layer position (overlays occupy a zIndex slot; background is beneath everything). Forcing the user to know this distinction in order to find the right tab is unnecessary cognitive load.
+**3 — Rigid panel layout.** The modal locks `[Layers+Media] | [Canvas] | [Properties]` regardless of workflow. Designers frequently want canvas-dominant views, or want properties and media on the same side. A true Photoshop-style drag-to-dock system covers the range of realistic workflows.
 
-`Media` is fundamentally different in nature: it manages campaign-specific photos and videos that fill the assignable slots. It belongs in its own section, but does not need a full peer tab alongside design asset tools.
+---
 
-### Friction 2 — Rigid panel layout wastes screen space on wide monitors
+## Key Decisions (Resolved)
 
-The modal currently locks `[Layers+Media] | [Canvas] | [Properties]` regardless of screen width or workflow preference. Designers often want the canvas central and as wide as possible, pushing both asset panels to one side. Others want properties on the left when editing text-heavy overlays. A lightweight toggle-based dock covers the realistic configuration space with ~200 lines and zero new dependencies. 
-
-### Friction 3 — Overlay properties not surfaced via layer panel
-
-Clicking a graphic layer row in the layer panel selects it visually but the right panel shows nothing (it only responds to slot selections). To edit opacity or click-through on a graphic layer, the user must switch to the Overlays tab. This breaks the "layer panel is the single interaction surface" principle introduced in P16.
+| # | Decision | Resolution |
+|---|----------|------------|
+| A | Ordering within Design Assets section | Graphic Layers first → Background (matches Layer Panel top-to-bottom visual order) |
+| B | Design Assets accordion default state | Persisted to `localStorage` |
+| C | Graphic layer properties implementation | New `GraphicLayerPropertiesPanel.tsx` component (clean separation, will grow) |
+| D | Dockable panels scope | Included in P17-E; true drag-to-dock via `dockview` |
+| E | On-canvas overlay cards in Design Assets | **Removed entirely.** Right panel is the single edit surface. |
+| — | Dock library | `dockview` (~38KB gzip, TypeScript-first, purpose-built for panel docking) |
+| — | Which panels dock | All three: Layers, Media, Properties. All can go left, right, or float. |
+| — | Floating panels | Supported (detached over canvas, dismiss on click-outside) |
+| — | Builder shell | Mantine `<Modal fullScreen>` + stripped chrome. dockview fills the overlay. No router changes. |
+| — | Type rename | `LayoutOverlay` → `LayoutGraphicLayer`, `kind: 'overlay'` → `kind: 'graphic'` in P17 (~15-file diff) |
+| — | Zoom/pan canvas | **Deferred to P18.** All 6 desired UX interactions documented below. |
 
 ---
 
@@ -49,21 +84,21 @@ Clicking a graphic layer row in the layer panel selects it visually but the righ
 
 | ID | Decision | Rationale |
 |----|----------|-----------|
-| AD-1 | Naming: "Graphic Layer" / "Design Assets" (not "Overlay") | Follows naming convention finalized in P16 QA. "Overlay" implies covering something; graphic layers can sit at any z-position. Consistent with `getLayerName()` output already shipping. |
-| AD-2 | Design Assets section lives **inside** the Media tab | The Media tab already exists and is the natural home for left-panel content when layers are hidden. Adding a collapsible `Design Assets` accordion section avoids a third-or-fourth tab proliferation. |
-| AD-3 | Background controls merge into Design Assets section | Background image and graphic layers share upload/URL flow. Zero data-model impact — both write to existing `LayoutTemplate` fields. |
-| AD-4 | Background tab (`value="bg"`) **removed** from tab bar | Clicking the Background layer row in Layer Panel already switches to the BG properties via `setLeftTab('bg')`. With P17, it will instead expand the Design Assets section and scroll to the BG sub-section. |
-| AD-5 | `AssetUploader` extracted as a reusable sub-component | Both Background image and each Graphic Layer share the same `FileButton + TextInput URL` pattern. Extracting avoids ~60 lines of duplication. Scoped to this file initially — no public export needed. |
-| AD-6 | Drop guard: `MediaItem` drag must resolve to a slot | Currently nothing prevents a user from accidentally triggering a media-assign on a graphic layer or the background. An explicit type-check in `LayoutSlotComponent`'s drop handler closes this gap cleanly. |
-| AD-7 | Overlay properties render in right `SlotPropertiesPanel` (or parallel `GraphicLayerPropertiesPanel`) | The right panel already hot-swaps between slot properties and background properties based on selection. Adding a graphic layer branch is a natural extension. The only question is whether to extend the existing `SlotPropertiesPanel` component or create a focused `GraphicLayerPropertiesPanel`. See [Choice C](#choice-c--graphic-layer-properties-implementation). |
-| AD-8 | Dockable panels: toggle-based, `localStorage` persisted | Full drag-to-dock is ~600 lines with hit testing. A simple ←/→ toggle achieves 95% of the value with ~200 lines and zero new dependencies. |
-| AD-9 | Layers panel is **left-anchored** — not dockable | The layer panel has spatial coupling with the canvas (layer row hovers, drag-to-reorder hit areas). Moving it to the right would require inverting all spatial intuition. Media and Properties panels are not spatially coupled and can toggle freely. |
+| AD-1 | `LayoutOverlay` → `LayoutGraphicLayer` throughout | Naming convention finalized in P16 QA. Compiled-only change — `kind` is computed at runtime, not stored in DB. |
+| AD-2 | Design Assets section inside Media tab, not its own tab | Avoids fourth-tab proliferation. Campaign media and design assets share the same authoring workflow. |
+| AD-3 | Graphic Layers listed above Background in Design Assets | Matches the layer panel's spatial order: top-most element at top; background is always lowest, listed last. |
+| AD-4 | On-canvas overlay cards removed entirely | With the right panel surfacing all properties on selection (P17-D), on-canvas cards are fully redundant. Single edit surface reduces "which one do I use?" friction. |
+| AD-5 | `dockview` for true drag-to-dock | Purpose-built library, TypeScript-first, actively maintained, ~38KB gzip. Provides drop-zone highlighting, floating panels, resizable splitters, and layout serialization for localStorage persistence. |
+| AD-6 | Builder stays as full-screen modal overlay (Option 2) | Mantine `<Modal fullScreen>` strips chrome and gives dockview a full-viewport surface. No router changes, no callsite changes, existing `opened`/`onClose`/`onSaved` API preserved. **Future note:** A full-page route (`/builder/:templateId`) is the cleaner long-term architecture — bookmarkable URLs, fully owned viewport, simpler z-index context. Document as P18+ consideration. |
+| AD-7 | All three panels (Layers, Media, Properties) are dockable | Left, right, or floating. The layer panel's top-to-bottom order is the same on either side — no spatial anchoring argument. |
+| AD-8 | dockview layout state persisted to `localStorage` | `dockview` has a `toJSON()` / `fromJSON()` API. Key: `'wpsg_builder_layout'`. A `LAYOUT_VERSION` constant guards against stale serialized layouts after code changes. |
+| AD-9 | Zoom/pan deferred to P18 with `react-zoom-pan-pinch` | Known incompatibility: react-rnd calculates positions in parent-container coordinates; CSS scale transforms (used by all zoom libraries) break slot drag/resize math unless each `onDragStop`/`onResizeStop` callback divides by the current scale. Fix is known (~10 lines per callback) but adds risk if combined with the already-complex P17 docking restructure. |
 
 ---
 
 ## Current State Audit
 
-### Left panel tabs (as of HEAD `ac06b9b`)
+### Left panel tabs (HEAD `ac06b9b`)
 
 | Tab value | Content | Lines in modal |
 |-----------|---------|---------------|
@@ -91,88 +126,41 @@ Currently accepts any `draggedMediaId` from `dataTransfer.getData('media-id')` w
 
 ---
 
-## Track P17-A — Design Assets Consolidation
+## Track P17-F — Type Rename (Pre-Work)
 
-**Files affected:** `LayoutBuilderModal.tsx`
+**Do this first** — all other tracks consume the renamed types.
 
-Remove the `overlays` and `bg` tabs from the `<Tabs.List>`. Collapse their content into a new `<Accordion>` (or Mantine `<Collapse>`) section at the bottom of the `media` tab panel, titled **"Design Assets"**.
+### Scope
 
-### Target left panel structure (after P17-A)
+| Old | New | Notes |
+|-----|-----|-------|
+| `LayoutOverlay` (interface in `types/index.ts`) | `LayoutGraphicLayer` | Consistent with `LayoutSlot`, `LayoutTemplate` naming |
+| `kind: 'overlay'` (in `LayerItem` union, `layerList.ts`) | `kind: 'graphic'` | Computed at runtime — never stored in DB |
+| `OverlayLayerItem` (in `layerList.ts`) | `GraphicLayerItem` | Runtime type only |
+| `template.overlays` array key | **Stays as `overlays`** | Stored in DB — renaming requires a migration. Type and storage key are intentionally decoupled. |
+| `builder.addOverlay()` / `removeOverlay()` etc. | **Stays as-is** | Action names are internal — decouple gradually in P18 |
 
-```
-┌──────────────────────────────┐
-│  Tabs: [Layers]  [Media]     │  ← only 2 tabs
-├──────────────────────────────┤
-│  Tab: Layers                 │
-│    <LayerPanel> (unchanged)  │
-├──────────────────────────────┤
-│  Tab: Media                  │
-│                              │
-│  ┌── Campaign Media ───────┐ │
-│  │  [Select campaign ▼]   │ │
-│  │  <MediaPickerSidebar>  │ │
-│  └─────────────────────────┘ │
-│                              │
-│  ┌── Design Assets ── [^] ─┐ │  ← Mantine Accordion, open by default
-│  │                          │ │
-│  │  Background              │ │
-│  │  ─────────────────────  │ │
-│  │  [ColorInput]            │ │
-│  │  [Image: upload | URL]   │ │
-│  │  [Fit: cover/contain/fill│ │
-│  │  [Opacity slider]        │ │
-│  │                          │ │
-│  │  Graphic Layers          │ │
-│  │  ─────────────────────  │ │
-│  │  Library: [thumb][thumb] │ │
-│  │  [Upload] [URL input]    │ │
-│  │  On canvas: [card][card] │ │
-│  └─────────────────────────┘ │
-└──────────────────────────────┘
-```
+### Why `template.overlays` stays
 
-### Routing `setLeftTab('bg')` → `setDesignAssetsOpen(true)` + scroll
-
-The two places that currently call `setLeftTab('bg')` will be replaced by:
-1. `setLeftTab('media')` — switch to the Media tab
-2. `setDesignAssetsOpen(true)` — expand the Design Assets accordion
-3. `designAssetsRef.current?.scrollIntoView({ behavior: 'smooth' })` — scroll to the BG sub-section
-
-A `useRef` on the background sub-section heading handles the scroll target.
-
-### State changes
+The `overlays` key is stored in `wpsg_layout_templates` WP option. Renaming the stored key to `graphicLayers` would require a PHP migration across all existing templates. The TypeScript interface (`LayoutGraphicLayer`) describes *what* the object is; the stored key (`overlays`) describes *where* it lives in the serialized structure. They can differ.
 
 ```typescript
-// Remove:
-const [leftTab, setLeftTab] = useState<string | null>('layers');
-// → leftTab values 'bg' and 'overlays' no longer needed
+// After rename:
+export interface LayoutGraphicLayer {
+  id: string;
+  imageUrl: string;
+  // ... (all fields unchanged)
+}
 
-// Keep, rename intent:
-const [leftTab, setLeftTab] = useState<'layers' | 'media'>('layers');
-
-// Add:
-const [designAssetsOpen, setDesignAssetsOpen] = useState(true);
+export interface LayoutTemplate {
+  // ...
+  overlays: LayoutGraphicLayer[];  // ← key stays, type renamed
+}
 ```
 
-### Impact on `LayerPanel`
+### Files touched (~15)
 
-The `onSelectBackground` prop currently does `setLeftTab('bg')`. After P17-A it will do:
-```typescript
-onSelectBackground={() => {
-  setLeftTab('media');
-  setDesignAssetsOpen(true);
-  // scroll on next tick
-  requestAnimationFrame(() =>
-    bgSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
-  );
-}}
-```
-
-### Removed: `overlaysVisible` global toggle
-
-The `overlaysVisible` toggle in the old Overlays tab header was a workaround for the lack of per-layer visibility. With P16 per-layer `visible` field and the Layer Panel eye icon, the global toggle is redundant. It will be removed in P17-A.
-
-> **Note:** `overlaysVisible` is currently passed to `<LayoutCanvas>`. Removing it requires checking `LayoutCanvas` and `LayoutOverlayComponent` — the per-element `visible` prop already drives opacity there, so the prop removal should be clean.
+`types/index.ts`, `layerList.ts`, `layerList.test.ts`, `useLayoutBuilderState.ts`, `LayoutBuilderModal.tsx`, `LayoutCanvas.tsx`, `LayerRow.tsx`, `LayerPanel.tsx`, `LayerPanel.test.tsx`, `GraphicLayerPropertiesPanel.tsx` (new in P17-D), `LayoutBuilderGallery.tsx`, `class-wpsg-layout-templates.php` (PHP doc comment only — data key unchanged).
 
 ---
 
@@ -239,227 +227,271 @@ This is a 1-line addition — minimal risk.
 
 ---
 
-## Track P17-D — Overlay Properties in Right Panel
+## Track P17-D — Graphic Layer Properties Panel
 
-**File:** `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`  
-**New file (Option A):** `src/components/Admin/LayoutBuilder/GraphicLayerPropertiesPanel.tsx`
+**New file:** `src/components/Admin/LayoutBuilder/GraphicLayerPropertiesPanel.tsx`
 
-When a graphic layer row is selected in the Layer Panel, the right panel currently renders nothing. P17-D adds a graphic layer properties panel that surfaces the same controls currently buried in the Overlays tab's "On canvas" cards.
+When a graphic layer row is selected in the Layer Panel, the right panel (currently blank) renders this component via the existing hot-swap logic in `LayoutBuilderModal`.
 
-### Properties to expose
+### Props
+
+```typescript
+interface GraphicLayerPropertiesPanelProps {
+  overlay: LayoutGraphicLayer;  // renamed type from P17-F
+  overlayIndex: number;         // for display: "Graphic Layer 2"
+  onUpdate: (id: string, patch: Partial<LayoutGraphicLayer>) => void;
+  onRename: (id: string, name: string) => void;
+  onRemove: (id: string) => void;
+  onBringToFront: (id: string) => void;
+  onSendToBack: (id: string) => void;
+  onBringForward: (id: string) => void;
+  onSendBackward: (id: string) => void;
+}
+```
+
+### Properties surfaced
 
 | Property | Control | Notes |
 |----------|---------|-------|
-| Name | `TextInput` (inline rename) | Syncs with layer row rename — calls `builder.renameOverlay()` |
-| Position (x, y) | `NumberInput` pair | % values, same pattern as `SlotPropertiesPanel` |
-| Size (width, height) | `NumberInput` pair | % values |
-| Opacity | `Slider` 0–1 | `Math.round(v * 100)%` label |
+| Name | `TextInput` inline | Calls `onRename`; same inline-edit pattern as `SlotPropertiesPanel` header |
+| Preview | Small `<img>` thumbnail | 64px height, `object-fit: contain`, dark background |
+| Position (x, y) | Two `NumberInput` (%) | Bounds 0–100 |
+| Size (width, height) | Two `NumberInput` (%) | Min 1 |
+| Opacity | `Slider` 0–1 | Label: `${Math.round(v * 100)}%` |
 | Click-through | `Switch` | `!overlay.pointerEvents` |
 | Fill canvas | `Button` | Sets x/y/w/h to 0/0/100/100 |
-| z-index reorder | `bringToFront / sendToBack / bringForward / sendBackward` | Same 4-button row as slot properties |
-| Remove from canvas | `Button` (red, danger) | Calls `builder.removeOverlay(id)` |
+| Z-order | 4-button row (↑↑ ↑ ↓ ↓↓) | Same as `SlotPropertiesPanel` — calls bring/send callbacks |
+| Remove | `Button` (red + trash icon) | `onRemove(overlay.id)` with Mantine `useDisclosure`-gated confirm dialog |
 
-### Implementation choice
+### Right panel hot-swap (after P17-D)
 
-See [Choice C](#choice-c--graphic-layer-properties-implementation) below.
-
-### Right panel hot-swap logic (after P17-D)
-
-```typescript
-// Currently:
-// slot selected → <SlotPropertiesPanel>
-// background selected → inline BG controls
-// overlay selected → nothing
-
-// After P17-D:
-// slot selected    → <SlotPropertiesPanel>
-// overlay selected → <GraphicLayerPropertiesPanel> (or extended SlotPropertiesPanel)
-// background selected → inline BG controls (unchanged; now also in Design Assets section)
-// nothing selected → "Select a layer to edit its properties" hint
-```
+| Selection | Right panel |
+|-----------|-------------|
+| Slot | `<SlotPropertiesPanel>` (unchanged) |
+| Graphic layer | `<GraphicLayerPropertiesPanel>` ← new |
+| Background | Inline BG controls (unchanged) |
+| Nothing | "Select a layer to edit its properties" hint text |
 
 ---
 
-## Track P17-E — Dockable Panels
+## Track P17-A — Design Assets Consolidation
 
-**Files affected:** `LayoutBuilderModal.tsx` (layout logic), possibly a new `useDockState.ts` hook
+**File:** `LayoutBuilderModal.tsx`
 
-### Scope
+Remove the `overlays` and `bg` tabs from the `<Tabs.List>`. Collapse their content into a new `<Accordion>` section at the bottom of the `media` tab panel, titled **"Design Assets"**.
 
-Two panels are dockable: **Media** and **Properties**. The **Layers** panel stays left-anchored (spatial coupling with canvas).
+### Target left panel structure (after P17-A)
 
-```typescript
-type DockSide = 'left' | 'right';
-
-interface DockState {
-  media: DockSide;       // default: 'left'
-  properties: DockSide;  // default: 'right'
-}
+```
+┌──────────────────────────────┐
+│  Tabs: [Layers]  [Media]     │  ← only 2 tabs
+├──────────────────────────────┤
+│  Tab: Layers                 │
+│    <LayerPanel> (unchanged)  │
+├──────────────────────────────┤
+│  Tab: Media                  │
+│                              │
+│  ┌── Campaign Media ───────┐ │
+│  │  [Select campaign ▼]   │ │
+│  │  <MediaPickerSidebar>  │ │
+│  └────────────────────────┘ │
+│                              │
+│  ┌── Design Assets ── [^] ─┐ │  ← Mantine Accordion, state persisted
+│  │                          │ │
+│  │  Graphic Layers          │ │  ← first (matches layer panel top-to-bottom)
+│  │  ─────────────────────  │ │
+│  │  Library: [thumb][thumb] │ │
+│  │  <AssetUploader>         │ │  ← upload + URL, no on-canvas cards
+│  │                          │ │
+│  │  Background              │ │  ← scroll target for bg row click
+│  │  ─────────────────────  │ │
+│  │  [ColorInput]            │ │
+│  │  <AssetUploader>         │ │
+│  │  [Fit: cover/contain/fill│ │
+│  │  [Opacity slider]        │ │
+│  └──────────────────────────┘ │
+└──────────────────────────────┘
 ```
 
-Persisted to `localStorage` under key `'wpsg_builder_dock'`. Loaded once on modal open; written on every toggle.
+### Routing `setLeftTab('bg')` → `setDesignAssetsOpen(true)` + scroll
 
-### The 4 configurations
+The two places that currently call `setLeftTab('bg')` will be replaced by:
+1. `setLeftTab('media')` — switch to the Media tab
+2. `setDesignAssetsOpen(true)` — expand the Design Assets accordion
+3. `bgSectionRef.current?.scrollIntoView({ behavior: 'smooth' })` — scroll to the BG sub-section
 
-| Config | media | properties | Use case |
-|--------|-------|------------|----------|
-| A (default) | left | right | Standard — Layers+Media left, Properties right |
-| B | left | left | Both panels left; canvas full right |
-| C | right | right | Both panels right; canvas full left |
-| D | right | left | Swapped — Properties left, Media right |
+A `useRef` on the background sub-section heading handles the scroll target.
 
-Config B and C produce a single column on one side with the canvas filling the other side entirely. Config D is the "power user" layout for editing slot properties while browsing media.
+### State changes
 
-### Modal layout structure
+```typescript
+// Remove:
+const [leftTab, setLeftTab] = useState<string | null>('layers');
+// → leftTab values 'bg' and 'overlays' no longer needed
 
-The modal currently uses a manual `<Group>` with three fixed children. After P17-E it becomes driven by the dock state:
+// Keep, narrow type:
+const [leftTab, setLeftTab] = useState<'layers' | 'media'>('layers');
+
+// Add — persisted:
+const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
+  try {
+    const stored = localStorage.getItem('wpsg_builder_design_assets_open');
+    return stored === null ? true : stored === 'true';  // default open
+  } catch { return true; }
+});
+// On toggle: localStorage.setItem('wpsg_builder_design_assets_open', String(next));
+```
+
+### Graphic Layers library — no on-canvas cards
+
+The library grid (thumbnail + add-to-canvas button) remains. Per Decision E, the "On canvas" cards section (individual overlay controls) is removed entirely. Graphic layers on the canvas are managed via the Layer Panel and have their properties editable in the right panel (P17-D).
+
+### Removed: `overlaysVisible` global toggle
+
+`overlaysVisible` was a workaround for the lack of per-layer visibility. With P16 per-element `visible` fields and the Layer Panel eye icon, it is redundant. **Grep all files for `overlaysVisible` before removing** — confirmed callsites: `LayoutBuilderModal.tsx` (state + prop) and `LayoutCanvas.tsx` (prop + usage).
+
+---
+
+## Track P17-E — True Dockable Panels (dockview)
+
+**New dependency:** `dockview` (~38KB gzip, zero peer deps beyond React, TypeScript-first)
+
+### Builder shell change
+
+Replace the current `<Modal>` chrome with a full-screen overlay using Mantine's `fullScreen` prop and stripped internal styling:
 
 ```tsx
-function buildColumns(dock: DockState, panels: Record<string, ReactNode>) {
-  const left: ReactNode[] = [panels.layers];
-  const right: ReactNode[] = [];
-
-  if (dock.media === 'left')       left.push(panels.media);
-  else                             right.push(panels.media);
-
-  if (dock.properties === 'left')  left.push(panels.properties);
-  else                             right.push(panels.properties);
-
-  return { left, right };
-}
+<Modal
+  fullScreen
+  withCloseButton={false}
+  styles={{
+    body: { padding: 0, height: '100dvh' },
+    content: { borderRadius: 0, boxShadow: 'none' },
+  }}
+>
+  {/* dockview fills this — close/save controls live inside as a dockview panel or toolbar overlay */}
+</Modal>
 ```
 
-Each side renders as a `<Stack>` with `gap={0}`. The canvas sits between them and fills remaining width via `flex: 1`.
+This preserves the existing `opened` / `onClose` / `onSaved` prop API, WP admin z-index context, Mantine's keyboard focus trap, and ESC-to-close — while giving dockview a true full-viewport surface.
 
-### Dock toggle button
+> **Future consideration (P18+):** A full-page route (`/builder/:templateId`) is the cleaner long-term architecture: fully owned viewport, bookmarkable/shareable builder URLs, removes modal z-index management entirely. Worth revisiting once the admin SPA router is more established.
 
-Small `←` / `→` `<ActionIcon>` in the header of each dockable panel. Only visible on panel hover (CSS `opacity: 0` → `1` on `:hover`) to avoid persistent visual noise.
+### dockview integration sketch
 
-```
-Media panel header:
-  [Media]                        [→]   ← dock-to-right button (hover-only)
-```
+```tsx
+import { DockviewReact, type DockviewReadyEvent } from 'dockview';
 
-Tooltip: `"Move to right side"` / `"Move to left side"`.
+// Panels registered by component ID:
+// 'layers'     → LayerPanelWrapper
+// 'media'      → MediaPanelWrapper (campaign selector + MediaPickerSidebar + Design Assets)
+// 'canvas'     → CanvasPanelWrapper (toolbar + LayoutCanvas — center group, not moveable)
+// 'properties' → PropertiesPanelWrapper (hot-swaps slot / graphic / bg panels)
 
-### `useDockState` hook
-
-```typescript
-// src/hooks/useDockState.ts
-export function useDockState() {
-  const [dock, setDock] = useState<DockState>(() => {
+function onReady(e: DockviewReadyEvent) {
+  const stored = localStorage.getItem('wpsg_builder_layout');
+  if (stored) {
     try {
-      const stored = localStorage.getItem('wpsg_builder_dock');
-      return stored ? JSON.parse(stored) : DEFAULT_DOCK;
-    } catch {
-      return DEFAULT_DOCK;
-    }
-  });
+      const parsed = JSON.parse(stored);
+      // Guard against stale layouts from old code versions:
+      if (parsed.version === LAYOUT_VERSION) { e.api.fromJSON(parsed); return; }
+    } catch { /* fall through to default */ }
+  }
 
-  const toggleDock = useCallback((panel: keyof DockState) => {
-    setDock((prev) => {
-      const next = { ...prev, [panel]: prev[panel] === 'left' ? 'right' : 'left' };
-      localStorage.setItem('wpsg_builder_dock', JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  // Default layout:
+  const canvasGroup = e.api.addGroup();
+  e.api.addPanel({ id: 'canvas', component: 'canvas',
+    position: { referenceGroup: canvasGroup } });
 
-  return { dock, toggleDock };
+  const leftGroup = e.api.addGroup({
+    position: { direction: 'left', referenceGroup: canvasGroup, size: 240 } });
+  e.api.addPanel({ id: 'layers', component: 'layers',
+    position: { referenceGroup: leftGroup } });
+
+  const rightGroup = e.api.addGroup({
+    position: { direction: 'right', referenceGroup: canvasGroup, size: 280 } });
+  e.api.addPanel({ id: 'media', component: 'media',
+    position: { referenceGroup: rightGroup } });
+  e.api.addPanel({ id: 'properties', component: 'properties',
+    position: { referenceGroup: rightGroup } });
 }
+
+// Persist on change:
+// dockviewApi.onDidLayoutChange(() => {
+//   localStorage.setItem('wpsg_builder_layout',
+//     JSON.stringify({ version: LAYOUT_VERSION, ...dockviewApi.toJSON() }));
+// });
 ```
 
-### Constraint: both panels on the same side
+### Panel configuration
 
-When both `media` and `properties` are docked to the same side, they stack vertically within a single side column. The canvas still fills the remaining width. No special handling needed — the column simply grows taller.
+| Panel | Default side | Can float | Min width |
+|-------|-------------|-----------|----------|
+| Layers | Left | Yes | 200px |
+| Media (+ Design Assets) | Right (initial) | Yes | 220px |
+| Properties | Right | Yes | 240px |
+| Canvas | Center (fixed, non-moveable) | No | 300px |
 
----
+All three non-canvas panels can be dragged to either side or floated as detached overlays.
 
-## Open Questions / Choices
+### Layout reset
 
-The following decisions need sign-off before implementation begins.
+A `"Reset layout"` button in the toolbar (next to save/undo) calls:
+```typescript
+dockviewApi.fromJSON(DEFAULT_LAYOUT);
+localStorage.removeItem('wpsg_builder_layout');
+```
 
----
+### Styling dockview to match Mantine theme
 
-### Choice A — Graphic Layers section ordering within Design Assets
-
-**Context:** The Design Assets accordion has two sub-sections: Background and Graphic Layers. Which comes first?
-
-| Option | Order | Rationale |
-|--------|-------|-----------|
-| **A1 (recommended)** | Background → Graphic Layers | Background is the lowest layer conceptually and the most commonly configured. Graphic Layers are added iteratively. |
-| A2 | Graphic Layers → Background | Matches the layer panel's visual order (graphic layers above background). Consistent spatial metaphor. |
-
----
-
-### Choice B — Design Assets accordion default state
-
-**Context:** Should the Design Assets section be expanded or collapsed when the Media tab is first opened (fresh modal open)?
-
-| Option | Default | Notes |
-|--------|---------|-------|
-| **B1 (recommended)** | Open | Design assets are commonly configured and shouldn't require an extra click to reach. |
-| B2 | Closed | Keeps the Media tab focused on campaign media by default; Design Assets is a secondary concern. |
-| B3 | Persisted to localStorage | Remembers the last state. Adds ~3 lines. |
+dockview exposes CSS custom properties (e.g. `--dv-activegroup-hiddenpanel-tab-background-color`). Override them in a scoped CSS block targeting `.dockview-react` to match Mantine's color tokens. No CSS modules needed — a single `<style>` injected into the modal body.
 
 ---
 
-### Choice C — Graphic Layer Properties implementation
+## Deferred to P18 — Zoomable Canvas & Hand Tool
 
-**Context:** When a graphic layer is selected in the Layer Panel, the right panel needs to show its editable properties. Two implementation approaches:
+All UX decisions captured for the P18 plan. All 6 desired interactions confirmed:
 
-| Option | Approach | Pros | Cons |
-|--------|----------|------|------|
-| **C1 (recommended)** | New `GraphicLayerPropertiesPanel.tsx` component | Clean separation; slots and overlays have genuinely different property sets; each component stays ≤200 lines | One more file |
-| C2 | Extend `SlotPropertiesPanel.tsx` to accept `overlay` prop with conditional rendering | Fewer files, reuses panel frame and z-order buttons | `SlotPropertiesPanel` is already 350 lines and adds branching complexity |
+| Interaction | Notes |
+|-------------|-------|
+| Space + drag | Temporary hand/pan mode while key is held. Standard across all design tools. |
+| Dedicated hand tool button | Permanent toggle in canvas toolbar. |
+| Mouse wheel = zoom | No modifier key required. |
+| Pinch-to-zoom | Trackpad / touch support. |
+| Double-click canvas bg | Reset zoom to 100% + re-center. |
+| Zoom % indicator | Displayed in toolbar; click to reset to 100%. |
 
----
-
-### Choice D — Dockable panels scope for P17
-
-**Context:** P17-E is the largest track by LOC. It can be deferred to P18 if the Design Assets consolidation (P17-A–D) is the higher-value delivery.
-
-| Option | Scope | Notes |
-|--------|-------|-------|
-| D1 | Include P17-E in P17 | Both touch `LayoutBuilderModal.tsx`; doing layout restructure once for two features is more efficient |
-| **D2 (recommended)** | Include P17-E in P17 but treat as a stretch goal | Start P17-A–D; add P17-E if time permits. If P17-E slips, it ships in P18 without blocking P17-A–D |
-| D3 | Defer P17-E to P18 | Safe; P17-A–D still deliver clear value |
-
----
-
-### Choice E — On-canvas overlay cards in Design Assets section
-
-**Context:** The current Overlays tab has "On canvas" cards below the library (showing opacity slider, fill-canvas button, delete, click-through per overlay). With P17-D surfacing these in the right panel when the overlay is selected, the on-canvas cards become partially redundant.
-
-| Option | Treatment | Notes |
-|--------|-----------|-------|
-| **E1 (recommended)** | Keep minimal on-canvas list (thumbnail + name + delete only); full properties go to right panel | The list is useful for quick deletion and overview; full editing in right panel is the canonical flow |
-| E2 | Remove on-canvas cards entirely | Cleaner. User must use Layer Panel to select, then edit in right panel. Relies on P17-D being solid. |
-| E3 | Keep full on-canvas cards as-is | Redundant with right panel but zero regression risk |
+**Implementation plan for P18:**
+- Library: `react-zoom-pan-pinch` v3.x (~14KB gzip, TypeScript-first)
+- **react-rnd coordinate fix (known):** `onDragStop` and `onResizeStop` divide raw position values by `transformState.scale` — approximately 10 lines per callback, patched in `LayoutSlotComponent.tsx` and the overlay `Rnd` wrapper in `LayoutCanvas.tsx`
+- Zoom range: 25%–400%
+- Pure design-time transform — zero impact on gallery rendering or stored slot positions
 
 ---
 
 ## Execution Priority
 
-| Sprint | Tracks | Prerequisite | Risk |
-|--------|--------|-------------|------|
-| 1 | P17-B (`AssetUploader`) | None — pure new component | Low |
-| 2 | P17-C (drop guard) | None — 1-line addition | Low |
-| 3 | P17-D (`GraphicLayerPropertiesPanel`) | P17-B (for AssetUploader if needed) | Low—Medium |
-| 4 | P17-A (Design Assets consolidation) | P17-B, P17-D complete | Medium (modal restructure) |
-| 5 | P17-E (dockable panels) *(stretch)* | P17-A complete (modal layout stable) | Medium |
+| Sprint | Track | Prerequisite | Risk |
+|--------|-------|-------------|------|
+| 1 | **P17-F** — Type rename | None | Low (compile-time only) |
+| 2 | **P17-B** — AssetUploader + **P17-C** — Drop guard | P17-F | Low |
+| 3 | **P17-D** — GraphicLayerPropertiesPanel | P17-F, P17-B | Low–Medium |
+| 4 | **P17-A** — Design Assets consolidation | P17-B, P17-D | Medium |
+| 5 | **P17-E** — dockview true dock | P17-A complete (modal layout stable) | Medium–High |
 
-Sprint 4 is the highest regression risk — removing two tabs and routing their content. Running the full test suite and building `build:wp` after each sprint milestone is mandatory.
+Sprints in the same row can be parallelised. Run `npm run build:wp` and `npx vitest run` after every sprint.
 
 ---
 
 ## Testing Strategy
 
-| File | Tests | What to cover |
-|------|-------|--------------|
-| `AssetUploader.test.tsx` | ~8 | Renders upload button; renders URL input; calls `onFileSelect` on file pick; calls `onUrlSubmit` on Enter; shows loader when `isUploading=true` |
-| `GraphicLayerPropertiesPanel.test.tsx` | ~12 | Renders overlay name, position, opacity; slider change calls `onUpdateOverlay`; fill-canvas button; remove button; z-order buttons call correct callbacks |
-| `LayoutBuilderModal.test.tsx` (extend) | ~6 new | Design Assets section visible in Media tab; background controls present; graphic layer upload button present; overlay card present after adding overlay |
-| `useDockState.test.ts` | ~6 | Default state; toggle media dock; toggle properties dock; persists to localStorage; reads from localStorage on init; handles corrupt stored value |
+| File | Tests | Coverage |
+|------|-------|----------|
+| `layerList.test.ts` (update) | ±0 new, ~4 updated | `kind: 'graphic'` assertion updates after P17-F |
+| `LayerPanel.test.tsx` (update) | ±0 new, ~3 updated | `kind` rename in test fixtures |
+| `AssetUploader.test.tsx` | ~8 | Renders upload button + URL input; `onFileSelect` on file pick; `onUrlSubmit` on Enter; loader when `isUploading`; disabled state |
+| `GraphicLayerPropertiesPanel.test.tsx` | ~12 | Renders name, position, opacity; slider calls `onUpdate`; fill-canvas button; remove triggers confirm dialog; z-order buttons |
+| `LayoutBuilderModal.test.tsx` (new/extend) | ~8 | Design Assets in Media tab; BG controls present; graphic layer library button; no on-canvas cards; background row click expands Design Assets + scrolls |
 
 ---
 
@@ -467,26 +499,43 @@ Sprint 4 is the highest regression risk — removing two tabs and routing their 
 
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
-| Removing `overlaysVisible` prop breaks `LayoutCanvas` | Medium | Low | `LayoutCanvas` already drives per-element visibility via `overlay.visible`; grep for all `overlaysVisible` usages before removal |
-| `setLeftTab('bg')` callsites missed → background layer click does nothing | Medium | Low | Grep for `'bg'` string in modal before removing tab; add regression test for background row click → Design Assets open |
-| Dock state causes layout shift on first render (before localStorage read) | Low | Medium | Initialize from localStorage synchronously in `useState(() => ...)` initializer (already shown in `useDockState` sketch) — avoids flash |
-| P17-A modal restructure causes existing test snapshots to fail | Medium | Medium | No snapshot tests in this codebase — all tests use RTL queries; restructure is safe as long as rendered text and accessible labels are preserved |
-| Stacking two docked panels on same side creates overflow on short viewports | Low | Low | Right panel and Media panel get `ScrollArea.Autosize` wrappers with `mah` cap — already pattern used in current modal |
+| P17-F type rename missed in a callsite → TS error | Low | Low | `tsc --noEmit` after P17-F sprint; CI blocks on type errors |
+| Removing `overlaysVisible` prop breaks `LayoutCanvas` | Medium | Low | Per-element `overlay.visible` already drives opacity in `LayoutCanvas`; grep all usages before removal |
+| `setLeftTab('bg')` callsites missed → background row click does nothing | Medium | Low | Grep for `'bg'` string in modal before removing; add regression test |
+| dockview CSS conflicts with Mantine | Medium | Medium | Override dockview CSS custom properties in a scoped block targeting `.dockview-react`; namespace cleanly |
+| dockview floating panels lose Mantine Modal focus trap | Medium | Low | Mantine's focus trap is document-wide; dockview floating panels use `ReactDOM.createPortal` — verify Mantine honors portaled elements in focus trap chain before shipping P17-E |
+| dockview stale layout JSON after a panel rename | Low | Medium | `LAYOUT_VERSION` constant guards serialized layout; mismatched version falls through to default and clears storage |
+| `bgSectionRef.scrollIntoView` no-ops in jsdom tests | Low | High | `scrollIntoView` is already mocked in `setup.ts`; assert `setDesignAssetsOpen(true)` was called instead |
 
 ---
 
 ## Modified File Inventory (projected)
 
-| File | Track | Change |
-|------|-------|--------|
-| `src/components/Admin/LayoutBuilder/AssetUploader.tsx` | P17-B | **New** — `AssetUploader` sub-component |
-| `src/components/Admin/LayoutBuilder/GraphicLayerPropertiesPanel.tsx` | P17-D | **New** — graphic layer property editor (if Choice C1 accepted) |
-| `src/hooks/useDockState.ts` | P17-E | **New** — dock toggle + localStorage persistence |
-| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | P17-A, P17-D, P17-E | Remove `overlays`/`bg` tabs; add Design Assets accordion; wire `GraphicLayerPropertiesPanel`; add dock toggle buttons and column-order logic |
-| `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | P17-C | Add 1-line `media-id` guard in `onDrop` |
-| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | P17-A | Remove `overlaysVisible` prop (replaced by per-element `visible`) |
-| `src/components/Admin/LayoutBuilder/index.ts` | P17-B, P17-D | Add new component exports |
+### New files
+
+| File | Track |
+|------|-------|
+| `src/components/Admin/LayoutBuilder/AssetUploader.tsx` | P17-B |
+| `src/components/Admin/LayoutBuilder/GraphicLayerPropertiesPanel.tsx` | P17-D |
+
+### Modified files
+
+| File | Tracks | Change summary |
+|------|--------|---------------|
+| `src/types/index.ts` | P17-F | `LayoutOverlay` → `LayoutGraphicLayer` |
+| `src/utils/layerList.ts` | P17-F | `kind: 'overlay'` → `kind: 'graphic'`, `OverlayLayerItem` → `GraphicLayerItem` |
+| `src/utils/layerList.test.ts` | P17-F | Update `kind` assertions |
+| `src/hooks/useLayoutBuilderState.ts` | P17-F | All `LayoutOverlay` references |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | P17-F, P17-A, P17-D, P17-E | Type rename; remove overlays+bg tabs; Design Assets accordion; `GraphicLayerPropertiesPanel` wiring; dockview shell |
+| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | P17-F, P17-A | Type rename; remove `overlaysVisible` prop |
+| `src/components/Admin/LayoutBuilder/LayerRow.tsx` | P17-F | `kind: 'overlay'` → `kind: 'graphic'` |
+| `src/components/Admin/LayoutBuilder/LayerPanel.tsx` | P17-F | `kind: 'overlay'` → `kind: 'graphic'` |
+| `src/components/Admin/LayoutBuilder/LayerPanel.test.tsx` | P17-F | Update `kind` in fixtures |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderGallery.tsx` | P17-F | `LayoutOverlay` → `LayoutGraphicLayer` |
+| `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | P17-C | 1-line drop guard |
+| `src/components/Admin/LayoutBuilder/index.ts` | P17-B, P17-D | New component exports |
+| `wp-plugin/.../class-wpsg-layout-templates.php` | P17-F | Doc comment only (data key `overlays` unchanged) |
 
 ---
 
-*Plan written: February 26, 2026. Awaiting sign-off before implementation begins.*
+*Plan finalized: February 26, 2026. Signed off — ready for Sprint 1 (P17-F type rename).*
