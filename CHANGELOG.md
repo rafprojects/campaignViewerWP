@@ -5,6 +5,35 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-02-26
+
+### Added - Phase 15: Layout Builder (Complete + QA Sprint)
+
+#### Layout Builder — Core Features
+- **P15-A — Per-Breakpoint Gallery Selection**: 6-way adapter config (desktop/tablet/mobile × image/video); `useBreakpoint` container-width hook; unified toggle collapses to single selection (backward compat).
+- **P15-B — Layout Template Data Model**: `LayoutTemplate`, `LayoutSlot`, `LayoutOverlay`, `CampaignLayoutBinding` TypeScript interfaces; `assignMediaToSlots()` auto-fill utility; PHP REST CRUD for templates.
+- **P15-C — Canvas Builder UI**: Full-screen `LayoutBuilderModal`; `LayoutCanvas` workspace; `LayoutSlotComponent` (react-rnd drag+resize, clip-path shapes, focal point, border); `SlotPropertiesPanel` (X/Y/W/H, lock-ratio, shape, border, z-index, click action, hover effect, focal point 9-dot grid); `MediaPickerSidebar` (auto-assign, drag-to-slot, click-to-assign, assignments panel); `useLayoutBuilderState` hook with undo/redo stack and autosave.
+- **P15-D — Smart Guides & Snapping**: `SmartGuides` SVG overlay; `computeGuides()` pure function; configurable snap threshold slider; edge/center/spacing detection with color-coded guide lines.
+- **P15-E — Finalized Gallery Adapter**: `LayoutBuilderGallery` renders templates with pixel-perfect slot positioning; `useLayoutTemplate` SWR hook; lightbox integration; overlay rendering; count mismatch warnings.
+- **P15-F — Template Library**: `LayoutTemplateList` admin panel; campaign layout selector in `CampaignFormModal`; JSON import/export with schema validation.
+
+#### Stretch Goals
+- **P15-G — Z-Index / Layer Control**: bringToFront / sendToBack / bringForward / sendBackward actions; keyboard shortcuts; layer-ordered slot list; normalize z-index on save.
+- **P15-H — Overlay Transparencies**: Overlay CRUD (file upload + URL); canvas rendering via Rnd; opacity slider; click-through toggle; gallery adapter overlay rendering; blob-URL guard.
+- **P15-I — Mixed Shapes**: Shape preview icons; 8 shapes including circle, ellipse, hexagon, diamond, custom mask URL; mask URL support.
+- **P15-J — Premade Layout Presets**: 12 premade templates in `src/data/layoutPresets.ts`; `PresetGalleryModal` with mini-canvas previews; "From Preset" button; `crypto.randomUUID()` for new slot IDs.
+- **P15-K — Diagonal Shapes**: 5 additional polygon shapes (parallelogram-left/right, chevron, arrow, trapezoid); `getClipPath()` shared utility; shape selector dropdown.
+
+#### QA Sprint — Test Coverage
+- 5 new layout builder test files: `SmartGuides.test.tsx` (18), `LayoutCanvas.test.tsx` (34), `LayoutSlotComponent.test.tsx` (31), `SlotPropertiesPanel.test.tsx` (30), `MediaPickerSidebar.test.tsx` (23).
+- Additional `LayoutBuilderGallery.test.tsx` coverage: clip-path double-container, border fill layer, hexagon/diamond shapes, blob-URL overlay guard.
+- Test suite: 539 passing (up from 319 at Sprint 6), 37 test files.
+- Layout builder area statement coverage: ~75%; branch coverage: 75%+.
+- Added `scrollIntoView` polyfill to `src/test/setup.ts` for Mantine Combobox JSDOM compatibility.
+
+### Changed
+- Version bumped from 0.12.0 → 0.13.0 to reflect Phase 15 feature set + QA sprint.
+
 ## [0.12.0] - 2026-02-22
 
 ### Added - Phase 14: Infrastructure Hardening, Advanced Settings & Backend Utilities

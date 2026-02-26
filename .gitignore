@@ -41,3 +41,7 @@ phpunit
 # backups
 1BAK/
 *.bak
+# Stray image file uploads at root
+/*.png
+/*.jpg
+/*.gif

@@ -45,6 +45,12 @@ export interface AdminCampaign {
   publishAt?: string;
   /** P13-D: Optional ISO 8601 auto-unpublish date. */
   unpublishAt?: string;
+  /** P15-B: Optional layout template reference. */
+  layoutTemplateId?: string;
+  /** Per-campaign image gallery adapter override. */
+  imageAdapterId?: string;
+  /** Per-campaign video gallery adapter override. */
+  videoAdapterId?: string;
 }
 
 interface ApiCampaignResponse {

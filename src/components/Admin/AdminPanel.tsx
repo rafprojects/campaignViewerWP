@@ -19,17 +19,20 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff, IconLayoutGrid } from '@tabler/icons-react';
 import { CampaignFormModal, type CampaignFormState } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
+import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/shared/CampaignSelector';
 import { AdminCampaignArchiveModal } from './AdminCampaignArchiveModal';
 import { AdminCampaignRestoreModal } from './AdminCampaignRestoreModal';
 import { ArchiveCompanyModal } from './ArchiveCompanyModal';
 import { QuickAddUserModal } from './QuickAddUserModal';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import useSWR from 'swr';
+import type { LayoutTemplate } from '@/types';
 import {
   useAdminCampaigns,
   useAccessGrants,
@@ -73,6 +76,9 @@ const emptyForm: CampaignFormState = {
   tags: '',
   publishAt: '',
   unpublishAt: '',
+  layoutTemplateId: '',
+  imageAdapterId: '',
+  videoAdapterId: '',
 };
 
 /** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
@@ -98,12 +104,20 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   // P13-C: SWR-cached campaign list — no duplicate fetch, instant re-open.
   const { campaigns, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient);
 
+  // P15-F.2: Layout templates for campaign assignment selector
+  const { data: layoutTemplates } = useSWR<LayoutTemplate[]>(
+    'admin-layout-templates-for-form',
+    () => apiClient.getLayoutTemplates(),
+    { revalidateOnFocus: false, dedupingInterval: 60_000 },
+  );
+
   const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
   const [formState, dispatchFormState] = useReducer(campaignFormReducer, { ...emptyForm });
   const [isSavingCampaign, setIsSavingCampaign] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState<string>('');
-  
+  // Template ID to open in the builder when switching to the layouts tab.
+  const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(null);
 
   const [accessCampaignId, setAccessCampaignId] = useState<string>('');
   const [accessUserId, setAccessUserId] = useState('');
@@ -435,6 +449,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       tags: (campaign.tags ?? []).join(', '),
       publishAt: campaign.publishAt ?? '',
       unpublishAt: campaign.unpublishAt ?? '',
+      layoutTemplateId: campaign.layoutTemplateId ?? '',
+      imageAdapterId: campaign.imageAdapterId ?? '',
+      videoAdapterId: campaign.videoAdapterId ?? '',
     });
     setCampaignFormOpen(true);
   }, []);
@@ -462,6 +479,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
       publishAt: formState.publishAt || '',
       unpublishAt: formState.unpublishAt || '',
+      layoutTemplateId: formState.layoutTemplateId || '',
+      imageAdapterId: formState.imageAdapterId || '',
+      videoAdapterId: formState.videoAdapterId || '',
     };
     try {
       if (editingCampaign) {
@@ -542,7 +562,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       <Table.Tr key={c.id}>
         <Table.Td>
           <Box>
-            <Text fw={700}>{c.title}</Text>
+            <Group gap={6}>
+              <Text fw={700}>{c.title}</Text>
+              {(c.imageAdapterId || c.videoAdapterId) && (
+                <Tooltip label={`Custom gallery: ${[c.imageAdapterId && `Image: ${c.imageAdapterId}`, c.videoAdapterId && `Video: ${c.videoAdapterId}`].filter(Boolean).join(', ')}`} withArrow>
+                  <IconLayoutGrid size={14} color="var(--mantine-color-violet-5)" />
+                </Tooltip>
+              )}
+            </Group>
             <Text size="xs" c="dimmed">{c.description?.slice(0, 120)}</Text>
           </Box>
         </Table.Td>
@@ -665,6 +692,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
           <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
           <Tabs.Tab value="media">Media</Tabs.Tab>
+          <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
           <Tabs.Tab value="access">Access</Tabs.Tab>
           <Tabs.Tab value="audit">Audit</Tabs.Tab>
         </Tabs.List>
@@ -690,6 +718,12 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             setMediaCampaignId(campaignId);
             closeCampaignForm();
             setActiveTab('media');
+          }}
+          layoutTemplates={layoutTemplates ?? []}
+          onEditLayout={(templateId) => {
+            closeCampaignForm();
+            setPendingEditLayoutId(templateId);
+            setActiveTab('layouts');
           }}
         />
 
@@ -733,6 +767,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Suspense fallback={<Center py="md"><Loader /></Center>}>
             <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
           </Suspense>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="layouts" pt="md">
+          <LayoutTemplateList
+            apiClient={apiClient}
+            onNotify={onNotify}
+            initialTemplateId={pendingEditLayoutId ?? undefined}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value="access" pt="md">

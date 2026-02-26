@@ -18,6 +18,8 @@ import {
   TextInput,
   ColorInput,
   Slider,
+  SegmentedControl,
+  SimpleGrid,
 } from '@mantine/core';
 import {
   IconSettings,
@@ -783,40 +785,123 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                             { value: 'hexagonal', label: 'Hexagonal' },
                             { value: 'circular', label: 'Circular' },
                             { value: 'diamond', label: 'Diamond' },
+                            { value: 'layout-builder', label: 'Layout Builder' },
                           ]}
                         />
                       ) : (
                         <>
-                          <Select
-                            label="Image Gallery Adapter"
-                            description="Layout for campaigns with images."
-                            value={settings.imageGalleryAdapterId}
-                            onChange={(value) => updateSetting('imageGalleryAdapterId', value ?? 'classic')}
-                            data={[
-                              { value: 'classic', label: 'Classic (Carousel)' },
-                              { value: 'compact-grid', label: 'Compact Grid' },
-                              { value: 'justified', label: 'Justified Rows (Flickr-style)' },
-                              { value: 'masonry', label: 'Masonry' },
-                              { value: 'hexagonal', label: 'Hexagonal' },
-                              { value: 'circular', label: 'Circular' },
-                              { value: 'diamond', label: 'Diamond' },
-                            ]}
-                          />
-                          <Select
-                            label="Video Gallery Adapter"
-                            description="Layout for campaigns with videos."
-                            value={settings.videoGalleryAdapterId}
-                            onChange={(value) => updateSetting('videoGalleryAdapterId', value ?? 'classic')}
-                            data={[
-                              { value: 'classic', label: 'Classic (Carousel)' },
-                              { value: 'compact-grid', label: 'Compact Grid' },
-                              { value: 'justified', label: 'Justified Rows (Flickr-style)' },
-                              { value: 'masonry', label: 'Masonry' },
-                              { value: 'hexagonal', label: 'Hexagonal' },
-                              { value: 'circular', label: 'Circular' },
-                              { value: 'diamond', label: 'Diamond' },
-                            ]}
-                          />
+                          {/* P15-A: Gallery Selection Mode */}
+                          <Box>
+                            <Text size="sm" fw={500} mb={4}>Gallery Selection Mode</Text>
+                            <Text size="xs" c="dimmed" mb={8}>
+                              Unified: one adapter for all screen sizes. Per-breakpoint: different adapters for desktop, tablet, and mobile.
+                            </Text>
+                            <SegmentedControl
+                              fullWidth
+                              value={settings.gallerySelectionMode}
+                              onChange={(value) => updateSetting('gallerySelectionMode', value as 'unified' | 'per-breakpoint')}
+                              data={[
+                                { value: 'unified', label: 'Unified' },
+                                { value: 'per-breakpoint', label: 'Per Breakpoint' },
+                              ]}
+                            />
+                          </Box>
+
+                          {settings.gallerySelectionMode === 'per-breakpoint' ? (
+                            /* 3×2 per-breakpoint adapter grid */
+                            <Box>
+                              <SimpleGrid cols={3} spacing="xs" mb={4}>
+                                <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
+                                <Text size="xs" fw={600} ta="center">Image</Text>
+                                <Text size="xs" fw={600} ta="center">Video</Text>
+                              </SimpleGrid>
+                              {(['desktop', 'tablet', 'mobile'] as const).map((bp) => (
+                                <SimpleGrid cols={3} spacing="xs" mb="xs" key={bp}>
+                                  <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
+                                    {bp.charAt(0).toUpperCase() + bp.slice(1)}
+                                  </Text>
+                                  <Select
+                                    size="xs"
+                                    value={settings[`${bp}ImageAdapterId` as keyof typeof settings] as string}
+                                    onChange={(value) => updateSetting(`${bp}ImageAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
+                                    data={[
+                                      { value: 'classic', label: 'Classic' },
+                                      { value: 'compact-grid', label: 'Compact Grid' },
+                                      { value: 'justified', label: 'Justified' },
+                                      { value: 'masonry', label: 'Masonry' },
+                                      { value: 'hexagonal', label: 'Hexagonal' },
+                                      { value: 'circular', label: 'Circular' },
+                                      { value: 'diamond', label: 'Diamond' },
+                                      { value: 'layout-builder', label: 'Layout Builder' },
+                                    ]}
+                                  />
+                                  <Select
+                                    size="xs"
+                                    value={settings[`${bp}VideoAdapterId` as keyof typeof settings] as string}
+                                    onChange={(value) => updateSetting(`${bp}VideoAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
+                                    data={[
+                                      { value: 'classic', label: 'Classic' },
+                                      { value: 'compact-grid', label: 'Compact Grid' },
+                                      { value: 'justified', label: 'Justified' },
+                                      { value: 'masonry', label: 'Masonry' },
+                                      { value: 'hexagonal', label: 'Hexagonal' },
+                                      { value: 'circular', label: 'Circular' },
+                                      { value: 'diamond', label: 'Diamond' },
+                                      { value: 'layout-builder', label: 'Layout Builder' },
+                                    ]}
+                                  />
+                                </SimpleGrid>
+                              ))}
+                              <Select
+                                label="Layout Builder Scope"
+                                description="Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
+                                size="xs"
+                                value={settings.layoutBuilderScope}
+                                onChange={(value) => updateSetting('layoutBuilderScope', (value ?? 'full') as 'full' | 'viewport')}
+                                data={[
+                                  { value: 'full', label: 'Full Gallery' },
+                                  { value: 'viewport', label: 'Viewport Only' },
+                                ]}
+                                mt="sm"
+                              />
+                            </Box>
+                          ) : (
+                            /* Unified mode: single pair of dropdowns */
+                            <>
+                              <Select
+                                label="Image Gallery Adapter"
+                                description="Layout for campaigns with images."
+                                value={settings.imageGalleryAdapterId}
+                                onChange={(value) => updateSetting('imageGalleryAdapterId', value ?? 'classic')}
+                                data={[
+                                  { value: 'classic', label: 'Classic (Carousel)' },
+                                  { value: 'compact-grid', label: 'Compact Grid' },
+                                  { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                                  { value: 'masonry', label: 'Masonry' },
+                                  { value: 'hexagonal', label: 'Hexagonal' },
+                                  { value: 'circular', label: 'Circular' },
+                                  { value: 'diamond', label: 'Diamond' },
+                                  { value: 'layout-builder', label: 'Layout Builder' },
+                                ]}
+                              />
+                              <Select
+                                label="Video Gallery Adapter"
+                                description="Layout for campaigns with videos."
+                                value={settings.videoGalleryAdapterId}
+                                onChange={(value) => updateSetting('videoGalleryAdapterId', value ?? 'classic')}
+                                data={[
+                                  { value: 'classic', label: 'Classic (Carousel)' },
+                                  { value: 'compact-grid', label: 'Compact Grid' },
+                                  { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                                  { value: 'masonry', label: 'Masonry' },
+                                  { value: 'hexagonal', label: 'Hexagonal' },
+                                  { value: 'circular', label: 'Circular' },
+                                  { value: 'diamond', label: 'Diamond' },
+                                  { value: 'layout-builder', label: 'Layout Builder' },
+                                ]}
+                              />
+                            </>
+                          )}
                         </>
                       )}
 

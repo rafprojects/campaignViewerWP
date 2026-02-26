@@ -1,12 +1,14 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { resolveAdapterId } from '@/utils/resolveAdapterId';
 
 /**
- * Dispatch a gallery adapter by ID. 'classic' is handled separately in the
- * caller because image/video carousels have different props. All other adapter
+ * Dispatch a gallery adapter by ID. 'classic' and 'layout-builder' are handled
+ * separately in the caller because they need different props. All other adapter
  * IDs are resolved here. Unknown IDs fall back to CompactGridGallery.
  */
 function renderAdapter(id: string, media: MediaItem[], settings: GalleryBehaviorSettings) {
@@ -70,6 +72,11 @@ const DiamondGallery = lazy(() =>
     default: m.DiamondGallery,
   }))
 );
+const LayoutBuilderGallery = lazy(() =>
+  import('@/gallery-adapters/layout-builder/LayoutBuilderGallery').then((m) => ({
+    default: m.LayoutBuilderGallery,
+  }))
+);
 
 interface CampaignViewerProps {
   campaign: Campaign;
@@ -101,6 +108,9 @@ export function CampaignViewer({
   const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
   // Reactive media query so fullScreen updates on orientation changes / resizes
   const isMobile = useMediaQuery('(max-width: 48em)'); // ≤ 768px
+  // P15-A: Per-breakpoint adapter resolution
+  const containerRef = useRef<HTMLDivElement>(null);
+  const breakpoint = useBreakpoint(containerRef);
   return (
     <Modal
       opened={opened}
@@ -182,7 +192,7 @@ export function CampaignViewer({
       </Box>
 
       {/* Content */}
-      <Box p={{ base: 'md', md: 'xl' }} style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
+      <Box ref={containerRef} p={{ base: 'md', md: 'xl' }} style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
         <Stack gap="xl">
           {/* Description */}
           <Box>
@@ -203,7 +213,14 @@ export function CampaignViewer({
 
           {/* Media Sections */}
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
-            <Suspense fallback={<Center py="md"><Loader /></Center>}>
+            <Suspense fallback={
+              <Center py="xl" mih={200}>
+                <Stack align="center" gap="xs">
+                  <Loader size="md" />
+                  <Text size="sm" c="dimmed">Loading gallery…</Text>
+                </Stack>
+              </Center>
+            }>
               {galleryBehaviorSettings.unifiedGalleryEnabled ? (
                 // Unified mode: all media merged and sorted by order → single adapter
                 (() => {
@@ -213,7 +230,11 @@ export function CampaignViewer({
                   if (allMedia.length === 0) return null;
                   const s = galleryBehaviorSettings;
                   const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
-                  const inner = renderAdapter(s.unifiedGalleryAdapterId, allMedia, s);
+                  // Per-campaign adapter override (image adapter takes precedence in unified mode)
+                  const effectiveId = campaign.imageAdapterId || s.unifiedGalleryAdapterId;
+                  const inner = effectiveId === 'layout-builder' && campaign.layoutTemplateId
+                    ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
+                    : renderAdapter(effectiveId, allMedia, s);
                   return s.unifiedBgType !== 'none'
                     ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                     : inner;
@@ -223,26 +244,30 @@ export function CampaignViewer({
                 <>
                   {campaign.videos.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
-                    const id = s.videoGalleryAdapterId;
+                    const id = campaign.videoAdapterId || resolveAdapterId(s, 'video', breakpoint);
                     // Override tileSize with per-gallery videoTileSize for shape adapters
                     const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
                     const inner = id === 'classic'
                       ? <VideoCarousel videos={campaign.videos} settings={videoSettings} />
-                      : renderAdapter(id, campaign.videos, videoSettings);
+                      : id === 'layout-builder' && campaign.layoutTemplateId
+                        ? <LayoutBuilderGallery media={campaign.videos} settings={videoSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
+                        : renderAdapter(id, campaign.videos, videoSettings);
                     return s.videoBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;
                   })()}
                   {campaign.images.length > 0 && (() => {
                     const s = galleryBehaviorSettings;
-                    const id = s.imageGalleryAdapterId;
+                    const id = campaign.imageAdapterId || resolveAdapterId(s, 'image', breakpoint);
                     // Override tileSize with per-gallery imageTileSize for shape adapters
                     const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
                     const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
                     const inner = id === 'classic'
                       ? <ImageCarousel images={campaign.images} settings={imageSettings} />
-                      : renderAdapter(id, campaign.images, imageSettings);
+                      : id === 'layout-builder' && campaign.layoutTemplateId
+                        ? <LayoutBuilderGallery media={campaign.images} settings={imageSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
+                        : renderAdapter(id, campaign.images, imageSettings);
                     return s.imageBgType !== 'none'
                       ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
                       : inner;

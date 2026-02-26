@@ -1,4 +1,5 @@
 import type { AuthProvider } from '@/services/auth/AuthProvider';
+import type { LayoutTemplate } from '@/types';
 
 export interface ApiClientOptions {
   baseUrl: string;
@@ -140,6 +141,37 @@ export class ApiClient {
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
     return this.get<{ success: boolean; message: string }>('/wp-json/wp-super-gallery/v1/campaigns');
+  }
+
+  // ── P15-B: Layout Template API methods ─────────────────────
+
+  async getLayoutTemplates(): Promise<LayoutTemplateResponse[]> {
+    return this.get<LayoutTemplateResponse[]>('/wp-json/wp-super-gallery/v1/admin/layout-templates');
+  }
+
+  async getLayoutTemplate(id: string): Promise<LayoutTemplateResponse> {
+    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`);
+  }
+
+  async createLayoutTemplate(data: Partial<LayoutTemplateResponse>): Promise<LayoutTemplateResponse> {
+    return this.post<LayoutTemplateResponse>('/wp-json/wp-super-gallery/v1/admin/layout-templates', data);
+  }
+
+  async updateLayoutTemplate(id: string, data: Partial<LayoutTemplateResponse>): Promise<LayoutTemplateResponse> {
+    return this.put<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`, data);
+  }
+
+  async deleteLayoutTemplate(id: string): Promise<{ deleted: boolean }> {
+    return this.delete<{ deleted: boolean }>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`);
+  }
+
+  async duplicateLayoutTemplate(id: string, name?: string): Promise<LayoutTemplateResponse> {
+    return this.post<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}/duplicate`, { name });
+  }
+
+  /** Public endpoint — no auth required. Used for rendering. */
+  async getLayoutTemplatePublic(id: string): Promise<LayoutTemplateResponse> {
+    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/layout-templates/${id}`);
   }
 }
 
@@ -344,12 +376,26 @@ export interface SettingsResponse {
   authBarBackdropBlur?: number;
   authBarMobileBreakpoint?: number;
   cardAutoColumnsBreakpoints?: string;
+  // P15-A: Per-breakpoint gallery selection
+  gallerySelectionMode?: 'unified' | 'per-breakpoint';
+  desktopImageAdapterId?: string;
+  desktopVideoAdapterId?: string;
+  tabletImageAdapterId?: string;
+  tabletVideoAdapterId?: string;
+  mobileImageAdapterId?: string;
+  mobileVideoAdapterId?: string;
+  layoutBuilderScope?: 'full' | 'viewport';
 }
 
 /**
  * Settings update request — same shape as response, all fields optional.
  */
 export type SettingsUpdateRequest = Partial<SettingsResponse>;
+
+/**
+ * Layout template response type — identical to the TS LayoutTemplate interface.
+ */
+export type LayoutTemplateResponse = LayoutTemplate;
 
 export class ApiError extends Error {
   status: number;
