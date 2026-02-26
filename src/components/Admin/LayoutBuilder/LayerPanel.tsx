@@ -91,7 +91,7 @@ export function LayerPanel({
 
     function selectLayer(item: (typeof layers)[0]) {
       if (item.kind === 'slot') onSelectSlot(item.id);
-      else if (item.kind === 'overlay') onSelectOverlay(item.id);
+      else if (item.kind === 'graphic') onSelectOverlay(item.id);
       else onSelectBackground?.();
     }
 
@@ -113,7 +113,7 @@ export function LayerPanel({
         e.preventDefault();
         const cur = layers[selectedIndex];
         if (cur.kind === 'slot') onToggleSlotVisible(cur.id);
-        else if (cur.kind === 'overlay') onToggleOverlayVisible(cur.id);
+        else if (cur.kind === 'graphic') onToggleOverlayVisible(cur.id);
         break;
       }
       case 'l':
@@ -121,7 +121,7 @@ export function LayerPanel({
         e.preventDefault();
         const cur = layers[selectedIndex];
         if (cur.kind === 'slot') onToggleSlotLocked(cur.id);
-        else if (cur.kind === 'overlay') onToggleOverlayLocked(cur.id);
+        else if (cur.kind === 'graphic') onToggleOverlayLocked(cur.id);
         break;
       }
       case 'f':
@@ -179,7 +179,7 @@ export function LayerPanel({
             const isBackground = item.kind === 'background';
             const isSelected =
               (item.kind === 'slot' && item.id === selectedSlotId) ||
-              (item.kind === 'overlay' && item.id === selectedOverlayId) ||
+              (item.kind === 'graphic' && item.id === selectedOverlayId) ||
               (item.kind === 'background' && !!isBackgroundSelected);
             return (
               <LayerRow
@@ -189,20 +189,20 @@ export function LayerPanel({
                 isSelected={isSelected}
                 onSelect={() => {
                   if (isBackground) onSelectBackground?.();
-                  else if (item.kind === 'overlay') onSelectOverlay(item.id);
+                  else if (item.kind === 'graphic') onSelectOverlay(item.id);
                   else onSelectSlot(item.id);
                 }}
                 onRename={(id, name) => {
                   if (item.kind === 'slot') onRenameSlot(id, name);
-                  else if (item.kind === 'overlay') onRenameOverlay(id, name);
+                  else if (item.kind === 'graphic') onRenameOverlay(id, name);
                 }}
                 onToggleVisible={(id) => {
                   if (item.kind === 'slot') onToggleSlotVisible(id);
-                  else if (item.kind === 'overlay') onToggleOverlayVisible(id);
+                  else if (item.kind === 'graphic') onToggleOverlayVisible(id);
                 }}
                 onToggleLocked={(id) => {
                   if (item.kind === 'slot') onToggleSlotLocked(id);
-                  else if (item.kind === 'overlay') onToggleOverlayLocked(id);
+                  else if (item.kind === 'graphic') onToggleOverlayLocked(id);
                 }}
                 onBringToFront={onBringToFront}
                 onSendToBack={onSendToBack}

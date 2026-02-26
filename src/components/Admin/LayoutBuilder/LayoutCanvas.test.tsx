@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
 import '@testing-library/jest-dom/vitest';
 import { LayoutCanvas } from './LayoutCanvas';
-import type { LayoutTemplate, LayoutSlot, LayoutOverlay } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer } from '@/types';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ const baseSlot: LayoutSlot = {
   hoverEffect: 'none',
 };
 
-const baseOverlay: LayoutOverlay = {
+const baseOverlay: LayoutGraphicLayer = {
   id: 'o1',
   imageUrl: 'https://example.com/overlay.png',
   x: 0,
@@ -268,7 +268,7 @@ describe('LayoutCanvas — overlays', () => {
   });
 
   it('renders multiple overlays', () => {
-    const overlay2: LayoutOverlay = { ...baseOverlay, id: 'o2', imageUrl: 'https://example.com/o2.png' };
+    const overlay2: LayoutGraphicLayer = { ...baseOverlay, id: 'o2', imageUrl: 'https://example.com/o2.png' };
     const { container } = renderCanvas({
       isPreview: true,
       template: makeTemplate({ overlays: [baseOverlay, overlay2] }),

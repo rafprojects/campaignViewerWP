@@ -184,10 +184,11 @@ export const DEFAULT_LAYOUT_SLOT: LayoutSlot = {
 };
 
 /**
- * A decorative overlay layer rendered above slots (stretch P15-H).
+ * A decorative graphic layer rendered above slots (P15-H, renamed P17-F).
  * All position/size values are percentages (0–100) of the canvas.
+ * Stored in `template.overlays` (key unchanged for DB compatibility).
  */
-export interface LayoutOverlay {
+export interface LayoutGraphicLayer {
   id: string;
   /** Transparent PNG/SVG URL */
   imageUrl: string;
@@ -234,8 +235,8 @@ export interface LayoutTemplate {
   backgroundImageOpacity?: number;
   /** Ordered list of media slots */
   slots: LayoutSlot[];
-  /** Decorative overlay layers (stretch P15-H) */
-  overlays: LayoutOverlay[];
+  /** Decorative graphic layers (P15-H). Key is `overlays` for DB compatibility. */
+  overlays: LayoutGraphicLayer[];
   /** ISO 8601 created timestamp */
   createdAt: string;
   /** ISO 8601 last-updated timestamp */

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { produce, enableMapSet } from 'immer';
-import type { LayoutTemplate, LayoutSlot, LayoutOverlay, MediaItem } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 
@@ -109,7 +109,7 @@ export interface LayoutBuilderActions {
   /** Remove an overlay by ID. */
   removeOverlay: (id: string) => void;
   /** Update arbitrary overlay properties. */
-  updateOverlay: (id: string, updates: Partial<LayoutOverlay>) => void;
+  updateOverlay: (id: string, updates: Partial<LayoutGraphicLayer>) => void;
   /** Move an overlay to a new position. */
   moveOverlay: (id: string, x: number, y: number) => void;
   /** Resize an overlay. */
@@ -564,7 +564,7 @@ export function useLayoutBuilderState(
   );
 
   const updateOverlay = useCallback(
-    (id: string, updates: Partial<LayoutOverlay>) =>
+    (id: string, updates: Partial<LayoutGraphicLayer>) =>
       mutate((d) => {
         const idx = d.overlays.findIndex((o) => o.id === id);
         if (idx !== -1) Object.assign(d.overlays[idx], updates);

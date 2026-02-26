@@ -7,7 +7,7 @@ import {
   getLayerName,
   computeReorderedZIndices,
 } from '@/utils/layerList';
-import type { LayoutTemplate, LayoutSlot, LayoutOverlay } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer } from '@/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -21,14 +21,14 @@ const makeSlot = (id: string, zIndex: number, overrides: Partial<LayoutSlot> = {
   ...overrides,
 });
 
-const makeOverlay = (id: string, zIndex: number, overrides: Partial<LayoutOverlay> = {}): LayoutOverlay => ({
+const makeOverlay = (id: string, zIndex: number, overrides: Partial<LayoutGraphicLayer> = {}): LayoutGraphicLayer => ({
   id, imageUrl: '/img.png',
   x: 0, y: 0, width: 50, height: 50, zIndex,
   opacity: 1, pointerEvents: false,
   ...overrides,
 });
 
-const makeTemplate = (slots: LayoutSlot[], overlays: LayoutOverlay[] = []): LayoutTemplate => ({
+const makeTemplate = (slots: LayoutSlot[], overlays: LayoutGraphicLayer[] = []): LayoutTemplate => ({
   id: 'tpl', name: 'Test', schemaVersion: 1,
   canvasAspectRatio: 16 / 9, canvasMinWidth: 400, canvasMaxWidth: 1200,
   backgroundColor: '#000',
@@ -125,7 +125,7 @@ describe('buildLayerList', () => {
     const tpl = makeTemplate([], [makeOverlay('o1', 5, { opacity: 0.6 })]);
     const layers = buildLayerList(tpl);
     const o = layers.find((l) => l.id === 'o1');
-    expect(o?.kind === 'overlay' && o.opacity).toBe(0.6);
+    expect(o?.kind === 'graphic' && o.opacity).toBe(0.6);
   });
 
   it('handles single slot + no overlays', () => {

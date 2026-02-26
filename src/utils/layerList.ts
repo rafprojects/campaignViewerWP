@@ -7,11 +7,11 @@
  * layers panel. Also exports `getLayerName()` as the single source of truth
  * for display names throughout the builder UI.
  */
-import type { LayoutTemplate, LayoutSlot, LayoutOverlay } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer } from '@/types';
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────
 
-export type LayerKind = 'slot' | 'overlay' | 'background';
+export type LayerKind = 'slot' | 'graphic' | 'background';
 
 export type SlotLayerItem = {
   kind: 'slot';
@@ -26,8 +26,8 @@ export type SlotLayerItem = {
   locked: boolean;
 };
 
-export type OverlayLayerItem = {
-  kind: 'overlay';
+export type GraphicLayerItem = {
+  kind: 'graphic';
   id: string;
   zIndex: number;
   /** 0-based position in template.overlays[] */
@@ -47,7 +47,7 @@ export type BackgroundLayerItem = {
   visible: boolean;
 };
 
-export type LayerItem = SlotLayerItem | OverlayLayerItem | BackgroundLayerItem;
+export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem;
 
 // ── Name helper ──────────────────────────────────────────────────────────────
 
@@ -57,13 +57,13 @@ export type LayerItem = SlotLayerItem | OverlayLayerItem | BackgroundLayerItem;
  * Priority: explicit `name` field → computed fallback.
  * Fallbacks:
  *  - slot     → "Media Layer N"   (1-based)
- *  - overlay  → "Graphic Layer N" (1-based position in template.overlays[])
+ *  - graphic    → "Graphic Layer N" (1-based position in template.overlays[])
  *  - background → "Background"
  *
  * This is the **single source of truth** used by the layer panel row, the
  * canvas tooltip, and the properties panel header.
  */
-export function getLayerName(item: LayerItem, template: LayoutTemplate): string {
+export function getLayerName(item: LayerItem, _template: LayoutTemplate): string {
   if (item.kind === 'background') {
     return item.name || 'Background';
   }
@@ -105,9 +105,9 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
     });
   });
 
-  template.overlays.forEach((overlay: LayoutOverlay, arrayIndex: number) => {
+  template.overlays.forEach((overlay: LayoutGraphicLayer, arrayIndex: number) => {
     items.push({
-      kind: 'overlay',
+      kind: 'graphic',
       id: overlay.id,
       zIndex: overlay.zIndex,
       arrayIndex,
@@ -160,7 +160,7 @@ export function computeReorderedZIndices(
   targetId: string,
 ): Map<string, number> {
   // Work only with non-background items
-  const movable = layers.filter((l): l is SlotLayerItem | OverlayLayerItem =>
+  const movable = layers.filter((l): l is SlotLayerItem | GraphicLayerItem =>
     l.kind !== 'background',
   );
 
