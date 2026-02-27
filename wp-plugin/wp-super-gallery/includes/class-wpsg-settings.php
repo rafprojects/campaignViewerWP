@@ -1062,7 +1062,9 @@ class WPSG_Settings {
             $sanitized['video_tile_size'] = max(60, min(400, intval($input['video_tile_size'])));
         }
 
-        // Boolean fields — conditional to avoid resetting on partial updates.
+        // Boolean fields. Only set when explicitly provided in $input so that
+        // callers that merge $sanitized into existing settings (e.g. REST
+        // partial updates) do not inadvertently overwrite existing values.
         if (isset($input['enable_lightbox'])) {
             $sanitized['enable_lightbox'] = (bool) $input['enable_lightbox'];
         }

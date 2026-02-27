@@ -31,6 +31,11 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-mantine': ['@mantine/core', '@mantine/hooks', '@mantine/modals', '@mantine/notifications'],
           'vendor-icons': ['@tabler/icons-react'],
+          // Dockview — isolated so admin and dockview are cached separately.
+          // TODO(P18+): Consider moving LayoutBuilderModal to React.lazy() so
+          // dockview + the full builder only load when the modal is opened.
+          // See FUTURE_TASKS § "Async chunk candidates" for full list.
+          'vendor-dockview': ['dockview'],
           // Admin chunk (code-split; loaded when lazy imports execute)
           'admin': [
             './src/components/Admin/AdminPanel.tsx',

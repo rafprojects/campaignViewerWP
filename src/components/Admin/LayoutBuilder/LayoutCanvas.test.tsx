@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
 import '@testing-library/jest-dom/vitest';
 import { LayoutCanvas } from './LayoutCanvas';
-import type { LayoutTemplate, LayoutSlot, LayoutOverlay } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer } from '@/types';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ const baseSlot: LayoutSlot = {
   hoverEffect: 'none',
 };
 
-const baseOverlay: LayoutOverlay = {
+const baseOverlay: LayoutGraphicLayer = {
   id: 'o1',
   imageUrl: 'https://example.com/overlay.png',
   x: 0,
@@ -196,54 +196,19 @@ describe('LayoutCanvas — background image', () => {
 // ── Overlays ──────────────────────────────────────────────────────────────────
 
 describe('LayoutCanvas — overlays', () => {
-  it('renders overlay image in edit mode when overlaysVisible=true', () => {
+  it('renders overlay image in edit mode', () => {
     const { container } = renderCanvas({
       isPreview: false,
       template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: true,
     });
     const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`);
     expect(img).toBeInTheDocument();
   });
 
-  it('renders ghost overlay (10% opacity) in edit mode when overlaysVisible=false', () => {
-    const { container } = renderCanvas({
-      isPreview: false,
-      template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false,
-    });
-    // Image should still be in the DOM (ghost mode, not removed)
-    const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`);
-    expect(img).toBeInTheDocument();
-  });
-
-  it('ghost overlay container has pointer-events:none', () => {
-    const { container } = renderCanvas({
-      isPreview: false,
-      template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false,
-    });
-    const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`)!;
-    const wrapper = img.parentElement!;
-    expect(wrapper.style.pointerEvents).toBe('none');
-  });
-
-  it('ghost overlay container has opacity ~0.1', () => {
-    const { container } = renderCanvas({
-      isPreview: false,
-      template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false,
-    });
-    const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`)!;
-    const wrapper = img.parentElement!;
-    expect(parseFloat(wrapper.style.opacity)).toBeCloseTo(0.1, 1);
-  });
-
-  it('renders overlay in preview mode regardless of overlaysVisible prop', () => {
+  it('renders overlay in preview mode', () => {
     const { container } = renderCanvas({
       isPreview: true,
       template: makeTemplate({ overlays: [baseOverlay] }),
-      overlaysVisible: false, // should be ignored in preview
     });
     const img = container.querySelector(`img[src="${baseOverlay.imageUrl}"]`);
     expect(img).toBeInTheDocument();
@@ -268,7 +233,7 @@ describe('LayoutCanvas — overlays', () => {
   });
 
   it('renders multiple overlays', () => {
-    const overlay2: LayoutOverlay = { ...baseOverlay, id: 'o2', imageUrl: 'https://example.com/o2.png' };
+    const overlay2: LayoutGraphicLayer = { ...baseOverlay, id: 'o2', imageUrl: 'https://example.com/o2.png' };
     const { container } = renderCanvas({
       isPreview: true,
       template: makeTemplate({ overlays: [baseOverlay, overlay2] }),

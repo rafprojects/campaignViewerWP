@@ -27,8 +27,6 @@ export interface LayoutCanvasProps {
   onOverlayMove?: (id: string, x: number, y: number) => void;
   /** Overlay resize callback (P15-H). */
   onOverlayResize?: (id: string, x: number, y: number, w: number, h: number) => void;
-  /** When false, overlay Rnd elements are hidden in edit mode so slots below are reachable. */
-  overlaysVisible?: boolean;
   /** Snap detection distance in canvas pixels (default: 5). Higher = snaps from further away. */
   snapThresholdPx?: number;
 }
@@ -55,7 +53,6 @@ export function LayoutCanvas({
   onAnnounce,
   onOverlayMove,
   onOverlayResize,
-  overlaysVisible = true,
   snapThresholdPx = 5,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -273,12 +270,6 @@ export function LayoutCanvas({
         {template.overlays.map((overlay) => {
           const oPos = pctToPx(overlay.x, overlay.y, overlay.width, overlay.height);
 
-          // When 'overlaysVisible' is false in edit mode, render a ghost rather
-          // than hiding entirely. The ghost is fully pointer-events:none so slots
-          // underneath remain interactive, but shows the overlay at 10% opacity
-          // so the designer can see where it sits while arranging slots.
-          const isGhost = !isPreview && !overlaysVisible;
-
           if (isPreview) {
             return (
               <div
@@ -303,31 +294,6 @@ export function LayoutCanvas({
                     objectFit: 'fill',
                     display: 'block',
                   }}
-                  draggable={false}
-                />
-              </div>
-            );
-          }
-
-          if (isGhost) {
-            return (
-              <div
-                key={overlay.id}
-                style={{
-                  position: 'absolute',
-                  left: oPos.x,
-                  top: oPos.y,
-                  width: oPos.width,
-                  height: oPos.height,
-                  zIndex: overlay.zIndex,
-                  opacity: 0.1,
-                  pointerEvents: 'none',
-                }}
-              >
-                <img
-                  src={overlay.imageUrl}
-                  alt=""
-                  style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
                   draggable={false}
                 />
               </div>

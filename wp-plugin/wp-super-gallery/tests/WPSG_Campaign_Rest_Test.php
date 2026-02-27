@@ -9,6 +9,16 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         return $user_id;
     }
 
+    public function setUp(): void {
+        parent::setUp();
+        // Disable nonce verification for direct REST tests (no browser session).
+        add_filter('wpsg_require_rest_nonce', '__return_false');
+    }
+
+    public function tearDown(): void {
+        remove_filter('wpsg_require_rest_nonce', '__return_false');
+        parent::tearDown();
+    }
     public function test_campaign_create_update_archive_restore_flow() {
         $this->set_admin_user();
 

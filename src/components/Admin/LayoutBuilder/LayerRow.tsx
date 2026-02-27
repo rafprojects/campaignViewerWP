@@ -50,7 +50,7 @@ export interface LayerRowProps {
 
 function TypeIcon({ item }: { item: LayerItem }) {
   if (item.kind === 'background') return <IconBg size={14} />;
-  if (item.kind === 'overlay') return <IconStack2 size={14} />;
+  if (item.kind === 'graphic') return <IconStack2 size={14} />;
   return <IconPhoto size={14} />;
 }
 

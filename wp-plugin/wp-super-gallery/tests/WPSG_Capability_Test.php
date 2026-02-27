@@ -1,6 +1,17 @@
 <?php
 
 class WPSG_Capability_Test extends WP_UnitTestCase {
+    public function setUp(): void {
+        parent::setUp();
+        // Disable nonce verification for direct REST tests (no browser session).
+        add_filter('wpsg_require_rest_nonce', '__return_false');
+    }
+
+    public function tearDown(): void {
+        remove_filter('wpsg_require_rest_nonce', '__return_false');
+        parent::tearDown();
+    }
+
     public function test_admin_required_for_campaign_create() {
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($user_id);

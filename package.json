@@ -1,7 +1,7 @@
 {
   "name": "wp-super-gallery",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,6 +28,7 @@
     "@tabler/icons-react": "^3.36.1",
     "chroma-js": "^3.2.0",
     "dayjs": "^1.11.19",
+    "dockview": "^5.0.0",
     "dompurify": "^3.3.1",
     "immer": "^11.1.4",
     "react": "^18.3.1",

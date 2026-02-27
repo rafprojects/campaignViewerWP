@@ -25,7 +25,7 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
 
         $this->assertEquals('wp-jwt', $settings['auth_provider']);
         $this->assertEquals('', $settings['api_base']);
-        $this->assertEquals('dark', $settings['theme']);
+        $this->assertEquals('default-dark', $settings['theme']);
         $this->assertEquals('grid', $settings['gallery_layout']);
         $this->assertEquals(12, $settings['items_per_page']);
         $this->assertTrue($settings['enable_lightbox']);
@@ -80,15 +80,15 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     public function test_sanitize_settings_validates_theme() {
         $input = ['theme' => 'invalid-theme'];
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $this->assertEquals('dark', $sanitized['theme']);
+        $this->assertEquals('default-dark', $sanitized['theme']);
 
-        $input = ['theme' => 'light'];
+        $input = ['theme' => 'default-light'];
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $this->assertEquals('light', $sanitized['theme']);
+        $this->assertEquals('default-light', $sanitized['theme']);
 
-        $input = ['theme' => 'auto'];
+        $input = ['theme' => 'nord'];
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $this->assertEquals('auto', $sanitized['theme']);
+        $this->assertEquals('nord', $sanitized['theme']);
     }
 
     /**
@@ -128,11 +128,13 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
      * Test sanitize_settings handles boolean fields.
      */
     public function test_sanitize_settings_handles_booleans() {
-        // Empty values = false.
+        // Absent keys must not appear in the sanitized output — callers that
+        // merge $sanitized over existing settings rely on this to avoid
+        // inadvertently resetting values (e.g. the REST partial-update path).
         $input = [];
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $this->assertFalse($sanitized['enable_lightbox']);
-        $this->assertFalse($sanitized['enable_animations']);
+        $this->assertArrayNotHasKey('enable_lightbox',   $sanitized);
+        $this->assertArrayNotHasKey('enable_animations', $sanitized);
 
         // Truthy values = true.
         $input = [
@@ -142,6 +144,15 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $this->assertTrue($sanitized['enable_lightbox']);
         $this->assertTrue($sanitized['enable_animations']);
+
+        // Explicit falsy values = false.
+        $input = [
+            'enable_lightbox'   => '0',
+            'enable_animations' => '',
+        ];
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+        $this->assertFalse($sanitized['enable_lightbox']);
+        $this->assertFalse($sanitized['enable_animations']);
     }
 
     /**
