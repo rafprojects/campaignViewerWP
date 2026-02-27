@@ -42,6 +42,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
       <Box style={{ overflowY: 'auto', height: '100%' }}>
         <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>GRAPHIC LAYER</Text>
         <GraphicLayerPropertiesPanel
+          key={selectedOverlay.id}
           overlay={selectedOverlay}
           overlayIndex={selectedOverlayIndex + 1}
           onUpdate={builder.updateOverlay}
