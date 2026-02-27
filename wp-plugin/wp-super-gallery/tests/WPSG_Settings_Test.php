@@ -128,11 +128,13 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
      * Test sanitize_settings handles boolean fields.
      */
     public function test_sanitize_settings_handles_booleans() {
-        // Empty values = false.
+        // Absent keys must not appear in the sanitized output — callers that
+        // merge $sanitized over existing settings rely on this to avoid
+        // inadvertently resetting values (e.g. the REST partial-update path).
         $input = [];
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $this->assertFalse($sanitized['enable_lightbox']);
-        $this->assertFalse($sanitized['enable_animations']);
+        $this->assertArrayNotHasKey('enable_lightbox',   $sanitized);
+        $this->assertArrayNotHasKey('enable_animations', $sanitized);
 
         // Truthy values = true.
         $input = [
@@ -142,6 +144,15 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $this->assertTrue($sanitized['enable_lightbox']);
         $this->assertTrue($sanitized['enable_animations']);
+
+        // Explicit falsy values = false.
+        $input = [
+            'enable_lightbox'   => '0',
+            'enable_animations' => '',
+        ];
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+        $this->assertFalse($sanitized['enable_lightbox']);
+        $this->assertFalse($sanitized['enable_animations']);
     }
 
     /**

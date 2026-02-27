@@ -28,16 +28,21 @@ class WPSG_Overlay_Library_Test extends WP_UnitTestCase {
     }
 
     public function test_get_all_returns_newest_first() {
-        $e1 = WPSG_Overlay_Library::add( [ 'url' => 'https://example.com/a.png', 'name' => 'A' ] );
-        // Small sleep to get different uploadedAt timestamps.
-        sleep( 1 );
-        $e2 = WPSG_Overlay_Library::add( [ 'url' => 'https://example.com/b.png', 'name' => 'B' ] );
+        // Seed the option directly with two entries that have distinct uploadedAt
+        // values so the test is deterministic and doesn't need a sleep() call.
+        $id1    = wp_generate_uuid4();
+        $id2    = wp_generate_uuid4();
+        $entries = [
+            $id1 => [ 'id' => $id1, 'url' => 'https://example.com/a.png', 'name' => 'A', 'uploadedAt' => '2024-01-01T00:00:00+00:00' ],
+            $id2 => [ 'id' => $id2, 'url' => 'https://example.com/b.png', 'name' => 'B', 'uploadedAt' => '2024-01-02T00:00:00+00:00' ],
+        ];
+        update_option( WPSG_Overlay_Library::OPTION_KEY, $entries );
 
         $all = WPSG_Overlay_Library::get_all();
         $this->assertCount( 2, $all );
-        // Newest first: e2 uploadedAt > e1 uploadedAt.
-        $this->assertEquals( $e2['id'], $all[0]['id'] );
-        $this->assertEquals( $e1['id'], $all[1]['id'] );
+        // Newest first: id2 ('2024-01-02') comes before id1 ('2024-01-01').
+        $this->assertEquals( $id2, $all[0]['id'] );
+        $this->assertEquals( $id1, $all[1]['id'] );
     }
 
     // ── add ─────────────────────────────────────────────────────

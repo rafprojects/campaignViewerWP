@@ -132,9 +132,9 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
                           style={{ flex: 1 }}
                           onClick={() => {
                             builder.addOverlay(item.url);
-                            announce(`Overlay "${item.name}" added to canvas`);
+                            announce(`Graphic layer "${item.name}" added to canvas`);
                           }}
-                          aria-label={`Use overlay ${item.name}`}
+                          aria-label={`Add graphic layer ${item.name} to canvas`}
                         >
                           <IconPlus size={10} />
                         </ActionIcon>
@@ -145,7 +145,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
                           color="red"
                           variant="subtle"
                           onClick={() => handleDeleteLibraryOverlay(item.id)}
-                          aria-label={`Delete overlay ${item.name} from library`}
+                          aria-label={`Delete graphic layer ${item.name} from library`}
                         >
                           <IconTrash size={10} />
                         </ActionIcon>
@@ -156,7 +156,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
               </div>
             ) : (
               <Text size="xs" c="dimmed" mb={8}>
-                No overlays in library yet.
+                No graphic layers in library yet.
               </Text>
             )}
             <AssetUploader
@@ -166,8 +166,8 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
               accept="image/png,image/svg+xml,image/webp,image/gif"
               uploadLabel="Upload to library"
               urlPlaceholder="Or paste image URL into library…"
-              uploadAriaLabel="Upload overlay to library"
-              urlAriaLabel="Overlay image URL"
+              uploadAriaLabel="Upload graphic layer to library"
+              urlAriaLabel="Graphic layer image URL"
             />
 
             {/* ── Background section ── */}

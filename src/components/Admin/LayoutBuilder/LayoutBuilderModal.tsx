@@ -429,24 +429,37 @@ export function LayoutBuilderModal({
   const handleDockReady = useCallback((event: DockviewReadyEvent) => {
     dockApiRef.current = event.api;
     const LAYOUT_KEY = 'wpsg_builder_layout';
+    const LAYOUT_VERSION = 1;
+    const persistLayout = () => {
+      try {
+        localStorage.setItem(LAYOUT_KEY, JSON.stringify({ version: LAYOUT_VERSION, layout: event.api.toJSON() }));
+      } catch { /* ignore storage errors */ }
+    };
     const saved = localStorage.getItem(LAYOUT_KEY);
     if (saved) {
       try {
-        event.api.fromJSON(JSON.parse(saved));
-        event.api.onDidLayoutChange(() => {
-          try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(event.api.toJSON())); } catch { /* ignore */ }
-        });
+        const parsed = JSON.parse(saved);
+        // Accept both versioned { version, layout } and legacy bare-JSON saves.
+        const layout =
+          parsed && typeof parsed === 'object' && 'layout' in parsed
+            ? (parsed as { layout: unknown }).layout
+            : parsed;
+        event.api.fromJSON(layout as Parameters<typeof event.api.fromJSON>[0]);
+        event.api.onDidLayoutChange(persistLayout);
         return;
-      } catch { /* fall through to default layout */ }
+      } catch {
+        // Saved layout is invalid or incompatible — clear it so every
+        // subsequent open doesn't repeat the same try/catch failure.
+        try { localStorage.removeItem(LAYOUT_KEY); } catch { /* ignore */ }
+        // fall through to default layout
+      }
     }
     // Default layout: Layers+Media tabs left | Canvas centre | Properties right
     const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
     event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
-    event.api.onDidLayoutChange(() => {
-      try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(event.api.toJSON())); } catch { /* ignore */ }
-    });
+    event.api.onDidLayoutChange(persistLayout);
   }, []);
 
   // ── Context value for dock panels (P17-E) ──
