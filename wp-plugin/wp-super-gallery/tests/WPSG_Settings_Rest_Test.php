@@ -1,7 +1,14 @@
 <?php
 
 class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
+    public function setUp(): void {
+        parent::setUp();
+        // Disable nonce verification for direct REST tests (no browser session).
+        add_filter('wpsg_require_rest_nonce', '__return_false');
+    }
+
     public function tearDown(): void {
+        remove_filter('wpsg_require_rest_nonce', '__return_false');
         delete_option(WPSG_Settings::OPTION_NAME);
         parent::tearDown();
     }
@@ -37,7 +44,7 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
-            'theme' => 'light',
+            'theme' => 'default-light',   // valid theme ID
             'itemsPerPage' => 24,
             'enableLightbox' => false,
         ]));
@@ -45,7 +52,7 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
 
         $this->assertEquals(200, $response->get_status());
         $data = $response->get_data();
-        $this->assertEquals('light', $data['theme'] ?? null);
+        $this->assertEquals('default-light', $data['theme'] ?? null);
         $this->assertEquals(24, $data['itemsPerPage'] ?? null);
         $this->assertFalse($data['enableLightbox']);
     }

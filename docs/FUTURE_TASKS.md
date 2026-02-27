@@ -138,6 +138,35 @@ Add `wpsg` WP-CLI command set for admin/debug workflows.
 ### Performance
 - Progressive Web App (PWA) support
 
+### Build & Bundle
+
+#### Async Chunk Candidates — Admin Code-Split (P17-E follow-up)
+
+Dockview (`vendor-dockview`) was split into its own vendor chunk in P17-E.
+The next step is to identify components that are only used in the admin UI
+and can be loaded lazily on user action rather than at initial parse time.
+
+**Known high-value candidates:**
+
+| Component | Trigger | Approx raw size |
+|-----------|---------|----------------|
+| `LayoutBuilderModal` + dockview | User opens Layout Builder | ~350 kB (est.) |
+| `SettingsPanel` | User clicks Settings | ~60 kB (est.) |
+| `MediaTab` | User navigates to Media tab | ~80 kB (est.) |
+| `AccessTab` | User navigates to Access tab | ~40 kB (est.) |
+
+**Implementation approach:** Wrap each lazy target in `React.lazy(() => import('./...'))`
+and gate the boundary with a `<Suspense fallback={<Loader />}>`. Each becomes its
+own Rollup chunk — loaded only when the trigger fires, cached independently.
+
+**Action:** Before implementing, profile the actual initial-parse budget and
+measure whether TTI improves. Start with `LayoutBuilderModal` (largest + rarest
+opening event). Remove from `manualChunks.admin` once lazy.
+
+**Effort:** Medium  
+**Impact:** Medium (initial load of admin SPA; current gzip is ~187 kB so real-world
+impact is modest unless the plugin is embedded in a high-traffic public page)
+
 ### UX Workflow
 - Convert settings panel from full-page shift to non-disruptive loading modal workflow
 - Reuse loaded Admin tab data across switches when filters/targets have not changed
@@ -163,4 +192,4 @@ When considering future tasks:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: February 22, 2026 — Phase 14 tracks promoted (external thumbnail cache, oEmbed monitoring/rate-limiting, admin metrics/health, image optimization, media & campaign tagging). Removed E1 SWR (completed in P13-C).*
+*Last updated: February 26, 2026 — Added async chunk candidates section (P17-E build follow-up). Phase 14 tracks promoted (external thumbnail cache, oEmbed monitoring/rate-limiting, admin metrics/health, image optimization, media & campaign tagging). Removed E1 SWR (completed in P13-C).*

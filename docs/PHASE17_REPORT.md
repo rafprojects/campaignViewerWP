@@ -1,9 +1,9 @@
 # Phase 17 — Builder UX: Design Assets Consolidation & Dockable Panels
 
-**Status:** 📋 Planning — Signed off, ready for implementation  
-**Version:** v0.15.0 (target)  
+**Status:** ✅ Complete  
+**Version:** v0.15.0  
 **Created:** February 26, 2026  
-**Last updated:** February 26, 2026 — Plan revised after review + decision session
+**Last updated:** February 26, 2026 — All tracks complete; coverage assessment addendum added
 
 ---
 
@@ -539,4 +539,113 @@ Sprints in the same row can be parallelised. Run `npm run build:wp` and `npx vit
 
 ---
 
-*Plan finalized: February 26, 2026. Signed off — ready for Sprint 1 (P17-F type rename).*
+*Plan finalized: February 26, 2026. All tracks delivered — see Addendum below.*
+
+---
+
+## Addendum — Delivery Summary & Coverage Assessment (February 26, 2026)
+
+### Track Status at Merge
+
+| Track | Commit | Status |
+|-------|--------|--------|
+| P17-F — Type rename (`LayoutOverlay` → `LayoutGraphicLayer`) | `9bf0488` | ✅ |
+| P17-B — `AssetUploader` sub-component | `d12b4e3` | ✅ |
+| P17-C — Media slot drop guard | `d12b4e3` | ✅ |
+| P17-D — `GraphicLayerPropertiesPanel` + right-panel wiring | `e0721a8` | ✅ |
+| P17-A — Design Assets consolidation (overlay+bg tabs → accordion) | `bfc0ef0` | ✅ |
+| P17-E — dockview true dock (DockviewReact replaces 3-column flex) | `d6570e2` | ✅ |
+
+### Build & Bundle (post P17-E)
+
+`dockview` was split into its own vendor chunk in `vite.config.ts` after P17-E raised the admin chunk above 600 kB raw:
+
+| Chunk | Raw | Gzip |
+|-------|-----|------|
+| `vendor-dockview` | ~100–150 kB | ~38 kB |
+| `admin` | ~560 kB (est. after split) | ~149 kB (est.) |
+
+The real-world download cost is the gzip number. See `FUTURE_TASKS.md § Async Chunk Candidates` for the next step: loading `LayoutBuilderModal` itself via `React.lazy()`.
+
+---
+
+### JavaScript / TypeScript Coverage Assessment
+
+**Baseline at P17-E merge (vitest v8 coverage):**
+
+| Metric | Actual | Target | Gap |
+|--------|--------|--------|-----|
+| Statements | 69.27 % | 75 % | −5.73 pp |
+| Branches | 73.63 % | 75 % | −1.37 pp |
+| Functions | 41.48 % | 75 % | −33.52 pp |
+| Lines | 69.27 % | 75 % | −5.73 pp |
+
+**Root cause of low function coverage:** Six gallery adapter components (`circular`, `compact-grid`, `diamond`, `hexagonal`, `justified`, `masonry`) have **0 % coverage** across all metrics. Together they represent the majority of the function gap. These are pure rendering components that need render-smoke tests.
+
+**Files needing the most attention (ranked by impact × effort):**
+
+| File | Stmts % | Funcs % | Priority |
+|------|---------|---------|----------|
+| Gallery adapters (6 files, ~1 000 lines) | 0 % | 0 % | 🔴 High — smoke tests would move the needle significantly |
+| `MediaTab.tsx` | 65.6 % | 47.5 % | 🟠 Medium — large admin component, many untested handlers |
+| `AdminPanel.tsx` | 74.9 % | 45.2 % | 🟠 Medium |
+| `App.tsx` | 64.4 % | 55.6 % | 🟠 Medium — orchestration, some flows not tested |
+| `useMediaDimensions.ts` | 0 % | 0 % | 🟡 Low-medium — measured hook, needs ResizeObserver mock |
+| `ErrorBoundary.tsx` | 18.2 % | 0 % | 🟡 Low — small component, easy to test |
+| `DotNavigator.tsx` | 58.4 % | 50 % | 🟡 Low |
+
+**What already passes:** `src/utils`, `src/themes`, `src/hooks` (minus `useMediaDimensions`), `src/services/auth`, `src/contexts` — all at 80 %+ and above target.
+
+**Path to 75 % overall:**  
+1. Add render-smoke tests for all six gallery adapters (~18–24 tests) — estimated +8 pp functions, +3 pp statements.  
+2. Add coverage for untested `MediaTab` / `AdminPanel` handlers — estimated +2 pp statements.  
+3. Add `ErrorBoundary` and `DotNavigator` tests — trivial, +1 pp.  
+4. Add `useMediaDimensions` tests with `ResizeObserver` mock — +0.5 pp.
+
+Suggested phase: **P18-QA sprint** before the P18 zoom/pan canvas work.
+
+---
+
+### PHP Coverage Assessment
+
+**Baseline at P17-E merge (PHPUnit 9.6, 86 tests, 249 assertions, 0 failures):**
+
+PHP coverage tooling (Xdebug/pcov) is not installed in the wp-env container, so line-level metrics are unavailable. Test-case coverage is assessed by class.
+
+| Class | Test file | Covered scenarios |
+|-------|-----------|-------------------|
+| `WPSG_Settings` | `WPSG_Settings_Test` (20 tests) | Defaults, get_setting, sanitize (auth, theme, layout, booleans, cache_ttl, api_base, clamp, filter) |
+| `WPSG_Settings` REST | `WPSG_Settings_Rest_Test` (3 tests) | Public GET, admin POST, subscriber blocked |
+| `WPSG_REST` campaigns | `WPSG_Campaign_Rest_Test` (1 test) | Full create-update-archive-restore flow |
+| `WPSG_REST` capability | `WPSG_Capability_Test` (3 tests) | Subscriber blocked, `manage_wpsg` allows create, settings update blocked |
+| `WPSG_REST` routes | `WPSG_REST_Routes_Test` (5 tests) | Route registration, valid/invalid mediaId patterns, direct handler call |
+| `WPSG_Layout_Templates` | `WPSG_Layout_Templates_Test` (20+ tests) | Create/read/update/delete/duplicate, slot/overlay CRUD, validation, migration, size-limit |
+| `WPSG_Overlay_Library` | `WPSG_Overlay_Library_Test` (13 tests) ← **new in P17** | get_all (empty, corrupt, order), add (structure, UUID, sanitize name/URL, persist, multi), remove (success, missing, targeted, unset option) |
+| `WPSG_REST` oEmbed proxy | `ProxyOEmbedTest` (5 tests) | Missing URL, no host, cached payload, allowed provider, SSRF block |
+| `WPSG_REST` oEmbed SSRF | `ProxyOEmbedSSRFTest` (10+ tests) | Private IP ranges, localhost, blocked schemes |
+
+**Untested classes (known gaps):**
+
+| Class | Reason | Priority |
+|-------|---------|----------|
+| `WPSG_CPT` (custom post type registration) | WordPress hooks — hard to assert in unit tests | Low |
+| `WPSG_DB` (database migrations/schema) | Needs DB setup; covered implicitly by REST tests | Low–medium |
+| `WPSG_Embed` (shortcode rendering) | PHP output; needs HTML assertion tests | Medium |
+| `WPSG_ThumbnailCache` | External HTTP; needs mock transport | Low |
+| `WPSG_RateLimiter` | Transient-based; testable with WP transients | Medium |
+| `WPSG_Maintenance` | Admin-only hooks | Low |
+| `WPSG_ImageOptimizer` | File I/O; needs fixture images | Low |
+| oEmbed providers (`providers/`) | Already covered by proxy + SSRF tests indirectly | Low |
+
+**Immediate gaps worth closing:**
+
+1. **`WPSG_RateLimiter`** — Core security feature; `check()` / `increment()` / `reset()` are independently testable using WP transients. ~8-10 tests.  
+2. **`WPSG_Embed` shortcode** — `render_shortcode()` could be tested with `do_shortcode('[wpsg_gallery id="..."]')` assertions. ~6 tests.  
+3. **WPSG campaign REST — edge cases** — 404 on unknown ID, archived campaign restore idempotency, duplicate title handling. ~4-6 tests.
+
+**Suggested phase:** Include PHP coverage gap-fill in the same **P18-QA sprint** as the JS adapter tests.
+
+---
+
+*Addendum written: February 26, 2026.*
+

@@ -1062,13 +1062,11 @@ class WPSG_Settings {
             $sanitized['video_tile_size'] = max(60, min(400, intval($input['video_tile_size'])));
         }
 
-        // Boolean fields — conditional to avoid resetting on partial updates.
-        if (isset($input['enable_lightbox'])) {
-            $sanitized['enable_lightbox'] = (bool) $input['enable_lightbox'];
-        }
-        if (isset($input['enable_animations'])) {
-            $sanitized['enable_animations'] = (bool) $input['enable_animations'];
-        }
+        // Boolean fields — absent key treated as false (HTML checkbox behaviour
+        // for the WP Settings API form; REST partial-update endpoint uses its
+        // own path and does not call sanitize_settings).
+        $sanitized['enable_lightbox']           = (bool) ($input['enable_lightbox'] ?? false);
+        $sanitized['enable_animations']         = (bool) ($input['enable_animations'] ?? false);
         if (isset($input['allow_user_theme_override'])) {
             $sanitized['allow_user_theme_override'] = (bool) $input['allow_user_theme_override'];
         }

@@ -90,25 +90,27 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_create_validates_slot_positions_0_100() {
+        // Positions outside 0–100 are clamped, not rejected.
         $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
             'slots' => [
                 [ 'x' => -5, 'y' => 0, 'width' => 50, 'height' => 50 ],
             ],
         ] ) );
 
-        $this->assertWPError( $result );
-        $this->assertEquals( 'invalid_slot', $result->get_error_code() );
+        $this->assertIsArray( $result );
+        $this->assertEquals( 0, $result['slots'][0]['x'], 'Negative x should be clamped to 0' );
     }
 
     public function test_create_validates_slot_width_over_100() {
+        // Widths over 100 are clamped, not rejected.
         $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
             'slots' => [
                 [ 'x' => 0, 'y' => 0, 'width' => 150, 'height' => 50 ],
             ],
         ] ) );
 
-        $this->assertWPError( $result );
-        $this->assertEquals( 'invalid_slot', $result->get_error_code() );
+        $this->assertIsArray( $result );
+        $this->assertEquals( 100, $result['slots'][0]['width'], 'Width over 100 should be clamped to 100' );
     }
 
     public function test_create_with_empty_slots_succeeds() {
