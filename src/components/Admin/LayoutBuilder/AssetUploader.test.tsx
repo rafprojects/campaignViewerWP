@@ -97,4 +97,5 @@ describe('AssetUploader', () => {
     // to the hidden <input> element.
     render(<AssetUploader {...makeProps({ disabled: true })} />);
     expect(screen.getByRole('button', { name: /upload image/i })).toBeDisabled();
-  });});
+  });
+});
