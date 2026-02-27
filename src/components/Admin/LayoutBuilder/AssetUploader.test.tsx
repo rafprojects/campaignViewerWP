@@ -64,4 +64,37 @@ describe('AssetUploader', () => {
     expect(screen.getByRole('button', { name: /upload image/i })).toBeDisabled();
     expect(screen.getByPlaceholderText(/or paste image url/i)).toBeDisabled();
   });
-});
+
+  it('calls onFileSelect when a file is chosen via the file picker', () => {
+    const onFileSelect = vi.fn();
+    render(<AssetUploader {...makeProps({ onFileSelect })} />);
+    // Mantine FileButton renders a hidden <input type="file"> in the DOM.
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+    const file = new File(['pixel'], 'overlay.png', { type: 'image/png' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(onFileSelect).toHaveBeenCalledWith(file);
+  });
+
+  it('does not call onFileSelect when file picker is cancelled (null)', () => {
+    const onFileSelect = vi.fn();
+    render(<AssetUploader {...makeProps({ onFileSelect })} />);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [] } });
+    expect(onFileSelect).not.toHaveBeenCalled();
+  });
+
+  it('file picker input is disabled when isUploading=true', () => {
+    // Mantine v7 FileButton guards the onClick but does not set the `disabled`
+    // attribute on the hidden <input>. The observable contract is that the
+    // trigger button itself is disabled.
+    render(<AssetUploader {...makeProps({ isUploading: true })} />);
+    expect(screen.getByRole('button', { name: /upload image/i })).toBeDisabled();
+  });
+
+  it('file picker input is disabled when disabled=true', () => {
+    // Same Mantine v7 behaviour: disabled propagates to the visible button, not
+    // to the hidden <input> element.
+    render(<AssetUploader {...makeProps({ disabled: true })} />);
+    expect(screen.getByRole('button', { name: /upload image/i })).toBeDisabled();
+  });});
