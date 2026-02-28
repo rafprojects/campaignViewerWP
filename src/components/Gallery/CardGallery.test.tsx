@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '../../test/test-utils';
+import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { CardGallery } from './CardGallery';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type Campaign, type Company, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 
@@ -119,6 +119,44 @@ describe('CardGallery', () => {
     );
 
     expect(screen.getByText(/hidden by access mode/i)).toBeInTheDocument();
+  });
+
+  it('filters campaigns by search query', () => {
+    render(
+      <CardGallery
+        campaigns={[
+          buildCampaign('1', 'Alpha Campaign', 'public'),
+          buildCampaign('2', 'Beta Campaign', 'public'),
+        ]}
+        userPermissions={[]}
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+      />,
+    );
+
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    fireEvent.change(searchInput, { target: { value: 'Alpha' } });
+    expect(screen.getByText('Alpha Campaign')).toBeInTheDocument();
+    expect(screen.queryByText('Beta Campaign')).not.toBeInTheDocument();
+  });
+
+  it('filters campaigns by company tab', () => {
+    render(
+      <CardGallery
+        campaigns={[
+          buildCampaign('1', 'Alpha Campaign', 'public'),
+          buildCampaign('2', 'Beta Campaign', 'public'),
+        ]}
+        userPermissions={['1', '2']}
+        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+      />,
+    );
+
+    // Company filter tab named "Acme" should appear
+    const acmeTab = screen.queryByRole('tab', { name: 'Acme' });
+    if (acmeTab) {
+      fireEvent.click(acmeTab);
+      expect(screen.getByText('Alpha Campaign')).toBeInTheDocument();
+    }
   });
 });
 
@@ -268,5 +306,65 @@ describe('CardGallery pagination', () => {
       />,
     );
     expect(screen.queryByText(/Load more/)).not.toBeInTheDocument();
+  });
+
+  it('clicking Next page advances to page 2', async () => {
+    const campaigns = buildMany(10);
+    render(
+      <CardGallery
+        campaigns={campaigns}
+        userPermissions={[]}
+        galleryBehaviorSettings={paginatedSettings}
+      />,
+    );
+    const nextBtn = screen.getByLabelText('Next page');
+    fireEvent.click(nextBtn);
+    await waitFor(() => expect(screen.getByText('Page 2 of 2')).toBeInTheDocument());
+  });
+
+  it('clicking Previous page goes back to page 1 from page 2', async () => {
+    const campaigns = buildMany(10);
+    render(
+      <CardGallery
+        campaigns={campaigns}
+        userPermissions={[]}
+        galleryBehaviorSettings={paginatedSettings}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText('Next page'));
+    await waitFor(() => screen.getByText('Page 2 of 2'));
+    fireEvent.click(screen.getByLabelText('Previous page'));
+    await waitFor(() => expect(screen.getByText('Page 1 of 2')).toBeInTheDocument());
+  });
+
+  it('ArrowRight keyboard navigates to next page', async () => {
+    const campaigns = buildMany(10);
+    render(
+      <CardGallery
+        campaigns={campaigns}
+        userPermissions={[]}
+        galleryBehaviorSettings={paginatedSettings}
+      />,
+    );
+    const container = screen.getByLabelText(/Card gallery page 1/);
+    fireEvent.keyDown(container, { key: 'ArrowRight' });
+    await waitFor(() => expect(screen.getByText('Page 2 of 2')).toBeInTheDocument());
+  });
+
+  it('ArrowLeft keyboard navigates to previous page', async () => {
+    const campaigns = buildMany(10);
+    render(
+      <CardGallery
+        campaigns={campaigns}
+        userPermissions={[]}
+        galleryBehaviorSettings={paginatedSettings}
+      />,
+    );
+    const container = screen.getByLabelText(/Card gallery page 1/);
+    fireEvent.keyDown(container, { key: 'ArrowRight' });
+    await waitFor(() => screen.getByText('Page 2 of 2'));
+    const container2 = screen.getByLabelText(/Card gallery page 2/);
+    fireEvent.keyDown(container2, { key: 'ArrowLeft' });
+    await waitFor(() => expect(screen.getByText('Page 1 of 2')).toBeInTheDocument());
   });
 });

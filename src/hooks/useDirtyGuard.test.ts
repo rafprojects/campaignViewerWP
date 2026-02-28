@@ -108,4 +108,39 @@ describe('useDirtyGuard', () => {
     addSpy.mockRestore();
     removeSpy.mockRestore();
   });
+
+  it('beforeunload handler calls preventDefault when dirty', () => {
+    const { rerender } = renderHook(
+      ({ current }: { current: { title: string } }) =>
+        useDirtyGuard({ current, isOpen: true, onClose }),
+      { initialProps: { current: { title: 'Hello' } } },
+    );
+
+    rerender({ current: { title: 'Changed' } });
+
+    const event = new Event('beforeunload') as BeforeUnloadEvent;
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+    window.dispatchEvent(event);
+    expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses custom isEqual when provided', () => {
+    // isEqual that ignores trailing whitespace
+    const isEqual = (a: { title: string }, b: { title: string }) =>
+      a.title.trim() === b.title.trim();
+
+    const { result, rerender } = renderHook(
+      ({ current }: { current: { title: string } }) =>
+        useDirtyGuard({ current, isOpen: true, onClose, isEqual }),
+      { initialProps: { current: { title: 'Hello' } } },
+    );
+
+    // Same content with extra spaces — custom eq treats as equal → not dirty
+    rerender({ current: { title: '  Hello  ' } });
+    expect(result.current.isDirty).toBe(false);
+
+    // Genuinely different
+    rerender({ current: { title: 'World' } });
+    expect(result.current.isDirty).toBe(true);
+  });
 });
