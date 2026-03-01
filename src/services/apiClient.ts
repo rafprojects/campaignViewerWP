@@ -207,6 +207,29 @@ export class ApiClient {
   async importCampaign(payload: CampaignExportPayload): Promise<Record<string, unknown>> {
     return this.post<Record<string, unknown>>('/wp-json/wp-super-gallery/v1/campaigns/import', payload);
   }
+
+  // ── P18-F: Analytics ────────────────────────────────────────────────────
+
+  async recordAnalyticsEvent(campaignId: string, eventType = 'view'): Promise<void> {
+    await this.post('/wp-json/wp-super-gallery/v1/analytics/event', {
+      campaign_id: campaignId,
+      event_type: eventType,
+    });
+  }
+
+  async getCampaignAnalytics(
+    campaignId: string,
+    from?: string,
+    to?: string,
+  ): Promise<CampaignAnalyticsResponse> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.get<CampaignAnalyticsResponse>(
+      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${campaignId}${qs}`,
+    );
+  }
 }
 
 export interface SettingsResponse {
@@ -446,6 +469,20 @@ export interface CampaignExportPayload {
     graphicLayers: unknown[];
   } | null;
   media_references: Array<{ id: string; url: string; title: string }>;
+}
+
+/**
+ * P18-F: Analytics response shape.
+ */
+export interface CampaignAnalyticsDayEntry {
+  date: string;
+  views: number;
+  unique: number;
+}
+export interface CampaignAnalyticsResponse {
+  total_views: number;
+  unique_visitors: number;
+  daily: CampaignAnalyticsDayEntry[];
 }
 
 export class ApiError extends Error {

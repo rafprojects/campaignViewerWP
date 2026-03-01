@@ -123,6 +123,22 @@ class WPSG_REST {
             ],
         ]);
 
+        // P18-F: Analytics
+        register_rest_route('wp-super-gallery/v1', '/analytics/event', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'record_analytics_event'],
+                'permission_callback' => [self::class, 'rate_limit_public'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/analytics/campaigns/(?P<id>\d+)', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_campaign_analytics'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
@@ -1043,6 +1059,131 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title]);
         $new_post = get_post($post_id);
         return new WP_REST_Response(self::format_campaign($new_post), 201);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // P18-F: Analytics
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * POST /analytics/event
+     * Public endpoint (rate-limited). Accepts { campaign_id, event_type }.
+     * Requires `enable_analytics` setting to be truthy.
+     */
+    public static function record_analytics_event() {
+        $request = func_get_arg(0);
+
+        // Respect the enable_analytics setting (default: disabled).
+        $settings = get_option('wpsg_settings', []);
+        if (empty($settings['enable_analytics'])) {
+            return new WP_REST_Response(['message' => 'Analytics disabled'], 403);
+        }
+
+        $campaign_id = intval($request->get_param('campaign_id'));
+        $event_type  = sanitize_text_field($request->get_param('event_type') ?? 'view');
+
+        if ($campaign_id <= 0) {
+            return new WP_REST_Response(['message' => 'Invalid campaign_id'], 400);
+        }
+        if (!self::campaign_exists($campaign_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $allowed_events = ['view'];
+        if (!in_array($event_type, $allowed_events, true)) {
+            $event_type = 'view';
+        }
+
+        global $wpdb;
+        $ip   = $_SERVER['REMOTE_ADDR'] ?? '';
+        $salt = wp_salt('auth');
+        $hash = hash('sha256', $ip . $salt);
+
+        $table = WPSG_DB::get_analytics_table();
+        $wpdb->insert($table, [
+            'campaign_id'  => $campaign_id,
+            'event_type'   => $event_type,
+            'visitor_hash' => $hash,
+            'occurred_at'  => current_time('mysql', true),
+        ], ['%d', '%s', '%s', '%s']);
+
+        return new WP_REST_Response(['recorded' => true], 201);
+    }
+
+    /**
+     * GET /analytics/campaigns/{id}?from=YYYY-MM-DD&to=YYYY-MM-DD
+     * Admin-only. Returns total_views, unique_visitors, daily breakdown.
+     */
+    public static function get_campaign_analytics() {
+        $request     = func_get_arg(0);
+        $campaign_id = intval($request->get_param('id'));
+
+        if (!self::campaign_exists($campaign_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $from = sanitize_text_field($request->get_param('from') ?? '');
+        $to   = sanitize_text_field($request->get_param('to') ?? '');
+
+        // Default: last 30 days.
+        $to_ts   = $to   ? strtotime($to)   : time();
+        $from_ts = $from ? strtotime($from) : strtotime('-30 days', $to_ts);
+        if (!$from_ts || !$to_ts || $from_ts > $to_ts) {
+            return new WP_REST_Response(['message' => 'Invalid date range'], 400);
+        }
+
+        $from_str = gmdate('Y-m-d 00:00:00', $from_ts);
+        $to_str   = gmdate('Y-m-d 23:59:59', $to_ts);
+
+        global $wpdb;
+        $table = WPSG_DB::get_analytics_table();
+
+        // Aggregate per day.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT
+                    DATE(occurred_at) AS date,
+                    COUNT(*) AS views,
+                    COUNT(DISTINCT visitor_hash) AS unique_visitors
+                FROM {$table}
+                WHERE campaign_id = %d
+                  AND event_type = 'view'
+                  AND occurred_at BETWEEN %s AND %s
+                GROUP BY DATE(occurred_at)
+                ORDER BY date ASC",
+                $campaign_id,
+                $from_str,
+                $to_str
+            ),
+            ARRAY_A
+        );
+
+        $total_views   = array_sum(array_column($rows, 'views'));
+        $total_unique  = 0;
+        if (!empty($rows)) {
+            $total_unique = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(DISTINCT visitor_hash) FROM {$table}
+                     WHERE campaign_id = %d AND event_type = 'view'
+                       AND occurred_at BETWEEN %s AND %s",
+                    $campaign_id,
+                    $from_str,
+                    $to_str
+                )
+            );
+        }
+
+        return new WP_REST_Response([
+            'total_views'      => (int) $total_views,
+            'unique_visitors'  => $total_unique,
+            'daily'            => array_map(function ($row) {
+                return [
+                    'date'    => $row['date'],
+                    'views'   => (int) $row['views'],
+                    'unique'  => (int) $row['unique_visitors'],
+                ];
+            }, $rows),
+        ], 200);
     }
 
     public static function list_media() {

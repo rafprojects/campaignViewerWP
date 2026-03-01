@@ -52,6 +52,7 @@ import {
 } from '@/hooks/useAdminSWR';
 
 const MediaTab = lazy(() => import('./MediaTab'));
+const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
 
 // Types moved to useAdminSWR.ts hook — only keep AccessViewMode, WpUser locally.
 
@@ -885,6 +886,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
           <Tabs.Tab value="access">Access</Tabs.Tab>
           <Tabs.Tab value="audit">Audit</Tabs.Tab>
+          <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="campaigns" pt="md">
@@ -1038,6 +1040,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             auditEntriesCount={auditEntries.length}
             auditRows={auditRows}
           />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="analytics" pt="md">
+          <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
+            <AnalyticsDashboard
+              apiClient={apiClient}
+              campaigns={campaignSelectData}
+            />
+          </Suspense>
         </Tabs.Panel>
       </Tabs>
 
