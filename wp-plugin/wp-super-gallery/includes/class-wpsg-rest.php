@@ -107,6 +107,22 @@ class WPSG_REST {
             ],
         ]);
 
+        // P18-D: Export / Import
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/export', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'export_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/campaigns/import', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'import_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
@@ -896,6 +912,137 @@ class WPSG_REST {
 
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['success' => $success, 'failed' => $failed], 200);
+    }
+
+    // P18-D: Export a single campaign as a self-contained JSON payload.
+    public static function export_campaign() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $post      = get_post($post_id);
+        $campaign  = self::format_campaign($post);
+        $media     = get_post_meta($post_id, 'media_items', true) ?: [];
+
+        // Embed layout template by value so export is self-contained.
+        $template_id  = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
+        $layout_template = null;
+        if ($template_id) {
+            $tmpl = get_post(intval($template_id));
+            if ($tmpl) {
+                $layout_template = [
+                    'id'          => (string) $tmpl->ID,
+                    'title'       => $tmpl->post_title,
+                    'slots'       => get_post_meta($tmpl->ID, 'slots', true) ?: [],
+                    'background'  => get_post_meta($tmpl->ID, 'background', true) ?: [],
+                    'graphicLayers' => get_post_meta($tmpl->ID, 'graphic_layers', true) ?: [],
+                ];
+            }
+        }
+
+        $payload = [
+            'version'          => 1,
+            'exported_at'      => gmdate('c'),
+            'campaign'         => $campaign,
+            'layout_template'  => $layout_template,
+            'media_references' => array_values(array_map(function ($item) {
+                return ['id' => $item['id'] ?? '', 'url' => $item['url'] ?? '', 'title' => $item['title'] ?? ''];
+            }, $media)),
+        ];
+
+        $response = new WP_REST_Response($payload, 200);
+        $response->header('Content-Disposition', 'attachment; filename="campaign-' . $post_id . '.json"');
+        return $response;
+    }
+
+    // P18-D: Import a campaign from a JSON export payload.
+    public static function import_campaign() {
+        $request = func_get_arg(0);
+        $body    = $request->get_json_params();
+
+        if (empty($body) || !isset($body['campaign'])) {
+            return new WP_REST_Response(['message' => 'Invalid payload: missing campaign key'], 400);
+        }
+        $version = intval($body['version'] ?? 0);
+        if ($version !== 1) {
+            return new WP_REST_Response(['message' => 'Unsupported export version'], 400);
+        }
+
+        $src = $body['campaign'];
+        $title = sanitize_text_field($src['title'] ?? 'Imported Campaign');
+        $description = sanitize_textarea_field($src['description'] ?? '');
+
+        $post_id = wp_insert_post([
+            'post_title'   => $title,
+            'post_content' => $description,
+            'post_type'    => 'wpsg_campaign',
+            'post_status'  => 'publish',
+        ], true);
+        if (is_wp_error($post_id)) {
+            return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
+        }
+
+        // Copy scalar meta fields; always import as draft.
+        $meta_map = [
+            'visibility'   => 'visibility',
+            'tags'         => 'tags',
+            'coverImage'   => 'cover_image',
+            'publishAt'    => 'publish_at',
+            'unpublishAt'  => 'unpublish_at',
+            'imageAdapterId' => '_wpsg_image_adapter_id',
+            'videoAdapterId' => '_wpsg_video_adapter_id',
+        ];
+        update_post_meta($post_id, 'status', 'draft');
+        foreach ($meta_map as $src_key => $meta_key) {
+            if (!empty($src[$src_key])) {
+                if ($src_key === 'tags' && is_array($src[$src_key])) {
+                    update_post_meta($post_id, $meta_key, array_values(array_map('sanitize_text_field', $src[$src_key])));
+                } else {
+                    update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
+                }
+            }
+        }
+
+        // Embed layout binding by value if provided.
+        $layout_template = $body['layout_template'] ?? null;
+        if ($layout_template) {
+            $tmpl_id = wp_insert_post([
+                'post_title'  => sanitize_text_field($layout_template['title'] ?? 'Imported Template'),
+                'post_type'   => 'wpsg_layout_template',
+                'post_status' => 'publish',
+            ]);
+            if (!is_wp_error($tmpl_id)) {
+                update_post_meta($tmpl_id, 'slots', $layout_template['slots'] ?? []);
+                update_post_meta($tmpl_id, 'background', $layout_template['background'] ?? []);
+                update_post_meta($tmpl_id, 'graphic_layers', $layout_template['graphicLayers'] ?? []);
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id);
+                if (!empty($src['layoutBinding'])) {
+                    update_post_meta($post_id, '_wpsg_layout_binding', $src['layoutBinding']);
+                }
+            }
+        }
+
+        // Import media references (URL-only, no binary transfer).
+        $media_refs = $body['media_references'] ?? [];
+        if (is_array($media_refs) && !empty($media_refs)) {
+            $media_items = array_values(array_map(function ($ref) {
+                return [
+                    'id'    => sanitize_text_field($ref['id'] ?? wp_generate_uuid4()),
+                    'url'   => esc_url_raw($ref['url'] ?? ''),
+                    'title' => sanitize_text_field($ref['title'] ?? ''),
+                    'type'  => 'image',
+                    'source' => 'url',
+                    'order' => 0,
+                ];
+            }, $media_refs));
+            update_post_meta($post_id, 'media_items', $media_items);
+        }
+
+        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title]);
+        $new_post = get_post($post_id);
+        return new WP_REST_Response(self::format_campaign($new_post), 201);
     }
 
     public static function list_media() {

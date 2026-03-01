@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import type { ApiClient } from '@/services/apiClient';
+import type { ApiClient, CampaignExportPayload } from '@/services/apiClient';
 import type { Campaign } from '@/types';
 import {
   Tabs,
@@ -19,12 +19,14 @@ import {
   useCombobox,
   Tooltip,
 } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff, IconLayoutGrid, IconCopy, IconArchive } from '@tabler/icons-react';
+import { useDebouncedValue, useHotkeys } from '@mantine/hooks';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff, IconLayoutGrid, IconCopy, IconArchive, IconDownload, IconFileImport, IconKeyboard } from '@tabler/icons-react';
 import { CampaignFormModal, type CampaignFormState } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
 import { BulkActionsBar } from './BulkActionsBar';
 import { CampaignDuplicateModal } from './CampaignDuplicateModal';
+import { CampaignImportModal } from './CampaignImportModal';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
@@ -187,6 +189,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   // ── P18-C: Duplicate ─────────────────────────────────────────
   const [duplicateSource, setDuplicateSource] = useState<AdminCampaign | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
+
+  // ── P18-D: Export / Import ─────────────────────────────────
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  // ── P18-E: Keyboard shortcuts help ──────────────────────────
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
   // Cleanup blur timeout on unmount
   useEffect(() => {
@@ -588,6 +597,46 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [duplicateSource, apiClient, onNotify, mutateCampaigns, onCampaignsUpdated]);
 
+  // ── P18-D: Export / Import handlers ─────────────────────────
+  const handleExportCampaign = useCallback(async (campaign: AdminCampaign) => {
+    try {
+      const payload = await apiClient.exportCampaign(String(campaign.id));
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `campaign-${campaign.id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Export failed') });
+    }
+  }, [apiClient, onNotify]);
+
+  const handleImportCampaign = useCallback(async (payload: CampaignExportPayload) => {
+    setIsImporting(true);
+    try {
+      await apiClient.importCampaign(payload);
+      const title = String((payload.campaign as Record<string, unknown>).title ?? 'Campaign');
+      onNotify({ type: 'success', text: `"${title}" imported as draft` });
+      setImportModalOpen(false);
+      await mutateCampaigns();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Import failed') });
+    } finally {
+      setIsImporting(false);
+    }
+  }, [apiClient, onNotify, mutateCampaigns, onCampaignsUpdated]);
+
+  // ── P18-E: Keyboard shortcuts ───────────────────────────────
+  useHotkeys([
+    ['?',              () => setShortcutHelpOpen(true)],
+    ['mod+n',         () => { if (!campaignFormOpen) handleCreate(); }],
+    ['mod+i',         () => setImportModalOpen(true)],
+    ['mod+shift+a',   () => handleToggleSelectMode()],
+  ]);
+
   const archiveCampaign = async (campaign: AdminCampaign) => {
     const id = String(campaign.id);
     setArchivingIds((prev) => new Set(prev).add(id));
@@ -692,7 +741,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               <Button variant="outline" size="xs" leftSection={<IconEdit size={14} />} onClick={() => handleEdit(c)}>
                 Edit
               </Button>
-              <Tooltip label="Duplicate campaign">
+              <Tooltip label="Clone campaign">
                 <Button
                   variant="subtle"
                   size="xs"
@@ -701,6 +750,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                   aria-label={`Duplicate ${c.title}`}
                 >
                   Clone
+                </Button>
+              </Tooltip>
+              <Tooltip label="Export campaign as JSON">
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  leftSection={<IconDownload size={14} />}
+                  onClick={() => handleExportCampaign(c)}
+                  aria-label={`Export ${c.title}`}
+                >
+                  Export
                 </Button>
               </Tooltip>
               {c.status === 'archived' ? (
@@ -717,7 +777,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Table.Tr>
       );
     });
-  }, [campaigns, handleEdit, restoringIds, archivingIds, setConfirmRestore, setConfirmArchive, selectMode, selectedCampaignIds, handleToggleCampaignSelect]);
+  }, [campaigns, handleEdit, restoringIds, archivingIds, setConfirmRestore, setConfirmArchive, selectMode, selectedCampaignIds, handleToggleCampaignSelect, handleExportCampaign]);
 
   const accessRows = useMemo(() => {
     return accessEntries.map((a) => (
@@ -796,6 +856,25 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           >
             New Campaign
           </Button>
+          <Button
+            variant="outline"
+            leftSection={<IconFileImport size={16} />}
+            onClick={() => setImportModalOpen(true)}
+            aria-label="Import campaign from JSON"
+            size="sm"
+          >
+            Import
+          </Button>
+          <Tooltip label="Keyboard shortcuts (?)">
+            <ActionIcon
+              variant="subtle"
+              size="lg"
+              onClick={() => setShortcutHelpOpen(true)}
+              aria-label="Keyboard shortcuts"
+            >
+              <IconKeyboard size={18} />
+            </ActionIcon>
+          </Tooltip>
         </Group>
       </Stack>
 
@@ -1025,6 +1104,20 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         isSaving={isDuplicating}
         onConfirm={handleDuplicateCampaign}
         onClose={() => setDuplicateSource(null)}
+      />
+
+      {/* P18-D: Campaign import */}
+      <CampaignImportModal
+        opened={importModalOpen}
+        isSaving={isImporting}
+        onImport={handleImportCampaign}
+        onClose={() => setImportModalOpen(false)}
+      />
+
+      {/* P18-E: Keyboard shortcuts help */}
+      <KeyboardShortcutsModal
+        opened={shortcutHelpOpen}
+        onClose={() => setShortcutHelpOpen(false)}
       />
     </Card>
   );

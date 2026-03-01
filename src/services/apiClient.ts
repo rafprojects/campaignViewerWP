@@ -197,6 +197,16 @@ export class ApiClient {
       { action, ids },
     );
   }
+
+  // ── P18-D: Export / Import ───────────────────────────────────────────────
+
+  async exportCampaign(id: string): Promise<CampaignExportPayload> {
+    return this.get<CampaignExportPayload>(`/wp-json/wp-super-gallery/v1/campaigns/${id}/export`);
+  }
+
+  async importCampaign(payload: CampaignExportPayload): Promise<Record<string, unknown>> {
+    return this.post<Record<string, unknown>>('/wp-json/wp-super-gallery/v1/campaigns/import', payload);
+  }
 }
 
 export interface SettingsResponse {
@@ -420,6 +430,23 @@ export type SettingsUpdateRequest = Partial<SettingsResponse>;
  * Layout template response type — identical to the TS LayoutTemplate interface.
  */
 export type LayoutTemplateResponse = LayoutTemplate;
+
+/**
+ * P18-D: Campaign export/import payload shape.
+ */
+export interface CampaignExportPayload {
+  version: 1;
+  exported_at: string;
+  campaign: Record<string, unknown>;
+  layout_template: {
+    id: string;
+    title: string;
+    slots: unknown[];
+    background: unknown;
+    graphicLayers: unknown[];
+  } | null;
+  media_references: Array<{ id: string; url: string; title: string }>;
+}
 
 export class ApiError extends Error {
   status: number;
