@@ -31,7 +31,7 @@ interface Options {
   onNotify: (msg: { type: 'error' | 'success'; text: string }) => void;
 }
 
-export function useAdminCampaignActions({ apiClient, campaigns, onMutate, onCampaignsUpdated, onNotify }: Options) {
+export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMutate, onCampaignsUpdated, onNotify }: Options) {
   const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
   const [formState, dispatchFormState] = useReducer(campaignFormReducer, { ...emptyForm });
   const [isSavingCampaign, setIsSavingCampaign] = useState(false);
@@ -162,9 +162,9 @@ export function useAdminCampaignActions({ apiClient, campaigns, onMutate, onCamp
     });
   }, []);
 
-  const handleSelectAll = useCallback(() => {
-    setSelectedCampaignIds(new Set(campaigns.map((c) => String(c.id))));
-  }, [campaigns]);
+  const handleSelectAll = useCallback((ids: string[]) => {
+    setSelectedCampaignIds(new Set(ids));
+  }, []);
 
   const handleDeselectAll = useCallback(() => setSelectedCampaignIds(new Set()), []);
 

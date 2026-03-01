@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **P18-F Analytics Dashboard** (`588c85e`): `wpsg_analytics_events` DB table; `POST /analytics/event` (rate-limited, IP-hashed); `GET /analytics/campaigns/{id}`; recharts `AnalyticsDashboard` (lazy-loaded).
 - **P18-G Media Usage Tracking**: `GET /media/{id}/usage`; `GET /media/usage-summary`; `MediaUsageBadge` popover; orphan filter; delete guard.
 - **P18-H Campaign Categories**: `wpsg_campaign_category` taxonomy; `GET /campaign-categories`; `categories[]` in create/update; `TagsInput` in form; `Chip.Group` filter pills.
-- **P18-I Access Request Workflow** (`4a5712a`): `wpsg_access_requests` table; `POST /access-requests`; `GET`/`PATCH /access-requests/{token}`; `AccessRequestForm`; `PendingRequestsPanel`; `QuickAddUserModal`; approval email flow.
+- **P18-I Access Request Workflow** (`4a5712a`): `POST /campaigns/{id}/access-requests` (submit); `GET /campaigns/{id}/access-requests` (admin list); `POST …/approve` + `POST …/deny` action endpoints; per-token WP options storage with `wpsg_access_request_index` (no custom DB table); `RequestAccessForm`; `PendingRequestsPanel`; `QuickAddUserModal`; approval email flow.
 - **P18-X Code Size Reduction** (`2b093b4`): `App.tsx` 808→346 lines; `AdminPanel.tsx` 1168→390 lines; 8 new hooks extracted.
 
 ## [0.15.0] - 2026-02-26

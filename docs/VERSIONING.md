@@ -24,7 +24,7 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
   - **P18-F**: Analytics dashboard — `wpsg_analytics_events` table, rate-limited beacon, recharts lazy `AnalyticsDashboard`.
   - **P18-G**: Media usage tracking — usage badge popover, orphan filter, delete guard.
   - **P18-H**: Campaign categories — `wpsg_campaign_category` taxonomy, `TagsInput`, `Chip.Group` filter pills.
-  - **P18-I**: Access request workflow — `wpsg_access_requests` table, approval flow, `PendingRequestsPanel`, approval email.
+  - **P18-I**: Access request workflow — per-token WP options storage with index (no custom DB table); `POST/GET /campaigns/{id}/access-requests`; approve/deny action endpoints; `RequestAccessForm`, `PendingRequestsPanel`, approval email.
   - **P18-X**: Code size reduction — `App.tsx` 808→346 lines; `AdminPanel.tsx` 1168→390 lines; 8 new hooks.
 
 ### v0.15.0 (February 26, 2026)

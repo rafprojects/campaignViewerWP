@@ -144,6 +144,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   );
   const availableCategoryNames = useMemo(() => campaignCategories.map((c) => c.name), [campaignCategories]);
 
+  const filteredCampaigns = useMemo(
+    () => categoryFilter ? campaigns.filter((c) => (c.categories ?? []).includes(categoryFilter)) : campaigns,
+    [campaigns, categoryFilter],
+  );
   const campaignsRows = useCampaignsRows({ campaigns, categoryFilter, campaignActions });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
@@ -199,9 +203,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             campaignsRows={campaignsRows}
             selectMode={campaignActions.selectMode}
             selectedCount={campaignActions.selectedCampaignIds.size}
-            totalCount={campaigns.length}
+            totalCount={filteredCampaigns.length}
             onToggleSelectMode={campaignActions.handleToggleSelectMode}
-            onSelectAll={campaignActions.handleSelectAll}
+            onSelectAll={() => campaignActions.handleSelectAll(filteredCampaigns.map((c) => String(c.id)))}
             onDeselectAll={campaignActions.handleDeselectAll}
           />
           {campaignActions.selectMode && campaignActions.selectedCampaignIds.size > 0 && (() => {
