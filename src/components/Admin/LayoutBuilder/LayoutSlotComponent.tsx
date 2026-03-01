@@ -3,6 +3,7 @@ import { Rnd } from 'react-rnd';
 import { Text } from '@mantine/core';
 import type { LayoutSlot, MediaItem } from '@/types';
 import { getClipPath } from '@/utils/clipPath';
+import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ export function LayoutSlotComponent({
   const rndRef = useRef<Rnd>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const clipPath = getClipPath(slot);
+  const { scale, isHandTool } = useCanvasTransform();
 
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
@@ -285,14 +287,15 @@ export function LayoutSlotComponent({
         );
       }}
       onMouseDown={handleMouseDown}
-      enableResizing={!isPreview && !(slot.locked ?? false)}
-      disableDragging={isPreview || (slot.locked ?? false)}
+      scale={scale}
+      enableResizing={!isPreview && !(slot.locked ?? false) && !isHandTool}
+      disableDragging={isPreview || (slot.locked ?? false) || isHandTool}
       style={{
         zIndex: slot.zIndex,
         // Ghost effect when layer is hidden in builder; 10 % opacity so designer
         // can still see its position while editing other layers.
         opacity: !isPreview && !(slot.visible ?? true) ? 0.1 : undefined,
-        pointerEvents: !isPreview && !(slot.visible ?? true) ? 'none' : undefined,
+        pointerEvents: (!isPreview && !(slot.visible ?? true)) || isHandTool ? 'none' : undefined,
       }}
       resizeHandleStyles={{
         topLeft: cornerHandle,

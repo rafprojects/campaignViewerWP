@@ -4,6 +4,7 @@ import { Text } from '@mantine/core';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@/utils/smartGuides';
+import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
 
@@ -29,6 +30,8 @@ export interface LayoutCanvasProps {
   onOverlayResize?: (id: string, x: number, y: number, w: number, h: number) => void;
   /** Snap detection distance in canvas pixels (default: 5). Higher = snaps from further away. */
   snapThresholdPx?: number;
+  /** Called on double-click on canvas background — used to reset zoom. */
+  onCanvasBgDoubleClick?: () => void;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -54,8 +57,10 @@ export function LayoutCanvas({
   onOverlayMove,
   onOverlayResize,
   snapThresholdPx = 5,
+  onCanvasBgDoubleClick,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const { scale, isHandTool } = useCanvasTransform();
 
   // Compute canvas pixel dimensions from aspect ratio
   const canvasWidth = Math.max(
@@ -171,6 +176,15 @@ export function LayoutCanvas({
     [onCanvasClick],
   );
 
+  const handleCanvasDblClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) {
+        onCanvasBgDoubleClick?.();
+      }
+    },
+    [onCanvasBgDoubleClick],
+  );
+
   return (
     <div style={{ position: 'relative' }}>
       {/* Canvas dimensions label */}
@@ -192,6 +206,7 @@ export function LayoutCanvas({
       <div
         ref={canvasRef}
         onClick={handleCanvasClick}
+        onDoubleClick={handleCanvasDblClick}
         role="application"
         aria-label="Layout canvas"
         style={{
@@ -310,6 +325,7 @@ export function LayoutCanvas({
               minHeight={20}
               maxWidth={canvasWidth}
               maxHeight={canvasHeight}
+              scale={scale}
               onDragStop={(_e, data) => {
                 const pct = pxToPct(data.x, data.y);
                 onOverlayMove?.(overlay.id, pct.x, pct.y);
@@ -334,10 +350,10 @@ export function LayoutCanvas({
                 // Ghost effect when overlay visibility is toggled off in builder.
                 opacity: !(overlay.visible ?? true) ? 0.1 : overlay.opacity,
                 outline: '1px dashed rgba(138, 43, 226, 0.6)',
-                pointerEvents: !(overlay.visible ?? true) ? 'none' : undefined,
+                pointerEvents: !(overlay.visible ?? true) || isHandTool ? 'none' : undefined,
               }}
-              enableResizing={!(overlay.locked ?? false)}
-              disableDragging={overlay.locked ?? false}
+              enableResizing={!(overlay.locked ?? false) && !isHandTool}
+              disableDragging={(overlay.locked ?? false) || isHandTool}
             >
               <img
                 src={overlay.imageUrl}
