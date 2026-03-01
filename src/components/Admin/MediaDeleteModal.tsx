@@ -18,10 +18,10 @@ export function MediaDeleteModal({
   usageCount = 0,
 }: MediaDeleteModalProps) {
   const baseMessage =
-    'Are you sure you want to delete this media item? This action cannot be undone.';
+    'Remove this item from the campaign? The file stays in your media library and can be added to other campaigns.';
   const usageWarning =
     usageCount > 0
-      ? ` This item is also used in ${usageCount} other campaign${usageCount === 1 ? '' : 's'} — removing it here only affects the current campaign.`
+      ? ` It is currently used in ${usageCount} other campaign${usageCount === 1 ? '' : 's'} — those associations are not affected.`
       : '';
 
   return (
@@ -29,11 +29,11 @@ export function MediaDeleteModal({
       opened={opened}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Delete Media"
+      title="Remove from Campaign"
       message={baseMessage + usageWarning}
-      confirmLabel="Delete"
+      confirmLabel="Remove"
       confirmColor="red"
-      confirmAriaLabel={`Delete media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
+      confirmAriaLabel={`Remove media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
     />
   );
 }

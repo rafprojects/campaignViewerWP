@@ -70,9 +70,9 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/999999999');
         $response = rest_do_request($req);
 
-        // Permission callback returns false for non-existent post → 403/401,
-        // or the route may 404 directly. Either way it must not be 200.
-        $this->assertNotEquals(200, $response->get_status());
+        // Permission callback denies access when the post does not exist;
+        // WP REST returns 403 for authenticated users, 401 for unauthenticated.
+        $this->assertContains( $response->get_status(), [ 401, 403 ] );
     }
 
     public function test_create_campaign_requires_manage_wpsg_capability() {
@@ -134,7 +134,9 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $req->set_param('title', 'Ghost Update');
         $response = rest_do_request($req);
 
-        $this->assertNotEquals(200, $response->get_status());
+        // require_admin passes for the admin user; update_campaign() returns
+        // 404 when the campaign post does not exist.
+        $this->assertEquals( 404, $response->get_status() );
     }
 
     public function test_restore_non_archived_campaign_is_handled() {
