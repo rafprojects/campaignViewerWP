@@ -441,6 +441,14 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
+  // P18-G: Stable key derived from the sorted media IDs — reorder and
+  // caption edits change `media` but not the set of IDs, so we avoid
+  // unnecessary network round-trips by keying the effect off this string.
+  const mediaIdKey = useMemo(
+    () => media.map((m) => m.id).sort().join(','),
+    [media],
+  );
+
   // P18-G: Fetch usage summary whenever the rendered media list changes (use
   // `media`, not the SWR seed `mediaItems`, so mutations stay in sync)
   useEffect(() => {
@@ -460,16 +468,26 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       })
       .catch(() => {
         if (canceled) return;
+        setUsageSummary({});
         setUsageSummaryLoading(false);
       });
     return () => { canceled = true; };
-  }, [media, campaignId, apiClient]);
+  }, [mediaIdKey, apiClient]);
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
-  const displayedMedia = useMemo(
-    () => (orphanFilter ? media.filter((m) => (usageSummary[m.id] ?? 1) <= 1) : media),
-    [media, orphanFilter, usageSummary],
-  );
+  const displayedMedia = useMemo(() => {
+    if (!orphanFilter) return media;
+    // Don't apply the filter while counts are being fetched — unknown entries
+    // would be incorrectly excluded, making items temporarily disappear.
+    if (usageSummaryLoading) return media;
+    // Only include items whose usage count is a known number ≤ 1.
+    // Items absent from the summary (partial/failed response) are excluded
+    // rather than assumed exclusive.
+    return media.filter((m) => {
+      const count = usageSummary[m.id];
+      return typeof count === 'number' && count <= 1;
+    });
+  }, [media, orphanFilter, usageSummary, usageSummaryLoading]);
 
   const mediaIds = useMemo(() => displayedMedia.map((item) => item.id), [displayedMedia]);
   const listTotalPages = useMemo(() => Math.max(1, Math.ceil(displayedMedia.length / LIST_PAGE_SIZE)), [displayedMedia.length]);
