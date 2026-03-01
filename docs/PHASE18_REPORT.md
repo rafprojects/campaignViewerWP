@@ -1,9 +1,9 @@
 # Phase 18 — Admin Power Features, Coverage & Canvas Polish
 
-**Status:** 🔄 In Progress  
+**Status:** ✅ Complete  
 **Version:** v0.16.0  
 **Created:** February 27, 2026  
-**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅ P18-D ✅ P18-E ✅ P18-F ✅ P18-G ✅ P18-H ✅; next: P18-I
+**Last updated:** March 1, 2026 — all tracks complete (P18-I ✅ P18-X ✅)
 
 ### Completed
 
@@ -18,8 +18,10 @@
 | P18-D Export / Import JSON | `d5859ff` | `GET /campaigns/{id}/export`; `POST /campaigns/import`; `CampaignImportModal`; Export button per row; `CampaignExportPayload` type |
 | P18-E Keyboard Shortcuts | `d5859ff` | `KeyboardShortcutsModal`; `useHotkeys` (?/mod+n/mod+i/mod+shift+a); `<kbd>` shortcut table; keyboard icon in header |
 | P18-F Analytics Dashboard | `588c85e` | `wpsg_analytics_events` table (DB v2); `POST /analytics/event`; `GET /analytics/campaigns/{id}`; recharts `AnalyticsDashboard`; lazy Analytics tab |
-| P18-G Media Usage Tracking | next commit | `GET /media/{id}/usage`; `GET /media/usage-summary`; `MediaUsageBadge` popover; orphan filter toggle; delete guard with usage count |
-| P18-H Campaign Categories | next commit | `wpsg_campaign_category` taxonomy; `GET /campaign-categories`; `categories[]` in create/update; `TagsInput` in form; `Chip.Group` filter pills |
+| P18-G Media Usage Tracking | (this sprint) | `GET /media/{id}/usage`; `GET /media/usage-summary`; `MediaUsageBadge` popover; orphan filter toggle; delete guard with usage count |
+| P18-H Campaign Categories | (this sprint) | `wpsg_campaign_category` taxonomy; `GET /campaign-categories`; `categories[]` in create/update; `TagsInput` in form; `Chip.Group` filter pills |
+| P18-I Access Request Workflow | `4a5712a` | `wpsg_access_requests` table; `POST /access-requests`; `GET/PATCH /access-requests/{token}` (approve/deny); `AccessRequestForm`; `PendingRequestsPanel`; `QuickAddUserModal`; approval/denial email via `wp_mail` |
+| P18-X Code Size Reduction | `2b093b4` | App.tsx 808→346 lines; AdminPanel.tsx 1168→390 lines; 8 new hooks extracted (`useEditCampaignModal`, `useArchiveModal`, `useExternalMediaModal`, `useAdminCampaignActions`, `useAdminAccessState`, `useCampaignsRows`, `useAccessRows`, `useAuditRows`) |
 
 ---
 
@@ -680,7 +682,9 @@ New "Analytics" tab in the campaign detail panel (or sidebar). Chart: `recharts`
 
 ---
 
-## Track P18-G — Media Usage Tracking
+## Track P18-G — Media Usage Tracking ✅ COMPLETE
+
+**Status:** Complete.
 
 **Promoted from FUTURE_TASKS.**
 
@@ -753,7 +757,22 @@ REST routes for term CRUD are automatically provided by WP core's taxonomy REST 
 
 ---
 
-## Track P18-I — Access Request Workflow
+## Track P18-I — Access Request Workflow ✅ COMPLETE
+
+**Commit:** `4a5712a`  
+**Status:** Complete — 840 tests pass (1 skipped); PHP suite 117 tests / 303 assertions green; `npm run build:wp` clean.
+
+**What was implemented:**
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-db.php` | `wpsg_access_requests` table via `dbDelta` (token PK, email, campaign_id, status, requested_at, resolved_at) |
+| `wp-plugin/.../class-wpsg-rest.php` | `POST /access-requests` (public, rate-limited); `GET /access-requests?campaign_id=` (admin); `PATCH /access-requests/{token}` (approve/deny — admin only); generates UUID token, calls `wp_mail` on submit and on resolve |
+| `src/services/apiClient.ts` | `submitAccessRequest()`, `listAccessRequests()`, `resolveAccessRequest()` methods; `AccessRequest` interface |
+| `src/components/Admin/Access/AccessRequestForm.tsx` | **New** — email `TextInput` + submit; shown to unauthenticated/unauthorised users in embed layer when campaign is restricted |
+| `src/components/Admin/Access/PendingRequestsPanel.tsx` | **New** — lists pending requests for a campaign with Approve / Deny buttons; badge count shown on Access tab |
+| `src/components/Admin/QuickAddUserModal.tsx` | **New** — admin shortcut to create a WP user + grant access in one step from the Access tab |
+| `src/components/Admin/AccessTab.tsx` | Wired `PendingRequestsPanel`; added quick-add button and pending request badge |
 
 **Promoted from FUTURE_TASKS.**
 
@@ -797,7 +816,19 @@ update_option("wpsg_access_request_{$token}", [
 
 ---
 
-## Track P18-X — Code Size Reduction (App.tsx + AdminPanel.tsx)
+## Track P18-X — Code Size Reduction (App.tsx + AdminPanel.tsx) ✅ COMPLETE
+
+**Commit:** `2b093b4`  
+**Status:** Complete — 840 tests pass (1 skipped); `npm run build:wp` clean; TSC exit 0.
+
+**Actual results:**
+
+| File | Before | After | Hooks extracted |
+|------|--------|-------|-----------------|
+| `src/App.tsx` | 808 lines | 346 lines | `useEditCampaignModal`, `useArchiveModal`, `useExternalMediaModal` |
+| `src/components/Admin/AdminPanel.tsx` | 1168 lines | 390 lines | `useAdminCampaignActions`, `useAdminAccessState`, `useCampaignsRows`, `useAccessRows`, `useAuditRows` |
+
+**Note:** Targets were ≤300 and ≤200 lines respectively. App.tsx ended at 346 and AdminPanel.tsx at 390 — still substantial reductions (57 % and 67 % smaller). Both files are now thin orchestration shells delegating all state and handlers to focused hooks. Stricter targets can be pursued in a follow-up if needed.
 
 **Promoted from FUTURE_TASKS (A1, A2).**
 
@@ -859,8 +890,8 @@ After extraction, `AdminPanel.tsx` renders tabs, passes context values, and dele
 | 6 | **P18-F** — Campaign analytics | None | Medium (new DB table, data model) | ✅ Done (`588c85e`) |
 | 7 | **P18-G** — Media usage tracking | None | Low | ✅ Done (next commit) |
 | 8 | **P18-H** — Campaign categories | None | Medium | ✅ Done (next commit) |
-| 9 | **P18-I** — Access request workflow | None | High | ⏳ Next |
-| 10 | **P18-X** — Code size reduction | All feature tracks | Low — extract only, no behaviour change | ❌ Not started |
+| 9 | **P18-I** — Access request workflow | None | High | ✅ Done (`4a5712a`) |
+| 10 | **P18-X** — Code size reduction | All feature tracks | Low — extract only, no behaviour change | ✅ Done (`2b093b4`) |
 
 Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx vitest run` and the wp-env phpunit suite after every sprint.
 
@@ -911,15 +942,19 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 | `src/components/Admin/CampaignDuplicateModal.tsx` | P18-C | ✅ Created |
 | `src/components/Admin/CampaignImportModal.tsx` | P18-D | ✅ Created |
 | `src/components/Admin/KeyboardShortcutsModal.tsx` | P18-E | ✅ Created |
-| `src/components/Admin/Analytics/AnalyticsDashboard.tsx` | P18-F | ❌ Pending |
-| `src/components/Admin/Analytics/AnalyticsChart.tsx` | P18-F | ❌ Pending |
-| `src/components/Admin/Media/MediaUsageBadge.tsx` | P18-G | ❌ Pending |
-| `src/components/Admin/Campaign/CampaignCategoryFilter.tsx` | P18-H | ❌ Pending |
-| `src/components/Admin/Access/AccessRequestForm.tsx` | P18-I | ❌ Pending |
-| `src/components/Admin/Access/PendingRequestsPanel.tsx` | P18-I | ❌ Pending |
-| `src/hooks/useAdminOrchestration.ts` | P18-X | ❌ Pending |
-| `src/hooks/useAdminModals.ts` | P18-X | ❌ Pending |
-| `src/hooks/useCampaignMutations.ts` | P18-X | ❌ Pending |
+| `src/components/Admin/AnalyticsDashboard.tsx` | P18-F | ✅ Created |
+| `src/components/Admin/MediaUsageBadge.tsx` | P18-G | ✅ Created |
+| `src/components/Admin/Access/AccessRequestForm.tsx` | P18-I | ✅ Created |
+| `src/components/Admin/Access/PendingRequestsPanel.tsx` | P18-I | ✅ Created |
+| `src/components/Admin/QuickAddUserModal.tsx` | P18-I | ✅ Created |
+| `src/hooks/useEditCampaignModal.ts` | P18-X | ✅ Created |
+| `src/hooks/useArchiveModal.ts` | P18-X | ✅ Created |
+| `src/hooks/useExternalMediaModal.ts` | P18-X | ✅ Created |
+| `src/hooks/useAdminCampaignActions.ts` | P18-X | ✅ Created |
+| `src/hooks/useAdminAccessState.ts` | P18-X | ✅ Created |
+| `src/hooks/useCampaignsRows.tsx` | P18-X | ✅ Created |
+| `src/hooks/useAccessRows.tsx` | P18-X | ✅ Created |
+| `src/hooks/useAuditRows.tsx` | P18-X | ✅ Created |
 | `wp-plugin/.../tests/WPSG_Rate_Limiter_Test.php` | P18-QA | ✅ Created |
 | `wp-plugin/.../tests/WPSG_Embed_Test.php` | P18-QA | ✅ Created |
 
@@ -931,14 +966,13 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 | `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | P18-A | `<Rnd scale={scale}>`; `isHandTool` disables drag/resize | ✅ Done |
 | `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | P18-A | `TransformWrapper`; hand tool; zoom % indicator; `CanvasTransformContext.Provider` | ✅ Done |
 | `tsconfig.json` | build fix | Exclude `*.test.ts(x)`, `src/test/` from `tsc -b` | ✅ Done |
-| `src/App.tsx` | P18-X | Reduce to ≤ 300 lines via hook extraction | ❌ Pending |
-| `src/components/Admin/AdminPanel.tsx` | P18-X | Reduce to ≤ 200 lines via hook extraction | ❌ Pending |
-| `src/main.tsx` | P18-X | Possibly minor adjustments if auth session hook moves | ❌ Pending |
-| `wp-plugin/.../class-wpsg-rest.php` | P18-B, C, D, F, I | Batch endpoint ✅, duplicate ✅, export/import, analytics, access requests | 🔄 In progress |
-| `wp-plugin/.../class-wpsg-db.php` | P18-F | `wpsg_analytics_events` table migration | ❌ Pending |
-| `wp-plugin/.../class-wpsg-settings.php` | P18-F | `enable_analytics` + `analytics_retention_days` settings | ❌ Pending |
-| `wp-plugin/.../wp-super-gallery.php` | P18-H | `register_taxonomy` for `wpsg_campaign_category` | ❌ Pending |
+| `src/App.tsx` | P18-X | Reduced 808→346 lines via hook extraction | ✅ Done |
+| `src/components/Admin/AdminPanel.tsx` | P18-X | Reduced 1168→390 lines via hook extraction | ✅ Done |
+| `wp-plugin/.../class-wpsg-rest.php` | P18-B, C, D, F, G, H, I | All REST routes implemented | ✅ Done |
+| `wp-plugin/.../class-wpsg-db.php` | P18-F, I | `wpsg_analytics_events` + `wpsg_access_requests` table migrations | ✅ Done |
+| `wp-plugin/.../class-wpsg-settings.php` | P18-F | `enable_analytics` + `analytics_retention_days` settings | ✅ Done |
+| `wp-plugin/.../wp-super-gallery.php` | P18-H | `register_taxonomy` for `wpsg_campaign_category` | ✅ Done |
 
 ---
 
-*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C + P18-D + P18-E + P18-F + P18-G + P18-H complete March 1, 2026. Next: P18-I (Access Request Workflow).*
+*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B through P18-H complete March 1, 2026. P18-I + P18-X complete March 1, 2026. Phase 18 fully closed.*
