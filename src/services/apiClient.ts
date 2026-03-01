@@ -252,6 +252,25 @@ export class ApiClient {
   async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
     return this.get<CampaignCategoryEntry[]>('/wp-json/wp-super-gallery/v1/campaign-categories');
   }
+
+  // ── P18-I: Access Request Workflow ───────────────────────────────────────
+
+  async submitAccessRequest(campaignId: string, email: string): Promise<{ message: string; token: string }> {
+    return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests`, { email });
+  }
+
+  async listAccessRequests(campaignId: string, status?: string): Promise<AccessRequest[]> {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+    return this.get<AccessRequest[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests${qs}`);
+  }
+
+  async approveAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
+    return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/approve`, {});
+  }
+
+  async denyAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
+    return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/deny`, {});
+  }
 }
 
 export interface SettingsResponse {
@@ -522,6 +541,15 @@ export interface CampaignCategoryEntry {
   name: string;
   slug: string;
   count: number;
+}
+
+export interface AccessRequest {
+  token: string;
+  email: string;
+  campaign_id: number;
+  status: 'pending' | 'approved' | 'denied';
+  requested_at: string;
+  resolved_at: string | null;
 }
 
 export class ApiError extends Error {

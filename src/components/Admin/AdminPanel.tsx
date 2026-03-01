@@ -1060,6 +1060,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               }
               setQuickAddUserOpen(true);
             }}
+            apiClient={apiClient}
           />
         </Tabs.Panel>
 

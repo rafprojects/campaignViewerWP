@@ -2,6 +2,8 @@ import { forwardRef } from 'react';
 import { IconLock, IconEye } from '@tabler/icons-react';
 import { Card, Image, Badge, Group, Text, Box, Stack, UnstyledButton } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
+import type { ApiClient } from '@/services/apiClient';
+import { RequestAccessForm } from './RequestAccessForm';
 import styles from './CampaignCard.module.scss';
 
 interface CampaignCardProps {
@@ -9,10 +11,11 @@ interface CampaignCardProps {
   hasAccess: boolean;
   onClick: () => void;
   settings?: GalleryBehaviorSettings;
+  apiClient?: ApiClient;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
-  ({ campaign, hasAccess, onClick, settings }, ref) => {
+  ({ campaign, hasAccess, onClick, settings, apiClient }, ref) => {
     const borderRadius = settings?.cardBorderRadius ?? 8;
     const borderWidth = settings?.cardBorderWidth ?? 4;
     const borderMode = settings?.cardBorderMode ?? 'auto';
@@ -94,20 +97,29 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  padding: '12px',
                 }}
               >
-                <Box
-                  p="lg"
-                  style={{
-                    background: 'color-mix(in srgb, var(--wpsg-color-surface) 90%, transparent)',
-                    borderRadius: '9999px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <IconLock size={32} color="var(--wpsg-color-text-muted)" />
-                </Box>
+                {apiClient ? (
+                  <RequestAccessForm
+                    campaignId={campaign.id}
+                    campaignTitle={campaign.title}
+                    apiClient={apiClient}
+                  />
+                ) : (
+                  <Box
+                    p="lg"
+                    style={{
+                      background: 'color-mix(in srgb, var(--wpsg-color-surface) 90%, transparent)',
+                      borderRadius: '9999px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <IconLock size={32} color="var(--wpsg-color-text-muted)" />
+                  </Box>
+                )}
               </Box>
             )}
 

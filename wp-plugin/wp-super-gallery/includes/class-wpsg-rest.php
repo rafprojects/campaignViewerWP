@@ -237,6 +237,36 @@ class WPSG_REST {
             ],
         ]);
 
+        // P18-I: Access Request Workflow
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'submit_access_request'],
+                'permission_callback' => [self::class, 'rate_limit_public'],
+            ],
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_access_requests'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/approve', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'approve_access_request'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/deny', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'deny_access_request'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/audit', [
             [
                 'methods' => 'GET',
@@ -1602,6 +1632,301 @@ class WPSG_REST {
         ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
+    }
+
+    // -------------------------------------------------------------------------
+    // P18-I: Access Request Workflow helpers
+    // -------------------------------------------------------------------------
+
+    /** Return the option name for a single request. */
+    private static function access_request_option(string $token): string {
+        return 'wpsg_access_request_' . $token;
+    }
+
+    /** Retrieve the stored request data for $token, or null if not found. */
+    private static function get_access_request(string $token): ?array {
+        $data = get_option(self::access_request_option($token), null);
+        return is_array($data) ? $data : null;
+    }
+
+    /** Persist the request data and ensure the global index contains $token. */
+    private static function save_access_request(string $token, array $data): void {
+        update_option(self::access_request_option($token), $data, false);
+        $index = get_option('wpsg_access_request_index', []);
+        if (!is_array($index)) {
+            $index = [];
+        }
+        if (!in_array($token, $index, true)) {
+            $index[] = $token;
+            update_option('wpsg_access_request_index', $index, false);
+        }
+    }
+
+    /** Remove a request from storage and from the global index. */
+    private static function delete_access_request(string $token): void {
+        delete_option(self::access_request_option($token));
+        $index = get_option('wpsg_access_request_index', []);
+        if (!is_array($index)) {
+            return;
+        }
+        $index = array_values(array_diff($index, [$token]));
+        update_option('wpsg_access_request_index', $index, false);
+    }
+
+    // -------------------------------------------------------------------------
+    // P18-I: Handler methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * POST /campaigns/{id}/access-requests
+     * Public (rate-limited) — submit an access request by email.
+     */
+    public static function submit_access_request() {
+        $request    = func_get_arg(0);
+        $post_id    = intval($request->get_param('id'));
+        $email      = sanitize_email($request->get_param('email') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+        if (!is_email($email)) {
+            return new WP_REST_Response(['message' => 'A valid email address is required'], 400);
+        }
+
+        // 24-hour cooldown per email per campaign for previously denied requests
+        $index = get_option('wpsg_access_request_index', []);
+        if (is_array($index)) {
+            foreach ($index as $existing_token) {
+                $data = self::get_access_request((string) $existing_token);
+                if (
+                    $data &&
+                    intval($data['campaign_id']) === $post_id &&
+                    strtolower($data['email']) === strtolower($email)
+                ) {
+                    if ($data['status'] === 'pending') {
+                        return new WP_REST_Response([
+                            'message' => 'A request for this email is already pending.',
+                        ], 409);
+                    }
+                    if ($data['status'] === 'denied') {
+                        $cooldown_seconds = 24 * 60 * 60;
+                        $elapsed = time() - strtotime($data['requested_at']);
+                        if ($elapsed < $cooldown_seconds) {
+                            return new WP_REST_Response([
+                                'message' => 'Please wait 24 hours before submitting another request.',
+                            ], 429);
+                        }
+                        // Remove stale denied request so a fresh one can be created
+                        self::delete_access_request((string) $existing_token);
+                    }
+                }
+            }
+        }
+
+        $token = wp_generate_uuid4();
+        $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
+        $now    = gmdate('c');
+
+        $data = [
+            'token'        => $token,
+            'email'        => $email,
+            'campaign_id'  => $post_id,
+            'status'       => 'pending',
+            'requested_at' => $now,
+        ];
+        self::save_access_request($token, $data);
+
+        // Confirmation email to the requester
+        $site_name = get_bloginfo('name');
+        wp_mail(
+            $email,
+            sprintf('[%s] Access Request Received — %s', $site_name, $campaign_title),
+            sprintf(
+                "Hello,\n\nYour access request for \"%s\" has been received.\nAn administrator will review your request shortly.\n\nThank you,\n%s",
+                $campaign_title,
+                $site_name
+            )
+        );
+
+        return new WP_REST_Response([
+            'message' => 'Request submitted. Check your email for confirmation.',
+            'token'   => $token,
+        ], 201);
+    }
+
+    /**
+     * GET /campaigns/{id}/access-requests
+     * Admin — list all access requests for a campaign.
+     */
+    public static function list_access_requests() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        $status  = sanitize_text_field($request->get_param('status') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $index  = get_option('wpsg_access_request_index', []);
+        $result = [];
+
+        if (is_array($index)) {
+            foreach ($index as $token) {
+                $data = self::get_access_request((string) $token);
+                if (!$data) {
+                    continue;
+                }
+                if (intval($data['campaign_id']) !== $post_id) {
+                    continue;
+                }
+                if ($status && $data['status'] !== $status) {
+                    continue;
+                }
+                $result[] = [
+                    'token'        => $data['token'],
+                    'email'        => $data['email'],
+                    'campaign_id'  => $data['campaign_id'],
+                    'status'       => $data['status'],
+                    'requested_at' => $data['requested_at'],
+                    'resolved_at'  => $data['resolved_at'] ?? null,
+                ];
+            }
+        }
+
+        // Sort newest-first
+        usort($result, function ($a, $b) {
+            return strcmp($b['requested_at'], $a['requested_at']);
+        });
+
+        return new WP_REST_Response($result, 200);
+    }
+
+    /**
+     * POST /campaigns/{id}/access-requests/{token}/approve
+     * Admin — approve a pending access request.
+     */
+    public static function approve_access_request() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        $token   = sanitize_text_field($request->get_param('token') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $data = self::get_access_request($token);
+        if (!$data || intval($data['campaign_id']) !== $post_id) {
+            return new WP_REST_Response(['message' => 'Request not found'], 404);
+        }
+        if ($data['status'] !== 'pending') {
+            return new WP_REST_Response(['message' => 'Request already resolved'], 409);
+        }
+
+        // Provision access: look up or create a WP user for this email
+        $user = get_user_by('email', $data['email']);
+        if (!$user) {
+            $username = sanitize_user(explode('@', $data['email'])[0], true);
+            // Ensure unique username
+            $base = $username ?: 'user';
+            $username = $base;
+            $suffix = 1;
+            while (username_exists($username)) {
+                $username = $base . $suffix++;
+            }
+            $user_id = wp_create_user($username, wp_generate_password(), $data['email']);
+            if (is_wp_error($user_id)) {
+                return new WP_REST_Response(['message' => 'Failed to create user: ' . $user_id->get_error_message()], 500);
+            }
+            $user = get_user_by('ID', $user_id);
+        }
+
+        // Grant access (campaign-level)
+        $grants = get_post_meta($post_id, 'access_grants', true);
+        $grants = is_array($grants) ? $grants : [];
+        $grants = self::upsert_grant($grants, [
+            'userId'    => $user->ID,
+            'campaignId' => $post_id,
+            'source'    => 'campaign',
+            'grantedAt' => gmdate('c'),
+        ]);
+        update_post_meta($post_id, 'access_grants', $grants);
+        self::clear_accessible_campaigns_cache();
+
+        // Update request record
+        $data['status']      = 'approved';
+        $data['resolved_at'] = gmdate('c');
+        self::save_access_request($token, $data);
+
+        self::add_audit_entry($post_id, 'access.request.approved', [
+            'email'  => $data['email'],
+            'userId' => $user->ID,
+            'token'  => $token,
+        ]);
+
+        // Notify requester
+        $site_name      = get_bloginfo('name');
+        $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
+        wp_mail(
+            $data['email'],
+            sprintf('[%s] Access Approved — %s', $site_name, $campaign_title),
+            sprintf(
+                "Hello,\n\nYour access request for \"%s\" has been approved!\nYou can now view the campaign at: %s\n\nThank you,\n%s",
+                $campaign_title,
+                home_url(),
+                $site_name
+            )
+        );
+
+        return new WP_REST_Response(['message' => 'Access request approved'], 200);
+    }
+
+    /**
+     * POST /campaigns/{id}/access-requests/{token}/deny
+     * Admin — deny a pending access request.
+     */
+    public static function deny_access_request() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        $token   = sanitize_text_field($request->get_param('token') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $data = self::get_access_request($token);
+        if (!$data || intval($data['campaign_id']) !== $post_id) {
+            return new WP_REST_Response(['message' => 'Request not found'], 404);
+        }
+        if ($data['status'] !== 'pending') {
+            return new WP_REST_Response(['message' => 'Request already resolved'], 409);
+        }
+
+        $data['status']      = 'denied';
+        $data['resolved_at'] = gmdate('c');
+        self::save_access_request($token, $data);
+
+        self::add_audit_entry($post_id, 'access.request.denied', [
+            'email' => $data['email'],
+            'token' => $token,
+        ]);
+
+        // Optional denial email
+        $send_denial = apply_filters('wpsg_send_denial_email', true);
+        if ($send_denial) {
+            $site_name      = get_bloginfo('name');
+            $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
+            wp_mail(
+                $data['email'],
+                sprintf('[%s] Access Request Update — %s', $site_name, $campaign_title),
+                sprintf(
+                    "Hello,\n\nUnfortunately your access request for \"%s\" has not been approved at this time.\n\nThank you,\n%s",
+                    $campaign_title,
+                    $site_name
+                )
+            );
+        }
+
+        return new WP_REST_Response(['message' => 'Access request denied'], 200);
     }
 
     /**

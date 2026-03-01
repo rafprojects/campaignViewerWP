@@ -714,6 +714,7 @@ function AppContent({
           onEditCampaign={handleEditCampaign}
           onArchiveCampaign={handleArchiveCampaign}
           onAddExternalMedia={handleAddExternalMedia}
+          apiClient={apiClient}
         />
       )}
 
