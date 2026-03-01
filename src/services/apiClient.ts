@@ -230,6 +230,22 @@ export class ApiClient {
       `/wp-json/wp-super-gallery/v1/analytics/campaigns/${campaignId}${qs}`,
     );
   }
+
+  // ── P18-G: Media Usage Tracking ─────────────────────────────────────────
+
+  async getMediaUsage(mediaId: string): Promise<MediaUsageResponse> {
+    return this.get<MediaUsageResponse>(
+      `/wp-json/wp-super-gallery/v1/media/${encodeURIComponent(mediaId)}/usage`,
+    );
+  }
+
+  async getMediaUsageSummary(ids: string[]): Promise<Record<string, number>> {
+    if (ids.length === 0) return {};
+    const qs = ids.map((id) => `ids[]=${encodeURIComponent(id)}`).join('&');
+    return this.get<Record<string, number>>(
+      `/wp-json/wp-super-gallery/v1/media/usage-summary?${qs}`,
+    );
+  }
 }
 
 export interface SettingsResponse {
@@ -483,6 +499,16 @@ export interface CampaignAnalyticsResponse {
   total_views: number;
   unique_visitors: number;
   daily: CampaignAnalyticsDayEntry[];
+}
+
+export interface MediaUsageCampaignRef {
+  id: string;
+  title: string;
+}
+
+export interface MediaUsageResponse {
+  count: number;
+  campaigns: MediaUsageCampaignRef[];
 }
 
 export class ApiError extends Error {

@@ -15,6 +15,8 @@ describe('MediaTab', () => {
     delete: vi.fn(),
     getBaseUrl: vi.fn().mockReturnValue('https://example.test'),
     getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer test' }),
+    // P18-G: media usage — default to empty map so tests aren't affected
+    getMediaUsageSummary: vi.fn().mockResolvedValue({}),
   } as unknown as {
     get: ReturnType<typeof vi.fn>;
     post: ReturnType<typeof vi.fn>;
@@ -22,6 +24,7 @@ describe('MediaTab', () => {
     delete: ReturnType<typeof vi.fn>;
     getBaseUrl: ReturnType<typeof vi.fn>;
     getAuthHeaders: ReturnType<typeof vi.fn>;
+    getMediaUsageSummary: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -34,6 +37,8 @@ describe('MediaTab', () => {
     apiClient.post.mockReset();
     apiClient.put.mockReset();
     apiClient.delete.mockReset();
+    apiClient.getMediaUsageSummary.mockReset();
+    apiClient.getMediaUsageSummary.mockResolvedValue({});
   });
 
   it('renders media items and supports edit/delete/drag-reorder', async () => {

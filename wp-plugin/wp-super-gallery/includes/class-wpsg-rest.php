@@ -123,6 +123,22 @@ class WPSG_REST {
             ],
         ]);
 
+        // P18-G: Media usage tracking — summary route BEFORE parameterised route
+        register_rest_route('wp-super-gallery/v1', '/media/usage-summary', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_media_usage_summary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/media/(?P<mediaId>[a-zA-Z0-9_.]+)/usage', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_media_usage'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // P18-F: Analytics
         register_rest_route('wp-super-gallery/v1', '/analytics/event', [
             [
@@ -1184,6 +1200,85 @@ class WPSG_REST {
                 ];
             }, $rows),
         ], 200);
+    }
+
+    /**
+     * GET /media/{mediaId}/usage
+     * Returns which campaigns reference this media item.
+     */
+    public static function get_media_usage() {
+        $request  = func_get_arg(0);
+        $media_id = sanitize_text_field($request->get_param('mediaId'));
+
+        if (empty($media_id)) {
+            return new WP_REST_Response(['message' => 'mediaId is required'], 400);
+        }
+
+        $campaigns = get_posts([
+            'post_type'      => WPSG_CPT::POST_TYPE,
+            'posts_per_page' => -1,
+            'post_status'    => ['publish', 'draft', 'private'],
+        ]);
+
+        $found = [];
+        foreach ($campaigns as $campaign) {
+            $items = get_post_meta($campaign->ID, 'media_items', true);
+            if (!is_array($items)) {
+                continue;
+            }
+            foreach ($items as $item) {
+                if (($item['id'] ?? '') === $media_id) {
+                    $found[] = ['id' => strval($campaign->ID), 'title' => $campaign->post_title];
+                    break; // at most once per campaign
+                }
+            }
+        }
+
+        return new WP_REST_Response(['count' => count($found), 'campaigns' => $found], 200);
+    }
+
+    /**
+     * GET /media/usage-summary?ids[]=id1&ids[]=id2...
+     * Returns a map { mediaId: count } for the given IDs.
+     */
+    public static function get_media_usage_summary() {
+        $request = func_get_arg(0);
+        $ids     = $request->get_param('ids');
+
+        if (!is_array($ids) || empty($ids)) {
+            return new WP_REST_Response((object)[], 200);
+        }
+
+        $ids = array_values(array_unique(array_map('sanitize_text_field', $ids)));
+        if (count($ids) > 200) {
+            return new WP_REST_Response(['message' => 'Too many IDs (max 200)'], 400);
+        }
+
+        $id_set = array_fill_keys($ids, 0);
+
+        $campaigns = get_posts([
+            'post_type'      => WPSG_CPT::POST_TYPE,
+            'posts_per_page' => -1,
+            'post_status'    => ['publish', 'draft', 'private'],
+        ]);
+
+        foreach ($campaigns as $campaign) {
+            $items = get_post_meta($campaign->ID, 'media_items', true);
+            if (!is_array($items)) {
+                continue;
+            }
+            $seen = [];
+            foreach ($items as $item) {
+                $mid = $item['id'] ?? '';
+                // Count each campaign only once per media ID
+                if (isset($id_set[$mid]) && !in_array($mid, $seen, true)) {
+                    $id_set[$mid]++;
+                    $seen[] = $mid;
+                }
+            }
+        }
+
+        return new WP_REST_Response((object)$id_set, 200);
     }
 
     public static function list_media() {

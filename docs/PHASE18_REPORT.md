@@ -3,7 +3,7 @@
 **Status:** 🔄 In Progress  
 **Version:** v0.16.0  
 **Created:** February 27, 2026  
-**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅ P18-D ✅ P18-E ✅; next: P18-F
+**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅ P18-D ✅ P18-E ✅ P18-F ✅; next: P18-G
 
 ### Completed
 
@@ -17,6 +17,8 @@
 | P18-C Campaign Duplication | `e392e8a` | `POST /campaigns/{id}/duplicate`; `CampaignDuplicateModal`; `duplicateCampaign()` in apiClient; Clone button per row |
 | P18-D Export / Import JSON | `d5859ff` | `GET /campaigns/{id}/export`; `POST /campaigns/import`; `CampaignImportModal`; Export button per row; `CampaignExportPayload` type |
 | P18-E Keyboard Shortcuts | `d5859ff` | `KeyboardShortcutsModal`; `useHotkeys` (?/mod+n/mod+i/mod+shift+a); `<kbd>` shortcut table; keyboard icon in header |
+| P18-F Analytics Dashboard | `588c85e` | `wpsg_analytics_events` table (DB v2); `POST /analytics/event`; `GET /analytics/campaigns/{id}`; recharts `AnalyticsDashboard`; lazy Analytics tab |
+| P18-G Media Usage Tracking | next commit | `GET /media/{id}/usage`; `GET /media/usage-summary`; `MediaUsageBadge` popover; orphan filter toggle; delete guard with usage count |
 
 ---
 
@@ -35,35 +37,35 @@
   - [Track P18-A — Zoomable Canvas \& Hand Tool ✅ COMPLETE](#track-p18-a--zoomable-canvas--hand-tool--complete)
     - [What was implemented](#what-was-implemented)
     - [Desired interactions](#desired-interactions)
-  - [Track P18-B — Bulk Actions ✅ COMPLETE](#track-p18-b--bulk-actions)
+  - [Track P18-B — Bulk Actions ✅ COMPLETE](#track-p18-b--bulk-actions--complete)
     - [Scope](#scope)
     - [UI](#ui)
     - [REST: Batch endpoint](#rest-batch-endpoint)
     - [Open questions](#open-questions)
-  - [Track P18-C — Campaign Duplication ✅ COMPLETE](#track-p18-c--campaign-duplication)
+  - [Track P18-C — Campaign Duplication ✅ COMPLETE](#track-p18-c--campaign-duplication--complete)
     - [Clone options (two-step modal)](#clone-options-two-step-modal)
     - [REST endpoint](#rest-endpoint)
     - [PHP implementation sketch](#php-implementation-sketch)
     - [Open questions](#open-questions-1)
-  - [Track P18-D — Export / Import Campaigns as JSON ✅ COMPLETE](#track-p18-d--export--import-campaigns-as-json)
+  - [Track P18-D — Export / Import Campaigns as JSON ✅ COMPLETE](#track-p18-d--export--import-campaigns-as-json--complete)
     - [Export](#export)
     - [Import](#import)
     - [Open questions](#open-questions-2)
-  - [Track P18-E — Admin Panel Keyboard Shortcuts ✅ COMPLETE](#track-p18-e--admin-panel-keyboard-shortcuts)
+  - [Track P18-E — Admin Panel Keyboard Shortcuts ✅ COMPLETE](#track-p18-e--admin-panel-keyboard-shortcuts--complete)
     - [Shortcut map](#shortcut-map)
     - [Open questions](#open-questions-3)
-  - [Track P18-F — Campaign Analytics Dashboard](#track-p18-f--campaign-analytics-dashboard)
+  - [Track P18-F — Campaign Analytics Dashboard ✅ COMPLETE](#track-p18-f--campaign-analytics-dashboard--complete)
     - [Scope](#scope-1)
     - [Data model](#data-model)
     - [Event ingestion](#event-ingestion)
     - [Aggregation](#aggregation)
     - [Analytics UI](#analytics-ui)
     - [Open questions](#open-questions-4)
-  - [Track P18-G — Media Usage Tracking](#track-p18-g--media-usage-tracking)
+  - [Track P18-G — Media Usage Tracking ✅ COMPLETE](#track-p18-g--media-usage-tracking)
     - [Features](#features)
     - [Implementation](#implementation)
     - [Open questions](#open-questions-5)
-  - [Track P18-H — Campaign Categories](#track-p18-h--campaign-categories)
+  - [Track P18-H — Campaign Categories ⏳ NEXT](#track-p18-h--campaign-categories)
     - [Implementation](#implementation-1)
   - [Track P18-I — Access Request Workflow](#track-p18-i--access-request-workflow)
     - [User-facing flow](#user-facing-flow)
@@ -581,7 +583,23 @@ Renders a `<Modal>` with a two-column table of all shortcuts grouped by section 
 
 ---
 
-## Track P18-F — Campaign Analytics Dashboard
+## Track P18-F — Campaign Analytics Dashboard ✅ COMPLETE
+
+**Commit:** `588c85e`  
+**Status:** Complete. recharts installed as dep; analytics table created on `init` via `WPSG_DB::maybe_upgrade()`.
+
+**What was implemented:**
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-db.php` | DB_VERSION 1→2; `maybe_create_analytics_table()` using `dbDelta`; `get_analytics_table()` helper |
+| `wp-plugin/.../class-wpsg-rest.php` | `POST /analytics/event` (rate-limited public, IP hashed SHA-256+salt, checks `enable_analytics`); `GET /analytics/campaigns/{id}?from&to` (admin, GROUP BY date) |
+| `src/services/apiClient.ts` | `recordAnalyticsEvent()` + `getCampaignAnalytics()` methods; `CampaignAnalyticsResponse` + `CampaignAnalyticsDayEntry` interfaces |
+| `src/components/Admin/AnalyticsDashboard.tsx` | **New** — lazy-loaded (~103 kB gzip); campaign Select; 7d/30d/90d SegmentedControl; stat cards (views + uniques); recharts `LineChart` (dual lines: Views + Unique); empty-state hint re `enable_analytics` setting |
+| `src/components/Admin/AdminPanel.tsx` | Analytics tab added (lazy `Suspense`); passes `campaignSelectData` to dashboard |
+| `package.json` | `recharts ^3.7.0` added |
+
+---
 
 **Promoted from FUTURE_TASKS (Track F / "Usage Analytics" from Phase 6 deferred).**
 
@@ -827,9 +845,9 @@ After extraction, `AdminPanel.tsx` renders tabs, passes context values, and dele
 | 3 | **P18-C** — Campaign duplication | None | Low | ✅ Done (`e392e8a`) |
 | 4 | **P18-D** — Export / import JSON | P18-C | Low–Medium | ✅ Done (`d5859ff`) |
 | 5 | **P18-E** — Keyboard shortcuts | None | Low | ✅ Done (`d5859ff`) |
-| 6 | **P18-F** — Campaign analytics | None | Medium (new DB table, data model) | ⏳ Next |
-| 7 | **P18-G** — Media usage tracking | None | Low | ❌ Not started |
-| 8 | **P18-H** — Campaign categories | None | Low | ❌ Not started |
+| 6 | **P18-F** — Campaign analytics | None | Medium (new DB table, data model) | ✅ Done (`588c85e`) |
+| 7 | **P18-G** — Media usage tracking | None | Low | ✅ Done (next commit) |
+| 8 | **P18-H** — Campaign categories | None | Medium | ⏳ Next |
 | 9 | **P18-I** — Access request workflow | None | Medium | ❌ Not started |
 | 10 | **P18-X** — Code size reduction | All feature tracks | Low — extract only, no behaviour change | ❌ Not started |
 
@@ -912,4 +930,4 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 
 ---
 
-*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C complete March 1, 2026. P18-D + P18-E complete March 1, 2026. Next: P18-F (Campaign Analytics Dashboard).*
+*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C + P18-D + P18-E + P18-F + P18-G complete March 1, 2026. Next: P18-H (Campaign Categories).*
