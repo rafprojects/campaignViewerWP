@@ -440,12 +440,16 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
-  // P18-G: Fetch usage summary whenever the campaign's media list changes
+  // P18-G: Fetch usage summary whenever the rendered media list changes (use
+  // `media`, not the SWR seed `mediaItems`, so mutations stay in sync)
   useEffect(() => {
-    if (mediaItems.length === 0) return;
-    const ids = mediaItems.map((m) => m.id);
+    if (media.length === 0) {
+      setUsageSummary({});
+      return;
+    }
+    const ids = media.map((m) => m.id);
     void apiClient.getMediaUsageSummary(ids).then(setUsageSummary).catch(() => {});
-  }, [mediaItems, campaignId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [media, campaignId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
   const displayedMedia = useMemo(

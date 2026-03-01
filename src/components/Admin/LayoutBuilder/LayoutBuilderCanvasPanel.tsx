@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useHotkeys } from '@mantine/hooks';
 import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip } from '@mantine/core';
 import { IconHandGrab } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
@@ -28,6 +29,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   const handleResetZoom = useCallback(() => {
     transformRef.current?.resetTransform();
   }, []);
+
+  useHotkeys([['h', () => setIsHandTool((v) => !v)]]);
 
   return (
     <CanvasTransformContext.Provider value={{ scale, isHandTool }}>

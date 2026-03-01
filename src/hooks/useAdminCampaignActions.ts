@@ -230,8 +230,10 @@ export function useAdminCampaignActions({ apiClient, campaigns, onMutate, onCamp
       const a = document.createElement('a');
       a.href = url;
       a.download = `campaign-${campaign.id}.json`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Export failed') });
     }
