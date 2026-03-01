@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch } from '@mantine/core';
 import {
   DndContext,
   DragOverlay,
@@ -26,6 +26,7 @@ import { MediaLightboxModal } from './MediaLightboxModal';
 import { MediaAddModal } from './MediaAddModal';
 import { MediaEditModal } from './MediaEditModal';
 import { MediaDeleteModal } from './MediaDeleteModal';
+import { MediaUsageBadge } from './MediaUsageBadge';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
@@ -76,6 +77,11 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [cardSize, setCardSize] = useState<CardSize>('medium');
   const [listPage, setListPage] = useState(1);
+
+  // P18-G: Media usage tracking
+  const [usageSummary, setUsageSummary] = useState<Record<string, number>>({});
+  const [usageSummaryLoading, setUsageSummaryLoading] = useState(false);
+  const [orphanFilter, setOrphanFilter] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -435,12 +441,60 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
-  const mediaIds = useMemo(() => media.map((item) => item.id), [media]);
-  const listTotalPages = useMemo(() => Math.max(1, Math.ceil(media.length / LIST_PAGE_SIZE)), [media.length]);
+  // P18-G: Stable key derived from the sorted media IDs — reorder and
+  // caption edits change `media` but not the set of IDs, so we avoid
+  // unnecessary network round-trips by keying the effect off this string.
+  const mediaIdKey = useMemo(
+    () => media.map((m) => m.id).sort().join(','),
+    [media],
+  );
+
+  // P18-G: Fetch usage summary whenever the rendered media list changes (use
+  // `media`, not the SWR seed `mediaItems`, so mutations stay in sync)
+  useEffect(() => {
+    if (media.length === 0) {
+      setUsageSummary({});
+      setUsageSummaryLoading(false);
+      return;
+    }
+    const ids = media.map((m) => m.id);
+    let canceled = false;
+    setUsageSummaryLoading(true);
+    void apiClient.getMediaUsageSummary(ids)
+      .then((data) => {
+        if (canceled) return;
+        setUsageSummary(data);
+        setUsageSummaryLoading(false);
+      })
+      .catch(() => {
+        if (canceled) return;
+        setUsageSummary({});
+        setUsageSummaryLoading(false);
+      });
+    return () => { canceled = true; };
+  }, [mediaIdKey, apiClient]);
+
+  // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
+  const displayedMedia = useMemo(() => {
+    if (!orphanFilter) return media;
+    // Don't apply the filter while counts are being fetched — unknown entries
+    // would be incorrectly excluded, making items temporarily disappear.
+    if (usageSummaryLoading) return media;
+    // Only include items whose usage count is a known number ≤ 1.
+    // Items absent from the summary (partial/failed response) are excluded
+    // rather than assumed exclusive.
+    return media.filter((m) => {
+      const count = usageSummary[m.id];
+      return typeof count === 'number' && count <= 1;
+    });
+  }, [media, orphanFilter, usageSummary, usageSummaryLoading]);
+
+  const mediaIds = useMemo(() => displayedMedia.map((item) => item.id), [displayedMedia]);
+  const listTotalPages = useMemo(() => Math.max(1, Math.ceil(displayedMedia.length / LIST_PAGE_SIZE)), [displayedMedia.length]);
   const pagedListMedia = useMemo(() => {
     const start = (listPage - 1) * LIST_PAGE_SIZE;
-    return media.slice(start, start + LIST_PAGE_SIZE);
-  }, [media, listPage]);
+    return displayedMedia.slice(start, start + LIST_PAGE_SIZE);
+  }, [displayedMedia, listPage]);
 
   useEffect(() => {
     if (listPage > listTotalPages) {
@@ -590,6 +644,11 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
         <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
         <Table.Td>
+          {usageSummaryLoading
+            ? <Skeleton width={64} height={20} radius="xl" />
+            : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
+        </Table.Td>
+        <Table.Td>
           <Group gap={4}>
             <ActionIcon
               variant="subtle"
@@ -634,17 +693,24 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 }}
         span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
       >
-        <MediaCard
-          item={item}
-          height={mediaHeight}
-          compact={isCompact}
-          showUrl={cardSize === 'large'}
-          onEdit={() => openEdit(item)}
-          onDelete={() => handleDelete(item)}
-          onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
-          cardStyle={getInsertionStyle(item.id, 'horizontal')}
-          dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
-        />
+        <Box style={{ position: 'relative' }}>
+          <MediaCard
+            item={item}
+            height={mediaHeight}
+            compact={isCompact}
+            showUrl={cardSize === 'large'}
+            onEdit={() => openEdit(item)}
+            onDelete={() => handleDelete(item)}
+            onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
+            cardStyle={getInsertionStyle(item.id, 'horizontal')}
+            dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
+          />
+          <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
+            {usageSummaryLoading
+              ? <Skeleton width={64} height={20} radius="xl" />
+              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
+          </Box>
+        </Box>
       </Grid.Col>
     );
   };
@@ -654,7 +720,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
         <Group gap="md" wrap="wrap">
           <Text fw={700} c="white">Media</Text>
-          <Text size="sm" c="dimmed">({media.length} items)</Text>
+          <Text size="sm" c="dimmed">({displayedMedia.length}{orphanFilter ? ` / ${media.length}` : ''} items)</Text>
         </Group>
         <Group gap="sm" wrap="wrap" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
           {/* View Mode Toggle */}
@@ -683,6 +749,15 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
               ]}
             />
           )}
+          <Tooltip label="Show only items exclusive to this campaign">
+            <Switch
+              size="xs"
+              label="Exclusive only"
+              checked={orphanFilter}
+              onChange={(e) => setOrphanFilter(e.currentTarget.checked)}
+              aria-label="Show only media exclusive to this campaign"
+            />
+          </Tooltip>
           <Button
             variant="subtle"
             leftSection={<IconRefresh size={18} />}
@@ -725,6 +800,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                       <Table.Th>Caption</Table.Th>
                       <Table.Th>Type</Table.Th>
                       <Table.Th>Source</Table.Th>
+                      <Table.Th w={100}>Usage</Table.Th>
                       <Table.Th w={180}>Actions</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
@@ -759,7 +835,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
           ) : (
             <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
               <Grid>
-                {media.map((item) => (
+                {displayedMedia.map((item) => (
                   <SortableGridItem key={item.id} item={item} />
                 ))}
               </Grid>
@@ -825,6 +901,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         onClose={() => setDeleteItem(null)}
         deleteItem={deleteItem}
         onConfirm={confirmDelete}
+        usageCount={Math.max(0, (usageSummary[deleteItem?.id ?? ''] ?? 1) - 1)}
       />
     </div>
   );

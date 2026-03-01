@@ -5,6 +5,7 @@ import { CampaignCard } from './CampaignCard';
 import { OverlayArrows } from '@/components/Campaign/OverlayArrows';
 import { DotNavigator } from '@/components/Campaign/DotNavigator';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
+import type { ApiClient } from '@/services/apiClient';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/Campaign/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -20,6 +21,7 @@ interface CardGalleryProps {
   onEditCampaign?: (campaign: Campaign) => void;
   onArchiveCampaign?: (campaign: Campaign) => void;
   onAddExternalMedia?: (campaign: Campaign) => void;
+  apiClient?: ApiClient;
 }
 
 export function CardGallery({
@@ -33,6 +35,7 @@ export function CardGallery({
   onEditCampaign,
   onArchiveCampaign,
   onAddExternalMedia,
+  apiClient,
 }: CardGalleryProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   // Keep a ref to the last campaign so CampaignViewer stays mounted during close animation
@@ -297,6 +300,7 @@ export function CardGallery({
                   hasAccess={hasAccess(campaign.id, campaign.visibility)}
                   onClick={() => setSelectedCampaign(campaign)}
                   settings={galleryBehaviorSettings}
+                  apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
                 />
               ))}
             </SimpleGrid>

@@ -23,6 +23,8 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } from '@tabler/icons-react';
 import { CampaignSelector, type CampaignSelectItem } from '@/components/shared/CampaignSelector';
+import { PendingRequestsPanel } from './PendingRequestsPanel';
+import type { ApiClient } from '@/services/apiClient';
 
 type AccessViewMode = 'campaign' | 'company' | 'all';
 
@@ -83,6 +85,7 @@ interface AccessTabProps {
   onGrantAccess: () => void;
   accessSaving: boolean;
   onQuickAddUser: () => void;
+  apiClient?: ApiClient;
 }
 
 export function AccessTab({
@@ -118,6 +121,7 @@ export function AccessTab({
   onGrantAccess,
   accessSaving,
   onQuickAddUser,
+  apiClient,
 }: AccessTabProps) {
   return (
     <>
@@ -287,6 +291,16 @@ export function AccessTab({
               </ScrollArea>
             )}
           </Card>
+
+          {/* P18-I: Access Request Workflow */}
+          {accessViewMode === 'campaign' && accessCampaignId && apiClient && (
+            <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
+              <PendingRequestsPanel
+                campaignId={accessCampaignId}
+                apiClient={apiClient}
+              />
+            </Card>
+          )}
 
           {/* Grant Access Form - Unified and compact */}
           <Card shadow="sm" withBorder p={{ base: 'sm', md: 'md' }}>

@@ -51,6 +51,8 @@ export interface AdminCampaign {
   imageAdapterId?: string;
   /** Per-campaign video gallery adapter override. */
   videoAdapterId?: string;
+  /** P18-H: Category names assigned to this campaign. */
+  categories?: string[];
 }
 
 interface ApiCampaignResponse {

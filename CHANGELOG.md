@@ -5,6 +5,43 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-03-01
+
+### Added - Phase 18: Admin Power Features, Coverage & Canvas Polish
+
+- **P18-QA JS** (`e996fb5`): 841 tests; functions threshold 41%→66.5%; all thresholds green (statements 75%, branches 60%, functions 60%, lines 75%).
+- **P18-QA PHP** (`477521f`): 117 tests / 303 assertions; new `WPSG_Rate_Limiter_Test`, `WPSG_Embed_Test`, Campaign REST edge cases.
+- **P18-A Zoomable Canvas** (`1f2bc57`): `react-zoom-pan-pinch`; `CanvasTransformContext`; hand tool; zoom % indicator; Rnd scale fix.
+- **P18-B Bulk Actions** (`e392e8a`): `POST /campaigns/batch`; `BulkActionsBar`; select-mode toggle; `handleBulkArchive`/`handleBulkRestore`.
+- **P18-C Campaign Duplication** (`e392e8a`): `POST /campaigns/{id}/duplicate`; `CampaignDuplicateModal`; Clone button in campaign list.
+- **P18-D Export/Import JSON** (`d5859ff`): `GET /campaigns/{id}/export`; `POST /campaigns/import`; `CampaignImportModal`; `CampaignExportPayload` type.
+- **P18-E Keyboard Shortcuts** (`d5859ff`): `KeyboardShortcutsModal`; `useHotkeys` bindings (`?`, `mod+n`, `mod+i`, `mod+shift+a`).
+- **P18-F Analytics Dashboard** (`588c85e`): `wpsg_analytics_events` DB table; `POST /analytics/event` (rate-limited, IP-hashed); `GET /analytics/campaigns/{id}`; recharts `AnalyticsDashboard` (lazy-loaded).
+- **P18-G Media Usage Tracking**: `GET /media/{id}/usage`; `GET /media/usage-summary`; `MediaUsageBadge` popover; orphan filter; delete guard.
+- **P18-H Campaign Categories**: `wpsg_campaign_category` taxonomy; `GET /campaign-categories`; `categories[]` in create/update; `TagsInput` in form; `Chip.Group` filter pills.
+- **P18-I Access Request Workflow** (`4a5712a`): `POST /campaigns/{id}/access-requests` (submit); `GET /campaigns/{id}/access-requests` (admin list); `POST …/approve` + `POST …/deny` action endpoints; per-token WP options storage with `wpsg_access_request_index` (no custom DB table); `RequestAccessForm`; `PendingRequestsPanel`; `QuickAddUserModal`; approval email flow.
+- **P18-X Code Size Reduction** (`2b093b4`): `App.tsx` 808→346 lines; `AdminPanel.tsx` 1168→390 lines; 8 new hooks extracted.
+
+## [0.15.0] - 2026-02-26
+
+### Added - Phase 17: Builder UX — Design Assets Consolidation & Dockable Panels
+
+- **P17-F**: Type rename pre-work — `overlay` → `graphicLayer` throughout codebase (~15 files).
+- **P17-B**: `AssetUploader` sub-component extracted from `LayoutBuilderModal`.
+- **P17-C**: Media slot drop guard — prevents non-image drops on image-typed slots.
+- **P17-D**: `GraphicLayerPropertiesPanel` — dedicated properties panel for graphic layers (position, size, opacity, blend mode, z-index).
+- **P17-A**: Design assets consolidation in `LayoutBuilderModal` — unified left panel with tabbed interface.
+- **P17-E**: True dockable panels via `dockview` (~38 KB gzip) — resizable/detachable builder panels; `vendor-dockview` chunk split.
+
+## [0.14.0] - 2026-02-25
+
+### Added - Phase 16: Layer System
+
+- **P16-A**: Unified Layer Panel — `buildLayerList()` + `getLayerName()` utilities; `LayerPanel` + `LayerRow` components; unified slot + graphic layer list with drag-to-reorder.
+- **P16-B**: State actions — 7 new actions in `useLayoutBuilderState` (lock, unlock, show, hide, move-up, move-down, z-reorder layers).
+- **P16-C**: Canvas locked support — `LayoutCanvas` and `LayoutSlotComponent` respect locked flag; visual locked indicator overlay.
+- **P16-D**: Modal restructure — `LayoutBuilderModal` restructured for layer panel integration; 25 new tests; 564 tests total.
+
 ## [0.13.0] - 2026-02-26
 
 ### Added - Phase 15: Layout Builder (Complete + QA Sprint)

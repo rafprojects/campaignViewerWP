@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '1';
+    const DB_VERSION = '2';
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
@@ -14,7 +14,35 @@ class WPSG_DB {
         }
 
         self::add_indexes();
+        self::maybe_create_analytics_table();
         update_option('wpsg_db_version', self::DB_VERSION);
+    }
+
+    // ── P18-F: Analytics events table ─────────────────────────────────────
+    public static function maybe_create_analytics_table() {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = $wpdb->prefix . 'wpsg_analytics_events';
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            campaign_id  BIGINT UNSIGNED NOT NULL,
+            event_type   VARCHAR(32) NOT NULL DEFAULT 'view',
+            visitor_hash CHAR(64) NOT NULL,
+            occurred_at  DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY campaign_occurred (campaign_id, occurred_at)
+        ) {$charset};";
+
+        dbDelta($sql);
+    }
+
+    // ── P18-F: Analytics helpers ───────────────────────────────────────────
+    public static function get_analytics_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'wpsg_analytics_events';
     }
 
     private static function add_indexes() {

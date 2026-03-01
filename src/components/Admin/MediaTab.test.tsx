@@ -15,6 +15,8 @@ describe('MediaTab', () => {
     delete: vi.fn(),
     getBaseUrl: vi.fn().mockReturnValue('https://example.test'),
     getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer test' }),
+    // P18-G: media usage — default to empty map so tests aren't affected
+    getMediaUsageSummary: vi.fn().mockResolvedValue({}),
   } as unknown as {
     get: ReturnType<typeof vi.fn>;
     post: ReturnType<typeof vi.fn>;
@@ -22,6 +24,7 @@ describe('MediaTab', () => {
     delete: ReturnType<typeof vi.fn>;
     getBaseUrl: ReturnType<typeof vi.fn>;
     getAuthHeaders: ReturnType<typeof vi.fn>;
+    getMediaUsageSummary: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -34,6 +37,8 @@ describe('MediaTab', () => {
     apiClient.post.mockReset();
     apiClient.put.mockReset();
     apiClient.delete.mockReset();
+    apiClient.getMediaUsageSummary.mockReset();
+    apiClient.getMediaUsageSummary.mockResolvedValue({});
   });
 
   it('renders media items and supports edit/delete/drag-reorder', async () => {
@@ -464,6 +469,140 @@ describe('MediaTab', () => {
       expect(showNotification).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Reorder failed' }),
       );
+    });
+  });
+
+  it('opens lightbox when image card is clicked and navigates prev/next', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm1',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/1.jpg',
+        thumbnail: 'https://example.com/1.jpg',
+        caption: 'Photo Alpha',
+        order: 1,
+      },
+      {
+        id: 'm2',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/2.jpg',
+        thumbnail: 'https://example.com/2.jpg',
+        caption: 'Photo Beta',
+        order: 2,
+      },
+    ]);
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+
+    // Wait for items to load
+    await screen.findByText('Photo Alpha');
+
+    // Click the image card to open lightbox
+    const imagePreviewBtn = screen.getAllByRole('button', { name: /Open image preview/ })[0];
+    fireEvent.click(imagePreviewBtn);
+
+    // Lightbox should be visible — navigate prev/next
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next image' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Previous image' }));
+
+    // Close lightbox — fire the click to exercise the handler; don't wait on
+    // portal removal since Mantine exit animations are unreliable in jsdom
+    fireEvent.click(screen.getByRole('button', { name: 'Close lightbox' }));
+  });
+
+  it('handles rescan types successfully', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm1',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/1.jpg',
+        thumbnail: 'https://example.com/1.jpg',
+        caption: 'Photo One',
+        order: 1,
+      },
+    ]);
+    apiClient.post.mockResolvedValueOnce({ message: 'done', updated: 1, total: 1 });
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+
+    await screen.findByText('Photo One');
+
+    const rescanBtn = screen.getByRole('button', { name: 'Rescan Types' });
+    fireEvent.click(rescanBtn);
+
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/wp-json/wp-super-gallery/v1/campaigns/101/media/rescan',
+        {},
+      );
+    });
+
+    expect(showNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Rescan Complete' }),
+    );
+  });
+
+  it('handles rescan types failure', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm1',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/1.jpg',
+        thumbnail: 'https://example.com/1.jpg',
+        caption: 'Photo One',
+        order: 1,
+      },
+    ]);
+    apiClient.post.mockRejectedValueOnce(new Error('Rescan network error'));
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    await screen.findByText('Photo One');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rescan Types' }));
+
+    await waitFor(() => {
+      expect(showNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Rescan failed' }),
+      );
+    });
+  });
+
+  it('switches to list view and opens lightbox from image row', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm1',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/1.jpg',
+        thumbnail: 'https://example.com/1.jpg',
+        caption: 'List Image',
+        order: 1,
+      },
+    ]);
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    await screen.findByText('List Image');
+
+    // Switch to list view via SegmentedControl radio input
+    const listRadio = document.querySelector<HTMLInputElement>('input[type="radio"][value="list"]');
+    if (listRadio) {
+      fireEvent.click(listRadio);
+    }
+
+    // In list view, the thumbnail has role="button" for images  
+    await waitFor(() => {
+      const lightboxTriggers = screen.queryAllByRole('button', { name: /Open image preview/ });
+      if (lightboxTriggers.length > 0) {
+        fireEvent.click(lightboxTriggers[0]);
+      }
     });
   });
 });

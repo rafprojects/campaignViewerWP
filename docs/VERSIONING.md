@@ -12,6 +12,37 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.16.0 (March 1, 2026)
+- **MINOR**: Phase 18 — Admin Power Features, Coverage & Canvas Polish
+  - **P18-QA JS**: 841 tests; functions threshold lifted 41%→66.5%; all Vitest thresholds green.
+  - **P18-QA PHP**: 117 tests / 303 assertions; `WPSG_Rate_Limiter_Test`, `WPSG_Embed_Test`, Campaign REST edge cases.
+  - **P18-A**: Zoomable canvas — `react-zoom-pan-pinch`, `CanvasTransformContext`, hand tool, zoom % indicator, Rnd scale fix.
+  - **P18-B**: Bulk actions — `POST /campaigns/batch`, `BulkActionsBar`, select-mode toggle.
+  - **P18-C**: Campaign duplication — `POST /campaigns/{id}/duplicate`, `CampaignDuplicateModal`.
+  - **P18-D**: Export/Import JSON — `GET /campaigns/{id}/export`, `POST /campaigns/import`, `CampaignImportModal`.
+  - **P18-E**: Keyboard shortcuts — `KeyboardShortcutsModal`, `useHotkeys` bindings (`?`, `mod+n`, `mod+i`, `mod+shift+a`).
+  - **P18-F**: Analytics dashboard — `wpsg_analytics_events` table, rate-limited beacon, recharts lazy `AnalyticsDashboard`.
+  - **P18-G**: Media usage tracking — usage badge popover, orphan filter, delete guard.
+  - **P18-H**: Campaign categories — `wpsg_campaign_category` taxonomy, `TagsInput`, `Chip.Group` filter pills.
+  - **P18-I**: Access request workflow — per-token WP options storage with index (no custom DB table); `POST/GET /campaigns/{id}/access-requests`; approve/deny action endpoints; `RequestAccessForm`, `PendingRequestsPanel`, approval email.
+  - **P18-X**: Code size reduction — `App.tsx` 808→346 lines; `AdminPanel.tsx` 1168→390 lines; 8 new hooks.
+
+### v0.15.0 (February 26, 2026)
+- **MINOR**: Phase 17 — Builder UX: Design Assets Consolidation & Dockable Panels
+  - **P17-F**: Type rename — `overlay` → `graphicLayer` throughout codebase (~15 files).
+  - **P17-B**: `AssetUploader` sub-component extracted from `LayoutBuilderModal`.
+  - **P17-C**: Media slot drop guard — prevents non-image drops on image-typed slots.
+  - **P17-D**: `GraphicLayerPropertiesPanel` — position, size, opacity, blend mode, z-index.
+  - **P17-A**: Design assets consolidation — unified left panel tabbing in `LayoutBuilderModal`.
+  - **P17-E**: True dockable panels via `dockview` (~38 KB gzip); `vendor-dockview` chunk split.
+
+### v0.14.0 (February 25, 2026)
+- **MINOR**: Phase 16 — Layer System
+  - **P16-A**: Unified Layer Panel — `buildLayerList()`, `getLayerName()`, `LayerPanel`, `LayerRow` components.
+  - **P16-B**: State actions — 7 new `useLayoutBuilderState` actions (lock/unlock/show/hide/reorder).
+  - **P16-C**: Canvas locked support — `LayoutCanvas` and `LayoutSlotComponent` respect locked flag.
+  - **P16-D**: Modal restructure for layer panel integration; 25 new tests; 564 tests total.
+
 ### v0.13.0 (February 26, 2026)
 - **MINOR**: Phase 15 — Layout Builder (all 6 sprints + QA Sprint)
   - **P15-A**: Per-breakpoint gallery selection — 6-way adapter config (desktop/tablet/mobile × image/video), `useBreakpoint` container-width hook.
@@ -178,6 +209,11 @@ Current development follows a phased approach:
 - **Phase 11**: ✅ Complete (UX & Discovery Improvements — v0.9.0 release)
 - **Phase 12**: ✅ Complete (Gallery Extensibility & Advanced Experience — v0.10.0 close-out)
 - **Phase 13**: ✅ Complete (UX Polish, Performance & Campaign Scheduling — v0.11.0 release)
+- **Phase 14**: ✅ Complete (Infrastructure Hardening — v0.12.0 release)
+- **Phase 15**: ✅ Complete (Layout Builder — v0.13.0 release)
+- **Phase 16**: ✅ Complete (Layer System — v0.14.0 release)
+- **Phase 17**: ✅ Complete (Builder UX — v0.15.0 release)
+- **Phase 18**: ✅ Complete (Admin Power Features, Coverage & Canvas Polish — v0.16.0 release)
 
 ## Branching Strategy
 

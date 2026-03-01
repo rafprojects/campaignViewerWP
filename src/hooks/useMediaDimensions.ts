@@ -26,7 +26,7 @@ const DEFAULT_VIDEO_RATIO = 16 / 9;
 /** Nominal target height used when computing placeholder width from ratio. */
 const PROBE_BASE_HEIGHT = 400;
 
-function buildWithDimensions(item: MediaItem): MediaItemWithDimensions {
+export function buildWithDimensions(item: MediaItem): MediaItemWithDimensions {
   if (item.width && item.height) {
     return item as MediaItemWithDimensions;
   }

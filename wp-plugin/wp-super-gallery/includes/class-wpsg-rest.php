@@ -89,6 +89,81 @@ class WPSG_REST {
             ],
         ]);
 
+        // P18-C: Campaign duplication
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/duplicate', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'duplicate_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P18-B: Bulk campaign actions (archive/restore)
+        register_rest_route('wp-super-gallery/v1', '/campaigns/batch', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'batch_campaigns'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P18-D: Export / Import
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/export', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'export_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/campaigns/import', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'import_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P18-G: Media usage tracking — summary route BEFORE parameterised route
+        register_rest_route('wp-super-gallery/v1', '/media/usage-summary', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_media_usage_summary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/media/(?P<mediaId>[a-zA-Z0-9_.]+)/usage', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_media_usage'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P18-H: Campaign categories
+        register_rest_route('wp-super-gallery/v1', '/campaign-categories', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_campaign_categories'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P18-F: Analytics
+        register_rest_route('wp-super-gallery/v1', '/analytics/event', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'record_analytics_event'],
+                'permission_callback' => [self::class, 'rate_limit_public'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/analytics/campaigns/(?P<id>\d+)', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_campaign_analytics'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
@@ -158,6 +233,36 @@ class WPSG_REST {
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'revoke_access'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P18-I: Access Request Workflow
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'submit_access_request'],
+                'permission_callback' => [self::class, 'rate_limit_public'],
+            ],
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_access_requests'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/approve', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'approve_access_request'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/deny', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'deny_access_request'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -777,6 +882,480 @@ class WPSG_REST {
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
     }
 
+    // ── P18-C: Campaign duplication ───────────────────────────────────────────
+
+    public static function duplicate_campaign() {
+        $request  = func_get_arg(0);
+        $source_id = intval($request->get_param('id'));
+
+        if (!self::campaign_exists($source_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $source   = get_post($source_id);
+        $new_name = sanitize_text_field(
+            $request->get_param('name') ?: ($source->post_title . ' (Copy)')
+        );
+        $copy_media = (bool) $request->get_param('copy_media');
+
+        $new_id = wp_insert_post([
+            'post_type'    => 'wpsg_campaign',
+            'post_title'   => $new_name,
+            'post_content' => $source->post_content,
+            'post_status'  => 'publish',
+        ], true);
+
+        if (is_wp_error($new_id)) {
+            return new WP_REST_Response(['message' => $new_id->get_error_message()], 500);
+        }
+
+        // Copy campaign-specific meta keys (settings + bindings), excluding WP internal meta
+        $meta_keys = [
+            'visibility',
+            'tags',
+            'cover_image',
+            '_wpsg_image_adapter_id',
+            '_wpsg_video_adapter_id',
+            '_wpsg_layout_binding_template_id',
+            '_wpsg_layout_binding',
+        ];
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($source_id, $key, true);
+            if ($value !== '' && $value !== false) {
+                update_post_meta($new_id, $key, $value);
+            }
+        }
+        // Clones always start as draft regardless of source status
+        update_post_meta($new_id, 'status', 'draft');
+
+        // Optionally copy media associations
+        if ($copy_media) {
+            $media_items = get_post_meta($source_id, 'media_items', true);
+            if (is_array($media_items)) {
+                update_post_meta($new_id, 'media_items', $media_items);
+            }
+        }
+
+        // Copy company assignment
+        $company_term = self::get_company_term($source_id);
+        if ($company_term) {
+            wp_set_object_terms($new_id, $company_term->term_id, 'wpsg_company');
+        }
+
+        self::add_audit_entry($new_id, 'campaign.duplicated', [
+            'source_id'  => $source_id,
+            'copy_media' => $copy_media,
+        ]);
+        self::clear_accessible_campaigns_cache();
+
+        return new WP_REST_Response(self::format_campaign(get_post($new_id)), 201);
+    }
+
+    // ── P18-B: Bulk campaign actions ──────────────────────────────────────────
+
+    public static function batch_campaigns() {
+        $request = func_get_arg(0);
+        $action  = sanitize_text_field($request->get_param('action'));
+        $ids     = $request->get_param('ids');
+
+        $allowed_actions = ['archive', 'restore'];
+        if (!in_array($action, $allowed_actions, true)) {
+            return new WP_REST_Response(['message' => 'Invalid action. Allowed: archive, restore'], 400);
+        }
+        if (!is_array($ids) || empty($ids)) {
+            return new WP_REST_Response(['message' => 'ids must be a non-empty array'], 400);
+        }
+
+        $success = [];
+        $failed  = [];
+        $new_status = $action === 'archive' ? 'archived' : 'active';
+
+        foreach ($ids as $raw_id) {
+            $post_id = intval($raw_id);
+            if (!self::campaign_exists($post_id)) {
+                $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
+                continue;
+            }
+            update_post_meta($post_id, 'status', $new_status);
+            self::add_audit_entry($post_id, "campaign.{$action}d", []);
+            $success[] = (string) $post_id;
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['success' => $success, 'failed' => $failed], 200);
+    }
+
+    // P18-D: Export a single campaign as a self-contained JSON payload.
+    public static function export_campaign() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $post      = get_post($post_id);
+        $campaign  = self::format_campaign($post);
+        $media     = get_post_meta($post_id, 'media_items', true) ?: [];
+
+        // Embed layout template by value so export is self-contained.
+        $template_id  = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
+        $layout_template = null;
+        if ($template_id) {
+            $tmpl = get_post(intval($template_id));
+            if ($tmpl) {
+                $layout_template = [
+                    'id'          => (string) $tmpl->ID,
+                    'title'       => $tmpl->post_title,
+                    'slots'       => get_post_meta($tmpl->ID, 'slots', true) ?: [],
+                    'background'  => get_post_meta($tmpl->ID, 'background', true) ?: [],
+                    'graphicLayers' => get_post_meta($tmpl->ID, 'graphic_layers', true) ?: [],
+                ];
+            }
+        }
+
+        $payload = [
+            'version'          => 1,
+            'exported_at'      => gmdate('c'),
+            'campaign'         => $campaign,
+            'layout_template'  => $layout_template,
+            'media_references' => array_values(array_map(function ($item) {
+                return ['id' => $item['id'] ?? '', 'url' => $item['url'] ?? '', 'title' => $item['title'] ?? ''];
+            }, $media)),
+        ];
+
+        $response = new WP_REST_Response($payload, 200);
+        $response->header('Content-Disposition', 'attachment; filename="campaign-' . $post_id . '.json"');
+        return $response;
+    }
+
+    // P18-D: Import a campaign from a JSON export payload.
+    public static function import_campaign() {
+        $request = func_get_arg(0);
+        $body    = $request->get_json_params();
+
+        if (empty($body) || !isset($body['campaign'])) {
+            return new WP_REST_Response(['message' => 'Invalid payload: missing campaign key'], 400);
+        }
+        $version = intval($body['version'] ?? 0);
+        if ($version !== 1) {
+            return new WP_REST_Response(['message' => 'Unsupported export version'], 400);
+        }
+
+        $src = $body['campaign'];
+        $title = sanitize_text_field($src['title'] ?? 'Imported Campaign');
+        $description = sanitize_textarea_field($src['description'] ?? '');
+
+        $post_id = wp_insert_post([
+            'post_title'   => $title,
+            'post_content' => $description,
+            'post_type'    => 'wpsg_campaign',
+            'post_status'  => 'publish',
+        ], true);
+        if (is_wp_error($post_id)) {
+            return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
+        }
+
+        // Copy scalar meta fields; always import as draft.
+        $meta_map = [
+            'visibility'   => 'visibility',
+            'tags'         => 'tags',
+            'coverImage'   => 'cover_image',
+            'publishAt'    => 'publish_at',
+            'unpublishAt'  => 'unpublish_at',
+            'imageAdapterId' => '_wpsg_image_adapter_id',
+            'videoAdapterId' => '_wpsg_video_adapter_id',
+        ];
+        update_post_meta($post_id, 'status', 'draft');
+        foreach ($meta_map as $src_key => $meta_key) {
+            if (!empty($src[$src_key])) {
+                if ($src_key === 'tags' && is_array($src[$src_key])) {
+                    update_post_meta($post_id, $meta_key, array_values(array_map('sanitize_text_field', $src[$src_key])));
+                } else {
+                    update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
+                }
+            }
+        }
+
+        // Embed layout binding by value if provided.
+        $layout_template = $body['layout_template'] ?? null;
+        if ($layout_template) {
+            $tmpl_id = wp_insert_post([
+                'post_title'  => sanitize_text_field($layout_template['title'] ?? 'Imported Template'),
+                'post_type'   => 'wpsg_layout_template',
+                'post_status' => 'publish',
+            ]);
+            if (!is_wp_error($tmpl_id)) {
+                update_post_meta($tmpl_id, 'slots', $layout_template['slots'] ?? []);
+                update_post_meta($tmpl_id, 'background', $layout_template['background'] ?? []);
+                update_post_meta($tmpl_id, 'graphic_layers', $layout_template['graphicLayers'] ?? []);
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id);
+                if (!empty($src['layoutBinding'])) {
+                    update_post_meta($post_id, '_wpsg_layout_binding', $src['layoutBinding']);
+                }
+            }
+        }
+
+        // Import media references (URL-only, no binary transfer).
+        $media_refs = $body['media_references'] ?? [];
+        if (is_array($media_refs) && !empty($media_refs)) {
+            $media_items = array_values(array_map(function ($ref) {
+                return [
+                    'id'    => sanitize_text_field($ref['id'] ?? wp_generate_uuid4()),
+                    'url'   => esc_url_raw($ref['url'] ?? ''),
+                    'title' => sanitize_text_field($ref['title'] ?? ''),
+                    'type'  => 'image',
+                    'source' => 'url',
+                    'order' => 0,
+                ];
+            }, $media_refs));
+            update_post_meta($post_id, 'media_items', $media_items);
+        }
+
+        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title]);
+        $new_post = get_post($post_id);
+        return new WP_REST_Response(self::format_campaign($new_post), 201);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // P18-F: Analytics
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * POST /analytics/event
+     * Public endpoint (rate-limited). Accepts { campaign_id, event_type }.
+     * Requires `enable_analytics` setting to be truthy.
+     */
+    public static function record_analytics_event() {
+        $request = func_get_arg(0);
+
+        // Respect the enable_analytics setting (default: disabled).
+        $settings = get_option('wpsg_settings', []);
+        if (empty($settings['enable_analytics'])) {
+            return new WP_REST_Response(['message' => 'Analytics disabled'], 403);
+        }
+
+        $campaign_id = intval($request->get_param('campaign_id'));
+        $event_type  = sanitize_text_field($request->get_param('event_type') ?? 'view');
+
+        if ($campaign_id <= 0) {
+            return new WP_REST_Response(['message' => 'Invalid campaign_id'], 400);
+        }
+        if (!self::campaign_exists($campaign_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $allowed_events = ['view'];
+        if (!in_array($event_type, $allowed_events, true)) {
+            $event_type = 'view';
+        }
+
+        global $wpdb;
+        $ip   = $_SERVER['REMOTE_ADDR'] ?? '';
+        $salt = wp_salt('auth');
+        $hash = hash('sha256', $ip . $salt);
+
+        $table = WPSG_DB::get_analytics_table();
+        $wpdb->insert($table, [
+            'campaign_id'  => $campaign_id,
+            'event_type'   => $event_type,
+            'visitor_hash' => $hash,
+            'occurred_at'  => current_time('mysql', true),
+        ], ['%d', '%s', '%s', '%s']);
+
+        return new WP_REST_Response(['recorded' => true], 201);
+    }
+
+    /**
+     * GET /analytics/campaigns/{id}?from=YYYY-MM-DD&to=YYYY-MM-DD
+     * Admin-only. Returns total_views, unique_visitors, daily breakdown.
+     */
+    public static function get_campaign_analytics() {
+        $request     = func_get_arg(0);
+        $campaign_id = intval($request->get_param('id'));
+
+        if (!self::campaign_exists($campaign_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $from = sanitize_text_field($request->get_param('from') ?? '');
+        $to   = sanitize_text_field($request->get_param('to') ?? '');
+
+        // Default: last 30 days.
+        $to_ts   = $to   ? strtotime($to)   : time();
+        $from_ts = $from ? strtotime($from) : strtotime('-30 days', $to_ts);
+        if (!$from_ts || !$to_ts || $from_ts > $to_ts) {
+            return new WP_REST_Response(['message' => 'Invalid date range'], 400);
+        }
+
+        $from_str = gmdate('Y-m-d 00:00:00', $from_ts);
+        $to_str   = gmdate('Y-m-d 23:59:59', $to_ts);
+
+        global $wpdb;
+        $table = WPSG_DB::get_analytics_table();
+
+        // Aggregate per day.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT
+                    DATE(occurred_at) AS date,
+                    COUNT(*) AS views,
+                    COUNT(DISTINCT visitor_hash) AS unique_visitors
+                FROM {$table}
+                WHERE campaign_id = %d
+                  AND event_type = 'view'
+                  AND occurred_at BETWEEN %s AND %s
+                GROUP BY DATE(occurred_at)
+                ORDER BY date ASC",
+                $campaign_id,
+                $from_str,
+                $to_str
+            ),
+            ARRAY_A
+        );
+
+        $total_views   = array_sum(array_column($rows, 'views'));
+        $total_unique  = 0;
+        if (!empty($rows)) {
+            $total_unique = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(DISTINCT visitor_hash) FROM {$table}
+                     WHERE campaign_id = %d AND event_type = 'view'
+                       AND occurred_at BETWEEN %s AND %s",
+                    $campaign_id,
+                    $from_str,
+                    $to_str
+                )
+            );
+        }
+
+        return new WP_REST_Response([
+            'total_views'      => (int) $total_views,
+            'unique_visitors'  => $total_unique,
+            'daily'            => array_map(function ($row) {
+                return [
+                    'date'    => $row['date'],
+                    'views'   => (int) $row['views'],
+                    'unique'  => (int) $row['unique_visitors'],
+                ];
+            }, $rows),
+        ], 200);
+    }
+
+    /**
+     * GET /media/{mediaId}/usage
+     * Returns which campaigns reference this media item.
+     */
+    public static function get_media_usage() {
+        $request  = func_get_arg(0);
+        $media_id = sanitize_text_field($request->get_param('mediaId'));
+
+        if (empty($media_id)) {
+            return new WP_REST_Response(['message' => 'mediaId is required'], 400);
+        }
+
+        $campaigns = get_posts([
+            'post_type'      => WPSG_CPT::POST_TYPE,
+            'posts_per_page' => -1,
+            'post_status'    => ['publish', 'draft', 'private'],
+        ]);
+
+        $found = [];
+        foreach ($campaigns as $campaign) {
+            $items = get_post_meta($campaign->ID, 'media_items', true);
+            if (!is_array($items)) {
+                continue;
+            }
+            foreach ($items as $item) {
+                if (($item['id'] ?? '') === $media_id) {
+                    $found[] = ['id' => strval($campaign->ID), 'title' => $campaign->post_title];
+                    break; // at most once per campaign
+                }
+            }
+        }
+
+        return new WP_REST_Response(['count' => count($found), 'campaigns' => $found], 200);
+    }
+
+    /**
+     * GET /media/usage-summary?ids[]=id1&ids[]=id2...
+     * Returns a map { mediaId: count } for the given IDs.
+     */
+    public static function get_media_usage_summary() {
+        $request = func_get_arg(0);
+        $ids     = $request->get_param('ids');
+
+        if (!is_array($ids) || empty($ids)) {
+            return new WP_REST_Response((object)[], 200);
+        }
+
+        $ids = array_values(array_unique(array_map('sanitize_text_field', $ids)));
+        if (count($ids) > 200) {
+            return new WP_REST_Response(['message' => 'Too many IDs (max 200)'], 400);
+        }
+
+        $id_set = array_fill_keys($ids, 0);
+
+        $campaigns = get_posts([
+            'post_type'      => WPSG_CPT::POST_TYPE,
+            'posts_per_page' => -1,
+            'post_status'    => ['publish', 'draft', 'private'],
+        ]);
+
+        foreach ($campaigns as $campaign) {
+            $items = get_post_meta($campaign->ID, 'media_items', true);
+            if (!is_array($items)) {
+                continue;
+            }
+            $seen = [];
+            foreach ($items as $item) {
+                $mid = $item['id'] ?? '';
+                // Count each campaign only once per media ID
+                if (isset($id_set[$mid]) && !in_array($mid, $seen, true)) {
+                    $id_set[$mid]++;
+                    $seen[] = $mid;
+                }
+            }
+        }
+
+        return new WP_REST_Response((object)$id_set, 200);
+    }
+
+    /**
+     * P18-H helper: return category names for a campaign post.
+     */
+    private static function get_campaign_category_names($post_id) {
+        $terms = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'names']);
+        return is_array($terms) && !is_wp_error($terms) ? array_values($terms) : [];
+    }
+
+    /**
+     * GET /campaign-categories
+     * Returns all wpsg_campaign_category terms (id, name, slug, count).
+     */
+    public static function list_campaign_categories() {
+        $terms = get_terms([
+            'taxonomy'   => 'wpsg_campaign_category',
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ]);
+
+        if (is_wp_error($terms)) {
+            return new WP_REST_Response(['message' => 'Failed to retrieve categories'], 500);
+        }
+
+        $result = array_map(function ($term) {
+            return [
+                'id'    => strval($term->term_id),
+                'name'  => $term->name,
+                'slug'  => $term->slug,
+                'count' => (int) $term->count,
+            ];
+        }, $terms);
+
+        return new WP_REST_Response($result, 200);
+    }
+
     public static function list_media() {
         $start = microtime(true);
         $request = func_get_arg(0);
@@ -1053,6 +1632,301 @@ class WPSG_REST {
         ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
+    }
+
+    // -------------------------------------------------------------------------
+    // P18-I: Access Request Workflow helpers
+    // -------------------------------------------------------------------------
+
+    /** Return the option name for a single request. */
+    private static function access_request_option(string $token): string {
+        return 'wpsg_access_request_' . $token;
+    }
+
+    /** Retrieve the stored request data for $token, or null if not found. */
+    private static function get_access_request(string $token): ?array {
+        $data = get_option(self::access_request_option($token), null);
+        return is_array($data) ? $data : null;
+    }
+
+    /** Persist the request data and ensure the global index contains $token. */
+    private static function save_access_request(string $token, array $data): void {
+        update_option(self::access_request_option($token), $data, false);
+        $index = get_option('wpsg_access_request_index', []);
+        if (!is_array($index)) {
+            $index = [];
+        }
+        if (!in_array($token, $index, true)) {
+            $index[] = $token;
+            update_option('wpsg_access_request_index', $index, false);
+        }
+    }
+
+    /** Remove a request from storage and from the global index. */
+    private static function delete_access_request(string $token): void {
+        delete_option(self::access_request_option($token));
+        $index = get_option('wpsg_access_request_index', []);
+        if (!is_array($index)) {
+            return;
+        }
+        $index = array_values(array_diff($index, [$token]));
+        update_option('wpsg_access_request_index', $index, false);
+    }
+
+    // -------------------------------------------------------------------------
+    // P18-I: Handler methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * POST /campaigns/{id}/access-requests
+     * Public (rate-limited) — submit an access request by email.
+     */
+    public static function submit_access_request() {
+        $request    = func_get_arg(0);
+        $post_id    = intval($request->get_param('id'));
+        $email      = sanitize_email($request->get_param('email') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+        if (!is_email($email)) {
+            return new WP_REST_Response(['message' => 'A valid email address is required'], 400);
+        }
+
+        // 24-hour cooldown per email per campaign for previously denied requests
+        $index = get_option('wpsg_access_request_index', []);
+        if (is_array($index)) {
+            foreach ($index as $existing_token) {
+                $data = self::get_access_request((string) $existing_token);
+                if (
+                    $data &&
+                    intval($data['campaign_id']) === $post_id &&
+                    strtolower($data['email']) === strtolower($email)
+                ) {
+                    if ($data['status'] === 'pending') {
+                        return new WP_REST_Response([
+                            'message' => 'A request for this email is already pending.',
+                        ], 409);
+                    }
+                    if ($data['status'] === 'denied') {
+                        $cooldown_seconds = 24 * 60 * 60;
+                        $elapsed = time() - strtotime($data['requested_at']);
+                        if ($elapsed < $cooldown_seconds) {
+                            return new WP_REST_Response([
+                                'message' => 'Please wait 24 hours before submitting another request.',
+                            ], 429);
+                        }
+                        // Remove stale denied request so a fresh one can be created
+                        self::delete_access_request((string) $existing_token);
+                    }
+                }
+            }
+        }
+
+        $token = wp_generate_uuid4();
+        $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
+        $now    = gmdate('c');
+
+        $data = [
+            'token'        => $token,
+            'email'        => $email,
+            'campaign_id'  => $post_id,
+            'status'       => 'pending',
+            'requested_at' => $now,
+        ];
+        self::save_access_request($token, $data);
+
+        // Confirmation email to the requester
+        $site_name = get_bloginfo('name');
+        wp_mail(
+            $email,
+            sprintf('[%s] Access Request Received — %s', $site_name, $campaign_title),
+            sprintf(
+                "Hello,\n\nYour access request for \"%s\" has been received.\nAn administrator will review your request shortly.\n\nThank you,\n%s",
+                $campaign_title,
+                $site_name
+            )
+        );
+
+        return new WP_REST_Response([
+            'message' => 'Request submitted. Check your email for confirmation.',
+            'token'   => $token,
+        ], 201);
+    }
+
+    /**
+     * GET /campaigns/{id}/access-requests
+     * Admin — list all access requests for a campaign.
+     */
+    public static function list_access_requests() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        $status  = sanitize_text_field($request->get_param('status') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $index  = get_option('wpsg_access_request_index', []);
+        $result = [];
+
+        if (is_array($index)) {
+            foreach ($index as $token) {
+                $data = self::get_access_request((string) $token);
+                if (!$data) {
+                    continue;
+                }
+                if (intval($data['campaign_id']) !== $post_id) {
+                    continue;
+                }
+                if ($status && $data['status'] !== $status) {
+                    continue;
+                }
+                $result[] = [
+                    'token'        => $data['token'],
+                    'email'        => $data['email'],
+                    'campaign_id'  => $data['campaign_id'],
+                    'status'       => $data['status'],
+                    'requested_at' => $data['requested_at'],
+                    'resolved_at'  => $data['resolved_at'] ?? null,
+                ];
+            }
+        }
+
+        // Sort newest-first
+        usort($result, function ($a, $b) {
+            return strcmp($b['requested_at'], $a['requested_at']);
+        });
+
+        return new WP_REST_Response($result, 200);
+    }
+
+    /**
+     * POST /campaigns/{id}/access-requests/{token}/approve
+     * Admin — approve a pending access request.
+     */
+    public static function approve_access_request() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        $token   = sanitize_text_field($request->get_param('token') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $data = self::get_access_request($token);
+        if (!$data || intval($data['campaign_id']) !== $post_id) {
+            return new WP_REST_Response(['message' => 'Request not found'], 404);
+        }
+        if ($data['status'] !== 'pending') {
+            return new WP_REST_Response(['message' => 'Request already resolved'], 409);
+        }
+
+        // Provision access: look up or create a WP user for this email
+        $user = get_user_by('email', $data['email']);
+        if (!$user) {
+            $username = sanitize_user(explode('@', $data['email'])[0], true);
+            // Ensure unique username
+            $base = $username ?: 'user';
+            $username = $base;
+            $suffix = 1;
+            while (username_exists($username)) {
+                $username = $base . $suffix++;
+            }
+            $user_id = wp_create_user($username, wp_generate_password(), $data['email']);
+            if (is_wp_error($user_id)) {
+                return new WP_REST_Response(['message' => 'Failed to create user: ' . $user_id->get_error_message()], 500);
+            }
+            $user = get_user_by('ID', $user_id);
+        }
+
+        // Grant access (campaign-level)
+        $grants = get_post_meta($post_id, 'access_grants', true);
+        $grants = is_array($grants) ? $grants : [];
+        $grants = self::upsert_grant($grants, [
+            'userId'    => $user->ID,
+            'campaignId' => $post_id,
+            'source'    => 'campaign',
+            'grantedAt' => gmdate('c'),
+        ]);
+        update_post_meta($post_id, 'access_grants', $grants);
+        self::clear_accessible_campaigns_cache();
+
+        // Update request record
+        $data['status']      = 'approved';
+        $data['resolved_at'] = gmdate('c');
+        self::save_access_request($token, $data);
+
+        self::add_audit_entry($post_id, 'access.request.approved', [
+            'email'  => $data['email'],
+            'userId' => $user->ID,
+            'token'  => $token,
+        ]);
+
+        // Notify requester
+        $site_name      = get_bloginfo('name');
+        $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
+        wp_mail(
+            $data['email'],
+            sprintf('[%s] Access Approved — %s', $site_name, $campaign_title),
+            sprintf(
+                "Hello,\n\nYour access request for \"%s\" has been approved!\nYou can now view the campaign at: %s\n\nThank you,\n%s",
+                $campaign_title,
+                home_url(),
+                $site_name
+            )
+        );
+
+        return new WP_REST_Response(['message' => 'Access request approved'], 200);
+    }
+
+    /**
+     * POST /campaigns/{id}/access-requests/{token}/deny
+     * Admin — deny a pending access request.
+     */
+    public static function deny_access_request() {
+        $request = func_get_arg(0);
+        $post_id = intval($request->get_param('id'));
+        $token   = sanitize_text_field($request->get_param('token') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $data = self::get_access_request($token);
+        if (!$data || intval($data['campaign_id']) !== $post_id) {
+            return new WP_REST_Response(['message' => 'Request not found'], 404);
+        }
+        if ($data['status'] !== 'pending') {
+            return new WP_REST_Response(['message' => 'Request already resolved'], 409);
+        }
+
+        $data['status']      = 'denied';
+        $data['resolved_at'] = gmdate('c');
+        self::save_access_request($token, $data);
+
+        self::add_audit_entry($post_id, 'access.request.denied', [
+            'email' => $data['email'],
+            'token' => $token,
+        ]);
+
+        // Optional denial email
+        $send_denial = apply_filters('wpsg_send_denial_email', true);
+        if ($send_denial) {
+            $site_name      = get_bloginfo('name');
+            $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
+            wp_mail(
+                $data['email'],
+                sprintf('[%s] Access Request Update — %s', $site_name, $campaign_title),
+                sprintf(
+                    "Hello,\n\nUnfortunately your access request for \"%s\" has not been approved at this time.\n\nThank you,\n%s",
+                    $campaign_title,
+                    $site_name
+                )
+            );
+        }
+
+        return new WP_REST_Response(['message' => 'Access request denied'], 200);
     }
 
     /**
@@ -2608,6 +3482,7 @@ class WPSG_REST {
             'status' => (string) get_post_meta($post->ID, 'status', true) ?: 'draft',
             'visibility' => (string) get_post_meta($post->ID, 'visibility', true) ?: 'private',
             'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
+            'categories' => self::get_campaign_category_names($post->ID),
             'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
             'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
             'layoutTemplateId' => get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: null,
@@ -2642,6 +3517,28 @@ class WPSG_REST {
         }
         if (is_array($tags)) {
             update_post_meta($post_id, 'tags', array_values(array_map('sanitize_text_field', $tags)));
+        }
+
+        // P18-H: Campaign categories — resolve names to term IDs, creating missing terms.
+        $categories = $request->get_param('categories');
+        if (is_array($categories)) {
+            $term_ids = [];
+            foreach ($categories as $cat_name) {
+                $cat_name = sanitize_text_field($cat_name);
+                if ($cat_name === '') {
+                    continue;
+                }
+                $term = get_term_by('name', $cat_name, 'wpsg_campaign_category');
+                if ($term && !is_wp_error($term)) {
+                    $term_ids[] = $term->term_id;
+                } else {
+                    $new_term = wp_insert_term($cat_name, 'wpsg_campaign_category');
+                    if (!is_wp_error($new_term)) {
+                        $term_ids[] = $new_term['term_id'];
+                    }
+                }
+            }
+            wp_set_object_terms($post_id, $term_ids, 'wpsg_campaign_category');
         }
         if (!is_null($cover_image_param)) {
             $cover_image = esc_url_raw($cover_image_param);

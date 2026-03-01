@@ -125,4 +125,173 @@ describe('ApiClient', () => {
       value: true,
     });
   });
+
+  it('sends post request with JSON body', async () => {
+    const response: FetchResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({ id: '1', title: 'New' }),
+    };
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(response);
+
+    const client = new ApiClient({ baseUrl });
+    const result = await client.post('/wp-json/wp-super-gallery/v1/campaigns', { title: 'New' });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns`,
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'New' }) }),
+    );
+    expect(result).toEqual({ id: '1', title: 'New' });
+  });
+
+  it('sends postForm request with FormData', async () => {
+    const response: FetchResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    };
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(response);
+
+    const client = new ApiClient({ baseUrl });
+    const fd = new FormData();
+    fd.append('file', new Blob(['test']), 'test.jpg');
+    await client.postForm('/wp-json/wp-super-gallery/v1/media', fd);
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${baseUrl}/wp-json/wp-super-gallery/v1/media`,
+      expect.objectContaining({ method: 'POST', body: fd }),
+    );
+  });
+
+  it('includes error message from response body in ApiError', async () => {
+    const response: FetchResponse = {
+      ok: false,
+      status: 500,
+      json: async () => ({ message: 'Server exploded' }),
+    };
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(response);
+
+    const client = new ApiClient({ baseUrl });
+    await expect(client.get('/any')).rejects.toMatchObject({
+      message: 'Server exploded',
+      status: 500,
+    });
+  });
+
+  describe('Settings API', () => {
+    let client: ApiClient;
+    const okResponse = (data: unknown): FetchResponse => ({
+      ok: true,
+      status: 200,
+      json: async () => data,
+    });
+
+    beforeEach(() => {
+      client = new ApiClient({ baseUrl });
+    });
+
+    it('getSettings calls GET /settings', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ theme: 'dark' }));
+      const result = await client.getSettings();
+      expect(result).toEqual({ theme: 'dark' });
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/settings'),
+        expect.objectContaining({}),
+      );
+    });
+
+    it('updateSettings calls POST /settings', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ theme: 'light' }));
+      const result = await client.updateSettings({ theme: 'light' });
+      expect(result).toEqual({ theme: 'light' });
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/settings'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('testConnection calls GET /campaigns', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ success: true, message: 'ok' }));
+      const result = await client.testConnection();
+      expect(result).toEqual({ success: true, message: 'ok' });
+    });
+  });
+
+  describe('LayoutTemplate API', () => {
+    let client: ApiClient;
+    const okResponse = (data: unknown): FetchResponse => ({
+      ok: true,
+      status: 200,
+      json: async () => data,
+    });
+    const templateBase = '/wp-json/wp-super-gallery/v1/admin/layout-templates';
+
+    beforeEach(() => {
+      client = new ApiClient({ baseUrl });
+    });
+
+    it('getLayoutTemplates calls GET /layout-templates', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse([]));
+      const result = await client.getLayoutTemplates();
+      expect(Array.isArray(result)).toBe(true);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}${templateBase}`,
+        expect.objectContaining({}),
+      );
+    });
+
+    it('getLayoutTemplate calls GET /layout-templates/:id', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ id: 'tpl1' }));
+      await client.getLayoutTemplate('tpl1');
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}${templateBase}/tpl1`,
+        expect.objectContaining({}),
+      );
+    });
+
+    it('createLayoutTemplate calls POST /layout-templates', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ id: 'tpl2' }));
+      await client.createLayoutTemplate({ name: 'New' } as never);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}${templateBase}`,
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('updateLayoutTemplate calls PUT /layout-templates/:id', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ id: 'tpl1', name: 'Updated' }));
+      await client.updateLayoutTemplate('tpl1', { name: 'Updated' } as never);
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}${templateBase}/tpl1`,
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+
+    it('deleteLayoutTemplate calls DELETE /layout-templates/:id', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ deleted: true }));
+      await client.deleteLayoutTemplate('tpl1');
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}${templateBase}/tpl1`,
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+    });
+
+    it('duplicateLayoutTemplate calls POST /layout-templates/:id/duplicate', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ id: 'tpl3' }));
+      await client.duplicateLayoutTemplate('tpl1', 'Copy');
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}${templateBase}/tpl1/duplicate`,
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ name: 'Copy' }) }),
+      );
+    });
+
+    it('getLayoutTemplatePublic calls public endpoint without /admin/', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ id: 'tpl1' }));
+      await client.getLayoutTemplatePublic('tpl1');
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}/wp-json/wp-super-gallery/v1/layout-templates/tpl1`,
+        expect.objectContaining({}),
+      );
+    });
+  });
 });

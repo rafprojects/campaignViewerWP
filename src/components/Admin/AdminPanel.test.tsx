@@ -414,4 +414,52 @@ describe('AdminPanel', () => {
       );
     });
   });
+
+  it('restores an archived campaign', async () => {
+    const apiClient = {
+      get: vi.fn().mockResolvedValue({
+        items: [
+          {
+            id: '999',
+            companyId: 'test',
+            title: 'Archived One',
+            status: 'archived',
+            visibility: 'private',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            tags: [],
+          },
+        ],
+      }),
+      post: vi.fn().mockResolvedValue({}),
+      delete: vi.fn(),
+      put: vi.fn(),
+    } as any;
+    const onNotify = vi.fn();
+
+    render(
+      <AdminPanel
+        apiClient={apiClient}
+        onClose={() => undefined}
+        onCampaignsUpdated={() => undefined}
+        onNotify={onNotify}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+    await screen.findByText('Restore campaign');
+    fireEvent.click(screen.getByRole('button', { name: /Restore campaign Archived One/ }));
+
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/wp-json/wp-super-gallery/v1/campaigns/999/restore',
+        {},
+      );
+    });
+    await waitFor(() => {
+      expect(onNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'success', text: 'Campaign restored.' }),
+      );
+    });
+  }, 20000);
 });

@@ -173,6 +173,104 @@ export class ApiClient {
   async getLayoutTemplatePublic(id: string): Promise<LayoutTemplateResponse> {
     return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/layout-templates/${id}`);
   }
+
+  // ── P18-C: Campaign duplication ─────────────────────────────────────────
+
+  async duplicateCampaign(
+    id: string,
+    options: { name?: string; copyMedia?: boolean },
+  ): Promise<{ id: string; title: string }> {
+    return this.post<{ id: string; title: string }>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${id}/duplicate`,
+      { name: options.name, copy_media: options.copyMedia ?? false },
+    );
+  }
+
+  // ── P18-B: Bulk campaign actions ────────────────────────────────────────
+
+  async batchCampaigns(
+    action: 'archive' | 'restore',
+    ids: string[],
+  ): Promise<{ success: string[]; failed: Array<{ id: string; reason: string }> }> {
+    return this.post<{ success: string[]; failed: Array<{ id: string; reason: string }> }>(
+      '/wp-json/wp-super-gallery/v1/campaigns/batch',
+      { action, ids },
+    );
+  }
+
+  // ── P18-D: Export / Import ───────────────────────────────────────────────
+
+  async exportCampaign(id: string): Promise<CampaignExportPayload> {
+    return this.get<CampaignExportPayload>(`/wp-json/wp-super-gallery/v1/campaigns/${id}/export`);
+  }
+
+  async importCampaign(payload: CampaignExportPayload): Promise<Record<string, unknown>> {
+    return this.post<Record<string, unknown>>('/wp-json/wp-super-gallery/v1/campaigns/import', payload);
+  }
+
+  // ── P18-F: Analytics ────────────────────────────────────────────────────
+
+  async recordAnalyticsEvent(campaignId: string, eventType = 'view'): Promise<void> {
+    await this.post('/wp-json/wp-super-gallery/v1/analytics/event', {
+      campaign_id: campaignId,
+      event_type: eventType,
+    });
+  }
+
+  async getCampaignAnalytics(
+    campaignId: string,
+    from?: string,
+    to?: string,
+  ): Promise<CampaignAnalyticsResponse> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.get<CampaignAnalyticsResponse>(
+      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${campaignId}${qs}`,
+    );
+  }
+
+  // ── P18-G: Media Usage Tracking ─────────────────────────────────────────
+
+  async getMediaUsage(mediaId: string): Promise<MediaUsageResponse> {
+    return this.get<MediaUsageResponse>(
+      `/wp-json/wp-super-gallery/v1/media/${encodeURIComponent(mediaId)}/usage`,
+    );
+  }
+
+  async getMediaUsageSummary(ids: string[]): Promise<Record<string, number>> {
+    if (ids.length === 0) return {};
+    const qs = ids.map((id) => `ids[]=${encodeURIComponent(id)}`).join('&');
+    return this.get<Record<string, number>>(
+      `/wp-json/wp-super-gallery/v1/media/usage-summary?${qs}`,
+    );
+  }
+
+  // ── P18-H: Campaign Categories ───────────────────────────────────────────
+
+  async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
+    return this.get<CampaignCategoryEntry[]>('/wp-json/wp-super-gallery/v1/campaign-categories');
+  }
+
+  // ── P18-I: Access Request Workflow ───────────────────────────────────────
+
+  async submitAccessRequest(campaignId: string, email: string): Promise<{ message: string; token: string }> {
+    return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests`, { email });
+  }
+
+  async listAccessRequests(campaignId: string, status?: string): Promise<AccessRequest[]> {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+    return this.get<AccessRequest[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests${qs}`);
+  }
+
+  async approveAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
+    return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/approve`, {});
+  }
+
+  async denyAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
+    return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/deny`, {});
+  }
 }
 
 export interface SettingsResponse {
@@ -396,6 +494,63 @@ export type SettingsUpdateRequest = Partial<SettingsResponse>;
  * Layout template response type — identical to the TS LayoutTemplate interface.
  */
 export type LayoutTemplateResponse = LayoutTemplate;
+
+/**
+ * P18-D: Campaign export/import payload shape.
+ */
+export interface CampaignExportPayload {
+  version: 1;
+  exported_at: string;
+  campaign: Record<string, unknown>;
+  layout_template: {
+    id: string;
+    title: string;
+    slots: unknown[];
+    background: unknown;
+    graphicLayers: unknown[];
+  } | null;
+  media_references: Array<{ id: string; url: string; title: string }>;
+}
+
+/**
+ * P18-F: Analytics response shape.
+ */
+export interface CampaignAnalyticsDayEntry {
+  date: string;
+  views: number;
+  unique: number;
+}
+export interface CampaignAnalyticsResponse {
+  total_views: number;
+  unique_visitors: number;
+  daily: CampaignAnalyticsDayEntry[];
+}
+
+export interface MediaUsageCampaignRef {
+  id: string;
+  title: string;
+}
+
+export interface MediaUsageResponse {
+  count: number;
+  campaigns: MediaUsageCampaignRef[];
+}
+
+export interface CampaignCategoryEntry {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+}
+
+export interface AccessRequest {
+  token: string;
+  email: string;
+  campaign_id: number;
+  status: 'pending' | 'approved' | 'denied';
+  requested_at: string;
+  resolved_at: string | null;
+}
 
 export class ApiError extends Error {
   status: number;

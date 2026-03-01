@@ -1,7 +1,7 @@
 {
   "name": "wp-super-gallery",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.16.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -36,6 +36,8 @@
     "react-photo-album": "^3.5.0",
     "react-rnd": "^10.5.2",
     "react-window": "^1.8.10",
+    "react-zoom-pan-pinch": "^3.7.0",
+    "recharts": "^3.7.0",
     "swr": "^2.4.0"
   },
   "devDependencies": {
