@@ -9,16 +9,27 @@ class WPSG_Rate_Limiter_Test extends WP_UnitTestCase {
 
     private string $test_ip   = '10.0.0.1';
     private string $endpoint  = 'test_ep';
+    private string|null $original_remote_addr = null;
 
     /** Derive the transient key the way the class does. */
     private function transient_key( string $ip, string $endpoint ): string {
         return WPSG_Rate_Limiter::TRANSIENT_PREFIX . $endpoint . '_' . md5( $ip );
     }
 
+    public function setUp(): void {
+        parent::setUp();
+        $this->original_remote_addr = $_SERVER['REMOTE_ADDR'] ?? null;
+    }
+
     public function tearDown(): void {
         delete_transient( $this->transient_key( $this->test_ip, $this->endpoint ) );
         delete_transient( $this->transient_key( '10.0.0.2', $this->endpoint ) );
         // Restore $_SERVER superglobal state modified by IP tests.
+        if ( $this->original_remote_addr !== null ) {
+            $_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
+        } else {
+            unset( $_SERVER['REMOTE_ADDR'] );
+        }
         unset( $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_X_REAL_IP'] );
         remove_all_filters( 'wpsg_rate_limit_max' );
         remove_all_filters( 'wpsg_rate_limit_window' );

@@ -16,17 +16,14 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
     items: [
       { keys: ['?'], description: 'Open keyboard shortcuts help (this modal)' },
       { keys: ['Escape'], description: 'Close active modal' },
-      { keys: ['/'], description: 'Focus campaign search / filter' },
     ],
   },
   {
     section: 'Campaigns',
     items: [
-      { keys: ['Ctrl', 'N'], description: 'New campaign' },
-      { keys: ['Ctrl', 'D'], description: 'Duplicate focused campaign' },
-      { keys: ['Ctrl', 'E'], description: 'Edit focused campaign' },
-      { keys: ['Ctrl', 'I'], description: 'Import campaign from JSON' },
-      { keys: ['Ctrl', 'Shift', 'A'], description: 'Toggle bulk select mode' },
+      { keys: ['Mod', 'N'], description: 'New campaign' },
+      { keys: ['Mod', 'I'], description: 'Import campaign from JSON' },
+      { keys: ['Mod', 'Shift', 'A'], description: 'Toggle bulk select mode' },
     ],
   },
 ];

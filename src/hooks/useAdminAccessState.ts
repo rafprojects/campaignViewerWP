@@ -187,7 +187,7 @@ export function useAdminAccessState({
         email: quickAddEmail,
         displayName: quickAddName,
         role: quickAddRole,
-        campaignId: quickAddCampaignId ? parseInt(quickAddCampaignId) : 0,
+        campaignId: quickAddCampaignId ? parseInt(quickAddCampaignId, 10) : 0,
         simulateEmailFailure: quickAddTestMode,
       });
       if (response.emailSent) {

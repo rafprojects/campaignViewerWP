@@ -449,7 +449,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
     const ids = media.map((m) => m.id);
     void apiClient.getMediaUsageSummary(ids).then(setUsageSummary).catch(() => {});
-  }, [media, campaignId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [media, campaignId, apiClient]);
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
   const displayedMedia = useMemo(
