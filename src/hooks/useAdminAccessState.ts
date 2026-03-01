@@ -73,6 +73,8 @@ export function useAdminAccessState({
 
   // Search users when debounced query changes
   useEffect(() => {
+    const controller = new AbortController();
+
     const searchUsers = async () => {
       if (!debouncedSearch || debouncedSearch.length < 2) {
         setUserSearchResults([]);
@@ -81,16 +83,20 @@ export function useAdminAccessState({
       setUserSearchLoading(true);
       try {
         const response = await apiClient.get<{ users: WpUser[]; total: number }>(
-          `/wp-json/wp-super-gallery/v1/users/search?search=${encodeURIComponent(debouncedSearch)}`
+          `/wp-json/wp-super-gallery/v1/users/search?search=${encodeURIComponent(debouncedSearch)}`,
+          { signal: controller.signal },
         );
         setUserSearchResults(response.users ?? []);
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         setUserSearchResults([]);
       } finally {
-        setUserSearchLoading(false);
+        if (!controller.signal.aborted) setUserSearchLoading(false);
       }
     };
+
     void searchUsers();
+    return () => controller.abort();
   }, [debouncedSearch, apiClient]);
 
   const handleGrantAccess = useCallback(async () => {
