@@ -89,6 +89,24 @@ class WPSG_REST {
             ],
         ]);
 
+        // P18-C: Campaign duplication
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/duplicate', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'duplicate_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P18-B: Bulk campaign actions (archive/restore)
+        register_rest_route('wp-super-gallery/v1', '/campaigns/batch', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'batch_campaigns'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
@@ -775,6 +793,109 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'campaign.restored', []);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
+    }
+
+    // ── P18-C: Campaign duplication ───────────────────────────────────────────
+
+    public static function duplicate_campaign() {
+        $request  = func_get_arg(0);
+        $source_id = intval($request->get_param('id'));
+
+        if (!self::campaign_exists($source_id)) {
+            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+        }
+
+        $source   = get_post($source_id);
+        $new_name = sanitize_text_field(
+            $request->get_param('name') ?: ($source->post_title . ' (Copy)')
+        );
+        $copy_media = (bool) $request->get_param('copy_media');
+
+        $new_id = wp_insert_post([
+            'post_type'    => 'wpsg_campaign',
+            'post_title'   => $new_name,
+            'post_content' => $source->post_content,
+            'post_status'  => 'publish',
+        ], true);
+
+        if (is_wp_error($new_id)) {
+            return new WP_REST_Response(['message' => $new_id->get_error_message()], 500);
+        }
+
+        // Copy campaign-specific meta keys (settings + bindings), excluding WP internal meta
+        $meta_keys = [
+            'visibility',
+            'tags',
+            'cover_image',
+            '_wpsg_image_adapter_id',
+            '_wpsg_video_adapter_id',
+            '_wpsg_layout_binding_template_id',
+            '_wpsg_layout_binding',
+        ];
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($source_id, $key, true);
+            if ($value !== '' && $value !== false) {
+                update_post_meta($new_id, $key, $value);
+            }
+        }
+        // Clones always start as draft regardless of source status
+        update_post_meta($new_id, 'status', 'draft');
+
+        // Optionally copy media associations
+        if ($copy_media) {
+            $media_items = get_post_meta($source_id, 'media_items', true);
+            if (is_array($media_items)) {
+                update_post_meta($new_id, 'media_items', $media_items);
+            }
+        }
+
+        // Copy company assignment
+        $company_term = self::get_company_term($source_id);
+        if ($company_term) {
+            wp_set_object_terms($new_id, $company_term->term_id, 'wpsg_company');
+        }
+
+        self::add_audit_entry($new_id, 'campaign.duplicated', [
+            'source_id'  => $source_id,
+            'copy_media' => $copy_media,
+        ]);
+        self::clear_accessible_campaigns_cache();
+
+        return new WP_REST_Response(self::format_campaign(get_post($new_id)), 201);
+    }
+
+    // ── P18-B: Bulk campaign actions ──────────────────────────────────────────
+
+    public static function batch_campaigns() {
+        $request = func_get_arg(0);
+        $action  = sanitize_text_field($request->get_param('action'));
+        $ids     = $request->get_param('ids');
+
+        $allowed_actions = ['archive', 'restore'];
+        if (!in_array($action, $allowed_actions, true)) {
+            return new WP_REST_Response(['message' => 'Invalid action. Allowed: archive, restore'], 400);
+        }
+        if (!is_array($ids) || empty($ids)) {
+            return new WP_REST_Response(['message' => 'ids must be a non-empty array'], 400);
+        }
+
+        $success = [];
+        $failed  = [];
+        $new_status = $action === 'archive' ? 'archived' : 'active';
+
+        foreach ($ids as $raw_id) {
+            $post_id = intval($raw_id);
+            if (!self::campaign_exists($post_id)) {
+                $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
+                continue;
+            }
+            update_post_meta($post_id, 'status', $new_status);
+            self::add_audit_entry($post_id, "campaign.{$action}d", []);
+            $success[] = (string) $post_id;
+        }
+
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(['success' => $success, 'failed' => $failed], 200);
     }
 
     public static function list_media() {

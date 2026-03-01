@@ -173,6 +173,30 @@ export class ApiClient {
   async getLayoutTemplatePublic(id: string): Promise<LayoutTemplateResponse> {
     return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/layout-templates/${id}`);
   }
+
+  // ── P18-C: Campaign duplication ─────────────────────────────────────────
+
+  async duplicateCampaign(
+    id: string,
+    options: { name?: string; copyMedia?: boolean },
+  ): Promise<{ id: string; title: string }> {
+    return this.post<{ id: string; title: string }>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${id}/duplicate`,
+      { name: options.name, copy_media: options.copyMedia ?? false },
+    );
+  }
+
+  // ── P18-B: Bulk campaign actions ────────────────────────────────────────
+
+  async batchCampaigns(
+    action: 'archive' | 'restore',
+    ids: string[],
+  ): Promise<{ success: string[]; failed: Array<{ id: string; reason: string }> }> {
+    return this.post<{ success: string[]; failed: Array<{ id: string; reason: string }> }>(
+      '/wp-json/wp-super-gallery/v1/campaigns/batch',
+      { action, ids },
+    );
+  }
 }
 
 export interface SettingsResponse {

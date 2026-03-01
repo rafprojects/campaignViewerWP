@@ -15,13 +15,16 @@ import {
   Title,
   ActionIcon,
   Box,
+  Checkbox,
   useCombobox,
   Tooltip,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff, IconLayoutGrid } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff, IconLayoutGrid, IconCopy, IconArchive } from '@tabler/icons-react';
 import { CampaignFormModal, type CampaignFormState } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
+import { BulkActionsBar } from './BulkActionsBar';
+import { CampaignDuplicateModal } from './CampaignDuplicateModal';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
@@ -175,6 +178,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
+
+  // ── P18-B: Bulk selection ────────────────────────────────────
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<string>>(new Set());
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+
+  // ── P18-C: Duplicate ─────────────────────────────────────────
+  const [duplicateSource, setDuplicateSource] = useState<AdminCampaign | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   // Cleanup blur timeout on unmount
   useEffect(() => {
@@ -501,6 +513,81 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   };
 
+  // ── P18-B: bulk selection handlers ───────────────────────────
+  const handleToggleSelectMode = useCallback(() => {
+    setSelectMode((v) => !v);
+    setSelectedCampaignIds(new Set());
+  }, []);
+
+  const handleToggleCampaignSelect = useCallback((id: string) => {
+    setSelectedCampaignIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedCampaignIds(new Set(campaigns.map((c) => String(c.id))));
+  }, [campaigns]);
+
+  const handleDeselectAll = useCallback(() => setSelectedCampaignIds(new Set()), []);
+
+  const handleBulkArchive = useCallback(async () => {
+    const ids = Array.from(selectedCampaignIds);
+    setIsBulkLoading(true);
+    try {
+      const result = await apiClient.batchCampaigns('archive', ids);
+      const msg = result.failed.length > 0
+        ? `${result.success.length} archived, ${result.failed.length} failed`
+        : `${result.success.length} campaign${result.success.length !== 1 ? 's' : ''} archived`;
+      onNotify({ type: result.failed.length > 0 ? 'error' : 'success', text: msg });
+      setSelectedCampaignIds(new Set());
+      await mutateCampaigns();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk action failed') });
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }, [selectedCampaignIds, apiClient, onNotify, mutateCampaigns, onCampaignsUpdated]);
+
+  const handleBulkRestore = useCallback(async () => {
+    const ids = Array.from(selectedCampaignIds);
+    setIsBulkLoading(true);
+    try {
+      const result = await apiClient.batchCampaigns('restore', ids);
+      const msg = result.failed.length > 0
+        ? `${result.success.length} restored, ${result.failed.length} failed`
+        : `${result.success.length} campaign${result.success.length !== 1 ? 's' : ''} restored`;
+      onNotify({ type: result.failed.length > 0 ? 'error' : 'success', text: msg });
+      setSelectedCampaignIds(new Set());
+      await mutateCampaigns();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk action failed') });
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }, [selectedCampaignIds, apiClient, onNotify, mutateCampaigns, onCampaignsUpdated]);
+
+  // ── P18-C: duplicate handler ──────────────────────────────────
+  const handleDuplicateCampaign = useCallback(async (name: string, copyMedia: boolean) => {
+    if (!duplicateSource) return;
+    setIsDuplicating(true);
+    try {
+      await apiClient.duplicateCampaign(String(duplicateSource.id), { name, copyMedia });
+      onNotify({ type: 'success', text: `"${name}" created` });
+      setDuplicateSource(null);
+      await mutateCampaigns();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Duplication failed') });
+    } finally {
+      setIsDuplicating(false);
+    }
+  }, [duplicateSource, apiClient, onNotify, mutateCampaigns, onCampaignsUpdated]);
+
   const archiveCampaign = async (campaign: AdminCampaign) => {
     const id = String(campaign.id);
     setArchivingIds((prev) => new Set(prev).add(id));
@@ -558,55 +645,79 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   }, [selectedCompanyId, companies]);
 
   const campaignsRows = useMemo(() => {
-    return campaigns.map((c) => (
-      <Table.Tr key={c.id}>
-        <Table.Td>
-          <Box>
-            <Group gap={6}>
-              <Text fw={700}>{c.title}</Text>
-              {(c.imageAdapterId || c.videoAdapterId) && (
-                <Tooltip label={`Custom gallery: ${[c.imageAdapterId && `Image: ${c.imageAdapterId}`, c.videoAdapterId && `Video: ${c.videoAdapterId}`].filter(Boolean).join(', ')}`} withArrow>
-                  <IconLayoutGrid size={14} color="var(--mantine-color-violet-5)" />
-                </Tooltip>
+    return campaigns.map((c) => {
+      const cid = String(c.id);
+      const isSelected = selectedCampaignIds.has(cid);
+      return (
+        <Table.Tr key={c.id} data-selected={isSelected || undefined}>
+          {selectMode && (
+            <Table.Td w={36}>
+              <Checkbox
+                checked={isSelected}
+                onChange={() => handleToggleCampaignSelect(cid)}
+                aria-label={`Select ${c.title}`}
+              />
+            </Table.Td>
+          )}
+          <Table.Td>
+            <Box>
+              <Group gap={6}>
+                <Text fw={700}>{c.title}</Text>
+                {(c.imageAdapterId || c.videoAdapterId) && (
+                  <Tooltip label={`Custom gallery: ${[c.imageAdapterId && `Image: ${c.imageAdapterId}`, c.videoAdapterId && `Video: ${c.videoAdapterId}`].filter(Boolean).join(', ')}`} withArrow>
+                    <IconLayoutGrid size={14} color="var(--mantine-color-violet-5)" />
+                  </Tooltip>
+                )}
+              </Group>
+              <Text size="xs" c="dimmed">{c.description?.slice(0, 120)}</Text>
+            </Box>
+          </Table.Td>
+          <Table.Td>
+            <Group gap={4} wrap="wrap">
+              <Badge color={c.status === 'active' ? 'teal' : c.status === 'archived' ? 'gray' : 'yellow'}>
+                {c.status}
+              </Badge>
+              {(() => {
+                const sched = scheduleLabel(c.publishAt, c.unpublishAt);
+                return sched ? <Badge variant="light" color={sched.color} size="xs">{sched.text}</Badge> : null;
+              })()}
+            </Group>
+          </Table.Td>
+          <Table.Td>
+            <Badge variant="light">{c.visibility}</Badge>
+          </Table.Td>
+          <Table.Td>{c.companyId || '—'}</Table.Td>
+          <Table.Td>
+            <Group gap="xs" wrap="wrap">
+              <Button variant="outline" size="xs" leftSection={<IconEdit size={14} />} onClick={() => handleEdit(c)}>
+                Edit
+              </Button>
+              <Tooltip label="Duplicate campaign">
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  leftSection={<IconCopy size={14} />}
+                  onClick={() => setDuplicateSource(c)}
+                  aria-label={`Duplicate ${c.title}`}
+                >
+                  Clone
+                </Button>
+              </Tooltip>
+              {c.status === 'archived' ? (
+                <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} loading={restoringIds.has(cid)} onClick={() => setConfirmRestore(c)}>
+                  Restore
+                </Button>
+              ) : (
+                <Button color="orange" variant="light" size="xs" leftSection={<IconArchive size={14} />} loading={archivingIds.has(cid)} onClick={() => setConfirmArchive(c)}>
+                  Archive
+                </Button>
               )}
             </Group>
-            <Text size="xs" c="dimmed">{c.description?.slice(0, 120)}</Text>
-          </Box>
-        </Table.Td>
-        <Table.Td>
-          <Group gap={4} wrap="wrap">
-            <Badge color={c.status === 'active' ? 'teal' : c.status === 'archived' ? 'gray' : 'yellow'}>
-              {c.status}
-            </Badge>
-            {(() => {
-              const sched = scheduleLabel(c.publishAt, c.unpublishAt);
-              return sched ? <Badge variant="light" color={sched.color} size="xs">{sched.text}</Badge> : null;
-            })()}
-          </Group>
-        </Table.Td>
-        <Table.Td>
-          <Badge variant="light">{c.visibility}</Badge>
-        </Table.Td>
-        <Table.Td>{c.companyId || '—'}</Table.Td>
-        <Table.Td>
-          <Group gap="xs" wrap="wrap">
-            <Button variant="outline" size="xs" leftSection={<IconEdit size={14} />} onClick={() => handleEdit(c)}>
-              Edit
-            </Button>
-            {c.status === 'archived' ? (
-              <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} loading={restoringIds.has(String(c.id))} onClick={() => setConfirmRestore(c)}>
-                Restore
-              </Button>
-            ) : (
-              <Button color="red" size="xs" leftSection={<IconTrash size={14} />} loading={archivingIds.has(String(c.id))} onClick={() => setConfirmArchive(c)}>
-                Archive
-              </Button>
-            )}
-          </Group>
-        </Table.Td>
-      </Table.Tr>
-    ));
-  }, [campaigns, handleEdit, restoringIds, archivingIds, setConfirmRestore, setConfirmArchive]);
+          </Table.Td>
+        </Table.Tr>
+      );
+    });
+  }, [campaigns, handleEdit, restoringIds, archivingIds, setConfirmRestore, setConfirmArchive, selectMode, selectedCampaignIds, handleToggleCampaignSelect]);
 
   const accessRows = useMemo(() => {
     return accessEntries.map((a) => (
@@ -702,7 +813,27 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             isLoading={isLoading}
             error={error}
             campaignsRows={campaignsRows}
+            selectMode={selectMode}
+            selectedCount={selectedCampaignIds.size}
+            totalCount={campaigns.length}
+            onToggleSelectMode={handleToggleSelectMode}
+            onSelectAll={handleSelectAll}
+            onDeselectAll={handleDeselectAll}
           />
+          {selectMode && selectedCampaignIds.size > 0 && (() => {
+            const selectedCampaigns = campaigns.filter((c) => selectedCampaignIds.has(String(c.id)));
+            const allArchived = selectedCampaigns.every((c) => c.status === 'archived');
+            return (
+              <BulkActionsBar
+                selectedCount={selectedCampaignIds.size}
+                allSelectedArchived={allArchived}
+                isLoading={isBulkLoading}
+                onArchive={handleBulkArchive}
+                onRestore={handleBulkRestore}
+                onClearSelection={handleDeselectAll}
+              />
+            );
+          })()}
         </Tabs.Panel>
 
         {/* Campaign Form Modal */}
@@ -886,6 +1017,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         onSubmit={handleQuickAddUser}
         quickAddSaving={quickAddSaving}
         onNotify={onNotify}
+      />
+
+      {/* P18-C: Campaign duplication */}
+      <CampaignDuplicateModal
+        source={duplicateSource}
+        isSaving={isDuplicating}
+        onConfirm={handleDuplicateCampaign}
+        onClose={() => setDuplicateSource(null)}
       />
     </Card>
   );
