@@ -63,8 +63,12 @@ export function useAdminAccessState({
 
   // Cleanup blur timeout on unmount
   useEffect(() => {
-    const timeoutId = blurTimeoutRef.current;
-    return () => { if (timeoutId) clearTimeout(timeoutId); };
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    };
   }, []);
 
   // Search users when debounced query changes

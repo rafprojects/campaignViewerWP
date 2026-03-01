@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - Phase 18: Admin Power Features, Coverage & Canvas Polish
 
-- **P18-QA JS** (`e996fb5`): 841 tests; functions threshold 41%→66.5%; all thresholds green (statements 70%, branches 60%, functions 60%, lines 70%).
+- **P18-QA JS** (`e996fb5`): 841 tests; functions threshold 41%→66.5%; all thresholds green (statements 75%, branches 60%, functions 60%, lines 75%).
 - **P18-QA PHP** (`477521f`): 117 tests / 303 assertions; new `WPSG_Rate_Limiter_Test`, `WPSG_Embed_Test`, Campaign REST edge cases.
 - **P18-A Zoomable Canvas** (`1f2bc57`): `react-zoom-pan-pinch`; `CanvasTransformContext`; hand tool; zoom % indicator; Rnd scale fix.
 - **P18-B Bulk Actions** (`e392e8a`): `POST /campaigns/batch`; `BulkActionsBar`; select-mode toggle; `handleBulkArchive`/`handleBulkRestore`.

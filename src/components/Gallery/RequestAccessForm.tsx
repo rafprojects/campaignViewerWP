@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Box, Button, Text, TextInput, Stack, Alert } from '@mantine/core';
 import { IconMail, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
@@ -16,7 +17,7 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     setSubmitState('loading');
