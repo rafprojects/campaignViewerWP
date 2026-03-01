@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox } from '@mantine/core';
 import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid } from '@tabler/icons-react';
 import type { AdminCampaign } from '@/hooks/useAdminSWR';
-import type { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
+import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
 
 /** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
 function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string; color: string } | null {
@@ -15,8 +15,6 @@ function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string
   }
   return null;
 }
-
-type CampaignActionsHandle = ReturnType<typeof useAdminCampaignActions>;
 
 interface Options {
   campaigns: AdminCampaign[];

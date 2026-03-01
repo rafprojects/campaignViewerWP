@@ -307,3 +307,5 @@ export function useAdminCampaignActions({ apiClient, campaigns, onMutate, onCamp
     handleImportCampaign,
   };
 }
+
+export type CampaignActionsHandle = ReturnType<typeof useAdminCampaignActions>;

@@ -15,6 +15,7 @@ const defaultFormState: CampaignFormState = {
   layoutTemplateId: '',
   imageAdapterId: '',
   videoAdapterId: '',
+  categories: [],
 };
 
 describe('CampaignFormModal', () => {

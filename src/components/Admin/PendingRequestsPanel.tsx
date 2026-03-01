@@ -22,11 +22,8 @@ interface PendingRequestsPanelProps {
 }
 
 function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? iso : date.toLocaleString();
 }
 
 export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: PendingRequestsPanelProps) {
