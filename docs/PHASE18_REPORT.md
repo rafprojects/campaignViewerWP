@@ -3,7 +3,7 @@
 **Status:** 🔄 In Progress  
 **Version:** v0.16.0  
 **Created:** February 27, 2026  
-**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅; next: P18-D + P18-E
+**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅ P18-D ✅ P18-E ✅; next: P18-F
 
 ### Completed
 
@@ -15,6 +15,8 @@
 | fix(build) tsconfig | `0fe3c10` | Excluded `*.test.ts(x)` and `src/test/` from `tsc -b`; `npm run build:wp` clean |
 | P18-B Bulk Actions | `e392e8a` | `POST /campaigns/batch`; `BulkActionsBar`; `CampaignsTab` select mode; `batchCampaigns()` in apiClient; AdminPanel wired |
 | P18-C Campaign Duplication | `e392e8a` | `POST /campaigns/{id}/duplicate`; `CampaignDuplicateModal`; `duplicateCampaign()` in apiClient; Clone button per row |
+| P18-D Export / Import JSON | `d5859ff` | `GET /campaigns/{id}/export`; `POST /campaigns/import`; `CampaignImportModal`; Export button per row; `CampaignExportPayload` type |
+| P18-E Keyboard Shortcuts | `d5859ff` | `KeyboardShortcutsModal`; `useHotkeys` (?/mod+n/mod+i/mod+shift+a); `<kbd>` shortcut table; keyboard icon in header |
 
 ---
 
@@ -43,11 +45,11 @@
     - [REST endpoint](#rest-endpoint)
     - [PHP implementation sketch](#php-implementation-sketch)
     - [Open questions](#open-questions-1)
-  - [Track P18-D — Export / Import Campaigns as JSON](#track-p18-d--export--import-campaigns-as-json)
+  - [Track P18-D — Export / Import Campaigns as JSON ✅ COMPLETE](#track-p18-d--export--import-campaigns-as-json)
     - [Export](#export)
     - [Import](#import)
     - [Open questions](#open-questions-2)
-  - [Track P18-E — Admin Panel Keyboard Shortcuts](#track-p18-e--admin-panel-keyboard-shortcuts)
+  - [Track P18-E — Admin Panel Keyboard Shortcuts ✅ COMPLETE](#track-p18-e--admin-panel-keyboard-shortcuts)
     - [Shortcut map](#shortcut-map)
     - [Open questions](#open-questions-3)
   - [Track P18-F — Campaign Analytics Dashboard](#track-p18-f--campaign-analytics-dashboard)
@@ -443,7 +445,21 @@ return $new_id;
 
 ---
 
-## Track P18-D — Export / Import Campaigns as JSON
+## Track P18-D — Export / Import Campaigns as JSON ✅ COMPLETE
+
+**Commit:** `d5859ff`  
+**Status:** Complete.
+
+**What was implemented:**
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-rest.php` | `GET /campaigns/{id}/export` — returns self-contained JSON (campaign meta + layout template by value + media references); `POST /campaigns/import` — validates version, creates draft, imports layout template + media references |
+| `src/services/apiClient.ts` | `exportCampaign(id)` + `importCampaign(payload)` methods; `CampaignExportPayload` interface |
+| `src/components/Admin/CampaignImportModal.tsx` | **New** — `FileButton` for `.json`; client-side parse + validation; preview campaign title + media count; Cancel + Import |
+| `src/components/Admin/AdminPanel.tsx` | `handleExportCampaign` (downloads blob); `handleImportCampaign`; Export button per row; Import button in header |
+
+---
 
 **Promoted from FUTURE_TASKS (Track F).**
 
@@ -491,7 +507,28 @@ UI: "Import" button in the campaigns list header opens a file picker (`.json` on
 
 ---
 
-## Track P18-E — Admin Panel Keyboard Shortcuts
+## Track P18-E — Admin Panel Keyboard Shortcuts ✅ COMPLETE
+
+**Commit:** `d5859ff`  
+**Status:** Complete.
+
+**What was implemented:**
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/KeyboardShortcutsModal.tsx` | **New** — grouped shortcut table with `<kbd>` styling; sections: Navigation, Campaigns |
+| `src/components/Admin/AdminPanel.tsx` | `useHotkeys`: `?` → open help; `mod+n` → new campaign; `mod+i` → import; `mod+shift+a` → toggle select mode; keyboard `(?)` icon button in header |
+
+**Shortcuts active in AdminPanel (all disabled when focus is inside an input):**
+
+| Keys | Action |
+|------|--------|
+| `?` | Open shortcuts help modal |
+| `Ctrl/⌘ + N` | New campaign (if modal not already open) |
+| `Ctrl/⌘ + I` | Open import modal |
+| `Ctrl/⌘ + Shift + A` | Toggle bulk select mode |
+
+---
 
 **Promoted from FUTURE_TASKS (Track F).**
 
@@ -788,9 +825,9 @@ After extraction, `AdminPanel.tsx` renders tabs, passes context values, and dele
 | — | **fix(build)** — tsconfig.json excludes test files | — | — | ✅ Done (`0fe3c10`) |
 | 3 | **P18-B** — Bulk actions | None | Low–Medium | ✅ Done (`e392e8a`) |
 | 3 | **P18-C** — Campaign duplication | None | Low | ✅ Done (`e392e8a`) |
-| 4 | **P18-D** — Export / import JSON | P18-C | Low–Medium | ⏳ Next |
-| 5 | **P18-E** — Keyboard shortcuts | None | Low | ⏳ Next |
-| 6 | **P18-F** — Campaign analytics | None | Medium (new DB table, data model) | ❌ Not started |
+| 4 | **P18-D** — Export / import JSON | P18-C | Low–Medium | ✅ Done (`d5859ff`) |
+| 5 | **P18-E** — Keyboard shortcuts | None | Low | ✅ Done (`d5859ff`) |
+| 6 | **P18-F** — Campaign analytics | None | Medium (new DB table, data model) | ⏳ Next |
 | 7 | **P18-G** — Media usage tracking | None | Low | ❌ Not started |
 | 8 | **P18-H** — Campaign categories | None | Low | ❌ Not started |
 | 9 | **P18-I** — Access request workflow | None | Medium | ❌ Not started |
@@ -843,8 +880,8 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 | `src/contexts/CanvasTransformContext.ts` | P18-A | ✅ Created |
 | `src/components/Admin/BulkActionsBar.tsx` | P18-B | ✅ Created |
 | `src/components/Admin/CampaignDuplicateModal.tsx` | P18-C | ✅ Created |
-| `src/components/Admin/Campaign/CampaignExportImport.tsx` | P18-D | ❌ Pending |
-| `src/components/Admin/KeyboardShortcutsModal.tsx` | P18-E | ❌ Pending |
+| `src/components/Admin/CampaignImportModal.tsx` | P18-D | ✅ Created |
+| `src/components/Admin/KeyboardShortcutsModal.tsx` | P18-E | ✅ Created |
 | `src/components/Admin/Analytics/AnalyticsDashboard.tsx` | P18-F | ❌ Pending |
 | `src/components/Admin/Analytics/AnalyticsChart.tsx` | P18-F | ❌ Pending |
 | `src/components/Admin/Media/MediaUsageBadge.tsx` | P18-G | ❌ Pending |
@@ -875,4 +912,4 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 
 ---
 
-*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C complete March 1, 2026. Next: P18-D (Export/Import JSON) + P18-E (Keyboard Shortcuts).*
+*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C complete March 1, 2026. P18-D + P18-E complete March 1, 2026. Next: P18-F (Campaign Analytics Dashboard).*
