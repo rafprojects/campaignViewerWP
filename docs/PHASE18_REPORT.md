@@ -3,7 +3,7 @@
 **Status:** 🔄 In Progress  
 **Version:** v0.16.0  
 **Created:** February 27, 2026  
-**Last updated:** February 28, 2026 — P18-QA ✅ P18-A ✅ tsconfig build fix ✅; next: P18-B + P18-C
+**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅; next: P18-D + P18-E
 
 ### Completed
 
@@ -13,31 +13,70 @@
 | P18-QA PHP | `477521f` | 117 tests / 303 assertions (was 86/251); `RateLimiter`, `Embed`, `Campaign REST` edge cases |
 | P18-A Zoomable Canvas | `1f2bc57` | `react-zoom-pan-pinch` installed; `CanvasTransformContext`; hand tool; zoom % indicator; `<Rnd scale>` fix |
 | fix(build) tsconfig | `0fe3c10` | Excluded `*.test.ts(x)` and `src/test/` from `tsc -b`; `npm run build:wp` clean |
+| P18-B Bulk Actions | `e392e8a` | `POST /campaigns/batch`; `BulkActionsBar`; `CampaignsTab` select mode; `batchCampaigns()` in apiClient; AdminPanel wired |
+| P18-C Campaign Duplication | `e392e8a` | `POST /campaigns/{id}/duplicate`; `CampaignDuplicateModal`; `duplicateCampaign()` in apiClient; Clone button per row |
 
 ---
 
 ## Table of Contents
 
-- [Rationale](#rationale)
-- [Key Decisions (Pre-Resolved)](#key-decisions-pre-resolved)
-- [Architecture Decisions](#architecture-decisions)
-- [Track P18-QA — Coverage Sprint (JS + PHP to ≥ 75 %)](#track-p18-qa--coverage-sprint-js--php-to--75-)
-  - [JS Coverage Gap Analysis (from P17 Addendum)](#js-coverage-gap-analysis-from-p17-addendum)
-  - [PHP Coverage Gap Analysis](#php-coverage-gap-analysis)
-- [Track P18-A — Zoomable Canvas & Hand Tool](#track-p18-a--zoomable-canvas--hand-tool)
-- [Track P18-B — Bulk Actions](#track-p18-b--bulk-actions)
-- [Track P18-C — Campaign Duplication](#track-p18-c--campaign-duplication)
-- [Track P18-D — Export / Import Campaigns as JSON](#track-p18-d--export--import-campaigns-as-json)
-- [Track P18-E — Admin Panel Keyboard Shortcuts](#track-p18-e--admin-panel-keyboard-shortcuts)
-- [Track P18-F — Campaign Analytics Dashboard](#track-p18-f--campaign-analytics-dashboard)
-- [Track P18-G — Media Usage Tracking](#track-p18-g--media-usage-tracking)
-- [Track P18-H — Campaign Categories](#track-p18-h--campaign-categories)
-- [Track P18-I — Access Request Workflow](#track-p18-i--access-request-workflow)
-- [Track P18-X — Code Size Reduction (App + AdminPanel)](#track-p18-x--code-size-reduction-app--adminpanel)
-- [Execution Priority](#execution-priority)
-- [Testing Strategy](#testing-strategy)
-- [Risk Register](#risk-register)
-- [Modified File Inventory (projected)](#modified-file-inventory-projected)
+- [Phase 18 — Admin Power Features, Coverage \& Canvas Polish](#phase-18--admin-power-features-coverage--canvas-polish)
+    - [Completed](#completed)
+  - [Table of Contents](#table-of-contents)
+  - [Rationale](#rationale)
+  - [Key Decisions (Pre-Resolved)](#key-decisions-pre-resolved)
+  - [Architecture Decisions](#architecture-decisions)
+  - [Track P18-QA — Coverage Sprint (JS + PHP to ≥ 75 %) ✅ COMPLETE](#track-p18-qa--coverage-sprint-js--php-to--75---complete)
+    - [JS Coverage — Final Results (commit `e996fb5`)](#js-coverage--final-results-commit-e996fb5)
+    - [JS Coverage Gap Analysis (from P17 Addendum — for reference)](#js-coverage-gap-analysis-from-p17-addendum--for-reference)
+    - [PHP Coverage Gap Analysis](#php-coverage-gap-analysis)
+  - [Track P18-A — Zoomable Canvas \& Hand Tool ✅ COMPLETE](#track-p18-a--zoomable-canvas--hand-tool--complete)
+    - [What was implemented](#what-was-implemented)
+    - [Desired interactions](#desired-interactions)
+  - [Track P18-B — Bulk Actions ✅ COMPLETE](#track-p18-b--bulk-actions)
+    - [Scope](#scope)
+    - [UI](#ui)
+    - [REST: Batch endpoint](#rest-batch-endpoint)
+    - [Open questions](#open-questions)
+  - [Track P18-C — Campaign Duplication ✅ COMPLETE](#track-p18-c--campaign-duplication)
+    - [Clone options (two-step modal)](#clone-options-two-step-modal)
+    - [REST endpoint](#rest-endpoint)
+    - [PHP implementation sketch](#php-implementation-sketch)
+    - [Open questions](#open-questions-1)
+  - [Track P18-D — Export / Import Campaigns as JSON](#track-p18-d--export--import-campaigns-as-json)
+    - [Export](#export)
+    - [Import](#import)
+    - [Open questions](#open-questions-2)
+  - [Track P18-E — Admin Panel Keyboard Shortcuts](#track-p18-e--admin-panel-keyboard-shortcuts)
+    - [Shortcut map](#shortcut-map)
+    - [Open questions](#open-questions-3)
+  - [Track P18-F — Campaign Analytics Dashboard](#track-p18-f--campaign-analytics-dashboard)
+    - [Scope](#scope-1)
+    - [Data model](#data-model)
+    - [Event ingestion](#event-ingestion)
+    - [Aggregation](#aggregation)
+    - [Analytics UI](#analytics-ui)
+    - [Open questions](#open-questions-4)
+  - [Track P18-G — Media Usage Tracking](#track-p18-g--media-usage-tracking)
+    - [Features](#features)
+    - [Implementation](#implementation)
+    - [Open questions](#open-questions-5)
+  - [Track P18-H — Campaign Categories](#track-p18-h--campaign-categories)
+    - [Implementation](#implementation-1)
+  - [Track P18-I — Access Request Workflow](#track-p18-i--access-request-workflow)
+    - [User-facing flow](#user-facing-flow)
+    - [PHP storage](#php-storage)
+    - [Open questions](#open-questions-6)
+  - [Track P18-X — Code Size Reduction (App.tsx + AdminPanel.tsx)](#track-p18-x--code-size-reduction-apptsx--adminpaneltsx)
+    - [App.tsx — target ≤ 300 lines](#apptsx--target--300-lines)
+    - [AdminPanel.tsx — target ≤ 200 lines](#adminpaneltsx--target--200-lines)
+    - [Open questions](#open-questions-7)
+  - [Execution Priority](#execution-priority)
+  - [Testing Strategy](#testing-strategy)
+  - [Risk Register](#risk-register)
+  - [Modified File Inventory (projected)](#modified-file-inventory-projected)
+    - [New files](#new-files)
+    - [Modified files](#modified-files)
 
 ---
 
@@ -279,7 +318,22 @@ Same fix applies to the graphic layer `<Rnd>` wrapper in `LayoutCanvas.tsx`.
 
 ---
 
-## Track P18-B — Bulk Actions
+## Track P18-B — Bulk Actions ✅ COMPLETE
+
+**Commit:** `e392e8a`  
+**Status:** Complete — 839/841 tests green (1 pre-existing SettingsPanel failure unrelated); `npm run build:wp` clean.
+
+**What was implemented:**
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-rest.php` | `POST /campaigns/batch` route + `batch_campaigns()` method (archive\|restore N ids; returns `{success[], failed[]}`) |
+| `src/services/apiClient.ts` | `batchCampaigns(action, ids[])` method |
+| `src/components/Admin/BulkActionsBar.tsx` | **New** — sticky footer bar; shows Archive/Restore based on selection mix; `IconX` clear |
+| `src/components/Admin/CampaignsTab.tsx` | Select-mode toggle button; `<Checkbox>` column with select-all / indeterminate header |
+| `src/components/Admin/AdminPanel.tsx` | `selectMode` + `selectedCampaignIds` state; `handleBulkArchive`/`handleBulkRestore` handlers; `BulkActionsBar` wired into campaigns panel |
+
+---
 
 **Promoted from FUTURE_TASKS (Phase 11 deferred + Track F).**
 
@@ -316,7 +370,21 @@ Partial failures are reported per-item; the UI shows a summary toast with a "Vie
 
 ---
 
-## Track P18-C — Campaign Duplication
+## Track P18-C — Campaign Duplication ✅ COMPLETE
+
+**Commit:** `e392e8a`  
+**Status:** Complete.
+
+**What was implemented:**
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-rest.php` | `POST /campaigns/{id}/duplicate` route + `duplicate_campaign()` method (copies all meta + optional `media_items`; always sets clone to `draft`) |
+| `src/services/apiClient.ts` | `duplicateCampaign(id, {name?, copyMedia?})` method |
+| `src/components/Admin/CampaignDuplicateModal.tsx` | **New** — name `TextInput` pre-filled `"{title} (Copy)"`; copy-media `Switch`; Cancel + Duplicate buttons |
+| `src/components/Admin/AdminPanel.tsx` | `duplicateSource` + `isDuplicating` state; `handleDuplicateCampaign` handler; Clone button per campaign row; `<CampaignDuplicateModal>` mounted |
+
+---
 
 **Promoted from FUTURE_TASKS (Track F).**
 
@@ -718,10 +786,10 @@ After extraction, `AdminPanel.tsx` renders tabs, passes context values, and dele
 | 1 | **P18-QA** — Coverage sprint (JS + PHP ≥ 75 %) | None | Low | ✅ Done (`e996fb5`, `477521f`) |
 | 2 | **P18-A** — Zoomable canvas & hand tool | P18-QA green | Medium | ✅ Done (`1f2bc57`) |
 | — | **fix(build)** — tsconfig.json excludes test files | — | — | ✅ Done (`0fe3c10`) |
-| 3 | **P18-B** — Bulk actions | None | Low–Medium | ⏳ Next |
-| 3 | **P18-C** — Campaign duplication | None | Low | ⏳ Next |
-| 4 | **P18-D** — Export / import JSON | P18-C | Low–Medium | ❌ Not started |
-| 5 | **P18-E** — Keyboard shortcuts | None | Low | ❌ Not started |
+| 3 | **P18-B** — Bulk actions | None | Low–Medium | ✅ Done (`e392e8a`) |
+| 3 | **P18-C** — Campaign duplication | None | Low | ✅ Done (`e392e8a`) |
+| 4 | **P18-D** — Export / import JSON | P18-C | Low–Medium | ⏳ Next |
+| 5 | **P18-E** — Keyboard shortcuts | None | Low | ⏳ Next |
 | 6 | **P18-F** — Campaign analytics | None | Medium (new DB table, data model) | ❌ Not started |
 | 7 | **P18-G** — Media usage tracking | None | Low | ❌ Not started |
 | 8 | **P18-H** — Campaign categories | None | Low | ❌ Not started |
@@ -773,8 +841,8 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 | File | Track | Status |
 |------|-------|--------|
 | `src/contexts/CanvasTransformContext.ts` | P18-A | ✅ Created |
-| `src/components/Admin/LayoutBuilder/BulkActionsBar.tsx` | P18-B | ❌ Pending |
-| `src/components/Admin/Campaign/CampaignDuplicateModal.tsx` | P18-C | ❌ Pending |
+| `src/components/Admin/BulkActionsBar.tsx` | P18-B | ✅ Created |
+| `src/components/Admin/CampaignDuplicateModal.tsx` | P18-C | ✅ Created |
 | `src/components/Admin/Campaign/CampaignExportImport.tsx` | P18-D | ❌ Pending |
 | `src/components/Admin/KeyboardShortcutsModal.tsx` | P18-E | ❌ Pending |
 | `src/components/Admin/Analytics/AnalyticsDashboard.tsx` | P18-F | ❌ Pending |
@@ -800,11 +868,11 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 | `src/App.tsx` | P18-X | Reduce to ≤ 300 lines via hook extraction | ❌ Pending |
 | `src/components/Admin/AdminPanel.tsx` | P18-X | Reduce to ≤ 200 lines via hook extraction | ❌ Pending |
 | `src/main.tsx` | P18-X | Possibly minor adjustments if auth session hook moves | ❌ Pending |
-| `wp-plugin/.../class-wpsg-rest.php` | P18-B, C, D, F, I | Batch endpoint, duplicate, export/import, analytics, access requests | ❌ Pending |
+| `wp-plugin/.../class-wpsg-rest.php` | P18-B, C, D, F, I | Batch endpoint ✅, duplicate ✅, export/import, analytics, access requests | 🔄 In progress |
 | `wp-plugin/.../class-wpsg-db.php` | P18-F | `wpsg_analytics_events` table migration | ❌ Pending |
 | `wp-plugin/.../class-wpsg-settings.php` | P18-F | `enable_analytics` + `analytics_retention_days` settings | ❌ Pending |
 | `wp-plugin/.../wp-super-gallery.php` | P18-H | `register_taxonomy` for `wpsg_campaign_category` | ❌ Pending |
 
 ---
 
-*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. Next: P18-B (Bulk Actions) + P18-C (Campaign Duplication).*
+*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C complete March 1, 2026. Next: P18-D (Export/Import JSON) + P18-E (Keyboard Shortcuts).*
