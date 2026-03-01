@@ -78,6 +78,7 @@ export function useAdminAccessState({
     const searchUsers = async () => {
       if (!debouncedSearch || debouncedSearch.length < 2) {
         setUserSearchResults([]);
+        setUserSearchLoading(false);
         return;
       }
       setUserSearchLoading(true);

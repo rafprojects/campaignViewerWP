@@ -80,6 +80,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
   // P18-G: Media usage tracking
   const [usageSummary, setUsageSummary] = useState<Record<string, number>>({});
+  const [usageSummaryLoading, setUsageSummaryLoading] = useState(false);
   const [orphanFilter, setOrphanFilter] = useState(false);
 
   const sensors = useSensors(
@@ -445,10 +446,14 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   useEffect(() => {
     if (media.length === 0) {
       setUsageSummary({});
+      setUsageSummaryLoading(false);
       return;
     }
     const ids = media.map((m) => m.id);
-    void apiClient.getMediaUsageSummary(ids).then(setUsageSummary).catch(() => {});
+    setUsageSummaryLoading(true);
+    void apiClient.getMediaUsageSummary(ids)
+      .then((data) => { setUsageSummary(data); setUsageSummaryLoading(false); })
+      .catch(() => { setUsageSummaryLoading(false); });
   }, [media, campaignId, apiClient]);
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
@@ -612,11 +617,9 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
         <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
         <Table.Td>
-          <MediaUsageBadge
-            count={usageSummary[item.id] ?? 1}
-            mediaId={item.id}
-            apiClient={apiClient}
-          />
+          {usageSummaryLoading
+            ? <Skeleton width={64} height={20} radius="xl" />
+            : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
         </Table.Td>
         <Table.Td>
           <Group gap={4}>
@@ -676,11 +679,9 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
           />
           <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
-            <MediaUsageBadge
-              count={usageSummary[item.id] ?? 1}
-              mediaId={item.id}
-              apiClient={apiClient}
-            />
+            {usageSummaryLoading
+              ? <Skeleton width={64} height={20} radius="xl" />
+              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
           </Box>
         </Box>
       </Grid.Col>
