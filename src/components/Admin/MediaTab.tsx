@@ -450,10 +450,19 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       return;
     }
     const ids = media.map((m) => m.id);
+    let canceled = false;
     setUsageSummaryLoading(true);
     void apiClient.getMediaUsageSummary(ids)
-      .then((data) => { setUsageSummary(data); setUsageSummaryLoading(false); })
-      .catch(() => { setUsageSummaryLoading(false); });
+      .then((data) => {
+        if (canceled) return;
+        setUsageSummary(data);
+        setUsageSummaryLoading(false);
+      })
+      .catch(() => {
+        if (canceled) return;
+        setUsageSummaryLoading(false);
+      });
+    return () => { canceled = true; };
   }, [media, campaignId, apiClient]);
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)

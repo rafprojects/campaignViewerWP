@@ -152,6 +152,8 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $restore   = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$id}/restore");
         $response  = rest_do_request($restore);
 
-        $this->assertContains($response->get_status(), [200, 400, 422]);
+        // Restore without prior archive — restore_campaign() sets status=active
+        // unconditionally, so the endpoint must always return 200.
+        $this->assertEquals( 200, $response->get_status() );
     }
 }
