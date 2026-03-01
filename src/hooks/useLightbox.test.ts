@@ -98,15 +98,21 @@ describe('useLightbox', () => {
   });
 
   it('keyboard listener is removed when closed', () => {
-    const { result } = renderHook(() => useLightbox({ initialOpen: true }));
+    const onPrev = vi.fn();
+    const onNext = vi.fn();
+    const { result } = renderHook(() =>
+      useLightbox({ initialOpen: true, enableArrowNavigation: true, onPrev, onNext }),
+    );
+    // Close the lightbox — effect should clean up and not re-register the listener
     act(() => {
       result.current.close();
     });
-    const onPrev = vi.fn();
-    // No listener should fire after close
+    // Arrow keys must no longer fire callbacks
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
     });
     expect(onPrev).not.toHaveBeenCalled();
+    expect(onNext).not.toHaveBeenCalled();
   });
 });
