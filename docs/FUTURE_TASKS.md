@@ -27,35 +27,6 @@ This document tracks deferred and exploratory work remaining after Phase 18 is p
 
 ---
 
-### Builder Keyboard Shortcuts (Builder-Specific)
-
-**Context:** P18-E covers admin panel shortcuts only. The builder warrants its own shortcut set — it is a design tool, not a data management UI, and has different interaction conventions.
-
-**Proposed shortcut map:**
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Z` / `Cmd+Z` | Undo |
-| `Ctrl+Shift+Z` / `Cmd+Shift+Z` | Redo |
-| `Ctrl+S` / `Cmd+S` | Save template |
-| `Escape` | Deselect current layer / close floating panel |
-| `Arrow keys` | Nudge selected slot/graphic layer by 1 % |
-| `Shift+Arrow` | Nudge by 10 % |
-| `Delete` / `Backspace` | Remove selected layer (with confirmation) |
-| `[` / `]` | Send backward / bring forward (z-order) |
-| `H` | Toggle hand/pan tool |
-| `V` | Return to select/move tool |
-| `0` | Reset canvas zoom to 100 % |
-| `+` / `-` | Zoom in / out |
-
-**Open questions:**
-- Q1: Should builder shortcuts conflict-check against admin panel shortcuts (P18-E)? The builder runs in a full-screen modal overlay — both `useHotkeys` scopes are mounted simultaneously. A `scopeKey` or activation/deactivation on modal open/close is needed.
-- Q2: Nudge values — should `Arrow` nudge by 1 px (absolute) or 1 % (relative to canvas)? Relative is more consistent when canvas is zoomed.
-
-**Effort:** Low | **Impact:** Medium
-
----
-
 ### Shortcut User Configuration
 
 **Context:** P18-E deploys a fixed shortcut map. Power users will want to remap keys — e.g. `Ctrl+K` instead of `/` for search (VS Code convention), or avoiding `Ctrl+N` for users who rely on browser new-tab.
@@ -226,52 +197,12 @@ This document tracks deferred and exploratory work remaining after Phase 18 is p
 - Host the rendered docs at a new admin page or link from the readme.
 - Open question: should the spec cover the public embed beacon endpoints (analytics, access request) as well as the admin-only endpoints?
 
-**Pre-commit tooling:**
-- Install `husky` + `lint-staged` to run ESLint + `tsc --noEmit` on staged files before every commit.
-- Open question: should the pre-commit hook block on test failures or only on type/lint errors? Blocking on all unit tests adds 30–60 seconds per commit — a pre-push test hook is preferable.
-
-**Conventional commits & CHANGELOG automation:**
-- Enforce `feat:` / `fix:` / `chore:` / `test:` prefixes via `commitlint`.
-- `standard-version` or `release-it` can auto-generate `CHANGELOG.md` entries from commit messages.
-- Open question: does the existing CHANGELOG.md need to be migrated to the generated format, or maintained in parallel?
-
 **TypeScript strictness improvements:**
 - Enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` progressively.
 - Current `tsconfig.json` has `"strict": true` — check for exceptions/overrides that have been silently added.
 - Open question: run `tsc --noEmit` with `exactOptionalPropertyTypes` before committing to the task scope — count the errors first.
 
 **Effort:** Medium per sub-task | **Impact:** Medium — primarily affects project health and contributor on-ramp
-
----
-
-### WP-CLI Commands
-
-**Context:** Admin/debug operations on campaign and media data currently require the WP admin UI or direct DB access. WP-CLI commands allow scripted automation, expected by site operators who manage WordPress programmatically.
-
-**Proposed command surface:**
-
-```
-wp wpsg campaign list           # tabular list: id, title, status
-wp wpsg campaign archive <id>
-wp wpsg campaign duplicate <id> # same options as P18-C UI
-wp wpsg campaign export <id>    # JSON to stdout (pipe-friendly)
-wp wpsg campaign import <file>  # import from JSON file
-
-wp wpsg media list <campaign>   # media associated with a campaign
-wp wpsg media orphans           # media items with zero campaign associations
-
-wp wpsg cache clear             # clear all wpsg_* transients
-wp wpsg cache stats             # hit/miss summary (requires object cache)
-
-wp wpsg analytics clear <id>    # delete events for a campaign
-wp wpsg rate-limit reset <ip>   # reset rate-limit counters for an IP
-```
-
-**Open questions:**
-- Q1: Should WP-CLI commands be bundled with the plugin or shipped as a separate companion plugin? Bundled is simpler; a companion plugin keeps the main plugin lean.
-- Q2: Should commands respect `manage_wpsg` capability, or run unrestricted as the CLI process owner?
-
-**Effort:** Low per command | **Impact:** Low for GUI users, High for server operators
 
 ---
 
