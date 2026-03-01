@@ -35,6 +35,17 @@ class WPSG_CPT {
             'show_admin_column' => true,
         ]);
 
+        // P18-H: Campaign categories (flat, organisational grouping).
+        register_taxonomy('wpsg_campaign_category', self::POST_TYPE, [
+            'label'             => 'Campaign Categories',
+            'public'            => false,
+            'show_ui'           => true,
+            'show_in_rest'      => true,
+            'rest_base'         => 'campaign-categories',
+            'hierarchical'      => false,
+            'show_admin_column' => true,
+        ]);
+
         // P14-G: Media tags (attached to attachments for cross-campaign organization).
         register_taxonomy('wpsg_media_tag', 'attachment', [
             'label' => 'Media Tags',

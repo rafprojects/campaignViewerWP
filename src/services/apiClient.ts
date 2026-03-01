@@ -246,6 +246,12 @@ export class ApiClient {
       `/wp-json/wp-super-gallery/v1/media/usage-summary?${qs}`,
     );
   }
+
+  // ── P18-H: Campaign Categories ───────────────────────────────────────────
+
+  async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
+    return this.get<CampaignCategoryEntry[]>('/wp-json/wp-super-gallery/v1/campaign-categories');
+  }
 }
 
 export interface SettingsResponse {
@@ -509,6 +515,13 @@ export interface MediaUsageCampaignRef {
 export interface MediaUsageResponse {
   count: number;
   campaigns: MediaUsageCampaignRef[];
+}
+
+export interface CampaignCategoryEntry {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
 }
 
 export class ApiError extends Error {

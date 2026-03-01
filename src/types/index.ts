@@ -32,6 +32,8 @@ export interface Campaign {
   imageAdapterId?: string;
   /** Per-campaign video gallery adapter override (empty = use global setting). */
   videoAdapterId?: string;
+  /** P18-H: Category names assigned to this campaign. */
+  categories?: string[];
 }
 
 export interface MediaItem {

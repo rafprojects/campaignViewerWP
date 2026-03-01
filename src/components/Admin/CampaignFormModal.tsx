@@ -1,4 +1,4 @@
-import { Button, Card, ColorInput, Group, Modal, Select, Stack, Text, TextInput, Textarea } from '@mantine/core';
+import { Button, Card, ColorInput, Group, Modal, Select, Stack, Text, TextInput, Textarea, TagsInput } from '@mantine/core';
 import type { Campaign, LayoutTemplate } from '@/types';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
@@ -42,6 +42,8 @@ export interface CampaignFormState {
   imageAdapterId: string;
   /** Per-campaign video gallery adapter override (empty = use global default). */
   videoAdapterId: string;
+  /** P18-H: Selected category names. */
+  categories: string[];
 }
 
 interface CampaignFormModalProps {
@@ -59,6 +61,8 @@ interface CampaignFormModalProps {
   layoutTemplates?: LayoutTemplate[];
   /** Called when user clicks "Edit Layout" for the selected template. */
   onEditLayout?: (templateId: string) => void;
+  /** P18-H: All existing category names for autocomplete in TagsInput. */
+  availableCategories?: string[];
 }
 
 export function CampaignFormModal({
@@ -73,6 +77,7 @@ export function CampaignFormModal({
   cardBorderMode,
   layoutTemplates = [],
   onEditLayout,
+  availableCategories = [],
 }: CampaignFormModalProps) {
   const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
     current: formState,
@@ -140,6 +145,16 @@ export function CampaignFormModal({
           description="Comma separated list of tags"
           value={formState.tags}
           onChange={(e) => onFormChange({ ...formState, tags: e.currentTarget.value })}
+        />
+        <TagsInput
+          label="Categories"
+          placeholder="Type and press Enter or comma to add"
+          description="Assign this campaign to one or more categories"
+          value={formState.categories}
+          onChange={(v) => onFormChange({ ...formState, categories: v })}
+          data={availableCategories}
+          clearable
+          splitChars={[',']}
         />
         <Group grow wrap="wrap" gap="sm">
           <TextInput

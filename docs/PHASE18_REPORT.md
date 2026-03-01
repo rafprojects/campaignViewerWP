@@ -3,7 +3,7 @@
 **Status:** 🔄 In Progress  
 **Version:** v0.16.0  
 **Created:** February 27, 2026  
-**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅ P18-D ✅ P18-E ✅ P18-F ✅; next: P18-G
+**Last updated:** March 1, 2026 — P18-B ✅ P18-C ✅ P18-D ✅ P18-E ✅ P18-F ✅ P18-G ✅ P18-H ✅; next: P18-I
 
 ### Completed
 
@@ -19,6 +19,7 @@
 | P18-E Keyboard Shortcuts | `d5859ff` | `KeyboardShortcutsModal`; `useHotkeys` (?/mod+n/mod+i/mod+shift+a); `<kbd>` shortcut table; keyboard icon in header |
 | P18-F Analytics Dashboard | `588c85e` | `wpsg_analytics_events` table (DB v2); `POST /analytics/event`; `GET /analytics/campaigns/{id}`; recharts `AnalyticsDashboard`; lazy Analytics tab |
 | P18-G Media Usage Tracking | next commit | `GET /media/{id}/usage`; `GET /media/usage-summary`; `MediaUsageBadge` popover; orphan filter toggle; delete guard with usage count |
+| P18-H Campaign Categories | next commit | `wpsg_campaign_category` taxonomy; `GET /campaign-categories`; `categories[]` in create/update; `TagsInput` in form; `Chip.Group` filter pills |
 
 ---
 
@@ -65,9 +66,9 @@
     - [Features](#features)
     - [Implementation](#implementation)
     - [Open questions](#open-questions-5)
-  - [Track P18-H — Campaign Categories ⏳ NEXT](#track-p18-h--campaign-categories)
+  - [Track P18-H — Campaign Categories ✅ COMPLETE](#track-p18-h--campaign-categories)
     - [Implementation](#implementation-1)
-  - [Track P18-I — Access Request Workflow](#track-p18-i--access-request-workflow)
+  - [Track P18-I — Access Request Workflow ⏳ NEXT](#track-p18-i--access-request-workflow)
     - [User-facing flow](#user-facing-flow)
     - [PHP storage](#php-storage)
     - [Open questions](#open-questions-6)
@@ -709,11 +710,21 @@ For the media grid batch display, a single `GET /wpsg/v1/media/usage-summary?ids
 
 ---
 
-## Track P18-H — Campaign Categories
+## Track P18-H — Campaign Categories ✅ COMPLETE
 
-**Promoted from FUTURE_TASKS.**
+**Status:** Complete.
 
-Multi-assign taxonomy for grouping campaigns. Replaces manual folder-by-name conventions.
+**What was implemented:**
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-cpt.php` | `register_taxonomy('wpsg_campaign_category', ...)` — flat, non-hierarchical, `show_in_rest` |
+| `wp-plugin/.../class-wpsg-rest.php` | `GET /campaign-categories` route + `list_campaign_categories()` method; `apply_campaign_meta()` handles `categories[]` param (creates missing terms via `wp_insert_term`); `format_campaign()` emits `categories` array |
+| `src/services/apiClient.ts` | `listCampaignCategories()` method; `CampaignCategoryEntry` interface |
+| `src/types/index.ts` | `categories?: string[]` added to `Campaign` interface |
+| `src/hooks/useAdminSWR.ts` | `categories?: string[]` added to `AdminCampaign` interface |
+| `src/components/Admin/CampaignFormModal.tsx` | `categories: string[]` in `CampaignFormState`; `TagsInput` with autocomplete; `availableCategories` prop |
+| `src/components/Admin/AdminPanel.tsx` | SWR fetch of categories; `availableCategoryNames`; `categoryFilter` state; `Chip.Group` filter pills above campaign table; category filter applied in `campaignsRows` memo; categories passed to `saveCampaign` payload and `handleEdit` |
 
 ### Implementation
 
@@ -847,8 +858,8 @@ After extraction, `AdminPanel.tsx` renders tabs, passes context values, and dele
 | 5 | **P18-E** — Keyboard shortcuts | None | Low | ✅ Done (`d5859ff`) |
 | 6 | **P18-F** — Campaign analytics | None | Medium (new DB table, data model) | ✅ Done (`588c85e`) |
 | 7 | **P18-G** — Media usage tracking | None | Low | ✅ Done (next commit) |
-| 8 | **P18-H** — Campaign categories | None | Medium | ⏳ Next |
-| 9 | **P18-I** — Access request workflow | None | Medium | ❌ Not started |
+| 8 | **P18-H** — Campaign categories | None | Medium | ✅ Done (next commit) |
+| 9 | **P18-I** — Access request workflow | None | High | ⏳ Next |
 | 10 | **P18-X** — Code size reduction | All feature tracks | Low — extract only, no behaviour change | ❌ Not started |
 
 Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx vitest run` and the wp-env phpunit suite after every sprint.
@@ -930,4 +941,4 @@ Tracks in the same sprint row can be parallelised. Run `npm run build:wp`, `npx 
 
 ---
 
-*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C + P18-D + P18-E + P18-F + P18-G complete March 1, 2026. Next: P18-H (Campaign Categories).*
+*Plan written: February 27, 2026. P18-QA + P18-A complete February 28, 2026. P18-B + P18-C + P18-D + P18-E + P18-F + P18-G + P18-H complete March 1, 2026. Next: P18-I (Access Request Workflow).*

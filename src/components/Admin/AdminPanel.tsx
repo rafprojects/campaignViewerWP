@@ -18,6 +18,7 @@ import {
   Checkbox,
   useCombobox,
   Tooltip,
+  Chip,
 } from '@mantine/core';
 import { useDebouncedValue, useHotkeys } from '@mantine/hooks';
 import { IconPlus, IconTrash, IconEdit, IconArrowLeft, IconRefresh, IconArchiveOff, IconLayoutGrid, IconCopy, IconArchive, IconDownload, IconFileImport, IconKeyboard } from '@tabler/icons-react';
@@ -85,6 +86,7 @@ const emptyForm: CampaignFormState = {
   layoutTemplateId: '',
   imageAdapterId: '',
   videoAdapterId: '',
+  categories: [],
 };
 
 /** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
@@ -197,6 +199,18 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   // ── P18-E: Keyboard shortcuts help ──────────────────────────
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+
+  // ── P18-H: Category filter ───────────────────────────────────
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const { data: campaignCategories = [] } = useSWR(
+    'campaign-categories',
+    () => apiClient.listCampaignCategories(),
+    { revalidateOnFocus: false, dedupingInterval: 60_000 },
+  );
+  const availableCategoryNames = useMemo(
+    () => campaignCategories.map((c) => c.name),
+    [campaignCategories],
+  );
 
   // Cleanup blur timeout on unmount
   useEffect(() => {
@@ -474,6 +488,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       layoutTemplateId: campaign.layoutTemplateId ?? '',
       imageAdapterId: campaign.imageAdapterId ?? '',
       videoAdapterId: campaign.videoAdapterId ?? '',
+      categories: campaign.categories ?? [],
     });
     setCampaignFormOpen(true);
   }, []);
@@ -499,6 +514,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       status: formState.status,
       visibility: formState.visibility,
       tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      categories: formState.categories,
       publishAt: formState.publishAt || '',
       unpublishAt: formState.unpublishAt || '',
       layoutTemplateId: formState.layoutTemplateId || '',
@@ -695,7 +711,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   }, [selectedCompanyId, companies]);
 
   const campaignsRows = useMemo(() => {
-    return campaigns.map((c) => {
+    // P18-H: Apply category filter
+    const visible = categoryFilter
+      ? campaigns.filter((c) => (c.categories ?? []).includes(categoryFilter))
+      : campaigns;
+    return visible.map((c) => {
       const cid = String(c.id);
       const isSelected = selectedCampaignIds.has(cid);
       return (
@@ -778,7 +798,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Table.Tr>
       );
     });
-  }, [campaigns, handleEdit, restoringIds, archivingIds, setConfirmRestore, setConfirmArchive, selectMode, selectedCampaignIds, handleToggleCampaignSelect, handleExportCampaign]);
+  }, [campaigns, categoryFilter, handleEdit, restoringIds, archivingIds, setConfirmRestore, setConfirmArchive, selectMode, selectedCampaignIds, handleToggleCampaignSelect, handleExportCampaign]);
 
   const accessRows = useMemo(() => {
     return accessEntries.map((a) => (
@@ -890,6 +910,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.List>
 
         <Tabs.Panel value="campaigns" pt="md">
+          {/* P18-H: Category filter pills */}
+          {campaignCategories.length > 0 && (
+            <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
+              <Group gap="xs" mb="sm" wrap="wrap">
+                <Chip value="" variant="light" size="sm">All</Chip>
+                {campaignCategories.map((cat) => (
+                  <Chip key={cat.id} value={cat.name} variant="light" size="sm">{cat.name}</Chip>
+                ))}
+              </Group>
+            </Chip.Group>
+          )}
           <CampaignsTab
             isLoading={isLoading}
             error={error}
@@ -937,6 +968,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             setPendingEditLayoutId(templateId);
             setActiveTab('layouts');
           }}
+          availableCategories={availableCategoryNames}
         />
 
         <Tabs.Panel value="media" pt="md">

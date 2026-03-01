@@ -139,6 +139,15 @@ class WPSG_REST {
             ],
         ]);
 
+        // P18-H: Campaign categories
+        register_rest_route('wp-super-gallery/v1', '/campaign-categories', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_campaign_categories'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // P18-F: Analytics
         register_rest_route('wp-super-gallery/v1', '/analytics/event', [
             [
@@ -1279,6 +1288,42 @@ class WPSG_REST {
         }
 
         return new WP_REST_Response((object)$id_set, 200);
+    }
+
+    /**
+     * P18-H helper: return category names for a campaign post.
+     */
+    private static function get_campaign_category_names($post_id) {
+        $terms = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'names']);
+        return is_array($terms) && !is_wp_error($terms) ? array_values($terms) : [];
+    }
+
+    /**
+     * GET /campaign-categories
+     * Returns all wpsg_campaign_category terms (id, name, slug, count).
+     */
+    public static function list_campaign_categories() {
+        $terms = get_terms([
+            'taxonomy'   => 'wpsg_campaign_category',
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ]);
+
+        if (is_wp_error($terms)) {
+            return new WP_REST_Response(['message' => 'Failed to retrieve categories'], 500);
+        }
+
+        $result = array_map(function ($term) {
+            return [
+                'id'    => strval($term->term_id),
+                'name'  => $term->name,
+                'slug'  => $term->slug,
+                'count' => (int) $term->count,
+            ];
+        }, $terms);
+
+        return new WP_REST_Response($result, 200);
     }
 
     public static function list_media() {
@@ -3112,6 +3157,7 @@ class WPSG_REST {
             'status' => (string) get_post_meta($post->ID, 'status', true) ?: 'draft',
             'visibility' => (string) get_post_meta($post->ID, 'visibility', true) ?: 'private',
             'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
+            'categories' => self::get_campaign_category_names($post->ID),
             'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
             'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
             'layoutTemplateId' => get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: null,
@@ -3146,6 +3192,28 @@ class WPSG_REST {
         }
         if (is_array($tags)) {
             update_post_meta($post_id, 'tags', array_values(array_map('sanitize_text_field', $tags)));
+        }
+
+        // P18-H: Campaign categories — resolve names to term IDs, creating missing terms.
+        $categories = $request->get_param('categories');
+        if (is_array($categories)) {
+            $term_ids = [];
+            foreach ($categories as $cat_name) {
+                $cat_name = sanitize_text_field($cat_name);
+                if ($cat_name === '') {
+                    continue;
+                }
+                $term = get_term_by('name', $cat_name, 'wpsg_campaign_category');
+                if ($term && !is_wp_error($term)) {
+                    $term_ids[] = $term->term_id;
+                } else {
+                    $new_term = wp_insert_term($cat_name, 'wpsg_campaign_category');
+                    if (!is_wp_error($new_term)) {
+                        $term_ids[] = $new_term['term_id'];
+                    }
+                }
+            }
+            wp_set_object_terms($post_id, $term_ids, 'wpsg_campaign_category');
         }
         if (!is_null($cover_image_param)) {
             $cover_image = esc_url_raw($cover_image_param);
