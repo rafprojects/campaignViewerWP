@@ -1,15 +1,15 @@
 # Phase 19 — Builder Power Tools, Coverage Recovery & Dev Toolchain
 
-**Status:** 🔄 Planning  
+**Status:** 🔄 In Progress  
 **Version:** v0.17.0  
 **Created:** March 1, 2026  
-**Last updated:** March 1, 2026 — Plan drafted; pending Phase 18 PR review
+**Last updated:** March 1, 2026 — P19-QA complete (102 tests, functions 79.91%)
 
 ### Completed
 
 | Track | Commit | Result |
 |-------|--------|--------|
-| _(none yet)_ | — | — |
+| P19-QA — Coverage Recovery Sprint | `9963400` | ✅ 102 tests across 11 files; functions coverage 79.91%; threshold raised 60% → 65% |
 
 ---
 
@@ -348,7 +348,7 @@ Keep `SettingsPanel.tsx` in the coverage exclude list. Document the decision exp
 
 | Sprint | Track | Prerequisite | Risk | Status |
 |--------|-------|-------------|------|--------|
-| 1 | **P19-QA** — Coverage recovery sprint | None | Low | ❌ Not started |
+| 1 | **P19-QA** — Coverage recovery sprint | None | Low | ✅ Complete (`9963400`) |
 | 2 | **P19-D** — Pre-commit toolchain | None | Low | ❌ Not started |
 | 3 | **P19-A** — Builder keyboard shortcuts | None | Medium (scope conflicts) | ❌ Not started |
 | 3 | **P19-B** — Builder undo/redo improvements | P19-A (Ctrl+Z wiring) | Medium | ❌ Not started |
