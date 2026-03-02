@@ -36,6 +36,7 @@ import { LayoutBuilderLayersPanel } from './LayoutBuilderLayersPanel';
 import { LayoutBuilderMediaPanel } from './LayoutBuilderMediaPanel';
 import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
+import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -145,6 +146,8 @@ export function LayoutBuilderModal({
   );
   const [isUploadingOverlay, setIsUploadingOverlay] = useState(false);
   const [isUploadingBg, setIsUploadingBg] = useState(false);
+
+  const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
 
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [snapThreshold, setSnapThreshold] = useState(5);
@@ -362,6 +365,15 @@ export function LayoutBuilderModal({
         builder.clearSelection();
       }
 
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        void handleSave();
+      }
+
+      if (e.key === '?') {
+        setBuilderShortcutsOpen(true);
+      }
+
       // Z-index shortcuts (P15-G): ] = forward, [ = backward, Shift+] = front, Shift+[ = back
       const ids = Array.from(builder.selectedSlotIds);
       if (ids.length > 0) {
@@ -405,7 +417,7 @@ export function LayoutBuilderModal({
         }
       }
     },
-    [builder, handleDeleteSelected, handleDuplicateSelected],
+    [builder, handleDeleteSelected, handleDuplicateSelected, handleSave],
   );
 
   // ── Get selected slot for properties panel ──
@@ -491,6 +503,7 @@ export function LayoutBuilderModal({
     >
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
+        data-testid="builder-keyboard-handler"
         onKeyDown={handleKeyDown}
         style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
@@ -607,6 +620,12 @@ export function LayoutBuilderModal({
             />
           </div>
         </BuilderDockContext.Provider>
+
+        {/* ── Builder keyboard shortcuts help modal ── */}
+        <BuilderKeyboardShortcutsModal
+          opened={builderShortcutsOpen}
+          onClose={() => setBuilderShortcutsOpen(false)}
+        />
 
         {/* ARIA live region for screen reader announcements */}
         <div
