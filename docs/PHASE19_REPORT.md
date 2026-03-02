@@ -381,7 +381,7 @@ Keep `SettingsPanel.tsx` in the coverage exclude list. Document the decision exp
 | 3 | **P19-A** — Builder keyboard shortcuts | None | Medium (scope conflicts) | ✅ Complete (`5685249`) |
 | 3 | **P19-B** — Builder undo/redo improvements | P19-A (Ctrl+Z wiring) | Medium | ✅ Complete (`12e0155`) |
 | 4 | **P19-C** — WP-CLI command surface | None | Low | ✅ Complete (`a979761`) |
-| 5 | **P19-E** — SettingsPanel coverage | **⚠️ Explicit go/no-go decision first** | High | ⛔ Blocked |
+| 5 | **P19-E** — SettingsPanel coverage | None | High | ✅ Complete (`aed33af`) |
 
 Tracks in the same sprint row can be parallelised. Run `npx vitest run`, `npx tsc --noEmit`, and `npm run build:wp` after every sprint.
 
