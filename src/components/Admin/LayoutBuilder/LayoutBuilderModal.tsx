@@ -37,6 +37,7 @@ import { LayoutBuilderMediaPanel } from './LayoutBuilderMediaPanel';
 import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
+import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -45,6 +46,7 @@ const dockComponents = {
   media: LayoutBuilderMediaPanel,
   canvas: LayoutBuilderCanvasPanel,
   properties: LayoutBuilderPropertiesPanel,
+  history: BuilderHistoryPanel,
 };
 
 // ── Aspect ratio presets ─────────────────────────────────────
@@ -466,9 +468,10 @@ export function LayoutBuilderModal({
         // fall through to default layout
       }
     }
-    // Default layout: Layers+Media tabs left | Canvas centre | Properties right
+    // Default layout: Layers+Media+History tabs left | Canvas centre | Properties right
     const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
     event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
+    event.api.addPanel({ id: 'history', component: 'history', title: 'History', position: { direction: 'within', referencePanel: layersPanel } });
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);

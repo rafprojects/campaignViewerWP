@@ -37,6 +37,17 @@ function generateSlotId(): string {
   return crypto.randomUUID?.() ?? `slot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// ── History entry ──────────────────────────────────────────
+
+export interface HistoryEntry {
+  /** Unique key for React lists. */
+  id: string;
+  /** Human-readable label, e.g. "Move slot", "Add layer". */
+  label: string;
+  /** Epoch ms — display only. */
+  timestamp: number;
+}
+
 // ── Types ────────────────────────────────────────────────────
 
 export interface LayoutBuilderState {
@@ -147,6 +158,10 @@ export interface LayoutBuilderActions {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  /** Human-readable history entries (most-recent-last). */
+  historyEntries: HistoryEntry[];
+  /** Current position in the history stack (-1 = at latest state). */
+  historyCurrentIndex: number;
 
   // ── Preview ──
   togglePreview: () => void;
@@ -173,13 +188,25 @@ export function useLayoutBuilderState(
   // ── History stack ──
   const [history, setHistory] = useState<LayoutTemplate[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [historyLabels, setHistoryLabels] = useState<HistoryEntry[]>([]);
 
   /** Push the current template onto the undo stack before a mutation. */
-  const pushHistory = useCallback(() => {
+  const pushHistory = useCallback((label: string) => {
     setHistory((prev) => {
       // Trim any redo entries after current index
       const trimmed = prev.slice(0, historyIndex + 1);
       const next = [...trimmed, template];
+      if (next.length > MAX_HISTORY) next.shift();
+      return next;
+    });
+    setHistoryLabels((prev) => {
+      const trimmed = prev.slice(0, historyIndex + 1);
+      const entry: HistoryEntry = {
+        id: crypto.randomUUID?.() ?? `h-${Date.now()}`,
+        label,
+        timestamp: Date.now(),
+      };
+      const next = [...trimmed, entry];
       if (next.length > MAX_HISTORY) next.shift();
       return next;
     });
@@ -188,8 +215,8 @@ export function useLayoutBuilderState(
 
   /** Apply a template mutation via Immer, pushing history first. */
   const mutate = useCallback(
-    (recipe: (draft: LayoutTemplate) => void) => {
-      pushHistory();
+    (recipe: (draft: LayoutTemplate) => void, label = 'Edit') => {
+      pushHistory(label);
       setTemplateRaw((prev) => produce(prev, recipe));
       setIsDirty(true);
     },
@@ -202,37 +229,38 @@ export function useLayoutBuilderState(
     setTemplateRaw(t);
     setHistory([]);
     setHistoryIndex(-1);
+    setHistoryLabels([]);
     setIsDirty(false);
     setSelectedSlotIds(new Set());
   }, []);
 
   const setName = useCallback(
-    (name: string) => mutate((d) => { d.name = name; }),
+    (name: string) => mutate((d) => { d.name = name; }, 'Rename template'),
     [mutate],
   );
 
   const setAspectRatio = useCallback(
-    (ratio: number) => mutate((d) => { d.canvasAspectRatio = ratio; }),
+    (ratio: number) => mutate((d) => { d.canvasAspectRatio = ratio; }, 'Change aspect ratio'),
     [mutate],
   );
 
   const setBackgroundColor = useCallback(
-    (color: string) => mutate((d) => { d.backgroundColor = color; }),
+    (color: string) => mutate((d) => { d.backgroundColor = color; }, 'Change background color'),
     [mutate],
   );
 
   const setBackgroundImage = useCallback(
-    (url: string) => mutate((d) => { d.backgroundImage = url || undefined; }),
+    (url: string) => mutate((d) => { d.backgroundImage = url || undefined; }, 'Set background image'),
     [mutate],
   );
 
   const setBackgroundImageFit = useCallback(
-    (fit: 'cover' | 'contain' | 'fill') => mutate((d) => { d.backgroundImageFit = fit; }),
+    (fit: 'cover' | 'contain' | 'fill') => mutate((d) => { d.backgroundImageFit = fit; }, 'Change image fit'),
     [mutate],
   );
 
   const setBackgroundImageOpacity = useCallback(
-    (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }),
+    (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }, 'Change image opacity'),
     [mutate],
   );
 
@@ -252,7 +280,7 @@ export function useLayoutBuilderState(
         y: offsetY,
         zIndex: slotCount + 1,
       });
-    });
+    }, 'Add slot');
     setSelectedSlotIds(new Set([newId]));
     return newId;
   }, [mutate]);
@@ -262,7 +290,7 @@ export function useLayoutBuilderState(
       const idSet = new Set(ids);
       mutate((d) => {
         d.slots = d.slots.filter((s) => !idSet.has(s.id));
-      });
+      }, ids.length > 1 ? 'Remove slots' : 'Remove slot');
       setSelectedSlotIds((prev) => {
         const next = new Set(prev);
         for (const id of ids) next.delete(id);
@@ -289,7 +317,7 @@ export function useLayoutBuilderState(
             zIndex: d.slots.length + 1,
           });
         }
-      });
+      }, ids.length > 1 ? 'Duplicate slots' : 'Duplicate slot');
       if (newIds.length > 0) {
         setSelectedSlotIds(new Set(newIds));
       }
@@ -304,7 +332,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) { slot.x = x; slot.y = y; }
-      }),
+      }, 'Move slot'),
     [mutate],
   );
 
@@ -318,7 +346,7 @@ export function useLayoutBuilderState(
           slot.width = width;
           slot.height = height;
         }
-      }),
+      }, 'Resize slot'),
     [mutate],
   );
 
@@ -329,7 +357,7 @@ export function useLayoutBuilderState(
         if (idx !== -1) {
           Object.assign(d.slots[idx], updates);
         }
-      }),
+      }, 'Update slot'),
     [mutate],
   );
 
@@ -343,7 +371,7 @@ export function useLayoutBuilderState(
             slot.y = Math.max(0, Math.min(100 - slot.height, slot.y + dy));
           }
         }
-      }),
+      }, 'Nudge slot'),
     [mutate],
   );
 
@@ -356,7 +384,7 @@ export function useLayoutBuilderState(
           slot.mediaAttachmentId = meta?.attachmentId;
           slot.mediaUrl = meta?.url;
         }
-      }),
+      }, 'Assign media'),
     [mutate],
   );
 
@@ -369,7 +397,7 @@ export function useLayoutBuilderState(
           slot.mediaAttachmentId = undefined;
           slot.mediaUrl = undefined;
         }
-      }),
+      }, 'Clear slot media'),
     [mutate],
   );
 
@@ -388,7 +416,7 @@ export function useLayoutBuilderState(
             d.slots[i].mediaUrl = undefined;
           }
         }
-      }),
+      }, 'Auto-assign media'),
     [mutate],
   );
 
@@ -410,7 +438,7 @@ export function useLayoutBuilderState(
         for (const overlay of d.overlays) {
           if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
         }
-      }),
+      }, 'Bring to front'),
     [mutate],
   );
 
@@ -440,7 +468,7 @@ export function useLayoutBuilderState(
           for (const slot of d.slots) slot.zIndex += offset;
           for (const overlay of d.overlays) overlay.zIndex += offset;
         }
-      }),
+      }, 'Send to back'),
     [mutate],
   );
 
@@ -470,7 +498,7 @@ export function useLayoutBuilderState(
             }
           }
         }
-      }),
+      }, 'Bring forward'),
     [mutate],
   );
 
@@ -499,7 +527,7 @@ export function useLayoutBuilderState(
             }
           }
         }
-      }),
+      }, 'Send backward'),
     [mutate],
   );
 
@@ -521,7 +549,7 @@ export function useLayoutBuilderState(
           const real = d.slots.find((s) => s.id === ref.id)!;
           real.zIndex = i + 1;
         });
-      });
+      }, 'Normalize z-indices');
       return normalized;
     },
     [template, mutate],
@@ -549,7 +577,7 @@ export function useLayoutBuilderState(
           opacity: 1,
           pointerEvents: false,
         });
-      });
+      }, 'Add layer');
       return newId;
     },
     [mutate],
@@ -559,7 +587,7 @@ export function useLayoutBuilderState(
     (id: string) =>
       mutate((d) => {
         d.overlays = d.overlays.filter((o) => o.id !== id);
-      }),
+      }, 'Remove layer'),
     [mutate],
   );
 
@@ -568,7 +596,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const idx = d.overlays.findIndex((o) => o.id === id);
         if (idx !== -1) Object.assign(d.overlays[idx], updates);
-      }),
+      }, 'Update layer'),
     [mutate],
   );
 
@@ -577,7 +605,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const o = d.overlays.find((ov) => ov.id === id);
         if (o) { o.x = x; o.y = y; }
-      }),
+      }, 'Move layer'),
     [mutate],
   );
 
@@ -586,7 +614,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const o = d.overlays.find((ov) => ov.id === id);
         if (o) { o.x = x; o.y = y; o.width = width; o.height = height; }
-      }),
+      }, 'Resize layer'),
     [mutate],
   );
 
@@ -597,7 +625,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) slot.name = name;
-      }),
+      }, 'Rename slot'),
     [mutate],
   );
 
@@ -606,7 +634,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const overlay = d.overlays.find((o) => o.id === id);
         if (overlay) overlay.name = name;
-      }),
+      }, 'Rename layer'),
     [mutate],
   );
 
@@ -615,7 +643,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) slot.visible = !(slot.visible ?? true);
-      }),
+      }, 'Toggle slot visibility'),
     [mutate],
   );
 
@@ -624,7 +652,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const overlay = d.overlays.find((o) => o.id === id);
         if (overlay) overlay.visible = !(overlay.visible ?? true);
-      }),
+      }, 'Toggle layer visibility'),
     [mutate],
   );
 
@@ -633,7 +661,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) slot.locked = !(slot.locked ?? false);
-      }),
+      }, 'Toggle slot lock'),
     [mutate],
   );
 
@@ -642,7 +670,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const overlay = d.overlays.find((o) => o.id === id);
         if (overlay) overlay.locked = !(overlay.locked ?? false);
-      }),
+      }, 'Toggle layer lock'),
     [mutate],
   );
 
@@ -659,7 +687,7 @@ export function useLayoutBuilderState(
           const z = newZMap.get(overlay.id);
           if (z !== undefined) overlay.zIndex = z;
         }
-      }),
+      }, 'Reorder layers'),
     [mutate],
   );
 
@@ -794,6 +822,8 @@ export function useLayoutBuilderState(
     redo,
     canUndo,
     canRedo,
+    historyEntries: historyLabels,
+    historyCurrentIndex: historyIndex,
     // Preview
     togglePreview,
     // Persistence
