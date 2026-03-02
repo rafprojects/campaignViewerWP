@@ -15,19 +15,47 @@
 
 ## Table of Contents
 
-- [Rationale](#rationale)
-- [Key Decisions (Pre-Resolved)](#key-decisions-pre-resolved)
-- [Architecture Decisions](#architecture-decisions)
-- [Track P19-QA — Coverage Recovery Sprint](#track-p19-qa--coverage-recovery-sprint)
-- [Track P19-A — Builder Keyboard Shortcuts](#track-p19-a--builder-keyboard-shortcuts)
-- [Track P19-B — Builder Undo/Redo Improvements](#track-p19-b--builder-undoredo-improvements)
-- [Track P19-C — WP-CLI Command Surface](#track-p19-c--wp-cli-command-surface)
-- [Track P19-D — Pre-Commit Toolchain & Conventional Commits](#track-p19-d--pre-commit-toolchain--conventional-commits)
-- [Track P19-E — SettingsPanel Full Coverage](#track-p19-e--settingspanel-full-coverage)
-- [Execution Priority](#execution-priority)
-- [Testing Strategy](#testing-strategy)
-- [Risk Register](#risk-register)
-- [Modified File Inventory (projected)](#modified-file-inventory-projected)
+- [Phase 19 — Builder Power Tools, Coverage Recovery \& Dev Toolchain](#phase-19--builder-power-tools-coverage-recovery--dev-toolchain)
+    - [Completed](#completed)
+  - [Table of Contents](#table-of-contents)
+  - [Rationale](#rationale)
+  - [Key Decisions (Pre-Resolved)](#key-decisions-pre-resolved)
+  - [Architecture Decisions](#architecture-decisions)
+  - [Track P19-QA — Coverage Recovery Sprint](#track-p19-qa--coverage-recovery-sprint)
+    - [Components to cover](#components-to-cover)
+    - [Hooks to cover](#hooks-to-cover)
+    - [Coverage target](#coverage-target)
+    - [Expected effort](#expected-effort)
+  - [Track P19-A — Builder Keyboard Shortcuts](#track-p19-a--builder-keyboard-shortcuts)
+    - [Shortcut map](#shortcut-map)
+    - [Implementation](#implementation)
+    - [Open questions](#open-questions)
+  - [Track P19-B — Builder Undo/Redo Improvements](#track-p19-b--builder-undoredo-improvements)
+    - [Goals for P19-B](#goals-for-p19-b)
+    - [Data model](#data-model)
+    - [Open questions](#open-questions-1)
+  - [Track P19-C — WP-CLI Command Surface](#track-p19-c--wp-cli-command-surface)
+    - [Command surface](#command-surface)
+    - [Implementation](#implementation-1)
+    - [Security model](#security-model)
+    - [Open questions](#open-questions-2)
+  - [Track P19-D — Pre-Commit Toolchain \& Conventional Commits](#track-p19-d--pre-commit-toolchain--conventional-commits)
+    - [Sub-tasks](#sub-tasks)
+      - [D-1 — husky + lint-staged (pre-commit hook)](#d-1--husky--lint-staged-pre-commit-hook)
+      - [D-2 — commitlint (commit message validation)](#d-2--commitlint-commit-message-validation)
+      - [D-3 — pre-push test gate](#d-3--pre-push-test-gate)
+      - [D-4 — Update CONTRIBUTING.md (or create if absent)](#d-4--update-contributingmd-or-create-if-absent)
+    - [New dev dependencies](#new-dev-dependencies)
+    - [Open questions](#open-questions-3)
+  - [Track P19-E — SettingsPanel Full Coverage](#track-p19-e--settingspanel-full-coverage)
+    - [If proceeding — planned test scope](#if-proceeding--planned-test-scope)
+    - [If NOT proceeding](#if-not-proceeding)
+  - [Execution Priority](#execution-priority)
+  - [Testing Strategy](#testing-strategy)
+  - [Risk Register](#risk-register)
+  - [Modified File Inventory (projected)](#modified-file-inventory-projected)
+    - [New files](#new-files)
+    - [Modified files](#modified-files)
 
 ---
 
@@ -349,7 +377,7 @@ Keep `SettingsPanel.tsx` in the coverage exclude list. Document the decision exp
 | Sprint | Track | Prerequisite | Risk | Status |
 |--------|-------|-------------|------|--------|
 | 1 | **P19-QA** — Coverage recovery sprint | None | Low | ✅ Complete (`9963400`) |
-| 2 | **P19-D** — Pre-commit toolchain | None | Low | ❌ Not started |
+| 2 | **P19-D** — Pre-commit toolchain | None | Low | ✅ Complete (`e604ff6`) |
 | 3 | **P19-A** — Builder keyboard shortcuts | None | Medium (scope conflicts) | ❌ Not started |
 | 3 | **P19-B** — Builder undo/redo improvements | P19-A (Ctrl+Z wiring) | Medium | ❌ Not started |
 | 4 | **P19-C** — WP-CLI command surface | None | Low | ❌ Not started |
