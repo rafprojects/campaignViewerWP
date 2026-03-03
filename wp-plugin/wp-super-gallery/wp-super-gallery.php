@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Super Gallery
  * Description: Embeddable campaign gallery with Shadow DOM rendering.
- * Version: 0.16.0
+ * Version: 0.17.0
  * Requires PHP: 8.0
  * Author: WP Super Gallery
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.16.0');
+define('WPSG_VERSION', '0.17.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -227,3 +227,9 @@ if (is_admin()) {
 // P14-C/D/E/F: Register infrastructure.
 WPSG_Thumbnail_Cache::register();
 WPSG_Image_Optimizer::register();
+
+// P19-C: WP-CLI command surface — only loaded when running under WP-CLI.
+if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
+    require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cli.php';
+    WP_CLI::add_command( 'wpsg', 'WPSG_CLI' );
+}

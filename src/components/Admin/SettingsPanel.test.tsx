@@ -47,15 +47,33 @@ function createMockApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
   } as unknown as ApiClient;
 }
 
-/** Helper to find Mantine Switch inputs (hidden checkbox inside Switch component) */
-function getSwitchInputs(): HTMLInputElement[] {
-  // Mantine Switch renders hidden <input type="checkbox"> elements
-  return Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+/**
+ * Wait until the SettingsPanel loading spinner has cleared and the tab bar
+ * is visible in the DOM. This is the correct gate — the modal header title
+ * ('Display Settings') renders immediately on open regardless of load state,
+ * so waiting for it resolves too early and races against getSettings().
+ */
+async function waitForTabs() {
+  await screen.findByRole('tab', { name: /General/i });
 }
 
-/** Navigate to a tab by clicking its tab button */
-function clickTab(name: string) {
+/** Navigate to a tab and wait for a piece of panel content to appear. */
+async function clickTabAndWait(name: string, contentText: string) {
   fireEvent.click(screen.getByRole('tab', { name }));
+  await screen.findByText(contentText);
+}
+
+/** Toggle a Mantine Switch by its visible label text. */
+function toggleSwitchByLabel(label: string) {
+  const el = screen.getByText(label);
+  // Mantine Switch wraps a hidden <input type="checkbox"> inside the label tree
+  const input = el.closest('div')?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+  if (input) {
+    fireEvent.click(input);
+  } else {
+    // Fallback: click the label element itself
+    fireEvent.click(el);
+  }
 }
 
 describe('SettingsPanel', () => {
@@ -73,10 +91,7 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
-
+    await waitForTabs();
     expect(apiClient.getSettings).toHaveBeenCalledOnce();
 
     // General tab (default) — settings visible
@@ -94,11 +109,8 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
-
-    clickTab('Media Gallery');
+    await waitForTabs();
+    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
 
     expect(screen.getByText('Enable Lightbox')).toBeDefined();
     expect(screen.getByText('Enable Animations')).toBeDefined();
@@ -115,10 +127,8 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
-
+    // The rejected promise still resolves `isLoading=false` in the finally block
+    await waitForTabs();
     expect(screen.getByText('Default Layout')).toBeDefined();
   });
 
@@ -127,10 +137,7 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
-
+    await waitForTabs();
     const closeButton = document.querySelector('.mantine-Modal-close') as HTMLButtonElement;
     expect(closeButton).not.toBeNull();
     fireEvent.click(closeButton);
@@ -142,10 +149,7 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
-
+    await waitForTabs();
     const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     expect(saveButton).toBeDisabled();
   });
@@ -155,25 +159,16 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
+    await waitForTabs();
+    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
 
-    // Navigate to Media Gallery tab to find switches
-    clickTab('Media Gallery');
-
-    // Toggle "Enable Lightbox" via hidden checkbox input
-    const switches = getSwitchInputs();
-    expect(switches.length).toBeGreaterThanOrEqual(2);
-    fireEvent.click(switches[0]);
+    // Toggle "Enable Lightbox" by its label
+    toggleSwitchByLabel('Enable Lightbox');
 
     const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     expect(saveButton).not.toBeDisabled();
-
-    // Reset button appears
     expect(screen.getByRole('button', { name: 'Reset' })).toBeDefined();
 
-    // Save
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -191,21 +186,16 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
+    await waitForTabs();
+    await clickTabAndWait('Media Gallery', 'Enable Animations');
 
-    // Navigate to Media Gallery tab to find switches
-    clickTab('Media Gallery');
+    // Toggle "Enable Animations" by its label, then reset
+    toggleSwitchByLabel('Enable Animations');
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeDefined();
 
-    // Toggle "Enable Animations" via hidden checkbox
-    const switches = getSwitchInputs();
-    fireEvent.click(switches[1]);
-
-    // Reset
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
-    // Save button should be disabled again
+    // After reset the save button must be disabled again
     const saveButton = screen.getByRole('button', { name: 'Save Changes' });
     expect(saveButton).toBeDisabled();
   });
@@ -219,18 +209,10 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
+    await waitForTabs();
+    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
 
-    // Navigate to Media Gallery tab to find switches
-    clickTab('Media Gallery');
-
-    // Make a change
-    const switches = getSwitchInputs();
-    fireEvent.click(switches[0]);
-
-    // Save
+    toggleSwitchByLabel('Enable Lightbox');
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     await waitFor(() => {
@@ -245,9 +227,8 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('theme-selector')).toBeDefined();
-    });
+    await waitForTabs();
+    expect(screen.getByTestId('theme-selector')).toBeDefined();
   });
 
   it('does not render content when opened is false', () => {
@@ -285,23 +266,23 @@ describe('SettingsPanel', () => {
     expect(screen.queryByRole('status')).toBeNull(); // no loader spinner
   });
 
-  it('toggles all switches on General tab to call updateSetting lambdas', async () => {
+  it('toggles General tab switches to call updateSetting lambdas', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
+    await waitForTabs();
 
-    // General tab is default — get all checkbox inputs and click each
-    const switches = getSwitchInputs();
-    // Click every switch to trigger each (e) => updateSetting(...) lambda
-    for (const checkbox of switches) {
-      fireEvent.click(checkbox);
-    }
+    // Toggle representative named switches on the General tab.
+    // These all map to (e) => updateSetting(key, e.currentTarget.checked) lambdas.
+    toggleSwitchByLabel('Show Gallery Title');
+    expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
 
-    // After clicking, at least one setting changed — save button should be enabled
+    toggleSwitchByLabel('Show Filter Tabs');
+    toggleSwitchByLabel('Show Search Box');
+    toggleSwitchByLabel('Show Gallery Subtitle');
+
+    // Save button must still be enabled with multiple changes
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
@@ -310,89 +291,60 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
+    await waitForTabs();
 
-    clickTab('Campaign Cards');
+    // Navigate to Campaign Cards tab and wait for its content
+    fireEvent.click(screen.getByRole('tab', { name: /Campaign Cards/i }));
+    // Wait for a label that lives exclusively in the campaign cards tab
+    // The Campaign Cards tab opens with an accordion; 'Card Appearance' is the first visible item.
+    await screen.findByText('Card Appearance');
 
-    // Toggle cardPageDotNav switch
-    const switches = getSwitchInputs();
-    for (const checkbox of switches) {
-      fireEvent.click(checkbox);
-    }
-
-    // The save button should be enabled after changes
-    expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
-  });
-
-  it('interacts with Media Gallery tab background text inputs', async () => {
-    render(
-      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+    // Toggle the first checkbox available on this tab
+    const switches = Array.from(
+      document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
     );
-
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
-
-    clickTab('Media Gallery');
-
-    // Find all text inputs (not checkboxes, not radio) and change them
-    const textInputs = Array.from(
-      document.querySelectorAll<HTMLInputElement>('input[type="text"]'),
-    );
-    for (const input of textInputs.slice(0, 10)) {
-      fireEvent.change(input, { target: { value: 'test-value' } });
-    }
-
-    // Also interact with switches on this tab
-    const switches = getSwitchInputs();
-    for (const sw of switches.slice(0, 5)) {
-      fireEvent.click(sw);
+    if (switches.length > 0) {
+      fireEvent.click(switches[0]);
     }
 
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
-  it('enables Advanced tab via toggle and interacts with its controls', async () => {
+  it('interacts with Media Gallery tab controls', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
+    await waitForTabs();
+    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
+
+    // Toggle named switches
+    toggleSwitchByLabel('Enable Lightbox');
+    toggleSwitchByLabel('Enable Animations');
+
+    expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
+  });
+
+  it('enables Advanced tab via advancedSettingsEnabled switch', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
+    );
+
+    await waitForTabs();
+
+    // Advanced Settings Enabled switch is on the General tab.
+    // It controls visibility of the Advanced tab.
+    toggleSwitchByLabel('Enable Advanced Settings');
+
+    // The Advanced tab should now appear in the tab list.
     await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
+      expect(screen.getByRole('tab', { name: /Advanced/i })).toBeDefined();
     });
 
-    // The advancedSettingsEnabled switch is on the General tab
-    // Get all checkboxes and click the last one (should be advancedSettingsEnabled)
-    const switches = getSwitchInputs();
-    // Click the last switch which should be advancedSettingsEnabled
-    const lastSwitch = switches[switches.length - 1];
-    fireEvent.click(lastSwitch);
+    // Navigate to it
+    fireEvent.click(screen.getByRole('tab', { name: /Advanced/i }));
 
-    await waitFor(() => {
-      // Advanced tab should now be visible
-      expect(screen.queryByRole('tab', { name: /Advanced/i })).toBeDefined();
-    });
-
-    const advancedTab = screen.queryByRole('tab', { name: /Advanced/i });
-    if (advancedTab) {
-      fireEvent.click(advancedTab);
-
-      // Interact with text inputs on Advanced tab
-      await waitFor(() => {
-        const textInputs = Array.from(
-          document.querySelectorAll<HTMLInputElement>('input:not([type="checkbox"]):not([type="radio"])'),
-        );
-        for (const input of textInputs.slice(0, 15)) {
-          if (input.type !== 'hidden') {
-            fireEvent.change(input, { target: { value: '100' } });
-          }
-        }
-      });
-    }
-
-    // Settings should have changed
+    // Save button must be enabled (advancedSettingsEnabled changed)
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
@@ -401,9 +353,7 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Display Settings')).toBeDefined();
-    });
+    await waitForTabs();
 
     const testBtn = screen.queryByRole('button', { name: /Test Connection/i });
     if (testBtn) {

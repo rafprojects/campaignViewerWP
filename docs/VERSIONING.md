@@ -12,6 +12,15 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.17.0 (March 2, 2026)
+- **MINOR**: Phase 19 — Builder Coverage, WP-CLI & Toolchain
+  - **P19-QA**: 102 new JS tests for 9 Phase 18 components + 2 hooks; functions threshold 60%→65%; ~991 JS tests total.
+  - **P19-D**: Pre-commit toolchain — Husky, lint-staged, commitlint; `CONTRIBUTING.md`.
+  - **P19-A**: Builder keyboard shortcuts — `Ctrl+S`, `?` help modal, `V`, zoom shortcuts; `BuilderKeyboardShortcutsModal`; 25 tests.
+  - **P19-B**: Builder undo/redo improvements — `HistoryEntry` type, 35 labeled `mutate()` call sites, `BuilderHistoryPanel` dockview tab with click-to-jump; 23 tests.
+  - **P19-C**: WP-CLI — `wp wpsg campaign list/archive/restore/duplicate/export/import`, `wp wpsg media list/orphans`, `wp wpsg cache clear`, `wp wpsg analytics clear`, `wp wpsg rate-limit reset`; 27 PHPUnit scenarios.
+  - **P19-E (fix)**: `SettingsPanel.test.tsx` race condition fixed — `findByRole` load gate, label-targeted switch helpers, `clickTabAndWait` helper.
+
 ### v0.16.0 (March 1, 2026)
 - **MINOR**: Phase 18 — Admin Power Features, Coverage & Canvas Polish
   - **P18-QA JS**: 841 tests; functions threshold lifted 41%→66.5%; all Vitest thresholds green.
@@ -214,6 +223,7 @@ Current development follows a phased approach:
 - **Phase 16**: ✅ Complete (Layer System — v0.14.0 release)
 - **Phase 17**: ✅ Complete (Builder UX — v0.15.0 release)
 - **Phase 18**: ✅ Complete (Admin Power Features, Coverage & Canvas Polish — v0.16.0 release)
+- **Phase 19**: ✅ Complete (Builder Coverage, WP-CLI & Toolchain — v0.17.0 release)
 
 ## Branching Strategy
 

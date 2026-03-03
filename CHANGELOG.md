@@ -5,6 +5,20 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-03-02
+
+### Added - Phase 19: Builder Coverage, WP-CLI & Toolchain
+
+- **P19-QA** (`9963400`): 102 new JS tests across 9 Phase 18 components (`AccessRequestForm`, `PendingRequestsPanel`, `QuickAddUserModal`, `AnalyticsDashboard`, `MediaUsageBadge`, `CampaignDuplicateModal`, `CampaignImportModal`, `KeyboardShortcutsModal`, `BulkActionsBar`) and 2 hooks (`useAdminCampaignActions`, `useAdminAccessState`); functions coverage threshold lifted 60%→65%; all Vitest thresholds green; ~991 JS tests total.
+- **P19-D** (`e604ff6`): Pre-commit toolchain — Husky hooks (`pre-commit` → lint-staged, `commit-msg` → commitlint, `pre-push` → vitest run); lint-staged runs ESLint + `tsc --noEmit` on staged TS/TSX; commitlint enforces Conventional Commits (11 allowed types, 120-char header limit); `CONTRIBUTING.md` documents all hooks and bypass instructions.
+- **P19-A** (`5685249`): Builder keyboard shortcuts hardening — `Ctrl+S` save, `?` opens `BuilderKeyboardShortcutsModal` (7 shortcut categories rendered in a Kbd table), `V` select tool, `0` reset zoom, `=`/`+` zoom in, `-` zoom out via `useHotkeys`; 25 new tests.
+- **P19-B** (`12e0155`): Builder undo/redo improvements — `HistoryEntry` interface (`id`, `label`, `timestamp`) added to `useLayoutBuilderState`; `mutate()` accepts a descriptive label (35 labeled call sites); new `BuilderHistoryPanel` dockview tab showing reverse-ordered history with click-to-jump, current-entry highlight, and undo/redo header buttons; 23 new tests.
+- **P19-C** (`a979761`): WP-CLI command surface — `class-wpsg-cli.php` registered under `WP_CLI::add_command('wpsg', 'WPSG_CLI')` gated on `defined('WP_CLI')`. Commands: `wp wpsg campaign list/archive/restore/duplicate/export/import`, `wp wpsg media list/orphans`, `wp wpsg cache clear`, `wp wpsg analytics clear`, `wp wpsg rate-limit reset`; all write audit-log entries and invalidate campaign transient cache; 27 PHPUnit scenarios in `WPSG_CLI_Test.php`.
+
+### Fixed
+
+- **P19-E** (`aed33af`): `SettingsPanel.test.tsx` race condition — all `waitFor` load gates replaced with `await screen.findByRole('tab', {name: /General/i})` (resolves only after `isLoading=false`); slow all-checkbox loops replaced by label-targeted `toggleSwitchByLabel()` helper; `clickTabAndWait()` helper waits for panel content after tab click; 16/16 tests pass reliably without hangs.
+
 ## [0.16.0] - 2026-03-01
 
 ### Added - Phase 18: Admin Power Features, Coverage & Canvas Polish

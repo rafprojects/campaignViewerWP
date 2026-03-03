@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { produce, enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
@@ -35,6 +35,24 @@ export function createEmptyTemplate(name = 'Untitled Layout'): LayoutTemplate {
 /** Generate a short unique ID for new slots. */
 function generateSlotId(): string {
   return crypto.randomUUID?.() ?? `slot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// ── History entry ──────────────────────────────────────────
+
+export interface HistoryEntry {
+  /** Unique key for React lists. */
+  id: string;
+  /** Human-readable label, e.g. "Move slot", "Add layer". */
+  label: string;
+  /** Epoch ms — display only. */
+  timestamp: number;
+}
+
+/** Internal past/future stack item — not part of the public API. */
+interface HistoryItem {
+  /** Template snapshot captured BEFORE the named mutation was applied. */
+  snapshot: LayoutTemplate;
+  entry: HistoryEntry;
 }
 
 // ── Types ────────────────────────────────────────────────────
@@ -147,6 +165,14 @@ export interface LayoutBuilderActions {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  /** Human-readable history entries (most-recent-last). */
+  historyEntries: HistoryEntry[];
+  /** Current position in the history stack (-1 = no history yet / initial state). */
+  historyCurrentIndex: number;
+  /** Jump directly to any entry in one synchronous state transition. target -1 = initial state. */
+  jumpToHistoryIndex: (target: number) => void;
+  /** True once the history stack has been trimmed (oldest snapshot is no longer the initial one). */
+  isHistoryTrimmed: boolean;
 
   // ── Preview ──
   togglePreview: () => void;
@@ -170,26 +196,36 @@ export function useLayoutBuilderState(
   const [isDirty, setIsDirty] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
 
-  // ── History stack ──
-  const [history, setHistory] = useState<LayoutTemplate[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  // ── History stack (past / future model) ──
+  // past[i] = { snapshot: template BEFORE mutation i, entry: label for mutation i }
+  // future[0] = most-recently-undone item (restored on redo)
+  const [past, setPast] = useState<HistoryItem[]>([]);
+  const [future, setFuture] = useState<HistoryItem[]>([]);
+  // Tracks whether any push has ever caused a trim; once true, past[0] is no
+  // longer the snapshot before the very first mutation.
+  const [historyTrimmed, setHistoryTrimmed] = useState(false);
 
-  /** Push the current template onto the undo stack before a mutation. */
-  const pushHistory = useCallback(() => {
-    setHistory((prev) => {
-      // Trim any redo entries after current index
-      const trimmed = prev.slice(0, historyIndex + 1);
-      const next = [...trimmed, template];
-      if (next.length > MAX_HISTORY) next.shift();
-      return next;
+  /** Save current template to the undo stack before applying a mutation. */
+  const pushHistory = useCallback((label: string) => {
+    const entry: HistoryEntry = {
+      id: crypto.randomUUID?.() ?? `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      label,
+      timestamp: Date.now(),
+    };
+    if (!historyTrimmed && past.length >= MAX_HISTORY) {
+      setHistoryTrimmed(true);
+    }
+    setPast((prev) => {
+      const next = [...prev, { snapshot: template, entry }];
+      return next.length > MAX_HISTORY ? next.slice(1) : next;
     });
-    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY - 1));
-  }, [template, historyIndex]);
+    setFuture([]); // new mutation always clears the redo stack
+  }, [template, past, historyTrimmed]);
 
   /** Apply a template mutation via Immer, pushing history first. */
   const mutate = useCallback(
-    (recipe: (draft: LayoutTemplate) => void) => {
-      pushHistory();
+    (recipe: (draft: LayoutTemplate) => void, label = 'Edit') => {
+      pushHistory(label);
       setTemplateRaw((prev) => produce(prev, recipe));
       setIsDirty(true);
     },
@@ -200,39 +236,40 @@ export function useLayoutBuilderState(
 
   const setTemplate = useCallback((t: LayoutTemplate) => {
     setTemplateRaw(t);
-    setHistory([]);
-    setHistoryIndex(-1);
+    setPast([]);
+    setFuture([]);
+    setHistoryTrimmed(false);
     setIsDirty(false);
     setSelectedSlotIds(new Set());
   }, []);
 
   const setName = useCallback(
-    (name: string) => mutate((d) => { d.name = name; }),
+    (name: string) => mutate((d) => { d.name = name; }, 'Rename template'),
     [mutate],
   );
 
   const setAspectRatio = useCallback(
-    (ratio: number) => mutate((d) => { d.canvasAspectRatio = ratio; }),
+    (ratio: number) => mutate((d) => { d.canvasAspectRatio = ratio; }, 'Change aspect ratio'),
     [mutate],
   );
 
   const setBackgroundColor = useCallback(
-    (color: string) => mutate((d) => { d.backgroundColor = color; }),
+    (color: string) => mutate((d) => { d.backgroundColor = color; }, 'Change background color'),
     [mutate],
   );
 
   const setBackgroundImage = useCallback(
-    (url: string) => mutate((d) => { d.backgroundImage = url || undefined; }),
+    (url: string) => mutate((d) => { d.backgroundImage = url || undefined; }, 'Set background image'),
     [mutate],
   );
 
   const setBackgroundImageFit = useCallback(
-    (fit: 'cover' | 'contain' | 'fill') => mutate((d) => { d.backgroundImageFit = fit; }),
+    (fit: 'cover' | 'contain' | 'fill') => mutate((d) => { d.backgroundImageFit = fit; }, 'Change image fit'),
     [mutate],
   );
 
   const setBackgroundImageOpacity = useCallback(
-    (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }),
+    (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }, 'Change image opacity'),
     [mutate],
   );
 
@@ -252,7 +289,7 @@ export function useLayoutBuilderState(
         y: offsetY,
         zIndex: slotCount + 1,
       });
-    });
+    }, 'Add slot');
     setSelectedSlotIds(new Set([newId]));
     return newId;
   }, [mutate]);
@@ -262,7 +299,7 @@ export function useLayoutBuilderState(
       const idSet = new Set(ids);
       mutate((d) => {
         d.slots = d.slots.filter((s) => !idSet.has(s.id));
-      });
+      }, ids.length > 1 ? 'Remove slots' : 'Remove slot');
       setSelectedSlotIds((prev) => {
         const next = new Set(prev);
         for (const id of ids) next.delete(id);
@@ -289,7 +326,7 @@ export function useLayoutBuilderState(
             zIndex: d.slots.length + 1,
           });
         }
-      });
+      }, ids.length > 1 ? 'Duplicate slots' : 'Duplicate slot');
       if (newIds.length > 0) {
         setSelectedSlotIds(new Set(newIds));
       }
@@ -304,7 +341,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) { slot.x = x; slot.y = y; }
-      }),
+      }, 'Move slot'),
     [mutate],
   );
 
@@ -318,7 +355,7 @@ export function useLayoutBuilderState(
           slot.width = width;
           slot.height = height;
         }
-      }),
+      }, 'Resize slot'),
     [mutate],
   );
 
@@ -329,7 +366,7 @@ export function useLayoutBuilderState(
         if (idx !== -1) {
           Object.assign(d.slots[idx], updates);
         }
-      }),
+      }, 'Update slot'),
     [mutate],
   );
 
@@ -343,7 +380,7 @@ export function useLayoutBuilderState(
             slot.y = Math.max(0, Math.min(100 - slot.height, slot.y + dy));
           }
         }
-      }),
+      }, 'Nudge slot'),
     [mutate],
   );
 
@@ -356,7 +393,7 @@ export function useLayoutBuilderState(
           slot.mediaAttachmentId = meta?.attachmentId;
           slot.mediaUrl = meta?.url;
         }
-      }),
+      }, 'Assign media'),
     [mutate],
   );
 
@@ -369,7 +406,7 @@ export function useLayoutBuilderState(
           slot.mediaAttachmentId = undefined;
           slot.mediaUrl = undefined;
         }
-      }),
+      }, 'Clear slot media'),
     [mutate],
   );
 
@@ -388,7 +425,7 @@ export function useLayoutBuilderState(
             d.slots[i].mediaUrl = undefined;
           }
         }
-      }),
+      }, 'Auto-assign media'),
     [mutate],
   );
 
@@ -410,7 +447,7 @@ export function useLayoutBuilderState(
         for (const overlay of d.overlays) {
           if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
         }
-      }),
+      }, 'Bring to front'),
     [mutate],
   );
 
@@ -440,7 +477,7 @@ export function useLayoutBuilderState(
           for (const slot of d.slots) slot.zIndex += offset;
           for (const overlay of d.overlays) overlay.zIndex += offset;
         }
-      }),
+      }, 'Send to back'),
     [mutate],
   );
 
@@ -470,7 +507,7 @@ export function useLayoutBuilderState(
             }
           }
         }
-      }),
+      }, 'Bring forward'),
     [mutate],
   );
 
@@ -499,7 +536,7 @@ export function useLayoutBuilderState(
             }
           }
         }
-      }),
+      }, 'Send backward'),
     [mutate],
   );
 
@@ -521,7 +558,7 @@ export function useLayoutBuilderState(
           const real = d.slots.find((s) => s.id === ref.id)!;
           real.zIndex = i + 1;
         });
-      });
+      }, 'Normalize z-indices');
       return normalized;
     },
     [template, mutate],
@@ -549,7 +586,7 @@ export function useLayoutBuilderState(
           opacity: 1,
           pointerEvents: false,
         });
-      });
+      }, 'Add layer');
       return newId;
     },
     [mutate],
@@ -559,7 +596,7 @@ export function useLayoutBuilderState(
     (id: string) =>
       mutate((d) => {
         d.overlays = d.overlays.filter((o) => o.id !== id);
-      }),
+      }, 'Remove layer'),
     [mutate],
   );
 
@@ -568,7 +605,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const idx = d.overlays.findIndex((o) => o.id === id);
         if (idx !== -1) Object.assign(d.overlays[idx], updates);
-      }),
+      }, 'Update layer'),
     [mutate],
   );
 
@@ -577,7 +614,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const o = d.overlays.find((ov) => ov.id === id);
         if (o) { o.x = x; o.y = y; }
-      }),
+      }, 'Move layer'),
     [mutate],
   );
 
@@ -586,7 +623,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const o = d.overlays.find((ov) => ov.id === id);
         if (o) { o.x = x; o.y = y; o.width = width; o.height = height; }
-      }),
+      }, 'Resize layer'),
     [mutate],
   );
 
@@ -597,7 +634,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) slot.name = name;
-      }),
+      }, 'Rename slot'),
     [mutate],
   );
 
@@ -606,7 +643,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const overlay = d.overlays.find((o) => o.id === id);
         if (overlay) overlay.name = name;
-      }),
+      }, 'Rename layer'),
     [mutate],
   );
 
@@ -615,7 +652,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) slot.visible = !(slot.visible ?? true);
-      }),
+      }, 'Toggle slot visibility'),
     [mutate],
   );
 
@@ -624,7 +661,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const overlay = d.overlays.find((o) => o.id === id);
         if (overlay) overlay.visible = !(overlay.visible ?? true);
-      }),
+      }, 'Toggle layer visibility'),
     [mutate],
   );
 
@@ -633,7 +670,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
         if (slot) slot.locked = !(slot.locked ?? false);
-      }),
+      }, 'Toggle slot lock'),
     [mutate],
   );
 
@@ -642,7 +679,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const overlay = d.overlays.find((o) => o.id === id);
         if (overlay) overlay.locked = !(overlay.locked ?? false);
-      }),
+      }, 'Toggle layer lock'),
     [mutate],
   );
 
@@ -659,7 +696,7 @@ export function useLayoutBuilderState(
           const z = newZMap.get(overlay.id);
           if (z !== undefined) overlay.zIndex = z;
         }
-      }),
+      }, 'Reorder layers'),
     [mutate],
   );
 
@@ -688,31 +725,88 @@ export function useLayoutBuilderState(
 
   // ── History ──
 
-  const canUndo = historyIndex >= 0;
-  const canRedo = historyIndex < history.length - 1;
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
 
   const undo = useCallback(() => {
-    if (!canUndo) return;
-    // Save current state as a redo point if we're at the tip
-    if (historyIndex === history.length - 1) {
-      setHistory((prev) => [...prev, template]);
-    }
-    setTemplateRaw(history[historyIndex]);
-    setHistoryIndex((prev) => prev - 1);
+    if (past.length === 0) return;
+    const lastItem = past[past.length - 1];
+    // Snapshot goes to future so redo can restore it.
+    setFuture((prev) => [{ snapshot: template, entry: lastItem.entry }, ...prev]);
+    setPast((prev) => prev.slice(0, -1));
+    setTemplateRaw(lastItem.snapshot);
     setIsDirty(true);
-  }, [canUndo, history, historyIndex, template]);
+  }, [past, template]);
 
   const redo = useCallback(() => {
-    if (!canRedo) return;
-    const nextIdx = historyIndex + 1;
-    // The redo state is at nextIdx + 1 because we pushed current when undoing
-    const redoState = history[nextIdx + 1] ?? history[nextIdx];
-    if (redoState) {
-      setTemplateRaw(redoState);
-      setHistoryIndex(nextIdx);
+    if (future.length === 0) return;
+    const nextItem = future[0];
+    // Save current template to past before restoring redo state.
+    setPast((prev) => {
+      const next = [...prev, { snapshot: template, entry: nextItem.entry }];
+      return next.length > MAX_HISTORY ? next.slice(1) : next;
+    });
+    setFuture((prev) => prev.slice(1));
+    setTemplateRaw(nextItem.snapshot);
+    setIsDirty(true);
+  }, [future, template]);
+
+  /**
+   * Jump to any history position in a single synchronous state transition.
+   * `target === -1` restores the initial state (before any mutations).
+   * `target === k` restores the state after mutation k was applied.
+   *
+   * This avoids the stale-closure problem of calling undo()/redo() in a loop
+   * (repeated calls in one tick would all read the same pre-update state).
+   */
+  const jumpToHistoryIndex = useCallback((target: number) => {
+    // Guard: nothing to jump to.
+    if (past.length === 0 && future.length === 0) return;
+
+    // Clamp target to valid range: -1 (initial state) … (total entries - 1).
+    const maxIndex = past.length + future.length - 1;
+    const clamped = Math.max(-1, Math.min(target, maxIndex));
+
+    const currentIndex = past.length - 1;
+    if (clamped === currentIndex) return;
+
+    if (clamped < currentIndex) {
+      // ── Jumping backward ──────────────────────────────────────────────────
+      // Build future items ordered so that future[0] undoes the smallest step,
+      // i.e. first redo takes us back to position (clamped + 1).
+      const newFutureItems: HistoryItem[] = [];
+      for (let k = clamped + 1; k < past.length; k++) {
+        // Template *at* position k = past[k+1].snapshot (before mutation k+1)
+        //                          = current template when k is the last past entry.
+        const snapshotAtK = k === past.length - 1 ? template : past[k + 1].snapshot;
+        newFutureItems.push({ snapshot: snapshotAtK, entry: past[k].entry });
+      }
+      // The template to restore: state after mutation `clamped`
+      //   = past[clamped + 1].snapshot (before mutation clamped+1)
+      //   = past[0].snapshot (the initial template) when clamped === -1.
+      const targetTemplate = clamped >= 0 ? past[clamped + 1].snapshot : past[0].snapshot;
+      setPast(past.slice(0, clamped + 1));
+      setFuture([...newFutureItems, ...future]);
+      setTemplateRaw(targetTemplate);
+      setIsDirty(true);
+    } else {
+      // ── Jumping forward ───────────────────────────────────────────────────
+      // Consume `stepsForward` items from the front of future.
+      const stepsForward = clamped - currentIndex;
+      const toApply = future.slice(0, stepsForward);
+      let tmpl = template;
+      const newPastItems: HistoryItem[] = [];
+      for (const item of toApply) {
+        newPastItems.push({ snapshot: tmpl, entry: item.entry });
+        tmpl = item.snapshot;
+      }
+      const newPast = [...past, ...newPastItems];
+      setPast(newPast.length > MAX_HISTORY ? newPast.slice(newPast.length - MAX_HISTORY) : newPast);
+      setFuture(future.slice(stepsForward));
+      setTemplateRaw(tmpl);
       setIsDirty(true);
     }
-  }, [canRedo, history, historyIndex]);
+  }, [past, future, template]);
 
   // ── Preview ──
 
@@ -794,6 +888,13 @@ export function useLayoutBuilderState(
     redo,
     canUndo,
     canRedo,
+    historyEntries: useMemo(
+      () => [...past.map((p) => p.entry), ...future.map((f) => f.entry)],
+      [past, future],
+    ),
+    historyCurrentIndex: past.length - 1,
+    jumpToHistoryIndex,
+    isHistoryTrimmed: historyTrimmed,
     // Preview
     togglePreview,
     // Persistence

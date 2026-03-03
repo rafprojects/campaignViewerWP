@@ -36,6 +36,8 @@ import { LayoutBuilderLayersPanel } from './LayoutBuilderLayersPanel';
 import { LayoutBuilderMediaPanel } from './LayoutBuilderMediaPanel';
 import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
+import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
+import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -44,6 +46,7 @@ const dockComponents = {
   media: LayoutBuilderMediaPanel,
   canvas: LayoutBuilderCanvasPanel,
   properties: LayoutBuilderPropertiesPanel,
+  history: BuilderHistoryPanel,
 };
 
 // ── Aspect ratio presets ─────────────────────────────────────
@@ -145,6 +148,8 @@ export function LayoutBuilderModal({
   );
   const [isUploadingOverlay, setIsUploadingOverlay] = useState(false);
   const [isUploadingBg, setIsUploadingBg] = useState(false);
+
+  const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
 
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [snapThreshold, setSnapThreshold] = useState(5);
@@ -330,8 +335,10 @@ export function LayoutBuilderModal({
   }, [builder, media, announce]);
 
   // ── Keyboard shortcuts ──
+  // Attached at the document level so shortcuts fire regardless of which
+  // focusable child (canvas, button, panel header, etc.) has focus.
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: KeyboardEvent) => {
       // Don't capture when inside inputs
       if (
         e.target instanceof HTMLInputElement ||
@@ -359,7 +366,25 @@ export function LayoutBuilderModal({
         e.preventDefault();
       }
       if (e.key === 'Escape') {
-        builder.clearSelection();
+        if (builder.selectedSlotIds.size > 0) {
+          // Something is selected — deselect and absorb the event so the
+          // Modal's own Escape-to-close handler does not fire.
+          builder.clearSelection();
+          e.preventDefault();
+          e.stopPropagation();
+        } else {
+          // Nothing selected — treat Escape as a modal close.
+          handleClose();
+        }
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        void handleSave();
+      }
+
+      if (e.key === '?') {
+        setBuilderShortcutsOpen(true);
       }
 
       // Z-index shortcuts (P15-G): ] = forward, [ = backward, Shift+] = front, Shift+[ = back
@@ -405,8 +430,15 @@ export function LayoutBuilderModal({
         }
       }
     },
-    [builder, handleDeleteSelected, handleDuplicateSelected],
+    [builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave],
   );
+
+  // Attach/detach the document-level listener whenever the modal opens/closes.
+  useEffect(() => {
+    if (!opened) return;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [opened, handleKeyDown]);
 
   // ── Get selected slot for properties panel ──
   const selectedSlot =
@@ -454,9 +486,10 @@ export function LayoutBuilderModal({
         // fall through to default layout
       }
     }
-    // Default layout: Layers+Media tabs left | Canvas centre | Properties right
+    // Default layout: Layers+Media+History tabs left | Canvas centre | Properties right
     const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
     event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
+    event.api.addPanel({ id: 'history', component: 'history', title: 'History', position: { direction: 'within', referencePanel: layersPanel } });
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);
@@ -482,6 +515,7 @@ export function LayoutBuilderModal({
       onClose={handleClose}
       fullScreen
       withCloseButton={false}
+      closeOnEscape={false}
       padding={0}
       styles={{
         body: { height: '100vh', display: 'flex', flexDirection: 'column' },
@@ -489,9 +523,8 @@ export function LayoutBuilderModal({
       }}
       aria-label="Layout Builder"
     >
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
-        onKeyDown={handleKeyDown}
+        data-testid="builder-keyboard-handler"
         style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
         {/* ── Header Bar ── */}
@@ -607,6 +640,12 @@ export function LayoutBuilderModal({
             />
           </div>
         </BuilderDockContext.Provider>
+
+        {/* ── Builder keyboard shortcuts help modal ── */}
+        <BuilderKeyboardShortcutsModal
+          opened={builderShortcutsOpen}
+          onClose={() => setBuilderShortcutsOpen(false)}
+        />
 
         {/* ARIA live region for screen reader announcements */}
         <div

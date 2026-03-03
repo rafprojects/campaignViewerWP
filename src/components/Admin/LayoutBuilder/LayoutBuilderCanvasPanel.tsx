@@ -30,7 +30,14 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     transformRef.current?.resetTransform();
   }, []);
 
-  useHotkeys([['h', () => setIsHandTool((v) => !v)]]);
+  useHotkeys([
+    ['h', () => setIsHandTool((v) => !v)],
+    ['v', () => setIsHandTool(false)],
+    ['0', () => transformRef.current?.resetTransform()],
+    ['=', () => transformRef.current?.zoomIn()],
+    ['+', () => transformRef.current?.zoomIn()],
+    ['-', () => transformRef.current?.zoomOut()],
+  ]);
 
   return (
     <CanvasTransformContext.Provider value={{ scale, isHandTool }}>
