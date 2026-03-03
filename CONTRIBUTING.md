@@ -18,7 +18,7 @@ Three hooks are managed by [husky](https://typicode.github.io/husky):
 
 | Hook | Runs | Blocks on |
 |------|------|-----------|
-| `pre-commit` | `lint-staged` | ESLint errors, TypeScript errors in staged files |
+| `pre-commit` | `lint-staged` | ESLint errors, TypeScript errors (project-wide) |
 | `commit-msg` | `commitlint` | Non-conventional commit message format |
 | `pre-push` | `vitest run` | Any failing test |
 

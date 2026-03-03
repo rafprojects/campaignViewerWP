@@ -517,6 +517,7 @@ class WPSG_CLI {
             'fields'         => 'ids',
         ] );
 
+        // Build a set for O(1) membership checks (vs O(n) in_array on large sites).
         $referenced_ids = [];
         foreach ( $campaigns as $campaign_id ) {
             $media_items = get_post_meta( $campaign_id, 'media_items', true );
@@ -524,7 +525,7 @@ class WPSG_CLI {
                 foreach ( $media_items as $item ) {
                     // Only use attachmentId (WP post ID); 'id' is a uniqid string and never matches attachment IDs.
                     if ( ! empty( $item['attachmentId'] ) ) {
-                        $referenced_ids[] = (string) $item['attachmentId'];
+                        $referenced_ids[ (string) $item['attachmentId'] ] = true;
                     }
                 }
             }
@@ -546,7 +547,7 @@ class WPSG_CLI {
 
         $orphans = [];
         foreach ( $attachments as $att ) {
-            if ( ! in_array( (string) $att->ID, $referenced_ids, true ) ) {
+            if ( ! isset( $referenced_ids[ (string) $att->ID ] ) ) {
                 $orphans[] = [
                     'id'    => $att->ID,
                     'title' => $att->post_title,
@@ -691,8 +692,8 @@ class WPSG_CLI {
             'id'          => (string) $post->ID,
             'title'       => $post->post_title,
             'description' => $post->post_content,
-            'status'      => get_post_meta( $post->ID, 'status', true ) ?: 'active',
-            'visibility'  => get_post_meta( $post->ID, 'visibility', true ) ?: 'public',
+            'status'      => get_post_meta( $post->ID, 'status', true ) ?: 'draft',
+            'visibility'  => get_post_meta( $post->ID, 'visibility', true ) ?: 'private',
             'tags'        => get_post_meta( $post->ID, 'tags', true ) ?: [],
             'coverImage'  => get_post_meta( $post->ID, 'cover_image', true ) ?: '',
             'publishAt'   => get_post_meta( $post->ID, 'publish_at', true ) ?: '',
