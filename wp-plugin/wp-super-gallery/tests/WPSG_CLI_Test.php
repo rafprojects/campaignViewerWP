@@ -68,6 +68,10 @@ if ( ! class_exists( 'WP_CLI\Utils' ) ) {
     class_alias( 'WP_CLI_Utils_Stub', 'WP_CLI\Utils' );
 }
 
+// Load the CLI class directly — it is normally gated on the WP_CLI constant in
+// the main plugin file, so the test suite must require it explicitly.
+require_once __DIR__ . '/../includes/class-wpsg-cli.php';
+
 /**
  * @covers WPSG_CLI
  */

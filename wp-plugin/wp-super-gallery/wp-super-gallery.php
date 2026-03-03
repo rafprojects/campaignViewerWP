@@ -229,7 +229,7 @@ WPSG_Thumbnail_Cache::register();
 WPSG_Image_Optimizer::register();
 
 // P19-C: WP-CLI command surface — only loaded when running under WP-CLI.
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
+if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
     require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cli.php';
     WP_CLI::add_command( 'wpsg', 'WPSG_CLI' );
 }

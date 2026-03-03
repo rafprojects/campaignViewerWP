@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { produce, enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
@@ -46,6 +46,13 @@ export interface HistoryEntry {
   label: string;
   /** Epoch ms — display only. */
   timestamp: number;
+}
+
+/** Internal past/future stack item — not part of the public API. */
+interface HistoryItem {
+  /** Template snapshot captured BEFORE the named mutation was applied. */
+  snapshot: LayoutTemplate;
+  entry: HistoryEntry;
 }
 
 // ── Types ────────────────────────────────────────────────────
@@ -162,6 +169,8 @@ export interface LayoutBuilderActions {
   historyEntries: HistoryEntry[];
   /** Current position in the history stack (-1 = no history yet / initial state). */
   historyCurrentIndex: number;
+  /** Jump directly to any entry in one synchronous state transition. target -1 = initial state. */
+  jumpToHistoryIndex: (target: number) => void;
 
   // ── Preview ──
   togglePreview: () => void;
@@ -185,33 +194,25 @@ export function useLayoutBuilderState(
   const [isDirty, setIsDirty] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
 
-  // ── History stack ──
-  const [history, setHistory] = useState<LayoutTemplate[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [historyLabels, setHistoryLabels] = useState<HistoryEntry[]>([]);
+  // ── History stack (past / future model) ──
+  // past[i] = { snapshot: template BEFORE mutation i, entry: label for mutation i }
+  // future[0] = most-recently-undone item (restored on redo)
+  const [past, setPast] = useState<HistoryItem[]>([]);
+  const [future, setFuture] = useState<HistoryItem[]>([]);
 
-  /** Push the current template onto the undo stack before a mutation. */
+  /** Save current template to the undo stack before applying a mutation. */
   const pushHistory = useCallback((label: string) => {
-    setHistory((prev) => {
-      // Trim any redo entries after current index
-      const trimmed = prev.slice(0, historyIndex + 1);
-      const next = [...trimmed, template];
-      if (next.length > MAX_HISTORY) next.shift();
-      return next;
+    const entry: HistoryEntry = {
+      id: crypto.randomUUID?.() ?? `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      label,
+      timestamp: Date.now(),
+    };
+    setPast((prev) => {
+      const next = [...prev, { snapshot: template, entry }];
+      return next.length > MAX_HISTORY ? next.slice(1) : next;
     });
-    setHistoryLabels((prev) => {
-      const trimmed = prev.slice(0, historyIndex + 1);
-      const entry: HistoryEntry = {
-        id: crypto.randomUUID?.() ?? `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-        label,
-        timestamp: Date.now(),
-      };
-      const next = [...trimmed, entry];
-      if (next.length > MAX_HISTORY) next.shift();
-      return next;
-    });
-    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY - 1));
-  }, [template, historyIndex]);
+    setFuture([]); // new mutation always clears the redo stack
+  }, [template]);
 
   /** Apply a template mutation via Immer, pushing history first. */
   const mutate = useCallback(
@@ -227,9 +228,8 @@ export function useLayoutBuilderState(
 
   const setTemplate = useCallback((t: LayoutTemplate) => {
     setTemplateRaw(t);
-    setHistory([]);
-    setHistoryIndex(-1);
-    setHistoryLabels([]);
+    setPast([]);
+    setFuture([]);
     setIsDirty(false);
     setSelectedSlotIds(new Set());
   }, []);
@@ -716,40 +716,81 @@ export function useLayoutBuilderState(
 
   // ── History ──
 
-  const canUndo = historyIndex >= 0;
-  const canRedo = historyIndex < history.length - 1;
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
 
   const undo = useCallback(() => {
-    if (!canUndo) return;
-    // Save current state as a redo point if we're at the tip.
-    // Keep historyLabels in lockstep so the two arrays never diverge.
-    if (historyIndex === history.length - 1) {
-      setHistory((prev) => [...prev, template]);
-      setHistoryLabels((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID?.() ?? `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-          label: prev[prev.length - 1]?.label ?? 'Current state',
-          timestamp: Date.now(),
-        },
-      ]);
-    }
-    setTemplateRaw(history[historyIndex]);
-    setHistoryIndex((prev) => prev - 1);
+    if (past.length === 0) return;
+    const lastItem = past[past.length - 1];
+    // Snapshot goes to future so redo can restore it.
+    setFuture((prev) => [{ snapshot: template, entry: lastItem.entry }, ...prev]);
+    setPast((prev) => prev.slice(0, -1));
+    setTemplateRaw(lastItem.snapshot);
     setIsDirty(true);
-  }, [canUndo, history, historyIndex, template]);
+  }, [past, template]);
 
   const redo = useCallback(() => {
-    if (!canRedo) return;
-    const nextIdx = historyIndex + 1;
-    // The redo state is at nextIdx + 1 because we pushed current when undoing
-    const redoState = history[nextIdx + 1] ?? history[nextIdx];
-    if (redoState) {
-      setTemplateRaw(redoState);
-      setHistoryIndex(nextIdx);
+    if (future.length === 0) return;
+    const nextItem = future[0];
+    // Save current template to past before restoring redo state.
+    setPast((prev) => {
+      const next = [...prev, { snapshot: template, entry: nextItem.entry }];
+      return next.length > MAX_HISTORY ? next.slice(1) : next;
+    });
+    setFuture((prev) => prev.slice(1));
+    setTemplateRaw(nextItem.snapshot);
+    setIsDirty(true);
+  }, [future, template]);
+
+  /**
+   * Jump to any history position in a single synchronous state transition.
+   * `target === -1` restores the initial state (before any mutations).
+   * `target === k` restores the state after mutation k was applied.
+   *
+   * This avoids the stale-closure problem of calling undo()/redo() in a loop
+   * (repeated calls in one tick would all read the same pre-update state).
+   */
+  const jumpToHistoryIndex = useCallback((target: number) => {
+    const currentIndex = past.length - 1;
+    if (target === currentIndex) return;
+
+    if (target < currentIndex) {
+      // ── Jumping backward ──────────────────────────────────────────────────
+      // Build future items ordered so that future[0] undoes the smallest step,
+      // i.e. first redo takes us back to position (target + 1).
+      const newFutureItems: HistoryItem[] = [];
+      for (let k = target + 1; k < past.length; k++) {
+        // Template *at* position k = past[k+1].snapshot (before mutation k+1)
+        //                          = current template when k is the last past entry.
+        const snapshotAtK = k === past.length - 1 ? template : past[k + 1].snapshot;
+        newFutureItems.push({ snapshot: snapshotAtK, entry: past[k].entry });
+      }
+      // The template to restore: state after mutation `target`
+      //   = past[target + 1].snapshot (before mutation target+1)
+      //   = past[0].snapshot (the initial template) when target === -1.
+      const targetTemplate = target >= 0 ? past[target + 1].snapshot : past[0].snapshot;
+      setPast(past.slice(0, target + 1));
+      setFuture([...newFutureItems, ...future]);
+      setTemplateRaw(targetTemplate);
+      setIsDirty(true);
+    } else {
+      // ── Jumping forward ───────────────────────────────────────────────────
+      // Consume `stepsForward` items from the front of future.
+      const stepsForward = target - currentIndex;
+      const toApply = future.slice(0, stepsForward);
+      let tmpl = template;
+      const newPastItems: HistoryItem[] = [];
+      for (const item of toApply) {
+        newPastItems.push({ snapshot: tmpl, entry: item.entry });
+        tmpl = item.snapshot;
+      }
+      const newPast = [...past, ...newPastItems];
+      setPast(newPast.length > MAX_HISTORY ? newPast.slice(newPast.length - MAX_HISTORY) : newPast);
+      setFuture(future.slice(stepsForward));
+      setTemplateRaw(tmpl);
       setIsDirty(true);
     }
-  }, [canRedo, history, historyIndex]);
+  }, [past, future, template]);
 
   // ── Preview ──
 
@@ -831,8 +872,12 @@ export function useLayoutBuilderState(
     redo,
     canUndo,
     canRedo,
-    historyEntries: historyLabels,
-    historyCurrentIndex: historyIndex,
+    historyEntries: useMemo(
+      () => [...past.map((p) => p.entry), ...future.map((f) => f.entry)],
+      [past, future],
+    ),
+    historyCurrentIndex: past.length - 1,
+    jumpToHistoryIndex,
     // Preview
     togglePreview,
     // Persistence

@@ -8,24 +8,15 @@ import { useBuilderDock } from './BuilderDockContext';
 
 export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
   const { builder } = useBuilderDock();
-  const { historyEntries, historyCurrentIndex, undo, redo, canUndo, canRedo } =
+  const { historyEntries, historyCurrentIndex, undo, redo, canUndo, canRedo, jumpToHistoryIndex } =
     builder;
 
-  /**
-   * Jump to a specific history index by calling undo/redo the appropriate
-   * number of times.  This is a simple sequential approach; a direct jump
-   * would require restructuring the hook but is not needed for P19-B scope.
-   */
+  /** Jump to a specific history index in one state transition (no stale-closure loop). */
   const handleJump = useCallback(
     (targetIndex: number) => {
-      const current = historyCurrentIndex;
-      if (targetIndex < current) {
-        for (let i = 0; i < current - targetIndex; i++) undo();
-      } else if (targetIndex > current) {
-        for (let i = 0; i < targetIndex - current; i++) redo();
-      }
+      if (targetIndex !== historyCurrentIndex) jumpToHistoryIndex(targetIndex);
     },
-    [historyCurrentIndex, undo, redo],
+    [historyCurrentIndex, jumpToHistoryIndex],
   );
 
   if (historyEntries.length === 0) {
@@ -137,10 +128,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
           {/* "Initial state" marker at the bottom */}
           <Box
             data-testid="history-entry-initial"
-            onClick={() => {
-              // Jump all the way back
-              for (let i = 0; i < historyCurrentIndex + 1; i++) undo();
-            }}
+            onClick={() => jumpToHistoryIndex(-1)}
             style={{
               cursor: 'pointer',
               borderRadius: 4,

@@ -172,11 +172,13 @@ const {
 } = vi.hoisted(() => {
   const mockUndo = vi.fn();
   const mockRedo = vi.fn();
+  const mockJumpToHistoryIndex = vi.fn();
   const mockBuilderHistoryReturn = {
     historyEntries: [] as Array<{ id: string; label: string; timestamp: number }>,
     historyCurrentIndex: -1,
     undo: mockUndo,
     redo: mockRedo,
+    jumpToHistoryIndex: mockJumpToHistoryIndex,
     canUndo: false,
     canRedo: false,
     template: { id: 1, name: 'Test', slots: [], overlays: [], canvasAspectRatio: 1.78 },
@@ -340,18 +342,18 @@ describe('BuilderHistoryPanel (P19-B)', () => {
     expect(redoSpy).toHaveBeenCalled();
   });
 
-  it('clicking a history entry calls undo to jump to that state', () => {
+  it('clicking a history entry calls jumpToHistoryIndex to jump to that state', () => {
     mockBuilderHistoryReturn.historyEntries = [
       { id: 'h1', label: 'Add slot', timestamp: Date.now() },
       { id: 'h2', label: 'Rename template', timestamp: Date.now() },
     ];
     mockBuilderHistoryReturn.historyCurrentIndex = 1;
     mockBuilderHistoryReturn.canUndo = true;
-    const undoSpy = vi.spyOn(mockBuilderHistoryReturn, 'undo');
+    const jumpSpy = vi.spyOn(mockBuilderHistoryReturn, 'jumpToHistoryIndex');
     renderPanel();
-    // Click the initial state entry (jumps back 2 = historyCurrentIndex + 1 undos)
+    // Click the initial state entry — should call jumpToHistoryIndex(-1)
     const initialEntry = screen.getByLabelText('Jump to initial state');
     fireEvent.click(initialEntry);
-    expect(undoSpy).toHaveBeenCalled();
+    expect(jumpSpy).toHaveBeenCalledWith(-1);
   });
 });
