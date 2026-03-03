@@ -8,7 +8,7 @@ import { useBuilderDock } from './BuilderDockContext';
 
 export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
   const { builder } = useBuilderDock();
-  const { historyEntries, historyCurrentIndex, undo, redo, canUndo, canRedo, jumpToHistoryIndex } =
+  const { historyEntries, historyCurrentIndex, undo, redo, canUndo, canRedo, jumpToHistoryIndex, isHistoryTrimmed } =
     builder;
 
   /** Jump to a specific history index in one state transition (no stale-closure loop). */
@@ -141,7 +141,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
             aria-label="Jump to initial state"
           >
             <Text size="xs" c="dimmed" fs="italic" style={{ flex: 1 }}>
-              Initial state
+              {isHistoryTrimmed ? 'Oldest state' : 'Initial state'}
             </Text>
             <IconTrash size={12} style={{ opacity: 0.3 }} />
           </UnstyledButton>

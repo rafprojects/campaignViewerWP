@@ -171,6 +171,8 @@ export interface LayoutBuilderActions {
   historyCurrentIndex: number;
   /** Jump directly to any entry in one synchronous state transition. target -1 = initial state. */
   jumpToHistoryIndex: (target: number) => void;
+  /** True once the history stack has been trimmed (oldest snapshot is no longer the initial one). */
+  isHistoryTrimmed: boolean;
 
   // ── Preview ──
   togglePreview: () => void;
@@ -199,6 +201,9 @@ export function useLayoutBuilderState(
   // future[0] = most-recently-undone item (restored on redo)
   const [past, setPast] = useState<HistoryItem[]>([]);
   const [future, setFuture] = useState<HistoryItem[]>([]);
+  // Tracks whether any push has ever caused a trim; once true, past[0] is no
+  // longer the snapshot before the very first mutation.
+  const [historyTrimmed, setHistoryTrimmed] = useState(false);
 
   /** Save current template to the undo stack before applying a mutation. */
   const pushHistory = useCallback((label: string) => {
@@ -207,12 +212,15 @@ export function useLayoutBuilderState(
       label,
       timestamp: Date.now(),
     };
+    if (!historyTrimmed && past.length >= MAX_HISTORY) {
+      setHistoryTrimmed(true);
+    }
     setPast((prev) => {
       const next = [...prev, { snapshot: template, entry }];
       return next.length > MAX_HISTORY ? next.slice(1) : next;
     });
     setFuture([]); // new mutation always clears the redo stack
-  }, [template]);
+  }, [template, past, historyTrimmed]);
 
   /** Apply a template mutation via Immer, pushing history first. */
   const mutate = useCallback(
@@ -878,6 +886,7 @@ export function useLayoutBuilderState(
     ),
     historyCurrentIndex: past.length - 1,
     jumpToHistoryIndex,
+    isHistoryTrimmed: historyTrimmed,
     // Preview
     togglePreview,
     // Persistence

@@ -181,6 +181,7 @@ const {
     jumpToHistoryIndex: mockJumpToHistoryIndex,
     canUndo: false,
     canRedo: false,
+    isHistoryTrimmed: false,
     template: { id: 1, name: 'Test', slots: [], overlays: [], canvasAspectRatio: 1.78 },
     selectedSlotIds: new Set<string>(),
     isDirty: false,

@@ -86,6 +86,7 @@ const {
     isDirty: false,
     isSaving: false,
     isPreview: false,
+    isHistoryTrimmed: false,
     canUndo: true,
     canRedo: true,
     undo: mockUndo,

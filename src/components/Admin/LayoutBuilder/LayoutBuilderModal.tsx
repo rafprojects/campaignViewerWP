@@ -335,8 +335,10 @@ export function LayoutBuilderModal({
   }, [builder, media, announce]);
 
   // ── Keyboard shortcuts ──
+  // Attached at the document level so shortcuts fire regardless of which
+  // focusable child (canvas, button, panel header, etc.) has focus.
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: KeyboardEvent) => {
       // Don't capture when inside inputs
       if (
         e.target instanceof HTMLInputElement ||
@@ -422,6 +424,13 @@ export function LayoutBuilderModal({
     [builder, handleDeleteSelected, handleDuplicateSelected, handleSave],
   );
 
+  // Attach/detach the document-level listener whenever the modal opens/closes.
+  useEffect(() => {
+    if (!opened) return;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [opened, handleKeyDown]);
+
   // ── Get selected slot for properties panel ──
   const selectedSlot =
     builder.selectedSlotIds.size === 1
@@ -504,10 +513,8 @@ export function LayoutBuilderModal({
       }}
       aria-label="Layout Builder"
     >
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
         data-testid="builder-keyboard-handler"
-        onKeyDown={handleKeyDown}
         style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
         {/* ── Header Bar ── */}
