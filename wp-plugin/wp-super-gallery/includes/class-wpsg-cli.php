@@ -321,9 +321,19 @@ class WPSG_CLI {
         if ( ! $file || ! file_exists( $file ) ) {
             WP_CLI::error( "File not found: {$file}" );
         }
+        if ( ! is_readable( $file ) ) {
+            WP_CLI::error( "File is not readable: {$file}" );
+        }
 
-        $raw  = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        $raw = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        if ( $raw === false ) {
+            WP_CLI::error( "Could not read file: {$file}" );
+        }
+
         $body = json_decode( $raw, true );
+        if ( json_last_error() !== JSON_ERROR_NONE ) {
+            WP_CLI::error( 'Invalid JSON: ' . json_last_error_msg() );
+        }
 
         if ( empty( $body ) || ! isset( $body['campaign'] ) ) {
             WP_CLI::error( 'Invalid payload: missing campaign key.' );
@@ -497,10 +507,9 @@ class WPSG_CLI {
             $media_items = get_post_meta( $campaign_id, 'media_items', true );
             if ( is_array( $media_items ) ) {
                 foreach ( $media_items as $item ) {
-                    // Prefer attachmentId (WP post ID) — 'id' is a uniqid string, not an attachment ID.
-                    $att_ref = ! empty( $item['attachmentId'] ) ? $item['attachmentId'] : ( $item['id'] ?? null );
-                    if ( $att_ref ) {
-                        $referenced_ids[] = (string) $att_ref;
+                    // Only use attachmentId (WP post ID); 'id' is a uniqid string and never matches attachment IDs.
+                    if ( ! empty( $item['attachmentId'] ) ) {
+                        $referenced_ids[] = (string) $item['attachmentId'];
                     }
                 }
             }

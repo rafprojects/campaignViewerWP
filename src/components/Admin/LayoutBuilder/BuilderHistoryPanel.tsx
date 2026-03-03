@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Stack, Text, Box, ActionIcon, Tooltip, Group, ScrollArea } from '@mantine/core';
+import { Stack, Text, Box, ActionIcon, Tooltip, Group, ScrollArea, UnstyledButton } from '@mantine/core';
 import { IconClockHour4, IconTrash } from '@tabler/icons-react';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
@@ -87,17 +87,17 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
             const isFuture = entryIdx > historyCurrentIndex;
 
             return (
-              <Box
+              <UnstyledButton
                 key={entry.id}
                 data-testid={`history-entry-${entryIdx}`}
                 onClick={() => handleJump(entryIdx)}
                 style={{
-                  cursor: 'pointer',
                   borderRadius: 4,
                   padding: '4px 8px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
+                  width: '100%',
                   background: isCurrent
                     ? 'var(--mantine-color-blue-light)'
                     : 'transparent',
@@ -121,21 +121,21 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
                     second: '2-digit',
                   })}
                 </Text>
-              </Box>
+              </UnstyledButton>
             );
           })}
 
           {/* "Initial state" marker at the bottom */}
-          <Box
+          <UnstyledButton
             data-testid="history-entry-initial"
             onClick={() => jumpToHistoryIndex(-1)}
             style={{
-              cursor: 'pointer',
               borderRadius: 4,
               padding: '4px 8px',
               display: 'flex',
               alignItems: 'center',
               gap: 8,
+              width: '100%',
               opacity: historyCurrentIndex === -1 ? 1 : 0.45,
             }}
             aria-label="Jump to initial state"
@@ -144,7 +144,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
               Initial state
             </Text>
             <IconTrash size={12} style={{ opacity: 0.3 }} />
-          </Box>
+          </UnstyledButton>
         </Stack>
       </ScrollArea>
     </Box>
