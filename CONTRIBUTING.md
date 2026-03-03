@@ -116,7 +116,7 @@ npm run test:coverage
 npm run test:e2e
 ```
 
-The `pre-push` hook runs `npm test` automatically before every `git push`.
+The `pre-push` hook runs `npx vitest run` automatically before every `git push`.
 
 ---
 

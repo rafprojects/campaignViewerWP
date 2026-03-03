@@ -71,12 +71,27 @@ class WPSG_CLI {
         ];
 
         if ( ! empty( $status ) ) {
-            $query_args['meta_query'] = [
-                [
-                    'key'   => 'status',
-                    'value' => $status,
-                ],
-            ];
+            if ( 'draft' === $status ) {
+                // Campaigns with no status meta are implicitly draft (matches REST default).
+                $query_args['meta_query'] = [
+                    'relation' => 'OR',
+                    [
+                        'key'     => 'status',
+                        'value'   => 'draft',
+                    ],
+                    [
+                        'key'     => 'status',
+                        'compare' => 'NOT EXISTS',
+                    ],
+                ];
+            } else {
+                $query_args['meta_query'] = [
+                    [
+                        'key'   => 'status',
+                        'value' => $status,
+                    ],
+                ];
+            }
         }
 
         $query = new WP_Query( $query_args );
@@ -91,8 +106,8 @@ class WPSG_CLI {
             $rows[] = [
                 'id'         => $post->ID,
                 'title'      => $post->post_title,
-                'status'     => get_post_meta( $post->ID, 'status', true ) ?: 'active',
-                'visibility' => get_post_meta( $post->ID, 'visibility', true ) ?: 'public',
+                'status'     => get_post_meta( $post->ID, 'status', true ) ?: 'draft',
+                'visibility' => get_post_meta( $post->ID, 'visibility', true ) ?: 'private',
                 'created'    => $post->post_date,
             ];
         }
