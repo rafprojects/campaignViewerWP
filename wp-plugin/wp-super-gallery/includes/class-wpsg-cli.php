@@ -23,7 +23,7 @@
  *   wp wpsg rate-limit reset 192.168.1.1
  *
  * @package WP_Super_Gallery
- * @since   0.16.0
+ * @since   0.17.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -67,7 +67,7 @@ class WPSG_CLI {
             'post_type'      => 'wpsg_campaign',
             'post_status'    => 'publish',
             'posts_per_page' => -1,
-            'no_found_rows'  => false,
+            'no_found_rows'  => true,
         ];
 
         if ( ! empty( $status ) ) {
@@ -372,12 +372,15 @@ class WPSG_CLI {
         // Embed layout template by value if provided.
         $layout_template = $body['layout_template'] ?? null;
         if ( $layout_template ) {
-            $tmpl_id = wp_insert_post( [
-                'post_title'  => sanitize_text_field( $layout_template['title'] ?? 'Imported Template' ),
-                'post_type'   => 'wpsg_layout_template',
-                'post_status' => 'publish',
-            ] );
-            if ( ! is_wp_error( $tmpl_id ) ) {
+            $tmpl_id = wp_insert_post(
+                [
+                    'post_title'  => sanitize_text_field( $layout_template['title'] ?? 'Imported Template' ),
+                    'post_type'   => 'wpsg_layout_template',
+                    'post_status' => 'publish',
+                ],
+                true // Return WP_Error on failure instead of 0.
+            );
+            if ( $tmpl_id && ! is_wp_error( $tmpl_id ) ) {
                 update_post_meta( $tmpl_id, 'slots', $layout_template['slots'] ?? [] );
                 update_post_meta( $tmpl_id, 'background', $layout_template['background'] ?? [] );
                 update_post_meta( $tmpl_id, 'graphic_layers', $layout_template['graphicLayers'] ?? [] );
@@ -494,8 +497,10 @@ class WPSG_CLI {
             $media_items = get_post_meta( $campaign_id, 'media_items', true );
             if ( is_array( $media_items ) ) {
                 foreach ( $media_items as $item ) {
-                    if ( ! empty( $item['id'] ) ) {
-                        $referenced_ids[] = (string) $item['id'];
+                    // Prefer attachmentId (WP post ID) — 'id' is a uniqid string, not an attachment ID.
+                    $att_ref = ! empty( $item['attachmentId'] ) ? $item['attachmentId'] : ( $item['id'] ?? null );
+                    if ( $att_ref ) {
+                        $referenced_ids[] = (string) $att_ref;
                     }
                 }
             }

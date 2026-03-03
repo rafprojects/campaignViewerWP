@@ -4,14 +4,15 @@ import { CampaignDuplicateModal } from './CampaignDuplicateModal';
 import type { AdminCampaign } from '@/hooks/useAdminSWR';
 
 const mockSource: AdminCampaign = {
-  id: 42,
+  id: '42',
   title: 'Summer Campaign',
   description: '',
-  company: '',
   companyId: '',
   status: 'active',
   visibility: 'private',
-  tags: '',
+  createdAt: '',
+  updatedAt: '',
+  tags: [],
   publishAt: '',
   unpublishAt: '',
   layoutTemplateId: '',

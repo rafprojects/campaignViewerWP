@@ -160,7 +160,7 @@ export interface LayoutBuilderActions {
   canRedo: boolean;
   /** Human-readable history entries (most-recent-last). */
   historyEntries: HistoryEntry[];
-  /** Current position in the history stack (-1 = at latest state). */
+  /** Current position in the history stack (-1 = no history yet / initial state). */
   historyCurrentIndex: number;
 
   // ── Preview ──
@@ -202,7 +202,7 @@ export function useLayoutBuilderState(
     setHistoryLabels((prev) => {
       const trimmed = prev.slice(0, historyIndex + 1);
       const entry: HistoryEntry = {
-        id: crypto.randomUUID?.() ?? `h-${Date.now()}`,
+        id: crypto.randomUUID?.() ?? `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
         label,
         timestamp: Date.now(),
       };
@@ -721,9 +721,18 @@ export function useLayoutBuilderState(
 
   const undo = useCallback(() => {
     if (!canUndo) return;
-    // Save current state as a redo point if we're at the tip
+    // Save current state as a redo point if we're at the tip.
+    // Keep historyLabels in lockstep so the two arrays never diverge.
     if (historyIndex === history.length - 1) {
       setHistory((prev) => [...prev, template]);
+      setHistoryLabels((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID?.() ?? `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+          label: prev[prev.length - 1]?.label ?? 'Current state',
+          timestamp: Date.now(),
+        },
+      ]);
     }
     setTemplateRaw(history[historyIndex]);
     setHistoryIndex((prev) => prev - 1);

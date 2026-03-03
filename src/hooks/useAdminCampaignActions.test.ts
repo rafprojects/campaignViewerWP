@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useAdminCampaignActions } from './useAdminCampaignActions';
 import type { ApiClient } from '@/services/apiClient';
 import type { AdminCampaign } from './useAdminSWR';
@@ -19,13 +19,14 @@ function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
 }
 
 const mockCampaign: AdminCampaign = {
-  id: 1,
+  id: '1',
   title: 'Test Campaign',
   description: '',
-  company: '',
   companyId: '',
   status: 'active',
   visibility: 'private',
+  createdAt: '',
+  updatedAt: '',
   tags: [],
   publishAt: '',
   unpublishAt: '',

@@ -14,7 +14,7 @@ after `npm install` because of the `prepare` script in `package.json`.
 
 ## Git Hooks
 
-Three hooks are managed by [husky](https://typicd.dev/packages/husky):
+Three hooks are managed by [husky](https://typicode.github.io/husky):
 
 | Hook | Runs | Blocks on |
 |------|------|-----------|

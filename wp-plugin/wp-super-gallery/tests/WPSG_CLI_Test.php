@@ -26,7 +26,7 @@ if ( ! class_exists( 'WP_CLI' ) ) {
         public static function success( string $msg ): void {
             self::$messages[] = [ 'type' => 'success', 'msg' => $msg ];
         }
-        public static function error( string $msg ): never {
+        public static function error( string $msg ): void {
             self::$last_error = $msg;
             throw new RuntimeException( 'WP_CLI::error — ' . $msg );
         }
@@ -47,12 +47,8 @@ if ( ! class_exists( 'WP_CLI' ) ) {
 
 /**
  * Minimal WP_CLI\Utils stub for format_items.
+ * Define the stub class first, then alias — class_alias() requires the source class to exist.
  */
-if ( ! class_exists( 'WP_CLI\Utils' ) ) {
-    // phpcs:ignore
-    class_alias( 'WP_CLI_Utils_Stub', 'WP_CLI\Utils' );
-}
-
 if ( ! class_exists( 'WP_CLI_Utils_Stub' ) ) {
     class WP_CLI_Utils_Stub {
         public static array $formatted = [];
@@ -65,6 +61,11 @@ if ( ! class_exists( 'WP_CLI_Utils_Stub' ) ) {
             self::$formatted = [];
         }
     }
+}
+
+if ( ! class_exists( 'WP_CLI\Utils' ) ) {
+    // phpcs:ignore
+    class_alias( 'WP_CLI_Utils_Stub', 'WP_CLI\Utils' );
 }
 
 /**
