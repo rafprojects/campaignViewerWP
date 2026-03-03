@@ -760,32 +760,39 @@ export function useLayoutBuilderState(
    * (repeated calls in one tick would all read the same pre-update state).
    */
   const jumpToHistoryIndex = useCallback((target: number) => {
-    const currentIndex = past.length - 1;
-    if (target === currentIndex) return;
+    // Guard: nothing to jump to.
+    if (past.length === 0 && future.length === 0) return;
 
-    if (target < currentIndex) {
+    // Clamp target to valid range: -1 (initial state) … (total entries - 1).
+    const maxIndex = past.length + future.length - 1;
+    const clamped = Math.max(-1, Math.min(target, maxIndex));
+
+    const currentIndex = past.length - 1;
+    if (clamped === currentIndex) return;
+
+    if (clamped < currentIndex) {
       // ── Jumping backward ──────────────────────────────────────────────────
       // Build future items ordered so that future[0] undoes the smallest step,
-      // i.e. first redo takes us back to position (target + 1).
+      // i.e. first redo takes us back to position (clamped + 1).
       const newFutureItems: HistoryItem[] = [];
-      for (let k = target + 1; k < past.length; k++) {
+      for (let k = clamped + 1; k < past.length; k++) {
         // Template *at* position k = past[k+1].snapshot (before mutation k+1)
         //                          = current template when k is the last past entry.
         const snapshotAtK = k === past.length - 1 ? template : past[k + 1].snapshot;
         newFutureItems.push({ snapshot: snapshotAtK, entry: past[k].entry });
       }
-      // The template to restore: state after mutation `target`
-      //   = past[target + 1].snapshot (before mutation target+1)
-      //   = past[0].snapshot (the initial template) when target === -1.
-      const targetTemplate = target >= 0 ? past[target + 1].snapshot : past[0].snapshot;
-      setPast(past.slice(0, target + 1));
+      // The template to restore: state after mutation `clamped`
+      //   = past[clamped + 1].snapshot (before mutation clamped+1)
+      //   = past[0].snapshot (the initial template) when clamped === -1.
+      const targetTemplate = clamped >= 0 ? past[clamped + 1].snapshot : past[0].snapshot;
+      setPast(past.slice(0, clamped + 1));
       setFuture([...newFutureItems, ...future]);
       setTemplateRaw(targetTemplate);
       setIsDirty(true);
     } else {
       // ── Jumping forward ───────────────────────────────────────────────────
       // Consume `stepsForward` items from the front of future.
-      const stepsForward = target - currentIndex;
+      const stepsForward = clamped - currentIndex;
       const toApply = future.slice(0, stepsForward);
       let tmpl = template;
       const newPastItems: HistoryItem[] = [];
