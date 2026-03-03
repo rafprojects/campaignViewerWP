@@ -238,6 +238,7 @@ export function useLayoutBuilderState(
     setTemplateRaw(t);
     setPast([]);
     setFuture([]);
+    setHistoryTrimmed(false);
     setIsDirty(false);
     setSelectedSlotIds(new Set());
   }, []);
