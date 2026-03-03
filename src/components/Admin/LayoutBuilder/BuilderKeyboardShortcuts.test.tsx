@@ -290,10 +290,20 @@ describe('LayoutBuilderModal — keyboard shortcuts (P19-A)', () => {
     mockSelectedSlotIds.delete('slot-1');
   });
 
-  it('Escape calls builder.clearSelection', () => {
+  it('Escape clears selection when slots are selected', () => {
+    mockSelectedSlotIds.add('slot-1');
     renderModal();
     pressKey('Escape');
     expect(mockClearSelection).toHaveBeenCalledOnce();
+    mockSelectedSlotIds.delete('slot-1');
+  });
+
+  it('Escape calls onClose when nothing is selected', () => {
+    const mockOnClose = vi.fn();
+    renderModal({ onClose: mockOnClose });
+    pressKey('Escape');
+    expect(mockClearSelection).not.toHaveBeenCalled();
+    expect(mockOnClose).toHaveBeenCalledOnce();
   });
 
   it('ArrowLeft calls nudgeSlots(-1, 0) for selected slots', () => {

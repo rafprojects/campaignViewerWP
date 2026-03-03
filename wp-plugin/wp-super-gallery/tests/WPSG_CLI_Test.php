@@ -286,7 +286,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
             'layout_template'  => null,
             'media_references' => [],
         ] );
-        $file = tempnam( get_temp_dir(), 'wpsg-import-' ) . '.json';
+        $file = tempnam( get_temp_dir(), 'wpsg-import-' );
         file_put_contents( $file, $payload );
 
         try {
@@ -311,7 +311,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
     }
 
     public function test_campaign_import_unsupported_version_throws(): void {
-        $file = tempnam( get_temp_dir(), 'wpsg-badver-' ) . '.json';
+        $file = tempnam( get_temp_dir(), 'wpsg-badver-' );
         file_put_contents( $file, json_encode( [ 'version' => 9, 'campaign' => [] ] ) );
 
         try {
@@ -342,7 +342,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         }
 
         // Write to file and import.
-        $file = tempnam( get_temp_dir(), 'wpsg-roundtrip-' ) . '.json';
+        $file = tempnam( get_temp_dir(), 'wpsg-roundtrip-' );
         file_put_contents( $file, $json_msg );
         WP_CLI::reset();
         try {

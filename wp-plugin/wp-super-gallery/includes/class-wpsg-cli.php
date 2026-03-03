@@ -411,7 +411,13 @@ class WPSG_CLI {
                 update_post_meta( $tmpl_id, 'graphic_layers', $layout_template['graphicLayers'] ?? [] );
                 update_post_meta( $post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id );
                 if ( ! empty( $src['layoutBinding'] ) ) {
-                    update_post_meta( $post_id, '_wpsg_layout_binding', $src['layoutBinding'] );
+                    $binding = $src['layoutBinding'];
+                    // Rewrite templateId to the newly created post ID — the exported value
+                    // points to the source site's template and would be inconsistent here.
+                    if ( is_array( $binding ) ) {
+                        $binding['templateId'] = (string) $tmpl_id;
+                    }
+                    update_post_meta( $post_id, '_wpsg_layout_binding', $binding );
                 }
             }
         }

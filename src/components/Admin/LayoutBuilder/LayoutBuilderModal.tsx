@@ -366,7 +366,16 @@ export function LayoutBuilderModal({
         e.preventDefault();
       }
       if (e.key === 'Escape') {
-        builder.clearSelection();
+        if (builder.selectedSlotIds.size > 0) {
+          // Something is selected — deselect and absorb the event so the
+          // Modal's own Escape-to-close handler does not fire.
+          builder.clearSelection();
+          e.preventDefault();
+          e.stopPropagation();
+        } else {
+          // Nothing selected — treat Escape as a modal close.
+          handleClose();
+        }
       }
 
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
@@ -421,7 +430,7 @@ export function LayoutBuilderModal({
         }
       }
     },
-    [builder, handleDeleteSelected, handleDuplicateSelected, handleSave],
+    [builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave],
   );
 
   // Attach/detach the document-level listener whenever the modal opens/closes.
@@ -506,6 +515,7 @@ export function LayoutBuilderModal({
       onClose={handleClose}
       fullScreen
       withCloseButton={false}
+      closeOnEscape={false}
       padding={0}
       styles={{
         body: { height: '100vh', display: 'flex', flexDirection: 'column' },
