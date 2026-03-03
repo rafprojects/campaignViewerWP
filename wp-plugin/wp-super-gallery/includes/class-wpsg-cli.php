@@ -642,22 +642,23 @@ class WPSG_CLI {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Reset all rate-limit counters for an IP address.
+     * Reset all rate-limit counters (flushes every client, not just one IP).
      *
      * The actual cache keys used by WPSG_REST::rate_limit_check() include the
      * route in the hash — i.e. wpsg_rl_<scope>_<user|anon>_<md5(ip|route)> —
-     * so individual keys cannot be recovered from the IP alone. This command
+     * so individual keys cannot be recovered from an IP alone. This command
      * therefore flushes the entire wpsg_rate_limit object-cache group and
-     * bulk-deletes all _transient_wpsg_rl_* rows from wp_options, effectively
-     * clearing rate limits for every client. Use on dev/staging only.
+     * bulk-deletes all _transient_wpsg_rl_* rows from wp_options, clearing
+     * rate limits for every client. Use on dev/staging only.
      *
      * ## OPTIONS
      *
-     * <ip>
-     * : IP address whose rate-limit counter should be reset (used for logging).
+     * [<ip>]
+     * : Optional IP address to include in the success log message.
      *
      * ## EXAMPLES
      *
+     *   wp wpsg rate-limit reset
      *   wp wpsg rate-limit reset 192.168.1.1
      *
      * @subcommand rate-limit reset
@@ -667,9 +668,6 @@ class WPSG_CLI {
         global $wpdb;
 
         $ip = sanitize_text_field( $args[0] ?? '' );
-        if ( ! $ip ) {
-            WP_CLI::error( 'IP address is required.' );
-        }
 
         // Flush the entire object-cache group (wp_cache_flush_group() available WP ≥ 6.1).
         if ( function_exists( 'wp_cache_flush_group' ) ) {
@@ -687,7 +685,8 @@ class WPSG_CLI {
             )
         );
 
-        WP_CLI::success( "Rate-limit counters reset (triggered for IP: {$ip}). DB rows removed: {$deleted}." );
+        $log_suffix = $ip ? " (triggered for IP: {$ip})" : '';
+        WP_CLI::success( "All rate-limit counters reset{$log_suffix}. DB rows removed: {$deleted}." );
     }
 
     // ─────────────────────────────────────────────────────────────────────────

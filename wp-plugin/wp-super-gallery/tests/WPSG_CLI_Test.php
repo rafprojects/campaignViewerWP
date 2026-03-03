@@ -451,15 +451,16 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
     // rate-limit reset
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function test_rate_limit_reset_outputs_success(): void {
+    public function test_rate_limit_reset_with_ip_includes_ip_in_message(): void {
         $this->cli->rate_limit_reset( [ '10.0.0.1' ], [] );
         $success = $this->last_success();
         $this->assertStringContainsString( '10.0.0.1', $success );
     }
 
-    public function test_rate_limit_reset_empty_ip_throws(): void {
-        $this->expectException( RuntimeException::class );
-        $this->cli->rate_limit_reset( [ '' ], [] );
+    public function test_rate_limit_reset_without_ip_succeeds(): void {
+        $this->cli->rate_limit_reset( [], [] );
+        $success = $this->last_success();
+        $this->assertStringContainsString( 'rate-limit counters reset', strtolower( $success ) );
     }
 
     // ─────────────────────────────────────────────────────────────────────────
