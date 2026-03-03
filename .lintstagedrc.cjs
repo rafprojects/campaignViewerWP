@@ -3,8 +3,8 @@
 // a full project-wide typecheck, while eslint still gets the staged filenames.
 module.exports = {
   '*.{ts,tsx}': (files) => [
-    `eslint --fix --max-warnings 0 ${files.join(' ')}`,
+    `eslint --fix --max-warnings 0 ${files.map((f) => JSON.stringify(f)).join(' ')}`,
     'tsc --noEmit --skipLibCheck',
   ],
-  '*.{js,cjs,mjs}': (files) => `eslint --fix --max-warnings 0 ${files.join(' ')}`,
+  '*.{js,cjs,mjs}': (files) => `eslint --fix --max-warnings 0 ${files.map((f) => JSON.stringify(f)).join(' ')}`,
 };

@@ -13,13 +13,13 @@ interface ShortcutRow {
 const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
   {
     heading: 'File',
-    rows: [{ keys: ['Ctrl', 'S'], description: 'Save template' }],
+    rows: [{ keys: ['Ctrl / ⌘', 'S'], description: 'Save template' }],
   },
   {
     heading: 'History',
     rows: [
-      { keys: ['Ctrl', 'Z'], description: 'Undo' },
-      { keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo' },
+      { keys: ['Ctrl / ⌘', 'Z'], description: 'Undo' },
+      { keys: ['Ctrl / ⌘', 'Shift', 'Z'], description: 'Redo' },
     ],
   },
   {
@@ -27,7 +27,7 @@ const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
     rows: [
       { keys: ['Delete'], description: 'Remove selected slot(s)' },
       { keys: ['Escape'], description: 'Deselect all' },
-      { keys: ['Ctrl', 'V'], description: 'Duplicate selected slot(s)' },
+      { keys: ['Ctrl / ⌘', 'V'], description: 'Duplicate selected slot(s)' },
     ],
   },
   {
