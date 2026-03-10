@@ -1,17 +1,20 @@
 # Phase 20 — Production Hardening, CI Pipeline & Distribution Readiness
 
-**Status:** In progress (Sprint 1 complete, H-track 7/12 done, QA Rounds 2–6 applied)
+**Status:** In progress (Sprint 1 complete, H-track 11/12, P20-B/E/F complete, QA Rounds 2–7 applied)
 **Version:** v0.18.0 (planned)
 **Created:** March 4, 2026
-**Last updated:** March 9, 2026 — QA Round 6 (mask UX, background panel, Design Assets DnD); H-track 7/12 complete
+**Last updated:** March 9, 2026 — P20-B (import sanitization), P20-E (uninstall cleanup), P20-F (license/headers)
 
 ### Completed
 
 | Track | Commit | Result |
 |-------|--------|--------|
 | P20-A | feat/phase20-prod-readiness | Public default 60 req/min, authenticated 120 req/min, filter overrides, 7 PHPUnit tests |
+| P20-B | feat/phase20-prod-readiness | import_campaign() routed through sanitize_template_data(), slots/overlays/background/layoutBinding all sanitized, 10 PHPUnit tests |
 | P20-C | feat/phase20-prod-readiness | `sanitize_css_value()` with type-specific allowlists (color, clip-path, position), universal blocklist, 4 call sites updated, 34 PHPUnit tests |
 | P20-D | feat/phase20-prod-readiness | `sanitize_callback` on all 7 REST-exposed post meta fields, 5 sanitize methods, 8 PHPUnit tests |
+| P20-E | feat/phase20-prod-readiness | uninstall.php with 9-category cleanup (posts, terms, options, transients, tables, roles, cron, files), preserve_data_on_uninstall setting |
+| P20-F | feat/phase20-prod-readiness | GPLv2 LICENSE at repo root and plugin dir, complete plugin header with all WordPress.org required fields |
 | P20-K | feat/phase20-prod-readiness | JWT gated behind `WPSG_ENABLE_JWT_AUTH`, nonce-only default, `useNonceHeartbeat` hook, `/nonce` endpoint, cookie-based `/auth/login` and `/auth/logout` REST endpoints, in-app LoginForm modal retained for nonce mode (no wp-login.php redirect), 12 Vitest tests, 6 AuthContext tests, 11 PHPUnit tests |
 | P20-H (11/12) | feat/phase20-prod-readiness | H-1 (parseProps whitelist), H-3 (nonce bypass hardened), H-4 (no password reset URL exposure), H-5 (overlay file deletion), H-6 (Sentry PII scrubbing), H-7 (CSP headers), H-8 (ErrorBoundary → Sentry), H-9 (apiClient 30s timeout + AbortController), H-10 (status/visibility whitelist), H-11 (encodeURIComponent), H-12 (console.info DEV guard) |
 
@@ -237,7 +240,7 @@ Both values remain overridable via filters for sites with custom requirements.
 
 ## Track P20-B — Import Payload Deep Sanitization
 
-**Status:** Not started  
+**Status:** ✅ Complete  
 **Priority:** 🔴 High — ship-blocking  
 **Origin:** Action item A-4  
 **Effort:** Small (2–3 hours)
@@ -390,7 +393,7 @@ For meta fields that should **never** be writable through the native WP REST API
 
 ## Track P20-E — Uninstall Cleanup
 
-**Status:** Not started  
+**Status:** ✅ Complete  
 **Priority:** 🟡 High  
 **Origin:** Action item A-7  
 **Effort:** Small–Medium (2–3 hours)
@@ -441,7 +444,7 @@ Add a checkbox in Settings → Advanced: "Preserve data on plugin removal" (defa
 
 ## Track P20-F — License, Headers & Legal
 
-**Status:** Not started  
+**Status:** ✅ Complete  
 **Priority:** 🟡 High  
 **Origin:** Action items A-8 + D-4  
 **Effort:** Trivial (30 minutes)
@@ -1132,9 +1135,9 @@ The `enshrined/svg-sanitize` library parses the SVG as strict XML, strips danger
 | 1 | **P20-A** — Rate limiting defaults | None | Low | ✅ Complete |
 | 1 | **P20-C** — CSS value sanitization | None | Low | ✅ Complete |
 | 1 | **P20-D** — Post meta sanitize callbacks | None | Low | ✅ Complete |
-| 2 | **P20-B** — Import payload deep sanitization | P20-C (needs `wpsg_sanitize_css_value()`) | Low | Not started |
-| 2 | **P20-F** — License, headers & legal | None | Low | Not started |
-| 3 | **P20-E** — Uninstall cleanup | None | Medium | Not started |
+| 2 | **P20-B** — Import payload deep sanitization | P20-C (needs `wpsg_sanitize_css_value()`) | Low | ✅ Complete |
+| 2 | **P20-F** — License, headers & legal | None | Low | ✅ Complete |
+| 3 | **P20-E** — Uninstall cleanup | None | Medium | ✅ Complete |
 | 3 | **P20-G** — GitHub Actions CI pipeline | None | Medium | Not started |
 | 4 | **P20-H** — Security hardening sprint | P20-A through P20-G complete | Low–Medium | 11/12 complete (H-2 DNS rebinding remaining) |
 | 5 | **P20-I** — Performance optimizations | P20-H complete | Medium–High | Not started |
