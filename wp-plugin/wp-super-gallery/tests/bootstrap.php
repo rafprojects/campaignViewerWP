@@ -28,6 +28,12 @@ if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
 	exit( 1 );
 }
 
+// Ensure WP_DEBUG is active so the nonce-bypass guard in verify_admin_auth()
+// can fire when WPSG_ALLOW_NONCE_BYPASS is also set.
+if ( ! defined( 'WP_DEBUG' ) ) {
+	define( 'WP_DEBUG', true );
+}
+
 // Give access to tests_add_filter() function.
 require_once "{$_tests_dir}/includes/functions.php";
 

@@ -5,6 +5,10 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
         $user->add_cap('manage_wpsg');
+        // Grant CPT caps introduced in J-4 so REST + wp_insert_post pass.
+        foreach ( WPSG_CPT::CPT_CAPS as $cap ) {
+            $user->add_cap( $cap );
+        }
         wp_set_current_user($user_id);
         return $user_id;
     }
@@ -243,10 +247,12 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_sanitize_tags_strips_html() {
         $input = [ 'clean', '<b>bold</b>', '<script>alert(1)</script>' ];
         $result = WPSG_CPT::sanitize_tags( $input );
-        $this->assertCount( 3, $result );
+        // <script> blocks (including content) are stripped by wp_strip_all_tags
+        // inside sanitize_text_field(), yielding an empty string that
+        // array_filter drops — so only 2 tags survive.
+        $this->assertCount( 2, $result );
         $this->assertEquals( 'clean', $result[0] );
         $this->assertEquals( 'bold', $result[1] );
-        $this->assertEquals( 'alert(1)', $result[2] );
     }
 
     /**

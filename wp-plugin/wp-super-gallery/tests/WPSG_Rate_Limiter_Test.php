@@ -237,7 +237,7 @@ class WPSG_Rate_Limiter_Test extends WP_UnitTestCase {
      */
     public function test_default_public_limit_triggers_at_threshold() {
         $limit = 5; // Use small value for test speed
-        add_filter( 'wpsg_rate_limit_public', fn() => $limit );
+        add_filter( 'wpsg_rate_limit_max', fn() => $limit );
 
         // Exhaust the allowance.
         for ( $i = 0; $i < $limit; $i++ ) {
@@ -249,7 +249,7 @@ class WPSG_Rate_Limiter_Test extends WP_UnitTestCase {
         $this->assertFalse( $result['allowed'], 'Public rate limit should block after threshold' );
 
         delete_transient( $this->transient_key( $this->test_ip, 'public' ) );
-        remove_all_filters( 'wpsg_rate_limit_public' );
+        remove_all_filters( 'wpsg_rate_limit_max' );
     }
 
     /**

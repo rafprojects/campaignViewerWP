@@ -705,10 +705,14 @@ class WPSG_REST {
             return true;
         }
 
-        // Allow nonce bypass ONLY when BOTH WP_DEBUG and the explicit
-        // WPSG_ALLOW_NONCE_BYPASS constant are set — for automated tests.
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG
-            && defined( 'WPSG_ALLOW_NONCE_BYPASS' ) && WPSG_ALLOW_NONCE_BYPASS ) {
+        // Allow nonce bypass ONLY when the explicit WPSG_ALLOW_NONCE_BYPASS
+        // constant is set AND we are in a recognised test/debug environment.
+        // wp-env's test container sets WP_DEBUG=false in wp-config.php, so we
+        // also accept the WP_TESTS_DOMAIN constant (defined by the WP PHPUnit
+        // bootstrap) as a secondary indicator.
+        if ( defined( 'WPSG_ALLOW_NONCE_BYPASS' ) && WPSG_ALLOW_NONCE_BYPASS
+            && ( ( defined( 'WP_DEBUG' ) && WP_DEBUG )
+                 || defined( 'WP_TESTS_DOMAIN' ) ) ) {
             return true;
         }
 
@@ -876,8 +880,8 @@ class WPSG_REST {
 
     public static function create_campaign() {
         $request = func_get_arg(0);
-        $title = sanitize_text_field($request->get_param('title'));
-        $description = wp_kses_post($request->get_param('description'));
+        $title = sanitize_text_field($request->get_param('title') ?? '');
+        $description = wp_kses_post($request->get_param('description') ?? '');
 
         if (empty($title)) {
             return new WP_REST_Response(['message' => 'Title is required'], 400);
@@ -1525,7 +1529,7 @@ class WPSG_REST {
         ];
 
         if ($source === 'external') {
-            $url = esc_url_raw($request->get_param('url'));
+            $url = esc_url_raw($request->get_param('url') ?? '');
             $normalized = self::normalize_external_media($url);
             if (is_wp_error($normalized)) {
                 return new WP_REST_Response(['message' => $normalized->get_error_message()], 400);
@@ -2862,7 +2866,7 @@ class WPSG_REST {
             }
         }
 
-        $url = esc_url_raw($request->get_param('url'));
+        $url = esc_url_raw($request->get_param('url') ?? '');
         if (empty($url)) {
             return new WP_REST_Response(['message' => 'url is required'], 400);
         }

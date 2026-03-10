@@ -337,7 +337,7 @@ HTACCESS;
                 $css = $matches[1];
 
                 // Block @import rules entirely.
-                $css = preg_replace( '/@import\b[^;]*;?/i', '/* @import removed */', $css );
+                $css = preg_replace( '/@import\b[^;]*;?/i', '/* import rule removed */', $css );
 
                 // Block expression(), -moz-binding, behavior:
                 $css = preg_replace( '/expression\s*\(/i', '/* expression removed */(', $css );

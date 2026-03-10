@@ -37,6 +37,10 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
         $user->add_cap('manage_wpsg');
+        // Grant CPT caps introduced in J-4.
+        foreach ( WPSG_CPT::CPT_CAPS as $cap ) {
+            $user->add_cap( $cap );
+        }
         wp_set_current_user($user_id);
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');

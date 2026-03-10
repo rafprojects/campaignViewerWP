@@ -588,13 +588,16 @@ class WPSG_Layout_Templates {
         }
 
         return array_values( array_filter( array_map( function ( $o ) {
-            $image_url = esc_url_raw( $o['imageUrl'] ?? '' );
+            $raw_url = $o['imageUrl'] ?? '';
 
             // Never persist blob URLs; they are local-tab only and break
-            // when viewed later in campaign rendering.
-            if ( strpos( $image_url, 'blob:' ) === 0 ) {
+            // when viewed later in campaign rendering.  Check the raw
+            // value *before* esc_url_raw() (which mangles the blob: scheme).
+            if ( is_string( $raw_url ) && strpos( $raw_url, 'blob:' ) === 0 ) {
                 return null;
             }
+
+            $image_url = esc_url_raw( $raw_url );
 
             return [
                 'id'            => sanitize_text_field( $o['id'] ?? wp_generate_uuid4() ),
