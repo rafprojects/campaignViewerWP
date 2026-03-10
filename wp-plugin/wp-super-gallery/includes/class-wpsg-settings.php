@@ -250,6 +250,8 @@ class WPSG_Settings {
         'mobile_image_adapter_id'        => 'classic',
         'mobile_video_adapter_id'        => 'classic',
         'layout_builder_scope'           => 'full',
+        // ── P20-E: Uninstall data preservation ────────────────
+        'preserve_data_on_uninstall'     => false,
     ];
 
     /**
@@ -280,6 +282,7 @@ class WPSG_Settings {
         'auth_bar_backdrop_blur',
         'auth_bar_mobile_breakpoint',
         'session_idle_timeout_minutes',
+        'preserve_data_on_uninstall',
     ];
 
     /**

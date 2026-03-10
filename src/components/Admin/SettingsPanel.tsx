@@ -1778,6 +1778,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           onChange={(v) => updateSetting('authBarBackdropBlur', typeof v === 'number' ? v : 8)} min={0} max={24} />
                         <NumberInput label="Auth Bar Mobile Breakpoint (px)" value={settings.authBarMobileBreakpoint}
                           onChange={(v) => updateSetting('authBarMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
+                        <Switch
+                          label="Preserve data on plugin removal"
+                          description="When enabled, all campaigns, templates, analytics, and uploaded files are kept if you uninstall the plugin."
+                          checked={settings.preserveDataOnUninstall ?? false}
+                          onChange={(e) => updateSetting('preserveDataOnUninstall', e.currentTarget.checked)}
+                        />
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>

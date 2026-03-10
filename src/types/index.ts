@@ -662,6 +662,8 @@ export interface GalleryBehaviorSettings {
   mobileVideoAdapterId: string;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
+  // P20-E: Uninstall data preservation
+  preserveDataOnUninstall: boolean;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -853,6 +855,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   mobileImageAdapterId: 'classic',
   mobileVideoAdapterId: 'classic',
   layoutBuilderScope: 'full',
+  // P20-E: Uninstall data preservation
+  preserveDataOnUninstall: false,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',
