@@ -56,6 +56,11 @@ if ( file_exists( $polyfill_autoload ) ) {
 	require_once $polyfill_autoload;
 }
 
+// Allow nonce bypass in the test environment (WP_DEBUG is already true here).
+if ( ! defined( 'WPSG_ALLOW_NONCE_BYPASS' ) ) {
+	define( 'WPSG_ALLOW_NONCE_BYPASS', true );
+}
+
 // Start up the WP testing environment.
 require_once __DIR__ . '/../vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php';
 require "{$_tests_dir}/includes/bootstrap.php";

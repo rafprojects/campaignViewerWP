@@ -299,6 +299,50 @@ class WPSG_REST {
             ],
         ]);
 
+        // P20-K: Lightweight nonce refresh endpoint for long-running tabs.
+        // Returns a fresh wp_rest nonce so the client can update its header
+        // without a full page reload. Requires existing valid cookie auth.
+        register_rest_route('wp-super-gallery/v1', '/nonce', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'refresh_nonce'],
+                'permission_callback' => [self::class, 'require_authenticated'],
+            ],
+        ]);
+
+        // P20-K: Cookie-based login endpoint so the React LoginForm modal works
+        // without JWT and without redirecting to wp-login.php.
+        register_rest_route('wp-super-gallery/v1', '/auth/login', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'handle_cookie_login'],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'username' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'password' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                    ],
+                    'remember' => [
+                        'type'    => 'boolean',
+                        'default' => false,
+                    ],
+                ],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/auth/logout', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'handle_cookie_logout'],
+                'permission_callback' => [self::class, 'require_authenticated'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/users/search', [
             [
                 'methods' => 'GET',
@@ -527,9 +571,34 @@ class WPSG_REST {
     }
 
     public static function rate_limit_public($request) {
-        $limit = intval(apply_filters('wpsg_rate_limit_public', 0));
+        $limit = intval(apply_filters('wpsg_rate_limit_public', 60));
         $window = intval(apply_filters('wpsg_rate_limit_window', 60));
         return self::rate_limit_check($request, 'public', $limit, $window);
+    }
+
+    /**
+     * Rate-limit authenticated endpoints (admin actions).
+     *
+     * Default: 120 requests per minute per IP. Override via
+     * `wpsg_rate_limit_authenticated` filter.
+     *
+     * @since 0.18.0 P20-A
+     */
+    public static function rate_limit_authenticated($request) {
+        if (!current_user_can('manage_wpsg')) {
+            return false;
+        }
+
+        $limit = intval(apply_filters('wpsg_rate_limit_authenticated', 120));
+        $window = intval(apply_filters('wpsg_rate_limit_window', 60));
+        $result = self::rate_limit_check($request, 'authenticated', $limit, $window);
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        // Delegate the rest of the admin permission check (nonce, etc.)
+        return self::verify_admin_auth();
     }
 
     private static function rate_limit_check($request, $scope, $limit, $window) {
@@ -596,6 +665,15 @@ class WPSG_REST {
             return false;
         }
 
+        return self::verify_admin_auth();
+    }
+
+    /**
+     * Shared admin auth verification extracted for reuse by rate_limit_authenticated.
+     *
+     * @since 0.18.0 P20-A
+     */
+    private static function verify_admin_auth() {
         // For token-based auth (e.g., JWT Bearer), WordPress nonce is not required.
         // Nonce verification is only needed for cookie-authenticated REST requests.
         $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION'])) : '';
@@ -603,8 +681,10 @@ class WPSG_REST {
             return true;
         }
 
-        $require_nonce = apply_filters('wpsg_require_rest_nonce', true);
-        if (!$require_nonce) {
+        // Allow nonce bypass ONLY when BOTH WP_DEBUG and the explicit
+        // WPSG_ALLOW_NONCE_BYPASS constant are set — for automated tests.
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG
+            && defined( 'WPSG_ALLOW_NONCE_BYPASS' ) && WPSG_ALLOW_NONCE_BYPASS ) {
             return true;
         }
 
@@ -2914,7 +2994,129 @@ class WPSG_REST {
 
         $campaign_ids = self::get_accessible_campaign_ids($user_id);
         $is_admin = current_user_can('manage_wpsg');
-        return new WP_REST_Response(['campaignIds' => $campaign_ids, 'isAdmin' => $is_admin], 200);
+        $user = get_user_by('id', $user_id);
+
+        // P20-K: Include userId and userEmail so the nonce-only auth path
+        // (no JWT provider) can detect the current user without localStorage.
+        return new WP_REST_Response([
+            'campaignIds' => $campaign_ids,
+            'isAdmin'     => $is_admin,
+            'userId'      => $user_id,
+            'userEmail'   => $user ? $user->user_email : '',
+        ], 200);
+    }
+
+    /**
+     * Return a fresh wp_rest nonce for long-running browser tabs.
+     *
+     * The client's useNonceHeartbeat hook calls this endpoint periodically
+     * to refresh its X-WP-Nonce before the default 24-hour expiry window.
+     *
+     * @since 0.18.0 P20-K
+     * @return WP_REST_Response
+     */
+    public static function refresh_nonce() {
+        return new WP_REST_Response([
+            'nonce' => wp_create_nonce('wp_rest'),
+        ], 200);
+    }
+
+    /**
+     * Cookie-based login via wp_signon().
+     *
+     * Allows the React LoginForm modal to authenticate without JWT and
+     * without redirecting to wp-login.php. On success the response sets
+     * the WordPress auth cookie (HttpOnly, same-origin) and returns a
+     * fresh wp_rest nonce so the client can make authenticated REST
+     * requests immediately.
+     *
+     * Rate-limited via rate_limit_public (default 60 req/min).
+     *
+     * @since 0.18.0 P20-K
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public static function handle_cookie_login($request) {
+        // Rate-limit like any public endpoint.
+        $rate_check = self::rate_limit_public($request);
+        if (is_wp_error($rate_check)) {
+            return $rate_check;
+        }
+
+        $username = $request->get_param('username');
+        $password = $request->get_param('password');
+        $remember = (bool) $request->get_param('remember');
+
+        $creds = [
+            'user_login'    => $username,
+            'user_password' => $password,
+            'remember'      => $remember,
+        ];
+
+        // Capture the new logged-in cookie into $_COOKIE within this request.
+        // wp_set_auth_cookie() (called by wp_signon) sends Set-Cookie headers
+        // to the browser but does NOT update the $_COOKIE superglobal. Without
+        // this, wp_create_nonce('wp_rest') generates a nonce tied to the wrong
+        // session token, causing "Cookie check failed" 403s on subsequent calls.
+        add_action('set_logged_in_cookie', static function ($cookie_value) {
+            $_COOKIE[ LOGGED_IN_COOKIE ] = $cookie_value;
+        });
+
+        // wp_signon() validates credentials and sets the auth cookie via Set-Cookie headers.
+        $user = wp_signon($creds, is_ssl());
+
+        if (is_wp_error($user)) {
+            // Fire the standard hook so brute-force plugins can act.
+            /** This action is documented in wp-includes/user.php */
+            do_action('wp_login_failed', $username, $user);
+
+            return new WP_REST_Response([
+                'code'    => 'invalid_credentials',
+                'message' => 'Invalid username or password.',
+            ], 401);
+        }
+
+        // Explicitly set the current user so subsequent calls
+        // (wp_create_nonce, current_user_can, etc.) work in this request.
+        wp_set_current_user($user->ID);
+
+        $is_admin = current_user_can('manage_wpsg');
+        $campaign_ids = self::get_accessible_campaign_ids($user->ID);
+
+        return new WP_REST_Response([
+            'user'        => [
+                'id'    => (string) $user->ID,
+                'email' => $user->user_email,
+                'role'  => $is_admin ? 'admin' : 'viewer',
+            ],
+            'permissions' => $campaign_ids,
+            'isAdmin'     => $is_admin,
+            'nonce'       => wp_create_nonce('wp_rest'),
+        ], 200);
+    }
+
+    /**
+     * Cookie-based logout. Clears WordPress auth cookies and destroys
+     * the session. Returns a guest-level nonce for subsequent requests.
+     *
+     * @since 0.18.0 P20-K
+     * @return WP_REST_Response
+     */
+    public static function handle_cookie_logout() {
+        wp_logout();
+
+        // wp_logout() calls wp_clear_auth_cookie() which sends Set-Cookie
+        // headers to expire browser cookies, but $_COOKIE still holds the old
+        // values within this request. Clear them so wp_create_nonce('wp_rest')
+        // generates a valid guest-level nonce (UID 0, empty session token).
+        $_COOKIE[ LOGGED_IN_COOKIE ]  = ' ';
+        $_COOKIE[ AUTH_COOKIE ]       = ' ';
+        $_COOKIE[ SECURE_AUTH_COOKIE ] = ' ';
+
+        return new WP_REST_Response([
+            'loggedOut' => true,
+            'nonce'     => wp_create_nonce('wp_rest'),
+        ], 200);
     }
 
     /**

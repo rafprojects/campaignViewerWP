@@ -240,6 +240,8 @@ class WPSG_Settings {
         'auth_bar_mobile_breakpoint'     => 768,
         'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
         // ── P15-A: Per-breakpoint gallery selection ───────────
+        // ── P20-K: Session idle timeout (minutes). 0 = disabled. ──
+        'session_idle_timeout_minutes' => 0,
         'gallery_selection_mode'         => 'unified',
         'desktop_image_adapter_id'       => 'classic',
         'desktop_video_adapter_id'       => 'classic',
@@ -277,6 +279,7 @@ class WPSG_Settings {
         'login_form_max_width',
         'auth_bar_backdrop_blur',
         'auth_bar_mobile_breakpoint',
+        'session_idle_timeout_minutes',
     ];
 
     /**
@@ -445,6 +448,7 @@ class WPSG_Settings {
         'login_form_max_width'        => [200, 800],
         'auth_bar_backdrop_blur'      => [0, 24],
         'auth_bar_mobile_breakpoint'  => [320, 1280],
+        'session_idle_timeout_minutes' => [0, 480],
     ];
 
     /**

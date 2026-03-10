@@ -11,12 +11,10 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
 
     public function setUp(): void {
         parent::setUp();
-        // Disable nonce verification for direct REST tests (no browser session).
-        add_filter('wpsg_require_rest_nonce', '__return_false');
+        // Nonce bypass handled via WPSG_ALLOW_NONCE_BYPASS constant in bootstrap.php.
     }
 
     public function tearDown(): void {
-        remove_filter('wpsg_require_rest_nonce', '__return_false');
         parent::tearDown();
     }
     public function test_campaign_create_update_archive_restore_flow() {
@@ -155,5 +153,124 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         // Restore without prior archive — restore_campaign() sets status=active
         // unconditionally, so the endpoint must always return 200.
         $this->assertEquals( 200, $response->get_status() );
+    }
+
+    // ─────────────────────────── P20-D: Post meta sanitize callbacks
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_visibility_whitelists_values() {
+        $this->assertEquals( 'public', WPSG_CPT::sanitize_visibility( 'public' ) );
+        $this->assertEquals( 'private', WPSG_CPT::sanitize_visibility( 'private' ) );
+        // Invalid value falls back to 'public'
+        $this->assertEquals( 'public', WPSG_CPT::sanitize_visibility( 'evil_visibility' ) );
+        $this->assertEquals( 'public', WPSG_CPT::sanitize_visibility( '<script>alert(1)</script>' ) );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_status_whitelists_values() {
+        $this->assertEquals( 'draft', WPSG_CPT::sanitize_status( 'draft' ) );
+        $this->assertEquals( 'active', WPSG_CPT::sanitize_status( 'active' ) );
+        $this->assertEquals( 'archived', WPSG_CPT::sanitize_status( 'archived' ) );
+        // Invalid value falls back to 'draft'
+        $this->assertEquals( 'draft', WPSG_CPT::sanitize_status( 'malicious' ) );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_media_items_sanitizes_urls() {
+        $input = [
+            [
+                'id'        => 'item-1',
+                'type'      => 'image',
+                'source'    => 'wp',
+                'url'       => 'javascript:alert(1)',
+                'thumbnail' => 'https://example.com/thumb.jpg',
+                'caption'   => '<script>alert("xss")</script>',
+                'order'     => 0,
+            ],
+        ];
+
+        $result = WPSG_CPT::sanitize_media_items( $input );
+        $this->assertCount( 1, $result );
+        // javascript: URI should be stripped by esc_url_raw
+        $this->assertStringNotContainsString( 'javascript', $result[0]['url'] );
+        // Script tags stripped from caption
+        $this->assertStringNotContainsString( '<script>', $result[0]['caption'] );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_media_items_rejects_invalid_types() {
+        $input = [
+            [
+                'id'     => 'item-1',
+                'type'   => 'malware',
+                'source' => 'hacker',
+            ],
+        ];
+
+        $result = WPSG_CPT::sanitize_media_items( $input );
+        $this->assertCount( 1, $result );
+        // Invalid type defaults to 'image'
+        $this->assertEquals( 'image', $result[0]['type'] );
+        // Invalid source defaults to 'wp'
+        $this->assertEquals( 'wp', $result[0]['source'] );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_media_items_drops_entries_without_id() {
+        $input = [
+            [ 'type' => 'image' ], // Missing 'id'
+            [ 'id' => 'valid-1', 'type' => 'image' ],
+        ];
+
+        $result = WPSG_CPT::sanitize_media_items( $input );
+        $this->assertCount( 1, $result );
+        $this->assertEquals( 'valid-1', $result[0]['id'] );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_tags_strips_html() {
+        $input = [ 'clean', '<b>bold</b>', '<script>alert(1)</script>' ];
+        $result = WPSG_CPT::sanitize_tags( $input );
+        $this->assertCount( 3, $result );
+        $this->assertEquals( 'clean', $result[0] );
+        $this->assertEquals( 'bold', $result[1] );
+        $this->assertEquals( 'alert(1)', $result[2] );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_datetime_accepts_valid_iso8601() {
+        $this->assertEquals( '2026-03-05T14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00' ) );
+        $this->assertEquals( '2026-03-05T14:30:00+05:30', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00+05:30' ) );
+        $this->assertEquals( '2026-03-05T14:30:00Z', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00Z' ) );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_datetime_rejects_invalid_format() {
+        $this->assertEquals( '', WPSG_CPT::sanitize_datetime( 'not-a-date' ) );
+        $this->assertEquals( '', WPSG_CPT::sanitize_datetime( '03/05/2026' ) );
+        $this->assertEquals( '', WPSG_CPT::sanitize_datetime( '<script>alert(1)</script>' ) );
+    }
+
+    /**
+     * @since 0.18.0 P20-D
+     */
+    public function test_sanitize_datetime_accepts_empty_string() {
+        $this->assertEquals( '', WPSG_CPT::sanitize_datetime( '' ) );
     }
 }

@@ -60,6 +60,7 @@ class WPSG_CPT {
             'single' => true,
             'show_in_rest' => true,
             'default' => 'private',
+            'sanitize_callback' => [ self::class, 'sanitize_visibility' ],
         ]);
 
         register_post_meta(self::POST_TYPE, 'status', [
@@ -67,6 +68,7 @@ class WPSG_CPT {
             'single' => true,
             'show_in_rest' => true,
             'default' => 'draft',
+            'sanitize_callback' => [ self::class, 'sanitize_status' ],
         ]);
 
         register_post_meta(self::POST_TYPE, 'media_items', [
@@ -94,6 +96,7 @@ class WPSG_CPT {
                 ],
             ],
             'default' => [],
+            'sanitize_callback' => [ self::class, 'sanitize_media_items' ],
         ]);
 
         register_post_meta(self::POST_TYPE, 'tags', [
@@ -106,6 +109,7 @@ class WPSG_CPT {
                 ],
             ],
             'default' => [],
+            'sanitize_callback' => [ self::class, 'sanitize_tags' ],
         ]);
 
         register_post_meta(self::POST_TYPE, 'cover_image', [
@@ -113,6 +117,7 @@ class WPSG_CPT {
             'single' => true,
             'show_in_rest' => true,
             'default' => '',
+            'sanitize_callback' => 'esc_url_raw',
         ]);
 
         register_post_meta(self::POST_TYPE, 'access_grants', [
@@ -136,6 +141,7 @@ class WPSG_CPT {
             'single' => true,
             'show_in_rest' => true,
             'default' => '',
+            'sanitize_callback' => [ self::class, 'sanitize_datetime' ],
         ]);
 
         register_post_meta(self::POST_TYPE, 'unpublish_at', [
@@ -143,6 +149,7 @@ class WPSG_CPT {
             'single' => true,
             'show_in_rest' => true,
             'default' => '',
+            'sanitize_callback' => [ self::class, 'sanitize_datetime' ],
         ]);
 
         register_term_meta('wpsg_company', 'access_grants', [
@@ -151,5 +158,114 @@ class WPSG_CPT {
             'show_in_rest' => false,
             'default' => [],
         ]);
+    }
+
+    // ── Sanitize callbacks (P20-D) ───────────────────────────
+
+    /**
+     * Whitelist visibility values.
+     *
+     * @since 0.18.0 P20-D
+     * @param  mixed $value Raw value.
+     * @return string Sanitized value.
+     */
+    public static function sanitize_visibility( $value ): string {
+        return in_array( $value, [ 'public', 'private' ], true ) ? $value : 'public';
+    }
+
+    /**
+     * Whitelist status values.
+     *
+     * @since 0.18.0 P20-D
+     * @param  mixed $value Raw value.
+     * @return string Sanitized value.
+     */
+    public static function sanitize_status( $value ): string {
+        return in_array( $value, [ 'draft', 'active', 'archived' ], true ) ? $value : 'draft';
+    }
+
+    /**
+     * Sanitize media_items array.
+     *
+     * Validates structure and sanitizes each field. Malformed entries are
+     * silently dropped.
+     *
+     * @since 0.18.0 P20-D
+     * @param  mixed $value Raw value.
+     * @return array Sanitized media items.
+     */
+    public static function sanitize_media_items( $value ): array {
+        if ( ! is_array( $value ) ) {
+            return [];
+        }
+
+        $valid_types    = [ 'image', 'video', 'embed' ];
+        $valid_sources  = [ 'wp', 'external', 'oembed' ];
+        $sanitized      = [];
+
+        foreach ( $value as $item ) {
+            if ( ! is_array( $item ) ) {
+                continue;
+            }
+
+            $clean = [
+                'id'           => isset( $item['id'] ) ? sanitize_text_field( $item['id'] ) : '',
+                'type'         => isset( $item['type'] ) && in_array( $item['type'], $valid_types, true )
+                    ? $item['type'] : 'image',
+                'source'       => isset( $item['source'] ) && in_array( $item['source'], $valid_sources, true )
+                    ? $item['source'] : 'wp',
+                'url'          => isset( $item['url'] ) ? esc_url_raw( $item['url'] ) : '',
+                'thumbnail'    => isset( $item['thumbnail'] ) ? esc_url_raw( $item['thumbnail'] ) : '',
+                'caption'      => isset( $item['caption'] ) ? sanitize_text_field( $item['caption'] ) : '',
+                'order'        => isset( $item['order'] ) ? intval( $item['order'] ) : 0,
+                'embedUrl'     => isset( $item['embedUrl'] ) ? esc_url_raw( $item['embedUrl'] ) : '',
+                'provider'     => isset( $item['provider'] ) ? sanitize_text_field( $item['provider'] ) : '',
+                'attachmentId' => isset( $item['attachmentId'] ) ? intval( $item['attachmentId'] ) : 0,
+                'title'        => isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '',
+            ];
+
+            // Drop entries with no usable ID
+            if ( $clean['id'] !== '' ) {
+                $sanitized[] = $clean;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Sanitize tags array.
+     *
+     * @since 0.18.0 P20-D
+     * @param  mixed $value Raw value.
+     * @return array Sanitized tag strings.
+     */
+    public static function sanitize_tags( $value ): array {
+        if ( ! is_array( $value ) ) {
+            return [];
+        }
+        return array_values( array_filter( array_map( 'sanitize_text_field', $value ) ) );
+    }
+
+    /**
+     * Validate and sanitize ISO 8601 datetime strings.
+     *
+     * Accepts format: Y-m-d\TH:i:s (e.g. 2026-03-05T14:30:00)
+     * Also accepts Y-m-d\TH:i:sP (with timezone offset) and empty string.
+     *
+     * @since 0.18.0 P20-D
+     * @param  mixed $value Raw value.
+     * @return string Validated datetime or empty string.
+     */
+    public static function sanitize_datetime( $value ): string {
+        if ( ! is_string( $value ) || trim( $value ) === '' ) {
+            return '';
+        }
+        $value = sanitize_text_field( $value );
+        // Accept ISO 8601 variants
+        if ( preg_match( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)?$/', $value ) ) {
+            return $value;
+        }
+        return '';
     }
 }

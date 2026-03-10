@@ -69,7 +69,7 @@ class WPSG_Overlay_Library {
     }
 
     /**
-     * Remove an overlay entry.  Does NOT delete the physical file.
+     * Remove an overlay entry and delete the physical file from disk.
      *
      * @param  string $id
      * @return bool  True if found and removed.
@@ -79,6 +79,24 @@ class WPSG_Overlay_Library {
         if ( ! is_array( $all ) || ! isset( $all[ $id ] ) ) {
             return false;
         }
+
+        // Attempt to delete the physical file.
+        $entry = $all[ $id ];
+        if ( ! empty( $entry['url'] ) ) {
+            $upload_dir = wp_upload_dir();
+            $base_url   = trailingslashit( $upload_dir['baseurl'] );
+            $base_dir   = trailingslashit( $upload_dir['basedir'] );
+
+            // Only delete if the URL lives inside our uploads directory.
+            if ( str_starts_with( $entry['url'], $base_url ) ) {
+                $relative  = substr( $entry['url'], strlen( $base_url ) );
+                $file_path = $base_dir . $relative;
+                if ( file_exists( $file_path ) ) {
+                    wp_delete_file( $file_path );
+                }
+            }
+        }
+
         unset( $all[ $id ] );
         update_option( self::OPTION_KEY, $all, false );
         return true;

@@ -129,6 +129,8 @@ class WPSG_Embed {
             'enableAnimations'        => $enable_animations,
             'sentryDsn'               => $sentry_dsn,
             'restNonce'               => wp_create_nonce('wp_rest'),
+            // P20-K: Gate JWT auth behind server-side constant.
+            'enableJwt'               => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
         ];
 
         $config_script = '<script>' .

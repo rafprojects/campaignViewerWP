@@ -3,12 +3,10 @@
 class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
     public function setUp(): void {
         parent::setUp();
-        // Disable nonce verification for direct REST tests (no browser session).
-        add_filter('wpsg_require_rest_nonce', '__return_false');
+        // Nonce bypass handled via WPSG_ALLOW_NONCE_BYPASS constant in bootstrap.php.
     }
 
     public function tearDown(): void {
-        remove_filter('wpsg_require_rest_nonce', '__return_false');
         delete_option(WPSG_Settings::OPTION_NAME);
         parent::tearDown();
     }
