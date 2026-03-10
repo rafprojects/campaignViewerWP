@@ -2971,8 +2971,73 @@ class WPSG_REST {
             return new WP_REST_Response($out, $cached_status);
         }
 
+        // H-2: DNS rebinding SSRF protection.
+        // The pre-flight DNS check above validates the IP *before* the HTTP request,
+        // but a DNS rebinding attack can return a public IP for the validation lookup
+        // and a private IP for the actual request (TOCTOU gap). This filter re-validates
+        // the resolved IP at connection time inside wp_remote_get().
+        $wpsg_ssrf_filter = null;
+        $wpsg_ssrf_blocked = false;
+        if (!$allowed) {
+            $wpsg_ssrf_filter = function ($preempt, $args, $request_url) use (&$wpsg_ssrf_blocked) {
+                $req_host = wp_parse_url($request_url, PHP_URL_HOST);
+                if (empty($req_host)) {
+                    return $preempt;
+                }
+
+                // Collect all resolved IPs for the host
+                $ips = [];
+                if (filter_var($req_host, FILTER_VALIDATE_IP)) {
+                    $ips[] = $req_host;
+                } else {
+                    $dns = dns_get_record($req_host, DNS_A | DNS_AAAA);
+                    if ($dns !== false && is_array($dns)) {
+                        foreach ($dns as $record) {
+                            if (isset($record['ip'])) {
+                                $ips[] = $record['ip'];
+                            }
+                            if (isset($record['ipv6'])) {
+                                $ips[] = $record['ipv6'];
+                            }
+                        }
+                    }
+                    if (empty($ips)) {
+                        $ipv4 = gethostbynamel($req_host);
+                        if ($ipv4 !== false && is_array($ipv4)) {
+                            $ips = $ipv4;
+                        }
+                    }
+                }
+
+                foreach ($ips as $ip) {
+                    if (WPSG_REST::check_private_ip($ip)) {
+                        $wpsg_ssrf_blocked = true;
+                        return new WP_Error(
+                            'ssrf_dns_rebind',
+                            'DNS rebinding detected: host resolved to a private IP at request time'
+                        );
+                    }
+                }
+
+                return $preempt;
+            };
+            add_filter('pre_http_request', $wpsg_ssrf_filter, 10, 3);
+        }
+
         $attempts = [];
         $result = WPSG_OEmbed_Providers::fetch($url, $parsed, $attempts);
+
+        // Remove the SSRF filter immediately after the fetch completes.
+        if ($wpsg_ssrf_filter !== null) {
+            remove_filter('pre_http_request', $wpsg_ssrf_filter, 10);
+        }
+
+        // H-2: If the SSRF filter blocked the request due to DNS rebinding,
+        // return a clear 400 instead of a generic 502 failure.
+        if ($wpsg_ssrf_blocked) {
+            return new WP_REST_Response(['message' => 'DNS rebinding detected: oEmbed host resolved to a private IP'], 400);
+        }
+
         if (is_array($result) && !empty($result)) {
             // If provider returned an error payload, cache it for a short TTL
             // to avoid hammering external services on repeated requests.
@@ -3537,6 +3602,17 @@ class WPSG_REST {
 
         // If we can't validate the IP format, treat as private for safety
         return true;
+    }
+
+    /**
+     * Public wrapper for is_private_ip() — used by the pre_http_request SSRF filter
+     * closure in proxy_oembed() (H-2 DNS rebinding protection).
+     *
+     * @param string $ip The IP address to check.
+     * @return bool True if the IP is private/reserved.
+     */
+    public static function check_private_ip($ip) {
+        return self::is_private_ip($ip);
     }
 
     /**

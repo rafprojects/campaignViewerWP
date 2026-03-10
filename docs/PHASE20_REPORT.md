@@ -16,7 +16,7 @@
 | P20-E | feat/phase20-prod-readiness | uninstall.php with 9-category cleanup (posts, terms, options, transients, tables, roles, cron, files), preserve_data_on_uninstall setting |
 | P20-F | feat/phase20-prod-readiness | GPLv2 LICENSE at repo root and plugin dir, complete plugin header with all WordPress.org required fields |
 | P20-K | feat/phase20-prod-readiness | JWT gated behind `WPSG_ENABLE_JWT_AUTH`, nonce-only default, `useNonceHeartbeat` hook, `/nonce` endpoint, cookie-based `/auth/login` and `/auth/logout` REST endpoints, in-app LoginForm modal retained for nonce mode (no wp-login.php redirect), 12 Vitest tests, 6 AuthContext tests, 11 PHPUnit tests |
-| P20-H (11/12) | feat/phase20-prod-readiness | H-1 (parseProps whitelist), H-3 (nonce bypass hardened), H-4 (no password reset URL exposure), H-5 (overlay file deletion), H-6 (Sentry PII scrubbing), H-7 (CSP headers), H-8 (ErrorBoundary → Sentry), H-9 (apiClient 30s timeout + AbortController), H-10 (status/visibility whitelist), H-11 (encodeURIComponent), H-12 (console.info DEV guard) |
+| P20-H (12/12) ✅ | feat/phase20-prod-readiness | H-1 (parseProps whitelist), H-2 (DNS rebinding SSRF fix), H-3 (nonce bypass hardened), H-4 (no password reset URL exposure), H-5 (overlay file deletion), H-6 (Sentry PII scrubbing), H-7 (CSP headers), H-8 (ErrorBoundary → Sentry), H-9 (apiClient 30s timeout + AbortController), H-10 (status/visibility whitelist), H-11 (encodeURIComponent), H-12 (console.info DEV guard) |
 
 ---
 
@@ -131,6 +131,12 @@
     - [6. URL Image Input Removal](#6-url-image-input-removal)
     - [7. Documentation Updates](#7-documentation-updates)
     - [Type \& Backend Changes (Round 5)](#type--backend-changes-round-5)
+  - [Layout Builder QA — Round 6 Changes](#layout-builder-qa--round-6-changes)
+    - [A. Mask Layer Fixes](#a-mask-layer-fixes)
+    - [B. Background Panel](#b-background-panel)
+    - [C. Design Assets \& Drag-and-Drop](#c-design-assets--drag-and-drop)
+    - [New \& Refactored Files (Round 6)](#new--refactored-files-round-6)
+  - [Security Hardening Sprint — Round 7 Changes](#security-hardening-sprint--round-7-changes)
 
 ---
 
@@ -560,7 +566,7 @@ Archive `.circleci/config.yml` → `.circleci/config.yml.legacy` with a header c
 
 ## Track P20-H — Security Hardening Sprint
 
-**Status:** 11/12 complete (H-1 ✅, H-2 ❌, H-3 ✅, H-4 ✅, H-5 ✅, H-6 ✅, H-7 ✅, H-8 ✅, H-9 ✅, H-10 ✅, H-11 ✅, H-12 ✅)  
+**Status:** ✅ 12/12 complete (all items done)  
 **Priority:** 🟠 Medium — strongly recommended before release  
 **Origin:** Action items B-1 through B-12  
 **Effort:** ~2–3 dev-days (12 sub-tasks, many trivial)
@@ -1139,7 +1145,7 @@ The `enshrined/svg-sanitize` library parses the SVG as strict XML, strips danger
 | 2 | **P20-F** — License, headers & legal | None | Low | ✅ Complete |
 | 3 | **P20-E** — Uninstall cleanup | None | Medium | ✅ Complete |
 | 3 | **P20-G** — GitHub Actions CI pipeline | None | Medium | Not started |
-| 4 | **P20-H** — Security hardening sprint | P20-A through P20-G complete | Low–Medium | 11/12 complete (H-2 DNS rebinding remaining) |
+| 4 | **P20-H** — Security hardening sprint | P20-A through P20-G complete | Low–Medium | ✅ 12/12 complete |
 | 5 | **P20-I** — Performance optimizations | P20-H complete | Medium–High | Not started |
 | 6 | **P20-J** — Plugin directory preparation | P20-F (license), P20-E (uninstall) | Low | Not started |
 | 1 | **P20-K** — JWT nonce-only default | None | Low | ✅ Complete |
@@ -1447,18 +1453,13 @@ Disabled `imageUrl` text input pathways from slot properties and media panels to
 
 ## Security Hardening Sprint — Round 7 Changes
 
-**Status:** ✅ Complete (4 items)  
+**Status:** ✅ Complete (5 items)  
 **Date:** March 9, 2026  
 
 | # | H-Track Item | Change | File(s) |
 |---|-------------|--------|---------|
+| H-2 | DNS rebinding SSRF fix | Added `pre_http_request` filter in `proxy_oembed()` that re-resolves the hostname and validates via `is_private_ip()` at HTTP-request time, closing the TOCTOU gap between pre-flight DNS check and actual fetch. Uses `$wpsg_ssrf_blocked` flag + closure with `use (&$wpsg_ssrf_blocked)` to surface a clear 400 response. Filter is added before `WPSG_OEmbed_Providers::fetch()` and removed immediately after. Added public `check_private_ip()` wrapper for closure access. Only active for non-allowlisted hosts. | `class-wpsg-rest.php` |
 | H-3 | Remove nonce bypass filter | Replaced `apply_filters('wpsg_require_rest_nonce', …)` with constant-based bypass: requires both `WP_DEBUG` and `WPSG_ALLOW_NONCE_BYPASS` to be true. Updated test bootstrap to define the constant; removed `add_filter`/`remove_filter` from all 3 test setUp/tearDown methods. | `class-wpsg-rest.php`, `tests/bootstrap.php`, `tests/WPSG_Settings_Rest_Test.php`, `tests/WPSG_Capability_Test.php`, `tests/WPSG_Campaign_Rest_Test.php` |
 | H-5 | Delete physical files on overlay removal | `remove()` now resolves the overlay URL to a filesystem path via `wp_upload_dir()`, checks `file_exists()`, and calls `wp_delete_file()` before removing the option entry. Only deletes files under the uploads directory. | `class-wpsg-overlay-library.php` |
 | H-6 | Sentry PII scrubbing | Added `beforeSend` callback to `Sentry.init()`: strips `Authorization`/`authorization` headers from breadcrumb data, deletes `user.ip_address` if auto-detected. | `src/services/monitoring/sentry.ts` |
 | H-8 | ErrorBoundary → Sentry | Added `Sentry.captureException(error, { contexts: { react: { componentStack } } })` in `componentDidCatch`. Imported `@sentry/react`. | `src/components/ErrorBoundary.tsx` |
-
-### Remaining H-Track Item
-
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| H-2 | DNS rebinding SSRF fix | ❌ Not done | Medium effort (3–4 hours). Requires `pre_http_request` filter or `CURLOPT_RESOLVE` to pin resolved IP. |
