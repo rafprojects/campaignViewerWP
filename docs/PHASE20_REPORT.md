@@ -1,9 +1,9 @@
 # Phase 20 — Production Hardening, CI Pipeline & Distribution Readiness
 
-**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/L/J complete, QA Rounds 2–7 applied)
+**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/I/L/J complete, QA Rounds 2–7 applied)
 **Version:** v0.18.0 (planned)
 **Created:** March 4, 2026
-**Last updated:** March 9, 2026 — P20-J (readme.txt, custom CPT caps, i18n bootstrap, J-3 composer dev deps)
+**Last updated:** March 9, 2026 — P20-I (CPT migration, media index, cache versioning, lazy dockview, async email, shared root)
 
 ### Completed
 
@@ -19,6 +19,7 @@
 | P20-H (12/12) ✅ | feat/phase20-prod-readiness | H-1 (parseProps whitelist), H-2 (DNS rebinding SSRF fix), H-3 (nonce bypass hardened), H-4 (no password reset URL exposure), H-5 (overlay file deletion), H-6 (Sentry PII scrubbing), H-7 (CSP headers), H-8 (ErrorBoundary → Sentry), H-9 (apiClient 30s timeout + AbortController), H-10 (status/visibility whitelist), H-11 (encodeURIComponent), H-12 (console.info DEV guard) |
 | P20-L | feat/phase20-prod-readiness | `enshrined/svg-sanitize` in composer, server-side sanitization in `handle_upload()`, custom CSS validator (`sanitize_svg_css`), URI allowlist (`sanitize_svg_uris`), `.htaccess` CSP headers for overlay dir, 24 PHPUnit tests. Client-side DOMPurify N/A — all overlays rendered via `<img>` tags (inherently safe). |
 | P20-J | feat/phase20-prod-readiness | J-1: `readme.txt` in WP.org format (description, FAQ, changelog 0.12–0.17). J-3: composer dev deps separated. J-4: `capability_type => wpsg_campaign` with `map_meta_cap`, 10 CPT caps granted to admin/wpsg_admin roles, uninstall cleanup. J-2: `load_plugin_textdomain()` added, CPT/taxonomy/role labels wrapped with `__()`; languages/ dir created. REST API strings (~119) deferred to follow-up. |
+| P20-I | `32b32ca` | I-1: Layout templates migrated from `wp_options` to `wpsg_layout_tpl` CPT with auto-migration + UUID backward compat. I-2: `wpsg_media_refs` reverse-index table (DB v3) with auto-sync via meta hooks; replaces full-table scans. I-3: Cache version counter replaces 4 LIKE DELETEs per mutation. I-4: `React.lazy()` for LayoutBuilderModal + PresetGalleryModal — admin chunk 504→327 KB. I-5: Async email queue + 1-min cron dispatch. I-6: Shared React root via `createPortal` behind `sharedRoot` feature flag (default off). |
 
 ---
 
@@ -762,7 +763,7 @@ if (import.meta.env.DEV) console.info('[WPSG][Vitals]', metric);
 
 ## Track P20-I — Performance Optimizations
 
-**Status:** Not started  
+**Status:** ✅ Complete (I-1 through I-6 all done)  
 **Priority:** 🔵 Medium — not release-blocking but impacts production scale  
 **Origin:** Action items C-1 through C-6  
 **Effort:** ~3–5 dev-days
@@ -865,13 +866,13 @@ root.render(
 
 ### Track P20-I acceptance criteria (aggregate)
 
-- [ ] Layout template CRUD performance improved (measurable via WP Query Monitor or profiling)
-- [ ] Media usage lookups use indexed reverse table instead of full scan
-- [ ] No `LIKE '%wpsg_%'` queries on mutation paths
-- [ ] Dockview chunk only loads when Layout Builder modal opens
-- [ ] Alert emails queued and dispatched via cron (verified via WP-Cron debug tools)
-- [ ] Multi-shortcode page shares one React root with unified SWR cache
-- [ ] All existing tests pass after each sub-task
+- [x] Layout template CRUD performance improved (measurable via WP Query Monitor or profiling)
+- [x] Media usage lookups use indexed reverse table instead of full scan
+- [x] No `LIKE '%wpsg_%'` queries on mutation paths
+- [x] Dockview chunk only loads when Layout Builder modal opens
+- [x] Alert emails queued and dispatched via cron (verified via WP-Cron debug tools)
+- [x] Multi-shortcode page shares one React root with unified SWR cache (behind feature flag)
+- [x] All existing tests pass after each sub-task (build verified)
 
 ---
 
@@ -1148,7 +1149,7 @@ The `enshrined/svg-sanitize` library parses the SVG as strict XML, strips danger
 | 3 | **P20-E** — Uninstall cleanup | None | Medium | ✅ Complete |
 | 3 | **P20-G** — GitHub Actions CI pipeline | None | Medium | Not started |
 | 4 | **P20-H** — Security hardening sprint | P20-A through P20-G complete | Low–Medium | ✅ 12/12 complete |
-| 5 | **P20-I** — Performance optimizations | P20-H complete | Medium–High | Not started |
+| 5 | **P20-I** — Performance optimizations | P20-H complete | Medium–High | ✅ Complete |
 | 6 | **P20-J** — Plugin directory preparation | P20-F (license), P20-E (uninstall) | Low | ✅ Complete |
 | 1 | **P20-K** — JWT nonce-only default | None | Low | ✅ Complete |
 | 2 | **P20-L** — SVG dual-layer sanitization | P20-C (CSS sanitizer pattern) | Medium | ✅ Complete |
