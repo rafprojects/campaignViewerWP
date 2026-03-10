@@ -1,4 +1,4 @@
-# Testing + QA Guide (Unified)
+git pusnl# Testing + QA Guide (Unified)
 
 This document consolidates the Testing Plan and Manual QA steps for WP Super Gallery. It includes automated test guidance and a release checklist for manual QA in WordPress, plus an updated REST API manual test suite.
 
@@ -512,6 +512,150 @@ Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with 
   - Caching behavior:
     - Successful oEmbed responses are cached for 6 hours.
     - Error/failure responses are cached for 5 minutes to avoid repeated immediate retries against external providers.
+
+---
+
+## Phase 20 — Sprint 1 Manual QA (v0.18.0)
+
+These manual tests validate the four ship-blocking tracks implemented in Phase 20 Sprint 1. Perform each section in a fresh WP test environment.
+
+### P20-A · Rate Limiting Defaults
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Confirm the `wpsg_rate_limit_public` option is **not** set in `wp_options`. | Option absent (uses code default). |
+| 2 | As a logged-out visitor, hit a public REST endpoint (e.g. `GET /wp-json/wp-super-gallery/v1/campaigns/{id}`) **61 times within 60 seconds** (use a loop: `for i in $(seq 1 61); do curl -s -o /dev/null -w "%{http_code}\n" "$URL"; done`). | Requests 1–60 return `200`. Request 61 returns `429 Too Many Requests`. |
+| 3 | Override the public limit via filter: add `add_filter('wpsg_rate_limit_public', fn() => 10);` in a mu-plugin. Repeat step 2 with 11 requests. | Request 11 returns `429`. |
+| 4 | As an **authenticated admin**, hit an admin endpoint (e.g. `GET /wp-json/wp-super-gallery/v1/campaigns`) **121 times within 60 seconds** using a valid nonce. | Requests 1–120 succeed. Request 121 returns `429`. |
+| 5 | Override the authenticated limit: `add_filter('wpsg_rate_limit_authenticated', fn() => 20);`. Repeat step 4 with 21 requests. | Request 21 returns `429`. |
+
+### P20-C · CSS Value Sanitization
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Create/edit a layout template via the admin panel. Set **Background Color** to `#ff6600`. Save and reload. | Color persists as `#ff6600`. |
+| 2 | Set Background Color to `rgb(100, 200, 50)`. Save. | Value accepted and persisted. |
+| 3 | Using direct REST (or browser dev-tools), attempt to save Background Color as `red; background-image: url(https://evil.com)`. | Value is **rejected** (empty string stored). Template renders with no background color. |
+| 4 | Attempt to set **Clip Path** to `polygon(50% 0%, 100% 100%, 0% 100%)`. Save. | Valid clip-path persists and renders. |
+| 5 | Attempt to set Clip Path to `url(#malicious)`. | Value rejected (empty string). |
+| 6 | Attempt to set **Object Position** to `expression(alert(1))`. | Value rejected (empty string). |
+| 7 | Attempt to set **Border Color** to `javascript:void(0)`. | Value rejected (empty string). |
+| 8 | Inspect the rendered template HTML (Shadow DOM). Confirm no `expression(`, `url(`, `javascript:`, or `var(` appears in inline styles. | Clean inline styles only. |
+
+### P20-D · Post Meta Sanitize Callbacks
+
+All tests use the WP REST API directly (`wp-json/wp/v2/wpsg_campaign/{id}`).
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | `PATCH` a campaign with `{"meta":{"visibility":"public"}}`. | Accepted; meta shows `public`. |
+| 2 | `PATCH` with `{"meta":{"visibility":"<script>alert(1)</script>"}}`. | Rejected; value falls back to `public`. |
+| 3 | `PATCH` with `{"meta":{"status":"archived"}}`. | Accepted; meta shows `archived`. |
+| 4 | `PATCH` with `{"meta":{"status":"deleted"}}`. | Rejected; value falls back to `draft`. |
+| 5 | `PATCH` with `media_items` containing a valid item `{"id":"m1","type":"image","source":"wp","url":"https://example.com/img.jpg","caption":"Test","order":1}`. | Accepted and persisted. |
+| 6 | `PATCH` with `media_items` containing `{"type":"malware","source":"evil","url":"javascript:alert(1)"}` (missing `id`). | Entry dropped entirely (empty array stored). |
+| 7 | `PATCH` with `{"meta":{"tags":["landscape","<img onerror=alert(1)>"]}}`. | Tags stored as `["landscape", ""]` (HTML stripped). |
+| 8 | `PATCH` with `{"meta":{"publish_at":"2025-06-15T12:00:00Z"}}`. | Accepted as valid ISO 8601. |
+| 9 | `PATCH` with `{"meta":{"publish_at":"not-a-date"}}`. | Rejected (empty string stored). |
+| 10 | `PATCH` with `{"meta":{"cover_image":"javascript:alert(1)"}}`. | URL sanitised via `esc_url_raw`; stored as empty or stripped. |
+
+### P20-K · Nonce-Only Auth (JWT Disabled by Default)
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Ensure `WPSG_ENABLE_JWT_AUTH` is **not** defined in `wp-config.php`. Load a page with the `[wp_super_gallery]` shortcode while logged in as admin. | Gallery renders. Browser console: no JWT token requests, no `localStorage.getItem('wpsg_jwt_*')` calls. |
+| 2 | Open browser DevTools → Application → Local Storage. Search for `wpsg_jwt`. | No JWT keys present. |
+| 3 | In the rendered gallery embed, inspect the `__WPSG_CONFIG__` object (run `JSON.stringify(window.__WPSG_CONFIG__)` in the shadow root's context or from the parent page). | `enableJwt` is `false` (or absent). `restNonce` is a valid nonce string. |
+| 4 | Verify admin UI controls are visible (edit, delete, settings). | Admin detected via nonce-authenticated `/permissions` endpoint. |
+| 5 | Open the page as a **logged-out visitor** (incognito). | Gallery renders in guest/public mode. No admin controls visible. A blue "Sign in" banner is shown. Console: no auth errors. |
+| 6 | Click the **"Sign in"** button in the banner. | An in-app modal opens with email + password fields. No redirect to `wp-login.php`. The URL bar does not change. |
+| 7 | Enter valid WordPress credentials and submit. | Modal closes. AuthBar appears showing "Signed in as …". Admin controls appear (if user is admin). Network tab shows `POST /wp-json/wp-super-gallery/v1/auth/login` returning 200 with `user`, `permissions`, `nonce`. |
+| 8 | Enter **invalid** credentials and submit. | Modal stays open. An error message "Invalid username or password." is displayed. Network tab shows 401 response. |
+| 9 | While signed in, click **"Sign out"** in the AuthBar. | User returns to guest mode. The sign-in banner reappears. Network tab shows `POST /wp-json/wp-super-gallery/v1/auth/logout` returning 200. No redirect to a WordPress page. |
+| 10 | View page source or inspect Network tab. Verify no reference to `wp-login.php` or `wp-logout` URLs. | WordPress identity is not exposed to the end user. |
+| 11 | Leave a tab open for **25+ minutes** (or temporarily change the heartbeat interval to 10 s for testing). Check the Network tab for periodic `GET /wp-json/wp-super-gallery/v1/nonce` calls. | Nonce refresh requests appear every ~20 min (or 10 s if overridden). Each returns `{ "nonce": "..." }`. |
+| 12 | After a nonce refresh, perform an admin action (e.g. reorder media). | Action succeeds with the refreshed nonce (no 403). |
+| 13 | **Opt-in JWT test:** Add `define('WPSG_ENABLE_JWT_AUTH', true);` to `wp-config.php`. Reload the gallery page. | `enableJwt` is `true` in config. JWT login flow activates. `localStorage` shows `wpsg_jwt_*` keys. |
+| 14 | Remove the `WPSG_ENABLE_JWT_AUTH` constant. Reload. | Reverts to nonce-only mode (step 1 behavior). |
+| 15 | In the admin **Settings** panel → General tab, set **"Session Idle Timeout"** to **2 minutes**. Save. | Setting persists. |
+| 16 | Sign in and wait **2+ minutes** without any mouse/keyboard/touch activity. | User is auto-logged out. Sign-in banner reappears. Admin panel closes if it was open. |
+| 17 | Sign in again. Move the mouse or press a key periodically (stay active). | Timer resets on each interaction — no auto-logout while active. |
+| 18 | Set **"Session Idle Timeout"** back to **0**. Save. Sign in and wait several minutes idle. | No auto-logout occurs (feature disabled). |
+
+---
+
+## Phase 20 — QA Round 5 Manual Tests
+
+The following manual tests cover changes landed in QA Round 5: glow hover fix, per-slot glow color, PHP filter sanitization, layout height flexibility (vh mode), mobile breakpoint handling for Layout Builder, and URL-input removal.
+
+### R5-A · Glow Hover Effect (Clip-Path Shapes)
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open the Layout Builder. Add a slot, set its **Shape** to "Circle" and **Hover** to "Glow". Save the template. | Template saves without error. |
+| 2 | View the campaign on the front-end. Hover over the circular slot. | A coloured glow (drop-shadow) appears around the circular clip-path on hover. The glow follows the clip shape, not a rectangular bounding box. |
+| 3 | Repeat step 2 with shapes: Hexagon, Diamond, Ellipse, Parallelogram. | Glow renders correctly around each non-rectangular clip-path. |
+| 4 | Set a slot to **Rectangle** shape with Hover = Glow. View front-end and hover. | Glow appears via the CSS class path (`wpsg-tile-lb-rect-glow`), using `box-shadow`. |
+| 5 | Set a slot's Hover to "Pop". View front-end and hover. | Scale-up bounce effect; no glow visible. |
+| 6 | Set a slot's Hover to "None". View front-end and hover. | No visual change on hover. |
+
+### R5-B · Per-Slot Glow Color & Spread
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | In the Layout Builder, set a slot's **Hover** to "Glow". | A **Glow** colour picker and **Spread** slider appear below the Hover selector. Default colour is `#7c9ef8`, default spread is 12 px. |
+| 2 | Change the glow colour to `#ff0000` (red). Save. View front-end and hover. | Glow renders in red. |
+| 3 | Adjust the spread slider to 30 px. Save. View front-end and hover. | Glow is noticeably wider/softer than the default. |
+| 4 | Add a second slot, set Hover = Glow with a green colour (`#00ff00`). View front-end. | Slot 1 has red glow, Slot 2 has green glow — each independent. |
+| 5 | Switch Slot 1's Hover back to "Pop". | The Glow and Spread controls disappear from the properties panel. |
+| 6 | Switch it back to "Glow". | Controls reappear, retaining the previously-set red colour and 30 px spread. |
+| 7 | Leave a slot's glowColor unset (or clear it). View front-end with Hover = Glow. | Falls back to the campaign-level `tileGlowColor` from Settings → Tile Appearance. |
+
+### R5-C · PHP Filter Sanitization (Round-Trip)
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open the Layout Builder. Select a slot and adjust **Brightness** to 150%, **Contrast** to 120%, **Saturate** to 180%. Save. | Template saves. |
+| 2 | Reload the builder or re-open the template. | Brightness = 150, Contrast = 120, Saturate = 180 — values survive the round-trip without clamping. |
+| 3 | Set **Grayscale** to 80%, **Sepia** to 50%, **Invert** to 100%. Save and reload. | Values persist exactly. Grayscale and Sepia are capped at 100 (not 300). Invert is capped at 100. |
+| 4 | Set Brightness to 300 (the max). Save and reload. | Value persists as 300. |
+| 5 | Using the REST API or direct DB edit, attempt to set Brightness to 500. | Server clamps to 300 on save. |
+| 6 | View the campaign front-end with the filter values from step 1. | Image renders correctly with the applied brightness/contrast/saturation — no grey wash-out, no solid grey rectangle. |
+| 7 | Set all filter sliders back to their defaults (100/100/100/0/0/0/0). Save. | Image renders normally with no visible filter effect. |
+
+### R5-D · Layout Canvas Height Mode (vh)
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open the Layout Builder. In the footer bar, locate the **Height** section with a "Ratio / vh" toggle. | Toggle is present between the "Fit" button and the Snap controls. Default mode is "Ratio". |
+| 2 | Switch to "vh" mode. | A number input appears showing **50** (the default viewport-height percentage). |
+| 3 | Set the value to 80. The builder canvas height should update. | Canvas height becomes approximately 80% of the browser viewport height. |
+| 4 | Save the template. View the campaign on the front-end. | The gallery canvas height fills ~80% of the viewport, regardless of container width. |
+| 5 | Resize the browser window vertically. | Gallery height adjusts in real-time to stay at ~80 vh. |
+| 6 | Set the vh value to 1 (the minimum). Save and view. | Very short canvas (~1% of viewport). |
+| 7 | Set the vh value to 100 (the maximum). Save and view. | Canvas fills the full viewport height. |
+| 8 | Switch back to "Ratio" mode. Save and view. | Canvas height reverts to width ÷ aspect-ratio behavior. No vh sizing. |
+| 9 | Via REST API, attempt to save `canvasHeightVh` as 200. | Server clamps to 100 on save. |
+
+### R5-E · Mobile Breakpoint — Layout Builder Guard
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open Settings → Media Gallery tab. Set gallery selection to **Unified** mode. Select **Layout Builder** as the image adapter. | Mode auto-switches to **Per Breakpoint**. Desktop and Tablet rows show "Layout Builder". Mobile row shows a different adapter (the previous unified adapter or "Classic"). |
+| 2 | Inspect the Mobile row's Image and Video dropdowns. | "Layout Builder" appears in the dropdown list but is **greyed out / disabled** with the label "Layout Builder (desktop/tablet only)". |
+| 3 | Attempt to select Layout Builder on the Mobile row. | Selection is blocked (disabled item). |
+| 4 | Save settings. View the campaign in a desktop-width browser. | Layout Builder renders. |
+| 5 | Resize the browser below 768 px (or use DevTools responsive mode). | Gallery switches from Layout Builder to the mobile adapter (e.g. Classic, Compact Grid). No blank/broken state. |
+| 6 | Resize back above 768 px. | Gallery switches back to Layout Builder. |
+| 7 | Set all three breakpoints (desktop/tablet/mobile) to non-layout-builder adapters. Switch back to Unified mode. | Unified mode works normally with the selected adapter. |
+
+### R5-F · URL Image Input Removal
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open the Layout Builder → Media picker sidebar. | Only the "Upload" button and WP media library picker are available. There is **no** URL text input or "Add from URL" option. |
+| 2 | Open Slot Properties → Mask section (if a mask exists). | Only "Replace" (file upload) and "Remove" buttons. No URL input for mask images. |
+| 3 | Inspect the network requests when adding media. | No requests to external URLs for fetching image metadata. All images come from local upload or WP media library. |
 
 ---
 

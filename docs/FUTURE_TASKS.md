@@ -8,7 +8,25 @@ This document tracks deferred and exploratory work remaining after Phase 18 is p
 
 ## Builder
 
-### Full-Page Route for Layout Builder (`/builder/:templateId`)
+### URL-Based Image Inputs (Mask, Overlay, Background)
+
+**Context:** All URL-based image inputs (paste URL for mask, overlay library, background image) were disabled in Phase 20 and replaced with upload-only workflows. This simplifies the security surface (no external URL fetching, no CORS issues, no SSRF risk) and keeps all assets in the WP media library.
+
+**What was removed:**
+- `SlotPropertiesPanel`: "Paste mask URL…" TextInput for adding masks, editable URL field for existing masks.
+- `LayoutBuilderMediaPanel`/`AssetUploader`: URL TextInput for graphic layer library and background image sections.
+- `LayoutBuilderModal`: `handleAddUrlToLibrary()` callback that POSTed external URLs to the overlay-library endpoint.
+- `BuilderDockContext`: `handleAddUrlToLibrary` from the shared context interface.
+
+**To re-enable (if needed):**
+- `AssetUploader.onUrlSubmit` is already optional — simply pass the callback to re-show the URL TextInput.
+- For masks, restore the TextInput in `SlotPropertiesPanel` mask section and the URL editing field.
+- Add server-side URL validation and proxying: fetch the remote image via PHP, validate its content type and size, store it in the WP uploads directory, and return the local URL. This avoids CORS and SSRF issues.
+- Consider a URL allowlist or domain whitelist for additional security.
+
+**Effort:** Medium | **Impact:** Low — upload-only covers the primary use case; URL import is a convenience feature for advanced users.
+
+---
 
 **Context:** The Layout Builder currently lives inside a Mantine `<Modal fullScreen>` overlay. This is pragmatic (no router changes, no callsite changes) but carries long-term costs: z-index management over the WP admin bar, no bookmarkable/shareable URL, Mantine's focus trap interacting with dockview floating panels.
 
@@ -243,7 +261,36 @@ This document tracks deferred and exploratory work remaining after Phase 18 is p
 - Q1: Should expired grants show as "expired" in the Access tab (for audit purposes) or be deleted immediately?
 - Q2: Should the grant holder receive an email warning before their access expires (e.g. 3 days before expiry)?
 
-**Effort:** Low (schema + check logic) | **Impact:** High for event galleries
+**Effort:** Low–Medium | **Impact:** High for event galleries
+
+---
+
+### JWT In-Memory Token Auth (Standalone SPA)
+
+**Context:** Phase 20 (P20-K) defaulted the plugin to nonce-only authentication and commented out the JWT localStorage flow to eliminate the XSS → token-theft vector. However, if WPSG is ever deployed as a **standalone SPA on a different origin** (i.e. not embedded via shortcode), WP nonces are unavailable because they require a same-origin page load. In that scenario, JWT auth is required.
+
+The current JWT code stores tokens in `localStorage`, which is accessible to any script on the page. The secure alternative is:
+
+1. **In-memory access token** — stored in a module-scoped variable (not `localStorage`). Survives only for the tab’s lifetime.
+2. **httpOnly refresh cookie** — issued by a new `/wpsg/v1/token/refresh` endpoint with `SameSite=Strict; Secure; HttpOnly`. The browser sends it automatically; JS cannot read it.
+3. **Silent refresh** — on app boot and before access-token expiry, `POST /wpsg/v1/token/refresh` returns a fresh short-lived access token.
+
+**What it would take:**
+- New PHP endpoint: `POST /wpsg/v1/token/refresh` — validates the httpOnly cookie, issues a new JWT with a 15-minute TTL.
+- Modify `WpJwtProvider.tsx` (currently commented out): replace `localStorage.setItem/getItem` with a module-scoped `let accessToken: string | null`.
+- Add a `useTokenRefresh` hook that calls the refresh endpoint 1 minute before expiry and on window `focus` events.
+- `apiClient.ts`: attach `Authorization: Bearer <in-memory-token>` only when the env-var opt-in `WPSG_ENABLE_JWT=1` is set.
+- Server-side: set the refresh cookie on `POST /wpsg/v1/token` (login) and clear it on `DELETE /wpsg/v1/token` (logout).
+- CORS configuration for the cross-origin case (`Access-Control-Allow-Credentials: true`, explicit origin).
+
+**Open questions:**
+- Q1: Should refresh-token rotation be implemented (invalidate old refresh cookie on each use)? This limits replay but adds a revocation table.
+- Q2: What is the refresh-cookie TTL? 7 days (convenience) vs. 24 hours (security) — should it be admin-configurable?
+- Q3: Is a `/wpsg/v1/token/revoke-all` endpoint needed for the “log out everywhere” use case?
+
+**Prerequisites:** P20-K must be complete (nonce-only default + JWT code commented out with env-var gate).
+
+**Effort:** High (2–4 days) | **Impact:** High for cross-origin standalone SPA deployments; Low for standard WordPress shortcode usage
 
 ---
 
@@ -495,4 +542,4 @@ When promoting future tasks to an active phase:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: February 27, 2026 — Phase 18 items promoted and removed (bulk actions, campaign duplication, export/import JSON, keyboard shortcuts, analytics dashboard, media usage tracking, campaign categories, access request workflow, App.tsx+AdminPanel.tsx reduction, JS+PHP coverage). All remaining one-liners expanded with implementation notes and open questions. New sections added: full-page builder route, builder keyboard shortcuts, shortcut configuration, deep clone, analytics follow-ons, access request scale/magic-link, binary export, role-based access, time-limited grants, audit log export, access totals, media sorting, duplicate detection, campaign templates, hierarchical categories, PWA, settings modal, tab data reuse.*
+*Last updated: March 5, 2026 — Added “JWT In-Memory Token Auth (Standalone SPA)” under Access Control (deferred from Phase 20 P20-K decision; see JWT_AUTH_ANALYSIS.md).*
