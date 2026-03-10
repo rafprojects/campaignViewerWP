@@ -479,91 +479,171 @@ Add a checkbox in Settings → Advanced: "Preserve data on plugin removal" (defa
 
 ---
 
-## Track P20-G — GitHub Actions CI Pipeline
+## Track P20-G — GitHub Actions CI/CD Pipeline
 
-**Status:** Not started  
+**Status:** In progress  
 **Priority:** 🟡 High  
 **Origin:** Action item A-9  
 **Effort:** Medium (3–5 hours)
 
 ### Problem
 
-- Frontend (ESLint, TypeScript, Vitest, Playwright) has zero CI coverage
-- Existing CircleCI PHP pipeline targets PHP 5.6–7.4 (plugin requires 8.0+)
+- Frontend (ESLint, TypeScript, Vitest) has zero CI coverage
+- Legacy CircleCI PHP pipeline targets PHP 5.6–7.4 with PHPUnit 5.7 — completely irrelevant (plugin requires PHP 8.0+, PHPUnit 9). Deleted outright, no archival needed.
 - PRs can merge with failing tests, type errors, or lint violations
+- No automated release packaging or distribution workflow
+- Version bumps are manual and error-prone across 3 files
+
+### Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| CI platform | GitHub Actions | Native to GitHub, free for public repos, no external service |
+| PHP matrix | 8.1, 8.2, 8.3 × WP latest | 8.0 is EOL. Multi-WP-version testing adds no value — plugin uses no version-gated WP APIs |
+| E2E strategy | Separate `e2e.yml`, manual trigger only (`workflow_dispatch`) | E2E requires full wp-env + Vite + seed data — too heavyweight for every push |
+| Release trigger | `workflow_dispatch` with version input (Approach C) | Maximum control, gated options, build-before-publish guarantee, override escape hatch |
+| Versioning | SemVer 2.0.0 auto-computed from conventional commits | `feat:` → MINOR, `fix:`/others → PATCH. Pre-1.0: breaking → MINOR (MAJOR reserved for deliberate 1.0.0) |
+| Version override | Always available in release workflow input | For deliberate decisions like "this is 1.0.0" |
+| SVN deploy | Optional checkbox in release + standalone `svn-deploy.yml` reusing existing release ZIP | 3 paths: during release, after release (reuse proven artifact), or never |
+| CircleCI | Deleted entirely | Was temporary, irrelevant to current stack |
+
+### Versioning strategy
+
+**SemVer mapping from conventional commits** (already enforced via commitlint + Husky):
+
+| Commits since last tag contain | Bump (pre-1.0) | Bump (post-1.0) |
+|-------------------------------|-----------------|------------------|
+| Only `fix:`, `chore:`, `docs:`, `refactor:`, `perf:`, `test:`, `build:`, `ci:`, `style:`, `revert:` | **PATCH** (0.17.0 → 0.17.1) | **PATCH** |
+| At least one `feat:` | **MINOR** (0.17.0 → 0.18.0) | **MINOR** |
+| Any `!` suffix or `BREAKING CHANGE:` in body | **MINOR** (0.17.0 → 0.18.0) | **MAJOR** |
+
+Auto-computation: a shell script in the release workflow scans commits since the last tag, determines the bump level, and proposes the version. The operator can accept or override.
+
+**Version locations** (all 3 must stay in sync — automated by release workflow):
+1. `package.json` → `"version": "X.Y.Z"`
+2. `wp-plugin/wp-super-gallery/wp-super-gallery.php` → `Version: X.Y.Z`
+3. `wp-plugin/wp-super-gallery/wp-super-gallery.php` → `define('WPSG_VERSION', 'X.Y.Z')`
 
 ### Pipeline architecture
 
-#### `.github/workflows/ci.yml`
+#### Workflow 1: `.github/workflows/ci.yml` — Every push/PR
 
-**Frontend job (`test-frontend`):**
-```yaml
-strategy:
-  matrix:
-    node-version: [20]
-steps:
-  - uses: actions/checkout@v4
-  - uses: actions/setup-node@v4
-    with: { node-version: ${{ matrix.node-version }} }
-  - run: npm ci
-  - run: npx eslint .
-  - run: npx tsc --noEmit
-  - run: npx vitest run --coverage
-  - run: npx vite build
-  - uses: actions/upload-artifact@v4
-    with: { name: coverage-report, path: coverage/ }
-```
+**Triggers:** `push` and `pull_request` to `main` and `develop`  
+**Concurrency:** Cancel in-progress runs on same branch  
+**Permissions:** `contents: read`
 
-**Playwright job (`test-e2e`):**
-```yaml
-needs: test-frontend
-steps:
-  - uses: actions/checkout@v4
-  - uses: actions/setup-node@v4
-  - run: npm ci
-  - run: npx playwright install --with-deps chromium firefox
-  - run: npx playwright test --retries=2
-  - uses: actions/upload-artifact@v4
-    if: failure()
-    with: { name: playwright-report, path: test-results/ }
-```
+**Job 1: `lint-typecheck`** (~1 min — fast fail gate)
+- Checkout → Setup Node 20 (npm cache) → `npm ci`
+- `npm run lint` (ESLint flat config)
+- `npx tsc --noEmit` (strict TypeScript check)
 
-**PHP job (`test-php`):**
-```yaml
-strategy:
-  matrix:
-    php-version: ['8.0', '8.1', '8.2', '8.3']
-    wp-version: ['6.0', 'latest']
-steps:
-  - uses: actions/checkout@v4
-  - uses: shivammathur/setup-php@v2
-    with:
-      php-version: ${{ matrix.php-version }}
-      extensions: mbstring, intl, pdo_mysql
-      coverage: pcov
-  - run: composer install --no-dev --prefer-dist
-  - run: composer install --working-dir=wp-plugin/wp-super-gallery
-  - run: cd wp-plugin/wp-super-gallery && vendor/bin/phpunit
-```
+**Job 2: `test-frontend`** (~2–3 min, depends on `lint-typecheck`)
+- Checkout → Setup Node 20 (npm cache) → `npm ci`
+- `npm run test:coverage` (Vitest with coverage thresholds: 75% lines / 65% functions / 72% branches / 75% statements)
+- `npm run build:wp` (Vite production build + copy assets into plugin dir)
+- Upload `coverage/` as artifact
+
+**Job 3: `test-php`** (~3–4 min, independent — runs in parallel with frontend jobs)
+- Matrix: PHP 8.1, 8.2, 8.3
+- Checkout → Setup PHP (`shivammathur/setup-php@v2` with mbstring, intl, pdo_mysql)
+- PHP syntax lint: `find wp-plugin/wp-super-gallery/includes -name '*.php' -exec php -l {} +`
+- `composer install` in `wp-plugin/wp-super-gallery/` (includes dev deps for PHPUnit)
+- Start wp-env: `npx wp-env start` (WordPress + MySQL in Docker)
+- Run PHPUnit via wp-env: `npx wp-env run tests-cli --env-cwd=wp-content/plugins/wp-super-gallery vendor/bin/phpunit`
+- 461 tests, 1104 assertions
+
+**Dependency caching:** `~/.npm` and `~/.composer/cache` cached across runs.
+
+#### Workflow 2: `.github/workflows/release.yml` — Manual trigger
+
+**Trigger:** `workflow_dispatch` with inputs:
+- `version` (string, default: `"auto"`) — leave as `auto` to compute from commits, or type explicit version (e.g., `1.0.0`)
+- `deploy_svn` (boolean, default: `false`) — Deploy to WordPress.org SVN
+
+**Permissions:** `contents: write` (creates tags, releases, commits)
+
+**Steps:**
+1. Checkout with full history (`fetch-depth: 0`)
+2. Setup Node 20 + PHP 8.3
+3. **Compute version** (if `auto`): scan commits since last tag via `scripts/compute-version.sh`
+4. **Validate version format** (must match `X.Y.Z`)
+5. **Bump version** in all 3 locations → commit with `chore(release): vX.Y.Z`
+6. `npm ci` → `npm run test:coverage` → `npm run build:wp` (sanity gate)
+7. `composer install --no-dev` in plugin dir (production deps only: sentry, svg-sanitize)
+8. **Create distribution ZIP** excluding tests/, phpunit.xml.dist, composer.*, dev artifacts
+9. **Create git tag** `vX.Y.Z` → push tag + version commit
+10. **Create GitHub Release** via `softprops/action-gh-release@v2` with ZIP attached + auto-generated changelog
+11. **(If `deploy_svn` checked)** Deploy to WordPress.org SVN via `10up/action-wordpress-plugin-deploy@v2`
+
+**ZIP contents (included):**
+- `wp-super-gallery.php`, `uninstall.php`
+- `includes/` (all PHP classes)
+- `assets/` (built React SPA + Vite manifest)
+- `vendor/` (production Composer deps only)
+- `readme.txt`, `LICENSE`
+- `languages/`
+
+**ZIP excluded:**
+- `tests/`, `phpunit.xml.dist`, `.phpunit.result.cache`
+- `composer.json`, `composer.lock`
+- `.circleci/`, `.wp-env.json`, `bin/`
+
+#### Workflow 3: `.github/workflows/svn-deploy.yml` — Deploy existing release to WordPress.org
+
+**Trigger:** `workflow_dispatch` with input:
+- `tag` (string, required) — e.g., `v0.18.0`
+
+**Steps:**
+1. Fetch the GitHub Release for the specified tag
+2. Download the attached ZIP artifact (the already-proven build)
+3. Extract → deploy to WordPress.org SVN via `10up/action-wordpress-plugin-deploy@v2`
+
+This enables deploying a previously built and tested release to WordPress.org without rebuilding — the exact bytes that were tested are what get deployed.
+
+**Required repository secrets for SVN deploy:**
+- `SVN_USERNAME` — WordPress.org username
+- `SVN_PASSWORD` — WordPress.org password
+
+#### Workflow 4: `.github/workflows/e2e.yml` — Manual E2E testing
+
+**Trigger:** `workflow_dispatch` (manual only)
+
+**Steps:**
+1. Checkout → Setup Node 20 → `npm ci`
+2. Install Playwright browsers: `npx playwright install --with-deps chromium`
+3. Start wp-env: `npx wp-env start`
+4. Build and copy assets: `npm run build:wp`
+5. Run Playwright: `npx playwright test --retries=2`
+6. Upload `test-results/` on failure
 
 ### Branch protection
 
 Configure `main` branch to require:
+- `lint-typecheck` ✅
 - `test-frontend` ✅
-- `test-php` ✅ (all matrix entries)
-- `test-e2e` ✅
+- `test-php` ✅ (all matrix entries: 8.1, 8.2, 8.3)
 
-### Handling legacy CircleCI
+### Additional quality gates
 
-Archive `.circleci/config.yml` → `.circleci/config.yml.legacy` with a header comment explaining the migration. Remove after 2 sprint cycles of stable GitHub Actions.
+| Gate | Implementation | Blocking? |
+|------|----------------|-----------|
+| Dependency caching | `actions/cache` for npm + Composer | N/A (perf) |
+| Concurrency groups | `concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }` | N/A (perf) |
+| PHP syntax lint | `php -l` on all plugin PHP files | Yes |
+| Version consistency | Script validates package.json = plugin header = WPSG_VERSION | Yes (release only) |
+| Minimal permissions | `contents: read` on CI, `contents: write` on release | N/A (security) |
 
 ### Acceptance criteria
 
 - [ ] Every push/PR triggers frontend lint + type-check + unit tests + build
-- [ ] Every push/PR triggers PHP tests on 8.0, 8.1, 8.2, 8.3 × WP 6.0 + latest
-- [ ] Playwright E2E runs with 2 retries on Chromium + Firefox
+- [ ] Every push/PR triggers PHP tests on 8.1, 8.2, 8.3 × WP latest
 - [ ] Coverage reports uploaded as artifacts
 - [ ] Branch protection rules block merging on failure
+- [ ] Release workflow computes version from conventional commits (or accepts override)
+- [ ] Release workflow bumps all 3 version locations, tags, and creates GitHub Release with ZIP
+- [ ] SVN deploy available as checkbox during release or standalone workflow reusing existing ZIP
+- [ ] E2E available as manual-trigger workflow
+- [ ] Legacy CircleCI config deleted
 
 ---
 

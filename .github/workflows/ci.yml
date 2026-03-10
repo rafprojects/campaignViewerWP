@@ -1,0 +1,122 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# WP Super Gallery — Continuous Integration
+#
+# Runs on every push / PR to main and develop.
+#   Job 1: lint-typecheck  — ESLint + TypeScript (fast-fail gate)
+#   Job 2: test-frontend   — Vitest w/ coverage + production build
+#   Job 3: test-php        — PHPUnit via wp-env (PHP 8.1 / 8.2 / 8.3)
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Job 1: Lint & Type-check (fast-fail) ─────────────────────────────────
+  lint-typecheck:
+    name: Lint & Type-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+  # ── Job 2: Frontend tests + build ────────────────────────────────────────
+  test-frontend:
+    name: Vitest + Build
+    needs: lint-typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Vitest (with coverage)
+        run: npm run test:coverage
+
+      - name: Production build (build:wp)
+        run: npm run build:wp
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+  # ── Job 3: PHP tests via wp-env ──────────────────────────────────────────
+  test-php:
+    name: PHP ${{ matrix.php-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, intl, pdo_mysql
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ matrix.php-version }}-${{ hashFiles('wp-plugin/wp-super-gallery/composer.lock') }}
+          restore-keys: composer-${{ matrix.php-version }}-
+
+      - name: PHP syntax check
+        run: find wp-plugin/wp-super-gallery/includes -name '*.php' -exec php -l {} + | (! grep -q "Errors parsing")
+
+      - name: Install Composer dependencies
+        working-directory: wp-plugin/wp-super-gallery
+        run: composer install --prefer-dist --no-interaction
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Start wp-env
+        run: npx wp-env start
+
+      - name: Run PHPUnit via wp-env
+        run: |
+          npx wp-env run tests-cli sh -c \
+            "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
