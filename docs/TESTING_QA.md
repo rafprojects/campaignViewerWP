@@ -659,6 +659,154 @@ The following manual tests cover changes landed in QA Round 5: glow hover fix, p
 
 ---
 
+## Phase 20 — P20-B · Import Payload Sanitization
+
+These tests validate that the layout-template import path deep-sanitizes every slot, overlay, and background field. Automated PHPUnit coverage exists in `WPSG_Import_Sanitization_Test.php` (10 tests). The manual steps below verify end-to-end behaviour through the admin UI.
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open Admin Panel → Layout Builder. Create a simple template with 2 slots, an overlay, and a background color. **Export** the template as JSON (or copy the raw JSON from browser DevTools → Network tab on save). | Valid JSON file in hand. |
+| 2 | Edit the JSON: change a slot's `name` to `<script>alert(1)</script>Slot`. Re-import via Settings → Import. | Import succeeds. Slot name stored as `alertSlot` (tags stripped). |
+| 3 | Edit the JSON: set a slot's `mediaUrl` to `javascript:alert(1)`. Import. | `mediaUrl` stored as empty string (scheme rejected by `esc_url_raw`). |
+| 4 | Edit the JSON: set a slot's `borderColor` to `red; background-image: url(https://evil.com)`. Import. | `borderColor` stored as empty string (CSS injection blocked by `wpsg_sanitize_css_value`). |
+| 5 | Edit the JSON: set a slot's `clipPath` to `expression(document.cookie)`. Import. | `clipPath` stored as empty string. |
+| 6 | Edit the JSON: set an overlay's `imageUrl` to `javascript:void(0)`. Import. | `imageUrl` stored as empty string. |
+| 7 | Edit the JSON: set an overlay's `imageUrl` to `blob:https://example.com/abc`. Import. | `imageUrl` stored as empty string (`blob:` scheme rejected). |
+| 8 | Edit the JSON: set `backgroundColor` to `red; position: fixed; top:0; left:0; z-index:99999`. Import. | `backgroundColor` stored as empty string (injection blocked). |
+| 9 | Edit the JSON: set `backgroundImageUrl` to `javascript:alert(1)`. Import. | `backgroundImageUrl` stored as empty string. |
+| 10 | Import the **original unmodified** JSON from step 1. | All values round-trip cleanly — slot names, positions, sizes, overlay images, background color all match the original template. |
+| 11 | Run PHPUnit: `vendor/bin/phpunit tests/WPSG_Import_Sanitization_Test.php`. | All 10 tests pass. |
+
+---
+
+## Phase 20 — P20-E · Uninstall Cleanup
+
+These tests verify that deactivation + deletion properly cleans up (or preserves) all plugin data.
+
+**Prerequisites:** Fresh WordPress install with WP Super Gallery activated. Create test data: 2+ campaigns with media, 1+ layout template, 1+ overlay upload, adjust at least one setting.
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open Admin Panel → Settings → General tab. Locate the **"Preserve data on uninstall"** switch. | Switch is visible, defaults to OFF. |
+| 2 | Leave the switch OFF. Deactivate the plugin via Plugins → Installed Plugins → Deactivate. | Plugin deactivated. All data still present (deactivation does not delete). |
+| 3 | Click **Delete** on the deactivated plugin. Confirm deletion. | Plugin files removed. |
+| 4 | Check the database: `SELECT * FROM wp_posts WHERE post_type IN ('wpsg_campaign', 'wpsg_layout_template');` | No rows returned — campaigns and templates deleted. |
+| 5 | Check: `SELECT * FROM wp_terms t JOIN wp_term_taxonomy tt ON t.term_id = tt.term_id WHERE tt.taxonomy = 'wpsg_company';` | No rows — taxonomy terms deleted. |
+| 6 | Check: `SELECT * FROM wp_options WHERE option_name LIKE 'wpsg_%';` | No matching rows — all plugin options removed. |
+| 7 | Check: `SELECT * FROM wp_options WHERE option_name LIKE '_transient%wpsg%';` | No matching rows — transients cleaned. |
+| 8 | Check: `SHOW TABLES LIKE '%wpsg%';` | No custom tables remain. |
+| 9 | Check: `SELECT * FROM wp_usermeta WHERE meta_key LIKE 'wpsg_%';` | No rows — roles/caps removed. Verify `wpsg_admin` role no longer exists: `wp role list` or `SELECT * FROM wp_options WHERE option_name = 'wp_user_roles'` and search for `wpsg`. |
+| 10 | Check `wp-content/uploads/wpsg-overlays/` directory. | Directory deleted (or empty). |
+| 11 | **Reinstall** the plugin. Create new test data (campaign, template, overlay, setting). Set **"Preserve data on uninstall"** to **ON**. Save. | Setting saved. |
+| 12 | Deactivate and Delete the plugin again. | Plugin files removed. |
+| 13 | Repeat checks from steps 4–10. | All data **preserved** — campaigns, templates, terms, options, transients, tables, overlay files all still present. |
+| 14 | Reinstall the plugin. Verify the preserved data loads correctly in the admin panel. | Campaigns, templates, overlays, and settings all intact and functional. |
+
+---
+
+## Phase 20 — P20-F · License Verification
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open `LICENSE.md` at the repository root. | File exists and contains the full GPLv2 text ("GNU GENERAL PUBLIC LICENSE, Version 2, June 1991"). |
+| 2 | Open `wp-plugin/wp-super-gallery/LICENSE`. | File exists and matches the repo-root LICENSE.md content. |
+| 3 | Open `wp-plugin/wp-super-gallery/wp-super-gallery.php`. Inspect the plugin file header comment. | Header includes: `License: GPLv2 or later`, `License URI: https://www.gnu.org/licenses/gpl-2.0.html`, `Requires at least: 6.0`, `Tested up to: 6.7`, `Requires PHP: 8.0`, `Text Domain: wp-super-gallery`. |
+| 4 | Run the WordPress.org plugin header validator (or manually compare against [the required headers list](https://developer.wordpress.org/plugins/plugin-basics/header-requirements/)). | All required fields present and correctly formatted. |
+
+---
+
+## Phase 20 — QA Round 6 Manual Tests
+
+The following manual tests cover changes from QA Round 6: mask sublayer workflow (A1–A5), background panel (B6–B7), and Design Assets drag-and-drop (C8–C11).
+
+### R6-A · Mask Sublayer Workflow
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Open the Layout Builder. Add a slot. In the **Layers** panel, click the **mask icon** (🎭) button. | A "Mask" sublayer appears nested under the slot in the Layers panel. The sublayer is auto-selected. The MaskPropertiesPanel opens in the right sidebar showing an empty preview area with "No mask image" placeholder. |
+| 2 | In the MaskPropertiesPanel, locate the **Design Assets** grid. Click a PNG/SVG asset. | The asset is applied as the mask image. Preview thumbnail updates. The canvas shows the mask effect on the slot. |
+| 3 | Drag a different Design Asset **onto the mask preview area** in the MaskPropertiesPanel. | The dragged asset replaces the current mask image. Preview and canvas update. |
+| 4 | Click the **slot's base layer** (not the mask sublayer) in the Layers panel. | Properties panel switches from "MASK PROPERTIES" to "SLOT PROPERTIES". The base image is now draggable on canvas — no pointer interception from the mask overlay. |
+| 5 | Click the **mask sublayer** in the Layers panel. Drag the mask around on the canvas. | Mask repositions independently of the base image. Position values (X, Y) update in MaskPropertiesPanel. |
+| 6 | With the mask sublayer selected, grab a **corner resize handle** (violet circle) on the canvas. | Mask resizes. Width/Height values update in MaskPropertiesPanel. |
+| 7 | Toggle **Mode** between Luminance and Alpha in MaskPropertiesPanel. | Canvas updates: Luminance mode uses white=visible/black=hidden; Alpha mode uses opacity for masking. |
+| 8 | Adjust the **Feather** slider to 20px. | Mask edges soften with the applied blur/feather effect on canvas. |
+| 9 | Click **Auto Fit** in MaskPropertiesPanel. | Mask scales and positions to cover the entire slot. |
+| 10 | Click **Remove** in MaskPropertiesPanel. | Mask sublayer disappears from Layers panel. Slot renders without any mask. Properties panel reverts to "SLOT PROPERTIES". |
+
+### R6-B · Background Panel
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | In the Layers panel, click the **Background** row. | The properties panel switches to **BackgroundPropertiesPanel** (not the Media panel). Header shows "BACKGROUND". |
+| 2 | In the background panel, switch between **None**, **Color**, **Gradient**, and **Image** modes. | Canvas updates in real-time for each mode. None = transparent. Color = solid fill. Gradient = linear/radial gradient. Image = background image. |
+| 3 | In **Color** mode, change the colour. | Canvas background updates immediately. |
+| 4 | In **Gradient** mode, adjust direction (5 presets) and colour stops. | Gradient preview swatch and canvas update. |
+| 5 | In **Image** mode, locate the Design Assets grid. Click an asset. | Asset applied as background image. Canvas shows the image background. |
+| 6 | Click somewhere on the canvas (not on a slot). Then click a slot. Then click Background again. | Background panel reopens correctly each time — it does not get "stuck" or redirect to Media panel. |
+
+### R6-C · Design Assets Drag-and-Drop
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | In the Media panel, locate the Design Assets grid. Confirm each asset is an image thumbnail **without** a "+" button overlay. | Assets show as thumbnails with a small "✕" circle at the top-right corner (for deletion). No "+" button. |
+| 2 | Drag an asset thumbnail from the Design Assets grid and drop it onto an **empty area** of the canvas. | A new **graphic (overlay) layer** is created at the drop position. It appears in the Layers panel. |
+| 3 | Drag a **campaign media item** (from the media list) onto the canvas. | A new **slot** is created at the drop position, pre-assigned with that media item. It appears in the Layers panel. |
+| 4 | Click the "✕" circle on a Design Asset thumbnail. | Asset is deleted from the overlay library. Confirmation prompt appears first. |
+| 5 | Add a mask to a slot (via the Layers panel mask button). Then drag a Design Asset **onto the slot** on the canvas. | The asset is applied as the slot's mask image (replacing any existing mask image). |
+| 6 | Drag multiple assets to the canvas in succession. | Each creates a separate graphic layer at its respective drop position. Layers panel shows all of them. |
+| 7 | Undo (Ctrl+Z / ⌘Z) after a drag-to-canvas drop. | The created layer/slot is removed. |
+| 8 | Save the template after drag-created layers exist. Reload. | All drag-created layers persist with correct positions and images. |
+
+---
+
+## Phase 20 — H-Track Security Verification
+
+These tests verify the security hardening items from the H-track sprint.
+
+### H-2 · DNS Rebinding SSRF Protection
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Call the oEmbed proxy with an **allowlisted** provider URL: `GET /wp-json/wp-super-gallery/v1/oembed?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ`. | Returns 200 with oEmbed data (allowlisted providers bypass DNS check). |
+| 2 | Call the oEmbed proxy with a **non-allowlisted** public HTTPS URL (e.g. `https://example.com/page`). | Returns either oEmbed data (if the host resolves to a public IP) or an appropriate error. No request is made to a private IP. |
+| 3 | *(Requires `/etc/hosts` manipulation or DNS rebinding test tool)* Configure a hostname that resolves to `127.0.0.1`. Call the oEmbed proxy with `https://that-hostname/path`. | Returns 400 with "oEmbed host resolves to a private or disallowed IP" **or** "DNS rebinding detected" — the request is never completed. |
+| 4 | Call the oEmbed proxy with a non-HTTPS URL: `GET /wp-json/wp-super-gallery/v1/oembed?url=http://example.com`. | Returns 400: "Only HTTPS oEmbed URLs are allowed". |
+
+### H-3 · Nonce Bypass Hardening
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | In a test environment **without** `WPSG_ALLOW_NONCE_BYPASS` defined, make a REST API call with an invalid/missing nonce. | Returns 403 — nonce is enforced. |
+| 2 | Define `WP_DEBUG = true` but **not** `WPSG_ALLOW_NONCE_BYPASS`. Make a REST call with invalid nonce. | Still returns 403 — `WP_DEBUG` alone is insufficient. |
+| 3 | Define both `WP_DEBUG = true` and `WPSG_ALLOW_NONCE_BYPASS = true`. Make a REST call with invalid nonce. | Request proceeds (bypass active). |
+
+### H-5 · Overlay File Deletion
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Upload a Design Asset (overlay) via the Layout Builder. Note the file path in `wp-content/uploads/wpsg-overlays/`. | File exists on disk. |
+| 2 | Delete the overlay (click the ✕ on the asset thumbnail, confirm). | API returns success. |
+| 3 | Check `wp-content/uploads/wpsg-overlays/` for the file. | File is **gone** — physically deleted from disk. |
+
+### H-6 · Sentry PII Scrubbing
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Enable Sentry DSN in the plugin settings. Open browser DevTools → Network tab. Trigger an action that generates Sentry breadcrumbs (e.g. navigating, making API calls). | Sentry events appear in Network tab (or Sentry dashboard). |
+| 2 | Inspect the Sentry event payload. Search for `Authorization` in breadcrumb data. | No `Authorization` header values present — scrubbed by `beforeSend`. |
+| 3 | Inspect the Sentry event payload for `user.ip_address`. | Field is absent or null — PII scrubbed. |
+
+### H-8 · ErrorBoundary → Sentry
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Temporarily introduce a runtime error in a React component (e.g. access a property on `undefined`). | ErrorBoundary catches the crash and shows the fallback UI. |
+| 2 | Check the Sentry dashboard (or mock Sentry capture). | An exception event is captured with `componentStack` context. |
+| 3 | Remove the intentional error. | App resumes normal operation. |
+
+---
+
 ## Tracking Status
 
 - **Unit tests:** Complete (coverage ≥ 80%).
