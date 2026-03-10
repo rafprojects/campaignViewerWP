@@ -1,9 +1,9 @@
 # Phase 20 — Production Hardening, CI Pipeline & Distribution Readiness
 
-**Status:** In progress (Sprint 1 complete, H-track 11/12, P20-B/E/F complete, QA Rounds 2–7 applied)
+**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/L complete, QA Rounds 2–7 applied)
 **Version:** v0.18.0 (planned)
 **Created:** March 4, 2026
-**Last updated:** March 9, 2026 — P20-B (import sanitization), P20-E (uninstall cleanup), P20-F (license/headers)
+**Last updated:** March 9, 2026 — P20-L (SVG sanitization), H-2 (DNS rebinding fix)
 
 ### Completed
 
@@ -17,6 +17,7 @@
 | P20-F | feat/phase20-prod-readiness | GPLv2 LICENSE at repo root and plugin dir, complete plugin header with all WordPress.org required fields |
 | P20-K | feat/phase20-prod-readiness | JWT gated behind `WPSG_ENABLE_JWT_AUTH`, nonce-only default, `useNonceHeartbeat` hook, `/nonce` endpoint, cookie-based `/auth/login` and `/auth/logout` REST endpoints, in-app LoginForm modal retained for nonce mode (no wp-login.php redirect), 12 Vitest tests, 6 AuthContext tests, 11 PHPUnit tests |
 | P20-H (12/12) ✅ | feat/phase20-prod-readiness | H-1 (parseProps whitelist), H-2 (DNS rebinding SSRF fix), H-3 (nonce bypass hardened), H-4 (no password reset URL exposure), H-5 (overlay file deletion), H-6 (Sentry PII scrubbing), H-7 (CSP headers), H-8 (ErrorBoundary → Sentry), H-9 (apiClient 30s timeout + AbortController), H-10 (status/visibility whitelist), H-11 (encodeURIComponent), H-12 (console.info DEV guard) |
+| P20-L | feat/phase20-prod-readiness | `enshrined/svg-sanitize` in composer, server-side sanitization in `handle_upload()`, custom CSS validator (`sanitize_svg_css`), URI allowlist (`sanitize_svg_uris`), `.htaccess` CSP headers for overlay dir, 24 PHPUnit tests. Client-side DOMPurify N/A — all overlays rendered via `<img>` tags (inherently safe). |
 
 ---
 
@@ -1056,7 +1057,7 @@ JWT tokens are stored in `localStorage` (`wpsg_access_token`, `wpsg_user`, `wpsg
 
 ## Track P20-L — SVG Upload Sanitization (Dual-Layer)
 
-**Status:** Not started  
+**Status:** ✅ Complete  
 **Priority:** 🔴 High — ship-blocking  
 **Origin:** Action item A-3; decision: Option 2 with enhancements (see [SVG_UPLOAD_ANALYSIS.md](SVG_UPLOAD_ANALYSIS.md))  
 **Effort:** Medium (3–5 hours)
@@ -1149,7 +1150,7 @@ The `enshrined/svg-sanitize` library parses the SVG as strict XML, strips danger
 | 5 | **P20-I** — Performance optimizations | P20-H complete | Medium–High | Not started |
 | 6 | **P20-J** — Plugin directory preparation | P20-F (license), P20-E (uninstall) | Low | Not started |
 | 1 | **P20-K** — JWT nonce-only default | None | Low | ✅ Complete |
-| 2 | **P20-L** — SVG dual-layer sanitization | P20-C (CSS sanitizer pattern) | Medium | Not started |
+| 2 | **P20-L** — SVG dual-layer sanitization | P20-C (CSS sanitizer pattern) | Medium | ✅ Complete |
 
 Tracks in the same sprint row can be parallelised. Run `npx vitest run`, `npx tsc --noEmit`, `npm run build:wp`, and PHPUnit after every sprint.
 
