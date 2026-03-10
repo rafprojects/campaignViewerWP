@@ -1,9 +1,9 @@
 # Phase 20 — Production Hardening, CI Pipeline & Distribution Readiness
 
-**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/L complete, QA Rounds 2–7 applied)
+**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/L/J complete, QA Rounds 2–7 applied)
 **Version:** v0.18.0 (planned)
 **Created:** March 4, 2026
-**Last updated:** March 9, 2026 — P20-L (SVG sanitization), H-2 (DNS rebinding fix)
+**Last updated:** March 9, 2026 — P20-J (readme.txt, custom CPT caps, i18n bootstrap, J-3 composer dev deps)
 
 ### Completed
 
@@ -18,6 +18,7 @@
 | P20-K | feat/phase20-prod-readiness | JWT gated behind `WPSG_ENABLE_JWT_AUTH`, nonce-only default, `useNonceHeartbeat` hook, `/nonce` endpoint, cookie-based `/auth/login` and `/auth/logout` REST endpoints, in-app LoginForm modal retained for nonce mode (no wp-login.php redirect), 12 Vitest tests, 6 AuthContext tests, 11 PHPUnit tests |
 | P20-H (12/12) ✅ | feat/phase20-prod-readiness | H-1 (parseProps whitelist), H-2 (DNS rebinding SSRF fix), H-3 (nonce bypass hardened), H-4 (no password reset URL exposure), H-5 (overlay file deletion), H-6 (Sentry PII scrubbing), H-7 (CSP headers), H-8 (ErrorBoundary → Sentry), H-9 (apiClient 30s timeout + AbortController), H-10 (status/visibility whitelist), H-11 (encodeURIComponent), H-12 (console.info DEV guard) |
 | P20-L | feat/phase20-prod-readiness | `enshrined/svg-sanitize` in composer, server-side sanitization in `handle_upload()`, custom CSS validator (`sanitize_svg_css`), URI allowlist (`sanitize_svg_uris`), `.htaccess` CSP headers for overlay dir, 24 PHPUnit tests. Client-side DOMPurify N/A — all overlays rendered via `<img>` tags (inherently safe). |
+| P20-J | feat/phase20-prod-readiness | J-1: `readme.txt` in WP.org format (description, FAQ, changelog 0.12–0.17). J-3: composer dev deps separated. J-4: `capability_type => wpsg_campaign` with `map_meta_cap`, 10 CPT caps granted to admin/wpsg_admin roles, uninstall cleanup. J-2: `load_plugin_textdomain()` added, CPT/taxonomy/role labels wrapped with `__()`; languages/ dir created. REST API strings (~119) deferred to follow-up. |
 
 ---
 
@@ -876,7 +877,7 @@ root.render(
 
 ## Track P20-J — Plugin Directory Preparation
 
-**Status:** Not started  
+**Status:** ✅ Complete (J-1, J-3, J-4 done; J-2 bootstrap done, REST strings deferred)  
 **Priority:** 🔵 Medium — required for WordPress.org submission  
 **Origin:** Action items D-1, D-2, D-3, D-5  
 **Effort:** ~2–3 dev-days
@@ -1148,7 +1149,7 @@ The `enshrined/svg-sanitize` library parses the SVG as strict XML, strips danger
 | 3 | **P20-G** — GitHub Actions CI pipeline | None | Medium | Not started |
 | 4 | **P20-H** — Security hardening sprint | P20-A through P20-G complete | Low–Medium | ✅ 12/12 complete |
 | 5 | **P20-I** — Performance optimizations | P20-H complete | Medium–High | Not started |
-| 6 | **P20-J** — Plugin directory preparation | P20-F (license), P20-E (uninstall) | Low | Not started |
+| 6 | **P20-J** — Plugin directory preparation | P20-F (license), P20-E (uninstall) | Low | ✅ Complete |
 | 1 | **P20-K** — JWT nonce-only default | None | Low | ✅ Complete |
 | 2 | **P20-L** — SVG dual-layer sanitization | P20-C (CSS sanitizer pattern) | Medium | ✅ Complete |
 

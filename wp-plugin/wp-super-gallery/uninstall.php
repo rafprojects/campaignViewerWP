@@ -91,6 +91,22 @@ remove_role( 'wpsg_admin' );
 $admin_role = get_role( 'administrator' );
 if ( $admin_role ) {
 	$admin_role->remove_cap( 'manage_wpsg' );
+	// Remove custom CPT capabilities
+	$cpt_caps = [
+		'edit_wpsg_campaigns',
+		'edit_others_wpsg_campaigns',
+		'publish_wpsg_campaigns',
+		'read_private_wpsg_campaigns',
+		'delete_wpsg_campaigns',
+		'delete_private_wpsg_campaigns',
+		'delete_published_wpsg_campaigns',
+		'delete_others_wpsg_campaigns',
+		'edit_private_wpsg_campaigns',
+		'edit_published_wpsg_campaigns',
+	];
+	foreach ( $cpt_caps as $cap ) {
+		$admin_role->remove_cap( $cap );
+	}
 }
 
 // ── 8. Clear cron hooks ─────────────────────────────────────

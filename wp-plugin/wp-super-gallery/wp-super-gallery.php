@@ -67,16 +67,25 @@ function wpsg_setup_roles_and_caps() {
         // Add manage_wpsg capability to Administrator role
         if ($admin_role) {
             $admin_role->add_cap('manage_wpsg');
+            // Grant custom CPT capabilities
+            foreach (WPSG_CPT::CPT_CAPS as $cap) {
+                $admin_role->add_cap($cap);
+            }
         }
         
-        // Create WPSG Admin role if it doesn't exist
+        // Create WPSG Admin role if it doesn't exist, or update caps
         $wpsg_role = get_role('wpsg_admin');
+        $wpsg_caps = array_merge(
+            ['read' => true, 'upload_files' => true, 'manage_wpsg' => true],
+            array_fill_keys(WPSG_CPT::CPT_CAPS, true)
+        );
         if (!$wpsg_role) {
-            add_role('wpsg_admin', 'Gallery Admin', [
-                'read' => true,
-                'upload_files' => true,
-                'manage_wpsg' => true,
-            ]);
+            add_role('wpsg_admin', __('Gallery Admin', 'wp-super-gallery'), $wpsg_caps);
+        } else {
+            // Ensure existing role gets CPT caps on upgrade
+            foreach (WPSG_CPT::CPT_CAPS as $cap) {
+                $wpsg_role->add_cap($cap);
+            }
         }
         
         // Clear setup flag
@@ -85,6 +94,9 @@ function wpsg_setup_roles_and_caps() {
 }
 
 add_action('init', ['WPSG_CPT', 'register']);
+add_action('init', function () {
+    load_plugin_textdomain('wp-super-gallery', false, dirname(plugin_basename(__FILE__)) . '/languages');
+});
 add_action('rest_api_init', ['WPSG_REST', 'register_routes']);
 add_action('init', ['WPSG_Embed', 'register_shortcode']);
 add_action('wp_enqueue_scripts', ['WPSG_Embed', 'register_assets']);
