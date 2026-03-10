@@ -1,9 +1,9 @@
 # Phase 20 — Production Hardening, CI Pipeline & Distribution Readiness
 
-**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/I/L/J complete, QA Rounds 2–7 applied)
+**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/G/I/L/J complete, QA Rounds 2–7 applied)
 **Version:** v0.18.0 (planned)
 **Created:** March 4, 2026
-**Last updated:** March 9, 2026 — P20-I (CPT migration, media index, cache versioning, lazy dockview, async email, shared root)
+**Last updated:** March 10, 2026 — P20-G (GitHub Actions CI/CD pipeline, release workflow, SVN deploy, E2E workflow)
 
 ### Completed
 
@@ -20,6 +20,7 @@
 | P20-L | feat/phase20-prod-readiness | `enshrined/svg-sanitize` in composer, server-side sanitization in `handle_upload()`, custom CSS validator (`sanitize_svg_css`), URI allowlist (`sanitize_svg_uris`), `.htaccess` CSP headers for overlay dir, 24 PHPUnit tests. Client-side DOMPurify N/A — all overlays rendered via `<img>` tags (inherently safe). |
 | P20-J | feat/phase20-prod-readiness | J-1: `readme.txt` in WP.org format (description, FAQ, changelog 0.12–0.17). J-3: composer dev deps separated. J-4: `capability_type => wpsg_campaign` with `map_meta_cap`, 10 CPT caps granted to admin/wpsg_admin roles, uninstall cleanup. J-2: `load_plugin_textdomain()` added, CPT/taxonomy/role labels wrapped with `__()`; languages/ dir created. REST API strings (~119) deferred to follow-up. |
 | P20-I | `32b32ca` | I-1: Layout templates migrated from `wp_options` to `wpsg_layout_tpl` CPT with auto-migration + UUID backward compat. I-2: `wpsg_media_refs` reverse-index table (DB v3) with auto-sync via meta hooks; replaces full-table scans. I-3: Cache version counter replaces 4 LIKE DELETEs per mutation. I-4: `React.lazy()` for LayoutBuilderModal + PresetGalleryModal — admin chunk 504→327 KB. I-5: Async email queue + 1-min cron dispatch. I-6: Shared React root via `createPortal` behind `sharedRoot` feature flag (default off). |
+| P20-G | `36ff411` | 4 GitHub Actions workflows: `ci.yml` (lint→test-frontend→test-php 8.1/8.2/8.3 on push/PR), `release.yml` (workflow_dispatch with auto SemVer from conventional commits, ZIP + GitHub Release), `svn-deploy.yml` (deploy existing release to WordPress.org), `e2e.yml` (manual Playwright via wp-env). `scripts/compute-version.sh` for automated version calculation. Legacy CircleCI deleted. |
 
 ---
 
@@ -1232,7 +1233,7 @@ The `enshrined/svg-sanitize` library parses the SVG as strict XML, strips danger
 | 2 | **P20-B** — Import payload deep sanitization | P20-C (needs `wpsg_sanitize_css_value()`) | Low | ✅ Complete |
 | 2 | **P20-F** — License, headers & legal | None | Low | ✅ Complete |
 | 3 | **P20-E** — Uninstall cleanup | None | Medium | ✅ Complete |
-| 3 | **P20-G** — GitHub Actions CI pipeline | None | Medium | Not started |
+| 3 | **P20-G** — GitHub Actions CI/CD pipeline | None | Medium | ✅ Complete |
 | 4 | **P20-H** — Security hardening sprint | P20-A through P20-G complete | Low–Medium | ✅ 12/12 complete |
 | 5 | **P20-I** — Performance optimizations | P20-H complete | Medium–High | ✅ Complete |
 | 6 | **P20-J** — Plugin directory preparation | P20-F (license), P20-E (uninstall) | Low | ✅ Complete |
@@ -1293,6 +1294,10 @@ Tracks in the same sprint row can be parallelised. Run `npx vitest run`, `npx ts
 | `wp-plugin/wp-super-gallery/uninstall.php` | P20-E |
 | `wp-plugin/wp-super-gallery/LICENSE` | P20-F |
 | `.github/workflows/ci.yml` | P20-G |
+| `.github/workflows/release.yml` | P20-G |
+| `.github/workflows/svn-deploy.yml` | P20-G |
+| `.github/workflows/e2e.yml` | P20-G |
+| `scripts/compute-version.sh` | P20-G |
 | `wp-plugin/wp-super-gallery/tests/WPSG_Import_Sanitization_Test.php` | P20-B |
 | `wp-plugin/wp-super-gallery/tests/WPSG_CSS_Sanitization_Test.php` | P20-C |
 | `wp-plugin/wp-super-gallery/tests/WPSG_DNS_Rebinding_Test.php` | P20-H |
@@ -1332,7 +1337,7 @@ Tracks in the same sprint row can be parallelised. Run `npx vitest run`, `npx ts
 | `src/services/monitoring/webVitals.ts` | P20-H | Gate `console.info` behind `import.meta.env.DEV` |
 | `src/components/ErrorBoundary.tsx` | P20-H | Sentry `captureException` integration |
 | `src/components/Admin/AdminPanel.tsx` | P20-I | Lazy-load `LayoutBuilderModal` |
-| `.circleci/config.yml` | P20-G | Renamed to `.circleci/config.yml.legacy` |
+| `.circleci/config.yml` | P20-G | Deleted (was untracked; PHP 5.6-7.4 + PHPUnit 5.7 — obsolete) |
 | `wp-plugin/.../tests/WPSG_Rate_Limiter_Test.php` | P20-A | Extend with default rate limit tests |
 | `wp-plugin/.../tests/WPSG_Campaign_Rest_Test.php` | P20-D | Extend with native REST meta write tests |
 | `src/contexts/WpJwtProvider.tsx` | P20-K | Comment out JWT localStorage logic; add env-var opt-in gate |
