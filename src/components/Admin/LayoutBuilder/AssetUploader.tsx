@@ -21,8 +21,11 @@ import { IconUpload } from '@tabler/icons-react';
 export interface AssetUploaderProps {
   /** Called when the user picks a file via the file dialog. */
   onFileSelect: (file: File) => void;
-  /** Called when the user presses Enter in the URL input with a non-empty value. */
-  onUrlSubmit: (url: string) => void;
+  /**
+   * Called when the user presses Enter in the URL input with a non-empty value.
+   * When omitted the URL text-input is hidden (upload-only mode).
+   */
+  onUrlSubmit?: (url: string) => void;
   /** When true, disables both inputs and shows a spinner in the upload button. */
   isUploading?: boolean;
   /** Optional extra disabled flag (e.g., during a parent-level save). */
@@ -60,7 +63,7 @@ export function AssetUploader({
   function handleUrlKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       const trimmed = urlValue.trim();
-      if (trimmed) {
+      if (trimmed && onUrlSubmit) {
         onUrlSubmit(trimmed);
         setUrlValue('');
       }
@@ -99,15 +102,17 @@ export function AssetUploader({
         )}
       </FileButton>
 
-      <TextInput
-        size="xs"
-        placeholder={urlPlaceholder}
-        value={urlValue}
-        onChange={(e) => setUrlValue(e.currentTarget.value)}
-        onKeyDown={handleUrlKeyDown}
-        disabled={isDisabled}
-        aria-label={urlAriaLabel}
-      />
+      {onUrlSubmit && (
+        <TextInput
+          size="xs"
+          placeholder={urlPlaceholder}
+          value={urlValue}
+          onChange={(e) => setUrlValue(e.currentTarget.value)}
+          onKeyDown={handleUrlKeyDown}
+          disabled={isDisabled}
+          aria-label={urlAriaLabel}
+        />
+      )}
     </Stack>
   );
 }

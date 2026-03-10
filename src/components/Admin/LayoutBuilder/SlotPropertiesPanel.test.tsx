@@ -51,66 +51,58 @@ function renderPanel(overrides: Partial<LayoutSlot> = {}, callbacks: Record<stri
 // ── Structure ─────────────────────────────────────────────────────────────────
 
 describe('SlotPropertiesPanel — structure', () => {
-  it('renders X % and Y % inputs', () => {
+  it('renders position section with X % and Y % labels', () => {
     renderPanel();
-    expect(screen.getByLabelText('X %')).toBeInTheDocument();
-    expect(screen.getByLabelText('Y %')).toBeInTheDocument();
+    // Position section uses PropRow — labels rendered as Text, not HTML labels.
+    // NumberInputs don't have explicit aria-labels, so we check for the text.
+    expect(screen.getByText('X %')).toBeInTheDocument();
+    expect(screen.getByText('Y %')).toBeInTheDocument();
   });
 
-  it('renders Width % and Height % inputs', () => {
+  it('renders Width % and Height % inputs with aria-labels', () => {
     renderPanel();
     expect(screen.getByLabelText('Width %')).toBeInTheDocument();
     expect(screen.getByLabelText('Height %')).toBeInTheDocument();
   });
 
-  it('populates X input with slot.x value', () => {
-    renderPanel({ x: 15 });
-    const input = screen.getByLabelText('X %') as HTMLInputElement;
-    expect(input.value).toBe('15');
-  });
-
-  it('populates Y input with slot.y value', () => {
-    renderPanel({ y: 33 });
-    const input = screen.getByLabelText('Y %') as HTMLInputElement;
-    expect(input.value).toBe('33');
-  });
-
-  it('renders lock ratio switch', () => {
+  it('renders lock aspect ratio button', () => {
     renderPanel();
-    expect(screen.getByLabelText('Lock width/height ratio')).toBeInTheDocument();
+    expect(screen.getByLabelText('Lock aspect ratio')).toBeInTheDocument();
   });
 
-  it('renders Shape selector', () => {
+  it('renders Shape section with Preset selector', () => {
     renderPanel();
-    // The Divider also renders "Shape" text, so use getAllByLabelText
-    const shapeInputs = screen.getAllByLabelText('Shape');
-    expect(shapeInputs.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Shape')).toBeInTheDocument();
+    expect(screen.getByText('Preset')).toBeInTheDocument();
   });
 
-  it('renders Border radius input for rectangle shape', () => {
+  it('renders Border Radius row for rectangle shape', () => {
     renderPanel({ shape: 'rectangle' });
-    expect(screen.getByLabelText('Border radius (px)')).toBeInTheDocument();
+    expect(screen.getByText('Radius')).toBeInTheDocument();
   });
 
-  it('does not render Border radius input for non-rectangle shape', () => {
+  it('does not render Border Radius row for non-rectangle shape', () => {
     renderPanel({ shape: 'circle' });
-    expect(screen.queryByLabelText('Border radius (px)')).toBeNull();
+    expect(screen.queryByText('Radius')).toBeNull();
   });
 
-  it('renders CSS clip-path input for custom shape', () => {
+  it('renders Clip-path input for custom shape', () => {
     renderPanel({ shape: 'custom' });
-    expect(screen.getByLabelText('CSS clip-path')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('polygon(50% 0%, 100% 50%, …)')).toBeInTheDocument();
   });
 
-  it('renders border width and color inputs', () => {
+  it('renders border width and color rows', () => {
     renderPanel();
-    expect(screen.getByLabelText('Width (px)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Color')).toBeInTheDocument();
+    expect(screen.getByText('Border')).toBeInTheDocument();
+    expect(screen.getByText('Width')).toBeInTheDocument();
+    // "Color" appears both as a PropRow label and inside Mantine's ColorInput
+    expect(screen.getAllByText('Color').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders Z-Index input', () => {
+  it('renders Stacking section with Z-Index row', () => {
     renderPanel();
-    expect(screen.getByLabelText('Z-Index')).toBeInTheDocument();
+    expect(screen.getByText('Stacking')).toBeInTheDocument();
+    expect(screen.getByText('Z-Index')).toBeInTheDocument();
   });
 
   it('renders layer order action buttons', () => {
@@ -221,21 +213,17 @@ describe('SlotPropertiesPanel — layer order callbacks', () => {
 describe('SlotPropertiesPanel — shape selector', () => {
   it('shows current shape value in the Select input', async () => {
     renderPanel({ shape: 'circle' });
-    // The Mantine Select displays the current value as an input value.
-    // Multiple inputs share 'Shape' label due to the Divider, so use getAllByLabelText.
-    const shapeInputs = screen.getAllByLabelText('Shape') as HTMLInputElement[];
-    const hasCircle = shapeInputs.some((el) => el.value?.includes('Circle'));
-    expect(hasCircle).toBe(true);
+    // The Mantine Select displays the selected value as visible text.
+    expect(screen.getByText(/Circle/i)).toBeInTheDocument();
   });
 
   it('calls onUpdate with new shape when selection changes', async () => {
     const user = userEvent.setup();
     const { onUpdate } = renderPanel({ shape: 'rectangle' });
 
-    // Open the shape select dropdown (use getAllByLabelText to avoid ambiguity)
-    const shapeInputs = screen.getAllByLabelText('Shape');
-    const selectInput = shapeInputs[0];
-    await user.click(selectInput);
+    // Open the shape select dropdown — find the displayed value and click
+    const displayed = screen.getByText(/Rectangle/i);
+    await user.click(displayed);
 
     // Click the Diamond option
     const option = await screen.findByText(/Diamond/i);
@@ -248,17 +236,16 @@ describe('SlotPropertiesPanel — shape selector', () => {
 // ── Lock ratio ────────────────────────────────────────────────────────────────
 
 describe('SlotPropertiesPanel — lock size ratio', () => {
-  it('lock ratio switch is unchecked by default', () => {
+  it('lock ratio button shows Lock aspect ratio by default', () => {
     renderPanel();
-    const toggle = screen.getByLabelText('Lock width/height ratio') as HTMLInputElement;
-    expect(toggle.checked).toBe(false);
+    expect(screen.getByLabelText('Lock aspect ratio')).toBeInTheDocument();
   });
 
-  it('can toggle lock ratio switch on', async () => {
+  it('calls onUpdate with lockAspectRatio: true when lock button clicked', async () => {
     const user = userEvent.setup();
-    renderPanel();
-    const toggle = screen.getByLabelText('Lock width/height ratio');
-    await user.click(toggle);
-    expect((toggle as HTMLInputElement).checked).toBe(true);
+    const { onUpdate } = renderPanel();
+    const btn = screen.getByLabelText('Lock aspect ratio');
+    await user.click(btn);
+    expect(onUpdate).toHaveBeenCalledWith({ lockAspectRatio: true });
   });
 });

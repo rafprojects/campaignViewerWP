@@ -18,7 +18,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Box, Center, Loader, Text, Stack } from '@mantine/core';
 import { IconLayoutDashboard, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem, LayoutTemplate, CampaignLayoutBinding } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, LayoutTemplate, CampaignLayoutBinding, SlotTiltEffect, LayoutSlot } from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
@@ -26,6 +26,370 @@ import { LazyImage } from '@/components/Gallery/LazyImage';
 import { assignMediaToSlots, resolveSlotWithOverrides } from '@/utils/layoutSlotAssignment';
 import { buildTileStyles, buildBoxShadowStyles } from '@/gallery-adapters/_shared/tileHoverStyles';
 import { getClipPath, usesClipPath } from '@/utils/clipPath';
+import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
+import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
+import { useFeatheredMask } from '@/hooks/useFeatheredMask';
+import { useViewportHeight } from '@/hooks/useViewportHeight';
+
+// ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
+
+function TiltWrapper({
+  tilt,
+  children,
+  style,
+  ...rest
+}: {
+  tilt: SlotTiltEffect;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+} & Omit<React.HTMLAttributes<HTMLDivElement>, 'style'>) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState('');
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      // Normalise mouse position to -1…1 from centre
+      const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+      const rotateY = nx * tilt.maxAngle;
+      const rotateX = -ny * tilt.maxAngle;
+      setTransform(
+        `perspective(${tilt.perspective}px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`,
+      );
+    },
+    [tilt.maxAngle, tilt.perspective],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    setTransform('');
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        ...style,
+        transform: transform || undefined,
+        transition: transform ? 'none' : `transform ${tilt.resetSpeed}ms ease-out`,
+        willChange: 'transform',
+      }}
+      {...rest}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ── GallerySlotView: renders one slot (a function component so hooks work) ───
+
+interface GallerySlotViewProps {
+  slot: LayoutSlot;
+  assigned: MediaItem | undefined;
+  effectiveWidth: number;
+  canvasHeight: number;
+  onOpenAt: (index: number) => void;
+  mediaIndexMap: Map<string, number>;
+  /** Glow settings from campaign-level GalleryBehaviorSettings. */
+  glowColor: string;
+  glowSpread: number;
+}
+
+function GallerySlotView({
+  slot,
+  assigned,
+  effectiveWidth,
+  canvasHeight,
+  onOpenAt,
+  mediaIndexMap,
+  glowColor,
+  glowSpread,
+}: GallerySlotViewProps) {
+  // Px positions from percentages
+  const pxX = (slot.x / 100) * effectiveWidth;
+  const pxY = (slot.y / 100) * canvasHeight;
+  const pxW = (slot.width / 100) * effectiveWidth;
+  const pxH = (slot.height / 100) * canvasHeight;
+  const clipPath = getClipPath(slot);
+
+  // Mask layer — prefer maskLayer fields if present, apply feathering
+  const ml = slot.maskLayer;
+  const maskVisible = ml?.visible !== false;
+  const rawMaskUrl = maskVisible ? (ml?.url ?? slot.maskUrl) : undefined;
+  const featherPx = maskVisible ? (ml?.feather ?? 0) : 0;
+  const maskUrl = useFeatheredMask(rawMaskUrl, featherPx);
+  const resolvedMaskMode = ml?.mode ?? slot.maskMode ?? 'luminance';
+  // Compute mask position as pixel offsets (CSS %-based mask-position doesn't work at size=100%)
+  const feMaskPosX = ml ? `${(ml.x / 100) * pxW}px` : 'center';
+  const feMaskPosY = ml ? `${(ml.y / 100) * pxH}px` : 'center';
+  const feMaskPos = ml ? `${feMaskPosX} ${feMaskPosY}` : 'center';
+  const maskStyle: React.CSSProperties = maskUrl
+    ? ({
+        WebkitMaskImage: `url(${maskUrl})`,
+        maskImage: `url(${maskUrl})`,
+        WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
+        maskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
+        WebkitMaskPosition: feMaskPos,
+        maskPosition: feMaskPos,
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+        WebkitMaskMode: resolvedMaskMode,
+        maskMode: resolvedMaskMode,
+      } as React.CSSProperties)
+    : {};
+
+  // Slot effects
+  const filterCss = buildFilterCss(slot.filterEffects, slot.shadow);
+  const blendCss = getBlendModeCss(slot.blendMode);
+  const overlayBg = buildOverlayBg(slot.overlayEffect);
+
+  if (!assigned) {
+    // E.4: Empty slot — gray dashed placeholder, non-interactive
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: pxX,
+          top: pxY,
+          width: pxW,
+          height: pxH,
+          zIndex: slot.zIndex,
+          clipPath,
+          ...maskStyle,
+          borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : undefined,
+          border: '2px dashed rgba(128,128,128,0.5)',
+          background: 'rgba(128,128,128,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        aria-hidden="true"
+      >
+        <Text size="xs" c="dimmed" ta="center">
+          Empty
+        </Text>
+      </div>
+    );
+  }
+
+  // Resolve lightbox index for this media item
+  const lightboxIndex = mediaIndexMap.get(assigned.id) ?? 0;
+  const isClickable = slot.clickAction === 'lightbox';
+
+  // Choose hover class — per-slot hoverEffect selects the specific
+  // effect variant (-pop or -glow), drop-shadow for clip-path (on wrapper),
+  // box-shadow for rectangles (direct).
+  //
+  // IMPORTANT: for clip-path + glow, we CANNOT use a CSS class because the
+  // inline `filter` style (for slot shadows/effects) overrides any class-based
+  // `filter` rule. Instead we merge the glow drop-shadow into the inline
+  // filter at render time via hover state.
+  const isClip = usesClipPath(slot);
+  const needsInlineGlow = isClip && slot.hoverEffect === 'glow';
+  const [hovered, setHovered] = useState(false);
+
+  const hoverClass = (() => {
+    if (slot.hoverEffect === 'none') return '';
+    // Clip-path + glow: handled via inline merged filter, no CSS class
+    if (needsInlineGlow) return '';
+    const suffix = slot.hoverEffect === 'glow' ? '-glow' : '-pop';
+    return isClip ? `wpsg-tile-lb${suffix}` : `wpsg-tile-lb-rect${suffix}`;
+  })();
+
+  // Build merged filter: slot effects + optional glow on hover
+  const glowFilter = hovered && needsInlineGlow
+    ? `drop-shadow(0 0 ${glowSpread}px ${glowColor}) drop-shadow(0 0 ${glowSpread * 2}px ${glowColor}66)`
+    : '';
+  const mergedFilter = [filterCss, glowFilter].filter(Boolean).join(' ') || undefined;
+
+  // Hover handlers for inline glow (only wired when needed)
+  const glowHandlers = needsInlineGlow
+    ? {
+        onMouseEnter: () => setHovered(true),
+        onMouseLeave: () => setHovered(false),
+      }
+    : {};
+
+  // Media content (shared by clip-path wrapper and rectangle paths)
+  const slotMedia = assigned.type === 'video' ? (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <LazyImage
+        src={assigned.thumbnail || assigned.url}
+        alt={assigned.title || 'Video'}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: slot.objectFit,
+          objectPosition: slot.objectPosition,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0,0,0,0.25)',
+          pointerEvents: 'none',
+        }}
+      >
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="white" opacity={0.85}>
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </div>
+    </div>
+  ) : (
+    <LazyImage
+      src={assigned.thumbnail || assigned.url}
+      alt={assigned.title || 'Image'}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: slot.objectFit,
+        objectPosition: slot.objectPosition,
+      }}
+    />
+  );
+
+  // Interaction props (shared)
+  const interactionProps = {
+    role: isClickable ? ('button' as const) : undefined,
+    tabIndex: isClickable ? 0 : undefined,
+    'aria-label': isClickable
+      ? `View ${assigned.title || 'media'} in lightbox`
+      : undefined,
+    onClick: isClickable ? () => onOpenAt(lightboxIndex) : undefined,
+    onKeyDown: isClickable
+      ? (e: React.KeyboardEvent<HTMLDivElement>) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpenAt(lightboxIndex);
+          }
+        }
+      : undefined,
+  };
+
+  // Clip-path shapes: double-container border technique.
+  if (clipPath) {
+    const inset = slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0;
+    const outerStyle: React.CSSProperties = {
+      position: 'absolute',
+      left: pxX,
+      top: pxY,
+      width: pxW,
+      height: pxH,
+      zIndex: slot.zIndex,
+      cursor: isClickable ? 'pointer' : 'default',
+      filter: mergedFilter,
+      transition: needsInlineGlow ? 'filter 0.25s ease' : undefined,
+      mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
+    };
+    const clipContent = (
+      <>
+        {/* Border fill layer */}
+        {slot.borderWidth > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              clipPath,
+              ...maskStyle,
+              backgroundColor: slot.borderColor,
+            }}
+          />
+        )}
+        {/* Image layer, inset to reveal border strip */}
+        <div
+          style={{
+            position: 'absolute',
+            inset,
+            clipPath,
+            ...maskStyle,
+            overflow: 'hidden',
+          }}
+        >
+          {slotMedia}
+        </div>
+        {/* Overlay effect layer */}
+        {overlayBg && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              clipPath,
+              ...maskStyle,
+              background: overlayBg,
+              pointerEvents: 'none',
+              zIndex: 2,
+            }}
+          />
+        )}
+      </>
+    );
+
+    return slot.tilt?.enabled ? (
+      <TiltWrapper tilt={slot.tilt} className={hoverClass} style={outerStyle} {...interactionProps} {...glowHandlers}>
+        {clipContent}
+      </TiltWrapper>
+    ) : (
+      <div className={hoverClass} style={outerStyle} {...interactionProps} {...glowHandlers}>
+        {clipContent}
+      </div>
+    );
+  }
+
+  // Rectangle slots
+  const rectStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: pxX,
+    top: pxY,
+    width: pxW,
+    height: pxH,
+    zIndex: slot.zIndex,
+    borderRadius: slot.borderRadius,
+    ...maskStyle,
+    border:
+      slot.borderWidth > 0
+        ? `${slot.borderWidth}px solid ${slot.borderColor}`
+        : undefined,
+    cursor: isClickable ? 'pointer' : 'default',
+    overflow: 'hidden',
+    filter: mergedFilter,
+    mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
+  };
+  const rectContent = (
+    <>
+      {slotMedia}
+      {overlayBg && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: slot.borderRadius,
+            background: overlayBg,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+      )}
+    </>
+  );
+
+  return slot.tilt?.enabled ? (
+    <TiltWrapper tilt={slot.tilt} className={hoverClass} style={rectStyle} {...interactionProps}>
+      {rectContent}
+    </TiltWrapper>
+  ) : (
+    <div className={hoverClass} style={rectStyle} {...interactionProps}>
+      {rectContent}
+    </div>
+  );
+}
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -136,6 +500,7 @@ function LayoutBuilderGalleryInner({
 }: InnerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const viewportHeight = useViewportHeight();
 
   // ── Responsive container width via ResizeObserver ──────────────────────────
   useEffect(() => {
@@ -167,7 +532,10 @@ function LayoutBuilderGalleryInner({
   const maxW = template.canvasMaxWidth || 9999;
   const minW = template.canvasMinWidth || 0;
   const effectiveWidth = Math.max(minW, Math.min(containerWidth, maxW));
-  const canvasHeight = effectiveWidth / (template.canvasAspectRatio || 16 / 9);
+  const canvasHeight =
+    template.canvasHeightMode === 'fixed-vh'
+      ? viewportHeight * ((template.canvasHeightVh || 50) / 100)
+      : effectiveWidth / (template.canvasAspectRatio || 16 / 9);
 
   // ── Hover styles ──────────────────────────────────────────────────────────
   // Two sets — drop-shadow for clip-path shapes (on wrapper div), box-shadow for rectangles.
@@ -269,7 +637,14 @@ function LayoutBuilderGalleryInner({
               position: 'relative',
               width: effectiveWidth,
               height: canvasHeight,
-              backgroundColor: template.backgroundColor || '#000',
+              backgroundColor:
+                (template.backgroundMode ?? 'color') === 'color'
+                  ? (template.backgroundColor || '#000')
+                  : (template.backgroundMode === 'none' ? 'transparent' : undefined),
+              background:
+                (template.backgroundMode ?? 'color') === 'gradient'
+                  ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
+                  : undefined,
               overflow: 'hidden',
               borderRadius: settings.imageBorderRadius || 0,
               margin: '0 auto',
@@ -300,199 +675,18 @@ function LayoutBuilderGalleryInner({
             {template.slots.map((rawSlot) => {
               const slot = resolveSlotWithOverrides(rawSlot, slotOverrides);
               const assigned = assignments.get(slot.id);
-
-              // Px positions from percentages
-              const pxX = (slot.x / 100) * effectiveWidth;
-              const pxY = (slot.y / 100) * canvasHeight;
-              const pxW = (slot.width / 100) * effectiveWidth;
-              const pxH = (slot.height / 100) * canvasHeight;
-              const clipPath = getClipPath(slot);
-              const maskStyle = slot.maskUrl
-                ? {
-                    WebkitMaskImage: `url(${slot.maskUrl})`,
-                    maskImage: `url(${slot.maskUrl})`,
-                    WebkitMaskSize: 'cover',
-                    maskSize: 'cover',
-                  } as React.CSSProperties
-                : {};
-
-              if (!assigned) {
-                // E.4: Empty slot — gray dashed placeholder, non-interactive
-                return (
-                  <div
-                    key={slot.id}
-                    style={{
-                      position: 'absolute',
-                      left: pxX,
-                      top: pxY,
-                      width: pxW,
-                      height: pxH,
-                      zIndex: slot.zIndex,
-                      clipPath,
-                      ...maskStyle,
-                      borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : undefined,
-                      border: '2px dashed rgba(128,128,128,0.5)',
-                      background: 'rgba(128,128,128,0.15)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    aria-hidden="true"
-                  >
-                    <Text size="xs" c="dimmed" ta="center">
-                      Empty
-                    </Text>
-                  </div>
-                );
-              }
-
-              // Resolve lightbox index for this media item
-              const lightboxIndex = mediaIndexMap.get(assigned.id) ?? 0;
-              const isClickable = slot.clickAction === 'lightbox';
-
-              // Choose hover class — drop-shadow for clip-path (on wrapper),
-              // box-shadow for rectangles (direct).
-              const hoverClass =
-                slot.hoverEffect !== 'none'
-                  ? usesClipPath(slot)
-                    ? 'wpsg-tile-lb'
-                    : 'wpsg-tile-lb-rect'
-                  : '';
-
-              // Media content (shared by clip-path wrapper and rectangle paths)
-              const slotMedia = assigned.type === 'video' ? (
-                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                  <LazyImage
-                    src={assigned.thumbnail || assigned.url}
-                    alt={assigned.title || 'Video'}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: slot.objectFit,
-                      objectPosition: slot.objectPosition,
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'rgba(0,0,0,0.25)',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white" opacity={0.85}>
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                </div>
-              ) : (
-                <LazyImage
-                  src={assigned.thumbnail || assigned.url}
-                  alt={assigned.title || 'Image'}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: slot.objectFit,
-                    objectPosition: slot.objectPosition,
-                  }}
-                />
-              );
-
-              // Interaction props (shared)
-              const interactionProps = {
-                role: isClickable ? ('button' as const) : undefined,
-                tabIndex: isClickable ? 0 : undefined,
-                'aria-label': isClickable
-                  ? `View ${assigned.title || 'media'} in lightbox`
-                  : undefined,
-                onClick: isClickable ? () => onOpenAt(lightboxIndex) : undefined,
-                onKeyDown: isClickable
-                  ? (e: React.KeyboardEvent<HTMLDivElement>) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onOpenAt(lightboxIndex);
-                      }
-                    }
-                  : undefined,
-              };
-
-              // Clip-path shapes: double-container border technique.
-              // Outer div holds absolute positioning only (no clip).
-              // Inside: a border-color fill layer + an inset image layer, both
-              // using the same clip-path so the border follows the shape edge.
-              if (clipPath) {
-                const inset = slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0;
-                return (
-                  <div
-                    key={slot.id}
-                    className={hoverClass}
-                    style={{
-                      position: 'absolute',
-                      left: pxX,
-                      top: pxY,
-                      width: pxW,
-                      height: pxH,
-                      zIndex: slot.zIndex,
-                      cursor: isClickable ? 'pointer' : 'default',
-                    }}
-                    {...interactionProps}
-                  >
-                    {/* Border fill layer */}
-                    {slot.borderWidth > 0 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          clipPath,
-                          ...maskStyle,
-                          backgroundColor: slot.borderColor,
-                        }}
-                      />
-                    )}
-                    {/* Image layer, inset to reveal border strip */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset,
-                        clipPath,
-                        ...maskStyle,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {slotMedia}
-                    </div>
-                  </div>
-                );
-              }
-
-              // Rectangle slots: box-shadow works directly on the element.
               return (
-                <div
+                <GallerySlotView
                   key={slot.id}
-                  className={hoverClass}
-                  style={{
-                    position: 'absolute',
-                    left: pxX,
-                    top: pxY,
-                    width: pxW,
-                    height: pxH,
-                    zIndex: slot.zIndex,
-                    borderRadius: slot.borderRadius,
-                    ...maskStyle,
-                    border:
-                      slot.borderWidth > 0
-                        ? `${slot.borderWidth}px solid ${slot.borderColor}`
-                        : undefined,
-                    cursor: isClickable ? 'pointer' : 'default',
-                    overflow: 'hidden',
-                  }}
-                  {...interactionProps}
-                >
-                  {slotMedia}
-                </div>
+                  slot={slot}
+                  assigned={assigned}
+                  effectiveWidth={effectiveWidth}
+                  canvasHeight={canvasHeight}
+                  onOpenAt={onOpenAt}
+                  mediaIndexMap={mediaIndexMap}
+                  glowColor={slot.glowColor || settings.tileGlowColor || '#7c9ef8'}
+                  glowSpread={slot.glowSpread ?? settings.tileGlowSpread ?? 12}
+                />
               );
             })}
 

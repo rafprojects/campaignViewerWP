@@ -7,6 +7,8 @@ import { computeGuides, type GuideLine, type SlotRect } from '@/utils/smartGuide
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
+import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
+import { ASSET_MIME } from './DesignAssetsGrid';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -32,6 +34,14 @@ export interface LayoutCanvasProps {
   snapThresholdPx?: number;
   /** Called on double-click on canvas background — used to reset zoom. */
   onCanvasBgDoubleClick?: () => void;
+  /** Generic slot property update callback (e.g. mask layer drag). */
+  onSlotUpdate?: (slotId: string, updates: Partial<import('@/types').LayoutSlot>) => void;
+  /** Slot ID whose mask sublayer is currently selected (for mask drag overlay). */
+  selectedMaskSlotId?: string | null;
+  /** Called when a Design Asset is dropped on the canvas background. x,y are canvas %. */
+  onAssetCanvasDrop?: (assetUrl: string, x: number, y: number) => void;
+  /** Called when campaign media is dropped on the canvas background. x,y are canvas %. */
+  onMediaCanvasDrop?: (mediaId: string, meta: { attachmentId?: number; url?: string }, x: number, y: number) => void;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -58,6 +68,10 @@ export function LayoutCanvas({
   onOverlayResize,
   snapThresholdPx = 5,
   onCanvasBgDoubleClick,
+  onSlotUpdate,
+  selectedMaskSlotId,
+  onAssetCanvasDrop,
+  onMediaCanvasDrop,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -67,7 +81,13 @@ export function LayoutCanvas({
     MIN_CANVAS_PX,
     Math.min(MAX_CANVAS_PX, template.canvasMaxWidth || MAX_CANVAS_PX),
   );
-  const canvasHeight = Math.round(canvasWidth / template.canvasAspectRatio);
+  const canvasHeight =
+    template.canvasHeightMode === 'fixed-vh'
+      ? Math.round(
+          (typeof window !== 'undefined' ? window.innerHeight : 800) *
+            ((template.canvasHeightVh || 50) / 100),
+        )
+      : Math.round(canvasWidth / template.canvasAspectRatio);
 
   // Auto-assign media to slots for preview
   const { assignments: mediaAssignments } = useMemo(
@@ -166,9 +186,13 @@ export function LayoutCanvas({
     [pxToPct, onSlotResize, onAnnounce],
   );
 
-  const handleCanvasClick = useCallback(
+  const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Only clear selection if clicking the canvas itself, not a slot
+      // Clear selection only when the pointer-down lands directly on the canvas
+      // background — not on a child slot.  Using mousedown instead of click
+      // prevents accidental deselection after a drag/resize where the mouseup
+      // lands on the canvas background (click fires on the common ancestor of
+      // mousedown/mouseup targets, but mousedown only on the actual target).
       if (e.target === e.currentTarget) {
         onCanvasClick();
       }
@@ -183,6 +207,47 @@ export function LayoutCanvas({
       }
     },
     [onCanvasBgDoubleClick],
+  );
+
+  // ── Canvas background drop handler (Design Assets + media) ──
+  const handleCanvasDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (
+        e.dataTransfer.types.includes(ASSET_MIME) ||
+        e.dataTransfer.types.includes('application/x-wpsg-media-id')
+      ) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    },
+    [],
+  );
+
+  const handleCanvasDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const pctX = ((e.clientX - rect.left) / rect.width) * 100;
+      const pctY = ((e.clientY - rect.top) / rect.height) * 100;
+
+      // Design Asset drop → new graphic layer
+      const assetUrl = e.dataTransfer.getData(ASSET_MIME);
+      if (assetUrl && onAssetCanvasDrop) {
+        onAssetCanvasDrop(assetUrl, pctX, pctY);
+        return;
+      }
+
+      // Campaign media drop → new slot
+      const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
+      if (mediaId && onMediaCanvasDrop) {
+        const metaRaw = e.dataTransfer.getData('application/x-wpsg-media-meta');
+        let meta: { attachmentId?: number; url?: string } = {};
+        try { meta = metaRaw ? JSON.parse(metaRaw) : {}; } catch { /* ignore */ }
+        onMediaCanvasDrop(mediaId, meta, pctX, pctY);
+      }
+    },
+    [onAssetCanvasDrop, onMediaCanvasDrop],
   );
 
   return (
@@ -205,24 +270,30 @@ export function LayoutCanvas({
       {/* The canvas itself */}
       <div
         ref={canvasRef}
-        onClick={handleCanvasClick}
+        onMouseDown={handleCanvasMouseDown}
         onDoubleClick={handleCanvasDblClick}
+        onDragOver={handleCanvasDragOver}
+        onDrop={handleCanvasDrop}
         role="application"
         aria-label="Layout canvas"
         style={{
           position: 'relative',
           width: canvasWidth,
           height: canvasHeight,
-          backgroundColor: template.backgroundColor,
+          backgroundColor:
+            (template.backgroundMode ?? 'color') === 'color'
+              ? template.backgroundColor
+              : (template.backgroundMode === 'none' ? 'transparent' : undefined),
+          background:
+            (template.backgroundMode ?? 'color') === 'gradient'
+              ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
+              : undefined,
           border: isPreview
             ? 'none'
             : '2px solid var(--mantine-color-default-border)',
           borderRadius: 4,
-          // In edit mode use overflow:visible so Rnd resize handles at the
-          // canvas edge remain reachable (they would be clipped with 'hidden').
           overflow: isPreview ? 'hidden' : 'visible',
           boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-          // Provide a clip boundary visually while keeping overflow:visible
           clipPath: isPreview ? undefined : 'none',
         }}
       >
@@ -277,6 +348,8 @@ export function LayoutCanvas({
               onToggleSelect={onSlotToggleSelect}
               onDragFrame={handleDragFrame}
               onMediaDrop={onMediaDrop}
+              onSlotUpdate={onSlotUpdate}
+              isMaskSelected={selectedMaskSlotId === slot.id}
             />
           );
         })}
