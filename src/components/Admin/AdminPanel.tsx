@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard } from '@tabler/icons-react';
 import { CampaignFormModal } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
@@ -39,7 +40,11 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<string | null>('campaigns');
+  const [activeTab, setActiveTab] = useLocalStorage<string | null>({
+    key: 'wpsg_admin_active_tab',
+    defaultValue: 'campaigns',
+    getInitialValueInEffect: false,
+  });
   const [mediaCampaignId, setMediaCampaignId] = useState('');
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(null);
   const [accessCampaignId, setAccessCampaignId] = useState('');

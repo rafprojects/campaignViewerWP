@@ -166,11 +166,27 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
     setBuilderOpen(true);
   }, []);
 
-  const handleBuilderSaved = useCallback(() => {
-    setBuilderOpen(false);
-    setEditingTemplate(null);
-    mutate();
-  }, [mutate]);
+  const handleBuilderSaved = useCallback(
+    (saved: LayoutTemplate) => {
+      // Optimistically update the SWR cache so the template list (and any
+      // immediate re-open of the builder) reflect the latest server data
+      // without waiting for a background revalidation round-trip.
+      mutate(
+        (current) => {
+          if (!current) return [saved];
+          const idx = current.findIndex((t) => t.id === saved.id);
+          if (idx >= 0) {
+            const next = [...current];
+            next[idx] = saved;
+            return next;
+          }
+          return [...current, saved];
+        },
+        { revalidate: false },
+      );
+    },
+    [mutate],
+  );
 
   const handleBuilderClose = useCallback(() => {
     setBuilderOpen(false);

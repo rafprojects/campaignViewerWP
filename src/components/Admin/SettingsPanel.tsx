@@ -298,6 +298,19 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('showSearchBox', e.currentTarget.checked)}
                 />
 
+                <Divider label="Security" labelPosition="center" />
+
+                <NumberInput
+                  label="Session Idle Timeout (minutes)"
+                  description="Automatically sign out users after this many minutes of inactivity. Set to 0 to disable."
+                  value={settings.sessionIdleTimeoutMinutes}
+                  onChange={(value) => updateSetting('sessionIdleTimeoutMinutes', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={480}
+                  step={5}
+                  placeholder="0 = disabled"
+                />
+
                 <Divider label="Developer" labelPosition="center" />
 
                 <Switch
@@ -815,7 +828,23 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                                 <Text size="xs" fw={600} ta="center">Image</Text>
                                 <Text size="xs" fw={600} ta="center">Video</Text>
                               </SimpleGrid>
-                              {(['desktop', 'tablet', 'mobile'] as const).map((bp) => (
+                              {(['desktop', 'tablet', 'mobile'] as const).map((bp) => {
+                                const isMobile = bp === 'mobile';
+                                const adapterOptions = [
+                                  { value: 'classic', label: 'Classic' },
+                                  { value: 'compact-grid', label: 'Compact Grid' },
+                                  { value: 'justified', label: 'Justified' },
+                                  { value: 'masonry', label: 'Masonry' },
+                                  { value: 'hexagonal', label: 'Hexagonal' },
+                                  { value: 'circular', label: 'Circular' },
+                                  { value: 'diamond', label: 'Diamond' },
+                                  {
+                                    value: 'layout-builder',
+                                    label: isMobile ? 'Layout Builder (desktop/tablet only)' : 'Layout Builder',
+                                    disabled: isMobile,
+                                  },
+                                ];
+                                return (
                                 <SimpleGrid cols={3} spacing="xs" mb="xs" key={bp}>
                                   <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
                                     {bp.charAt(0).toUpperCase() + bp.slice(1)}
@@ -824,34 +853,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                                     size="xs"
                                     value={settings[`${bp}ImageAdapterId` as keyof typeof settings] as string}
                                     onChange={(value) => updateSetting(`${bp}ImageAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
-                                    data={[
-                                      { value: 'classic', label: 'Classic' },
-                                      { value: 'compact-grid', label: 'Compact Grid' },
-                                      { value: 'justified', label: 'Justified' },
-                                      { value: 'masonry', label: 'Masonry' },
-                                      { value: 'hexagonal', label: 'Hexagonal' },
-                                      { value: 'circular', label: 'Circular' },
-                                      { value: 'diamond', label: 'Diamond' },
-                                      { value: 'layout-builder', label: 'Layout Builder' },
-                                    ]}
+                                    data={adapterOptions}
                                   />
                                   <Select
                                     size="xs"
                                     value={settings[`${bp}VideoAdapterId` as keyof typeof settings] as string}
                                     onChange={(value) => updateSetting(`${bp}VideoAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
-                                    data={[
-                                      { value: 'classic', label: 'Classic' },
-                                      { value: 'compact-grid', label: 'Compact Grid' },
-                                      { value: 'justified', label: 'Justified' },
-                                      { value: 'masonry', label: 'Masonry' },
-                                      { value: 'hexagonal', label: 'Hexagonal' },
-                                      { value: 'circular', label: 'Circular' },
-                                      { value: 'diamond', label: 'Diamond' },
-                                      { value: 'layout-builder', label: 'Layout Builder' },
-                                    ]}
+                                    data={adapterOptions}
                                   />
                                 </SimpleGrid>
-                              ))}
+                                );
+                              })}
                               <Select
                                 label="Layout Builder Scope"
                                 description="Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
@@ -872,7 +884,22 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                                 label="Image Gallery Adapter"
                                 description="Layout for campaigns with images."
                                 value={settings.imageGalleryAdapterId}
-                                onChange={(value) => updateSetting('imageGalleryAdapterId', value ?? 'classic')}
+                                onChange={(value) => {
+                                  const v = value ?? 'classic';
+                                  if (v === 'layout-builder') {
+                                    // Auto-switch to per-breakpoint with layout-builder on desktop+tablet
+                                    updateSetting('gallerySelectionMode', 'per-breakpoint');
+                                    updateSetting('desktopImageAdapterId', 'layout-builder');
+                                    updateSetting('tabletImageAdapterId', 'layout-builder');
+                                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    // Preserve video settings
+                                    updateSetting('desktopVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    updateSetting('tabletVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    return;
+                                  }
+                                  updateSetting('imageGalleryAdapterId', v);
+                                }}
                                 data={[
                                   { value: 'classic', label: 'Classic (Carousel)' },
                                   { value: 'compact-grid', label: 'Compact Grid' },
@@ -881,14 +908,29 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                                   { value: 'hexagonal', label: 'Hexagonal' },
                                   { value: 'circular', label: 'Circular' },
                                   { value: 'diamond', label: 'Diamond' },
-                                  { value: 'layout-builder', label: 'Layout Builder' },
+                                  { value: 'layout-builder', label: 'Layout Builder ⟶ per-breakpoint' },
                                 ]}
                               />
                               <Select
                                 label="Video Gallery Adapter"
                                 description="Layout for campaigns with videos."
                                 value={settings.videoGalleryAdapterId}
-                                onChange={(value) => updateSetting('videoGalleryAdapterId', value ?? 'classic')}
+                                onChange={(value) => {
+                                  const v = value ?? 'classic';
+                                  if (v === 'layout-builder') {
+                                    // Auto-switch to per-breakpoint with layout-builder on desktop+tablet
+                                    updateSetting('gallerySelectionMode', 'per-breakpoint');
+                                    updateSetting('desktopVideoAdapterId', 'layout-builder');
+                                    updateSetting('tabletVideoAdapterId', 'layout-builder');
+                                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    // Preserve image settings
+                                    updateSetting('desktopImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    updateSetting('tabletImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    return;
+                                  }
+                                  updateSetting('videoGalleryAdapterId', v);
+                                }}
                                 data={[
                                   { value: 'classic', label: 'Classic (Carousel)' },
                                   { value: 'compact-grid', label: 'Compact Grid' },
@@ -897,7 +939,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                                   { value: 'hexagonal', label: 'Hexagonal' },
                                   { value: 'circular', label: 'Circular' },
                                   { value: 'diamond', label: 'Diamond' },
-                                  { value: 'layout-builder', label: 'Layout Builder' },
+                                  { value: 'layout-builder', label: 'Layout Builder ⟶ per-breakpoint' },
                                 ]}
                               />
                             </>

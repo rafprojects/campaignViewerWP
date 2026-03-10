@@ -22,41 +22,57 @@ export interface TileStyleOptions {
 export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOptions): string {
   const cls = `wpsg-tile-${scope}`;
   const { tileHoverBounce, tileGlowEnabled, tileGlowColor, tileGlowSpread } = settings;
+  const glowColor = tileGlowColor || '#00bfff';
+  const glowSpread = tileGlowSpread || 8;
+  const glowColor2 = `${glowColor}66`; // half-opacity echo
 
   const parts: string[] = [];
 
-  // ── Base transition ────────────────────────────────────────────────────────
+  // ── Base transition (shared by combined + per-slot classes) ─────────────
   parts.push(`
-.${cls} {
+.${cls}, .${cls}-pop, .${cls}-glow {
   transition: filter 0.25s ease;
   cursor: pointer;
 }
 `);
 
-  // ── Hover bounce ──────────────────────────────────────────────────────────
-  if (tileHoverBounce) {
-    parts.push(`
+  // ── Bounce keyframes (always emitted — needed by both combined & per-slot) ─
+  parts.push(`
 @keyframes ${cls}-bounce {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.07); }
   75%  { transform: scale(0.97); }
   100% { transform: scale(1); }
 }
+`);
+
+  // ── Per-slot pop class — bounce only ────────────────────────────────────
+  parts.push(`
+.${cls}-pop:hover {
+  animation: ${cls}-bounce 0.38s ease-out forwards;
+}
+`);
+
+  // ── Per-slot glow class — drop-shadow only ─────────────────────────────
+  parts.push(`
+.${cls}-glow:hover {
+  filter: drop-shadow(0 0 ${glowSpread}px ${glowColor}) drop-shadow(0 0 ${glowSpread * 2}px ${glowColor2});
+}
+`);
+
+  // ── Legacy combined class — controlled by global settings ──────────────
+  if (tileHoverBounce) {
+    parts.push(`
 .${cls}:hover {
   animation: ${cls}-bounce 0.38s ease-out forwards;
 }
 `);
   }
 
-  // ── Border glow ───────────────────────────────────────────────────────────
-  // drop-shadow filter works correctly with clip-path shapes (unlike box-shadow)
   if (tileGlowEnabled) {
-    const color = tileGlowColor;
-    const spread = tileGlowSpread;
-    const color2 = `${color}66`; // half-opacity echo
     parts.push(`
 .${cls}:hover {
-  filter: drop-shadow(0 0 ${spread}px ${color}) drop-shadow(0 0 ${spread * 2}px ${color2});
+  filter: drop-shadow(0 0 ${glowSpread}px ${glowColor}) drop-shadow(0 0 ${glowSpread * 2}px ${glowColor2});
 }
 `);
   }
@@ -77,23 +93,45 @@ export function tileBorderStyle(settings: GalleryBehaviorSettings): string {
 /** Box-shadow for non-clip-path tiles (justified/masonry) where box-shadow works. */
 export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSettings): string {
   const cls = `wpsg-tile-${scope}`;
+  const glowColor = settings.tileGlowColor || '#00bfff';
+  const glowSpread = settings.tileGlowSpread || 8;
   const parts: string[] = [];
 
+  // ── Base transition (shared by combined + per-slot classes) ─────────────
   parts.push(`
-.${cls} {
+.${cls}, .${cls}-pop, .${cls}-glow {
   transition: box-shadow 0.25s ease, transform 0.25s ease;
   cursor: pointer;
 }
 `);
 
-  if (settings.tileHoverBounce) {
-    parts.push(`
+  // ── Bounce keyframes (always emitted) ──────────────────────────────────
+  parts.push(`
 @keyframes ${cls}-bounce {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.06); }
   75%  { transform: scale(0.98); }
   100% { transform: scale(1); }
 }
+`);
+
+  // ── Per-slot pop class — bounce only ────────────────────────────────────
+  parts.push(`
+.${cls}-pop:hover {
+  animation: ${cls}-bounce 0.38s ease-out forwards;
+}
+`);
+
+  // ── Per-slot glow class — box-shadow only ──────────────────────────────
+  parts.push(`
+.${cls}-glow:hover {
+  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${glowColor}66;
+}
+`);
+
+  // ── Legacy combined class — controlled by global settings ──────────────
+  if (settings.tileHoverBounce) {
+    parts.push(`
 .${cls}:hover {
   animation: ${cls}-bounce 0.38s ease-out forwards;
 }
@@ -101,10 +139,9 @@ export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSet
   }
 
   if (settings.tileGlowEnabled) {
-    const { tileGlowColor: color, tileGlowSpread: spread } = settings;
     parts.push(`
 .${cls}:hover {
-  box-shadow: 0 0 ${spread}px ${color}, 0 0 ${spread * 2}px ${color}66;
+  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${glowColor}66;
 }
 `);
   }

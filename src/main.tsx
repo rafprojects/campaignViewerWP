@@ -42,11 +42,20 @@ if ('serviceWorker' in navigator && !import.meta.env.DEV) {
   });
 }
 
+/**
+ * Allowed shortcode prop keys. Prevents external shortcode consumers from
+ * injecting unexpected keys into the React component tree (P20-H-1).
+ */
+const ALLOWED_PROPS = new Set(['campaign', 'company'])
+
 const parseProps = (node: Element): MountProps => {
   const raw = node.getAttribute('data-wpsg-props')
   if (!raw) return {}
   try {
-    return JSON.parse(raw) as MountProps
+    const parsed = JSON.parse(raw) as MountProps
+    return Object.fromEntries(
+      Object.entries(parsed).filter(([k]) => ALLOWED_PROPS.has(k)),
+    )
   } catch {
     return {}
   }

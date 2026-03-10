@@ -4,10 +4,22 @@ interface WpJwtProviderOptions {
   apiBaseUrl: string;
 }
 
+// [WPSG_JWT_DISABLED] — localStorage keys preserved for future standalone SPA use.
+// Enable via WPSG_ENABLE_JWT_AUTH constant in wp-config.php.
+// See docs/FUTURE_TASKS.md § "JWT In-Memory Token Auth" for the planned
+// in-memory token + httpOnly refresh cookie upgrade path.
 const ACCESS_TOKEN_KEY = 'wpsg_access_token';
 const USER_KEY = 'wpsg_user';
 const PERMISSIONS_KEY = 'wpsg_permissions';
 
+/**
+ * JWT-based auth provider for cross-origin / headless deployments.
+ *
+ * [P20-K] This provider is only instantiated when WPSG_ENABLE_JWT_AUTH is
+ * explicitly set in wp-config.php. For the default same-origin WordPress
+ * deployment, authentication uses WP login cookie + X-WP-Nonce (no tokens
+ * in localStorage). See AuthContext.tsx for the nonce-only detection path.
+ */
 export class WpJwtProvider implements AuthProvider {
   private apiBaseUrl: string;
 

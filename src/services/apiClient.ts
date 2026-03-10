@@ -5,17 +5,56 @@ export interface ApiClientOptions {
   baseUrl: string;
   authProvider?: AuthProvider;
   onUnauthorized?: () => void;
+  /** Default request timeout in milliseconds (P20-H-9). 0 = no timeout. Default: 30000. */
+  timeout?: number;
 }
 
 export class ApiClient {
   private baseUrl: string;
   private authProvider?: AuthProvider;
   private onUnauthorized?: () => void;
+  private timeout: number;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
     this.authProvider = options.authProvider;
     this.onUnauthorized = options.onUnauthorized;
+    this.timeout = options.timeout ?? 30_000;
+  }
+
+  /**
+   * Wrapper around `fetch` that enforces a request timeout via AbortController (P20-H-9).
+   * If the caller already provides a signal, it is combined with the timeout signal.
+   */
+  private async fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+    if (this.timeout <= 0) return fetch(url, init);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    // If the caller already attached an AbortSignal, listen for its abort too.
+    const existingSignal = init?.signal;
+    if (existingSignal) {
+      if (existingSignal.aborted) {
+        clearTimeout(timeoutId);
+        controller.abort(existingSignal.reason);
+      } else {
+        existingSignal.addEventListener('abort', () => controller.abort(existingSignal.reason), {
+          once: true,
+        });
+      }
+    }
+
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError' && !existingSignal?.aborted) {
+        throw new ApiError(`Request timed out after ${this.timeout}ms`, 0);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   private async getHeaders(extra?: HeadersInit): Promise<Record<string, string>> {
@@ -87,13 +126,13 @@ export class ApiClient {
         ...(init?.headers as Record<string, string> | undefined),
       },
     };
-    const response = await fetch(`${this.baseUrl}${path}`, requestInit);
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, requestInit);
     return this.handleResponse<T>(response);
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
@@ -103,7 +142,7 @@ export class ApiClient {
 
   async postForm<T>(path: string, formData: FormData): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.buildAuthHeaders(),
       body: formData,
@@ -113,7 +152,7 @@ export class ApiClient {
 
   async put<T>(path: string, body: unknown): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
@@ -123,7 +162,7 @@ export class ApiClient {
 
   async delete<T>(path: string): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: await this.getHeaders(),
     });

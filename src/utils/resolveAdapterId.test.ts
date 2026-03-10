@@ -110,3 +110,39 @@ describe('resolveAdapterId – with defaults', () => {
     expect(resolveAdapterId(s, 'video', 'mobile')).toBe('classic');
   });
 });
+
+// ── Layout-builder mobile guard ──────────────────────────────
+
+describe('resolveAdapterId – layout-builder mobile fallback', () => {
+  it('falls back to unified image adapter when layout-builder is resolved on mobile', () => {
+    const s = makeSettings({
+      gallerySelectionMode: 'per-breakpoint',
+      desktopImageAdapterId: 'layout-builder',
+      tabletImageAdapterId: 'layout-builder',
+      mobileImageAdapterId: 'layout-builder',
+      imageGalleryAdapterId: 'masonry',
+    });
+    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('layout-builder');
+    expect(resolveAdapterId(s, 'image', 'tablet')).toBe('layout-builder');
+    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('masonry');
+  });
+
+  it('falls back to unified video adapter when layout-builder is resolved on mobile', () => {
+    const s = makeSettings({
+      gallerySelectionMode: 'per-breakpoint',
+      mobileVideoAdapterId: 'layout-builder',
+      videoGalleryAdapterId: 'justified',
+    });
+    expect(resolveAdapterId(s, 'video', 'mobile')).toBe('justified');
+  });
+
+  it('falls back to classic when unified adapter is also layout-builder on mobile', () => {
+    const s = makeSettings({
+      gallerySelectionMode: 'unified',
+      imageGalleryAdapterId: 'layout-builder',
+    });
+    // Unified mode returns 'layout-builder', mobile guard kicks in,
+    // fallback is also 'layout-builder' → returns 'classic'.
+    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('classic');
+  });
+});
