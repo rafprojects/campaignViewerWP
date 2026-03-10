@@ -1158,19 +1158,46 @@ class WPSG_REST {
 
         // Embed layout binding by value if provided.
         $layout_template = $body['layout_template'] ?? null;
-        if ($layout_template) {
+        if ($layout_template && is_array($layout_template)) {
+            // Route through the same sanitization pipeline used by template
+            // create/update so imported payloads receive identical validation.
+            $sanitized = WPSG_Layout_Templates::sanitize_template_data($layout_template);
+
             $tmpl_id = wp_insert_post([
                 'post_title'  => sanitize_text_field($layout_template['title'] ?? 'Imported Template'),
                 'post_type'   => 'wpsg_layout_template',
                 'post_status' => 'publish',
             ]);
             if (!is_wp_error($tmpl_id)) {
-                update_post_meta($tmpl_id, 'slots', $layout_template['slots'] ?? []);
-                update_post_meta($tmpl_id, 'background', $layout_template['background'] ?? []);
-                update_post_meta($tmpl_id, 'graphic_layers', $layout_template['graphicLayers'] ?? []);
+                update_post_meta($tmpl_id, 'slots', $sanitized['slots']);
+                update_post_meta($tmpl_id, 'background', [
+                    'backgroundMode'              => $sanitized['backgroundMode'],
+                    'backgroundColor'             => $sanitized['backgroundColor'],
+                    'backgroundGradientDirection'  => $sanitized['backgroundGradientDirection'],
+                    'backgroundGradientStops'     => $sanitized['backgroundGradientStops'],
+                    'backgroundGradientType'      => $sanitized['backgroundGradientType'],
+                    'backgroundGradientAngle'     => $sanitized['backgroundGradientAngle'],
+                    'backgroundRadialShape'       => $sanitized['backgroundRadialShape'],
+                    'backgroundRadialSize'        => $sanitized['backgroundRadialSize'],
+                    'backgroundGradientCenterX'   => $sanitized['backgroundGradientCenterX'],
+                    'backgroundGradientCenterY'   => $sanitized['backgroundGradientCenterY'],
+                    'backgroundImage'             => $sanitized['backgroundImage'],
+                    'backgroundImageFit'          => $sanitized['backgroundImageFit'],
+                    'backgroundImageOpacity'      => $sanitized['backgroundImageOpacity'],
+                ]);
+                update_post_meta($tmpl_id, 'graphic_layers', $sanitized['overlays']);
                 update_post_meta($post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id);
                 if (!empty($src['layoutBinding'])) {
-                    update_post_meta($post_id, '_wpsg_layout_binding', $src['layoutBinding']);
+                    // Sanitize layout binding the same way as apply_campaign_meta.
+                    $binding = $src['layoutBinding'];
+                    if (is_array($binding)) {
+                        array_walk_recursive($binding, function (&$v) {
+                            if (is_string($v)) {
+                                $v = sanitize_text_field($v);
+                            }
+                        });
+                    }
+                    update_post_meta($post_id, '_wpsg_layout_binding', $binding);
                 }
             }
         }

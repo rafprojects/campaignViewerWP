@@ -318,6 +318,21 @@ class WPSG_Layout_Templates {
     // ── Helpers ───────────────────────────────────────────────
 
     /**
+     * Sanitize raw template data for external callers (e.g., import_campaign).
+     *
+     * Runs the same sanitization pipeline as the create/update paths so
+     * imported payloads receive identical validation and escaping.
+     *
+     * @param  array $data Raw template data (slots, overlays, background, etc.).
+     * @return array Sanitized template data.
+     */
+    public static function sanitize_template_data( array $data ): array {
+        $id  = wp_generate_uuid4();
+        $now = gmdate( 'c' );
+        return self::build_template( $id, $data, $now );
+    }
+
+    /**
      * Build a complete template array from partial input.
      *
      * @param  string $id   UUID.
