@@ -743,19 +743,9 @@ class WPSG_CLI {
     }
 
     /**
-     * Invalidate all wpsg_campaigns_* transient cache entries.
+     * Invalidate all wpsg campaign transient caches via version bump.
      */
     private function clear_campaign_cache(): void {
-        global $wpdb;
-        $like         = $wpdb->esc_like( '_transient_wpsg_campaigns_' ) . '%';
-        $timeout_like = $wpdb->esc_like( '_transient_timeout_wpsg_campaigns_' ) . '%';
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-                $like,
-                $timeout_like
-            )
-        );
+        WPSG_REST::bump_cache_version();
     }
 }

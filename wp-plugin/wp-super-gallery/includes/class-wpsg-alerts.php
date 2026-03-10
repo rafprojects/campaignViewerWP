@@ -8,10 +8,36 @@ class WPSG_Alerts {
     const REST_ERROR_BUCKET = 'wpsg_rest_error_bucket';
     const ALERT_THROTTLE_FATAL = 'wpsg_alert_throttle_fatal';
     const ALERT_THROTTLE_REST = 'wpsg_alert_throttle_rest';
+    const EMAIL_QUEUE = 'wpsg_alert_email_queue';
+    const CRON_HOOK = 'wpsg_process_alert_emails';
 
     public static function register() {
         add_action('wpsg_php_error', [self::class, 'notify_fatal_error']);
         add_action('wpsg_rest_metrics', [self::class, 'track_rest_metrics']);
+        add_action(self::CRON_HOOK, [self::class, 'process_email_queue']);
+
+        // Schedule 1-minute cron if not already scheduled.
+        if (!wp_next_scheduled(self::CRON_HOOK)) {
+            wp_schedule_event(time(), 'wpsg_every_minute', self::CRON_HOOK);
+        }
+
+        // Register the custom 1-minute interval.
+        add_filter('cron_schedules', [self::class, 'add_cron_interval']);
+    }
+
+    /**
+     * Register a 1-minute cron interval for alert email processing.
+     *
+     * @since 0.18.0 P20-I-5
+     */
+    public static function add_cron_interval(array $schedules): array {
+        if (!isset($schedules['wpsg_every_minute'])) {
+            $schedules['wpsg_every_minute'] = [
+                'interval' => 60,
+                'display'  => 'Every minute (WPSG alerts)',
+            ];
+        }
+        return $schedules;
     }
 
     public static function notify_fatal_error($payload) {
@@ -25,7 +51,7 @@ class WPSG_Alerts {
 
         $subject = '[WPSG] Fatal error detected';
         $message = "A fatal error occurred in WP Super Gallery.\n\n" . wp_json_encode($payload, JSON_PRETTY_PRINT);
-        wp_mail(self::get_recipient(), $subject, $message);
+        self::queue_email($subject, $message);
         if (class_exists('WPSG_Sentry')) {
             WPSG_Sentry::capture_message('WPSG fatal error', $payload);
         }
@@ -72,11 +98,71 @@ class WPSG_Alerts {
             wp_json_encode($payload, JSON_PRETTY_PRINT)
         );
 
-        wp_mail(self::get_recipient(), $subject, $message);
+        self::queue_email($subject, $message);
         if (class_exists('WPSG_Sentry')) {
             WPSG_Sentry::capture_message('WPSG REST error spike', $payload);
         }
         self::throttle(self::ALERT_THROTTLE_REST);
+    }
+
+    /**
+     * Queue an alert email for async dispatch via cron.
+     *
+     * Falls back to synchronous wp_mail() when WP-Cron is disabled.
+     *
+     * @since 0.18.0 P20-I-5
+     */
+    private static function queue_email(string $subject, string $message): void {
+        // If WP-Cron is disabled, send synchronously as fallback.
+        if (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) {
+            wp_mail(self::get_recipient(), $subject, $message);
+            return;
+        }
+
+        $queue = get_option(self::EMAIL_QUEUE, []);
+        if (!is_array($queue)) {
+            $queue = [];
+        }
+
+        // Cap queue at 50 items to prevent unbounded growth.
+        if (count($queue) >= 50) {
+            return;
+        }
+
+        $queue[] = [
+            'to'      => self::get_recipient(),
+            'subject' => $subject,
+            'message' => $message,
+            'queued'  => time(),
+        ];
+
+        update_option(self::EMAIL_QUEUE, $queue, false);
+    }
+
+    /**
+     * Process queued alert emails (called by cron).
+     *
+     * @since 0.18.0 P20-I-5
+     */
+    public static function process_email_queue(): void {
+        $queue = get_option(self::EMAIL_QUEUE, []);
+        if (!is_array($queue) || empty($queue)) {
+            return;
+        }
+
+        // Grab and clear atomically to prevent double-processing.
+        delete_option(self::EMAIL_QUEUE);
+
+        foreach ($queue as $item) {
+            if (!is_array($item) || empty($item['to']) || empty($item['subject'])) {
+                continue;
+            }
+            wp_mail(
+                sanitize_email($item['to']),
+                sanitize_text_field($item['subject']),
+                $item['message'] ?? ''
+            );
+        }
     }
 
     private static function email_enabled() {

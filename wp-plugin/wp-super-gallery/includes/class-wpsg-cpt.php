@@ -74,6 +74,17 @@ class WPSG_CPT {
             'hierarchical' => false,
         ]);
 
+        // P20-I-1: Layout templates CPT (replaces wp_options storage).
+        register_post_type('wpsg_layout_tpl', [
+            'label' => __('Layout Templates', 'wp-super-gallery'),
+            'public' => false,
+            'show_ui' => false,
+            'show_in_rest' => false,
+            'supports' => ['title'],
+            'capability_type' => ['wpsg_campaign', 'wpsg_campaigns'],
+            'map_meta_cap' => true,
+        ]);
+
         register_post_meta(self::POST_TYPE, 'visibility', [
             'type' => 'string',
             'single' => true,

@@ -669,6 +669,30 @@ class WPSG_REST {
     }
 
     /**
+     * Get the current cache version counter.
+     *
+     * Included in all transient cache keys so that bumping the version
+     * invalidates every key without expensive LIKE-based DELETEs.
+     * Stale keys expire naturally via their TTL.
+     *
+     * @since 0.18.0 P20-I-3
+     * @return int
+     */
+    public static function get_cache_version(): int {
+        return intval(get_option('wpsg_cache_version', 1));
+    }
+
+    /**
+     * Bump the cache version counter, effectively invalidating all caches.
+     *
+     * @since 0.18.0 P20-I-3
+     */
+    public static function bump_cache_version(): void {
+        $v = self::get_cache_version();
+        update_option('wpsg_cache_version', $v + 1, true);
+    }
+
+    /**
      * Shared admin auth verification extracted for reuse by rate_limit_authenticated.
      *
      * @since 0.18.0 P20-A
@@ -712,12 +736,14 @@ class WPSG_REST {
         $page = max(1, intval($request->get_param('page')));
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
 
-        // Generate cache key based on user ID and query parameters
+        // Generate cache key based on user ID, query parameters, and cache version
         $user_id = get_current_user_id();
         $is_admin = current_user_can('manage_options') || current_user_can('manage_wpsg');
         $search_key = $search ? md5($search) : 'none';
+        $cv = self::get_cache_version();
         $cache_key = sprintf(
-            'wpsg_campaigns_%d_%s_%s_%s_%s_%d_%d_%s_%s',
+            'wpsg_campaigns_v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s',
+            $cv,
             $user_id,
             $status ?: 'all',
             $visibility ?: 'all',
@@ -1351,6 +1377,7 @@ class WPSG_REST {
     /**
      * GET /media/{mediaId}/usage
      * Returns which campaigns reference this media item.
+     * Uses indexed wpsg_media_refs table (P20-I-2).
      */
     public static function get_media_usage() {
         $request  = func_get_arg(0);
@@ -1360,32 +1387,14 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => 'mediaId is required'], 400);
         }
 
-        $campaigns = get_posts([
-            'post_type'      => WPSG_CPT::POST_TYPE,
-            'posts_per_page' => -1,
-            'post_status'    => ['publish', 'draft', 'private'],
-        ]);
-
-        $found = [];
-        foreach ($campaigns as $campaign) {
-            $items = get_post_meta($campaign->ID, 'media_items', true);
-            if (!is_array($items)) {
-                continue;
-            }
-            foreach ($items as $item) {
-                if (($item['id'] ?? '') === $media_id) {
-                    $found[] = ['id' => strval($campaign->ID), 'title' => $campaign->post_title];
-                    break; // at most once per campaign
-                }
-            }
-        }
-
+        $found = WPSG_DB::get_media_usage($media_id);
         return new WP_REST_Response(['count' => count($found), 'campaigns' => $found], 200);
     }
 
     /**
      * GET /media/usage-summary?ids[]=id1&ids[]=id2...
      * Returns a map { mediaId: count } for the given IDs.
+     * Uses indexed wpsg_media_refs table (P20-I-2).
      */
     public static function get_media_usage_summary() {
         $request = func_get_arg(0);
@@ -1400,31 +1409,8 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => 'Too many IDs (max 200)'], 400);
         }
 
-        $id_set = array_fill_keys($ids, 0);
-
-        $campaigns = get_posts([
-            'post_type'      => WPSG_CPT::POST_TYPE,
-            'posts_per_page' => -1,
-            'post_status'    => ['publish', 'draft', 'private'],
-        ]);
-
-        foreach ($campaigns as $campaign) {
-            $items = get_post_meta($campaign->ID, 'media_items', true);
-            if (!is_array($items)) {
-                continue;
-            }
-            $seen = [];
-            foreach ($items as $item) {
-                $mid = $item['id'] ?? '';
-                // Count each campaign only once per media ID
-                if (isset($id_set[$mid]) && !in_array($mid, $seen, true)) {
-                    $id_set[$mid]++;
-                    $seen[] = $mid;
-                }
-            }
-        }
-
-        return new WP_REST_Response((object)$id_set, 200);
+        $result = WPSG_DB::get_media_usage_summary($ids);
+        return new WP_REST_Response((object)$result, 200);
     }
 
     /**
@@ -3670,7 +3656,8 @@ class WPSG_REST {
 
     private static function get_accessible_campaign_ids($user_id) {
         $sanitized_user_id = absint($user_id);
-        $cache_key = 'wpsg_accessible_campaigns_' . $sanitized_user_id;
+        $cv = self::get_cache_version();
+        $cache_key = 'wpsg_acc_v' . $cv . '_' . $sanitized_user_id;
         $cached = get_transient($cache_key);
         if (false !== $cached && is_array($cached)) {
             return $cached;
@@ -3705,37 +3692,7 @@ class WPSG_REST {
     }
 
     private static function clear_accessible_campaigns_cache() {
-        global $wpdb;
-
-        // Clear accessible campaigns cache
-        $prefix = $wpdb->esc_like('_transient_wpsg_accessible_campaigns_') . '%';
-        $sql = $wpdb->prepare(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-            $prefix
-        );
-        $wpdb->query($sql);
-
-        $timeout_prefix = $wpdb->esc_like('_transient_timeout_wpsg_accessible_campaigns_') . '%';
-        $timeout_sql = $wpdb->prepare(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-            $timeout_prefix
-        );
-        $wpdb->query($timeout_sql);
-
-        // Clear campaign list cache for all users
-        $campaigns_prefix = $wpdb->esc_like('_transient_wpsg_campaigns_') . '%';
-        $campaigns_sql = $wpdb->prepare(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-            $campaigns_prefix
-        );
-        $wpdb->query($campaigns_sql);
-
-        $campaigns_timeout_prefix = $wpdb->esc_like('_transient_timeout_wpsg_campaigns_') . '%';
-        $campaigns_timeout_sql = $wpdb->prepare(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-            $campaigns_timeout_prefix
-        );
-        $wpdb->query($campaigns_timeout_sql);
+        self::bump_cache_version();
     }
 
     private static function get_campaign_deny_ids($post_id) {

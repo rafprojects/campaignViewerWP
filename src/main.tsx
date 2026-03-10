@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { createPortal } from 'react-dom'
 import App from './App'
 import { shadowStyles } from './shadowStyles'
 import { MantineProvider } from '@mantine/core'
@@ -30,6 +31,9 @@ void initSentry({ dsn: sentryDsn })
 // If the WP admin disables user theme override, we disable localStorage
 // persistence so the admin-chosen theme is always used.
 const allowThemePersistence = wpsgConfig?.allowUserThemeOverride !== false
+
+// P20-I-6: Shared React root for multi-shortcode pages (default: off).
+const useSharedRoot = wpsgConfig?.sharedRoot === true
 
 if ('serviceWorker' in navigator && !import.meta.env.DEV) {
   window.addEventListener('load', () => {
@@ -153,6 +157,81 @@ const mountDefault = (host: HTMLElement, props: MountProps) => {
   renderApp(host, props)
 }
 
+/**
+ * I-6: Mount multiple shortcodes via a single React root using portals.
+ * Galleries rendered through portals share the same React tree, which means:
+ *   • SWR request deduplication — identical keys are fetched only once.
+ *   • Reduced provider overhead — one StrictMode boundary for all galleries.
+ * Each gallery still gets its own ThemeProvider + MantineProvider so shadow
+ * DOM CSS variable scoping and per-instance config continue to work.
+ */
+const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
+  interface MountInstance {
+    mountPoint: HTMLElement
+    shadowRoot?: ShadowRoot
+    props: MountProps
+  }
+
+  const instances: MountInstance[] = []
+
+  nodes.forEach((host) => {
+    if (host.hasAttribute('data-wpsg-mounted')) return
+    host.setAttribute('data-wpsg-mounted', 'true')
+
+    if (useShadowDom) {
+      const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
+
+      if (!shadowRoot.querySelector('style[data-wpsg]')) {
+        const styleTag = document.createElement('style')
+        styleTag.setAttribute('data-wpsg', 'true')
+        styleTag.textContent = shadowStyles
+        shadowRoot.appendChild(styleTag)
+      }
+
+      const mountPoint = document.createElement('div')
+      mountPoint.setAttribute('data-wpsg-mount', 'true')
+      shadowRoot.appendChild(mountPoint)
+      instances.push({ mountPoint, shadowRoot, props: parseProps(host) })
+    } else {
+      instances.push({ mountPoint: host, props: parseProps(host) })
+    }
+  })
+
+  if (instances.length === 0) return
+
+  // Load global styles once for non-shadow-DOM mode.
+  if (!useShadowDom) {
+    import('./styles/global.scss')
+  }
+
+  // Hidden container that anchors the single React root.
+  const container = document.createElement('div')
+  container.id = 'wpsg-shared-root'
+  container.style.display = 'none'
+  document.body.appendChild(container)
+
+  createRoot(container).render(
+    <StrictMode>
+      {instances.map((inst, i) =>
+        createPortal(
+          <ThemeProvider
+            shadowRoot={inst.shadowRoot ?? null}
+            allowPersistence={i === 0 && allowThemePersistence}
+          >
+            <ThemedApp
+              props={inst.props}
+              isShadowDom={!!inst.shadowRoot}
+              shadowRootEl={inst.shadowRoot}
+            />
+          </ThemeProvider>,
+          inst.mountPoint,
+          `wpsg-gallery-${i}`,
+        ),
+      )}
+    </StrictMode>,
+  )
+}
+
 const rootHost = document.getElementById('root')
 if (import.meta.env.DEV) {
   console.log('[WPSG] Mount init - rootHost:', rootHost, 'useShadowDom:', useShadowDom)
@@ -172,14 +251,22 @@ if (rootHost) {
   // Only search for .wp-super-gallery if #root doesn't exist
   const nodes = document.querySelectorAll<HTMLElement>('.wp-super-gallery')
   if (import.meta.env.DEV) console.log('[WPSG] No #root, mounting to', nodes.length, '.wp-super-gallery elements')
-  nodes.forEach((node, index) => {
-    if (import.meta.env.DEV) console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
-    const props = parseProps(node)
-    if (useShadowDom) {
-      mountWithShadow(node, props)
-    } else {
-      import('./styles/global.scss')
-      mountDefault(node, props)
-    }
-  })
+
+  // I-6: When shared root is enabled and there are multiple shortcodes,
+  // use a single React root with portals for deduplication benefits.
+  if (useSharedRoot && nodes.length > 1) {
+    if (import.meta.env.DEV) console.log('[WPSG] Shared root: mounting', nodes.length, 'galleries via portals')
+    mountSharedRoot(nodes)
+  } else {
+    nodes.forEach((node, index) => {
+      if (import.meta.env.DEV) console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
+      const props = parseProps(node)
+      if (useShadowDom) {
+        mountWithShadow(node, props)
+      } else {
+        import('./styles/global.scss')
+        mountDefault(node, props)
+      }
+    })
+  }
 }

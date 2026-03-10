@@ -53,6 +53,7 @@ function wpsg_deactivate() {
     wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
     wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
     wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
+    wp_clear_scheduled_hook(WPSG_Alerts::CRON_HOOK);
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -104,6 +105,18 @@ add_action('init', ['WPSG_DB', 'maybe_upgrade']);
 add_action('init', ['WPSG_Maintenance', 'register']);
 add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
+
+// P20-I-2: Automatically sync media refs whenever media_items meta is updated.
+add_action('updated_post_meta', function ($meta_id, $post_id, $meta_key, $meta_value) {
+    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
+        WPSG_DB::sync_media_refs((int) $post_id, is_array($meta_value) ? $meta_value : []);
+    }
+}, 10, 4);
+add_action('added_post_meta', function ($meta_id, $post_id, $meta_key, $meta_value) {
+    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
+        WPSG_DB::sync_media_refs((int) $post_id, is_array($meta_value) ? $meta_value : []);
+    }
+}, 10, 4);
 add_action('init', ['WPSG_Sentry', 'init']);
 
 // P13-D: Campaign schedule auto-archive cron.
@@ -155,18 +168,9 @@ function wpsg_run_schedule_auto_archive() {
         }
     } while (!empty($query->posts));
 
-    // Clear campaign transient + timeout caches once after all updates.
+    // Bump cache version once after all updates (no LIKE queries needed).
     if ($archived_count > 0) {
-        global $wpdb;
-        $like = $wpdb->esc_like('_transient_wpsg_campaigns_') . '%';
-        $timeout_like = $wpdb->esc_like('_transient_timeout_wpsg_campaigns_') . '%';
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-                $like,
-                $timeout_like
-            )
-        );
+        WPSG_REST::bump_cache_version();
     }
 }
 

@@ -29,13 +29,16 @@ foreach ( $campaign_ids as $id ) {
 	wp_delete_post( (int) $id, true ); // force delete, bypasses trash
 }
 
-// ── 2. Delete all wpsg_layout_template posts + meta ─────────
+// ── 2. Delete all wpsg_layout_tpl posts + meta ─────────────
 $template_ids = $wpdb->get_col(
-	"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpsg_layout_template'"
+	"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpsg_layout_tpl'"
 );
 foreach ( $template_ids as $id ) {
 	wp_delete_post( (int) $id, true );
 }
+// Also clean up legacy layout template option and backup.
+delete_option( 'wpsg_layout_templates' );
+delete_option( 'wpsg_layout_templates_backup' );
 
 // ── 3. Delete taxonomy terms ────────────────────────────────
 $taxonomies = [ 'wpsg_company', 'wpsg_campaign_category' ];
@@ -79,6 +82,7 @@ $wpdb->query(
 $tables = [
 	$wpdb->prefix . 'wpsg_analytics_events',
 	$wpdb->prefix . 'wpsg_access_requests',
+	$wpdb->prefix . 'wpsg_media_refs',
 ];
 foreach ( $tables as $table ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
@@ -114,6 +118,7 @@ $cron_hooks = [
 	'wpsg_archive_cleanup',
 	'wpsg_schedule_auto_archive',
 	'wpsg_thumbnail_cache_cleanup',
+	'wpsg_process_alert_emails',
 ];
 foreach ( $cron_hooks as $hook ) {
 	wp_clear_scheduled_hook( $hook );

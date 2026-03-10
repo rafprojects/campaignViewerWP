@@ -5,7 +5,7 @@
  * grid/list toggle, search/filter, and action buttons (edit, duplicate,
  * delete). Includes import/export JSON functionality.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -40,8 +40,12 @@ import {
 import useSWR from 'swr';
 import type { ApiClient } from '@/services/apiClient';
 import type { LayoutTemplate } from '@/types';
-import { LayoutBuilderModal } from './LayoutBuilder';
-import { PresetGalleryModal } from './LayoutBuilder/PresetGalleryModal';
+const LayoutBuilderModal = lazy(() =>
+  import('./LayoutBuilder/LayoutBuilderModal').then((m) => ({ default: m.LayoutBuilderModal }))
+);
+const PresetGalleryModal = lazy(() =>
+  import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal }))
+);
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { createEmptyTemplate } from '@/hooks/useLayoutBuilderState';
 import type { LayoutPreset } from '@/data/layoutPresets';
@@ -429,15 +433,19 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
       )}
 
       {/* Layout Builder Modal – key forces remount so useState re-inits */}
-      <LayoutBuilderModal
-        key={editingTemplate?.id ?? 'new'}
-        opened={builderOpen}
-        initialTemplate={editingTemplate ?? undefined}
-        apiClient={apiClient}
-        onSaved={handleBuilderSaved}
-        onClose={handleBuilderClose}
-        onNotify={onNotify}
-      />
+      <Suspense fallback={null}>
+        {builderOpen && (
+          <LayoutBuilderModal
+            key={editingTemplate?.id ?? 'new'}
+            opened={builderOpen}
+            initialTemplate={editingTemplate ?? undefined}
+            apiClient={apiClient}
+            onSaved={handleBuilderSaved}
+            onClose={handleBuilderClose}
+            onNotify={onNotify}
+          />
+        )}
+      </Suspense>
 
       {/* Delete confirmation */}
       <ConfirmModal
@@ -451,11 +459,15 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
       />
 
       {/* Preset gallery (P15-J.2) */}
-      <PresetGalleryModal
-        opened={presetGalleryOpen}
-        onClose={() => setPresetGalleryOpen(false)}
-        onSelect={handleCreateFromPreset}
-      />
+      <Suspense fallback={null}>
+        {presetGalleryOpen && (
+          <PresetGalleryModal
+            opened={presetGalleryOpen}
+            onClose={() => setPresetGalleryOpen(false)}
+            onSelect={handleCreateFromPreset}
+          />
+        )}
+      </Suspense>
     </Stack>
   );
 }

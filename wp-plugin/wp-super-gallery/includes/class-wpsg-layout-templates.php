@@ -99,40 +99,79 @@ class WPSG_Layout_Templates {
     // ── CRUD ──────────────────────────────────────────────────
 
     /**
+     * Layout template CPT name.
+     *
+     * @since 0.18.0 P20-I-1
+     */
+    const CPT = 'wpsg_layout_tpl';
+
+    /**
+     * Post meta key for template data blob.
+     *
+     * @since 0.18.0 P20-I-1
+     */
+    const META_KEY = '_wpsg_template_data';
+
+    /**
      * Retrieve all templates.
      *
-     * @return array<string, array> Keyed by template ID.
+     * @return array<string, array> Keyed by template UUID.
      */
     public static function get_all(): array {
-        $templates = get_option( self::OPTION_KEY, [] );
-        if ( ! is_array( $templates ) ) {
-            return [];
-        }
-        // Ensure every template is at the current schema version.
-        $migrated = false;
-        foreach ( $templates as $id => &$tpl ) {
-            $before = $tpl;
-            $tpl    = self::migrate_template( $tpl );
-            if ( $tpl !== $before ) {
-                $migrated = true;
+        // Migrate legacy wp_options storage on first call.
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'post_status'    => 'publish',
+            'posts_per_page' => 200,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ]);
+
+        $templates = [];
+        foreach ( $posts as $post ) {
+            $data = get_post_meta( $post->ID, self::META_KEY, true );
+            if ( ! is_array( $data ) ) {
+                continue;
             }
+            $id = $data['id'] ?? $post->post_name;
+            $data['id']   = $id;
+            $data['name']  = $post->post_title;
+            $templates[ $id ] = $data;
         }
-        unset( $tpl );
-        if ( $migrated ) {
-            update_option( self::OPTION_KEY, $templates, false );
-        }
+
         return $templates;
     }
 
     /**
-     * Get a single template by ID.
+     * Get a single template by UUID.
      *
      * @param  string $id UUID.
      * @return array|null  Template data or null.
      */
     public static function get( string $id ): ?array {
-        $all = self::get_all();
-        return $all[ $id ] ?? null;
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'name'           => $id,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+        ]);
+
+        if ( empty( $posts ) ) {
+            return null;
+        }
+
+        $post = $posts[0];
+        $data = get_post_meta( $post->ID, self::META_KEY, true );
+        if ( ! is_array( $data ) ) {
+            return null;
+        }
+        $data['id']   = $id;
+        $data['name']  = $post->post_title;
+        return $data;
     }
 
     /**
@@ -142,6 +181,8 @@ class WPSG_Layout_Templates {
      * @return array|WP_Error Created template or error.
      */
     public static function create( array $data ) {
+        self::maybe_migrate_from_options();
+
         $id  = wp_generate_uuid4();
         $now = gmdate( 'c' );
 
@@ -152,15 +193,18 @@ class WPSG_Layout_Templates {
             return $validation;
         }
 
-        $all         = self::get_all();
-        $all[ $id ]  = $template;
+        $post_id = wp_insert_post([
+            'post_type'   => self::CPT,
+            'post_status' => 'publish',
+            'post_title'  => $template['name'],
+            'post_name'   => $id,
+        ], true);
 
-        $size_error = self::check_size_limit( $all );
-        if ( is_wp_error( $size_error ) ) {
-            return $size_error;
+        if ( is_wp_error( $post_id ) ) {
+            return $post_id;
         }
 
-        update_option( self::OPTION_KEY, $all, false );
+        update_post_meta( $post_id, self::META_KEY, $template );
         return $template;
     }
 
@@ -172,21 +216,33 @@ class WPSG_Layout_Templates {
      * @return array|WP_Error Updated template or error.
      */
     public static function update( string $id, array $data ) {
-        $all = self::get_all();
-        if ( ! isset( $all[ $id ] ) ) {
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'name'           => $id,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+        ]);
+
+        if ( empty( $posts ) ) {
             return new WP_Error( 'not_found', 'Template not found.', [ 'status' => 404 ] );
         }
 
-        $existing = $all[ $id ];
+        $post     = $posts[0];
+        $existing = get_post_meta( $post->ID, self::META_KEY, true );
+        if ( ! is_array( $existing ) ) {
+            $existing = [];
+        }
 
         // Rebuild through build_template() so all fields (including new
         // slot sub-fields like shadow, filterEffects, tilt, etc.) are
         // consistently sanitized — same as the create path.
-        $merged = self::build_template( $id, array_merge( $existing, $data ), $existing['createdAt'] );
+        $merged = self::build_template( $id, array_merge( $existing, $data ), $existing['createdAt'] ?? gmdate( 'c' ) );
 
         // Preserve immutable fields.
         $merged['id']            = $id;
-        $merged['createdAt']     = $existing['createdAt'];
+        $merged['createdAt']     = $existing['createdAt'] ?? gmdate( 'c' );
         $merged['updatedAt']     = gmdate( 'c' );
         $merged['schemaVersion'] = self::SCHEMA_VERSION;
 
@@ -195,14 +251,11 @@ class WPSG_Layout_Templates {
             return $validation;
         }
 
-        $all[ $id ] = $merged;
-
-        $size_error = self::check_size_limit( $all );
-        if ( is_wp_error( $size_error ) ) {
-            return $size_error;
-        }
-
-        update_option( self::OPTION_KEY, $all, false );
+        wp_update_post([
+            'ID'         => $post->ID,
+            'post_title' => $merged['name'],
+        ]);
+        update_post_meta( $post->ID, self::META_KEY, $merged );
         return $merged;
     }
 
@@ -213,12 +266,20 @@ class WPSG_Layout_Templates {
      * @return bool True on success.
      */
     public static function delete( string $id ): bool {
-        $all = self::get_all();
-        if ( ! isset( $all[ $id ] ) ) {
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'name'           => $id,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+        ]);
+
+        if ( empty( $posts ) ) {
             return false;
         }
-        unset( $all[ $id ] );
-        update_option( self::OPTION_KEY, $all, false );
+
+        wp_delete_post( $posts[0]->ID, true );
         return true;
     }
 
@@ -254,6 +315,67 @@ class WPSG_Layout_Templates {
         }
 
         return self::create( $clone );
+    }
+
+    // ── Migration from wp_options ─────────────────────────────
+
+    /**
+     * One-time migration from legacy wp_options storage to CPT posts.
+     *
+     * Runs automatically on first CRUD call after upgrade. The old option
+     * is renamed to `wpsg_layout_templates_backup` for rollback safety.
+     *
+     * @since 0.18.0 P20-I-1
+     */
+    private static function maybe_migrate_from_options(): void {
+        static $migrated = false;
+        if ( $migrated ) {
+            return;
+        }
+        $migrated = true;
+
+        $legacy = get_option( self::OPTION_KEY );
+        if ( ! is_array( $legacy ) || empty( $legacy ) ) {
+            return;
+        }
+
+        // Check if any CPT posts already exist to avoid double-migration.
+        $existing = get_posts([
+            'post_type'      => self::CPT,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+        ]);
+        if ( ! empty( $existing ) ) {
+            // CPT posts exist — migration already completed.
+            delete_option( self::OPTION_KEY );
+            return;
+        }
+
+        // Migrate each template to a CPT post.
+        foreach ( $legacy as $id => $tpl ) {
+            if ( ! is_array( $tpl ) ) {
+                continue;
+            }
+
+            $tpl = self::migrate_template( $tpl );
+            $tpl['id'] = $id;
+
+            $post_id = wp_insert_post([
+                'post_type'   => self::CPT,
+                'post_status' => 'publish',
+                'post_title'  => $tpl['name'] ?? 'Untitled',
+                'post_name'   => $id,
+            ], true);
+
+            if ( ! is_wp_error( $post_id ) ) {
+                update_post_meta( $post_id, self::META_KEY, $tpl );
+            }
+        }
+
+        // Backup and remove legacy option.
+        update_option( 'wpsg_layout_templates_backup', $legacy, false );
+        delete_option( self::OPTION_KEY );
     }
 
     // ── Validation ────────────────────────────────────────────
@@ -660,22 +782,13 @@ class WPSG_Layout_Templates {
     /**
      * Check if the serialized template library exceeds the size limit.
      *
+     * @deprecated P20-I-1 — CPT storage removes the single-row bottleneck.
+     *             Kept for backward compatibility if called externally.
+     *
      * @param  array $all All templates.
-     * @return true|WP_Error
+     * @return true Always passes now.
      */
     private static function check_size_limit( array $all ) {
-        $size = strlen( serialize( $all ) );
-        if ( $size > self::SIZE_LIMIT ) {
-            return new WP_Error(
-                'storage_limit',
-                sprintf(
-                    'Layout template library size (%s KB) exceeds the %s KB limit. Consider removing unused templates or migrating to a dedicated database table.',
-                    round( $size / 1024, 1 ),
-                    round( self::SIZE_LIMIT / 1024, 1 )
-                ),
-                [ 'status' => 413 ]
-            );
-        }
         return true;
     }
 
