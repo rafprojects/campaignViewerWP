@@ -710,10 +710,15 @@ class WPSG_REST {
         // wp-env's test container sets WP_DEBUG=false in wp-config.php, so we
         // also accept the WP_TESTS_DOMAIN constant (defined by the WP PHPUnit
         // bootstrap) as a secondary indicator.
-        if ( defined( 'WPSG_ALLOW_NONCE_BYPASS' ) && WPSG_ALLOW_NONCE_BYPASS
-            && ( ( defined( 'WP_DEBUG' ) && WP_DEBUG )
-                 || defined( 'WP_TESTS_DOMAIN' ) ) ) {
-            return true;
+        if ( defined( 'WPSG_ALLOW_NONCE_BYPASS' ) && WPSG_ALLOW_NONCE_BYPASS ) {
+            $is_test_env = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || defined( 'WP_TESTS_DOMAIN' );
+            if ( ! $is_test_env ) {
+                // Log a critical warning — this should never be active in production.
+                error_log( '[WPSG SECURITY] WPSG_ALLOW_NONCE_BYPASS is enabled outside a recognized test environment. This is a security risk.' );
+            }
+            if ( $is_test_env ) {
+                return true;
+            }
         }
 
         return self::verify_rest_nonce();
@@ -728,9 +733,8 @@ class WPSG_REST {
         return is_user_logged_in();
     }
 
-    public static function list_campaigns() {
+    public static function list_campaigns($request) {
         $start = microtime(true);
-        $request = func_get_arg(0);
         $status = sanitize_text_field($request->get_param('status'));
         $visibility = sanitize_text_field($request->get_param('visibility'));
         $company = sanitize_text_field($request->get_param('company'));
@@ -878,8 +882,7 @@ class WPSG_REST {
         return $response;
     }
 
-    public static function create_campaign() {
-        $request = func_get_arg(0);
+    public static function create_campaign($request) {
         $title = sanitize_text_field($request->get_param('title') ?? '');
         $description = wp_kses_post($request->get_param('description') ?? '');
 
@@ -912,8 +915,7 @@ class WPSG_REST {
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
 
-    public static function get_campaign() {
-        $request = func_get_arg(0);
+    public static function get_campaign($request) {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
@@ -928,8 +930,7 @@ class WPSG_REST {
         return new WP_REST_Response(self::format_campaign($post), 200);
     }
 
-    public static function update_campaign() {
-        $request = func_get_arg(0);
+    public static function update_campaign($request) {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
@@ -966,8 +967,7 @@ class WPSG_REST {
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 200);
     }
 
-    public static function archive_campaign() {
-        $request = func_get_arg(0);
+    public static function archive_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -979,8 +979,7 @@ class WPSG_REST {
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
 
-    public static function restore_campaign() {
-        $request = func_get_arg(0);
+    public static function restore_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -994,8 +993,7 @@ class WPSG_REST {
 
     // ── P18-C: Campaign duplication ───────────────────────────────────────────
 
-    public static function duplicate_campaign() {
-        $request  = func_get_arg(0);
+    public static function duplicate_campaign($request) {
         $source_id = intval($request->get_param('id'));
 
         if (!self::campaign_exists($source_id)) {
@@ -1063,8 +1061,7 @@ class WPSG_REST {
 
     // ── P18-B: Bulk campaign actions ──────────────────────────────────────────
 
-    public static function batch_campaigns() {
-        $request = func_get_arg(0);
+    public static function batch_campaigns($request) {
         $action  = sanitize_text_field($request->get_param('action'));
         $ids     = $request->get_param('ids');
 
@@ -1096,8 +1093,7 @@ class WPSG_REST {
     }
 
     // P18-D: Export a single campaign as a self-contained JSON payload.
-    public static function export_campaign() {
-        $request = func_get_arg(0);
+    public static function export_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -1139,8 +1135,7 @@ class WPSG_REST {
     }
 
     // P18-D: Import a campaign from a JSON export payload.
-    public static function import_campaign() {
-        $request = func_get_arg(0);
+    public static function import_campaign($request) {
         $body    = $request->get_json_params();
 
         if (empty($body) || !isset($body['campaign'])) {
@@ -1262,8 +1257,7 @@ class WPSG_REST {
      * Public endpoint (rate-limited). Accepts { campaign_id, event_type }.
      * Requires `enable_analytics` setting to be truthy.
      */
-    public static function record_analytics_event() {
-        $request = func_get_arg(0);
+    public static function record_analytics_event($request) {
 
         // Respect the enable_analytics setting (default: disabled).
         $settings = get_option('wpsg_settings', []);
@@ -1306,8 +1300,7 @@ class WPSG_REST {
      * GET /analytics/campaigns/{id}?from=YYYY-MM-DD&to=YYYY-MM-DD
      * Admin-only. Returns total_views, unique_visitors, daily breakdown.
      */
-    public static function get_campaign_analytics() {
-        $request     = func_get_arg(0);
+    public static function get_campaign_analytics($request) {
         $campaign_id = intval($request->get_param('id'));
 
         if (!self::campaign_exists($campaign_id)) {
@@ -1383,8 +1376,7 @@ class WPSG_REST {
      * Returns which campaigns reference this media item.
      * Uses indexed wpsg_media_refs table (P20-I-2).
      */
-    public static function get_media_usage() {
-        $request  = func_get_arg(0);
+    public static function get_media_usage($request) {
         $media_id = sanitize_text_field($request->get_param('mediaId'));
 
         if (empty($media_id)) {
@@ -1400,8 +1392,7 @@ class WPSG_REST {
      * Returns a map { mediaId: count } for the given IDs.
      * Uses indexed wpsg_media_refs table (P20-I-2).
      */
-    public static function get_media_usage_summary() {
-        $request = func_get_arg(0);
+    public static function get_media_usage_summary($request) {
         $ids     = $request->get_param('ids');
 
         if (!is_array($ids) || empty($ids)) {
@@ -1453,9 +1444,8 @@ class WPSG_REST {
         return new WP_REST_Response($result, 200);
     }
 
-    public static function list_media() {
+    public static function list_media($request) {
         $start = microtime(true);
-        $request = func_get_arg(0);
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -1498,8 +1488,7 @@ class WPSG_REST {
         return $response;
     }
 
-    public static function create_media() {
-        $request = func_get_arg(0);
+    public static function create_media($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -1521,7 +1510,7 @@ class WPSG_REST {
         }
 
         $media_item = [
-            'id' => uniqid('m', true),
+            'id' => wp_generate_uuid4(),
             'type' => $type,
             'source' => $source,
             'caption' => $caption,
@@ -1573,8 +1562,7 @@ class WPSG_REST {
         return new WP_REST_Response($media_item, 201);
     }
 
-    public static function list_access() {
-        $request = func_get_arg(0);
+    public static function list_access($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -1628,8 +1616,7 @@ class WPSG_REST {
         return new WP_REST_Response($enriched, 200);
     }
 
-    public static function grant_access() {
-        $request = func_get_arg(0);
+    public static function grant_access($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -1692,8 +1679,7 @@ class WPSG_REST {
         return new WP_REST_Response(['message' => 'Access updated'], 200);
     }
 
-    public static function revoke_access() {
-        $request = func_get_arg(0);
+    public static function revoke_access($request) {
         $post_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
         if (!self::campaign_exists($post_id) || $user_id <= 0) {
@@ -1778,8 +1764,7 @@ class WPSG_REST {
      * POST /campaigns/{id}/access-requests
      * Public (rate-limited) — submit an access request by email.
      */
-    public static function submit_access_request() {
-        $request    = func_get_arg(0);
+    public static function submit_access_request($request) {
         $post_id    = intval($request->get_param('id'));
         $email      = sanitize_email($request->get_param('email') ?? '');
 
@@ -1855,8 +1840,7 @@ class WPSG_REST {
      * GET /campaigns/{id}/access-requests
      * Admin — list all access requests for a campaign.
      */
-    public static function list_access_requests() {
-        $request = func_get_arg(0);
+    public static function list_access_requests($request) {
         $post_id = intval($request->get_param('id'));
         $status  = sanitize_text_field($request->get_param('status') ?? '');
 
@@ -1902,8 +1886,7 @@ class WPSG_REST {
      * POST /campaigns/{id}/access-requests/{token}/approve
      * Admin — approve a pending access request.
      */
-    public static function approve_access_request() {
-        $request = func_get_arg(0);
+    public static function approve_access_request($request) {
         $post_id = intval($request->get_param('id'));
         $token   = sanitize_text_field($request->get_param('token') ?? '');
 
@@ -1981,8 +1964,7 @@ class WPSG_REST {
      * POST /campaigns/{id}/access-requests/{token}/deny
      * Admin — deny a pending access request.
      */
-    public static function deny_access_request() {
-        $request = func_get_arg(0);
+    public static function deny_access_request($request) {
         $post_id = intval($request->get_param('id'));
         $token   = sanitize_text_field($request->get_param('token') ?? '');
 
@@ -2029,8 +2011,7 @@ class WPSG_REST {
     /**
      * List all companies with their campaign counts and statistics
      */
-    public static function list_companies() {
-        $request = func_get_arg(0);
+    public static function list_companies($request) {
         $page = max(1, intval($request->get_param('page') ?? 1));
         $per_page = max(1, min(100, intval($request->get_param('per_page') ?? 50)));
         $offset = ($page - 1) * $per_page;
@@ -2106,9 +2087,8 @@ class WPSG_REST {
     /**
      * List access grants for a specific company (company-level + optionally all campaign grants)
      */
-    public static function list_company_access() {
+    public static function list_company_access($request) {
         $start = microtime(true);
-        $request = func_get_arg(0);
         $term_id = intval($request->get_param('id'));
         $include_campaigns = $request->get_param('include_campaigns') === 'true';
 
@@ -2202,8 +2182,7 @@ class WPSG_REST {
     /**
      * Grant company-wide access to a user
      */
-    public static function grant_company_access() {
-        $request = func_get_arg(0);
+    public static function grant_company_access($request) {
         $term_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
 
@@ -2257,8 +2236,7 @@ class WPSG_REST {
     /**
      * Revoke company-wide access for a user
      */
-    public static function revoke_company_access() {
-        $request = func_get_arg(0);
+    public static function revoke_company_access($request) {
         $term_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
 
@@ -2306,8 +2284,7 @@ class WPSG_REST {
     /**
      * Archive all campaigns under a company
      */
-    public static function archive_company() {
-        $request = func_get_arg(0);
+    public static function archive_company($request) {
         $term_id = intval($request->get_param('id'));
         $revoke_access = $request->get_param('revokeAccess') === true || $request->get_param('revokeAccess') === 'true';
 
@@ -2366,8 +2343,7 @@ class WPSG_REST {
         ], 200);
     }
 
-    public static function update_media() {
-        $request = func_get_arg(0);
+    public static function update_media($request) {
         $post_id = intval($request->get_param('id'));
         $media_id = sanitize_text_field($request->get_param('mediaId'));
         if (!self::campaign_exists($post_id)) {
@@ -2406,8 +2382,7 @@ class WPSG_REST {
         return new WP_REST_Response(['message' => 'Media updated'], 200);
     }
 
-    public static function reorder_media() {
-        $request = func_get_arg(0);
+    public static function reorder_media($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -2563,8 +2538,7 @@ class WPSG_REST {
     /**
      * Rescan and fix media types for a single campaign.
      */
-    public static function rescan_media_types() {
-        $request = func_get_arg(0);
+    public static function rescan_media_types($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -2652,8 +2626,7 @@ class WPSG_REST {
         ], 200);
     }
 
-    public static function delete_media() {
-        $request = func_get_arg(0);
+    public static function delete_media($request) {
         $post_id = intval($request->get_param('id'));
         $media_id = sanitize_text_field($request->get_param('mediaId'));
         if (!self::campaign_exists($post_id)) {
@@ -2674,8 +2647,7 @@ class WPSG_REST {
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
     }
 
-    public static function list_audit() {
-        $request = func_get_arg(0);
+    public static function list_audit($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
             return new WP_REST_Response(['message' => 'Campaign not found'], 404);
@@ -2686,8 +2658,7 @@ class WPSG_REST {
         return new WP_REST_Response($entries, 200);
     }
 
-    public static function upload_media() {
-        $request = func_get_arg(0);
+    public static function upload_media($request) {
         $files = $request->get_file_params();
         if (empty($files['file'])) {
             return new WP_REST_Response(['message' => 'File is required'], 400);
@@ -2757,7 +2728,16 @@ class WPSG_REST {
         require_once ABSPATH . 'wp-admin/includes/media.php';
         require_once ABSPATH . 'wp-admin/includes/image.php';
 
+        // Signal the image optimizer to process this upload.
+        if (class_exists('WPSG_Image_Optimizer')) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = true;
+        }
+
         $attachment_id = media_handle_upload('file', 0);
+
+        if (class_exists('WPSG_Image_Optimizer')) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = false;
+        }
         if (is_wp_error($attachment_id)) {
             return new WP_REST_Response(['message' => $attachment_id->get_error_message()], 400);
         }
@@ -2783,8 +2763,7 @@ class WPSG_REST {
      * List media items from the WordPress Media Library.
      * Returns image and video attachments that can be associated with campaigns.
      */
-    public static function list_media_library() {
-        $request = func_get_arg(0);
+    public static function list_media_library($request) {
         $per_page = intval($request->get_param('per_page') ?? 50);
         $page = intval($request->get_param('page') ?? 1);
         $search = sanitize_text_field($request->get_param('search') ?? '');
@@ -2852,8 +2831,7 @@ class WPSG_REST {
         return self::respond_with_etag($request, $payload, 200, sprintf('%d:%d:%s', $page, $per_page, $search));
     }
 
-    public static function proxy_oembed() {
-        $request = func_get_arg(0);
+    public static function proxy_oembed($request) {
 
         // P14-D: Rate limiting — exempt authenticated admins.
         if (!current_user_can('manage_options')) {
@@ -3015,11 +2993,13 @@ class WPSG_REST {
         }
 
         $attempts = [];
-        $result = WPSG_OEmbed_Providers::fetch($url, $parsed, $attempts);
-
-        // Remove the SSRF filter immediately after the fetch completes.
-        if ($wpsg_ssrf_filter !== null) {
-            remove_filter('pre_http_request', $wpsg_ssrf_filter, 10);
+        try {
+            $result = WPSG_OEmbed_Providers::fetch($url, $parsed, $attempts);
+        } finally {
+            // Always remove the SSRF filter — even if fetch() throws.
+            if ($wpsg_ssrf_filter !== null) {
+                remove_filter('pre_http_request', $wpsg_ssrf_filter, 10);
+            }
         }
 
         // H-2: If the SSRF filter blocked the request due to DNS rebinding,
@@ -3125,6 +3105,19 @@ class WPSG_REST {
             return $rate_check;
         }
 
+        // CSRF protection: verify Origin or Referer header matches the site URL.
+        // Without this, an attacker could craft a cross-origin form POST that
+        // logs a victim into an attacker-controlled account (login CSRF).
+        $site_host = wp_parse_url(home_url(), PHP_URL_HOST);
+        $origin    = isset($_SERVER['HTTP_ORIGIN']) ? wp_parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST) : '';
+        $referer   = isset($_SERVER['HTTP_REFERER']) ? wp_parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST) : '';
+        if ( $origin !== $site_host && $referer !== $site_host ) {
+            return new WP_REST_Response([
+                'code'    => 'csrf_failed',
+                'message' => 'Cross-origin login requests are not allowed.',
+            ], 403);
+        }
+
         $username = $request->get_param('username');
         $password = $request->get_param('password');
         $remember = (bool) $request->get_param('remember');
@@ -3207,8 +3200,7 @@ class WPSG_REST {
      *
      * @return WP_REST_Response List of matching users.
      */
-    public static function search_users() {
-        $request = func_get_arg(0);
+    public static function search_users($request) {
         $search = sanitize_text_field($request->get_param('search') ?? '');
         $per_page = min(intval($request->get_param('per_page') ?? 20), 50);
 
@@ -3248,8 +3240,7 @@ class WPSG_REST {
      *
      * @return WP_REST_Response User creation result.
      */
-    public static function create_user() {
-        $request = func_get_arg(0);
+    public static function create_user($request) {
         $email = sanitize_email($request->get_param('email') ?? '');
         $display_name = sanitize_text_field($request->get_param('displayName') ?? '');
         $role = sanitize_text_field($request->get_param('role') ?? 'subscriber');
@@ -3448,12 +3439,10 @@ class WPSG_REST {
      *
      * @return WP_REST_Response Updated settings.
      */
-    public static function update_settings() {
+    public static function update_settings($request) {
         if (!class_exists('WPSG_Settings')) {
             return new WP_REST_Response(['error' => 'Settings not available'], 500);
         }
-
-        $request = func_get_arg(0);
         $body = $request->get_json_params();
         $input = WPSG_Settings::from_js($body);
         $sanitized = WPSG_Settings::sanitize_settings($input);
@@ -3845,7 +3834,7 @@ class WPSG_REST {
         }
 
         // Per-campaign gallery adapter overrides.
-        $valid_adapters = ['classic', 'compact-grid', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+        $valid_adapters = WPSG_CPT::VALID_ADAPTERS;
         $image_adapter_id = $request->get_param('imageAdapterId');
         if (!is_null($image_adapter_id)) {
             $image_adapter_id = sanitize_text_field($image_adapter_id);
@@ -3983,11 +3972,11 @@ class WPSG_REST {
         return array_values($filtered);
     }
 
-    private static function add_audit_entry($post_id, $action, $details) {
+    public static function add_audit_entry($post_id, $action, $details = []) {
         $entries = get_post_meta($post_id, 'audit_log', true);
         $entries = is_array($entries) ? $entries : [];
         $entries[] = [
-            'id' => uniqid('audit_', true),
+            'id' => wp_generate_uuid4(),
             'action' => sanitize_text_field($action),
             'details' => self::sanitize_audit_details($details),
             'userId' => get_current_user_id(),
@@ -4001,8 +3990,13 @@ class WPSG_REST {
         update_post_meta($post_id, 'audit_log', $entries);
     }
 
-    private static function sanitize_audit_details($details) {
+    private static function sanitize_audit_details($details, int $depth = 0) {
         if (!is_array($details)) {
+            return [];
+        }
+
+        // Cap nesting depth to prevent stack overflow from crafted payloads.
+        if ($depth > 5) {
             return [];
         }
 
@@ -4010,7 +4004,7 @@ class WPSG_REST {
         foreach ($details as $key => $value) {
             $safe_key = sanitize_text_field($key);
             if (is_array($value)) {
-                $sanitized[$safe_key] = self::sanitize_audit_details($value);
+                $sanitized[$safe_key] = self::sanitize_audit_details($value, $depth + 1);
             } elseif (is_numeric($value)) {
                 $sanitized[$safe_key] = $value + 0;
             } elseif (is_bool($value)) {
@@ -4187,8 +4181,7 @@ class WPSG_REST {
         return new WP_REST_Response($failures, 200);
     }
 
-    public static function reset_oembed_failures() {
-        $request = func_get_arg(0);
+    public static function reset_oembed_failures($request) {
         $provider = sanitize_text_field($request->get_param('provider') ?? '');
         WPSG_Monitoring::reset_oembed_failures($provider ?: null);
         return new WP_REST_Response(['reset' => true], 200);

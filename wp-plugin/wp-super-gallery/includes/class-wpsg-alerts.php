@@ -150,8 +150,11 @@ class WPSG_Alerts {
             return;
         }
 
-        // Grab and clear atomically to prevent double-processing.
-        delete_option(self::EMAIL_QUEUE);
+        // Atomic swap: replace the queue with an empty array first, then
+        // process the snapshot. If another request calls queue_email()
+        // between here and the foreach, the new item lands in the fresh
+        // empty array and will be picked up on the next cron tick.
+        update_option(self::EMAIL_QUEUE, []);
 
         foreach ($queue as $item) {
             if (!is_array($item) || empty($item['to']) || empty($item['subject'])) {

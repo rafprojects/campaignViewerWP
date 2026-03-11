@@ -23,8 +23,16 @@ class WPSG_Cookie_Auth_Test extends WP_UnitTestCase {
             'role'       => 'subscriber',
         ]);
 
+        // Simulate same-origin request for CSRF validation.
+        $_SERVER['HTTP_ORIGIN'] = home_url();
+
         // Ensure REST routes are registered.
         do_action('rest_api_init');
+    }
+
+    public function tearDown(): void {
+        unset($_SERVER['HTTP_ORIGIN']);
+        parent::tearDown();
     }
 
     // ── Login endpoint ────────────────────────────────────

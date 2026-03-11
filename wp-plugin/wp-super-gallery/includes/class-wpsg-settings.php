@@ -874,13 +874,13 @@ class WPSG_Settings {
 
         // P12-C: Gallery Adapters
         if (isset($input['image_gallery_adapter_id'])) {
-            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
+            $valid_adapters = WPSG_CPT::VALID_ADAPTERS;
             $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['image_gallery_adapter_id']
                 : 'classic';
         }
         if (isset($input['video_gallery_adapter_id'])) {
-            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
+            $valid_adapters = WPSG_CPT::VALID_ADAPTERS;
             $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['video_gallery_adapter_id']
                 : 'classic';
@@ -889,7 +889,7 @@ class WPSG_Settings {
             $sanitized['unified_gallery_enabled'] = (bool) $input['unified_gallery_enabled'];
         }
         if (isset($input['unified_gallery_adapter_id'])) {
-            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
+            $valid_adapters = WPSG_CPT::VALID_ADAPTERS;
             $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['unified_gallery_adapter_id']
                 : 'compact-grid';
@@ -905,7 +905,7 @@ class WPSG_Settings {
             'tablet_image_adapter_id',  'tablet_video_adapter_id',
             'mobile_image_adapter_id',  'mobile_video_adapter_id',
         ];
-        $valid_bp_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+        $valid_bp_adapters = WPSG_CPT::VALID_ADAPTERS;
         foreach ($bp_adapter_fields as $field) {
             if (isset($input[$field])) {
                 $sanitized[$field] = in_array($input[$field], $valid_bp_adapters, true)

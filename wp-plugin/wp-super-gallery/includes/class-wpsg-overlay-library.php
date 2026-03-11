@@ -161,6 +161,22 @@ class WPSG_Overlay_Library {
         // L-8: Ensure the .htaccess with CSP headers exists in the overlays dir.
         self::ensure_htaccess( $target_dir );
 
+        // 1a: Pre-flight SVG sanitizer dependency check. If the uploaded file
+        // appears to be an SVG, ensure the sanitizer class is loadable BEFORE
+        // the file is written to disk by wp_handle_upload().
+        $mime = $file['type'] ?? '';
+        if ( $mime === 'image/svg+xml' || ( isset( $file['name'] ) && preg_match( '/\.svgz?$/i', $file['name'] ) ) ) {
+            if ( ! class_exists( '\\enshrined\\svgSanitize\\Sanitizer' ) ) {
+                $autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
+                if ( file_exists( $autoload ) ) {
+                    require_once $autoload;
+                }
+            }
+            if ( ! class_exists( '\\enshrined\\svgSanitize\\Sanitizer' ) ) {
+                return new WP_Error( 'wpsg_svg_dep', 'SVG sanitizer library is not installed. SVG uploads are disabled until the dependency is available.' );
+            }
+        }
+
         // Move uploaded file.
         $overrides = [
             'test_form'   => false,
@@ -183,7 +199,18 @@ class WPSG_Overlay_Library {
             ];
         };
         add_filter( 'upload_dir', $upload_dir_filter );
+
+        // Signal the image optimizer to process this upload.
+        if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = true;
+        }
+
         $result = wp_handle_upload( $file, $overrides );
+
+        if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = false;
+        }
+
         remove_filter( 'upload_dir', $upload_dir_filter );
 
         if ( isset( $result['error'] ) ) {

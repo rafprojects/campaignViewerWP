@@ -510,7 +510,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
 
         $log = get_post_meta( $id, 'audit_log', true );
         $this->assertIsArray( $log );
-        $events = array_column( $log, 'event' );
+        $events = array_column( $log, 'action' );
         $this->assertContains( 'campaign.archived', $events );
     }
 
@@ -519,7 +519,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $this->cli->campaign_restore( [ (string) $id ], [] );
 
         $log    = get_post_meta( $id, 'audit_log', true );
-        $events = array_column( is_array( $log ) ? $log : [], 'event' );
+        $events = array_column( is_array( $log ) ? $log : [], 'action' );
         $this->assertContains( 'campaign.restored', $events );
     }
 
@@ -531,7 +531,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $new_id = intval( $m[1] ?? 0 );
 
         $log    = get_post_meta( $new_id, 'audit_log', true );
-        $events = array_column( is_array( $log ) ? $log : [], 'event' );
+        $events = array_column( is_array( $log ) ? $log : [], 'action' );
         $this->assertContains( 'campaign.duplicated', $events );
     }
 }

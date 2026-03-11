@@ -24,6 +24,22 @@ class WPSG_CPT {
         'edit_published_wpsg_campaigns',
     ];
 
+    /**
+     * Canonical list of valid gallery adapter identifiers.
+     * Used by both global settings and per-campaign overrides.
+     */
+    const VALID_ADAPTERS = [
+        'classic',
+        'compact-grid',
+        'mosaic',
+        'justified',
+        'masonry',
+        'hexagonal',
+        'circular',
+        'diamond',
+        'layout-builder',
+    ];
+
     public static function register() {
         register_post_type(self::POST_TYPE, [
             'label' => __('Campaigns', 'wp-super-gallery'),

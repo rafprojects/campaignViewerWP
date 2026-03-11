@@ -5,6 +5,7 @@ import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@/utils/smartGuides';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
+import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
@@ -75,6 +76,7 @@ export function LayoutCanvas({
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
+  const viewportHeight = useViewportHeight();
 
   // Compute canvas pixel dimensions from aspect ratio
   const canvasWidth = Math.max(
@@ -84,7 +86,7 @@ export function LayoutCanvas({
   const canvasHeight =
     template.canvasHeightMode === 'fixed-vh'
       ? Math.round(
-          (typeof window !== 'undefined' ? window.innerHeight : 800) *
+          viewportHeight *
             ((template.canvasHeightVh || 50) / 100),
         )
       : Math.round(canvasWidth / template.canvasAspectRatio);
@@ -154,7 +156,7 @@ export function LayoutCanvas({
       lastGuideResultRef.current = { snapX: result.snapX, snapY: result.snapY };
       setActiveGuides(result.guides);
     },
-    [snapEnabled, isPreview, template.slots, pxToPct, canvasWidth, canvasHeight],
+    [snapEnabled, isPreview, template.slots, pxToPct, canvasWidth, canvasHeight, snapThresholdPx],
   );
 
   /** On drag stop: apply snapping then commit. */

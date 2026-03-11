@@ -728,18 +728,10 @@ class WPSG_CLI {
     }
 
     /**
-     * Record a campaign audit-log entry (mirrors WPSG_REST::add_audit_entry).
+     * Record a campaign audit-log entry via the shared WPSG_REST method.
      */
     private function add_audit_entry( int $campaign_id, string $event, array $data = [] ): void {
-        $entries   = get_post_meta( $campaign_id, 'audit_log', true );
-        $entries   = is_array( $entries ) ? $entries : [];
-        $entries[] = [
-            'event'   => $event,
-            'data'    => $data,
-            'user_id' => 0, // CLI context — no WP user.
-            'time'    => gmdate( 'c' ),
-        ];
-        update_post_meta( $campaign_id, 'audit_log', $entries );
+        WPSG_REST::add_audit_entry( $campaign_id, $event, $data );
     }
 
     /**

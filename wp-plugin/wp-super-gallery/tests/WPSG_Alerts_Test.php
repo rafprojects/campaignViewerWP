@@ -171,9 +171,10 @@ class WPSG_Alerts_Test extends WP_UnitTestCase {
         $this->assertNotEmpty($sent);
         $this->assertStringContainsString('Test Subject', $sent[0]['subject'] ?? '');
 
-        // Queue should be cleared.
+        // Queue should be cleared (atomic swap sets empty array).
         $remaining = get_option(WPSG_Alerts::EMAIL_QUEUE, 'deleted');
-        $this->assertEquals('deleted', $remaining);
+        $this->assertIsArray($remaining);
+        $this->assertEmpty($remaining);
     }
 
     public function test_process_email_queue_noop_when_empty() {

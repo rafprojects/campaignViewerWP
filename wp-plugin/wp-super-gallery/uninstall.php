@@ -73,6 +73,7 @@ foreach ( $options as $option ) {
 }
 
 // ── 5. Delete transients matching wpsg_* ────────────────────
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
 	"DELETE FROM {$wpdb->options}
 	 WHERE option_name LIKE '_transient_wpsg_%'
