@@ -265,7 +265,9 @@ describe('useAdminAccessState', () => {
       ),
       { timeout: 2000 },
     );
-    expect(result.current.userSearchResults).toHaveLength(1);
+    await waitFor(() => {
+      expect(result.current.userSearchResults).toHaveLength(1);
+    }, { timeout: 2000 });
     expect(result.current.userSearchResults[0].displayName).toBe('Alice');
   });
 

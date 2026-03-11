@@ -25,4 +25,17 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/test-utils.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['**/contexts/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 )

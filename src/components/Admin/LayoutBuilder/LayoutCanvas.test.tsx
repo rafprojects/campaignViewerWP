@@ -132,7 +132,7 @@ describe('LayoutCanvas — canvas element', () => {
     const onCanvasClick = vi.fn();
     renderCanvas({ onCanvasClick });
     const canvas = screen.getByRole('application');
-    fireEvent.click(canvas);
+    fireEvent.mouseDown(canvas);
     expect(onCanvasClick).toHaveBeenCalledOnce();
   });
 });

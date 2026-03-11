@@ -96,7 +96,11 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
           const result = await detectNonceAuth();
           if (isMounted) {
             setUser(result.user);
-            setPermissions(result.permissions);
+            // Only override fallback permissions when auth was actually detected
+            // (nonce existed and the permissions endpoint returned data).
+            if (result.user || result.permissions.length > 0) {
+              setPermissions(result.permissions);
+            }
           }
         } catch {
           // no-op

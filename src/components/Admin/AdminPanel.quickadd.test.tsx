@@ -53,7 +53,7 @@ describe('AdminPanel – QuickAdd user', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
     fireEvent.click(await screen.findByRole('button', { name: /Quick add a new user/i }));
-    await screen.findByText('Quick Add User');
+    await screen.findByRole('heading', { name: 'Quick Add User' });
 
     fireEvent.change(screen.getByPlaceholderText('user@example.com'), {
       target: { value: 'test@example.com' },
@@ -95,7 +95,7 @@ describe('AdminPanel – QuickAdd user', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
     fireEvent.click(await screen.findByRole('button', { name: /Quick add a new user/i }));
-    await screen.findByText('Quick Add User');
+    await screen.findByRole('heading', { name: 'Quick Add User' });
 
     // Cancel should not call post - verify immediately without DOM-removal waitFor
     // (DOM-removal waitFor hangs due to Mantine exit-animation mutation observer loop)
@@ -126,7 +126,7 @@ describe('AdminPanel – QuickAdd user', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
     fireEvent.click(await screen.findByRole('button', { name: /Quick add a new user/i }));
-    await screen.findByText('Quick Add User');
+    await screen.findByRole('heading', { name: 'Quick Add User' });
 
     const createBtn = screen.getByRole('button', { name: /Create User/i });
     expect(createBtn).toBeDisabled();

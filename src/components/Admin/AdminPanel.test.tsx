@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { AdminPanel } from './AdminPanel';
 
@@ -19,6 +19,16 @@ const campaignsPayload = {
 };
 
 describe('AdminPanel', () => {
+  // AdminPanel persists active tab via useLocalStorage('wpsg_admin_active_tab').
+  // Clear localStorage between tests to prevent tab state leaking across tests.
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it('loads campaigns and supports access grant/revoke', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
@@ -129,7 +139,7 @@ describe('AdminPanel', () => {
 
     // Open the campaign form modal
     fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
-    await screen.findByText('New Campaign');
+    await screen.findByRole('heading', { name: 'New Campaign' });
 
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.change(screen.getByPlaceholderText('Campaign description'), { target: { value: 'Desc' } });
@@ -170,7 +180,7 @@ describe('AdminPanel', () => {
 
     // Open the campaign form modal
     fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
-    await screen.findByText('New Campaign');
+    await screen.findByRole('heading', { name: 'New Campaign' });
 
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
