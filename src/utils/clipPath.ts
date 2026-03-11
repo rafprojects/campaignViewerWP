@@ -5,6 +5,7 @@
  * LayoutBuilderGallery (public adapter) to ensure consistent rendering.
  */
 import type { LayoutSlot } from '@/types';
+import { sanitizeClipPath } from '@/utils/sanitizeCss';
 
 /**
  * Returns the CSS `clip-path` value for a given slot shape,
@@ -31,7 +32,7 @@ export function getClipPath(slot: LayoutSlot): string | undefined {
     case 'trapezoid':
       return 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)';
     case 'custom':
-      return slot.clipPath || undefined;
+      return sanitizeClipPath(slot.clipPath) || undefined;
     case 'rectangle':
     default:
       return undefined;

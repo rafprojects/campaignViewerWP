@@ -55,12 +55,9 @@ describe('useNonceHeartbeat', () => {
 
     renderHook(() => useNonceHeartbeat(5000));
 
-    // Should not call immediately.
-    expect(globalThis.fetch).not.toHaveBeenCalled();
-
-    // Advance past the interval.
+    // Immediate refresh on mount.
     await act(async () => {
-      vi.advanceTimersByTime(5000);
+      await vi.advanceTimersByTimeAsync(0);
     });
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -74,6 +71,13 @@ describe('useNonceHeartbeat', () => {
 
     // Verify global nonce was updated.
     expect(win.__WPSG_CONFIG__?.restNonce).toBe('refreshed-nonce');
+
+    // Advance past the interval — should fire again.
+    await act(async () => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 
   it('does not crash on network error', async () => {
@@ -83,12 +87,13 @@ describe('useNonceHeartbeat', () => {
 
     renderHook(() => useNonceHeartbeat(5000));
 
+    // Immediate refresh + interval.
     await act(async () => {
-      vi.advanceTimersByTime(5000);
+      await vi.advanceTimersByTimeAsync(5000);
     });
 
     // Should not throw — hook handles errors gracefully.
-    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
     // Nonce should remain unchanged.
     expect(win.__WPSG_CONFIG__?.restNonce).toBe('initial-nonce');
   });
@@ -116,13 +121,20 @@ describe('useNonceHeartbeat', () => {
 
     const { unmount } = renderHook(() => useNonceHeartbeat(5000));
 
+    // Immediate refresh fires on mount.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
     unmount();
 
     await act(async () => {
       vi.advanceTimersByTime(10000);
     });
 
-    // No calls after unmount.
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    // No additional calls after unmount.
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 });

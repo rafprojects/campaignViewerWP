@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   Accordion,
   Box,
@@ -51,7 +52,7 @@ export interface SettingsData extends GalleryBehaviorSettings {
   enableAnimations: boolean;
 }
 
-/** Extra SettingsPanel-only defaults that extend GalleryBehaviorSettings */
+/** Set of all valid ImageShape values for the control. */
 const defaultSettings: SettingsData = {
   ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   galleryLayout: 'grid',
@@ -146,6 +147,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     hasChangesRef.current = false;
   };
 
+  const isSmallScreen = useMediaQuery('(max-width: 767px)');
+  const isExtraSmall = useMediaQuery('(max-width: 575px)');
+
   return (
     <Modal
       opened={opened}
@@ -156,8 +160,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           <Title order={3}>Display Settings</Title>
         </Group>
       }
-      size={typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 'lg'}
-      fullScreen={typeof window !== 'undefined' && window.innerWidth < 576}
+      size={isSmallScreen ? '100%' : 'lg'}
+      fullScreen={!!isExtraSmall}
       centered
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}

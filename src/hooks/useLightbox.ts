@@ -56,6 +56,14 @@ export function useLightbox(options: UseLightboxOptions = {}): UseLightboxResult
     };
   }, [isOpen, lockBodyScroll, unlockBodyScroll]);
 
+  // Ensure scroll is unlocked on unmount regardless of isOpen state
+  useEffect(() => {
+    return () => {
+      unlockBodyScroll();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!isOpen) return;
 

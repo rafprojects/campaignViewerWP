@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UploadParams {
   url: string;
@@ -11,9 +11,29 @@ interface UploadParams {
 export function useXhrUpload() {
   const [progress, setProgress] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   const resetProgress = useCallback(() => {
     setProgress(null);
+  }, []);
+
+  // Abort in-flight upload on unmount
+  useEffect(() => {
+    return () => {
+      if (xhrRef.current) {
+        xhrRef.current.abort();
+        xhrRef.current = null;
+      }
+    };
+  }, []);
+
+  const abort = useCallback(() => {
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+      xhrRef.current = null;
+      setIsUploading(false);
+      setProgress(null);
+    }
   }, []);
 
   const upload = useCallback(async <T,>({
@@ -37,6 +57,7 @@ export function useXhrUpload() {
 
       const response = await new Promise<T>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        xhrRef.current = xhr;
         xhr.open('POST', url);
 
         if (headers) {
@@ -111,9 +132,10 @@ export function useXhrUpload() {
 
       return response;
     } finally {
+      xhrRef.current = null;
       setIsUploading(false);
     }
   }, []);
 
-  return { upload, progress, isUploading, resetProgress };
+  return { upload, progress, isUploading, resetProgress, abort };
 }

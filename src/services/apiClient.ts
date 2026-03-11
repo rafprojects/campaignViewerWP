@@ -189,7 +189,7 @@ export class ApiClient {
   }
 
   async getLayoutTemplate(id: string): Promise<LayoutTemplateResponse> {
-    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`);
+    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}`);
   }
 
   async createLayoutTemplate(data: Partial<LayoutTemplateResponse>): Promise<LayoutTemplateResponse> {
@@ -197,20 +197,20 @@ export class ApiClient {
   }
 
   async updateLayoutTemplate(id: string, data: Partial<LayoutTemplateResponse>): Promise<LayoutTemplateResponse> {
-    return this.put<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`, data);
+    return this.put<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}`, data);
   }
 
   async deleteLayoutTemplate(id: string): Promise<{ deleted: boolean }> {
-    return this.delete<{ deleted: boolean }>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`);
+    return this.delete<{ deleted: boolean }>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}`);
   }
 
   async duplicateLayoutTemplate(id: string, name?: string): Promise<LayoutTemplateResponse> {
-    return this.post<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}/duplicate`, { name });
+    return this.post<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}/duplicate`, { name });
   }
 
   /** Public endpoint — no auth required. Used for rendering. */
   async getLayoutTemplatePublic(id: string): Promise<LayoutTemplateResponse> {
-    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/layout-templates/${id}`);
+    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/layout-templates/${encodeURIComponent(id)}`);
   }
 
   // ── P18-C: Campaign duplication ─────────────────────────────────────────
@@ -220,7 +220,7 @@ export class ApiClient {
     options: { name?: string; copyMedia?: boolean },
   ): Promise<{ id: string; title: string }> {
     return this.post<{ id: string; title: string }>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${id}/duplicate`,
+      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/duplicate`,
       { name: options.name, copy_media: options.copyMedia ?? false },
     );
   }
@@ -240,7 +240,7 @@ export class ApiClient {
   // ── P18-D: Export / Import ───────────────────────────────────────────────
 
   async exportCampaign(id: string): Promise<CampaignExportPayload> {
-    return this.get<CampaignExportPayload>(`/wp-json/wp-super-gallery/v1/campaigns/${id}/export`);
+    return this.get<CampaignExportPayload>(`/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/export`);
   }
 
   async importCampaign(payload: CampaignExportPayload): Promise<Record<string, unknown>> {
@@ -266,7 +266,7 @@ export class ApiClient {
     if (to) params.set('to', to);
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.get<CampaignAnalyticsResponse>(
-      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${campaignId}${qs}`,
+      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}${qs}`,
     );
   }
 

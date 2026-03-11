@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
@@ -266,9 +267,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               Rescan All
             </Button>
           </Group>
-          <Suspense fallback={<Center py="md"><Loader /></Center>}>
-            <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<Center py="md"><Loader /></Center>}>
+              <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
+            </Suspense>
+          </ErrorBoundary>
         </Tabs.Panel>
 
         <Tabs.Panel value="layouts" pt="md">
@@ -328,9 +331,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.Panel>
 
         <Tabs.Panel value="analytics" pt="md">
-          <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
-            <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
+              <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} />
+            </Suspense>
+          </ErrorBoundary>
         </Tabs.Panel>
       </Tabs>
 

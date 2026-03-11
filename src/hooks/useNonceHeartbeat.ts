@@ -66,7 +66,8 @@ export function useNonceHeartbeat(intervalMs = 20 * 60 * 1000): void {
       }
     };
 
-    // Run the first refresh after one interval (not immediately).
+    // Refresh immediately on mount, then periodically.
+    void refresh();
     timerRef.current = setInterval(() => void refresh(), intervalMs);
 
     return () => {

@@ -404,7 +404,7 @@ export function LayoutSlotComponent({
     const imageEl = mediaItem ? (
       <img
         src={mediaItem.url}
-        alt=""
+        alt={mediaItem.caption || mediaItem.title || ''}
         style={{
           width: '100%',
           height: '100%',
@@ -656,7 +656,7 @@ export function LayoutSlotComponent({
             {mediaItem ? (
               <img
                 src={mediaItem.url}
-                alt=""
+                alt={mediaItem.caption || mediaItem.title || ''}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -762,7 +762,7 @@ export function LayoutSlotComponent({
           {mediaItem ? (
             <img
               src={mediaItem.url}
-              alt=""
+              alt={mediaItem.caption || mediaItem.title || ''}
               style={{
                 width: '100%',
                 height: '100%',

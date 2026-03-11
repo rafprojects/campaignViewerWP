@@ -30,6 +30,7 @@ import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
+import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
 
@@ -127,10 +128,11 @@ function GallerySlotView({
   const feMaskPosX = ml ? `${(ml.x / 100) * pxW}px` : 'center';
   const feMaskPosY = ml ? `${(ml.y / 100) * pxH}px` : 'center';
   const feMaskPos = ml ? `${feMaskPosX} ${feMaskPosY}` : 'center';
-  const maskStyle: React.CSSProperties = maskUrl
+  const safeMaskUrl = sanitizeCssUrl(maskUrl);
+  const maskStyle: React.CSSProperties = safeMaskUrl
     ? ({
-        WebkitMaskImage: `url(${maskUrl})`,
-        maskImage: `url(${maskUrl})`,
+        WebkitMaskImage: `url(${safeMaskUrl})`,
+        maskImage: `url(${safeMaskUrl})`,
         WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
         maskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
         WebkitMaskPosition: feMaskPos,
@@ -146,6 +148,7 @@ function GallerySlotView({
   const filterCss = buildFilterCss(slot.filterEffects, slot.shadow);
   const blendCss = getBlendModeCss(slot.blendMode);
   const overlayBg = buildOverlayBg(slot.overlayEffect);
+  const [hovered, setHovered] = useState(false);
 
   if (!assigned) {
     // E.4: Empty slot — gray dashed placeholder, non-interactive
@@ -190,7 +193,6 @@ function GallerySlotView({
   // filter at render time via hover state.
   const isClip = usesClipPath(slot);
   const needsInlineGlow = isClip && slot.hoverEffect === 'glow';
-  const [hovered, setHovered] = useState(false);
 
   const hoverClass = (() => {
     if (slot.hoverEffect === 'none') return '';

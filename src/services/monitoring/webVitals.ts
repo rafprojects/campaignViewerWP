@@ -35,7 +35,7 @@ const defaultReport = (metric: VitalMetric) => {
   }
   // Gate verbose logging behind DEV mode (P20-H-12)
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
+     
     console.info('[WPSG][Vitals]', metric.name, metric.value.toFixed(2));
   }
 };
@@ -45,9 +45,13 @@ const shouldSample = (sampleRate: number) => {
   return Math.random() < sampleRate;
 };
 
+let _initialized = false;
+
 export function startWebVitalsMonitoring(options: WebVitalsOptions = {}) {
+  if (_initialized) return;
   if (typeof window === 'undefined') return;
   if (typeof PerformanceObserver === 'undefined') return;
+  _initialized = true;
 
   const sampleRate = options.sampleRate ?? 1;
   if (!shouldSample(sampleRate)) return;

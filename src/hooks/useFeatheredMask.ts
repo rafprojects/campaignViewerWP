@@ -14,13 +14,22 @@ export function useFeatheredMask(
 ): string | undefined {
   const [resolved, setResolved] = useState<string | undefined>(maskUrl);
   const seqRef = useRef(0);
+  const prevBlobRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!maskUrl) {
+      if (prevBlobRef.current) {
+        URL.revokeObjectURL(prevBlobRef.current);
+        prevBlobRef.current = null;
+      }
       setResolved(undefined);
       return;
     }
     if (featherPx <= 0) {
+      if (prevBlobRef.current) {
+        URL.revokeObjectURL(prevBlobRef.current);
+        prevBlobRef.current = null;
+      }
       setResolved(maskUrl);
       return;
     }
@@ -31,11 +40,14 @@ export function useFeatheredMask(
     featherMask(maskUrl, featherPx)
       .then((url) => {
         if (!cancelled && seqRef.current === seq) {
+          if (prevBlobRef.current) URL.revokeObjectURL(prevBlobRef.current);
+          prevBlobRef.current = url.startsWith('blob:') ? url : null;
           setResolved(url);
+        } else if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
         }
       })
       .catch(() => {
-        // On error, fall back to unfeathered mask
         if (!cancelled && seqRef.current === seq) {
           setResolved(maskUrl);
         }
@@ -45,6 +57,16 @@ export function useFeatheredMask(
       cancelled = true;
     };
   }, [maskUrl, featherPx]);
+
+  // Revoke blob on unmount
+  useEffect(() => {
+    return () => {
+      if (prevBlobRef.current) {
+        URL.revokeObjectURL(prevBlobRef.current);
+        prevBlobRef.current = null;
+      }
+    };
+  }, []);
 
   return resolved;
 }
