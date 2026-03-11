@@ -1,9 +1,9 @@
 # Phase 20 — Production Hardening, CI Pipeline & Distribution Readiness
 
-**Status:** In progress (Sprint 1 complete, H-track 12/12, P20-B/E/F/G/I/L/J complete, QA Rounds 2–7 applied)
-**Version:** v0.18.0 (planned)
+**Status:** Complete (all 12 tracks: P20-A through P20-L, H-track 12/12, QA Rounds 2–7 applied)
+**Version:** v0.18.0
 **Created:** March 4, 2026
-**Last updated:** March 10, 2026 — P20-G (GitHub Actions CI/CD pipeline, release workflow, SVN deploy, E2E workflow)
+**Last updated:** March 10, 2026 — Version bump to 0.18.0, all tracks complete
 
 ### Completed
 
@@ -1352,7 +1352,7 @@ Tracks in the same sprint row can be parallelised. Run `npx vitest run`, `npx ts
 
 ---
 
-*Plan written: March 4, 2026. Updated: March 8, 2026 — Sprint 1 complete (P20-A, P20-C, P20-D, P20-K); QA Rounds 2–5 applied.*
+*Plan written: March 4, 2026. Updated: March 10, 2026 — All 12 tracks complete (P20-A through P20-L). Version bumped to v0.18.0.*
 
 ---
 

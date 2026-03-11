@@ -5,6 +5,30 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-03-10
+
+### Added - Phase 20: Production Hardening, CI/CD Pipeline & Distribution Readiness
+
+- **P20-A** Rate limiting defaults — public 60 req/min, authenticated 120 req/min, filter overrides; 7 PHPUnit tests.
+- **P20-B** Import payload deep sanitization — `import_campaign()` routed through `sanitize_template_data()`, slots/overlays/background all sanitized; 10 PHPUnit tests.
+- **P20-C** CSS value sanitization — `sanitize_css_value()` with type-specific allowlists (color, clip-path, position), universal blocklist, 4 call sites updated; 34 PHPUnit tests.
+- **P20-D** Post meta sanitize callbacks on all 7 REST-exposed post meta fields; 8 PHPUnit tests.
+- **P20-E** Uninstall cleanup — `uninstall.php` with 9-category data removal (posts, terms, options, transients, tables, roles, cron, files), `preserve_data_on_uninstall` option.
+- **P20-F** License & legal — GPLv2 `LICENSE` at repo root and plugin dir, complete plugin header with all WordPress.org required fields.
+- **P20-G** GitHub Actions CI/CD pipeline — `ci.yml` (ESLint + tsc → Vitest + build → PHPUnit matrix PHP 8.1/8.2/8.3), `release.yml` (workflow_dispatch with auto SemVer from conventional commits, production ZIP, GitHub Release), `svn-deploy.yml` (WordPress.org SVN deploy of existing release), `e2e.yml` (manual Playwright via wp-env). `scripts/compute-version.sh` for automated version calculation. Legacy CircleCI deleted.
+- **P20-H** (12/12) Security hardening sprint — parseProps prop whitelist, DNS rebinding SSRF fix (TOCTOU-safe `pre_http_request`), nonce bypass hardened (constant-gated), password reset URL removed from response, overlay file deletion on remove, Sentry PII scrubbing (`beforeSend`), CSP headers, ErrorBoundary→Sentry, apiClient 30s timeout + AbortController, status/visibility whitelist, `encodeURIComponent` on URL segments, `console.info` DEV guard.
+- **P20-I** Performance optimizations — layout templates migrated from `wp_options` to `wpsg_layout_tpl` CPT with auto-migration + UUID backward compat; `wpsg_media_refs` reverse-index table (DB v3); cache version counter replaces LIKE-based invalidation; `React.lazy()` for LayoutBuilderModal + PresetGalleryModal (admin chunk 504→327 KB); async email queue + 1-min cron dispatch; shared React root via `createPortal` (feature-flagged).
+- **P20-J** Plugin directory preparation — `readme.txt` in WordPress.org format, composer dev deps separated, `capability_type => wpsg_campaign` with `map_meta_cap` (10 CPT caps), `load_plugin_textdomain()` + `__()` i18n wrapping.
+- **P20-K** JWT nonce-only default — JWT gated behind `WPSG_ENABLE_JWT_AUTH`, `useNonceHeartbeat` hook, `/nonce` endpoint, cookie-based `/auth/login` and `/auth/logout` REST endpoints; 12 Vitest + 6 AuthContext + 11 PHPUnit tests.
+- **P20-L** SVG dual-layer sanitization — `enshrined/svg-sanitize` with custom CSS validator (`sanitize_svg_css`), URI allowlist (`sanitize_svg_uris`), `.htaccess` CSP headers for overlay dir; 24 PHPUnit tests.
+
+### Changed
+
+- PHPUnit test suite expanded to 461 tests / 1104 assertions with ~92% method coverage (172/186 methods); fixed all 14 pre-existing test failures (PHP 8.3 null deprecations, nonce bypass, CPT caps).
+- Layout Builder QA Rounds 3–7: advanced gradient controls (linear/radial/conic with full CSS output), mask sub-layer system (Photoshop-style with canvas resize handles), image effects system (5 categories: filters, shadow/glow, 3D tilt, blend modes, overlay), per-slot glow color/spread, background properties panel, design assets drag-and-drop, canvas drop-to-create for media and assets.
+- `VERSIONING.md` updated with automated release process documentation.
+- `PACKAGING_RELEASE.md` updated: PHP 7.4→8.0+, CircleCI references removed, GitHub Actions notes added.
+
 ## [0.17.0] - 2026-03-02
 
 ### Added - Phase 19: Builder Coverage, WP-CLI & Toolchain

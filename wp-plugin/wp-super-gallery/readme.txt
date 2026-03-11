@@ -4,7 +4,7 @@ Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.17.0
+Stable tag: 0.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,19 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 5. Advanced settings accordion.
 
 == Changelog ==
+
+= 0.18.0 =
+**Phase 20 — Production Hardening, CI/CD Pipeline & Distribution Readiness**
+
+* Security hardening: rate limiting defaults, CSS value sanitization, import payload sanitization, meta sanitize callbacks, nonce bypass hardening, DNS rebinding SSRF fix, CSP headers, Sentry PII scrubbing.
+* Uninstall cleanup with 9-category data removal and preserve-data option.
+* GPLv2 license, complete plugin header for WordPress.org.
+* GitHub Actions CI/CD: lint/test/PHPUnit pipeline, automated release with SemVer, WordPress.org SVN deploy, E2E workflow.
+* Performance: layout template CPT migration, media refs reverse-index, cache version counter, lazy-loaded builder (504→327 KB), async email queue.
+* Plugin directory prep: readme.txt, custom capabilities, i18n text domain loading.
+* JWT gated behind env var, nonce-only auth default with heartbeat refresh.
+* SVG dual-layer sanitization (server + client) with enshrined/svg-sanitize.
+* PHPUnit coverage raised to ~92% (461 tests, 1104 assertions).
 
 = 0.17.0 =
 **Phase 19 — Builder Test Coverage, WP-CLI & Toolchain**
