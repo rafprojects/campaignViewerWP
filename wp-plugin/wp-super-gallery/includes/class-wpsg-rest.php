@@ -1017,7 +1017,9 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => $new_id->get_error_message()], 500);
         }
 
-        // Copy campaign-specific meta keys (settings + bindings), excluding WP internal meta
+        // Copy campaign-specific meta keys (settings + bindings), excluding WP internal meta.
+        // NOTE: access_grants are intentionally excluded — cloned campaigns start with
+        // a clean permission slate so the owner can configure access from scratch.
         $meta_keys = [
             'visibility',
             'tags',
@@ -2028,19 +2030,36 @@ class WPSG_REST {
         }
 
         $companies = [];
-        foreach ($terms as $term) {
-            // Get campaigns for this company
-            $campaigns = get_posts([
-                'post_type' => 'wpsg_campaign',
+        $term_ids = wp_list_pluck($terms, 'term_id');
+
+        // Single query: fetch ALL campaigns assigned to ANY of the returned companies,
+        // avoiding an N+1 get_posts call per company term.
+        $all_campaigns = [];
+        if (!empty($term_ids)) {
+            $all_campaigns = get_posts([
+                'post_type'      => 'wpsg_campaign',
                 'posts_per_page' => -1,
-                'tax_query' => [
+                'tax_query'      => [
                     [
                         'taxonomy' => 'wpsg_company',
-                        'field' => 'term_id',
-                        'terms' => $term->term_id,
+                        'field'    => 'term_id',
+                        'terms'    => $term_ids,
                     ],
                 ],
             ]);
+        }
+
+        // Index campaigns by company term_id for O(1) lookup per company.
+        $campaigns_by_term = [];
+        foreach ($all_campaigns as $campaign) {
+            $campaign_terms = wp_get_object_terms($campaign->ID, 'wpsg_company', ['fields' => 'ids']);
+            foreach ($campaign_terms as $tid) {
+                $campaigns_by_term[$tid][] = $campaign;
+            }
+        }
+
+        foreach ($terms as $term) {
+            $campaigns = $campaigns_by_term[$term->term_id] ?? [];
 
             $active_count = 0;
             $archived_count = 0;

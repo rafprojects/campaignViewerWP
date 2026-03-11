@@ -214,6 +214,45 @@ export function useAuditEntries(apiClient: ApiClient, campaignId: string) {
 
 // ── Prefetch: Access & Audit ───────────────────────────────────────────────────
 
+/** Max concurrent in-flight prefetch requests to avoid overwhelming the server. */
+const PREFETCH_CONCURRENCY = 4;
+
+/**
+ * Run async tasks with bounded concurrency + stagger delay.
+ * Returns a cancel function that aborts pending work.
+ */
+function staggeredPrefetch(
+  ids: string[],
+  run: (id: string) => Promise<void>,
+  staggerMs: number,
+): () => void {
+  let cancelled = false;
+  const timers: ReturnType<typeof setTimeout>[] = [];
+
+  // Chunk ids into batches of PREFETCH_CONCURRENCY
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += PREFETCH_CONCURRENCY) {
+    batches.push(ids.slice(i, i + PREFETCH_CONCURRENCY));
+  }
+
+  let batchIndex = 0;
+  function runNextBatch() {
+    if (cancelled || batchIndex >= batches.length) return;
+    const batch = batches[batchIndex++];
+    Promise.allSettled(batch.map(run)).then(() => {
+      if (!cancelled) {
+        timers.push(setTimeout(runNextBatch, staggerMs));
+      }
+    });
+  }
+
+  runNextBatch();
+  return () => {
+    cancelled = true;
+    timers.forEach(clearTimeout);
+  };
+}
+
 /**
  * Background-prefetch per-campaign access grants into SWR cache.
  *
@@ -228,25 +267,23 @@ export function prefetchAllCampaignAccess(
   apiClient: ApiClient,
   campaignIds: string[],
 ): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  campaignIds.forEach((id, index) => {
-    timers.push(
-      setTimeout(() => {
-        const key = ['admin-access', 'campaign', id];
-        void globalMutate(
-          key,
-          async () => {
-            const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
-              `/wp-json/wp-super-gallery/v1/campaigns/${id}/access`,
-            );
-            return normalizeListResponse(response);
-          },
-          { revalidate: false },
-        );
-      }, index * 100),
-    );
-  });
-  return () => timers.forEach(clearTimeout);
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => {
+      const key = ['admin-access', 'campaign', id];
+      return globalMutate(
+        key,
+        async () => {
+          const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
+            `/wp-json/wp-super-gallery/v1/campaigns/${id}/access`,
+          );
+          return normalizeListResponse(response);
+        },
+        { revalidate: false },
+      ) as Promise<void>;
+    },
+    100,
+  );
 }
 
 /**
@@ -261,25 +298,23 @@ export function prefetchAllCampaignAudit(
   apiClient: ApiClient,
   campaignIds: string[],
 ): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  campaignIds.forEach((id, index) => {
-    timers.push(
-      setTimeout(() => {
-        const key = ['admin-audit', id];
-        void globalMutate(
-          key,
-          async () => {
-            const response = await apiClient.get<ListResponse<AuditEntry>>(
-              `/wp-json/wp-super-gallery/v1/campaigns/${id}/audit`,
-            );
-            return normalizeListResponse(response);
-          },
-          { revalidate: false },
-        );
-      }, index * 100),
-    );
-  });
-  return () => timers.forEach(clearTimeout);
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => {
+      const key = ['admin-audit', id];
+      return globalMutate(
+        key,
+        async () => {
+          const response = await apiClient.get<ListResponse<AuditEntry>>(
+            `/wp-json/wp-super-gallery/v1/campaigns/${id}/audit`,
+          );
+          return normalizeListResponse(response);
+        },
+        { revalidate: false },
+      ) as Promise<void>;
+    },
+    100,
+  );
 }
 
 // ── Media Items ────────────────────────────────────────────────────────────────
@@ -332,27 +367,25 @@ export function prefetchAllCampaignMedia(
   apiClient: ApiClient,
   campaignIds: string[],
 ): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  campaignIds.forEach((id, index) => {
-    timers.push(
-      setTimeout(() => {
-        const key = mediaItemsKey(id);
-        if (!key) return;
-        void globalMutate(
-          key,
-          async () => {
-            const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
-              `/wp-json/wp-super-gallery/v1/campaigns/${id}/media`,
-            );
-            const items = Array.isArray(response) ? response : response.items ?? [];
-            return sortByOrder(items);
-          },
-          { revalidate: false },
-        );
-      }, index * 150),
-    );
-  });
-  return () => timers.forEach(clearTimeout);
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => {
+      const key = mediaItemsKey(id);
+      if (!key) return Promise.resolve();
+      return globalMutate(
+        key,
+        async () => {
+          const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
+            `/wp-json/wp-super-gallery/v1/campaigns/${id}/media`,
+          );
+          const items = Array.isArray(response) ? response : response.items ?? [];
+          return sortByOrder(items);
+        },
+        { revalidate: false },
+      ) as Promise<void>;
+    },
+    150,
+  );
 }
 
 // Re-export the mutator type for convenience

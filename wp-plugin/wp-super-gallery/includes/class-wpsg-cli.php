@@ -216,6 +216,8 @@ class WPSG_CLI {
         }
 
         // Copy campaign-specific meta keys.
+        // NOTE: access_grants are intentionally excluded — cloned campaigns start with
+        // a clean permission slate so the owner can configure access from scratch.
         $meta_keys = [
             'visibility',
             'tags',

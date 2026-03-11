@@ -87,7 +87,7 @@ class WPSG_Thumbnail_Cache {
         }
 
         // Deterministic filename from source URL.
-        $hash = md5($source_url);
+        $hash = hash('sha256', $source_url);
         $ext  = self::get_extension_from_url($url);
         $filename = $hash . '.' . $ext;
         $filepath = trailingslashit($cache_dir) . $filename;
@@ -160,7 +160,7 @@ class WPSG_Thumbnail_Cache {
      * @return string|null Local URL if cached and not expired, null otherwise.
      */
     public static function get_cached_url($source_url) {
-        $hash = md5($source_url);
+        $hash = hash('sha256', $source_url);
         $cache_index = get_option('wpsg_thumbnail_cache_index', []);
 
         if (!isset($cache_index[$hash])) {
