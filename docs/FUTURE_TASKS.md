@@ -542,4 +542,152 @@ When promoting future tasks to an active phase:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: March 5, 2026 — Added “JWT In-Memory Token Auth (Standalone SPA)” under Access Control (deferred from Phase 20 P20-K decision; see JWT_AUTH_ANALYSIS.md).*
+*Last updated: March 5, 2026 — Added "JWT In-Memory Token Auth (Standalone SPA)" under Access Control (deferred from Phase 20 P20-K decision; see JWT_AUTH_ANALYSIS.md).*  
+*Updated: Added "Deferred Review Tasks" section from PHP_IMPLEMENTATION_REVIEW.txt and REACT_IMPLEMENTATION_REVIEW.txt triage.*
+
+---
+
+## Deferred Review Tasks
+
+Items below were triaged from the PHP and React implementation review deferred task lists.
+Easy/ASAP items were handled separately — see ASAP_TASKS.md and the implementation notes in the source review docs.
+
+### PHP — From PHP_IMPLEMENTATION_REVIEW.txt
+
+**D-1: CORS Origin Allow-List & Admin UI**
+Files: `wp-super-gallery.php`, `class-wpsg-settings.php`  
+Add CORS allowed-origins setting and reject wildcard with credentials. Only affects cross-origin REST API usage. Filter workaround exists.  
+LOE: Medium (4-6 hours) | Impact: Low
+
+**D-2: Migrate Overlay Library from wp_options to Custom Table**
+Files: `class-wpsg-overlay-library.php`, `class-wpsg-db.php`, `uninstall.php`  
+Move overlay entries out of single serialized wp_options row. Problem at scale (hundreds of overlays). Corrupted update_option could lose entire library.  
+LOE: Large (8-12 hours) | Impact: Low-Medium
+
+**D-5: Pre-Uninstall Export and Confirmation Gate**
+Files: `uninstall.php`, `class-wpsg-settings.php`  
+Add one-click "Export All" and timed confirmation before uninstall data purge. Default preserves data — low risk, severe consequences when disabled.  
+LOE: Medium (4-6 hours) | Impact: Low
+
+**D-7: Decompose Monolithic REST Class into Domain Controllers**
+Files: `class-wpsg-rest.php` → 8+ new files  
+Split 4400-line WPSG_REST class. All 461 PHPUnit tests pass today. Pure DX/maintainability refactor.  
+LOE: X-Large (16-24 hours) | Impact: Low (DX only)
+
+**D-8: Add REST Schema/Args Definitions to All Routes**
+Files: `class-wpsg-rest.php` (`register_routes`)  
+Define typed args with sanitize/validate callbacks on all 40+ REST route registrations. Large mechanical effort. Best done per-domain if combined with D-7.  
+LOE: Large (10-16 hours) | Impact: Low
+
+**D-10: Optimize get_accessible_campaign_ids() — O(n) Full Scan**
+Files: `class-wpsg-rest.php`  
+Replace per-campaign access checks with queryable grant structure. Cached with 15-min TTL. Only problematic at 1000+ campaigns.  
+LOE: Large (8-12 hours) | Impact: Low (current scale), High (1000+ campaigns)
+
+**D-12: Rate Limiter Transient Bloat Under Load**
+Files: `class-wpsg-rate-limiter.php`  
+Document persistent object cache requirement; optionally add APCu fallback. Standard WP practice, only problematic without Redis/Memcached under heavy load.  
+LOE: Small (1-2 hours docs, 4-6 hours APCu) | Impact: Low
+
+**D-13: Thumbnail Cache Index — Single wp_options Row Scalability**
+Files: `class-wpsg-thumbnail-cache.php`  
+Move thumbnail cache index to per-hash entries or custom table. Cache is self-healing (regenerated on miss).  
+LOE: Medium (4-6 hours) | Impact: Low
+
+**D-14: Campaign Export — Stream Large Media Sets**
+Files: `class-wpsg-rest.php`, `class-wpsg-cli.php`  
+Add chunked/streamed export for campaigns with large media arrays. Most campaigns have <100 items.  
+LOE: Medium (4-6 hours) | Impact: Low
+
+**D-16: Consolidate Settings Sanitization to Generic Handler**
+Files: `class-wpsg-settings.php`  
+Remove 150+ redundant per-field sanitization blocks. Generic fallback already exists. Risks subtle regressions.  
+LOE: Medium (4-6 hours) | Impact: Low (DX only)
+
+**D-17: Add Default Content-Security-Policy Header**
+Files: `wp-super-gallery.php`  
+Ship sensible default CSP. Could break sites if too restrictive. Needs testing with all embed providers.  
+LOE: Medium (3-5 hours) | Impact: Low
+
+### React — From REACT_IMPLEMENTATION_REVIEW.txt
+
+**RD-1: JWT Token Storage Migration (localStorage → in-memory)**
+Files: `src/services/apiClient.ts`, `src/hooks/useAuth.ts`, `src/contexts/AuthContext.tsx`  
+Move JWT tokens from localStorage to in-memory + httpOnly refresh cookie. Requires PHP backend coordination. Mitigated by DOMPurify and CSP.  
+LOE: High (8-12 hours) | Impact: Medium  
+*Note: Overlaps with existing "JWT In-Memory Token Auth" section above.*
+
+**RD-2: SettingsPanel Tab-Level Code Splitting**
+Files: `src/components/Admin/SettingsPanel.tsx` (~1822 lines)  
+Split into tab-level sub-components with React.memo. Admin-only, negligible perf impact.  
+LOE: High (6-8 hours) | Impact: Low
+
+**RD-3: Extract MediaTab Sortable Components**
+Files: `src/components/Admin/MediaTab.tsx`  
+Move SortableListRow/SortableGridItem outside render body. Inline components reference ~15+ closure variables.  
+LOE: Medium (4-6 hours) | Impact: Low-Medium
+
+**RD-4: useLayoutBuilderState Callback Cascade**
+Files: `src/hooks/useLayoutBuilderState.ts`  
+Break callback cascade by storing template in a ref. Extra re-renders, not user-visible.  
+LOE: Medium (3-4 hours) | Impact: Low
+
+**RD-6: Replace window.confirm with Mantine Modal**
+Files: `src/components/Admin/MediaTab.tsx`, other admin components  
+UX-only improvement. No functional issue.  
+LOE: Medium (3-4 hours) | Impact: Low
+
+**RD-7: JSON.stringify Change Detection in EditCampaignModal**
+Files: `src/components/Campaign/EditCampaignModal.tsx`  
+Replace JSON.stringify comparison with per-key dirty tracking. Negligible CPU cost.  
+LOE: Medium (2-3 hours) | Impact: Low
+
+**RD-8: CardGallery setTimeout → transitionend**
+Files: `src/gallery-adapters/card/CardGallery.tsx`  
+Replace setTimeout with CSS transitionend event listener. Minor UX polish.  
+LOE: Low (1 hour) | Impact: Low
+
+**RD-9: LayoutBuilderGallery Inline Style → CSS Injection**
+Files: `src/gallery-adapters/layout-builder/LayoutBuilderGallery.tsx`  
+Replace inline `<style>` with useInsertionEffect/adoptedStyleSheets. Works correctly inside Shadow DOM today.  
+LOE: Low (1-2 hours) | Impact: Low
+
+**RD-10: AdminPanel AccessTab Prop Drilling**
+Files: `src/components/Admin/AdminPanel.tsx`, `src/components/Admin/AccessTab.tsx`  
+Reduce prop drilling by passing hook object directly. Code organization improvement.  
+LOE: Low (1-2 hours) | Impact: Low
+
+**RD-11: EditCampaignModal Props Grouping**
+Files: `src/components/Campaign/EditCampaignModal.tsx`  
+Group 34 props into interface objects. Developer experience only.  
+LOE: Medium (2-3 hours) | Impact: Low
+
+**RD-15: SlotPropertiesPanel IIFE Extraction**
+Files: `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx`  
+Extract IIFEs into named sub-components. Readability improvement.  
+LOE: Low (1-2 hours) | Impact: Low
+
+**RD-16: LoginForm Password Length from Settings**
+Files: `src/components/Auth/LoginForm.tsx`  
+Read loginMinPasswordLength from settings instead of hardcoding (6). Server-side still validates.  
+LOE: Low (1 hour) | Impact: Low
+
+**RD-17: JWT Token Refresh**
+Files: `src/services/apiClient.ts`, `src/hooks/useAuth.ts`  
+Transparent JWT token refresh before expiry. **Blocked on RD-1**. Most deployments use nonce auth.  
+LOE: Medium (blocked on RD-1) | Impact: Low
+
+**RD-18: useMediaDimensions ID-Based Caching**
+Files: `src/hooks/useMediaDimensions.ts`  
+Stabilize with ID-based caching to reduce recalculations. Minor optimization.  
+LOE: Low (1-2 hours) | Impact: Low
+
+**RD-20: localStorage Draft Recovery**
+Files: `src/components/Campaign/EditCampaignModal.tsx`  
+Implement draft recovery prompt or remove autosave. Requires UX decision.  
+LOE: Low-Medium (2-3 hours) | Impact: Low
+
+**RD-21: Standardize Error Handling Patterns**
+Files: Multiple hooks  
+Standardize error handling across admin hooks. Inconsistent DX, no user impact.  
+LOE: Medium (3-4 hours) | Impact: Low
