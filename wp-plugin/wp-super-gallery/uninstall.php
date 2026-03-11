@@ -65,6 +65,7 @@ $options = [
 	'wpsg_needs_setup',
 	'wpsg_cache_version',
 	'wpsg_layout_templates',
+	'wpsg_media_refs_backfilled',
 	'wpsg_preserve_data_on_uninstall', // legacy key, if ever set directly
 ];
 foreach ( $options as $option ) {

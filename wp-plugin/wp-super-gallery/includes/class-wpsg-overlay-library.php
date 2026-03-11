@@ -91,8 +91,12 @@ class WPSG_Overlay_Library {
             if ( str_starts_with( $entry['url'], $base_url ) ) {
                 $relative  = substr( $entry['url'], strlen( $base_url ) );
                 $file_path = $base_dir . $relative;
-                if ( file_exists( $file_path ) ) {
-                    wp_delete_file( $file_path );
+
+                // Prevent path traversal: resolve to a real path and ensure
+                // it still resides within the uploads directory.
+                $real_path = realpath( $file_path );
+                if ( $real_path && str_starts_with( $real_path, realpath( $upload_dir['basedir'] ) . DIRECTORY_SEPARATOR ) ) {
+                    wp_delete_file( $real_path );
                 }
             }
         }

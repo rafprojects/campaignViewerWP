@@ -18,7 +18,7 @@ export async function initSentry(options: SentryInitOptions) {
       if (event.breadcrumbs) {
         event.breadcrumbs = event.breadcrumbs.map((b) => {
           if (b.data?.headers) {
-            const { Authorization, authorization, ...rest } = b.data.headers as Record<string, unknown>;
+            const { Authorization: _Auth, authorization: _auth, ...rest } = b.data.headers as Record<string, unknown>;
             b.data.headers = rest;
           }
           return b;

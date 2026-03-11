@@ -30,6 +30,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Validate tag exists
         run: |
@@ -58,6 +60,7 @@ jobs:
           echo "Downloaded $(du -h "$ZIP_NAME" | cut -f1)"
 
       - name: Extract release ZIP
+        id: extract
         env:
           TAG: ${{ inputs.tag }}
         run: |
@@ -68,6 +71,7 @@ jobs:
           unzip "$ZIP_NAME" -d deploy-dir
           echo "Extracted to deploy-dir/wp-super-gallery/"
           ls -la deploy-dir/wp-super-gallery/
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to WordPress.org SVN
         uses: 10up/action-wordpress-plugin-deploy@v2
@@ -77,5 +81,5 @@ jobs:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: wp-super-gallery
-          VERSION: ${{ inputs.tag }}
+          VERSION: ${{ steps.extract.outputs.version }}
           BUILD_DIR: deploy-dir/wp-super-gallery

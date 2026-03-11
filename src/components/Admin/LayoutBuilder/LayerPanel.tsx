@@ -206,7 +206,7 @@ export function LayerPanel({
                 item={item}
                 template={template}
                 isSelected={isSelected}
-                onSelect={() => {
+                onSelect={(_id) => {
                   if (isBackground) onSelectBackground?.();
                   else if (isMask) onSelectMask?.(item.parentSlotId);
                   else if (item.kind === 'graphic') onSelectOverlay(item.id);
@@ -228,10 +228,12 @@ export function LayerPanel({
                 onBringToFront={onBringToFront}
                 onSendToBack={onSendToBack}
                 onBringForward={onBringForward}
-                onSendBackward={onSendBackward}                onDelete={onDeleteLayer ? (id) => {
+                onSendBackward={onSendBackward}
+                onDelete={onDeleteLayer ? (id) => {
                   if (item.kind === 'mask') onDeleteLayer(item.parentSlotId, 'mask');
                   else onDeleteLayer(id, item.kind === 'graphic' ? 'graphic' : 'slot');
-                } : undefined}                onAddMask={onAddMask}
+                } : undefined}
+                onAddMask={onAddMask}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}

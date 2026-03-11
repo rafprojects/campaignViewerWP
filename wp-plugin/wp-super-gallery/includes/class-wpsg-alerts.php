@@ -16,13 +16,13 @@ class WPSG_Alerts {
         add_action('wpsg_rest_metrics', [self::class, 'track_rest_metrics']);
         add_action(self::CRON_HOOK, [self::class, 'process_email_queue']);
 
+        // Register the custom 1-minute interval before scheduling.
+        add_filter('cron_schedules', [self::class, 'add_cron_interval']);
+
         // Schedule 1-minute cron if not already scheduled.
         if (!wp_next_scheduled(self::CRON_HOOK)) {
             wp_schedule_event(time(), 'wpsg_every_minute', self::CRON_HOOK);
         }
-
-        // Register the custom 1-minute interval.
-        add_filter('cron_schedules', [self::class, 'add_cron_interval']);
     }
 
     /**
