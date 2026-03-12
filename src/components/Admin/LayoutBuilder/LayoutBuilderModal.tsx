@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
+import { safeLocalStorage } from '../../../utils/safeLocalStorage';
 import {
   Modal,
   Group,
@@ -107,7 +108,7 @@ export function LayoutBuilderModal({
   useEffect(() => {
     if (!opened || !campaigns || campaigns.length === 0) return;
 
-    const saved = localStorage.getItem(campaignSelectionStorageKey);
+    const saved = safeLocalStorage.getItem(campaignSelectionStorageKey);
     const hasSaved = saved && campaigns.some((c) => String(c.id) === saved);
 
     if (hasSaved) {
@@ -124,7 +125,7 @@ export function LayoutBuilderModal({
   // Persist campaign selection per-layout while editing.
   useEffect(() => {
     if (!selectedCampaignId) return;
-    localStorage.setItem(campaignSelectionStorageKey, selectedCampaignId);
+    safeLocalStorage.setItem(campaignSelectionStorageKey, selectedCampaignId);
   }, [selectedCampaignId, campaignSelectionStorageKey]);
 
   // ── Fetch media for the selected campaign ──
@@ -443,7 +444,7 @@ export function LayoutBuilderModal({
         }
       }
     },
-    [builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave],
+    [announce, builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave],
   );
 
   // Attach/detach the document-level listener whenever the modal opens/closes.

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { useHotkeys } from '@mantine/hooks';
+import { getHotkeyHandler } from '@mantine/hooks';
 import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip, SegmentedControl } from '@mantine/core';
 import { IconHandGrab } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
@@ -55,7 +55,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     transformRef.current?.resetTransform();
   }, []);
 
-  useHotkeys([
+  const handleCanvasHotkeys = getHotkeyHandler([
     ['h', () => setIsHandTool((v) => !v)],
     ['v', () => setIsHandTool(false)],
     ['0', () => transformRef.current?.resetTransform()],
@@ -66,7 +66,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
 
   return (
     <CanvasTransformContext.Provider value={{ scale, isHandTool }}>
-      <Box style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box
+        tabIndex={-1}
+        onKeyDown={handleCanvasHotkeys}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%', outline: 'none' }}
+      >
         {/* Canvas */}
         <Box
           style={{

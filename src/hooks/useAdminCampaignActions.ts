@@ -1,5 +1,5 @@
 import { useCallback, useReducer, useRef, useState } from 'react';
-import { useHotkeys } from '@mantine/hooks';
+import { getHotkeyHandler } from '@mantine/hooks';
 import type { ApiClient, CampaignExportPayload } from '@/services/apiClient';
 import type { CampaignFormState } from '@/components/Admin/CampaignFormModal';
 import type { AdminCampaign } from '@/hooks/useAdminSWR';
@@ -259,7 +259,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
-  useHotkeys([
+  const hotkeyHandler = getHotkeyHandler([
     ['?',            () => setShortcutHelpOpen(true)],
     ['mod+n',        () => { if (!campaignFormOpen) handleCreate(); }],
     ['mod+i',        () => setImportModalOpen(true)],
@@ -267,6 +267,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   ]);
 
   return {
+    // Scoped hotkey handler — attach via onKeyDown on a container
+    hotkeyHandler,
     // Form state
     editingCampaign,
     formState,

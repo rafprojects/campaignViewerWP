@@ -159,7 +159,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const auditRows = useAuditRows(auditEntries);
 
   return (
-    <Card shadow="sm" radius="md" withBorder>
+    <Card shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
       <Group justify="space-between" wrap="wrap" gap="sm" mb="md">
         <Group>
           <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
