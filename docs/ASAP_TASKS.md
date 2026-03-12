@@ -5,56 +5,39 @@ Sourced from PHP_IMPLEMENTATION_REVIEW.txt and REACT_IMPLEMENTATION_REVIEW.txt d
 
 ---
 
-## D-4: Maintenance Purge — Add Trash Phase and Pre-Deletion Safeguards
-**Source:** PHP_IMPLEMENTATION_REVIEW.txt (D-4)  
-**Files:** `class-wpsg-maintenance.php` (`purge_archived_campaigns`)  
-**LOE:** Medium (4-6 hours)  
-**Why ASAP:** Archived campaigns are permanently deleted with no confirmation, notification, or recovery path. Accidental short retention = irreversible data loss.
-
-**Solution:**
-1. Phase 1 — `wp_trash_post` instead of `wp_delete_post`
-2. Phase 2 — Weekly cron for trash items older than grace period, email notification with export link
-3. Phase 3 — Permanent delete 24h after notification
-4. Add `purge_grace_period_days` setting (default 30, min 7)
+## ~~D-4: Maintenance Purge — Add Trash Phase and Pre-Deletion Safeguards~~ ✅
+**Completed:** commit 21da22f  
+Two-phase cleanup (archive→trash→delete with grace period). New settings: `archive_purge_days`, `archive_purge_grace_days`, `analytics_retention_days`.
 
 ---
 
-## D-6: Audit and Fix Cache Invalidation Gaps
-**Source:** PHP_IMPLEMENTATION_REVIEW.txt (D-6)  
-**Files:** `class-wpsg-rest.php` (all mutation endpoints)  
-**LOE:** Small-Medium (3-4 hours)  
-**Why ASAP:** Gaps in cache invalidation for less-frequent operations (access grants, settings updates, taxonomy edits). Stale lists persist for up to 15 min.
-
-**Solution:**
-1. Create unified `invalidate_all_caches()` method
-2. Grep for all mutation calls, add invalidation to access grant/override endpoints, settings update, category assignment
-3. Add integration tests
+## ~~D-6: Audit and Fix Cache Invalidation Gaps~~ ✅
+**Completed:** commit 21da22f  
+Added `bump_cache_version()`/`clear_accessible_campaigns_cache()` to 10 mutation endpoints.
 
 ---
 
-## D-15: Standardize REST Error Responses
-**Source:** PHP_IMPLEMENTATION_REVIEW.txt (D-15)  
-**Files:** `class-wpsg-rest.php` (all endpoints returning errors)  
-**LOE:** Medium (4-6 hours)  
-**Why ASAP:** Mixed error patterns (WP_Error, WP_REST_Response with error status, raw arrays). Affects third-party integrations and automated tools.
-
-**Solution:**
-1. Grep for mixed patterns (WP_REST_Response with 4xx/5xx, raw arrays with error keys)
-2. Replace with `new WP_Error()` usage
-3. Update PHPUnit assertions
+## ~~D-15: Standardize REST Error Responses~~ ✅
+**Completed:** commit 279427e  
+Converted 90 `WP_REST_Response` error returns to `WP_Error` with `wpsg_*` codes. 3 intentional exceptions kept (proxy_oembed 429+502s).
 
 ---
 
-## D-20: Analytics Data Retention / Purge Cron
-**Source:** PHP_IMPLEMENTATION_REVIEW.txt (D-20)  
-**Files:** `class-wpsg-db.php`, `class-wpsg-maintenance.php`, `class-wpsg-settings.php`  
-**LOE:** Small-Medium (3-4 hours)  
-**Why ASAP:** Analytics data accumulates indefinitely. Millions of rows will eventually slow aggregate queries.
+## ~~D-20: Analytics Data Retention / Purge Cron~~ ✅
+**Completed:** commit 21da22f  
+Batch analytics purge cron (wpsg_analytics_purge) deletes rows older than `analytics_retention_days` in batches of 1000.
 
-**Solution:**
-1. Add `analytics_retention_days` setting (default 90, min 30, max 730)
-2. Weekly cron deleting in batches of 1000
-3. Manual "Purge Analytics" button in Settings
+---
+
+## ~~RD-14: safeLocalStorage Utility~~ ✅
+**Completed:** commit 5769e69  
+Created `src/utils/safeLocalStorage.ts`. Migrated 14 unprotected call sites in WpJwtProvider and LayoutBuilderModal.
+
+---
+
+## ~~RD-19: Scope Admin Hotkeys to Container~~ ✅
+**Completed:** commit 5769e69  
+Replaced global `useHotkeys` with `getHotkeyHandler` on container elements. Admin shortcuts scoped to Card, canvas shortcuts scoped to canvas Box.
 
 ---
 
@@ -83,28 +66,3 @@ Sourced from PHP_IMPLEMENTATION_REVIEW.txt and REACT_IMPLEMENTATION_REVIEW.txt d
 1. Add PHP offset/limit params to campaign list endpoint
 2. Add React pagination controls (or virtual scrolling)
 3. Update SWR cache keys to include page param
-
----
-
-## RD-14: safeLocalStorage Utility
-**Source:** REACT_IMPLEMENTATION_REVIEW.txt (RD-14)  
-**Files:** Multiple (~10+ production files using `localStorage`)  
-**LOE:** Low-Medium (2-3 hours)  
-**Why ASAP:** Bare `localStorage` calls scattered across codebase. Some browsers block localStorage entirely (private browsing, enterprise policies). A centralized wrapper prevents silent failures.
-
-**Solution:**
-1. Create `src/utils/safeLocalStorage.ts` with try/catch for quota/blocking
-2. Find-and-replace bare `localStorage` calls in production files
-3. Keep test files using raw `localStorage` (fine in test env)
-
----
-
-## RD-19: Scope Admin Hotkeys to Container
-**Source:** REACT_IMPLEMENTATION_REVIEW.txt (RD-19)  
-**Files:** `src/hooks/useAdminCampaignActions.ts`  
-**LOE:** Low-Medium (1-2 hours)  
-**Why ASAP:** `useHotkeys` binds to `document`, which can conflict with WordPress admin keyboard shortcuts. Requires wrapping with `getHotkeyHandler` or a container-scoped approach.
-
-**Solution:**
-1. Replace `useHotkeys` with Mantine's `getHotkeyHandler` attached to the admin container ref
-2. Or use a custom wrapper that listens on the container element
