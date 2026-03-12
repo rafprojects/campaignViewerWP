@@ -41,28 +41,12 @@ Replaced global `useHotkeys` with `getHotkeyHandler` on container elements. Admi
 
 ---
 
-## D-9: Migrate Access Requests from wp_options to Custom Table
-**Source:** PHP_IMPLEMENTATION_REVIEW.txt (D-9)  
-**Files:** `class-wpsg-rest.php` (submit/approve/deny_access_request), `class-wpsg-db.php`, `uninstall.php`  
-**LOE:** Medium (6-8 hours)  
-**Why ASAP:** Table schema already exists (`wpsg_access_requests`) but REST code still uses individual options + serialized index. Slow at hundreds of access requests.
-
-**Solution:**
-1. Replace `get_option` calls with `$wpdb` queries against custom table
-2. Remove serialized index option
-3. Add migration routine
-4. Update `uninstall.php`
-5. Add PHPUnit tests
+## ~~D-9: Migrate Access Requests from wp_options to Custom Table~~ ✅
+**Completed:** commit 5423466  
+DB_VERSION bumped to 4. Created `wpsg_access_requests` table with indexed lookups. Migrated from O(N) wp_options scans to indexed SQL queries. 7 DB helpers, rewritten REST handlers, uninstall cleanup, 25 PHPUnit tests.
 
 ---
 
-## RD-12: Campaign Pagination for Large Lists
-**Source:** REACT_IMPLEMENTATION_REVIEW.txt (RD-12)  
-**Files:** `src/components/Admin/AdminPanel.tsx`, `src/hooks/useAdminSWR.ts`  
-**LOE:** High (6-8 hours, requires PHP + React changes)  
-**Why ASAP:** Admin panel silently degrades with >50 campaigns. No pagination — all campaigns loaded at once.
-
-**Solution:**
-1. Add PHP offset/limit params to campaign list endpoint
-2. Add React pagination controls (or virtual scrolling)
-3. Update SWR cache keys to include page param
+## ~~RD-12: Campaign Pagination for Large Lists~~ ✅
+**Completed:** commit 1cc73c9  
+PHP endpoint already supported pagination. Updated `useAdminCampaigns` to pass page/perPage params and return pagination metadata. Added Mantine `<Pagination>` to CampaignsTab. Separate `useAllCampaignOptions` hook for selector dropdowns.
