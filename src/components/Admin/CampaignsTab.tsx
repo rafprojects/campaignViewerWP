@@ -1,4 +1,4 @@
-import { Group, Skeleton, Table, Text, Checkbox, Button, Tooltip } from '@mantine/core';
+import { Group, Pagination, Skeleton, Table, Text, Checkbox, Button, Tooltip } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { IconCheckbox, IconSquare } from '@tabler/icons-react';
 
@@ -41,6 +41,14 @@ interface CampaignsTabProps {
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
+  /** Current page number (1-based). */
+  page: number;
+  /** Total number of pages. */
+  totalPages: number;
+  /** Total number of campaigns across all pages. */
+  total: number;
+  /** Called when the user navigates to a different page. */
+  onPageChange: (page: number) => void;
 }
 
 export function CampaignsTab({
@@ -53,6 +61,10 @@ export function CampaignsTab({
   onToggleSelectMode,
   onSelectAll,
   onDeselectAll,
+  page,
+  totalPages,
+  total,
+  onPageChange,
 }: CampaignsTabProps) {
   if (error) {
     return <Text c="red" role="alert" aria-live="assertive">{error}</Text>;
@@ -103,6 +115,13 @@ export function CampaignsTab({
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
+
+      {totalPages > 1 && (
+        <Group justify="space-between" mt="md">
+          <Text size="sm" c="dimmed">{total} campaigns</Text>
+          <Pagination value={page} onChange={onPageChange} total={totalPages} size="sm" />
+        </Group>
+      )}
     </>
   );
 }

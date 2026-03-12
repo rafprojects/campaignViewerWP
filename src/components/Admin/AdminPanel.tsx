@@ -21,7 +21,7 @@ import { QuickAddUserModal } from './QuickAddUserModal';
 import useSWR from 'swr';
 import type { LayoutTemplate } from '@/types';
 import {
-  useAdminCampaigns, useAccessGrants, useCompanies, useAuditEntries,
+  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
 } from '@/hooks/useAdminSWR';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
@@ -54,8 +54,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [auditCampaignId, setAuditCampaignId] = useState('');
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [campaignPage, setCampaignPage] = useState(1);
+  const CAMPAIGNS_PER_PAGE = 20;
 
-  const { campaigns, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient);
+  const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, campaignPage, CAMPAIGNS_PER_PAGE);
+  const allCampaigns = useAllCampaignOptions(apiClient);
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 
   const { data: layoutTemplates } = useSWR<LayoutTemplate[]>(
@@ -94,14 +97,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   });
 
   useEffect(() => {
-    if (activeTab === 'media' && !mediaCampaignId && campaigns.length > 0) setMediaCampaignId(String(campaigns[0].id));
-  }, [activeTab, campaigns, mediaCampaignId]);
+    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0].id));
+  }, [activeTab, allCampaigns, mediaCampaignId]);
   useEffect(() => {
-    if (activeTab === 'access' && !accessCampaignId && campaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(campaigns[0].id));
-  }, [activeTab, accessCampaignId, campaigns, accessViewMode]);
+    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0].id));
+  }, [activeTab, accessCampaignId, allCampaigns, accessViewMode]);
   useEffect(() => {
-    if (activeTab === 'audit' && !auditCampaignId && campaigns.length > 0) setAuditCampaignId(String(campaigns[0].id));
-  }, [activeTab, auditCampaignId, campaigns]);
+    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0].id));
+  }, [activeTab, auditCampaignId, allCampaigns]);
   useEffect(() => {
     if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0].id));
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
@@ -113,36 +116,36 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const cancelAccessRef = useRef<(() => void) | null>(null);
   const cancelAuditRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (activeTab === 'media' && campaigns.length > 0 && !mediaPrefetchedRef.current) {
+    if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
-      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, campaigns.map((c) => String(c.id)));
+      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)));
     }
-  }, [activeTab, campaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient]);
   useEffect(() => {
-    if (activeTab === 'access' && campaigns.length > 0 && !accessPrefetchedRef.current) {
+    if (activeTab === 'access' && allCampaigns.length > 0 && !accessPrefetchedRef.current) {
       accessPrefetchedRef.current = true;
-      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, campaigns.map((c) => String(c.id)));
+      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)));
     }
-  }, [activeTab, campaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient]);
   useEffect(() => {
-    if (activeTab === 'audit' && campaigns.length > 0 && !auditPrefetchedRef.current) {
+    if (activeTab === 'audit' && allCampaigns.length > 0 && !auditPrefetchedRef.current) {
       auditPrefetchedRef.current = true;
-      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, campaigns.map((c) => String(c.id)));
+      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)));
     }
-  }, [activeTab, campaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient]);
   useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
 
   const campaignSelectData = useMemo(
-    () => campaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
-    [campaigns],
+    () => allCampaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
+    [allCampaigns],
   );
   const companySelectData = useMemo(
     () => companies.map((c) => ({ value: String(c.id), label: `${c.name} (${c.activeCampaigns} active, ${c.archivedCampaigns} archived)` })),
     [companies],
   );
   const selectedCampaign = useMemo(
-    () => campaigns.find((c) => String(c.id) === String(accessCampaignId)) ?? null,
-    [accessCampaignId, campaigns],
+    () => allCampaigns.find((c) => String(c.id) === String(accessCampaignId)) ?? null,
+    [accessCampaignId, allCampaigns],
   );
   const selectedCompany = useMemo(
     () => companies.find((c) => String(c.id) === selectedCompanyId) ?? null,
@@ -213,6 +216,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             onToggleSelectMode={campaignActions.handleToggleSelectMode}
             onSelectAll={() => campaignActions.handleSelectAll(filteredCampaigns.map((c) => String(c.id)))}
             onDeselectAll={campaignActions.handleDeselectAll}
+            page={campaignPagination.page}
+            totalPages={campaignPagination.totalPages}
+            total={campaignPagination.total}
+            onPageChange={setCampaignPage}
           />
           {campaignActions.selectMode && campaignActions.selectedCampaignIds.size > 0 && (() => {
             const sel = campaigns.filter((c) => campaignActions.selectedCampaignIds.has(String(c.id)));

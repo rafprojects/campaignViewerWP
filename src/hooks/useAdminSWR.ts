@@ -57,6 +57,17 @@ export interface AdminCampaign {
 
 interface ApiCampaignResponse {
   items: AdminCampaign[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface CampaignPagination {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
 }
 
 export interface AuditEntry {
@@ -104,11 +115,46 @@ const ADMIN_SWR_OPTIONS = {
 
 /**
  * Fetch the admin campaign list (includes companyId, tags, etc.).
- * Cached under key 'admin-campaigns'. Re-open AdminPanel = instant render.
+ * Supports server-side pagination via page/perPage params.
+ * Cached under key ['admin-campaigns', page, perPage].
  */
-export function useAdminCampaigns(apiClient: ApiClient) {
-  const { data, error, isLoading, mutate } = useSWR<AdminCampaign[]>(
-    'admin-campaigns',
+export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20) {
+  const { data, error, isLoading, mutate } = useSWR<{ campaigns: AdminCampaign[]; pagination: CampaignPagination }>(
+    ['admin-campaigns', page, perPage],
+    async () => {
+      const response = await apiClient.get<ApiCampaignResponse>(
+        `/wp-json/wp-super-gallery/v1/campaigns?page=${page}&per_page=${perPage}`,
+      );
+      return {
+        campaigns: response.items ?? [],
+        pagination: {
+          page: response.page ?? page,
+          perPage: response.perPage ?? perPage,
+          total: response.total ?? 0,
+          totalPages: response.totalPages ?? 1,
+        },
+      };
+    },
+    ADMIN_SWR_OPTIONS,
+  );
+
+  return {
+    campaigns: data?.campaigns ?? [],
+    pagination: data?.pagination ?? { page, perPage, total: 0, totalPages: 1 },
+    campaignsLoading: isLoading,
+    campaignsError: error ? (error instanceof Error ? error.message : 'Failed to load campaigns') : null,
+    mutateCampaigns: mutate,
+  };
+}
+
+/**
+ * Fetch all campaigns for dropdown selectors (per_page=50, the endpoint max).
+ * Cached separately from the paginated table so selectors always show all
+ * campaigns regardless of which page the campaigns tab is on.
+ */
+export function useAllCampaignOptions(apiClient: ApiClient) {
+  const { data } = useSWR<AdminCampaign[]>(
+    'admin-campaign-options',
     async () => {
       const response = await apiClient.get<ApiCampaignResponse>(
         '/wp-json/wp-super-gallery/v1/campaigns?per_page=50',
@@ -118,12 +164,7 @@ export function useAdminCampaigns(apiClient: ApiClient) {
     ADMIN_SWR_OPTIONS,
   );
 
-  return {
-    campaigns: data ?? [],
-    campaignsLoading: isLoading,
-    campaignsError: error ? (error instanceof Error ? error.message : 'Failed to load campaigns') : null,
-    mutateCampaigns: mutate,
-  };
+  return data ?? [];
 }
 
 /**
