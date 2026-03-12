@@ -51,6 +51,8 @@ function wpsg_deactivate() {
     // Roles and capabilities are kept on deactivation
     // Only remove on uninstall if desired
     wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
+    wp_clear_scheduled_hook(WPSG_Maintenance::TRASH_PURGE_HOOK);
+    wp_clear_scheduled_hook(WPSG_Maintenance::ANALYTICS_PURGE_HOOK);
     wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
     wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
     wp_clear_scheduled_hook(WPSG_Alerts::CRON_HOOK);

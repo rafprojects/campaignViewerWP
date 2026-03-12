@@ -252,6 +252,11 @@ class WPSG_Settings {
         'layout_builder_scope'           => 'full',
         // ── P20-E: Uninstall data preservation ────────────────
         'preserve_data_on_uninstall'     => false,
+        // ── D-4: Archive purge safeguards ─────────────────────
+        'archive_purge_days'             => 0,
+        'archive_purge_grace_days'       => 30,
+        // ── D-20: Analytics data retention ────────────────────
+        'analytics_retention_days'       => 0,
     ];
 
     /**
@@ -283,6 +288,9 @@ class WPSG_Settings {
         'auth_bar_mobile_breakpoint',
         'session_idle_timeout_minutes',
         'preserve_data_on_uninstall',
+        'archive_purge_days',
+        'archive_purge_grace_days',
+        'analytics_retention_days',
     ];
 
     /**
@@ -452,6 +460,9 @@ class WPSG_Settings {
         'auth_bar_backdrop_blur'      => [0, 24],
         'auth_bar_mobile_breakpoint'  => [320, 1280],
         'session_idle_timeout_minutes' => [0, 480],
+        'archive_purge_days'           => [0, 365],
+        'archive_purge_grace_days'     => [7, 90],
+        'analytics_retention_days'     => [0, 730],
     ];
 
     /**

@@ -664,6 +664,11 @@ export interface GalleryBehaviorSettings {
   layoutBuilderScope: 'full' | 'viewport';
   // P20-E: Uninstall data preservation
   preserveDataOnUninstall: boolean;
+  // D-4: Archive purge safeguards
+  archivePurgeDays: number;
+  archivePurgeGraceDays: number;
+  // D-20: Analytics data retention
+  analyticsRetentionDays: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -857,6 +862,11 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   layoutBuilderScope: 'full',
   // P20-E: Uninstall data preservation
   preserveDataOnUninstall: false,
+  // D-4: Archive purge safeguards
+  archivePurgeDays: 0,
+  archivePurgeGraceDays: 30,
+  // D-20: Analytics data retention
+  analyticsRetentionDays: 0,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',

@@ -1791,6 +1791,35 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
+
+                  <Accordion.Item value="maintenance">
+                    <Accordion.Control>Data Maintenance</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <NumberInput
+                          label="Archive Purge After (days)"
+                          description="Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging."
+                          value={settings.archivePurgeDays ?? 0}
+                          onChange={(v) => updateSetting('archivePurgeDays', typeof v === 'number' ? v : 0)}
+                          min={0} max={365}
+                        />
+                        <NumberInput
+                          label="Trash Grace Period (days)"
+                          description="Trashed campaigns are permanently deleted after this many days. Minimum 7 days."
+                          value={settings.archivePurgeGraceDays ?? 30}
+                          onChange={(v) => updateSetting('archivePurgeGraceDays', typeof v === 'number' ? v : 30)}
+                          min={7} max={90}
+                        />
+                        <NumberInput
+                          label="Analytics Retention (days)"
+                          description="Analytics events older than this are purged weekly. Set to 0 to keep indefinitely."
+                          value={settings.analyticsRetentionDays ?? 0}
+                          onChange={(v) => updateSetting('analyticsRetentionDays', typeof v === 'number' ? v : 0)}
+                          min={0} max={730}
+                        />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
                 </Accordion>
               </Tabs.Panel>
             )}

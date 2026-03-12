@@ -1246,6 +1246,7 @@ class WPSG_REST {
         }
 
         self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title]);
+        self::clear_accessible_campaigns_cache();
         $new_post = get_post($post_id);
         return new WP_REST_Response(self::format_campaign($new_post), 201);
     }
@@ -1560,6 +1561,7 @@ class WPSG_REST {
             'url' => $media_item['url'] ?? '',
             'attachmentId' => $media_item['attachmentId'] ?? 0,
         ]);
+        self::bump_cache_version();
 
         return new WP_REST_Response($media_item, 201);
     }
@@ -2398,6 +2400,7 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'media.updated', [
             'mediaId' => $media_id,
         ]);
+        self::bump_cache_version();
         return new WP_REST_Response(['message' => 'Media updated'], 200);
     }
 
@@ -2458,6 +2461,7 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'media.reordered', [
             'count' => count($order_map),
         ]);
+        self::bump_cache_version();
 
         return new WP_REST_Response(['message' => 'Media reordered'], 200);
     }
@@ -2586,6 +2590,7 @@ class WPSG_REST {
             self::add_audit_entry($post_id, 'media.types_rescanned', [
                 'updated' => $updated_count,
             ]);
+            self::bump_cache_version();
         }
 
         return new WP_REST_Response([
@@ -2637,6 +2642,10 @@ class WPSG_REST {
             }
         }
 
+        if ($total_updated > 0) {
+            self::bump_cache_version();
+        }
+
         return new WP_REST_Response([
             'message' => $total_updated > 0 ? 'Media types updated' : 'No changes needed',
             'campaigns_scanned' => count($campaigns),
@@ -2662,6 +2671,7 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'media.deleted', [
             'mediaId' => $media_id,
         ]);
+        self::bump_cache_version();
 
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
     }
@@ -3468,6 +3478,7 @@ class WPSG_REST {
         $current = WPSG_Settings::get_settings();
         $merged = array_merge($current, $sanitized);
         update_option(WPSG_Settings::OPTION_NAME, $merged);
+        self::bump_cache_version();
 
         return new WP_REST_Response(
             WPSG_Settings::to_js($merged, true),
@@ -4307,6 +4318,7 @@ class WPSG_REST {
             $status = $result->get_error_data()['status'] ?? 400;
             return new WP_REST_Response(['message' => $result->get_error_message()], $status);
         }
+        self::bump_cache_version();
 
         return new WP_REST_Response($result, 200);
     }
@@ -4321,6 +4333,7 @@ class WPSG_REST {
         if (!$deleted) {
             return new WP_REST_Response(['message' => 'Template not found.'], 404);
         }
+        self::bump_cache_version();
 
         return new WP_REST_Response(['deleted' => true], 200);
     }
