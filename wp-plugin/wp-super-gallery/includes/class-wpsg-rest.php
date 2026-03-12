@@ -1722,42 +1722,23 @@ class WPSG_REST {
     }
 
     // -------------------------------------------------------------------------
-    // P18-I: Access Request Workflow helpers
+    // P18-I: Access Request Workflow helpers  (D-9: now backed by custom table)
     // -------------------------------------------------------------------------
 
-    /** Return the option name for a single request. */
-    private static function access_request_option(string $token): string {
-        return 'wpsg_access_request_' . $token;
-    }
-
-    /** Retrieve the stored request data for $token, or null if not found. */
-    private static function get_access_request(string $token): ?array {
-        $data = get_option(self::access_request_option($token), null);
-        return is_array($data) ? $data : null;
-    }
-
-    /** Persist the request data and ensure the global index contains $token. */
-    private static function save_access_request(string $token, array $data): void {
-        update_option(self::access_request_option($token), $data, false);
-        $index = get_option('wpsg_access_request_index', []);
-        if (!is_array($index)) {
-            $index = [];
-        }
-        if (!in_array($token, $index, true)) {
-            $index[] = $token;
-            update_option('wpsg_access_request_index', $index, false);
-        }
-    }
-
-    /** Remove a request from storage and from the global index. */
-    private static function delete_access_request(string $token): void {
-        delete_option(self::access_request_option($token));
-        $index = get_option('wpsg_access_request_index', []);
-        if (!is_array($index)) {
-            return;
-        }
-        $index = array_values(array_diff($index, [$token]));
-        update_option('wpsg_access_request_index', $index, false);
+    /**
+     * Format a DB row into the REST response shape expected by the frontend.
+     */
+    private static function format_access_request(array $row): array {
+        return [
+            'token'        => $row['token'],
+            'email'        => $row['email'],
+            'campaign_id'  => (int) $row['campaign_id'],
+            'status'       => $row['status'],
+            'requested_at' => gmdate('c', strtotime($row['requested_at'])),
+            'resolved_at'  => $row['resolved_at']
+                ? gmdate('c', strtotime($row['resolved_at']))
+                : null,
+        ];
     }
 
     // -------------------------------------------------------------------------
@@ -1779,33 +1760,20 @@ class WPSG_REST {
             return new WP_Error('wpsg_invalid_email', 'A valid email address is required', ['status' => 400]);
         }
 
-        // 24-hour cooldown per email per campaign for previously denied requests
-        $index = get_option('wpsg_access_request_index', []);
-        if (is_array($index)) {
-            foreach ($index as $existing_token) {
-                $data = self::get_access_request((string) $existing_token);
-                if (
-                    $data &&
-                    intval($data['campaign_id']) === $post_id &&
-                    strtolower($data['email']) === strtolower($email)
-                ) {
-                    if ($data['status'] === 'pending') {
-                        return new WP_REST_Response([
-                            'message' => 'A request for this email is already pending.',
-                        ], 409);
-                    }
-                    if ($data['status'] === 'denied') {
-                        $cooldown_seconds = 24 * 60 * 60;
-                        $elapsed = time() - strtotime($data['requested_at']);
-                        if ($elapsed < $cooldown_seconds) {
-                            return new WP_REST_Response([
-                                'message' => 'Please wait 24 hours before submitting another request.',
-                            ], 429);
-                        }
-                        // Remove stale denied request so a fresh one can be created
-                        self::delete_access_request((string) $existing_token);
-                    }
+        // Check for existing request (duplicate / cooldown)
+        $existing = WPSG_DB::find_access_request_by_email($email, $post_id);
+        if ($existing) {
+            if ($existing['status'] === 'pending') {
+                return new WP_Error('wpsg_request_pending', 'A request for this email is already pending.', ['status' => 409]);
+            }
+            if ($existing['status'] === 'denied') {
+                $cooldown_seconds = 24 * 60 * 60;
+                $elapsed = time() - strtotime($existing['requested_at']);
+                if ($elapsed < $cooldown_seconds) {
+                    return new WP_Error('wpsg_rate_limited', 'Please wait 24 hours before submitting another request.', ['status' => 429]);
                 }
+                // Remove stale denied request so a fresh one can be created
+                WPSG_DB::delete_access_request($existing['token']);
             }
         }
 
@@ -1813,14 +1781,13 @@ class WPSG_REST {
         $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
         $now    = gmdate('c');
 
-        $data = [
+        WPSG_DB::insert_access_request([
             'token'        => $token,
             'email'        => $email,
             'campaign_id'  => $post_id,
             'status'       => 'pending',
             'requested_at' => $now,
-        ];
-        self::save_access_request($token, $data);
+        ]);
 
         // Confirmation email to the requester
         $site_name = get_bloginfo('name');
@@ -1852,36 +1819,8 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        $index  = get_option('wpsg_access_request_index', []);
-        $result = [];
-
-        if (is_array($index)) {
-            foreach ($index as $token) {
-                $data = self::get_access_request((string) $token);
-                if (!$data) {
-                    continue;
-                }
-                if (intval($data['campaign_id']) !== $post_id) {
-                    continue;
-                }
-                if ($status && $data['status'] !== $status) {
-                    continue;
-                }
-                $result[] = [
-                    'token'        => $data['token'],
-                    'email'        => $data['email'],
-                    'campaign_id'  => $data['campaign_id'],
-                    'status'       => $data['status'],
-                    'requested_at' => $data['requested_at'],
-                    'resolved_at'  => $data['resolved_at'] ?? null,
-                ];
-            }
-        }
-
-        // Sort newest-first
-        usort($result, function ($a, $b) {
-            return strcmp($b['requested_at'], $a['requested_at']);
-        });
+        $rows = WPSG_DB::list_access_requests($post_id, $status);
+        $result = array_map([self::class, 'format_access_request'], $rows);
 
         return new WP_REST_Response($result, 200);
     }
@@ -1898,7 +1837,7 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        $data = self::get_access_request($token);
+        $data = WPSG_DB::get_access_request($token);
         if (!$data || intval($data['campaign_id']) !== $post_id) {
             return new WP_Error('wpsg_request_not_found', 'Request not found', ['status' => 404]);
         }
@@ -1936,10 +1875,8 @@ class WPSG_REST {
         update_post_meta($post_id, 'access_grants', $grants);
         self::clear_accessible_campaigns_cache();
 
-        // Update request record
-        $data['status']      = 'approved';
-        $data['resolved_at'] = gmdate('c');
-        self::save_access_request($token, $data);
+        // Update request status
+        WPSG_DB::update_access_request_status($token, 'approved');
 
         self::add_audit_entry($post_id, 'access.request.approved', [
             'email'  => $data['email'],
@@ -1976,7 +1913,7 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        $data = self::get_access_request($token);
+        $data = WPSG_DB::get_access_request($token);
         if (!$data || intval($data['campaign_id']) !== $post_id) {
             return new WP_Error('wpsg_request_not_found', 'Request not found', ['status' => 404]);
         }
@@ -1984,9 +1921,7 @@ class WPSG_REST {
             return new WP_Error('wpsg_request_resolved', 'Request already resolved', ['status' => 409]);
         }
 
-        $data['status']      = 'denied';
-        $data['resolved_at'] = gmdate('c');
-        self::save_access_request($token, $data);
+        WPSG_DB::update_access_request_status($token, 'denied');
 
         self::add_audit_entry($post_id, 'access.request.denied', [
             'email' => $data['email'],

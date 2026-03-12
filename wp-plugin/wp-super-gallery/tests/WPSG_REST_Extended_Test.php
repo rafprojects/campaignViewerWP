@@ -511,7 +511,12 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
     // Access Request Workflow
     // ═══════════════════════════════════════════════════════════════════════
 
+    private function setup_access_request_tables(): void {
+        WPSG_DB::maybe_upgrade();
+    }
+
     public function test_list_access_requests() {
+        $this->setup_access_request_tables();
         $cid = $this->create_campaign('Access Req List');
 
         $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
@@ -519,6 +524,201 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
 
         $this->assertEquals(200, $res->get_status());
         $this->assertIsArray($res->get_data());
+    }
+
+    public function test_submit_access_request_returns_201_and_token() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Submit');
+
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req->set_body_params(['email' => 'newuser@example.com']);
+        $res = rest_do_request($req);
+
+        $this->assertEquals(201, $res->get_status());
+        $data = $res->get_data();
+        $this->assertArrayHasKey('token', $data);
+        $this->assertNotEmpty($data['token']);
+    }
+
+    public function test_submit_access_request_rejects_invalid_email() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Bad Email');
+
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req->set_body_params(['email' => 'not-an-email']);
+        $res = rest_do_request($req);
+
+        $this->assertEquals(400, $res->get_status());
+    }
+
+    public function test_submit_access_request_404_for_missing_campaign() {
+        $this->setup_access_request_tables();
+
+        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/999999/access-requests');
+        $req->set_body_params(['email' => 'test@example.com']);
+        $res = rest_do_request($req);
+
+        $this->assertEquals(404, $res->get_status());
+    }
+
+    public function test_submit_duplicate_pending_request_returns_409() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Dup');
+
+        // First submission.
+        $req1 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req1->set_body_params(['email' => 'dup@example.com']);
+        $res1 = rest_do_request($req1);
+        $this->assertEquals(201, $res1->get_status());
+
+        // Duplicate while still pending.
+        $req2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req2->set_body_params(['email' => 'dup@example.com']);
+        $res2 = rest_do_request($req2);
+        $this->assertEquals(409, $res2->get_status());
+    }
+
+    public function test_submit_after_denial_within_cooldown_returns_429() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Cooldown');
+
+        // Submit + deny.
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req->set_body_params(['email' => 'cool@example.com']);
+        $res = rest_do_request($req);
+        $token = $res->get_data()['token'];
+
+        $deny = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/deny");
+        rest_do_request($deny);
+
+        // Re-submit within 24h.
+        $req2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req2->set_body_params(['email' => 'cool@example.com']);
+        $res2 = rest_do_request($req2);
+        $this->assertEquals(429, $res2->get_status());
+    }
+
+    public function test_approve_access_request_provisions_user() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Approve');
+
+        // Submit.
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req->set_body_params(['email' => 'approve-me@example.com']);
+        $res = rest_do_request($req);
+        $token = $res->get_data()['token'];
+
+        // Approve.
+        $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $ares = rest_do_request($approve);
+        $this->assertEquals(200, $ares->get_status());
+
+        // Status should be approved.
+        $row = WPSG_DB::get_access_request($token);
+        $this->assertEquals('approved', $row['status']);
+        $this->assertNotNull($row['resolved_at']);
+
+        // A WP user should exist for the email.
+        $user = get_user_by('email', 'approve-me@example.com');
+        $this->assertNotFalse($user);
+    }
+
+    public function test_approve_already_resolved_returns_409() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Already');
+
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req->set_body_params(['email' => 'resolved@example.com']);
+        $token = rest_do_request($req)->get_data()['token'];
+
+        // Approve first time.
+        $a1 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $this->assertEquals(200, rest_do_request($a1)->get_status());
+
+        // Approve again — should be 409.
+        $a2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $this->assertEquals(409, rest_do_request($a2)->get_status());
+    }
+
+    public function test_deny_access_request() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Deny');
+
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req->set_body_params(['email' => 'deny-me@example.com']);
+        $token = rest_do_request($req)->get_data()['token'];
+
+        $deny = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/deny");
+        $dres = rest_do_request($deny);
+        $this->assertEquals(200, $dres->get_status());
+
+        $row = WPSG_DB::get_access_request($token);
+        $this->assertEquals('denied', $row['status']);
+    }
+
+    public function test_approve_nonexistent_token_returns_404() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Missing');
+
+        $fake_token = wp_generate_uuid4();
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$fake_token}/approve");
+        $res = rest_do_request($req);
+        $this->assertEquals(404, $res->get_status());
+    }
+
+    public function test_list_access_requests_returns_formatted_entries() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR List Format');
+
+        // Submit two requests.
+        foreach (['a@e.com', 'b@e.com'] as $email) {
+            $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+            $req->set_body_params(['email' => $email]);
+            rest_do_request($req);
+        }
+
+        $list = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $res = rest_do_request($list);
+        $data = $res->get_data();
+
+        $this->assertEquals(200, $res->get_status());
+        $this->assertCount(2, $data);
+        // Check response shape.
+        $first = $data[0];
+        $this->assertArrayHasKey('token', $first);
+        $this->assertArrayHasKey('email', $first);
+        $this->assertArrayHasKey('status', $first);
+        $this->assertArrayHasKey('requested_at', $first);
+    }
+
+    public function test_list_access_requests_filters_by_status_param() {
+        $this->setup_access_request_tables();
+        $cid = $this->create_campaign('AR Status Filter');
+
+        // Submit 2 requests, approve one.
+        $req1 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req1->set_body_params(['email' => 'f1@e.com']);
+        $t1 = rest_do_request($req1)->get_data()['token'];
+
+        $req2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req2->set_body_params(['email' => 'f2@e.com']);
+        rest_do_request($req2);
+
+        $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$t1}/approve");
+        rest_do_request($approve);
+
+        // Filter pending — should get 1.
+        $listPending = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $listPending->set_param('status', 'pending');
+        $pending = rest_do_request($listPending)->get_data();
+        $this->assertCount(1, $pending);
+        $this->assertEquals('f2@e.com', $pending[0]['email']);
+
+        // Filter approved — should get 1.
+        $listApproved = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $listApproved->set_param('status', 'approved');
+        $approved = rest_do_request($listApproved)->get_data();
+        $this->assertCount(1, $approved);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

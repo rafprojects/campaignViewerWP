@@ -66,11 +66,22 @@ $options = [
 	'wpsg_cache_version',
 	'wpsg_layout_templates',
 	'wpsg_media_refs_backfilled',
+	'wpsg_access_requests_migrated',
+	'wpsg_access_request_index',
 	'wpsg_preserve_data_on_uninstall', // legacy key, if ever set directly
 ];
 foreach ( $options as $option ) {
 	delete_option( $option );
 }
+
+// Clean up any legacy per-request options from pre-D-9 wp_options storage.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$wpdb->query(
+	"DELETE FROM {$wpdb->options}
+	 WHERE option_name LIKE 'wpsg\_access\_request\_%'
+	   AND option_name != 'wpsg_access_request_index'
+	   AND option_name != 'wpsg_access_requests_migrated'"
+);
 
 // ── 5. Delete transients matching wpsg_* ────────────────────
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

@@ -14,8 +14,10 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         // Clean up custom tables after each test.
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_analytics_events");
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_media_refs");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_access_requests");
         delete_option('wpsg_db_version');
         delete_option('wpsg_media_refs_backfilled');
+        delete_option('wpsg_access_requests_migrated');
         parent::tearDown();
     }
 
@@ -34,6 +36,10 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         // Media refs table should exist.
         $refs = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_media_refs'");
         $this->assertNotNull($refs);
+
+        // Access requests table should exist.
+        $ar = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_access_requests'");
+        $this->assertNotNull($ar);
     }
 
     public function test_maybe_upgrade_is_idempotent() {
@@ -269,5 +275,226 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         // We test by checking the flag is still set after second call.
         WPSG_DB::maybe_create_media_refs_table();
         $this->assertEquals('1', get_option('wpsg_media_refs_backfilled'));
+    }
+
+    // ── Access requests table ──────────────────────────────────────────────
+
+    private function create_access_requests_table(): void {
+        WPSG_DB::maybe_create_access_requests_table();
+    }
+
+    public function test_access_requests_table_has_expected_columns() {
+        $this->create_access_requests_table();
+
+        global $wpdb;
+        $cols = $wpdb->get_results(
+            "DESCRIBE {$wpdb->prefix}wpsg_access_requests"
+        );
+        $col_names = array_map(function ($c) { return $c->Field; }, $cols);
+
+        $expected = ['id', 'token', 'campaign_id', 'email', 'status',
+                     'requested_at', 'resolved_at'];
+        foreach ($expected as $col) {
+            $this->assertContains($col, $col_names);
+        }
+    }
+
+    public function test_get_access_requests_table_returns_prefixed_name() {
+        global $wpdb;
+        $this->assertEquals(
+            $wpdb->prefix . 'wpsg_access_requests',
+            WPSG_DB::get_access_requests_table()
+        );
+    }
+
+    public function test_insert_and_get_access_request() {
+        $this->create_access_requests_table();
+
+        $token = wp_generate_uuid4();
+        WPSG_DB::insert_access_request([
+            'token'        => $token,
+            'campaign_id'  => 42,
+            'email'        => 'alice@example.com',
+            'status'       => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+
+        $row = WPSG_DB::get_access_request($token);
+        $this->assertNotNull($row);
+        $this->assertEquals($token, $row['token']);
+        $this->assertEquals('alice@example.com', $row['email']);
+        $this->assertEquals(42, (int) $row['campaign_id']);
+        $this->assertEquals('pending', $row['status']);
+    }
+
+    public function test_get_access_request_returns_null_for_unknown_token() {
+        $this->create_access_requests_table();
+        $this->assertNull(WPSG_DB::get_access_request('nonexistent'));
+    }
+
+    public function test_update_access_request_status() {
+        $this->create_access_requests_table();
+
+        $token = wp_generate_uuid4();
+        WPSG_DB::insert_access_request([
+            'token'        => $token,
+            'campaign_id'  => 1,
+            'email'        => 'bob@example.com',
+            'status'       => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+
+        WPSG_DB::update_access_request_status($token, 'approved');
+
+        $row = WPSG_DB::get_access_request($token);
+        $this->assertEquals('approved', $row['status']);
+        $this->assertNotNull($row['resolved_at']);
+    }
+
+    public function test_delete_access_request() {
+        $this->create_access_requests_table();
+
+        $token = wp_generate_uuid4();
+        WPSG_DB::insert_access_request([
+            'token'        => $token,
+            'campaign_id'  => 1,
+            'email'        => 'del@example.com',
+            'status'       => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+
+        WPSG_DB::delete_access_request($token);
+        $this->assertNull(WPSG_DB::get_access_request($token));
+    }
+
+    public function test_list_access_requests_returns_campaign_rows() {
+        $this->create_access_requests_table();
+
+        $cid = 10;
+        foreach (['a@e.com', 'b@e.com', 'c@e.com'] as $email) {
+            WPSG_DB::insert_access_request([
+                'token'        => wp_generate_uuid4(),
+                'campaign_id'  => $cid,
+                'email'        => $email,
+                'status'       => 'pending',
+                'requested_at' => gmdate('c'),
+            ]);
+        }
+        // Different campaign — should not appear.
+        WPSG_DB::insert_access_request([
+            'token'        => wp_generate_uuid4(),
+            'campaign_id'  => 99,
+            'email'        => 'other@e.com',
+            'status'       => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+
+        $rows = WPSG_DB::list_access_requests($cid);
+        $this->assertCount(3, $rows);
+    }
+
+    public function test_list_access_requests_filters_by_status() {
+        $this->create_access_requests_table();
+
+        $cid = 20;
+        $tokenA = wp_generate_uuid4();
+        WPSG_DB::insert_access_request([
+            'token' => $tokenA, 'campaign_id' => $cid,
+            'email' => 'a@e.com', 'status' => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+        $tokenB = wp_generate_uuid4();
+        WPSG_DB::insert_access_request([
+            'token' => $tokenB, 'campaign_id' => $cid,
+            'email' => 'b@e.com', 'status' => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+        WPSG_DB::update_access_request_status($tokenB, 'approved');
+
+        $pending = WPSG_DB::list_access_requests($cid, 'pending');
+        $this->assertCount(1, $pending);
+        $this->assertEquals('a@e.com', $pending[0]['email']);
+
+        $approved = WPSG_DB::list_access_requests($cid, 'approved');
+        $this->assertCount(1, $approved);
+    }
+
+    public function test_find_access_request_by_email() {
+        $this->create_access_requests_table();
+
+        WPSG_DB::insert_access_request([
+            'token'        => wp_generate_uuid4(),
+            'campaign_id'  => 5,
+            'email'        => 'FIND@Example.COM',
+            'status'       => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+
+        // Case-insensitive match.
+        $row = WPSG_DB::find_access_request_by_email('find@example.com', 5);
+        $this->assertNotNull($row);
+
+        // Different campaign — no match.
+        $none = WPSG_DB::find_access_request_by_email('find@example.com', 999);
+        $this->assertNull($none);
+    }
+
+    public function test_delete_access_requests_for_campaign() {
+        $this->create_access_requests_table();
+
+        foreach ([1, 1, 2] as $cid) {
+            WPSG_DB::insert_access_request([
+                'token'        => wp_generate_uuid4(),
+                'campaign_id'  => $cid,
+                'email'        => "u{$cid}@e.com",
+                'status'       => 'pending',
+                'requested_at' => gmdate('c'),
+            ]);
+        }
+
+        WPSG_DB::delete_access_requests_for_campaign(1);
+
+        $this->assertCount(0, WPSG_DB::list_access_requests(1));
+        $this->assertCount(1, WPSG_DB::list_access_requests(2));
+    }
+
+    public function test_migrate_access_requests_from_options() {
+        $this->create_access_requests_table();
+
+        // Seed legacy options.
+        $token1 = wp_generate_uuid4();
+        $token2 = wp_generate_uuid4();
+        update_option('wpsg_access_request_index', [$token1, $token2]);
+        update_option('wpsg_access_request_' . $token1, [
+            'campaign_id'  => 7,
+            'email'        => 'legacy1@test.com',
+            'status'       => 'pending',
+            'requested_at' => gmdate('c'),
+        ]);
+        update_option('wpsg_access_request_' . $token2, [
+            'campaign_id'  => 7,
+            'email'        => 'legacy2@test.com',
+            'status'       => 'approved',
+            'requested_at' => gmdate('c'),
+            'resolved_at'  => gmdate('c'),
+        ]);
+
+        // Reset migration flag and run migration again.
+        delete_option('wpsg_access_requests_migrated');
+        WPSG_DB::maybe_create_access_requests_table();
+
+        // Legacy options should be cleaned up.
+        $this->assertFalse(get_option('wpsg_access_request_index'));
+        $this->assertFalse(get_option('wpsg_access_request_' . $token1));
+        $this->assertFalse(get_option('wpsg_access_request_' . $token2));
+
+        // Data should be in the new table.
+        $row1 = WPSG_DB::get_access_request($token1);
+        $this->assertNotNull($row1);
+        $this->assertEquals('legacy1@test.com', $row1['email']);
+
+        $row2 = WPSG_DB::get_access_request($token2);
+        $this->assertNotNull($row2);
+        $this->assertEquals('approved', $row2['status']);
     }
 }

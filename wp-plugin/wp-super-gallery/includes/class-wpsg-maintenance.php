@@ -166,6 +166,9 @@ class WPSG_Maintenance {
         $media_table = WPSG_DB::get_media_refs_table();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $wpdb->delete($media_table, ['campaign_id' => $campaign_id], ['%d']);
+
+        // Remove access requests for this campaign.
+        WPSG_DB::delete_access_requests_for_campaign($campaign_id);
     }
 
     /**

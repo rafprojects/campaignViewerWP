@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '3';
+    const DB_VERSION = '4';
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
@@ -16,6 +16,7 @@ class WPSG_DB {
         self::add_indexes();
         self::maybe_create_analytics_table();
         self::maybe_create_media_refs_table();
+        self::maybe_create_access_requests_table();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -227,6 +228,207 @@ class WPSG_DB {
     public static function delete_media_refs(int $campaign_id): void {
         global $wpdb;
         $table = self::get_media_refs_table();
+        $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
+    }
+
+    // ── D-9: Access requests table ──────────────────────────────────────
+
+    public static function maybe_create_access_requests_table() {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_access_requests_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            token        VARCHAR(36) NOT NULL,
+            campaign_id  BIGINT UNSIGNED NOT NULL,
+            email        VARCHAR(255) NOT NULL,
+            status       VARCHAR(20) NOT NULL DEFAULT 'pending',
+            requested_at DATETIME NOT NULL,
+            resolved_at  DATETIME DEFAULT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY token (token),
+            KEY campaign_status (campaign_id, status),
+            KEY email_campaign (email, campaign_id)
+        ) {$charset};";
+
+        dbDelta($sql);
+
+        // One-time migration from wp_options to custom table.
+        if (!get_option('wpsg_access_requests_migrated')) {
+            self::migrate_access_requests_from_options();
+            update_option('wpsg_access_requests_migrated', '1');
+        }
+    }
+
+    public static function get_access_requests_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'wpsg_access_requests';
+    }
+
+    /**
+     * Migrate access request data from wp_options to the custom table.
+     *
+     * Reads the legacy wpsg_access_request_index option and each per-request
+     * option, inserts rows into the new table, then deletes the old options.
+     */
+    private static function migrate_access_requests_from_options(): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $index = get_option('wpsg_access_request_index', []);
+
+        if (!is_array($index) || empty($index)) {
+            return;
+        }
+
+        foreach ($index as $token) {
+            $token = (string) $token;
+            $option_name = 'wpsg_access_request_' . $token;
+            $data = get_option($option_name, null);
+
+            if (!is_array($data)) {
+                delete_option($option_name);
+                continue;
+            }
+
+            $wpdb->insert($table, [
+                'token'        => $token,
+                'campaign_id'  => intval($data['campaign_id'] ?? 0),
+                'email'        => sanitize_email($data['email'] ?? ''),
+                'status'       => sanitize_text_field($data['status'] ?? 'pending'),
+                'requested_at' => gmdate('Y-m-d H:i:s', strtotime($data['requested_at'] ?? 'now')),
+                'resolved_at'  => !empty($data['resolved_at'])
+                    ? gmdate('Y-m-d H:i:s', strtotime($data['resolved_at']))
+                    : null,
+            ], ['%s', '%d', '%s', '%s', '%s', '%s']);
+
+            delete_option($option_name);
+        }
+
+        delete_option('wpsg_access_request_index');
+    }
+
+    // ── Access request query helpers ─────────────────────────────────────
+
+    /**
+     * Get a single access request by token.
+     *
+     * @return array|null Request row as associative array, or null.
+     */
+    public static function get_access_request(string $token): ?array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$table} WHERE token = %s", $token),
+            ARRAY_A
+        );
+        return $row ?: null;
+    }
+
+    /**
+     * Insert a new access request.
+     *
+     * @return string The token of the inserted request.
+     */
+    public static function insert_access_request(array $data): string {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->insert($table, [
+            'token'        => $data['token'],
+            'campaign_id'  => intval($data['campaign_id']),
+            'email'        => $data['email'],
+            'status'       => $data['status'] ?? 'pending',
+            'requested_at' => gmdate('Y-m-d H:i:s', strtotime($data['requested_at'])),
+            'resolved_at'  => null,
+        ], ['%s', '%d', '%s', '%s', '%s', '%s']);
+        return $data['token'];
+    }
+
+    /**
+     * Update the status of an access request.
+     */
+    public static function update_access_request_status(string $token, string $status): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            [
+                'status'      => $status,
+                'resolved_at' => gmdate('Y-m-d H:i:s'),
+            ],
+            ['token' => $token],
+            ['%s', '%s'],
+            ['%s']
+        );
+    }
+
+    /**
+     * Delete an access request by token.
+     */
+    public static function delete_access_request(string $token): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->delete($table, ['token' => $token], ['%s']);
+    }
+
+    /**
+     * List access requests for a campaign, optionally filtered by status.
+     *
+     * @return array Array of associative arrays, newest first.
+     */
+    public static function list_access_requests(int $campaign_id, string $status = ''): array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+
+        if ($status) {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE campaign_id = %d AND status = %s ORDER BY requested_at DESC",
+                    $campaign_id,
+                    $status
+                ),
+                ARRAY_A
+            );
+        } else {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE campaign_id = %d ORDER BY requested_at DESC",
+                    $campaign_id
+                ),
+                ARRAY_A
+            );
+        }
+
+        return $rows ?: [];
+    }
+
+    /**
+     * Find an existing request by email + campaign (for duplicate/cooldown checks).
+     *
+     * @return array|null Request row or null.
+     */
+    public static function find_access_request_by_email(string $email, int $campaign_id): ?array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE LOWER(email) = LOWER(%s) AND campaign_id = %d LIMIT 1",
+                $email,
+                $campaign_id
+            ),
+            ARRAY_A
+        );
+        return $row ?: null;
+    }
+
+    /**
+     * Delete all access requests for a campaign (cleanup on campaign delete).
+     */
+    public static function delete_access_requests_for_campaign(int $campaign_id): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
         $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
     }
 
