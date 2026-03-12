@@ -887,7 +887,7 @@ class WPSG_REST {
         $description = wp_kses_post($request->get_param('description') ?? '');
 
         if (empty($title)) {
-            return new WP_REST_Response(['message' => 'Title is required'], 400);
+            return new WP_Error('wpsg_missing_title', 'Title is required', ['status' => 400]);
         }
 
         $post_id = wp_insert_post([
@@ -898,7 +898,7 @@ class WPSG_REST {
         ], true);
 
         if (is_wp_error($post_id)) {
-            return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
+            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
         }
 
         $meta_result = self::apply_campaign_meta($post_id, $request);
@@ -919,12 +919,12 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $user_id = get_current_user_id();
         if (!self::can_view_campaign($post_id, $user_id)) {
-            return new WP_REST_Response(['message' => 'Forbidden'], 403);
+            return new WP_Error('wpsg_forbidden', 'Forbidden', ['status' => 403]);
         }
 
         return new WP_REST_Response(self::format_campaign($post), 200);
@@ -934,7 +934,7 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $title = $request->get_param('title');
@@ -970,7 +970,7 @@ class WPSG_REST {
     public static function archive_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         update_post_meta($post_id, 'status', 'archived');
@@ -982,7 +982,7 @@ class WPSG_REST {
     public static function restore_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         update_post_meta($post_id, 'status', 'active');
@@ -997,7 +997,7 @@ class WPSG_REST {
         $source_id = intval($request->get_param('id'));
 
         if (!self::campaign_exists($source_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $source   = get_post($source_id);
@@ -1014,7 +1014,7 @@ class WPSG_REST {
         ], true);
 
         if (is_wp_error($new_id)) {
-            return new WP_REST_Response(['message' => $new_id->get_error_message()], 500);
+            return new WP_Error('wpsg_internal_error', $new_id->get_error_message(), ['status' => 500]);
         }
 
         // Copy campaign-specific meta keys (settings + bindings), excluding WP internal meta.
@@ -1069,10 +1069,10 @@ class WPSG_REST {
 
         $allowed_actions = ['archive', 'restore'];
         if (!in_array($action, $allowed_actions, true)) {
-            return new WP_REST_Response(['message' => 'Invalid action. Allowed: archive, restore'], 400);
+            return new WP_Error('wpsg_invalid_action', 'Invalid action. Allowed: archive, restore', ['status' => 400]);
         }
         if (!is_array($ids) || empty($ids)) {
-            return new WP_REST_Response(['message' => 'ids must be a non-empty array'], 400);
+            return new WP_Error('wpsg_invalid_ids', 'ids must be a non-empty array', ['status' => 400]);
         }
 
         $success = [];
@@ -1098,7 +1098,7 @@ class WPSG_REST {
     public static function export_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $post      = get_post($post_id);
@@ -1141,11 +1141,11 @@ class WPSG_REST {
         $body    = $request->get_json_params();
 
         if (empty($body) || !isset($body['campaign'])) {
-            return new WP_REST_Response(['message' => 'Invalid payload: missing campaign key'], 400);
+            return new WP_Error('wpsg_invalid_payload', 'Invalid payload: missing campaign key', ['status' => 400]);
         }
         $version = intval($body['version'] ?? 0);
         if ($version !== 1) {
-            return new WP_REST_Response(['message' => 'Unsupported export version'], 400);
+            return new WP_Error('wpsg_unsupported_version', 'Unsupported export version', ['status' => 400]);
         }
 
         $src = $body['campaign'];
@@ -1159,7 +1159,7 @@ class WPSG_REST {
             'post_status'  => 'publish',
         ], true);
         if (is_wp_error($post_id)) {
-            return new WP_REST_Response(['message' => $post_id->get_error_message()], 500);
+            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
         }
 
         // Copy scalar meta fields; always import as draft.
@@ -1265,17 +1265,17 @@ class WPSG_REST {
         // Respect the enable_analytics setting (default: disabled).
         $settings = get_option('wpsg_settings', []);
         if (empty($settings['enable_analytics'])) {
-            return new WP_REST_Response(['message' => 'Analytics disabled'], 403);
+            return new WP_Error('wpsg_analytics_disabled', 'Analytics disabled', ['status' => 403]);
         }
 
         $campaign_id = intval($request->get_param('campaign_id'));
         $event_type  = sanitize_text_field($request->get_param('event_type') ?? 'view');
 
         if ($campaign_id <= 0) {
-            return new WP_REST_Response(['message' => 'Invalid campaign_id'], 400);
+            return new WP_Error('wpsg_invalid_campaign_id', 'Invalid campaign_id', ['status' => 400]);
         }
         if (!self::campaign_exists($campaign_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $allowed_events = ['view'];
@@ -1307,7 +1307,7 @@ class WPSG_REST {
         $campaign_id = intval($request->get_param('id'));
 
         if (!self::campaign_exists($campaign_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $from = sanitize_text_field($request->get_param('from') ?? '');
@@ -1317,7 +1317,7 @@ class WPSG_REST {
         $to_ts   = $to   ? strtotime($to)   : time();
         $from_ts = $from ? strtotime($from) : strtotime('-30 days', $to_ts);
         if (!$from_ts || !$to_ts || $from_ts > $to_ts) {
-            return new WP_REST_Response(['message' => 'Invalid date range'], 400);
+            return new WP_Error('wpsg_invalid_date_range', 'Invalid date range', ['status' => 400]);
         }
 
         $from_str = gmdate('Y-m-d 00:00:00', $from_ts);
@@ -1383,7 +1383,7 @@ class WPSG_REST {
         $media_id = sanitize_text_field($request->get_param('mediaId'));
 
         if (empty($media_id)) {
-            return new WP_REST_Response(['message' => 'mediaId is required'], 400);
+            return new WP_Error('wpsg_missing_media_id', 'mediaId is required', ['status' => 400]);
         }
 
         $found = WPSG_DB::get_media_usage($media_id);
@@ -1404,7 +1404,7 @@ class WPSG_REST {
 
         $ids = array_values(array_unique(array_map('sanitize_text_field', $ids)));
         if (count($ids) > 200) {
-            return new WP_REST_Response(['message' => 'Too many IDs (max 200)'], 400);
+            return new WP_Error('wpsg_too_many_ids', 'Too many IDs (max 200)', ['status' => 400]);
         }
 
         $result = WPSG_DB::get_media_usage_summary($ids);
@@ -1432,7 +1432,7 @@ class WPSG_REST {
         ]);
 
         if (is_wp_error($terms)) {
-            return new WP_REST_Response(['message' => 'Failed to retrieve categories'], 500);
+            return new WP_Error('wpsg_internal_error', 'Failed to retrieve categories', ['status' => 500]);
         }
 
         $result = array_map(function ($term) {
@@ -1451,12 +1451,12 @@ class WPSG_REST {
         $start = microtime(true);
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $user_id = get_current_user_id();
         if (!self::can_view_campaign($post_id, $user_id)) {
-            return new WP_REST_Response(['message' => 'Forbidden'], 403);
+            return new WP_Error('wpsg_forbidden', 'Forbidden', ['status' => 403]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -1494,7 +1494,7 @@ class WPSG_REST {
     public static function create_media($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $type = sanitize_text_field($request->get_param('type'));
@@ -1509,7 +1509,7 @@ class WPSG_REST {
         $thumbnail = esc_url_raw($request->get_param('thumbnail'));
 
         if (!in_array($type, ['video', 'image'], true)) {
-            return new WP_REST_Response(['message' => 'Invalid media type'], 400);
+            return new WP_Error('wpsg_invalid_media_type', 'Invalid media type', ['status' => 400]);
         }
 
         $media_item = [
@@ -1524,7 +1524,7 @@ class WPSG_REST {
             $url = esc_url_raw($request->get_param('url') ?? '');
             $normalized = self::normalize_external_media($url);
             if (is_wp_error($normalized)) {
-                return new WP_REST_Response(['message' => $normalized->get_error_message()], 400);
+                return new WP_Error('wpsg_bad_request', $normalized->get_error_message(), ['status' => 400]);
             }
             $media_item['url'] = $normalized['url'];
             $media_item['embedUrl'] = $normalized['embedUrl'];
@@ -1533,17 +1533,17 @@ class WPSG_REST {
         } elseif ($source === 'upload') {
             $attachment_id = intval($request->get_param('attachmentId'));
             if ($attachment_id <= 0) {
-                return new WP_REST_Response(['message' => 'attachmentId is required for uploads'], 400);
+                return new WP_Error('wpsg_missing_attachment_id', 'attachmentId is required for uploads', ['status' => 400]);
             }
             $attachment_url = wp_get_attachment_url($attachment_id);
             if (!$attachment_url) {
-                return new WP_REST_Response(['message' => 'Invalid attachmentId'], 400);
+                return new WP_Error('wpsg_invalid_attachment_id', 'Invalid attachmentId', ['status' => 400]);
             }
             $media_item['attachmentId'] = $attachment_id;
             $media_item['url'] = $attachment_url;
             $media_item['thumbnail'] = $thumbnail ?: $attachment_url;
         } else {
-            return new WP_REST_Response(['message' => 'Invalid media source'], 400);
+            return new WP_Error('wpsg_invalid_media_source', 'Invalid media source', ['status' => 400]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -1569,7 +1569,7 @@ class WPSG_REST {
     public static function list_access($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $company_term = self::get_company_term($post_id);
@@ -1623,7 +1623,7 @@ class WPSG_REST {
     public static function grant_access($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $user_id = intval($request->get_param('userId'));
@@ -1631,11 +1631,11 @@ class WPSG_REST {
         $action = sanitize_text_field($request->get_param('action')) ?: 'grant';
 
         if ($user_id <= 0) {
-            return new WP_REST_Response(['message' => 'userId is required'], 400);
+            return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
         if (!in_array($source, ['company', 'campaign'], true)) {
-            return new WP_REST_Response(['message' => 'Invalid source'], 400);
+            return new WP_Error('wpsg_invalid_source', 'Invalid source', ['status' => 400]);
         }
 
         $entry = [
@@ -1648,7 +1648,7 @@ class WPSG_REST {
         if ($source === 'company') {
             $company_term = self::get_company_term($post_id);
             if (!$company_term) {
-                return new WP_REST_Response(['message' => 'Company not set for campaign'], 400);
+                return new WP_Error('wpsg_company_not_set', 'Company not set for campaign', ['status' => 400]);
             }
             $grants = get_term_meta($company_term->term_id, 'access_grants', true);
             $grants = is_array($grants) ? $grants : [];
@@ -1687,7 +1687,7 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
         if (!self::campaign_exists($post_id) || $user_id <= 0) {
-            return new WP_REST_Response(['message' => 'Invalid request'], 400);
+            return new WP_Error('wpsg_invalid_request', 'Invalid request', ['status' => 400]);
         }
 
         $company_term = self::get_company_term($post_id);
@@ -1773,10 +1773,10 @@ class WPSG_REST {
         $email      = sanitize_email($request->get_param('email') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
         if (!is_email($email)) {
-            return new WP_REST_Response(['message' => 'A valid email address is required'], 400);
+            return new WP_Error('wpsg_invalid_email', 'A valid email address is required', ['status' => 400]);
         }
 
         // 24-hour cooldown per email per campaign for previously denied requests
@@ -1849,7 +1849,7 @@ class WPSG_REST {
         $status  = sanitize_text_field($request->get_param('status') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $index  = get_option('wpsg_access_request_index', []);
@@ -1895,15 +1895,15 @@ class WPSG_REST {
         $token   = sanitize_text_field($request->get_param('token') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $data = self::get_access_request($token);
         if (!$data || intval($data['campaign_id']) !== $post_id) {
-            return new WP_REST_Response(['message' => 'Request not found'], 404);
+            return new WP_Error('wpsg_request_not_found', 'Request not found', ['status' => 404]);
         }
         if ($data['status'] !== 'pending') {
-            return new WP_REST_Response(['message' => 'Request already resolved'], 409);
+            return new WP_Error('wpsg_request_resolved', 'Request already resolved', ['status' => 409]);
         }
 
         // Provision access: look up or create a WP user for this email
@@ -1919,7 +1919,7 @@ class WPSG_REST {
             }
             $user_id = wp_create_user($username, wp_generate_password(), $data['email']);
             if (is_wp_error($user_id)) {
-                return new WP_REST_Response(['message' => 'Failed to create user: ' . $user_id->get_error_message()], 500);
+                return new WP_Error('wpsg_user_creation_failed', 'Failed to create user: ' . $user_id->get_error_message(), ['status' => 500]);
             }
             $user = get_user_by('ID', $user_id);
         }
@@ -1973,15 +1973,15 @@ class WPSG_REST {
         $token   = sanitize_text_field($request->get_param('token') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $data = self::get_access_request($token);
         if (!$data || intval($data['campaign_id']) !== $post_id) {
-            return new WP_REST_Response(['message' => 'Request not found'], 404);
+            return new WP_Error('wpsg_request_not_found', 'Request not found', ['status' => 404]);
         }
         if ($data['status'] !== 'pending') {
-            return new WP_REST_Response(['message' => 'Request already resolved'], 409);
+            return new WP_Error('wpsg_request_resolved', 'Request already resolved', ['status' => 409]);
         }
 
         $data['status']      = 'denied';
@@ -2028,7 +2028,7 @@ class WPSG_REST {
         ]);
 
         if (is_wp_error($terms)) {
-            return new WP_REST_Response(['message' => 'Failed to fetch companies'], 500);
+            return new WP_Error('wpsg_internal_error', 'Failed to fetch companies', ['status' => 500]);
         }
 
         $companies = [];
@@ -2115,7 +2115,7 @@ class WPSG_REST {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_REST_Response(['message' => 'Company not found'], 404);
+            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         // Get company-level grants
@@ -2209,11 +2209,11 @@ class WPSG_REST {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_REST_Response(['message' => 'Company not found'], 404);
+            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         if ($user_id <= 0) {
-            return new WP_REST_Response(['message' => 'userId is required'], 400);
+            return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
         $grants = get_term_meta($term_id, 'access_grants', true);
@@ -2263,11 +2263,11 @@ class WPSG_REST {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_REST_Response(['message' => 'Company not found'], 404);
+            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         if ($user_id <= 0) {
-            return new WP_REST_Response(['message' => 'userId is required'], 400);
+            return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
         $grants = get_term_meta($term_id, 'access_grants', true);
@@ -2311,7 +2311,7 @@ class WPSG_REST {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_REST_Response(['message' => 'Company not found'], 404);
+            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         // Get all non-archived campaigns for this company
@@ -2368,7 +2368,7 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         $media_id = sanitize_text_field($request->get_param('mediaId'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -2393,7 +2393,7 @@ class WPSG_REST {
         unset($media_item);
 
         if (!$updated) {
-            return new WP_REST_Response(['message' => 'Media not found'], 404);
+            return new WP_Error('wpsg_media_not_found', 'Media not found', ['status' => 404]);
         }
 
         update_post_meta($post_id, 'media_items', $media_items);
@@ -2407,12 +2407,12 @@ class WPSG_REST {
     public static function reorder_media($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $items = $request->get_param('items');
         if (!is_array($items)) {
-            return new WP_REST_Response(['message' => 'items must be an array'], 400);
+            return new WP_Error('wpsg_invalid_items', 'items must be an array', ['status' => 400]);
         }
 
         $order_map = [];
@@ -2434,7 +2434,7 @@ class WPSG_REST {
         }
 
         if (empty($order_map)) {
-            return new WP_REST_Response(['message' => 'No valid items provided'], 400);
+            return new WP_Error('wpsg_no_valid_items', 'No valid items provided', ['status' => 400]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -2446,7 +2446,7 @@ class WPSG_REST {
             return !in_array($id, $existing_ids, true);
         }));
         if (!empty($invalid)) {
-            return new WP_REST_Response(['message' => 'Invalid media id(s) provided', 'invalid' => $invalid], 400);
+            return new WP_Error('wpsg_invalid_media_ids', 'Invalid media id(s) provided', ['status' => 400, 'invalid' => $invalid]);
         }
 
         foreach ($media_items as &$media_item) {
@@ -2564,7 +2564,7 @@ class WPSG_REST {
     public static function rescan_media_types($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -2658,7 +2658,7 @@ class WPSG_REST {
         $post_id = intval($request->get_param('id'));
         $media_id = sanitize_text_field($request->get_param('mediaId'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -2679,7 +2679,7 @@ class WPSG_REST {
     public static function list_audit($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_REST_Response(['message' => 'Campaign not found'], 404);
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $entries = get_post_meta($post_id, 'audit_log', true);
@@ -2690,7 +2690,7 @@ class WPSG_REST {
     public static function upload_media($request) {
         $files = $request->get_file_params();
         if (empty($files['file'])) {
-            return new WP_REST_Response(['message' => 'File is required'], 400);
+            return new WP_Error('wpsg_missing_file', 'File is required', ['status' => 400]);
         }
 
         $file = $files['file'];
@@ -2721,7 +2721,7 @@ class WPSG_REST {
             return new WP_REST_Response(['message' => $message], $status);
         }
         if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            return new WP_REST_Response(['message' => 'Invalid upload'], 400);
+            return new WP_Error('wpsg_invalid_upload', 'Invalid upload', ['status' => 400]);
         }
 
         $allowed_mimes = apply_filters('wpsg_upload_allowed_mimes', [
@@ -2736,7 +2736,7 @@ class WPSG_REST {
 
         $size_limit = intval(apply_filters('wpsg_upload_max_bytes', 50 * 1024 * 1024));
         if (isset($file['size']) && $file['size'] > $size_limit) {
-            return new WP_REST_Response(['message' => 'File too large'], 413);
+            return new WP_Error('wpsg_file_too_large', 'File too large', ['status' => 413]);
         }
 
         $check = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
@@ -2746,11 +2746,11 @@ class WPSG_REST {
         $mime_filename = $check_filename['type'] ?? '';
 
         if (!$mime || !in_array($mime, $allowed_mimes, true)) {
-            return new WP_REST_Response(['message' => 'Invalid file type'], 415);
+            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
         }
 
         if (!$ext || ($mime_filename && $mime_filename !== $mime)) {
-            return new WP_REST_Response(['message' => 'Invalid file type'], 415);
+            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
         }
 
         require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -2768,7 +2768,7 @@ class WPSG_REST {
             WPSG_Image_Optimizer::$wpsg_upload_context = false;
         }
         if (is_wp_error($attachment_id)) {
-            return new WP_REST_Response(['message' => $attachment_id->get_error_message()], 400);
+            return new WP_Error('wpsg_bad_request', $attachment_id->get_error_message(), ['status' => 400]);
         }
 
         $url = wp_get_attachment_url($attachment_id);
@@ -2875,19 +2875,19 @@ class WPSG_REST {
 
         $url = esc_url_raw($request->get_param('url') ?? '');
         if (empty($url)) {
-            return new WP_REST_Response(['message' => 'url is required'], 400);
+            return new WP_Error('wpsg_missing_url', 'url is required', ['status' => 400]);
         }
 
         $parsed = wp_parse_url($url);
         if (!is_array($parsed)) {
-            return new WP_REST_Response(['message' => 'Invalid oEmbed URL'], 400);
+            return new WP_Error('wpsg_invalid_oembed_url', 'Invalid oEmbed URL', ['status' => 400]);
         }
 
         // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
         $host = isset($parsed['host']) ? $parsed['host'] : '';
         $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : '';
         if (empty($host)) {
-            return new WP_REST_Response(['message' => 'Invalid oEmbed URL host'], 400);
+            return new WP_Error('wpsg_invalid_oembed_host', 'Invalid oEmbed URL host', ['status' => 400]);
         }
 
         // Normalize IPv6 literals wrapped in brackets (e.g. [::1])
@@ -2896,7 +2896,7 @@ class WPSG_REST {
         }
 
         if ($scheme !== 'https') {
-            return new WP_REST_Response(['message' => 'Only HTTPS oEmbed URLs are allowed'], 400);
+            return new WP_Error('wpsg_oembed_https_required', 'Only HTTPS oEmbed URLs are allowed', ['status' => 400]);
         }
 
         // Allowlist of well-known oEmbed providers (allows subdomains).
@@ -2944,13 +2944,13 @@ class WPSG_REST {
                 }
 
                 if (empty($ips_to_check)) {
-                    return new WP_REST_Response(['message' => 'Unable to resolve host for oEmbed URL'], 400);
+                    return new WP_Error('wpsg_oembed_dns_failed', 'Unable to resolve host for oEmbed URL', ['status' => 400]);
                 }
             }
 
             foreach ($ips_to_check as $ip) {
                 if (self::is_private_ip($ip)) {
-                    return new WP_REST_Response(['message' => 'oEmbed host resolves to a private or disallowed IP'], 400);
+                    return new WP_Error('wpsg_oembed_ssrf_blocked', 'oEmbed host resolves to a private or disallowed IP', ['status' => 400]);
                 }
             }
         }
@@ -3034,7 +3034,7 @@ class WPSG_REST {
         // H-2: If the SSRF filter blocked the request due to DNS rebinding,
         // return a clear 400 instead of a generic 502 failure.
         if ($wpsg_ssrf_blocked) {
-            return new WP_REST_Response(['message' => 'DNS rebinding detected: oEmbed host resolved to a private IP'], 400);
+            return new WP_Error('wpsg_oembed_dns_rebind', 'DNS rebinding detected: oEmbed host resolved to a private IP', ['status' => 400]);
         }
 
         if (is_array($result) && !empty($result)) {
@@ -3277,22 +3277,22 @@ class WPSG_REST {
 
         // Validate required fields
         if (empty($email) || !is_email($email)) {
-            return new WP_REST_Response(['message' => 'Valid email is required.'], 400);
+            return new WP_Error('wpsg_invalid_email', 'Valid email is required.', ['status' => 400]);
         }
 
         if (empty($display_name)) {
-            return new WP_REST_Response(['message' => 'Display name is required.'], 400);
+            return new WP_Error('wpsg_missing_display_name', 'Display name is required.', ['status' => 400]);
         }
 
         // Check if email already exists
         if (email_exists($email)) {
-            return new WP_REST_Response(['message' => 'A user with this email already exists.'], 409);
+            return new WP_Error('wpsg_user_exists', 'A user with this email already exists.', ['status' => 409]);
         }
 
         // Validate role exists and prevent privilege escalation
         $allowed_roles = ['subscriber', 'wpsg_admin'];
         if (!in_array($role, $allowed_roles, true)) {
-            return new WP_REST_Response(['message' => 'Invalid role. Allowed: subscriber, wpsg_admin.'], 400);
+            return new WP_Error('wpsg_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_admin.', ['status' => 400]);
         }
 
         // Generate username from email (before @)
@@ -3318,7 +3318,7 @@ class WPSG_REST {
         ]);
 
         if (is_wp_error($user_id)) {
-            return new WP_REST_Response(['message' => $user_id->get_error_message()], 500);
+            return new WP_Error('wpsg_internal_error', $user_id->get_error_message(), ['status' => 500]);
         }
 
         // Send password reset email so user can set their own password
@@ -3470,7 +3470,7 @@ class WPSG_REST {
      */
     public static function update_settings($request) {
         if (!class_exists('WPSG_Settings')) {
-            return new WP_REST_Response(['error' => 'Settings not available'], 500);
+            return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
         }
         $body = $request->get_json_params();
         $input = WPSG_Settings::from_js($body);
@@ -3789,14 +3789,14 @@ class WPSG_REST {
         $allowed_visibility = ['public', 'private'];
         if (!empty($visibility)) {
             if (!in_array($visibility, $allowed_visibility, true)) {
-                return new WP_REST_Response(['message' => 'Invalid visibility value'], 400);
+                return new WP_Error('wpsg_invalid_visibility', 'Invalid visibility value', ['status' => 400]);
             }
             update_post_meta($post_id, 'visibility', $visibility);
         }
         $allowed_status = ['draft', 'active', 'archived'];
         if (!empty($status)) {
             if (!in_array($status, $allowed_status, true)) {
-                return new WP_REST_Response(['message' => 'Invalid status value'], 400);
+                return new WP_Error('wpsg_invalid_status', 'Invalid status value', ['status' => 400]);
             }
             update_post_meta($post_id, 'status', $status);
         }
@@ -4285,8 +4285,7 @@ class WPSG_REST {
         $result = WPSG_Layout_Templates::create($data);
 
         if (is_wp_error($result)) {
-            $status = $result->get_error_data()['status'] ?? 400;
-            return new WP_REST_Response(['message' => $result->get_error_message()], $status);
+            return $result;
         }
 
         return new WP_REST_Response($result, 201);
@@ -4300,7 +4299,7 @@ class WPSG_REST {
         $template = WPSG_Layout_Templates::get($id);
 
         if (!$template) {
-            return new WP_REST_Response(['message' => 'Template not found.'], 404);
+            return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
         }
 
         return new WP_REST_Response($template, 200);
@@ -4315,8 +4314,7 @@ class WPSG_REST {
         $result = WPSG_Layout_Templates::update($id, $data);
 
         if (is_wp_error($result)) {
-            $status = $result->get_error_data()['status'] ?? 400;
-            return new WP_REST_Response(['message' => $result->get_error_message()], $status);
+            return $result;
         }
         self::bump_cache_version();
 
@@ -4331,7 +4329,7 @@ class WPSG_REST {
         $deleted = WPSG_Layout_Templates::delete($id);
 
         if (!$deleted) {
-            return new WP_REST_Response(['message' => 'Template not found.'], 404);
+            return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
         }
         self::bump_cache_version();
 
@@ -4348,8 +4346,7 @@ class WPSG_REST {
         $result   = WPSG_Layout_Templates::duplicate($id, $new_name);
 
         if (is_wp_error($result)) {
-            $status = $result->get_error_data()['status'] ?? 400;
-            return new WP_REST_Response(['message' => $result->get_error_message()], $status);
+            return $result;
         }
 
         return new WP_REST_Response($result, 201);
@@ -4376,7 +4373,7 @@ class WPSG_REST {
         if ( ! empty( $_FILES['file'] ) ) {
             $url = WPSG_Overlay_Library::handle_upload( $_FILES['file'] );
             if ( is_wp_error( $url ) ) {
-                return new WP_REST_Response( [ 'message' => $url->get_error_message() ], 400 );
+                return new WP_Error( 'wpsg_upload_failed', $url->get_error_message(), [ 'status' => 400 ] );
             }
             $name = sanitize_text_field( $request->get_param( 'name' ) ?? basename( $_FILES['file']['name'] ) );
         } else {
@@ -4385,7 +4382,7 @@ class WPSG_REST {
             $url  = esc_url_raw( $data['url'] ?? '' );
             $name = sanitize_text_field( $data['name'] ?? '' );
             if ( empty( $url ) ) {
-                return new WP_REST_Response( [ 'message' => 'A file or URL is required.' ], 400 );
+                return new WP_Error( 'wpsg_missing_file_or_url', 'A file or URL is required.', [ 'status' => 400 ] );
             }
         }
 
@@ -4400,7 +4397,7 @@ class WPSG_REST {
         $id      = $request->get_param( 'id' );
         $deleted = WPSG_Overlay_Library::remove( $id );
         if ( ! $deleted ) {
-            return new WP_REST_Response( [ 'message' => 'Overlay not found.' ], 404 );
+            return new WP_Error( 'wpsg_overlay_not_found', 'Overlay not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'deleted' => true ], 200 );
     }
@@ -4413,7 +4410,7 @@ class WPSG_REST {
         $template = WPSG_Layout_Templates::get($id);
 
         if (!$template) {
-            return new WP_REST_Response(['message' => 'Template not found.'], 404);
+            return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
         }
 
         return new WP_REST_Response($template, 200);
