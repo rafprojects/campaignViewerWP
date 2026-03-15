@@ -330,7 +330,7 @@ export function LayoutSlotComponent({
   // CSS props for mask-image.  When a maskLayer exists, use its position/size/mode.
   const ml = slot.maskLayer;
   const maskVisible = ml?.visible !== false;
-  const rawMaskUrl = maskVisible ? (ml?.url ?? slot.maskUrl) : undefined;
+  const rawMaskUrl = maskVisible ? ((ml?.url || undefined) ?? slot.maskUrl) : undefined;
   const featherPx = maskVisible ? (ml?.feather ?? 0) : 0;
   const maskUrl = useFeatheredMask(rawMaskUrl, featherPx);
   const resolvedMaskMode = ml?.mode ?? slot.maskMode ?? 'luminance';

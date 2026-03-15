@@ -52,7 +52,7 @@ export interface SettingsData extends GalleryBehaviorSettings {
   enableAnimations: boolean;
 }
 
-/** Set of all valid ImageShape values for the control. */
+/** SettingsPanel defaults extending gallery behavior settings. */
 const defaultSettings: SettingsData = {
   ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   galleryLayout: 'grid',

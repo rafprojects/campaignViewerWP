@@ -268,7 +268,8 @@ const PREFETCH_CONCURRENCY = 4;
 
 /**
  * Run async tasks with bounded concurrency + stagger delay.
- * Returns a cancel function that aborts pending work.
+ * Returns a cancel function that stops scheduling of remaining batches
+ * and clears pending timers (already in-flight requests will complete).
  */
 function staggeredPrefetch(
   ids: string[],
