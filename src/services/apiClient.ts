@@ -34,14 +34,15 @@ export class ApiClient {
 
     // If the caller already attached an AbortSignal, listen for its abort too.
     const existingSignal = init?.signal;
+    const onExternalAbort = existingSignal
+      ? () => controller.abort(existingSignal.reason)
+      : undefined;
     if (existingSignal) {
       if (existingSignal.aborted) {
         clearTimeout(timeoutId);
         controller.abort(existingSignal.reason);
       } else {
-        existingSignal.addEventListener('abort', () => controller.abort(existingSignal.reason), {
-          once: true,
-        });
+        existingSignal.addEventListener('abort', onExternalAbort!, { once: true });
       }
     }
 
@@ -54,6 +55,9 @@ export class ApiClient {
       throw err;
     } finally {
       clearTimeout(timeoutId);
+      if (onExternalAbort && existingSignal) {
+        existingSignal.removeEventListener('abort', onExternalAbort);
+      }
     }
   }
 

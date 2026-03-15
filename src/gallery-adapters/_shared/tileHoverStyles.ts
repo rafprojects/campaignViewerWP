@@ -6,6 +6,7 @@
  * multiple different adapters on the same page don't collide.
  */
 import type { GalleryBehaviorSettings } from '@/types';
+import { sanitizeCssValue } from '@/utils/sanitizeCss';
 
 export interface TileStyleOptions {
   /** Unique CSS class suffix for this adapter, e.g. "hex", "circle", "masonry" */
@@ -22,7 +23,7 @@ export interface TileStyleOptions {
 export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOptions): string {
   const cls = `wpsg-tile-${scope}`;
   const { tileHoverBounce, tileGlowEnabled, tileGlowColor, tileGlowSpread } = settings;
-  const glowColor = tileGlowColor || '#00bfff';
+  const glowColor = sanitizeCssValue(tileGlowColor) || '#00bfff';
   const glowSpread = tileGlowSpread || 8;
   const glowColor2 = `${glowColor}66`; // half-opacity echo
 

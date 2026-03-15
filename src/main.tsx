@@ -214,7 +214,15 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
     document.body.appendChild(container)
   }
 
-  createRoot(container).render(
+  // Persist the React root so repeated mounts call render() instead of createRoot().
+  const rootKey = '__wpsgSharedRoot' as keyof typeof container;
+  let root = (container as any)[rootKey] as ReturnType<typeof createRoot> | undefined;
+  if (!root) {
+    root = createRoot(container);
+    (container as any)[rootKey] = root;
+  }
+
+  root.render(
     <StrictMode>
       {instances.map((inst, i) =>
         createPortal(

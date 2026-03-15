@@ -50,10 +50,11 @@ export function startWebVitalsMonitoring(options: WebVitalsOptions = {}) {
   if (_initialized) return;
   if (typeof window === 'undefined') return;
   if (typeof PerformanceObserver === 'undefined') return;
-  _initialized = true;
 
   const sampleRate = options.sampleRate ?? 1;
   if (!shouldSample(sampleRate)) return;
+
+  _initialized = true;
 
   const report = options.report ?? defaultReport;
 

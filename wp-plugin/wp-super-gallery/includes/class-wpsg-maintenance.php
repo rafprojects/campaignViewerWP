@@ -22,6 +22,8 @@ class WPSG_Maintenance {
             if (!wp_next_scheduled(self::CLEANUP_HOOK)) {
                 wp_schedule_event(time(), 'daily', self::CLEANUP_HOOK);
             }
+        } else {
+            wp_clear_scheduled_hook(self::CLEANUP_HOOK);
         }
 
         // Schedule trash purge independently — it depends on grace_days, not archive_purge_days.
@@ -30,6 +32,8 @@ class WPSG_Maintenance {
             if (!wp_next_scheduled(self::TRASH_PURGE_HOOK)) {
                 wp_schedule_event(time(), 'daily', self::TRASH_PURGE_HOOK);
             }
+        } else {
+            wp_clear_scheduled_hook(self::TRASH_PURGE_HOOK);
         }
 
         $analytics_days = self::get_setting('analytics_retention_days');
@@ -37,6 +41,8 @@ class WPSG_Maintenance {
             if (!wp_next_scheduled(self::ANALYTICS_PURGE_HOOK)) {
                 wp_schedule_event(time(), 'weekly', self::ANALYTICS_PURGE_HOOK);
             }
+        } else {
+            wp_clear_scheduled_hook(self::ANALYTICS_PURGE_HOOK);
         }
     }
 
