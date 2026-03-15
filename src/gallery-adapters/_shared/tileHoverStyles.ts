@@ -6,7 +6,7 @@
  * multiple different adapters on the same page don't collide.
  */
 import type { GalleryBehaviorSettings } from '@/types';
-import { sanitizeCssColor, sanitizeCssValue } from '@/utils/sanitizeCss';
+import { sanitizeCssColor } from '@/utils/sanitizeCss';
 
 export interface TileStyleOptions {
   /** Unique CSS class suffix for this adapter, e.g. "hex", "circle", "masonry" */

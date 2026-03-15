@@ -103,7 +103,7 @@ jobs:
           npm version "$VERSION" --no-git-tag-version
 
           # 2. Plugin header: "Version: X.Y.Z"
-          sed -i "s/^ \* Version: .*/\ * Version:           $VERSION/" "$PLUGIN_FILE"
+          sed -i "s/^ \* Version: .*/ * Version:           $VERSION/" "$PLUGIN_FILE"
 
           # 3. WPSG_VERSION constant
           sed -i "s/define('WPSG_VERSION', '.*')/define('WPSG_VERSION', '$VERSION')/" "$PLUGIN_FILE"
@@ -163,10 +163,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Remove the ZIP so it isn't accidentally staged.
-          rm -f wp-super-gallery-v*.zip
-
           # Stage only the files touched by the version bump step.
+          # (The ZIP is left intact for the GitHub Release upload step.)
           git add package.json package-lock.json \
             wp-plugin/wp-super-gallery/wp-super-gallery.php \
             wp-plugin/wp-super-gallery/readme.txt

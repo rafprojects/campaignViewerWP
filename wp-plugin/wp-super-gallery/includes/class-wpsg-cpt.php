@@ -308,9 +308,14 @@ class WPSG_CPT {
             return '';
         }
         $value = sanitize_text_field( $value );
-        // Accept ISO 8601 variants
-        if ( preg_match( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)?$/', $value ) ) {
-            return $value;
+
+        // Strict parse using DateTimeImmutable to reject invalid ranges.
+        $formats = array( 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:s' );
+        foreach ( $formats as $fmt ) {
+            $dt = \DateTimeImmutable::createFromFormat( $fmt, $value );
+            if ( $dt && $dt->format( $fmt ) === $value ) {
+                return $value;
+            }
         }
         return '';
     }
