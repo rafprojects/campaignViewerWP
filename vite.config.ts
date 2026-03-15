@@ -33,12 +33,6 @@ export default defineConfig({
           'vendor-icons': ['@tabler/icons-react'],
           // Dockview — isolated so it only loads when LayoutBuilderModal opens (lazy).
           'vendor-dockview': ['dockview'],
-          // Admin chunk (code-split; loaded when lazy imports execute)
-          'admin': [
-            './src/components/Admin/AdminPanel.tsx',
-            './src/components/Admin/SettingsPanel.tsx',
-            './src/components/Admin/MediaTab.tsx',
-          ],
         },
       },
     },

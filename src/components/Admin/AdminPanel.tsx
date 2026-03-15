@@ -4,20 +4,12 @@ import type { ApiClient } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard } from '@tabler/icons-react';
-import { CampaignFormModal } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
 import { BulkActionsBar } from './BulkActionsBar';
-import { CampaignDuplicateModal } from './CampaignDuplicateModal';
-import { CampaignImportModal } from './CampaignImportModal';
-import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/shared/CampaignSelector';
-import { AdminCampaignArchiveModal } from './AdminCampaignArchiveModal';
-import { AdminCampaignRestoreModal } from './AdminCampaignRestoreModal';
-import { ArchiveCompanyModal } from './ArchiveCompanyModal';
-import { QuickAddUserModal } from './QuickAddUserModal';
 import useSWR from 'swr';
 import type { LayoutTemplate } from '@/types';
 import {
@@ -32,6 +24,14 @@ import { useAuditRows } from '@/hooks/useAuditRows';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
+const CampaignFormModal = lazy(() => import('./CampaignFormModal').then((m) => ({ default: m.CampaignFormModal })));
+const CampaignDuplicateModal = lazy(() => import('./CampaignDuplicateModal').then((m) => ({ default: m.CampaignDuplicateModal })));
+const CampaignImportModal = lazy(() => import('./CampaignImportModal').then((m) => ({ default: m.CampaignImportModal })));
+const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal').then((m) => ({ default: m.KeyboardShortcutsModal })));
+const AdminCampaignArchiveModal = lazy(() => import('./AdminCampaignArchiveModal').then((m) => ({ default: m.AdminCampaignArchiveModal })));
+const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal').then((m) => ({ default: m.AdminCampaignRestoreModal })));
+const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
+const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 
 interface AdminPanelProps {
   apiClient: ApiClient;
@@ -245,19 +245,23 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           })()}
         </Tabs.Panel>
 
-        <CampaignFormModal
-          opened={campaignActions.campaignFormOpen}
-          editingCampaign={campaignActions.editingCampaign}
-          formState={campaignActions.formState}
-          onFormChange={campaignActions.dispatchFormState}
-          onClose={campaignActions.closeCampaignForm}
-          onSave={() => campaignActions.saveCampaign(campaignActions.formState)}
-          isSaving={campaignActions.isSavingCampaign}
-          onGoToMedia={(id) => { setMediaCampaignId(id); campaignActions.closeCampaignForm(); setActiveTab('media'); }}
-          layoutTemplates={layoutTemplates ?? []}
-          onEditLayout={(id) => { campaignActions.closeCampaignForm(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
-          availableCategories={availableCategoryNames}
-        />
+        {campaignActions.campaignFormOpen && (
+          <Suspense fallback={null}>
+            <CampaignFormModal
+              opened={campaignActions.campaignFormOpen}
+              editingCampaign={campaignActions.editingCampaign}
+              formState={campaignActions.formState}
+              onFormChange={campaignActions.dispatchFormState}
+              onClose={campaignActions.closeCampaignForm}
+              onSave={() => campaignActions.saveCampaign(campaignActions.formState)}
+              isSaving={campaignActions.isSavingCampaign}
+              onGoToMedia={(id) => { setMediaCampaignId(id); campaignActions.closeCampaignForm(); setActiveTab('media'); }}
+              layoutTemplates={layoutTemplates ?? []}
+              onEditLayout={(id) => { campaignActions.closeCampaignForm(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
+              availableCategories={availableCategoryNames}
+            />
+          </Suspense>
+        )}
 
         <Tabs.Panel value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
@@ -355,66 +359,94 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.Panel>
       </Tabs>
 
-      <AdminCampaignArchiveModal
-        opened={!!campaignActions.confirmArchive}
-        campaign={campaignActions.confirmArchive ? { id: campaignActions.confirmArchive.id, title: campaignActions.confirmArchive.title } : null}
-        onClose={() => campaignActions.setConfirmArchive(null)}
-        onConfirm={async () => {
-          if (campaignActions.confirmArchive) { campaignActions.setConfirmArchive(null); await campaignActions.archiveCampaign(campaignActions.confirmArchive); }
-        }}
-      />
-      <AdminCampaignRestoreModal
-        opened={!!campaignActions.confirmRestore}
-        campaign={campaignActions.confirmRestore ? { id: campaignActions.confirmRestore.id, title: campaignActions.confirmRestore.title } : null}
-        onClose={() => campaignActions.setConfirmRestore(null)}
-        onConfirm={async () => {
-          if (campaignActions.confirmRestore) { campaignActions.setConfirmRestore(null); await campaignActions.restoreCampaign(campaignActions.confirmRestore); }
-        }}
-      />
-      <ArchiveCompanyModal
-        opened={!!accessState.confirmArchiveCompany}
-        company={accessState.confirmArchiveCompany}
-        archiveRevokeAccess={accessState.archiveRevokeAccess}
-        onArchiveRevokeAccessChange={accessState.setArchiveRevokeAccess}
-        onClose={() => { accessState.setConfirmArchiveCompany(null); accessState.setArchiveRevokeAccess(false); }}
-        onConfirm={accessState.handleArchiveCompany}
-        accessSaving={accessState.accessSaving}
-      />
-      <QuickAddUserModal
-        opened={accessState.quickAddUserOpen}
-        onClose={accessState.closeQuickAddUser}
-        quickAddResult={accessState.quickAddResult}
-        quickAddEmail={accessState.quickAddEmail}
-        setQuickAddEmail={accessState.setQuickAddEmail}
-        quickAddName={accessState.quickAddName}
-        setQuickAddName={accessState.setQuickAddName}
-        quickAddRole={accessState.quickAddRole}
-        setQuickAddRole={accessState.setQuickAddRole}
-        quickAddCampaignId={accessState.quickAddCampaignId}
-        setQuickAddCampaignId={accessState.setQuickAddCampaignId}
-        quickAddTestMode={accessState.quickAddTestMode}
-        setQuickAddTestMode={accessState.setQuickAddTestMode}
-        campaigns={campaigns}
-        onSubmit={accessState.handleQuickAddUser}
-        quickAddSaving={accessState.quickAddSaving}
-        onNotify={onNotify}
-      />
-      <CampaignDuplicateModal
-        source={campaignActions.duplicateSource}
-        isSaving={campaignActions.isDuplicating}
-        onConfirm={campaignActions.handleDuplicateCampaign}
-        onClose={() => campaignActions.setDuplicateSource(null)}
-      />
-      <CampaignImportModal
-        opened={campaignActions.importModalOpen}
-        isSaving={campaignActions.isImporting}
-        onImport={campaignActions.handleImportCampaign}
-        onClose={() => campaignActions.setImportModalOpen(false)}
-      />
-      <KeyboardShortcutsModal
-        opened={campaignActions.shortcutHelpOpen}
-        onClose={() => campaignActions.setShortcutHelpOpen(false)}
-      />
+      {!!campaignActions.confirmArchive && (
+        <Suspense fallback={null}>
+          <AdminCampaignArchiveModal
+            opened={!!campaignActions.confirmArchive}
+            campaign={campaignActions.confirmArchive ? { id: campaignActions.confirmArchive.id, title: campaignActions.confirmArchive.title } : null}
+            onClose={() => campaignActions.setConfirmArchive(null)}
+            onConfirm={async () => {
+              if (campaignActions.confirmArchive) { campaignActions.setConfirmArchive(null); await campaignActions.archiveCampaign(campaignActions.confirmArchive); }
+            }}
+          />
+        </Suspense>
+      )}
+      {!!campaignActions.confirmRestore && (
+        <Suspense fallback={null}>
+          <AdminCampaignRestoreModal
+            opened={!!campaignActions.confirmRestore}
+            campaign={campaignActions.confirmRestore ? { id: campaignActions.confirmRestore.id, title: campaignActions.confirmRestore.title } : null}
+            onClose={() => campaignActions.setConfirmRestore(null)}
+            onConfirm={async () => {
+              if (campaignActions.confirmRestore) { campaignActions.setConfirmRestore(null); await campaignActions.restoreCampaign(campaignActions.confirmRestore); }
+            }}
+          />
+        </Suspense>
+      )}
+      {!!accessState.confirmArchiveCompany && (
+        <Suspense fallback={null}>
+          <ArchiveCompanyModal
+            opened={!!accessState.confirmArchiveCompany}
+            company={accessState.confirmArchiveCompany}
+            archiveRevokeAccess={accessState.archiveRevokeAccess}
+            onArchiveRevokeAccessChange={accessState.setArchiveRevokeAccess}
+            onClose={() => { accessState.setConfirmArchiveCompany(null); accessState.setArchiveRevokeAccess(false); }}
+            onConfirm={accessState.handleArchiveCompany}
+            accessSaving={accessState.accessSaving}
+          />
+        </Suspense>
+      )}
+      {accessState.quickAddUserOpen && (
+        <Suspense fallback={null}>
+          <QuickAddUserModal
+            opened={accessState.quickAddUserOpen}
+            onClose={accessState.closeQuickAddUser}
+            quickAddResult={accessState.quickAddResult}
+            quickAddEmail={accessState.quickAddEmail}
+            setQuickAddEmail={accessState.setQuickAddEmail}
+            quickAddName={accessState.quickAddName}
+            setQuickAddName={accessState.setQuickAddName}
+            quickAddRole={accessState.quickAddRole}
+            setQuickAddRole={accessState.setQuickAddRole}
+            quickAddCampaignId={accessState.quickAddCampaignId}
+            setQuickAddCampaignId={accessState.setQuickAddCampaignId}
+            quickAddTestMode={accessState.quickAddTestMode}
+            setQuickAddTestMode={accessState.setQuickAddTestMode}
+            campaigns={campaigns}
+            onSubmit={accessState.handleQuickAddUser}
+            quickAddSaving={accessState.quickAddSaving}
+            onNotify={onNotify}
+          />
+        </Suspense>
+      )}
+      {!!campaignActions.duplicateSource && (
+        <Suspense fallback={null}>
+          <CampaignDuplicateModal
+            source={campaignActions.duplicateSource}
+            isSaving={campaignActions.isDuplicating}
+            onConfirm={campaignActions.handleDuplicateCampaign}
+            onClose={() => campaignActions.setDuplicateSource(null)}
+          />
+        </Suspense>
+      )}
+      {campaignActions.importModalOpen && (
+        <Suspense fallback={null}>
+          <CampaignImportModal
+            opened={campaignActions.importModalOpen}
+            isSaving={campaignActions.isImporting}
+            onImport={campaignActions.handleImportCampaign}
+            onClose={() => campaignActions.setImportModalOpen(false)}
+          />
+        </Suspense>
+      )}
+      {campaignActions.shortcutHelpOpen && (
+        <Suspense fallback={null}>
+          <KeyboardShortcutsModal
+            opened={campaignActions.shortcutHelpOpen}
+            onClose={() => campaignActions.setShortcutHelpOpen(false)}
+          />
+        </Suspense>
+      )}
     </Card>
   );
 }
