@@ -216,7 +216,7 @@ class WPSG_CPT {
      * @return string Sanitized value.
      */
     public static function sanitize_visibility( $value ): string {
-        return in_array( $value, [ 'public', 'private' ], true ) ? $value : 'public';
+        return in_array( $value, [ 'public', 'private' ], true ) ? $value : 'private';
     }
 
     /**

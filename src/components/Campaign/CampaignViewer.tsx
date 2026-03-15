@@ -36,7 +36,10 @@ function resolveViewportBg(type: string, color: string, gradient: string, imageU
   switch (type) {
     case 'solid':    return { background: color };
     case 'gradient': return { background: gradient };
-    case 'image':    return sanitizeCssUrl(imageUrl) ? { backgroundImage: `url(${sanitizeCssUrl(imageUrl)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
+    case 'image': {
+      const safeUrl = sanitizeCssUrl(imageUrl);
+      return safeUrl ? { backgroundImage: `url(${safeUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
+    }
     default:         return {};
   }
 }

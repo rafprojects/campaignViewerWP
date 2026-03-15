@@ -163,8 +163,16 @@ class WPSG_Thumbnail_Cache {
         $hash = hash('sha256', $source_url);
         $cache_index = get_option('wpsg_thumbnail_cache_index', []);
 
+        // Backward compat: migrate entries cached under old md5 key.
         if (!isset($cache_index[$hash])) {
-            return null;
+            $legacy_hash = md5($source_url);
+            if (isset($cache_index[$legacy_hash])) {
+                $cache_index[$hash] = $cache_index[$legacy_hash];
+                unset($cache_index[$legacy_hash]);
+                update_option('wpsg_thumbnail_cache_index', $cache_index, false);
+            } else {
+                return null;
+            }
         }
 
         $entry = $cache_index[$hash];

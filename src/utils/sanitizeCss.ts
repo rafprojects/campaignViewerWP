@@ -48,7 +48,7 @@ export function sanitizeCssUrl(url: string | undefined): string | undefined {
   }
 
   // Also allow http:// for local dev
-  if (lower.startsWith('http://')) return url;
+  if (import.meta.env.DEV && lower.startsWith('http://')) return url;
 
   return undefined;
 }

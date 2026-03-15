@@ -87,7 +87,7 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
         // Check index was updated.
         $index = get_option('wpsg_thumbnail_cache_index', []);
-        $hash = md5('https://example.com/media/1');
+        $hash = hash('sha256', 'https://example.com/media/1');
         $this->assertArrayHasKey($hash, $index);
         $this->assertEquals('https://example.com/media/1', $index[$hash]['source_url']);
     }

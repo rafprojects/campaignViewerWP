@@ -119,6 +119,13 @@ class WPSG_Alerts {
             return;
         }
 
+        // Acquire a short lock to prevent concurrent read-modify-write races.
+        $lock_key = 'wpsg_email_queue_lock';
+        if (get_transient($lock_key)) {
+            return; // Another process is writing; item will be picked up next cycle.
+        }
+        set_transient($lock_key, 1, 5);
+
         $queue = get_option(self::EMAIL_QUEUE, []);
         if (!is_array($queue)) {
             $queue = [];
@@ -126,6 +133,7 @@ class WPSG_Alerts {
 
         // Cap queue at 50 items to prevent unbounded growth.
         if (count($queue) >= 50) {
+            delete_transient($lock_key);
             return;
         }
 
@@ -137,6 +145,7 @@ class WPSG_Alerts {
         ];
 
         update_option(self::EMAIL_QUEUE, $queue, false);
+        delete_transient($lock_key);
     }
 
     /**
@@ -156,15 +165,28 @@ class WPSG_Alerts {
         // empty array and will be picked up on the next cron tick.
         update_option(self::EMAIL_QUEUE, []);
 
+        $failed = [];
         foreach ($queue as $item) {
             if (!is_array($item) || empty($item['to']) || empty($item['subject'])) {
                 continue;
             }
-            wp_mail(
+            $sent = wp_mail(
                 sanitize_email($item['to']),
                 sanitize_text_field($item['subject']),
                 $item['message'] ?? ''
             );
+            if (!$sent) {
+                $failed[] = $item;
+            }
+        }
+
+        // Re-queue any items that failed to send.
+        if (!empty($failed)) {
+            $current = get_option(self::EMAIL_QUEUE, []);
+            if (!is_array($current)) {
+                $current = [];
+            }
+            update_option(self::EMAIL_QUEUE, array_merge($current, $failed), false);
         }
     }
 

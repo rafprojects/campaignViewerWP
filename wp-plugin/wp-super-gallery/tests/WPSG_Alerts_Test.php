@@ -14,11 +14,21 @@ class WPSG_Alerts_Test extends WP_UnitTestCase {
         // Enable alert emails via filter.
         add_filter('wpsg_alert_email_enabled', '__return_true');
         // Capture mail sends (DISABLE_WP_CRON is true in test env, so emails send synchronously).
+        // If cron is enabled, explicitly process the queue after triggers.
         $this->sent_mails = [];
         add_filter('pre_wp_mail', function ($null, $atts) {
             $this->sent_mails[] = $atts;
             return true; // Prevent actual sending.
         }, 10, 2);
+    }
+
+    /**
+     * Helper: flush the email queue when cron is not disabled.
+     */
+    private function flush_email_queue(): void {
+        if (!defined('DISABLE_WP_CRON') || !DISABLE_WP_CRON) {
+            WPSG_Alerts::process_email_queue();
+        }
     }
 
     public function tearDown(): void {
@@ -65,8 +75,8 @@ class WPSG_Alerts_Test extends WP_UnitTestCase {
         ];
 
         WPSG_Alerts::notify_fatal_error($payload);
+        $this->flush_email_queue();
 
-        // In test env DISABLE_WP_CRON=true, so emails are sent synchronously.
         $this->assertCount(1, $this->sent_mails);
         $this->assertStringContainsString('[WPSG] Fatal error', $this->sent_mails[0]['subject']);
         $this->assertStringContainsString('Class not found', $this->sent_mails[0]['message']);
@@ -77,6 +87,7 @@ class WPSG_Alerts_Test extends WP_UnitTestCase {
 
         WPSG_Alerts::notify_fatal_error($payload);
         WPSG_Alerts::notify_fatal_error($payload);
+        $this->flush_email_queue();
 
         // Only first one should have been sent.
         $this->assertCount(1, $this->sent_mails);
@@ -117,6 +128,7 @@ class WPSG_Alerts_Test extends WP_UnitTestCase {
         for ($i = 0; $i < 3; $i++) {
             WPSG_Alerts::track_rest_metrics(['status' => 500, 'route' => '/test']);
         }
+        $this->flush_email_queue();
 
         $this->assertCount(1, $this->sent_mails);
         $this->assertStringContainsString('REST error spike', $this->sent_mails[0]['subject']);
@@ -133,6 +145,7 @@ class WPSG_Alerts_Test extends WP_UnitTestCase {
         delete_transient(WPSG_Alerts::REST_ERROR_BUCKET);
         WPSG_Alerts::track_rest_metrics(['status' => 500, 'route' => '/test']);
         WPSG_Alerts::track_rest_metrics(['status' => 500, 'route' => '/test']);
+        $this->flush_email_queue();
 
         $this->assertCount(1, $this->sent_mails);
     }
