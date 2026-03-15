@@ -152,9 +152,10 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
     }
 
     // Update the global nonce so subsequent REST calls are authenticated.
-    if (data.nonce) {
-      if (window.__WPSG_CONFIG__) window.__WPSG_CONFIG__.restNonce = data.nonce;
-      (window as unknown as Record<string, unknown>).__WPSG_REST_NONCE__ = data.nonce;
+    const newNonce = typeof data.nonce === 'string' ? data.nonce : '';
+    if (newNonce) {
+      if (window.__WPSG_CONFIG__) window.__WPSG_CONFIG__.restNonce = newNonce;
+      (window as unknown as Record<string, unknown>).__WPSG_REST_NONCE__ = newNonce;
     }
 
     if (data.user) {
@@ -162,7 +163,7 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
     }
     setPermissions(Array.isArray(data.permissions) ? data.permissions : []);
 
-    return { accessToken: data.nonce ?? '' } as AuthSession;
+    return { accessToken: newNonce } as AuthSession;
   }, [provider]);
 
   const logout = useCallback(async () => {
