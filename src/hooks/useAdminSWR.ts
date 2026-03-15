@@ -156,10 +156,18 @@ export function useAllCampaignOptions(apiClient: ApiClient) {
   const { data } = useSWR<AdminCampaign[]>(
     'admin-campaign-options',
     async () => {
-      const response = await apiClient.get<ApiCampaignResponse>(
-        '/wp-json/wp-super-gallery/v1/campaigns?per_page=50',
-      );
-      return response.items ?? [];
+      const all: AdminCampaign[] = [];
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const response = await apiClient.get<ApiCampaignResponse>(
+          `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}`,
+        );
+        all.push(...(response.items ?? []));
+        totalPages = response.totalPages ?? 1;
+        page++;
+      } while (page <= totalPages);
+      return all;
     },
     ADMIN_SWR_OPTIONS,
   );

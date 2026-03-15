@@ -29,8 +29,9 @@ export class ApiClient {
   private async fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
     if (this.timeout <= 0) return fetch(url, init);
 
+    let timedOut = false;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => { timedOut = true; controller.abort(); }, this.timeout);
 
     // If the caller already attached an AbortSignal, listen for its abort too.
     const existingSignal = init?.signal;
@@ -49,7 +50,7 @@ export class ApiClient {
     try {
       return await fetch(url, { ...init, signal: controller.signal });
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError' && !existingSignal?.aborted) {
+      if ((err as { name?: string })?.name === 'AbortError' && timedOut) {
         throw new ApiError(`Request timed out after ${this.timeout}ms`, 0);
       }
       throw err;

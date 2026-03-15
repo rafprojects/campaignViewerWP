@@ -18,15 +18,7 @@ class WPSG_Maintenance {
         add_action(self::ANALYTICS_PURGE_HOOK, [self::class, 'purge_old_analytics']);
 
         // Register a weekly interval — core only ships hourly/twicedaily/daily.
-        add_filter('cron_schedules', function (array $schedules): array {
-            if (!isset($schedules['weekly'])) {
-                $schedules['weekly'] = [
-                    'interval' => WEEK_IN_SECONDS,
-                    'display'  => 'Once Weekly',
-                ];
-            }
-            return $schedules;
-        });
+        add_filter('cron_schedules', [self::class, 'add_weekly_schedule']);
 
         $archive_days = self::get_setting('archive_purge_days');
         if ($archive_days > 0) {
@@ -191,6 +183,19 @@ class WPSG_Maintenance {
 
         // Remove access requests for this campaign.
         WPSG_DB::delete_access_requests_for_campaign($campaign_id);
+    }
+
+    /**
+     * Register a weekly cron interval (core only ships hourly/twicedaily/daily).
+     */
+    public static function add_weekly_schedule(array $schedules): array {
+        if (!isset($schedules['weekly'])) {
+            $schedules['weekly'] = [
+                'interval' => WEEK_IN_SECONDS,
+                'display'  => 'Once Weekly',
+            ];
+        }
+        return $schedules;
     }
 
     /**

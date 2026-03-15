@@ -163,7 +163,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add -A
+          # Remove the ZIP so it isn't accidentally staged.
+          rm -f wp-super-gallery-v*.zip
+
+          # Stage only the files touched by the version bump step.
+          git add package.json package-lock.json \
+            wp-plugin/wp-super-gallery/wp-super-gallery.php \
+            wp-plugin/wp-super-gallery/readme.txt
           git commit -m "chore(release): ${TAG}" --no-verify
           git tag -a "$TAG" -m "Release ${TAG}"
           git push origin HEAD --follow-tags
