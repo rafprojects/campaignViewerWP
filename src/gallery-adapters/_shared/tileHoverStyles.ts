@@ -24,7 +24,7 @@ export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOpt
   const cls = `wpsg-tile-${scope}`;
   const { tileHoverBounce, tileGlowEnabled, tileGlowColor, tileGlowSpread } = settings;
   const glowColor = sanitizeCssValue(tileGlowColor) || '#00bfff';
-  const glowSpread = tileGlowSpread || 8;
+  const glowSpread = tileGlowSpread ?? 8;
   const glowColor2 = `${glowColor}66`; // half-opacity echo
 
   const parts: string[] = [];
@@ -94,8 +94,8 @@ export function tileBorderStyle(settings: GalleryBehaviorSettings): string {
 /** Box-shadow for non-clip-path tiles (justified/masonry) where box-shadow works. */
 export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSettings): string {
   const cls = `wpsg-tile-${scope}`;
-  const glowColor = settings.tileGlowColor || '#00bfff';
-  const glowSpread = settings.tileGlowSpread || 8;
+  const glowColor = sanitizeCssValue(settings.tileGlowColor) || '#00bfff';
+  const glowSpread = settings.tileGlowSpread ?? 8;
   const parts: string[] = [];
 
   // ── Base transition (shared by combined + per-slot classes) ─────────────
