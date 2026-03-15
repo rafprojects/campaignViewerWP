@@ -57,8 +57,8 @@ export async function featherMask(maskUrl: string, featherPx: number): Promise<s
 
   const blobUrl = URL.createObjectURL(blob);
 
-  // Limit cache size
-  if (featherCache.size > 50) {
+  // Limit cache to 50 entries — evict before inserting.
+  if (featherCache.size >= 50) {
     const first = featherCache.keys().next().value;
     if (first) {
       const old = featherCache.get(first);

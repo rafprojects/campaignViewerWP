@@ -195,7 +195,7 @@ export function LayoutCanvas({
       // prevents accidental deselection after a drag/resize where the mouseup
       // lands on the canvas background (click fires on the common ancestor of
       // mousedown/mouseup targets, but mousedown only on the actual target).
-      if (e.target === e.currentTarget) {
+      if (e.button === 0 && e.target === e.currentTarget) {
         onCanvasClick();
       }
     },

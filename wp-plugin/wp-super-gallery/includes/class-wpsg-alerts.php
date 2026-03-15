@@ -158,8 +158,16 @@ class WPSG_Alerts {
      * @since 0.18.0 P20-I-5
      */
     public static function process_email_queue(): void {
+        // Acquire a lock so concurrent cron runners don't process the same queue.
+        $lock_key = 'wpsg_email_process_lock';
+        if (get_transient($lock_key)) {
+            return; // Another runner is already processing.
+        }
+        set_transient($lock_key, 1, 30);
+
         $queue = get_option(self::EMAIL_QUEUE, []);
         if (!is_array($queue) || empty($queue)) {
+            delete_transient($lock_key);
             return;
         }
 
@@ -192,6 +200,8 @@ class WPSG_Alerts {
             }
             update_option(self::EMAIL_QUEUE, array_merge($current, $failed), false);
         }
+
+        delete_transient($lock_key);
     }
 
     private static function email_enabled() {
