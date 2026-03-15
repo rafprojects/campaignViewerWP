@@ -22,6 +22,11 @@ class WPSG_Maintenance {
             if (!wp_next_scheduled(self::CLEANUP_HOOK)) {
                 wp_schedule_event(time(), 'daily', self::CLEANUP_HOOK);
             }
+        }
+
+        // Schedule trash purge independently — it depends on grace_days, not archive_purge_days.
+        $grace_days = self::get_setting('archive_purge_grace_days');
+        if ($grace_days > 0) {
             if (!wp_next_scheduled(self::TRASH_PURGE_HOOK)) {
                 wp_schedule_event(time(), 'daily', self::TRASH_PURGE_HOOK);
             }

@@ -134,8 +134,10 @@ class WPSG_Alerts {
         }
 
         // Cap queue at 50 items to prevent unbounded growth.
+        // When full, fall back to synchronous send so the alert is not lost.
         if (count($queue) >= 50) {
             delete_transient($lock_key);
+            wp_mail(self::get_recipient(), $subject, $message);
             return;
         }
 
@@ -165,7 +167,7 @@ class WPSG_Alerts {
         // process the snapshot. If another request calls queue_email()
         // between here and the foreach, the new item lands in the fresh
         // empty array and will be picked up on the next cron tick.
-        update_option(self::EMAIL_QUEUE, []);
+        update_option(self::EMAIL_QUEUE, [], false);
 
         $failed = [];
         foreach ($queue as $item) {

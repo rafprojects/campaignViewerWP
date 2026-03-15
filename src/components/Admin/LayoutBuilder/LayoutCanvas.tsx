@@ -230,8 +230,8 @@ export function LayoutCanvas({
       e.preventDefault();
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const pctX = ((e.clientX - rect.left) / rect.width) * 100;
-      const pctY = ((e.clientY - rect.top) / rect.height) * 100;
+      const pctX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+      const pctY = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
 
       // Design Asset drop → new graphic layer
       const assetUrl = e.dataTransfer.getData(ASSET_MIME);

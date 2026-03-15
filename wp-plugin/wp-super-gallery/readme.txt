@@ -145,5 +145,8 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 
 == Upgrade Notice ==
 
+= 0.18.0 =
+Production hardening: JWT auth gated behind env var (nonce-only default), CSS sanitization, async email queue, rate-limiting defaults, GPLv2 licensing, CI/CD pipeline, and WordPress.org distribution readiness. Review auth settings after upgrade.
+
 = 0.17.0 =
 Adds WP-CLI commands, Playwright E2E tests, and raises builder test coverage to 75 %+. No breaking changes.

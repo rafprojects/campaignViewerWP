@@ -35,7 +35,6 @@ const defaultReport = (metric: VitalMetric) => {
   }
   // Gate verbose logging behind DEV mode (P20-H-12)
   if (import.meta.env.DEV) {
-     
     console.info('[WPSG][Vitals]', metric.name, metric.value.toFixed(2));
   }
 };
