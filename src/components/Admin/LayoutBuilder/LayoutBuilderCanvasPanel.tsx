@@ -184,11 +184,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   size="xs"
                   value={builder.template.canvasHeightMode || 'aspect-ratio'}
                   onChange={(val) => {
-                    builder.setTemplate({
-                      ...builder.template,
-                      canvasHeightMode: val as 'aspect-ratio' | 'fixed-vh',
-                      updatedAt: new Date().toISOString(),
-                    });
+                    builder.setCanvasHeightMode(val as 'aspect-ratio' | 'fixed-vh');
                   }}
                   data={[
                     { label: 'Ratio', value: 'aspect-ratio' },
@@ -201,11 +197,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     value={builder.template.canvasHeightVh || 50}
                     onChange={(val) => {
                       const n = Number(val) || 50;
-                      builder.setTemplate({
-                        ...builder.template,
-                        canvasHeightVh: Math.max(1, Math.min(100, n)),
-                        updatedAt: new Date().toISOString(),
-                      });
+                      builder.setCanvasHeightVh(n);
                     }}
                     min={1}
                     max={100}

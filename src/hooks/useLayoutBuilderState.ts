@@ -138,6 +138,10 @@ export interface LayoutBuilderActions {
   setBackgroundImageFit: (fit: 'cover' | 'contain' | 'fill') => void;
   /** Update background image opacity. */
   setBackgroundImageOpacity: (opacity: number) => void;
+  /** Set canvas height mode (aspect-ratio or fixed-vh). */
+  setCanvasHeightMode: (mode: 'aspect-ratio' | 'fixed-vh') => void;
+  /** Set canvas height in viewport units (1–100). */
+  setCanvasHeightVh: (vh: number) => void;
 
   // ── Overlay CRUD (P15-H) ──
   /** Add a new overlay. Returns the overlay's ID. */
@@ -343,6 +347,16 @@ export function useLayoutBuilderState(
 
   const setBackgroundImageOpacity = useCallback(
     (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }, 'Change image opacity'),
+    [mutate],
+  );
+
+  const setCanvasHeightMode = useCallback(
+    (mode: 'aspect-ratio' | 'fixed-vh') => mutate((d) => { d.canvasHeightMode = mode; }, 'Change height mode'),
+    [mutate],
+  );
+
+  const setCanvasHeightVh = useCallback(
+    (vh: number) => mutate((d) => { d.canvasHeightVh = Math.max(1, Math.min(100, vh)); }, 'Change height vh'),
     [mutate],
   );
 
@@ -929,6 +943,8 @@ export function useLayoutBuilderState(
     setBackgroundImage,
     setBackgroundImageFit,
     setBackgroundImageOpacity,
+    setCanvasHeightMode,
+    setCanvasHeightVh,
     // Slot CRUD
     addSlot,
     removeSlots,

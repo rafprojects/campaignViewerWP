@@ -122,7 +122,9 @@ class WPSG_Alerts {
         // Acquire a short lock to prevent concurrent read-modify-write races.
         $lock_key = 'wpsg_email_queue_lock';
         if (get_transient($lock_key)) {
-            return; // Another process is writing; item will be picked up next cycle.
+            // Lock held — fall back to synchronous send so the alert is not lost.
+            wp_mail(self::get_recipient(), $subject, $message);
+            return;
         }
         set_transient($lock_key, 1, 5);
 

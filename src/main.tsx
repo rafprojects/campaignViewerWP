@@ -56,9 +56,10 @@ const parseProps = (node: Element): MountProps => {
   const raw = node.getAttribute('data-wpsg-props')
   if (!raw) return {}
   try {
-    const parsed = JSON.parse(raw) as MountProps
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
     return Object.fromEntries(
-      Object.entries(parsed).filter(([k]) => ALLOWED_PROPS.has(k)),
+      Object.entries(parsed as Record<string, unknown>).filter(([k]) => ALLOWED_PROPS.has(k)),
     )
   } catch {
     return {}
@@ -204,11 +205,14 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
     import('./styles/global.scss')
   }
 
-  // Hidden container that anchors the single React root.
-  const container = document.createElement('div')
-  container.id = 'wpsg-shared-root'
-  container.style.display = 'none'
-  document.body.appendChild(container)
+  // Hidden container that anchors the single React root — reuse if it already exists.
+  let container = document.getElementById('wpsg-shared-root')
+  if (!container) {
+    container = document.createElement('div')
+    container.id = 'wpsg-shared-root'
+    container.style.display = 'none'
+    document.body.appendChild(container)
+  }
 
   createRoot(container).render(
     <StrictMode>

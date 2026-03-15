@@ -100,7 +100,9 @@ jobs:
           restore-keys: composer-${{ matrix.php-version }}-
 
       - name: PHP syntax check
-        run: find wp-plugin/wp-super-gallery/includes -name '*.php' -exec php -l {} + | (! grep -q "Errors parsing")
+        run: |
+          set -o pipefail
+          find wp-plugin/wp-super-gallery/includes -name '*.php' -exec php -l {} + 2>&1 | (! grep -q "Errors parsing")
 
       - name: Install Composer dependencies
         working-directory: wp-plugin/wp-super-gallery

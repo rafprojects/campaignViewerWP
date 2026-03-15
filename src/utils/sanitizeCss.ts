@@ -23,11 +23,15 @@ const CSS_INJECTION_RE = /[{}<>;/\\]/;
 export function sanitizeCssUrl(url: string | undefined): string | undefined {
   if (!url) return undefined;
 
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+
   // Reject characters that can break out of url() or inject CSS
-  if (/[)};]/.test(url)) return undefined;
+  // Includes whitespace, quotes, and backslashes per CSS url() token spec
+  if (/[)};"'\\\s]/.test(trimmed)) return undefined;
 
   // Reject dangerous protocols
-  const lower = url.toLowerCase().trim();
+  const lower = trimmed.toLowerCase();
   if (
     lower.startsWith('javascript:') ||
     lower.startsWith('data:') ||
@@ -44,11 +48,11 @@ export function sanitizeCssUrl(url: string | undefined): string | undefined {
     lower.startsWith('/') ||
     !lower.includes(':')
   ) {
-    return url;
+    return trimmed;
   }
 
   // Also allow http:// for local dev
-  if (import.meta.env.DEV && lower.startsWith('http://')) return url;
+  if (import.meta.env.DEV && lower.startsWith('http://')) return trimmed;
 
   return undefined;
 }
