@@ -9,6 +9,7 @@ import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
+import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { ASSET_MIME } from './DesignAssetsGrid';
 
 // ── Props ────────────────────────────────────────────────────
@@ -288,16 +289,9 @@ export function LayoutCanvas({
               : template.backgroundMode === 'image'
                 ? (template.backgroundColor || '#ffffff')
                 : (template.backgroundMode === 'none' ? 'transparent' : undefined),
-          backgroundImage:
-            template.backgroundMode === 'image' && template.backgroundImage
-              ? `url(${template.backgroundImage})`
-              : undefined,
-          backgroundSize:
-            template.backgroundMode === 'image'
-              ? (template.backgroundImageFit ?? 'cover')
-              : undefined,
-          backgroundPosition:
-            template.backgroundMode === 'image' ? 'center' : undefined,
+          backgroundImage: undefined,
+          backgroundSize: undefined,
+          backgroundPosition: undefined,
           background:
             (template.backgroundMode ?? 'color') === 'gradient'
               ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
@@ -312,7 +306,7 @@ export function LayoutCanvas({
         }}
       >
         {/* Background image layer (below slots) */}
-        {template.backgroundImage && (
+        {template.backgroundMode === 'image' && template.backgroundImage && sanitizeCssUrl(template.backgroundImage) && (
           <div
             style={{
               position: 'absolute',
@@ -324,7 +318,7 @@ export function LayoutCanvas({
             }}
           >
             <img
-              src={template.backgroundImage}
+              src={sanitizeCssUrl(template.backgroundImage)}
               alt=""
               style={{
                 width: '100%',

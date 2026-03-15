@@ -151,7 +151,12 @@ export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20) 
  * Fetch all campaigns for dropdown selectors (per_page=50, the endpoint max).
  * Cached separately from the paginated table so selectors always show all
  * campaigns regardless of which page the campaigns tab is on.
+ *
+ * TODO: Replace with a lightweight server endpoint returning id/title only
+ * to reduce payload size and sequential page walks on large installs.
  */
+const MAX_SELECTOR_PAGES = 20; // Safety cap: 20 × 50 = 1 000 campaigns
+
 export function useAllCampaignOptions(apiClient: ApiClient) {
   const { data } = useSWR<AdminCampaign[]>(
     'admin-campaign-options',
@@ -166,7 +171,7 @@ export function useAllCampaignOptions(apiClient: ApiClient) {
         all.push(...(response.items ?? []));
         totalPages = response.totalPages ?? 1;
         page++;
-      } while (page <= totalPages);
+      } while (page <= totalPages && page <= MAX_SELECTOR_PAGES);
       return all;
     },
     ADMIN_SWR_OPTIONS,

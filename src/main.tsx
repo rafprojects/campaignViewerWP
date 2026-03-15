@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import App from './App'
 import { shadowStyles } from './shadowStyles'
@@ -166,6 +166,8 @@ const mountDefault = (host: HTMLElement, props: MountProps) => {
  * Each gallery still gets its own ThemeProvider + MantineProvider so shadow
  * DOM CSS variable scoping and per-instance config continue to work.
  */
+const sharedRootMap = new WeakMap<HTMLElement, Root>();
+
 const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
   interface MountInstance {
     mountPoint: HTMLElement
@@ -218,11 +220,10 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
   }
 
   // Persist the React root so repeated mounts call render() instead of createRoot().
-  const rootKey = '__wpsgSharedRoot' as keyof typeof container;
-  let root = (container as any)[rootKey] as ReturnType<typeof createRoot> | undefined;
+  let root = sharedRootMap.get(container);
   if (!root) {
     root = createRoot(container);
-    (container as any)[rootKey] = root;
+    sharedRootMap.set(container, root);
   }
 
   root.render(
