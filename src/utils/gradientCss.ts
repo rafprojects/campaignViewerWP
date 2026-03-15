@@ -5,6 +5,7 @@ import type {
   RadialShape,
   RadialSize,
 } from '@/types';
+import { sanitizeCssColor } from '@/utils/sanitizeCss';
 
 /** Options bag for fine-grained gradient control. */
 export interface GradientOptions {
@@ -37,8 +38,12 @@ const DIRECTION_ANGLE: Record<string, number> = {
 function buildColorList(stops: GradientStop[]): string {
   return stops
     .map((s) => {
-      const pos = s.position != null ? ` ${s.position}%` : '';
-      return `${s.color}${pos}`;
+      const color = sanitizeCssColor(s.color) ?? '#000';
+      const pos =
+        s.position != null
+          ? ` ${Math.max(0, Math.min(100, s.position))}%`
+          : '';
+      return `${color}${pos}`;
     })
     .join(', ');
 }

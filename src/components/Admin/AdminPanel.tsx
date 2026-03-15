@@ -157,6 +157,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     () => categoryFilter ? campaigns.filter((c) => (c.categories ?? []).includes(categoryFilter)) : campaigns,
     [campaigns, categoryFilter],
   );
+  // Reset to page 1 when category filter changes.
+  useEffect(() => { setCampaignPage(1); }, [categoryFilter]);
+  // Clamp page into [1, totalPages] when dataset shrinks (deletions, server-side changes).
+  useEffect(() => {
+    if (campaignPagination.totalPages > 0 && campaignPage > campaignPagination.totalPages) {
+      setCampaignPage(campaignPagination.totalPages);
+    }
+  }, [campaignPage, campaignPagination.totalPages]);
+
   const campaignsRows = useCampaignsRows({ campaigns, categoryFilter, campaignActions });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);

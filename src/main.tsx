@@ -171,6 +171,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
     mountPoint: HTMLElement
     shadowRoot?: ShadowRoot
     props: MountProps
+    portalKey: string
   }
 
   const instances: MountInstance[] = []
@@ -192,9 +193,11 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
       const mountPoint = document.createElement('div')
       mountPoint.setAttribute('data-wpsg-mount', 'true')
       shadowRoot.appendChild(mountPoint)
-      instances.push({ mountPoint, shadowRoot, props: parseProps(host) })
+      const portalKey = host.id || (host.dataset.wpsgKey ??= `wpsg-${Math.random().toString(36).slice(2, 10)}`)
+      instances.push({ mountPoint, shadowRoot, props: parseProps(host), portalKey })
     } else {
-      instances.push({ mountPoint: host, props: parseProps(host) })
+      const portalKey = host.id || (host.dataset.wpsgKey ??= `wpsg-${Math.random().toString(36).slice(2, 10)}`)
+      instances.push({ mountPoint: host, props: parseProps(host), portalKey })
     }
   })
 
@@ -237,7 +240,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
             />
           </ThemeProvider>,
           inst.mountPoint,
-          `wpsg-gallery-${i}`,
+          inst.portalKey,
         ),
       )}
     </StrictMode>,

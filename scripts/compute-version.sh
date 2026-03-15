@@ -57,7 +57,7 @@ while IFS= read -r line; do
     HAS_BREAKING=true
   fi
   # Check for feat: commits.
-  if echo "$line" | grep -qE '^feat(\(.+\))?:'; then
+  if echo "$line" | grep -qiE '^feat(\(.+\))?:'; then
     HAS_FEAT=true
   fi
 done <<< "$COMMITS"

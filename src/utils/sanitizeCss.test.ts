@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeCssUrl, sanitizeClipPath, sanitizeCssValue } from './sanitizeCss';
+import { sanitizeCssUrl, sanitizeClipPath, sanitizeCssValue, sanitizeCssColor } from './sanitizeCss';
 
 describe('sanitizeCssUrl', () => {
   it('returns undefined for falsy input', () => {
@@ -125,5 +125,52 @@ describe('sanitizeCssValue', () => {
     expect(sanitizeCssValue('val{ue')).toBeUndefined();
     expect(sanitizeCssValue('val/ue')).toBeUndefined();
     expect(sanitizeCssValue('val\\ue')).toBeUndefined();
+  });
+});
+
+describe('sanitizeCssColor', () => {
+  it('returns undefined for falsy input', () => {
+    expect(sanitizeCssColor(undefined)).toBeUndefined();
+    expect(sanitizeCssColor('')).toBeUndefined();
+    expect(sanitizeCssColor('   ')).toBeUndefined();
+  });
+
+  it('accepts hex colors', () => {
+    expect(sanitizeCssColor('#fff')).toBe('#fff');
+    expect(sanitizeCssColor('#FF0000')).toBe('#FF0000');
+    expect(sanitizeCssColor('#00ff0080')).toBe('#00ff0080');
+  });
+
+  it('accepts rgb/rgba/hsl/hsla functions', () => {
+    expect(sanitizeCssColor('rgb(255, 0, 0)')).toBe('rgb(255, 0, 0)');
+    expect(sanitizeCssColor('rgba(0, 0, 0, 0.5)')).toBe('rgba(0, 0, 0, 0.5)');
+    expect(sanitizeCssColor('hsl(120, 50%, 50%)')).toBe('hsl(120, 50%, 50%)');
+    expect(sanitizeCssColor('hsla(0, 100%, 50%, 0.3)')).toBe('hsla(0, 100%, 50%, 0.3)');
+  });
+
+  it('accepts CSS color keywords', () => {
+    expect(sanitizeCssColor('transparent')).toBe('transparent');
+    expect(sanitizeCssColor('currentcolor')).toBe('currentcolor');
+    expect(sanitizeCssColor('inherit')).toBe('inherit');
+  });
+
+  it('accepts named colors', () => {
+    expect(sanitizeCssColor('red')).toBe('red');
+    expect(sanitizeCssColor('cornflowerblue')).toBe('cornflowerblue');
+    expect(sanitizeCssColor('rebeccapurple')).toBe('rebeccapurple');
+  });
+
+  it('rejects values with injection characters', () => {
+    expect(sanitizeCssColor('red; background: url(evil)')).toBeUndefined();
+    expect(sanitizeCssColor('#fff), url(https://evil.com')).toBeUndefined();
+    expect(sanitizeCssColor('red) drop-shadow(0 0 10px green')).toBeUndefined();
+  });
+
+  it('rejects values exceeding named color length', () => {
+    expect(sanitizeCssColor('a'.repeat(21))).toBeUndefined();
+  });
+
+  it('rejects strings with digits mixed (non-color-function)', () => {
+    expect(sanitizeCssColor('abc123')).toBeUndefined();
   });
 });

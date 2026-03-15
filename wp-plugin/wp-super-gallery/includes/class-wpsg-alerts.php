@@ -192,13 +192,17 @@ class WPSG_Alerts {
             }
         }
 
-        // Re-queue any items that failed to send.
+        // Re-queue any items that failed to send, enforcing the same 50-item cap.
         if (!empty($failed)) {
             $current = get_option(self::EMAIL_QUEUE, []);
             if (!is_array($current)) {
                 $current = [];
             }
-            update_option(self::EMAIL_QUEUE, array_merge($current, $failed), false);
+            $merged = array_merge($current, $failed);
+            if (count($merged) > 50) {
+                $merged = array_slice($merged, -50);
+            }
+            update_option(self::EMAIL_QUEUE, $merged, false);
         }
 
         delete_transient($lock_key);

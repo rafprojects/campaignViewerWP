@@ -6,7 +6,7 @@
  * multiple different adapters on the same page don't collide.
  */
 import type { GalleryBehaviorSettings } from '@/types';
-import { sanitizeCssValue } from '@/utils/sanitizeCss';
+import { sanitizeCssColor, sanitizeCssValue } from '@/utils/sanitizeCss';
 
 export interface TileStyleOptions {
   /** Unique CSS class suffix for this adapter, e.g. "hex", "circle", "masonry" */
@@ -23,7 +23,7 @@ export interface TileStyleOptions {
 export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOptions): string {
   const cls = `wpsg-tile-${scope}`;
   const { tileHoverBounce, tileGlowEnabled, tileGlowColor, tileGlowSpread } = settings;
-  const glowColor = sanitizeCssValue(tileGlowColor) || '#00bfff';
+  const glowColor = sanitizeCssColor(tileGlowColor) || '#00bfff';
   const glowSpread = tileGlowSpread ?? 8;
   const glowColor2 = `${glowColor}66`; // half-opacity echo
 
@@ -94,7 +94,7 @@ export function tileBorderStyle(settings: GalleryBehaviorSettings): string {
 /** Box-shadow for non-clip-path tiles (justified/masonry) where box-shadow works. */
 export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSettings): string {
   const cls = `wpsg-tile-${scope}`;
-  const glowColor = sanitizeCssValue(settings.tileGlowColor) || '#00bfff';
+  const glowColor = sanitizeCssColor(settings.tileGlowColor) || '#00bfff';
   const glowSpread = settings.tileGlowSpread ?? 8;
   const parts: string[] = [];
 
