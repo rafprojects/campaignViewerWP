@@ -93,8 +93,8 @@ export function sanitizeCssValue(value: string | undefined): string | undefined 
  *  - Keywords: transparent, currentcolor, inherit
  *  - Named colors: pure alphabetic strings up to 20 chars
  *
- * Rejects anything containing `)`, `,`, `;` etc. that could break out
- * of a `filter: drop-shadow(...)` or `background: linear-gradient(...)` context.
+ * Allows `)` and `,` only within recognised color function patterns
+ * (rgb/rgba/hsl/hsla). All other inputs containing these characters are rejected.
  */
 export function sanitizeCssColor(value: string | undefined): string | undefined {
   if (!value || typeof value !== 'string') return undefined;

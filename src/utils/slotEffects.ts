@@ -2,7 +2,7 @@
  * Build CSS filter, shadow, blend-mode, and overlay strings from slot effect types.
  */
 import type { SlotFilterEffects, SlotShadow, SlotOverlayEffect, SlotBlendMode } from '@/types';
-import { sanitizeCssValue } from '@/utils/sanitizeCss';
+import { sanitizeCssColor } from '@/utils/sanitizeCss';
 
 /**
  * Build a CSS `filter` string from slot filter effects and optional shadow.
@@ -34,7 +34,7 @@ export function buildFilterCss(
   }
 
   if (shadow && (shadow.offsetX || shadow.offsetY || shadow.blur)) {
-    const safeColor = sanitizeCssValue(shadow.color) ?? 'rgba(0,0,0,0.5)';
+    const safeColor = sanitizeCssColor(shadow.color) ?? 'rgba(0,0,0,0.5)';
     parts.push(
       `drop-shadow(${shadow.offsetX}px ${shadow.offsetY}px ${shadow.blur}px ${safeColor})`,
     );

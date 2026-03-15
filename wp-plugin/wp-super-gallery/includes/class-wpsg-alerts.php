@@ -16,25 +16,22 @@ class WPSG_Alerts {
         add_action('wpsg_rest_metrics', [self::class, 'track_rest_metrics']);
         add_action(self::CRON_HOOK, [self::class, 'process_email_queue']);
 
-        // Register the custom 1-minute interval before scheduling.
+        // Register the custom 5-minute interval before scheduling.
         add_filter('cron_schedules', [self::class, 'add_cron_interval']);
 
-        // Schedule 1-minute cron if not already scheduled.
-        if (!wp_next_scheduled(self::CRON_HOOK)) {
-            wp_schedule_event(time(), 'wpsg_every_minute', self::CRON_HOOK);
-        }
+        // Cron is scheduled on-demand by queue_email(); no unconditional schedule here.
     }
 
     /**
-     * Register a 1-minute cron interval for alert email processing.
+     * Register a 5-minute cron interval for alert email processing.
      *
      * @since 0.18.0 P20-I-5
      */
     public static function add_cron_interval(array $schedules): array {
-        if (!isset($schedules['wpsg_every_minute'])) {
-            $schedules['wpsg_every_minute'] = [
-                'interval' => 60,
-                'display'  => 'Every minute (WPSG alerts)',
+        if (!isset($schedules['wpsg_every_5min'])) {
+            $schedules['wpsg_every_5min'] = [
+                'interval' => 300,
+                'display'  => 'Every 5 minutes (WPSG alerts)',
             ];
         }
         return $schedules;
@@ -150,6 +147,11 @@ class WPSG_Alerts {
 
         update_option(self::EMAIL_QUEUE, $queue, false);
         delete_transient($lock_key);
+
+        // Schedule cron on-demand so it only runs when there are queued items.
+        if (!wp_next_scheduled(self::CRON_HOOK)) {
+            wp_schedule_event(time(), 'wpsg_every_5min', self::CRON_HOOK);
+        }
     }
 
     /**
@@ -168,6 +170,8 @@ class WPSG_Alerts {
         $queue = get_option(self::EMAIL_QUEUE, []);
         if (!is_array($queue) || empty($queue)) {
             delete_transient($lock_key);
+            // Nothing to process — unschedule cron to avoid idle ticks.
+            wp_clear_scheduled_hook(self::CRON_HOOK);
             return;
         }
 
@@ -203,6 +207,12 @@ class WPSG_Alerts {
                 $merged = array_slice($merged, -50);
             }
             update_option(self::EMAIL_QUEUE, $merged, false);
+        } else {
+            // All items sent — unschedule if no new items appeared while processing.
+            $remaining = get_option(self::EMAIL_QUEUE, []);
+            if (!is_array($remaining) || empty($remaining)) {
+                wp_clear_scheduled_hook(self::CRON_HOOK);
+            }
         }
 
         delete_transient($lock_key);

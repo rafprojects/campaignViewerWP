@@ -47,21 +47,21 @@ class WPSG_Alerts_Test extends WP_UnitTestCase {
 
     // ── add_cron_interval ──────────────────────────────────────────────────
 
-    public function test_add_cron_interval_adds_every_minute_schedule() {
+    public function test_add_cron_interval_adds_every_5min_schedule() {
         $schedules = WPSG_Alerts::add_cron_interval([]);
-        $this->assertArrayHasKey('wpsg_every_minute', $schedules);
-        $this->assertEquals(60, $schedules['wpsg_every_minute']['interval']);
+        $this->assertArrayHasKey('wpsg_every_5min', $schedules);
+        $this->assertEquals(300, $schedules['wpsg_every_5min']['interval']);
     }
 
     public function test_add_cron_interval_does_not_overwrite_existing() {
         $existing = [
-            'wpsg_every_minute' => [
+            'wpsg_every_5min' => [
                 'interval' => 999,
                 'display'  => 'Custom',
             ],
         ];
         $result = WPSG_Alerts::add_cron_interval($existing);
-        $this->assertEquals(999, $result['wpsg_every_minute']['interval']);
+        $this->assertEquals(999, $result['wpsg_every_5min']['interval']);
     }
 
     // ── notify_fatal_error ─────────────────────────────────────────────────

@@ -25,7 +25,8 @@ export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOpt
   const { tileHoverBounce, tileGlowEnabled, tileGlowColor, tileGlowSpread } = settings;
   const glowColor = sanitizeCssColor(tileGlowColor) || '#00bfff';
   const glowSpread = tileGlowSpread ?? 8;
-  const glowColor2 = `${glowColor}66`; // half-opacity echo
+  // Append hex alpha only for hex colors; reuse the base color for functional notations.
+  const glowColor2 = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(glowColor) ? `${glowColor}66` : glowColor;
 
   const parts: string[] = [];
 
@@ -126,7 +127,7 @@ export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSet
   // ── Per-slot glow class — box-shadow only ──────────────────────────────
   parts.push(`
 .${cls}-glow:hover {
-  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${glowColor}66;
+  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(glowColor) ? `${glowColor}66` : glowColor};
 }
 `);
 
@@ -142,9 +143,10 @@ export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSet
   if (settings.tileGlowEnabled) {
     parts.push(`
 .${cls}:hover {
-  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${glowColor}66;
+  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(glowColor) ? `${glowColor}66` : glowColor};
 }
 `);
+  
   }
 
   return parts.join('');

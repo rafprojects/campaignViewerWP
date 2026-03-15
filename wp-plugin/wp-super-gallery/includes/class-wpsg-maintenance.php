@@ -17,6 +17,17 @@ class WPSG_Maintenance {
         add_action(self::TRASH_PURGE_HOOK, [self::class, 'purge_trashed_campaigns']);
         add_action(self::ANALYTICS_PURGE_HOOK, [self::class, 'purge_old_analytics']);
 
+        // Register a weekly interval — core only ships hourly/twicedaily/daily.
+        add_filter('cron_schedules', function (array $schedules): array {
+            if (!isset($schedules['weekly'])) {
+                $schedules['weekly'] = [
+                    'interval' => WEEK_IN_SECONDS,
+                    'display'  => 'Once Weekly',
+                ];
+            }
+            return $schedules;
+        });
+
         $archive_days = self::get_setting('archive_purge_days');
         if ($archive_days > 0) {
             if (!wp_next_scheduled(self::CLEANUP_HOOK)) {
