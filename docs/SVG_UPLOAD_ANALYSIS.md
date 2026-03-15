@@ -360,4 +360,4 @@ These layered defenses significantly reduce the residual risk of Option 2.
 
 ---
 
-*Decision: **Option 2 (sanitize and allow)** selected on March 5, 2026 with enhancements: dual-layer sanitization (`enshrined/svg-sanitize` server-side + DOMPurify client-side), custom CSS sanitizer for `<style>` blocks, URI allowlisting, `@font-face` with embedded data: fonts only. Implemented as Track P20-L in [PHASE20_REPORT.md](PHASE20_REPORT.md).*
+*Decision: **Option 2 (sanitize and allow)** selected on March 5, 2026 with enhancements: dual-layer sanitization (`enshrined/svg-sanitize` server-side + DOMPurify client-side), custom CSS sanitizer for `<style>` blocks, URI allowlisting, `@font-face` with embedded data: fonts only. Implemented as Track P20-L in [archive/phases/PHASE20_REPORT.md](archive/phases/PHASE20_REPORT.md).*

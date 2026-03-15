@@ -2697,10 +2697,12 @@ class WPSG_REST {
             WPSG_Image_Optimizer::$wpsg_upload_context = true;
         }
 
-        $attachment_id = media_handle_upload('file', 0);
-
-        if (class_exists('WPSG_Image_Optimizer')) {
-            WPSG_Image_Optimizer::$wpsg_upload_context = false;
+        try {
+            $attachment_id = media_handle_upload('file', 0);
+        } finally {
+            if (class_exists('WPSG_Image_Optimizer')) {
+                WPSG_Image_Optimizer::$wpsg_upload_context = false;
+            }
         }
         if (is_wp_error($attachment_id)) {
             return new WP_Error('wpsg_bad_request', $attachment_id->get_error_message(), ['status' => 400]);

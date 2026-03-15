@@ -125,6 +125,23 @@ jobs:
       - name: Build production assets
         run: npm run build:wp
 
+      # ── PHPUnit sanity gate ─────────────────────────────────────────────────
+      - name: Install Composer dependencies (dev)
+        working-directory: wp-plugin/wp-super-gallery
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Start wp-env
+        run: npx wp-env start
+
+      - name: PHPUnit (sanity gate)
+        run: |
+          npx wp-env run tests-cli sh -c \
+            "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+
+      - name: Stop wp-env
+        if: always()
+        run: npx wp-env stop
+
       # ── Production Composer deps ────────────────────────────────────────────
       - name: Install production PHP deps
         working-directory: wp-plugin/wp-super-gallery

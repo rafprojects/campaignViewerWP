@@ -285,7 +285,9 @@ export function LayoutCanvas({
           backgroundColor:
             (template.backgroundMode ?? 'color') === 'color'
               ? template.backgroundColor
-              : (template.backgroundMode === 'none' ? 'transparent' : undefined),
+              : template.backgroundMode === 'image'
+                ? (template.backgroundColor || '#ffffff')
+                : (template.backgroundMode === 'none' ? 'transparent' : undefined),
           background:
             (template.backgroundMode ?? 'color') === 'gradient'
               ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'

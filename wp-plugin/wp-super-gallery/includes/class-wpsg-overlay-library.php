@@ -205,10 +205,12 @@ class WPSG_Overlay_Library {
             WPSG_Image_Optimizer::$wpsg_upload_context = true;
         }
 
-        $result = wp_handle_upload( $file, $overrides );
-
-        if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
-            WPSG_Image_Optimizer::$wpsg_upload_context = false;
+        try {
+            $result = wp_handle_upload( $file, $overrides );
+        } finally {
+            if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
+                WPSG_Image_Optimizer::$wpsg_upload_context = false;
+            }
         }
 
         remove_filter( 'upload_dir', $upload_dir_filter );

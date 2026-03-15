@@ -390,7 +390,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-See [PHASE13_REPORT.md](./docs/PHASE13_REPORT.md) for Phase 13 execution details.
+See [PHASE13_REPORT.md](./docs/archive/phases/PHASE13_REPORT.md) for Phase 13 execution details.
 
 ---
 

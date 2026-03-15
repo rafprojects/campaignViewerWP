@@ -2,7 +2,7 @@
 
 This document tracks deferred and exploratory work remaining after Phase 18 is planned. Items promoted to active phase execution are moved into dedicated phase reports and removed from this backlog.
 
-> **Note:** Phase 18 is under way — see [PHASE18_REPORT.md](PHASE18_REPORT.md) for the promoted items (bulk actions, campaign duplication, export/import JSON, keyboard shortcuts, analytics dashboard, media usage tracking, campaign categories, access request workflow, App.tsx/AdminPanel.tsx reduction, JS+PHP coverage to ≥ 75 %).
+> **Note:** Phase 18 is under way — see [archive/phases/PHASE18_REPORT.md](archive/phases/PHASE18_REPORT.md) for the promoted items (bulk actions, campaign duplication, export/import JSON, keyboard shortcuts, analytics dashboard, media usage tracking, campaign categories, access request workflow, App.tsx/AdminPanel.tsx reduction, JS+PHP coverage to ≥ 75 %).
 
 ---
 
@@ -543,7 +543,7 @@ When promoting future tasks to an active phase:
 
 *Document created: February 1, 2026*  
 *Last updated: March 5, 2026 — Added "JWT In-Memory Token Auth (Standalone SPA)" under Access Control (deferred from Phase 20 P20-K decision; see JWT_AUTH_ANALYSIS.md).*  
-*Updated: Added "Deferred Review Tasks" section from PHP_IMPLEMENTATION_REVIEW.txt and REACT_IMPLEMENTATION_REVIEW.txt triage.*
+*Updated: Added "Deferred Review Tasks" section from archived review triage in [archive/reviews/PHP_IMPLEMENTATION_REVIEW.txt](archive/reviews/PHP_IMPLEMENTATION_REVIEW.txt) and [archive/reviews/REACT_IMPLEMENTATION_REVIEW.txt](archive/reviews/REACT_IMPLEMENTATION_REVIEW.txt).*
 
 ---
 
@@ -552,7 +552,7 @@ When promoting future tasks to an active phase:
 Items below were triaged from the PHP and React implementation review deferred task lists.
 Easy/ASAP items were handled separately — see ASAP_TASKS.md and the implementation notes in the source review docs.
 
-### PHP — From PHP_IMPLEMENTATION_REVIEW.txt
+### PHP — From archived PHP_IMPLEMENTATION_REVIEW.txt
 
 **D-1: CORS Origin Allow-List & Admin UI**
 Files: `wp-super-gallery.php`, `class-wpsg-settings.php`  
@@ -609,7 +609,7 @@ Files: `wp-super-gallery.php`
 Ship sensible default CSP. Could break sites if too restrictive. Needs testing with all embed providers.  
 LOE: Medium (3-5 hours) | Impact: Low
 
-### React — From REACT_IMPLEMENTATION_REVIEW.txt
+### React — From archived REACT_IMPLEMENTATION_REVIEW.txt
 
 **RD-1: JWT Token Storage Migration (localStorage → in-memory)**
 Files: `src/services/apiClient.ts`, `src/hooks/useAuth.ts`, `src/contexts/AuthContext.tsx`  

@@ -141,9 +141,14 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
       body: JSON.stringify({ username: email, password }),
     });
 
-    const data = await response.json();
+    let data: Record<string, unknown>;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`Login failed (HTTP ${response.status}). Server returned a non-JSON response.`);
+    }
     if (!response.ok) {
-      throw new Error(data?.message ?? 'Login failed. Check your credentials.');
+      throw new Error((data?.message as string) ?? 'Login failed. Check your credentials.');
     }
 
     // Update the global nonce so subsequent REST calls are authenticated.

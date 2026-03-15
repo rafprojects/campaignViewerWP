@@ -8,6 +8,20 @@
 import type { GalleryBehaviorSettings } from '@/types';
 import { sanitizeCssColor } from '@/utils/sanitizeCss';
 
+/** Expand 3-digit hex (#abc) to 6-digit (#aabbcc); pass others through unchanged. */
+function expandHex(hex: string): string {
+  const m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  return m ? `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}` : hex;
+}
+
+/** Append hex alpha to a 3- or 6-digit hex color; return as-is for non-hex. */
+function hexWithAlpha(color: string, alpha: string): string {
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color)) {
+    return `${expandHex(color)}${alpha}`;
+  }
+  return color;
+}
+
 export interface TileStyleOptions {
   /** Unique CSS class suffix for this adapter, e.g. "hex", "circle", "masonry" */
   scope: string;
@@ -26,7 +40,7 @@ export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOpt
   const glowColor = sanitizeCssColor(tileGlowColor) || '#00bfff';
   const glowSpread = tileGlowSpread ?? 8;
   // Append hex alpha only for hex colors; reuse the base color for functional notations.
-  const glowColor2 = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(glowColor) ? `${glowColor}66` : glowColor;
+  const glowColor2 = hexWithAlpha(glowColor, '66');
 
   const parts: string[] = [];
 
@@ -127,7 +141,7 @@ export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSet
   // ── Per-slot glow class — box-shadow only ──────────────────────────────
   parts.push(`
 .${cls}-glow:hover {
-  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(glowColor) ? `${glowColor}66` : glowColor};
+  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${hexWithAlpha(glowColor, '66')};
 }
 `);
 
@@ -143,7 +157,7 @@ export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSet
   if (settings.tileGlowEnabled) {
     parts.push(`
 .${cls}:hover {
-  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(glowColor) ? `${glowColor}66` : glowColor};
+  box-shadow: 0 0 ${glowSpread}px ${glowColor}, 0 0 ${glowSpread * 2}px ${hexWithAlpha(glowColor, '66')};
 }
 `);
   
