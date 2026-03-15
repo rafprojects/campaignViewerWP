@@ -16,6 +16,10 @@ const campaignsPayload = {
       tags: [],
     },
   ],
+  page: 1,
+  perPage: 20,
+  total: 1,
+  totalPages: 1,
 };
 
 describe('AdminPanel', () => {
@@ -32,7 +36,7 @@ describe('AdminPanel', () => {
   it('loads campaigns and supports access grant/revoke', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {
@@ -195,7 +199,7 @@ describe('AdminPanel', () => {
   it('validates access user id before applying', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {
@@ -233,7 +237,7 @@ describe('AdminPanel', () => {
   it('loads audit entries when audit tab is opened', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/audit')) {
@@ -297,7 +301,7 @@ describe('AdminPanel', () => {
   it('grants access for a campaign', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {
@@ -335,7 +339,7 @@ describe('AdminPanel', () => {
   it('shows company access helper text when source is company', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {

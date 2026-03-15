@@ -93,36 +93,74 @@ class WPSG_DB {
     /**
      * Backfill media_refs from existing campaign media_items meta.
      *
+     * This runs in batches to avoid time/memory issues on large sites and
+     * stores progress (offset) so it can safely resume if interrupted.
+     *
      * @since 0.18.0 P20-I-2
      */
     private static function backfill_media_refs(): void {
         global $wpdb;
         $table = self::get_media_refs_table();
 
-        $campaigns = get_posts([
-            'post_type'      => 'wpsg_campaign',
-            'posts_per_page' => -1,
-            'post_status'    => ['publish', 'draft', 'private'],
-            'fields'         => 'ids',
-        ]);
+        // Process campaigns in batches to limit memory/time usage.
+        $batch_size = 100;
 
-        foreach ($campaigns as $campaign_id) {
-            $items = get_post_meta($campaign_id, 'media_items', true);
-            if (!is_array($items)) {
-                continue;
+        // Track progress so we can resume if the process is interrupted.
+        $offset_option = 'wpsg_media_refs_backfill_offset';
+        $offset        = (int) get_option($offset_option, 0);
+
+        while (true) {
+            $campaigns = get_posts([
+                'post_type'      => 'wpsg_campaign',
+                'posts_per_page' => $batch_size,
+                'offset'         => $offset,
+                'post_status'    => ['publish', 'draft', 'private'],
+                'fields'         => 'ids',
+            ]);
+
+            $count = is_array($campaigns) ? count($campaigns) : 0;
+
+            if ($count === 0) {
+                delete_option($offset_option);
+                break;
             }
-            $seen = [];
-            foreach ($items as $item) {
-                $mid = $item['id'] ?? '';
-                if ($mid === '' || in_array($mid, $seen, true)) {
+
+            foreach ($campaigns as $campaign_id) {
+                $items = get_post_meta($campaign_id, 'media_items', true);
+                if (!is_array($items)) {
                     continue;
                 }
-                $seen[] = $mid;
-                $wpdb->query($wpdb->prepare(
-                    "INSERT IGNORE INTO {$table} (media_id, campaign_id) VALUES (%s, %d)",
-                    $mid,
-                    $campaign_id
-                ));
+
+                $seen         = [];
+                $placeholders = [];
+                $values       = [];
+
+                foreach ($items as $item) {
+                    $mid = $item['id'] ?? '';
+                    if ($mid === '' || in_array($mid, $seen, true)) {
+                        continue;
+                    }
+                    $seen[]         = $mid;
+                    $placeholders[] = '(%s, %d)';
+                    $values[]       = $mid;
+                    $values[]       = $campaign_id;
+                }
+
+                if (!empty($placeholders)) {
+                    $sql = "INSERT IGNORE INTO {$table} (media_id, campaign_id) VALUES " . implode(', ', $placeholders);
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+                    $wpdb->query($wpdb->prepare($sql, $values));
+                }
+            }
+
+            // Advance offset and persist progress.
+            $offset += $count;
+            update_option($offset_option, $offset);
+
+            // If we fetched fewer than a full batch, we've reached the end.
+            if ($count < $batch_size) {
+                delete_option($offset_option);
+                break;
             }
         }
     }

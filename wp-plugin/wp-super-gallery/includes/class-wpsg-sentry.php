@@ -41,9 +41,11 @@ class WPSG_Sentry {
             return;
         }
 
-        $hint = \Sentry\EventHint::fromArray([
-            'extra' => $context,
-        ]);
-        \Sentry\captureMessage($message, null, $hint);
+        \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($message, $context) {
+            if (!empty($context)) {
+                $scope->setExtras($context);
+            }
+            \Sentry\captureMessage($message);
+        });
     }
 }

@@ -50,14 +50,7 @@ if ( ! class_exists( 'WP_CLI' ) ) {
  * `WP_CLI\Utils\format_items(...)` resolves at runtime.
  */
 if ( ! function_exists( 'WP_CLI\\Utils\\format_items' ) ) {
-    // phpcs:disable
-    eval('
-        namespace WP_CLI\\Utils;
-        function format_items( string $format, array $items, array $fields ): void {
-            \\WP_CLI::$messages[] = [ "type" => "format", "items" => $items ];
-        }
-    ');
-    // phpcs:enable
+    require_once __DIR__ . '/stubs/wp-cli-utils-format-items.php';
 }
 
 if ( ! class_exists( 'WP_CLI_Utils_Stub' ) ) {

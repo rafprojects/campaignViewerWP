@@ -119,6 +119,12 @@ add_action('added_post_meta', function ($meta_id, $post_id, $meta_key, $meta_val
         WPSG_DB::sync_media_refs((int) $post_id, is_array($meta_value) ? $meta_value : []);
     }
 }, 10, 4);
+add_action('deleted_post_meta', function ($meta_ids, $post_id, $meta_key, $meta_value) {
+    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
+        // Clear all media refs for this post when media_items meta is deleted.
+        WPSG_DB::sync_media_refs((int) $post_id, []);
+    }
+}, 10, 4);
 add_action('init', ['WPSG_Sentry', 'init']);
 
 // P13-D: Campaign schedule auto-archive cron.

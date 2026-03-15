@@ -41,7 +41,7 @@ delete_option( 'wpsg_layout_templates' );
 delete_option( 'wpsg_layout_templates_backup' );
 
 // ── 3. Delete taxonomy terms ────────────────────────────────
-$taxonomies = [ 'wpsg_company', 'wpsg_campaign_category' ];
+$taxonomies = [ 'wpsg_company', 'wpsg_campaign_category', 'wpsg_campaign_tag', 'wpsg_media_tag' ];
 foreach ( $taxonomies as $taxonomy ) {
 	$terms = get_terms( [
 		'taxonomy'   => $taxonomy,
@@ -66,6 +66,7 @@ $options = [
 	'wpsg_cache_version',
 	'wpsg_layout_templates',
 	'wpsg_media_refs_backfilled',
+	'wpsg_media_refs_backfill_offset',
 	'wpsg_access_requests_migrated',
 	'wpsg_access_request_index',
 	'wpsg_preserve_data_on_uninstall', // legacy key, if ever set directly
