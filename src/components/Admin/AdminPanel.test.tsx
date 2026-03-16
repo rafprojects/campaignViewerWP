@@ -7,7 +7,6 @@ import { AdminPanel } from './AdminPanel';
 // findByRole times out waiting for the modal heading to appear.
 beforeAll(async () => {
   await Promise.all([
-    import('./CampaignFormModal'),
     import('./AdminCampaignArchiveModal'),
     import('./AdminCampaignRestoreModal'),
   ]);

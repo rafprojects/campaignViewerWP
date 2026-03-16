@@ -296,7 +296,6 @@ describe('App', () => {
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     const fetchMock = setupAdminFetch();
-    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock as typeof fetch);
 
     render(<App />);
 
@@ -304,19 +303,13 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    // Test Edit Campaign with modal (CampaignViewer is lazy-loaded)
-    await waitFor(() => {
-      const btn = screen.getByRole('button', { name: 'Edit Campaign Alpha' });
-      expect(document.body.contains(btn)).toBe(true);
-    }, { timeout: 5000 });
-    const editButton = screen.getByRole('button', { name: 'Edit Campaign Alpha' });
-    fireEvent.click(editButton);
-    // Edit modal opens - fill in title and description
-    await waitFor(() => {
-      expect(screen.getByLabelText('Title')).toBeInTheDocument();
-    }, { timeout: 3000 });
-    const titleInput = screen.getByLabelText('Title');
-    const descInput = screen.getByLabelText('Description');
+    // CampaignViewer is lazy-loaded – wait for Edit button to appear
+    const editBtn = await screen.findByRole('button', { name: 'Edit Campaign Alpha' });
+    fireEvent.click(editBtn);
+
+    // UnifiedCampaignModal opens on Details tab. Labels include '*' for required fields.
+    const titleInput = await screen.findByRole('textbox', { name: /^Title/ });
+    const descInput = screen.getByRole('textbox', { name: /^Description/ });
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
     fireEvent.change(descInput, { target: { value: 'Updated Description' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
