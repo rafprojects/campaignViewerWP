@@ -25,6 +25,11 @@ interface Window {
     allowUserThemeOverride?: boolean;
     restNonce?: string;
     theme?: string;
+    /** P20-K: When true, JWT auth flow is enabled (cross-origin/headless). Default: WP nonce-only. */
+    enableJwt?: boolean;
+    apiBase?: string;
+    /** P20-I-6: When true, multiple shortcodes share one React root via portals. Default: false. */
+    sharedRoot?: boolean;
   };
   __WPSG_REST_NONCE__?: string;
   __WPSG_SENTRY_DSN__?: string;

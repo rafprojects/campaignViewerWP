@@ -1,25 +1,19 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard } from '@tabler/icons-react';
-import { CampaignFormModal } from './CampaignFormModal';
 import { CampaignsTab } from './CampaignsTab';
 import { BulkActionsBar } from './BulkActionsBar';
-import { CampaignDuplicateModal } from './CampaignDuplicateModal';
-import { CampaignImportModal } from './CampaignImportModal';
-import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/shared/CampaignSelector';
-import { AdminCampaignArchiveModal } from './AdminCampaignArchiveModal';
-import { AdminCampaignRestoreModal } from './AdminCampaignRestoreModal';
-import { ArchiveCompanyModal } from './ArchiveCompanyModal';
-import { QuickAddUserModal } from './QuickAddUserModal';
 import useSWR from 'swr';
 import type { LayoutTemplate } from '@/types';
 import {
-  useAdminCampaigns, useAccessGrants, useCompanies, useAuditEntries,
+  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
 } from '@/hooks/useAdminSWR';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
@@ -30,6 +24,14 @@ import { useAuditRows } from '@/hooks/useAuditRows';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
+const CampaignFormModal = lazy(() => import('./CampaignFormModal').then((m) => ({ default: m.CampaignFormModal })));
+const CampaignDuplicateModal = lazy(() => import('./CampaignDuplicateModal').then((m) => ({ default: m.CampaignDuplicateModal })));
+const CampaignImportModal = lazy(() => import('./CampaignImportModal').then((m) => ({ default: m.CampaignImportModal })));
+const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal').then((m) => ({ default: m.KeyboardShortcutsModal })));
+const AdminCampaignArchiveModal = lazy(() => import('./AdminCampaignArchiveModal').then((m) => ({ default: m.AdminCampaignArchiveModal })));
+const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal').then((m) => ({ default: m.AdminCampaignRestoreModal })));
+const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
+const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 
 interface AdminPanelProps {
   apiClient: ApiClient;
@@ -39,7 +41,11 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<string | null>('campaigns');
+  const [activeTab, setActiveTab] = useLocalStorage<string | null>({
+    key: 'wpsg_admin_active_tab',
+    defaultValue: 'campaigns',
+    getInitialValueInEffect: false,
+  });
   const [mediaCampaignId, setMediaCampaignId] = useState('');
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(null);
   const [accessCampaignId, setAccessCampaignId] = useState('');
@@ -48,8 +54,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [auditCampaignId, setAuditCampaignId] = useState('');
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [campaignPage, setCampaignPage] = useState(1);
+  const CAMPAIGNS_PER_PAGE = 20;
 
-  const { campaigns, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient);
+  const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, campaignPage, CAMPAIGNS_PER_PAGE);
+  const allCampaigns = useAllCampaignOptions(apiClient);
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 
   const { data: layoutTemplates } = useSWR<LayoutTemplate[]>(
@@ -88,14 +97,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   });
 
   useEffect(() => {
-    if (activeTab === 'media' && !mediaCampaignId && campaigns.length > 0) setMediaCampaignId(String(campaigns[0].id));
-  }, [activeTab, campaigns, mediaCampaignId]);
+    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0].id));
+  }, [activeTab, allCampaigns, mediaCampaignId]);
   useEffect(() => {
-    if (activeTab === 'access' && !accessCampaignId && campaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(campaigns[0].id));
-  }, [activeTab, accessCampaignId, campaigns, accessViewMode]);
+    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0].id));
+  }, [activeTab, accessCampaignId, allCampaigns, accessViewMode]);
   useEffect(() => {
-    if (activeTab === 'audit' && !auditCampaignId && campaigns.length > 0) setAuditCampaignId(String(campaigns[0].id));
-  }, [activeTab, auditCampaignId, campaigns]);
+    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0].id));
+  }, [activeTab, auditCampaignId, allCampaigns]);
   useEffect(() => {
     if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0].id));
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
@@ -107,36 +116,36 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const cancelAccessRef = useRef<(() => void) | null>(null);
   const cancelAuditRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (activeTab === 'media' && campaigns.length > 0 && !mediaPrefetchedRef.current) {
+    if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
-      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, campaigns.map((c) => String(c.id)));
+      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)));
     }
-  }, [activeTab, campaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient]);
   useEffect(() => {
-    if (activeTab === 'access' && campaigns.length > 0 && !accessPrefetchedRef.current) {
+    if (activeTab === 'access' && allCampaigns.length > 0 && !accessPrefetchedRef.current) {
       accessPrefetchedRef.current = true;
-      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, campaigns.map((c) => String(c.id)));
+      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)));
     }
-  }, [activeTab, campaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient]);
   useEffect(() => {
-    if (activeTab === 'audit' && campaigns.length > 0 && !auditPrefetchedRef.current) {
+    if (activeTab === 'audit' && allCampaigns.length > 0 && !auditPrefetchedRef.current) {
       auditPrefetchedRef.current = true;
-      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, campaigns.map((c) => String(c.id)));
+      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)));
     }
-  }, [activeTab, campaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient]);
   useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
 
   const campaignSelectData = useMemo(
-    () => campaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
-    [campaigns],
+    () => allCampaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
+    [allCampaigns],
   );
   const companySelectData = useMemo(
     () => companies.map((c) => ({ value: String(c.id), label: `${c.name} (${c.activeCampaigns} active, ${c.archivedCampaigns} archived)` })),
     [companies],
   );
   const selectedCampaign = useMemo(
-    () => campaigns.find((c) => String(c.id) === String(accessCampaignId)) ?? null,
-    [accessCampaignId, campaigns],
+    () => allCampaigns.find((c) => String(c.id) === String(accessCampaignId)) ?? null,
+    [accessCampaignId, allCampaigns],
   );
   const selectedCompany = useMemo(
     () => companies.find((c) => String(c.id) === selectedCompanyId) ?? null,
@@ -148,12 +157,21 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     () => categoryFilter ? campaigns.filter((c) => (c.categories ?? []).includes(categoryFilter)) : campaigns,
     [campaigns, categoryFilter],
   );
+  // Reset to page 1 when category filter changes.
+  useEffect(() => { setCampaignPage(1); }, [categoryFilter]);
+  // Clamp page into [1, totalPages] when dataset shrinks (deletions, server-side changes).
+  useEffect(() => {
+    if (campaignPagination.totalPages > 0 && campaignPage > campaignPagination.totalPages) {
+      setCampaignPage(campaignPagination.totalPages);
+    }
+  }, [campaignPage, campaignPagination.totalPages]);
+
   const campaignsRows = useCampaignsRows({ campaigns, categoryFilter, campaignActions });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
 
   return (
-    <Card shadow="sm" radius="md" withBorder>
+    <Card shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
       <Group justify="space-between" wrap="wrap" gap="sm" mb="md">
         <Group>
           <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
@@ -207,6 +225,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             onToggleSelectMode={campaignActions.handleToggleSelectMode}
             onSelectAll={() => campaignActions.handleSelectAll(filteredCampaigns.map((c) => String(c.id)))}
             onDeselectAll={campaignActions.handleDeselectAll}
+            page={campaignPagination.page}
+            totalPages={campaignPagination.totalPages}
+            total={campaignPagination.total}
+            onPageChange={setCampaignPage}
           />
           {campaignActions.selectMode && campaignActions.selectedCampaignIds.size > 0 && (() => {
             const sel = campaigns.filter((c) => campaignActions.selectedCampaignIds.has(String(c.id)));
@@ -223,19 +245,23 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           })()}
         </Tabs.Panel>
 
-        <CampaignFormModal
-          opened={campaignActions.campaignFormOpen}
-          editingCampaign={campaignActions.editingCampaign}
-          formState={campaignActions.formState}
-          onFormChange={campaignActions.dispatchFormState}
-          onClose={campaignActions.closeCampaignForm}
-          onSave={() => campaignActions.saveCampaign(campaignActions.formState)}
-          isSaving={campaignActions.isSavingCampaign}
-          onGoToMedia={(id) => { setMediaCampaignId(id); campaignActions.closeCampaignForm(); setActiveTab('media'); }}
-          layoutTemplates={layoutTemplates ?? []}
-          onEditLayout={(id) => { campaignActions.closeCampaignForm(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
-          availableCategories={availableCategoryNames}
-        />
+        {campaignActions.campaignFormOpen && (
+          <Suspense fallback={null}>
+            <CampaignFormModal
+              opened={campaignActions.campaignFormOpen}
+              editingCampaign={campaignActions.editingCampaign}
+              formState={campaignActions.formState}
+              onFormChange={campaignActions.dispatchFormState}
+              onClose={campaignActions.closeCampaignForm}
+              onSave={() => campaignActions.saveCampaign(campaignActions.formState)}
+              isSaving={campaignActions.isSavingCampaign}
+              onGoToMedia={(id) => { setMediaCampaignId(id); campaignActions.closeCampaignForm(); setActiveTab('media'); }}
+              layoutTemplates={layoutTemplates ?? []}
+              onEditLayout={(id) => { campaignActions.closeCampaignForm(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
+              availableCategories={availableCategoryNames}
+            />
+          </Suspense>
+        )}
 
         <Tabs.Panel value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
@@ -261,9 +287,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               Rescan All
             </Button>
           </Group>
-          <Suspense fallback={<Center py="md"><Loader /></Center>}>
-            <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<Center py="md"><Loader /></Center>}>
+              <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
+            </Suspense>
+          </ErrorBoundary>
         </Tabs.Panel>
 
         <Tabs.Panel value="layouts" pt="md">
@@ -323,72 +351,102 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.Panel>
 
         <Tabs.Panel value="analytics" pt="md">
-          <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
-            <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
+              <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} />
+            </Suspense>
+          </ErrorBoundary>
         </Tabs.Panel>
       </Tabs>
 
-      <AdminCampaignArchiveModal
-        opened={!!campaignActions.confirmArchive}
-        campaign={campaignActions.confirmArchive ? { id: campaignActions.confirmArchive.id, title: campaignActions.confirmArchive.title } : null}
-        onClose={() => campaignActions.setConfirmArchive(null)}
-        onConfirm={async () => {
-          if (campaignActions.confirmArchive) { campaignActions.setConfirmArchive(null); await campaignActions.archiveCampaign(campaignActions.confirmArchive); }
-        }}
-      />
-      <AdminCampaignRestoreModal
-        opened={!!campaignActions.confirmRestore}
-        campaign={campaignActions.confirmRestore ? { id: campaignActions.confirmRestore.id, title: campaignActions.confirmRestore.title } : null}
-        onClose={() => campaignActions.setConfirmRestore(null)}
-        onConfirm={async () => {
-          if (campaignActions.confirmRestore) { campaignActions.setConfirmRestore(null); await campaignActions.restoreCampaign(campaignActions.confirmRestore); }
-        }}
-      />
-      <ArchiveCompanyModal
-        opened={!!accessState.confirmArchiveCompany}
-        company={accessState.confirmArchiveCompany}
-        archiveRevokeAccess={accessState.archiveRevokeAccess}
-        onArchiveRevokeAccessChange={accessState.setArchiveRevokeAccess}
-        onClose={() => { accessState.setConfirmArchiveCompany(null); accessState.setArchiveRevokeAccess(false); }}
-        onConfirm={accessState.handleArchiveCompany}
-        accessSaving={accessState.accessSaving}
-      />
-      <QuickAddUserModal
-        opened={accessState.quickAddUserOpen}
-        onClose={accessState.closeQuickAddUser}
-        quickAddResult={accessState.quickAddResult}
-        quickAddEmail={accessState.quickAddEmail}
-        setQuickAddEmail={accessState.setQuickAddEmail}
-        quickAddName={accessState.quickAddName}
-        setQuickAddName={accessState.setQuickAddName}
-        quickAddRole={accessState.quickAddRole}
-        setQuickAddRole={accessState.setQuickAddRole}
-        quickAddCampaignId={accessState.quickAddCampaignId}
-        setQuickAddCampaignId={accessState.setQuickAddCampaignId}
-        quickAddTestMode={accessState.quickAddTestMode}
-        setQuickAddTestMode={accessState.setQuickAddTestMode}
-        campaigns={campaigns}
-        onSubmit={accessState.handleQuickAddUser}
-        quickAddSaving={accessState.quickAddSaving}
-        onNotify={onNotify}
-      />
-      <CampaignDuplicateModal
-        source={campaignActions.duplicateSource}
-        isSaving={campaignActions.isDuplicating}
-        onConfirm={campaignActions.handleDuplicateCampaign}
-        onClose={() => campaignActions.setDuplicateSource(null)}
-      />
-      <CampaignImportModal
-        opened={campaignActions.importModalOpen}
-        isSaving={campaignActions.isImporting}
-        onImport={campaignActions.handleImportCampaign}
-        onClose={() => campaignActions.setImportModalOpen(false)}
-      />
-      <KeyboardShortcutsModal
-        opened={campaignActions.shortcutHelpOpen}
-        onClose={() => campaignActions.setShortcutHelpOpen(false)}
-      />
+      {!!campaignActions.confirmArchive && (
+        <Suspense fallback={null}>
+          <AdminCampaignArchiveModal
+            opened={!!campaignActions.confirmArchive}
+            campaign={campaignActions.confirmArchive ? { id: campaignActions.confirmArchive.id, title: campaignActions.confirmArchive.title } : null}
+            onClose={() => campaignActions.setConfirmArchive(null)}
+            onConfirm={async () => {
+              if (campaignActions.confirmArchive) { campaignActions.setConfirmArchive(null); await campaignActions.archiveCampaign(campaignActions.confirmArchive); }
+            }}
+          />
+        </Suspense>
+      )}
+      {!!campaignActions.confirmRestore && (
+        <Suspense fallback={null}>
+          <AdminCampaignRestoreModal
+            opened={!!campaignActions.confirmRestore}
+            campaign={campaignActions.confirmRestore ? { id: campaignActions.confirmRestore.id, title: campaignActions.confirmRestore.title } : null}
+            onClose={() => campaignActions.setConfirmRestore(null)}
+            onConfirm={async () => {
+              if (campaignActions.confirmRestore) { campaignActions.setConfirmRestore(null); await campaignActions.restoreCampaign(campaignActions.confirmRestore); }
+            }}
+          />
+        </Suspense>
+      )}
+      {!!accessState.confirmArchiveCompany && (
+        <Suspense fallback={null}>
+          <ArchiveCompanyModal
+            opened={!!accessState.confirmArchiveCompany}
+            company={accessState.confirmArchiveCompany}
+            archiveRevokeAccess={accessState.archiveRevokeAccess}
+            onArchiveRevokeAccessChange={accessState.setArchiveRevokeAccess}
+            onClose={() => { accessState.setConfirmArchiveCompany(null); accessState.setArchiveRevokeAccess(false); }}
+            onConfirm={accessState.handleArchiveCompany}
+            accessSaving={accessState.accessSaving}
+          />
+        </Suspense>
+      )}
+      {accessState.quickAddUserOpen && (
+        <Suspense fallback={null}>
+          <QuickAddUserModal
+            opened={accessState.quickAddUserOpen}
+            onClose={accessState.closeQuickAddUser}
+            quickAddResult={accessState.quickAddResult}
+            quickAddEmail={accessState.quickAddEmail}
+            setQuickAddEmail={accessState.setQuickAddEmail}
+            quickAddName={accessState.quickAddName}
+            setQuickAddName={accessState.setQuickAddName}
+            quickAddRole={accessState.quickAddRole}
+            setQuickAddRole={accessState.setQuickAddRole}
+            quickAddCampaignId={accessState.quickAddCampaignId}
+            setQuickAddCampaignId={accessState.setQuickAddCampaignId}
+            quickAddTestMode={accessState.quickAddTestMode}
+            setQuickAddTestMode={accessState.setQuickAddTestMode}
+            campaigns={campaigns}
+            onSubmit={accessState.handleQuickAddUser}
+            quickAddSaving={accessState.quickAddSaving}
+            onNotify={onNotify}
+          />
+        </Suspense>
+      )}
+      {!!campaignActions.duplicateSource && (
+        <Suspense fallback={null}>
+          <CampaignDuplicateModal
+            source={campaignActions.duplicateSource}
+            isSaving={campaignActions.isDuplicating}
+            onConfirm={campaignActions.handleDuplicateCampaign}
+            onClose={() => campaignActions.setDuplicateSource(null)}
+          />
+        </Suspense>
+      )}
+      {campaignActions.importModalOpen && (
+        <Suspense fallback={null}>
+          <CampaignImportModal
+            opened={campaignActions.importModalOpen}
+            isSaving={campaignActions.isImporting}
+            onImport={campaignActions.handleImportCampaign}
+            onClose={() => campaignActions.setImportModalOpen(false)}
+          />
+        </Suspense>
+      )}
+      {campaignActions.shortcutHelpOpen && (
+        <Suspense fallback={null}>
+          <KeyboardShortcutsModal
+            opened={campaignActions.shortcutHelpOpen}
+            onClose={() => campaignActions.setShortcutHelpOpen(false)}
+          />
+        </Suspense>
+      )}
     </Card>
   );
 }

@@ -11,6 +11,7 @@ import {
   IconPhoto,
   IconStack2,
   IconPhoto as IconBg,
+  IconMask,
   IconEye,
   IconEyeOff,
   IconLock,
@@ -21,6 +22,7 @@ import {
   IconLayoutAlignBottom,
   IconArrowUp,
   IconArrowDown,
+  IconTrash,
 } from '@tabler/icons-react';
 import type { LayerItem } from '@/utils/layerList';
 import { getLayerName } from '@/utils/layerList';
@@ -40,6 +42,10 @@ export interface LayerRowProps {
   onSendToBack: (id: string) => void;
   onBringForward: (id: string) => void;
   onSendBackward: (id: string) => void;
+  /** Delete this layer. */
+  onDelete?: (id: string) => void;
+  /** Add a mask sublayer to this slot (only for kind === 'slot'). */
+  onAddMask?: (slotId: string) => void;
   /** Native DnD callbacks */
   onDragStart: (e: DragEvent<HTMLDivElement>, id: string) => void;
   onDragOver: (e: DragEvent<HTMLDivElement>, id: string) => void;
@@ -51,6 +57,7 @@ export interface LayerRowProps {
 function TypeIcon({ item }: { item: LayerItem }) {
   if (item.kind === 'background') return <IconBg size={14} />;
   if (item.kind === 'graphic') return <IconStack2 size={14} />;
+  if (item.kind === 'mask') return <IconMask size={14} />;
   return <IconPhoto size={14} />;
 }
 
@@ -68,13 +75,17 @@ export function LayerRow({
   onSendToBack,
   onBringForward,
   onSendBackward,
+  onDelete,
+  onAddMask,
   onDragStart,
   onDragOver,
   onDrop,
 }: LayerRowProps) {
   const isBackground = item.kind === 'background';
+  const isMask = item.kind === 'mask';
+  const isNonInteractive = isBackground || isMask;
   const visible = item.visible ?? true;
-  const locked = item.kind !== 'background' ? (item.locked ?? false) : false;
+  const locked = (item.kind !== 'background' && item.kind !== 'mask') ? (item.locked ?? false) : false;
   const displayName = getLayerName(item, template);
 
   const [editing, setEditing] = useState(false);
@@ -118,21 +129,21 @@ export function LayerRow({
       gap={4}
       py={4}
       data-layer-id={item.id}
-      draggable={!isBackground}
+      draggable={!isNonInteractive}
       onDragStart={(e) => onDragStart(e as DragEvent<HTMLDivElement>, item.id)}
       onDragOver={handleDragOver}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       onClick={() => onSelect(item.id)}
       style={{
-        cursor: isBackground ? 'default' : 'grab',
+        cursor: isNonInteractive ? 'default' : 'grab',
+        // Mask sublayers are indented to show hierarchy
+        marginLeft: isMask ? 16 : 0,
         // Selection: 3px solid left accent + coloured bg row.
-        // `blue-filled` resolves to the solid Mantine blue in both light & dark.
         borderLeft: isSelected
           ? '3px solid var(--mantine-color-blue-filled)'
           : '3px solid transparent',
         borderRadius: isSelected ? '0 4px 4px 0' : 4,
-        // Reduce left padding when border is visible so text stays at 6px from edge.
         paddingLeft: isSelected ? 3 : 6,
         paddingRight: 6,
         backgroundColor: isSelected
@@ -145,7 +156,7 @@ export function LayerRow({
       }}
     >
       {/* Drag handle */}
-      {!isBackground && (
+      {!isNonInteractive && (
         <IconGripVertical
           size={12}
           style={{ color: 'var(--mantine-color-gray-5)', flexShrink: 0 }}
@@ -204,7 +215,7 @@ export function LayerRow({
       )}
 
       {/* Lock toggle */}
-      {!isBackground && (
+      {!isNonInteractive && (
         <Tooltip label={locked ? 'Unlock layer' : 'Lock layer'} withArrow openDelay={400}>
           <ActionIcon
             size="xs"
@@ -218,7 +229,7 @@ export function LayerRow({
       )}
 
       {/* Context menu */}
-      {!isBackground && (
+      {!isNonInteractive && (
         <Menu width={160} withinPortal>
           <Menu.Target>
             <ActionIcon
@@ -255,8 +266,39 @@ export function LayerRow({
             >
               Send to Back
             </Menu.Item>
+            {item.kind === 'slot' && onAddMask && (() => {
+              const slot = template.slots.find((s) => s.id === item.id);
+              const hasMask = !!slot?.maskLayer || !!slot?.maskUrl;
+              return !hasMask ? (
+                <>
+                  <Menu.Divider />
+                  <Menu.Item
+                    leftSection={<IconMask size={12} />}
+                    onClick={() => onAddMask(item.id)}
+                  >
+                    Add Mask
+                  </Menu.Item>
+                </>
+              ) : null;
+            })()}
           </Menu.Dropdown>
         </Menu>
+      )}
+
+      {/* ── Delete button — separated from other controls to prevent accidental clicks ── */}
+      {!isBackground && onDelete && (
+        <Tooltip label="Delete layer" withArrow openDelay={400}>
+          <ActionIcon
+            size="xs"
+            variant="subtle"
+            color="red"
+            style={{ marginLeft: 4 }}
+            onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+            aria-label="Delete layer"
+          >
+            <IconTrash size={11} />
+          </ActionIcon>
+        </Tooltip>
       )}
     </Group>
   );

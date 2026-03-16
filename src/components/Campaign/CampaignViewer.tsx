@@ -5,6 +5,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { resolveAdapterId } from '@/utils/resolveAdapterId';
+import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 
 /**
  * Dispatch a gallery adapter by ID. 'classic' and 'layout-builder' are handled
@@ -35,7 +36,10 @@ function resolveViewportBg(type: string, color: string, gradient: string, imageU
   switch (type) {
     case 'solid':    return { background: color };
     case 'gradient': return { background: gradient };
-    case 'image':    return { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' };
+    case 'image': {
+      const safeUrl = sanitizeCssUrl(imageUrl);
+      return safeUrl ? { backgroundImage: `url(${safeUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
+    }
     default:         return {};
   }
 }

@@ -216,6 +216,8 @@ class WPSG_CLI {
         }
 
         // Copy campaign-specific meta keys.
+        // NOTE: access_grants are intentionally excluded — cloned campaigns start with
+        // a clean permission slate so the owner can configure access from scratch.
         $meta_keys = [
             'visibility',
             'tags',
@@ -728,34 +730,16 @@ class WPSG_CLI {
     }
 
     /**
-     * Record a campaign audit-log entry (mirrors WPSG_REST::add_audit_entry).
+     * Record a campaign audit-log entry via the shared WPSG_REST method.
      */
     private function add_audit_entry( int $campaign_id, string $event, array $data = [] ): void {
-        $entries   = get_post_meta( $campaign_id, 'audit_log', true );
-        $entries   = is_array( $entries ) ? $entries : [];
-        $entries[] = [
-            'event'   => $event,
-            'data'    => $data,
-            'user_id' => 0, // CLI context — no WP user.
-            'time'    => gmdate( 'c' ),
-        ];
-        update_post_meta( $campaign_id, 'audit_log', $entries );
+        WPSG_REST::add_audit_entry( $campaign_id, $event, $data );
     }
 
     /**
-     * Invalidate all wpsg_campaigns_* transient cache entries.
+     * Invalidate all wpsg campaign transient caches via version bump.
      */
     private function clear_campaign_cache(): void {
-        global $wpdb;
-        $like         = $wpdb->esc_like( '_transient_wpsg_campaigns_' ) . '%';
-        $timeout_like = $wpdb->esc_like( '_transient_timeout_wpsg_campaigns_' ) . '%';
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-                $like,
-                $timeout_like
-            )
-        );
+        WPSG_REST::bump_cache_version();
     }
 }

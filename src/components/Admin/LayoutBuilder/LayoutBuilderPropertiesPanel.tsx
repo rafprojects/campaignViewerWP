@@ -3,6 +3,8 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
+import { MaskPropertiesPanel } from './MaskPropertiesPanel';
+import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
 
 export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   const {
@@ -11,12 +13,41 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     selectedOverlay,
     selectedOverlayIndex,
     setSelectedOverlayId,
+    selectedMaskSlotId,
+    handleUploadMask,
+    overlayLibrary,
+    isBackgroundSelected,
   } = useBuilderDock();
 
   if (builder.isPreview) {
     return (
       <Box p="sm">
         <Text size="sm" c="dimmed">Properties are unavailable in preview mode.</Text>
+      </Box>
+    );
+  }
+
+  // Background selected — show dedicated background properties
+  if (isBackgroundSelected) {
+    return (
+      <Box p="sm" style={{ overflowY: 'auto', height: '100%' }}>
+        <Text size="xs" fw={600} c="dimmed" mb="xs">BACKGROUND</Text>
+        <BackgroundPropertiesPanel />
+      </Box>
+    );
+  }
+
+  // Mask sublayer selected — show dedicated mask properties panel
+  if (selectedMaskSlotId && selectedSlot) {
+    return (
+      <Box p="sm" style={{ overflowY: 'auto', height: '100%' }}>
+        <Text size="xs" fw={600} c="dimmed" mb="xs">MASK PROPERTIES</Text>
+        <MaskPropertiesPanel
+          slot={selectedSlot}
+          onUpdate={(updates) => builder.updateSlot(selectedSlot.id, updates)}
+          onUploadMask={handleUploadMask}
+          overlayLibrary={overlayLibrary}
+        />
       </Box>
     );
   }

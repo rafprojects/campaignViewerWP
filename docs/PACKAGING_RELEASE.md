@@ -23,7 +23,7 @@ This document provides a comprehensive guide for building, packaging, and releas
 Before building or releasing, ensure you have:
 
 - **Node.js** 18+ and npm 9+
-- **PHP** 7.4+ (for plugin syntax validation)
+- **PHP** 8.0+ (for plugin syntax validation)
 - **Git** for version control
 - Access to the WordPress installation for deployment
 - (Optional) **Composer** for PHP dependencies in the plugin
@@ -33,7 +33,7 @@ Before building or releasing, ensure you have:
 ```bash
 node --version    # Should be 18+
 npm --version     # Should be 9+
-php --version     # Should be 7.4+
+php --version     # Should be 8.0+
 git --version     # Any recent version
 ```
 
@@ -139,8 +139,9 @@ zip -r wp-super-gallery-v$(cat wp-super-gallery/wp-super-gallery.php | grep "Ver
   -x "wp-super-gallery/tests/*" \
   -x "wp-super-gallery/.phpunit.result.cache" \
   -x "wp-super-gallery/phpunit.xml.dist" \
-  -x "wp-super-gallery/.circleci/*" \
-  -x "wp-super-gallery/composer.lock"
+  -x "wp-super-gallery/composer.json" \
+  -x "wp-super-gallery/composer.lock" \
+  -x "wp-super-gallery/bin/*"
 ```
 
 Or use the npm script (if configured):
@@ -156,8 +157,8 @@ These files should NOT be in the production ZIP:
 - `tests/` directory
 - `.phpunit.result.cache`
 - `phpunit.xml.dist`
-- `.circleci/` directory
-- `composer.lock` (include `composer.json` for reference)
+- `composer.json` and `composer.lock`
+- `bin/` directory
 - Any `.git` files
 - Development documentation
 
@@ -222,7 +223,14 @@ rsync -avz --delete wp-plugin/wp-super-gallery/ user@server:/path/to/wp-content/
 
 ## Release Checklist
 
-Use this checklist for every release:
+The **preferred method** is the automated GitHub Actions release workflow:
+
+1. Go to **Actions → Release → Run workflow**
+2. Enter version (or leave `auto` to compute from conventional commits)
+3. Optionally check **Deploy to WordPress.org SVN**
+4. The workflow handles: version bump, tests, build, ZIP, tag, GitHub Release
+
+For manual releases, use this checklist:
 
 ### Pre-Release
 
@@ -267,6 +275,9 @@ Use this checklist for every release:
 - [ ] Monitor for errors (15-30 minutes)
 
 ### Post-Release
+
+> **Note:** If you used the GitHub Actions release workflow, tagging and GitHub Release
+> creation are handled automatically. These steps are for manual releases only.
 
 - [ ] Git tag created (`git tag -a v1.2.3 -m "Release v1.2.3"`)
 - [ ] Git tag pushed (`git push origin v1.2.3`)

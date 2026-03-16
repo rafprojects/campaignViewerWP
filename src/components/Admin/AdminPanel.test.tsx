@@ -1,6 +1,17 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { AdminPanel } from './AdminPanel';
+
+// Warm the module cache for lazy-loaded modals so React.lazy resolves them
+// synchronously. Without this, the Suspense fallback (null) renders and
+// findByRole times out waiting for the modal heading to appear.
+beforeAll(async () => {
+  await Promise.all([
+    import('./CampaignFormModal'),
+    import('./AdminCampaignArchiveModal'),
+    import('./AdminCampaignRestoreModal'),
+  ]);
+});
 
 const campaignsPayload = {
   items: [
@@ -16,13 +27,27 @@ const campaignsPayload = {
       tags: [],
     },
   ],
+  page: 1,
+  perPage: 20,
+  total: 1,
+  totalPages: 1,
 };
 
 describe('AdminPanel', () => {
+  // AdminPanel persists active tab via useLocalStorage('wpsg_admin_active_tab').
+  // Clear localStorage between tests to prevent tab state leaking across tests.
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it('loads campaigns and supports access grant/revoke', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {
@@ -127,9 +152,13 @@ describe('AdminPanel', () => {
       />,
     );
 
-    // Open the campaign form modal
+    // Open the campaign form modal (lazy-loaded — waitFor with generous timeout
+    // to handle Suspense resolution under full-suite CPU load)
     fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
-    await screen.findByText('New Campaign');
+    await waitFor(
+      () => expect(screen.getByRole('heading', { name: 'New Campaign' })).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
 
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.change(screen.getByPlaceholderText('Campaign description'), { target: { value: 'Desc' } });
@@ -170,7 +199,10 @@ describe('AdminPanel', () => {
 
     // Open the campaign form modal
     fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
-    await screen.findByText('New Campaign');
+    await waitFor(
+      () => expect(screen.getByRole('heading', { name: 'New Campaign' })).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
 
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
@@ -185,7 +217,7 @@ describe('AdminPanel', () => {
   it('validates access user id before applying', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {
@@ -223,7 +255,7 @@ describe('AdminPanel', () => {
   it('loads audit entries when audit tab is opened', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/audit')) {
@@ -271,7 +303,10 @@ describe('AdminPanel', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     // Wait for modal to open
-    await screen.findByText('Edit Campaign');
+    await waitFor(
+      () => expect(screen.getByText('Edit Campaign')).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
 
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'Updated Title' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -287,7 +322,7 @@ describe('AdminPanel', () => {
   it('grants access for a campaign', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {
@@ -325,7 +360,7 @@ describe('AdminPanel', () => {
   it('shows company access helper text when source is company', async () => {
     const apiClient = {
       get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50')) {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
         }
         if (path.includes('/access')) {
@@ -376,7 +411,10 @@ describe('AdminPanel', () => {
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
-    await screen.findByText('Archive campaign');
+    await waitFor(
+      () => expect(screen.getByText('Archive campaign')).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Archive campaign Admin Campaign' }));
 
     await waitFor(() => {
@@ -405,7 +443,10 @@ describe('AdminPanel', () => {
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
-    await screen.findByText('Archive campaign');
+    await waitFor(
+      () => expect(screen.getByText('Archive campaign')).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Archive campaign Admin Campaign' }));
 
     await waitFor(() => {
@@ -447,7 +488,10 @@ describe('AdminPanel', () => {
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
-    await screen.findByText('Restore campaign');
+    await waitFor(
+      () => expect(screen.getByText('Restore campaign')).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
     fireEvent.click(screen.getByRole('button', { name: /Restore campaign Archived One/ }));
 
     await waitFor(() => {

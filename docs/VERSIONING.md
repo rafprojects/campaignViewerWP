@@ -12,6 +12,23 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.18.0 (March 10, 2026)
+- **MINOR**: Phase 20 — Production Hardening, CI/CD Pipeline & Distribution Readiness
+  - **P20-A**: Rate limiting defaults — public 60 req/min, authenticated 120 req/min with filter overrides.
+  - **P20-B**: Import payload deep sanitization — `import_campaign()` routes through `sanitize_template_data()`.
+  - **P20-C**: CSS value sanitization — `sanitize_css_value()` with type-specific allowlists (color, clip-path, position).
+  - **P20-D**: Post meta sanitize callbacks on all 7 REST-exposed fields.
+  - **P20-E**: Uninstall cleanup — `uninstall.php` with 9-category data removal, `preserve_data_on_uninstall` option.
+  - **P20-F**: License & legal — GPLv2 LICENSE, complete plugin header with all WordPress.org required fields.
+  - **P20-G**: GitHub Actions CI/CD — 4 workflows: `ci.yml` (lint → test-frontend → test-php 8.1/8.2/8.3), `release.yml` (auto SemVer + ZIP + GitHub Release), `svn-deploy.yml` (WordPress.org deploy), `e2e.yml` (Playwright). `scripts/compute-version.sh` for conventional commit version calculation. Legacy CircleCI removed.
+  - **P20-H** (12/12): Security hardening sprint — parseProps whitelist, DNS rebinding SSRF fix, nonce bypass hardened, Sentry PII scrubbing, CSP headers, ErrorBoundary→Sentry, apiClient timeout+AbortController, status/visibility whitelist, encodeURIComponent, console.info DEV guard, overlay file deletion, password reset URL fix.
+  - **P20-I**: Performance — layout template CPT migration, `wpsg_media_refs` reverse-index table, cache version counter, lazy LayoutBuilderModal (504→327 KB), async email queue, shared React root (feature-flagged).
+  - **P20-J**: Plugin directory preparation — `readme.txt`, composer dev deps separated, custom capability type (`wpsg_campaign`), i18n `load_plugin_textdomain()` + `__()` wrapping.
+  - **P20-K**: JWT nonce-only default — JWT gated behind `WPSG_ENABLE_JWT_AUTH`, `useNonceHeartbeat` hook, cookie-based auth endpoints.
+  - **P20-L**: SVG dual-layer sanitization — `enshrined/svg-sanitize`, custom CSS/URI validators, `.htaccess` CSP for overlay dir.
+  - **PHPUnit coverage**: 461 tests, 1104 assertions, ~92% method coverage (172/186 methods).
+  - **Layout Builder QA**: Rounds 3–7 — advanced gradient controls, mask sub-layer system, image effects (5 categories), per-slot glow, background properties panel, design assets drag-and-drop, canvas drop-to-create.
+
 ### v0.17.0 (March 2, 2026)
 - **MINOR**: Phase 19 — Builder Coverage, WP-CLI & Toolchain
   - **P19-QA**: 102 new JS tests for 9 Phase 18 components + 2 hooks; functions threshold 60%→65%; ~991 JS tests total.
@@ -190,18 +207,35 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 - [ ] Security review completed
 
 ### Version Bump Process
-1. Update version in `package.json`
-2. Update version in `wp-plugin/wp-super-gallery/wp-super-gallery.php`
-3. Update version constant `WPSG_VERSION`
-4. Update `VERSIONING.md` with release notes
-5. Create git tag: `git tag v{version}`
-6. Push tag: `git push origin v{version}`
 
-### Deployment Packaging (Phase 7)
-- Plugin ZIP generation
-- WordPress.org submission preparation
-- Release notes documentation
-- Migration guides (for breaking changes)
+Version bumps are handled automatically by the **GitHub Actions release workflow** (`release.yml`):
+
+1. Trigger via GitHub Actions → "Release" → "Run workflow"
+2. Version is **auto-computed** from conventional commits since the last tag:
+   - `feat:` → MINOR bump
+   - `fix:`, `refactor:`, `perf:`, etc. → PATCH bump
+   - `BREAKING CHANGE` or `!:` → MINOR bump (pre-1.0); MAJOR bump (post-1.0)
+3. Override: enter a specific version (e.g., `1.0.0`) to bypass auto-computation
+4. The workflow updates version in all 3 locations:
+   - `package.json` (`version` field)
+   - `wp-plugin/wp-super-gallery/wp-super-gallery.php` (plugin header `Version:`)
+   - `wp-plugin/wp-super-gallery/wp-super-gallery.php` (`WPSG_VERSION` constant)
+5. Creates a git tag (`v{version}`) and GitHub Release with a production ZIP
+6. Optionally deploys to WordPress.org SVN (checkbox in workflow UI)
+
+**Manual version bump** (if needed):
+1. Update version in `package.json`
+2. Update version in `wp-plugin/wp-super-gallery/wp-super-gallery.php` (header + constant)
+3. Update `VERSIONING.md` with release notes
+4. Create git tag: `git tag v{version}`
+5. Push tag: `git push origin v{version}`
+
+The auto-compute logic lives in `scripts/compute-version.sh`.
+
+### Deployment Packaging
+- Production ZIP built by `release.yml` workflow (excludes tests, dev files, docs)
+- WordPress.org SVN deployment via `svn-deploy.yml` (reuses release ZIP artifact)
+- Manual packaging: `npm run build:wp` + composer install --no-dev + zip
 
 ## Development Phases
 
@@ -224,6 +258,7 @@ Current development follows a phased approach:
 - **Phase 17**: ✅ Complete (Builder UX — v0.15.0 release)
 - **Phase 18**: ✅ Complete (Admin Power Features, Coverage & Canvas Polish — v0.16.0 release)
 - **Phase 19**: ✅ Complete (Builder Coverage, WP-CLI & Toolchain — v0.17.0 release)
+- **Phase 20**: ✅ Complete (Production Hardening, CI/CD Pipeline & Distribution Readiness — v0.18.0 release)
 
 ## Branching Strategy
 

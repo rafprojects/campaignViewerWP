@@ -5,17 +5,61 @@ export interface ApiClientOptions {
   baseUrl: string;
   authProvider?: AuthProvider;
   onUnauthorized?: () => void;
+  /** Default request timeout in milliseconds (P20-H-9). 0 = no timeout. Default: 30000. */
+  timeout?: number;
 }
 
 export class ApiClient {
   private baseUrl: string;
   private authProvider?: AuthProvider;
   private onUnauthorized?: () => void;
+  private timeout: number;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
     this.authProvider = options.authProvider;
     this.onUnauthorized = options.onUnauthorized;
+    this.timeout = options.timeout ?? 30_000;
+  }
+
+  /**
+   * Wrapper around `fetch` that enforces a request timeout via AbortController (P20-H-9).
+   * If the caller already provides a signal, it is combined with the timeout signal.
+   */
+  private async fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+    if (this.timeout <= 0) return fetch(url, init);
+
+    let timedOut = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => { timedOut = true; controller.abort(); }, this.timeout);
+
+    // If the caller already attached an AbortSignal, listen for its abort too.
+    const existingSignal = init?.signal;
+    const onExternalAbort = existingSignal
+      ? () => controller.abort(existingSignal.reason)
+      : undefined;
+    if (existingSignal) {
+      if (existingSignal.aborted) {
+        clearTimeout(timeoutId);
+        controller.abort(existingSignal.reason);
+      } else {
+        existingSignal.addEventListener('abort', onExternalAbort!, { once: true });
+      }
+    }
+
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (err) {
+      if ((err as { name?: string })?.name === 'AbortError' && timedOut) {
+        throw new ApiError(`Request timed out after ${this.timeout}ms`, 0);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+      if (onExternalAbort && existingSignal) {
+        existingSignal.removeEventListener('abort', onExternalAbort);
+      }
+    }
   }
 
   private async getHeaders(extra?: HeadersInit): Promise<Record<string, string>> {
@@ -87,13 +131,13 @@ export class ApiClient {
         ...(init?.headers as Record<string, string> | undefined),
       },
     };
-    const response = await fetch(`${this.baseUrl}${path}`, requestInit);
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, requestInit);
     return this.handleResponse<T>(response);
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
@@ -103,7 +147,7 @@ export class ApiClient {
 
   async postForm<T>(path: string, formData: FormData): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.buildAuthHeaders(),
       body: formData,
@@ -113,7 +157,7 @@ export class ApiClient {
 
   async put<T>(path: string, body: unknown): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: await this.getHeaders(),
       body: JSON.stringify(body),
@@ -123,7 +167,7 @@ export class ApiClient {
 
   async delete<T>(path: string): Promise<T> {
     this.assertOnline();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: await this.getHeaders(),
     });
@@ -150,7 +194,7 @@ export class ApiClient {
   }
 
   async getLayoutTemplate(id: string): Promise<LayoutTemplateResponse> {
-    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`);
+    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}`);
   }
 
   async createLayoutTemplate(data: Partial<LayoutTemplateResponse>): Promise<LayoutTemplateResponse> {
@@ -158,20 +202,20 @@ export class ApiClient {
   }
 
   async updateLayoutTemplate(id: string, data: Partial<LayoutTemplateResponse>): Promise<LayoutTemplateResponse> {
-    return this.put<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`, data);
+    return this.put<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}`, data);
   }
 
   async deleteLayoutTemplate(id: string): Promise<{ deleted: boolean }> {
-    return this.delete<{ deleted: boolean }>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}`);
+    return this.delete<{ deleted: boolean }>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}`);
   }
 
   async duplicateLayoutTemplate(id: string, name?: string): Promise<LayoutTemplateResponse> {
-    return this.post<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${id}/duplicate`, { name });
+    return this.post<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}/duplicate`, { name });
   }
 
   /** Public endpoint — no auth required. Used for rendering. */
   async getLayoutTemplatePublic(id: string): Promise<LayoutTemplateResponse> {
-    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/layout-templates/${id}`);
+    return this.get<LayoutTemplateResponse>(`/wp-json/wp-super-gallery/v1/layout-templates/${encodeURIComponent(id)}`);
   }
 
   // ── P18-C: Campaign duplication ─────────────────────────────────────────
@@ -181,7 +225,7 @@ export class ApiClient {
     options: { name?: string; copyMedia?: boolean },
   ): Promise<{ id: string; title: string }> {
     return this.post<{ id: string; title: string }>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${id}/duplicate`,
+      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/duplicate`,
       { name: options.name, copy_media: options.copyMedia ?? false },
     );
   }
@@ -201,7 +245,7 @@ export class ApiClient {
   // ── P18-D: Export / Import ───────────────────────────────────────────────
 
   async exportCampaign(id: string): Promise<CampaignExportPayload> {
-    return this.get<CampaignExportPayload>(`/wp-json/wp-super-gallery/v1/campaigns/${id}/export`);
+    return this.get<CampaignExportPayload>(`/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/export`);
   }
 
   async importCampaign(payload: CampaignExportPayload): Promise<Record<string, unknown>> {
@@ -227,7 +271,7 @@ export class ApiClient {
     if (to) params.set('to', to);
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.get<CampaignAnalyticsResponse>(
-      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${campaignId}${qs}`,
+      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}${qs}`,
     );
   }
 

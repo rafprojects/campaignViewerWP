@@ -32,43 +32,146 @@ class WPSG_Layout_Templates {
      */
     const SIZE_LIMIT = 512000;
 
+    // ── CSS Sanitization (P20-C) ─────────────────────────────
+
+    /**
+     * Allowlist-based CSS value sanitizer.
+     *
+     * Rejects any value containing known CSS-injection vectors (url(), expression(),
+     * javascript:, semicolons, backslashes). Then validates the value against a
+     * type-specific pattern allowing only safe CSS constructs.
+     *
+     * @since 0.18.0 P20-C
+     *
+     * @param  string $value Raw CSS value.
+     * @param  string $type  One of 'color', 'clip-path', 'position', or 'generic'.
+     * @return string Sanitized value, or empty string if unsafe.
+     */
+    public static function sanitize_css_value( string $value, string $type = 'generic' ): string {
+        $value = trim( $value );
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        // ── Universal blocklist ──
+        // Reject values with injection patterns regardless of declared type.
+        if ( preg_match( '/[;\\\\]|url\s*\(|expression\s*\(|javascript\s*:|@import|behavior\s*:|var\s*\(|-moz-binding/i', $value ) ) {
+            return '';
+        }
+
+        // Reject unbalanced parentheses (potential truncation attacks).
+        if ( substr_count( $value, '(' ) !== substr_count( $value, ')' ) ) {
+            return '';
+        }
+
+        switch ( $type ) {
+            case 'color':
+                // Hex (#RGB, #RRGGBB, #RRGGBBAA), rgb/rgba/hsl/hsla functions,
+                // named CSS colors (3-20 alpha chars), transparent, currentColor.
+                if ( preg_match( '/^(#[0-9a-fA-F]{3,8}|rgba?\(\s*[\d.,\s%]+\)|hsla?\(\s*[\d.,\s%deg]+\)|transparent|currentColor|[a-zA-Z]{3,20})$/', $value ) ) {
+                    return $value;
+                }
+                return '';
+
+            case 'clip-path':
+                // Standard CSS shapes, none, or path().
+                if ( preg_match( '/^(none|polygon\([^)]+\)|circle\([^)]+\)|ellipse\([^)]+\)|inset\([^)]+\)|path\([^)]+\))$/i', $value ) ) {
+                    return $value;
+                }
+                return '';
+
+            case 'position':
+                // Keywords, percentages, px/em/rem values, or two-value combos.
+                if ( preg_match( '/^(center|top|bottom|left|right|(\d+(\.\d+)?(%|px|em|rem)\s*){1,2})$/i', $value ) ) {
+                    return $value;
+                }
+                return '';
+
+            case 'generic':
+            default:
+                // Fall back to sanitize_text_field for any unknown type, but only
+                // after the universal blocklist above has passed.
+                return sanitize_text_field( $value );
+        }
+    }
+
     // ── CRUD ──────────────────────────────────────────────────
+
+    /**
+     * Layout template CPT name.
+     *
+     * @since 0.18.0 P20-I-1
+     */
+    const CPT = 'wpsg_layout_tpl';
+
+    /**
+     * Post meta key for template data blob.
+     *
+     * @since 0.18.0 P20-I-1
+     */
+    const META_KEY = '_wpsg_template_data';
 
     /**
      * Retrieve all templates.
      *
-     * @return array<string, array> Keyed by template ID.
+     * @return array<string, array> Keyed by template UUID.
      */
     public static function get_all(): array {
-        $templates = get_option( self::OPTION_KEY, [] );
-        if ( ! is_array( $templates ) ) {
-            return [];
-        }
-        // Ensure every template is at the current schema version.
-        $migrated = false;
-        foreach ( $templates as $id => &$tpl ) {
-            $before = $tpl;
-            $tpl    = self::migrate_template( $tpl );
-            if ( $tpl !== $before ) {
-                $migrated = true;
+        // Migrate legacy wp_options storage on first call.
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'post_status'    => 'publish',
+            'posts_per_page' => 200,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ]);
+
+        $templates = [];
+        foreach ( $posts as $post ) {
+            $data = get_post_meta( $post->ID, self::META_KEY, true );
+            if ( ! is_array( $data ) ) {
+                continue;
             }
+            $id = $data['id'] ?? $post->post_name;
+            $data['id']   = $id;
+            $data['name']  = $post->post_title;
+            $templates[ $id ] = $data;
         }
-        unset( $tpl );
-        if ( $migrated ) {
-            update_option( self::OPTION_KEY, $templates, false );
-        }
+
         return $templates;
     }
 
     /**
-     * Get a single template by ID.
+     * Get a single template by UUID.
      *
      * @param  string $id UUID.
      * @return array|null  Template data or null.
      */
     public static function get( string $id ): ?array {
-        $all = self::get_all();
-        return $all[ $id ] ?? null;
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'name'           => $id,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+        ]);
+
+        if ( empty( $posts ) ) {
+            return null;
+        }
+
+        $post = $posts[0];
+        $data = get_post_meta( $post->ID, self::META_KEY, true );
+        if ( ! is_array( $data ) ) {
+            return null;
+        }
+        $data['id']   = $id;
+        $data['name']  = $post->post_title;
+        return $data;
     }
 
     /**
@@ -78,6 +181,8 @@ class WPSG_Layout_Templates {
      * @return array|WP_Error Created template or error.
      */
     public static function create( array $data ) {
+        self::maybe_migrate_from_options();
+
         $id  = wp_generate_uuid4();
         $now = gmdate( 'c' );
 
@@ -88,15 +193,18 @@ class WPSG_Layout_Templates {
             return $validation;
         }
 
-        $all         = self::get_all();
-        $all[ $id ]  = $template;
+        $post_id = wp_insert_post([
+            'post_type'   => self::CPT,
+            'post_status' => 'publish',
+            'post_title'  => $template['name'],
+            'post_name'   => $id,
+        ], true);
 
-        $size_error = self::check_size_limit( $all );
-        if ( is_wp_error( $size_error ) ) {
-            return $size_error;
+        if ( is_wp_error( $post_id ) ) {
+            return $post_id;
         }
 
-        update_option( self::OPTION_KEY, $all, false );
+        update_post_meta( $post_id, self::META_KEY, $template );
         return $template;
     }
 
@@ -108,17 +216,33 @@ class WPSG_Layout_Templates {
      * @return array|WP_Error Updated template or error.
      */
     public static function update( string $id, array $data ) {
-        $all = self::get_all();
-        if ( ! isset( $all[ $id ] ) ) {
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'name'           => $id,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+        ]);
+
+        if ( empty( $posts ) ) {
             return new WP_Error( 'not_found', 'Template not found.', [ 'status' => 404 ] );
         }
 
-        $existing = $all[ $id ];
-        $merged   = array_merge( $existing, $data );
+        $post     = $posts[0];
+        $existing = get_post_meta( $post->ID, self::META_KEY, true );
+        if ( ! is_array( $existing ) ) {
+            $existing = [];
+        }
+
+        // Rebuild through build_template() so all fields (including new
+        // slot sub-fields like shadow, filterEffects, tilt, etc.) are
+        // consistently sanitized — same as the create path.
+        $merged = self::build_template( $id, array_merge( $existing, $data ), $existing['createdAt'] ?? gmdate( 'c' ) );
 
         // Preserve immutable fields.
         $merged['id']            = $id;
-        $merged['createdAt']     = $existing['createdAt'];
+        $merged['createdAt']     = $existing['createdAt'] ?? gmdate( 'c' );
         $merged['updatedAt']     = gmdate( 'c' );
         $merged['schemaVersion'] = self::SCHEMA_VERSION;
 
@@ -127,14 +251,11 @@ class WPSG_Layout_Templates {
             return $validation;
         }
 
-        $all[ $id ] = $merged;
-
-        $size_error = self::check_size_limit( $all );
-        if ( is_wp_error( $size_error ) ) {
-            return $size_error;
-        }
-
-        update_option( self::OPTION_KEY, $all, false );
+        wp_update_post([
+            'ID'         => $post->ID,
+            'post_title' => $merged['name'],
+        ]);
+        update_post_meta( $post->ID, self::META_KEY, $merged );
         return $merged;
     }
 
@@ -145,12 +266,20 @@ class WPSG_Layout_Templates {
      * @return bool True on success.
      */
     public static function delete( string $id ): bool {
-        $all = self::get_all();
-        if ( ! isset( $all[ $id ] ) ) {
+        self::maybe_migrate_from_options();
+
+        $posts = get_posts([
+            'post_type'      => self::CPT,
+            'name'           => $id,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+        ]);
+
+        if ( empty( $posts ) ) {
             return false;
         }
-        unset( $all[ $id ] );
-        update_option( self::OPTION_KEY, $all, false );
+
+        wp_delete_post( $posts[0]->ID, true );
         return true;
     }
 
@@ -186,6 +315,67 @@ class WPSG_Layout_Templates {
         }
 
         return self::create( $clone );
+    }
+
+    // ── Migration from wp_options ─────────────────────────────
+
+    /**
+     * One-time migration from legacy wp_options storage to CPT posts.
+     *
+     * Runs automatically on first CRUD call after upgrade. The old option
+     * is renamed to `wpsg_layout_templates_backup` for rollback safety.
+     *
+     * @since 0.18.0 P20-I-1
+     */
+    private static function maybe_migrate_from_options(): void {
+        static $migrated = false;
+        if ( $migrated ) {
+            return;
+        }
+        $migrated = true;
+
+        $legacy = get_option( self::OPTION_KEY );
+        if ( ! is_array( $legacy ) || empty( $legacy ) ) {
+            return;
+        }
+
+        // Check if any CPT posts already exist to avoid double-migration.
+        $existing = get_posts([
+            'post_type'      => self::CPT,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+        ]);
+        if ( ! empty( $existing ) ) {
+            // CPT posts exist — migration already completed.
+            delete_option( self::OPTION_KEY );
+            return;
+        }
+
+        // Migrate each template to a CPT post.
+        foreach ( $legacy as $id => $tpl ) {
+            if ( ! is_array( $tpl ) ) {
+                continue;
+            }
+
+            $tpl = self::migrate_template( $tpl );
+            $tpl['id'] = $id;
+
+            $post_id = wp_insert_post([
+                'post_type'   => self::CPT,
+                'post_status' => 'publish',
+                'post_title'  => $tpl['name'] ?? 'Untitled',
+                'post_name'   => $id,
+            ], true);
+
+            if ( ! is_wp_error( $post_id ) ) {
+                update_post_meta( $post_id, self::META_KEY, $tpl );
+            }
+        }
+
+        // Backup and remove legacy option.
+        update_option( 'wpsg_layout_templates_backup', $legacy, false );
+        delete_option( self::OPTION_KEY );
     }
 
     // ── Validation ────────────────────────────────────────────
@@ -250,6 +440,21 @@ class WPSG_Layout_Templates {
     // ── Helpers ───────────────────────────────────────────────
 
     /**
+     * Sanitize raw template data for external callers (e.g., import_campaign).
+     *
+     * Runs the same sanitization pipeline as the create/update paths so
+     * imported payloads receive identical validation and escaping.
+     *
+     * @param  array $data Raw template data (slots, overlays, background, etc.).
+     * @return array Sanitized template data.
+     */
+    public static function sanitize_template_data( array $data ): array {
+        $id  = wp_generate_uuid4();
+        $now = gmdate( 'c' );
+        return self::build_template( $id, $data, $now );
+    }
+
+    /**
      * Build a complete template array from partial input.
      *
      * @param  string $id   UUID.
@@ -265,7 +470,38 @@ class WPSG_Layout_Templates {
             'canvasAspectRatio' => floatval( $data['canvasAspectRatio'] ?? ( 16 / 9 ) ),
             'canvasMinWidth'    => max( 0, intval( $data['canvasMinWidth'] ?? 320 ) ),
             'canvasMaxWidth'    => max( 0, intval( $data['canvasMaxWidth'] ?? 0 ) ),
-            'backgroundColor'      => sanitize_text_field( $data['backgroundColor'] ?? '#1a1a2e' ),
+            'canvasHeightMode'  => in_array( $data['canvasHeightMode'] ?? '', [ 'aspect-ratio', 'fixed-vh' ], true )
+                ? $data['canvasHeightMode']
+                : 'aspect-ratio',
+            'canvasHeightVh'    => isset( $data['canvasHeightVh'] )
+                ? max( 1, min( 100, intval( $data['canvasHeightVh'] ) ) )
+                : 50,
+            'backgroundMode'       => in_array( $data['backgroundMode'] ?? '', [ 'none', 'color', 'gradient', 'image' ], true )
+                ? $data['backgroundMode']
+                : 'color',
+            'backgroundColor'      => self::sanitize_css_value( $data['backgroundColor'] ?? '#1a1a2e', 'color' ),
+            'backgroundGradientDirection' => in_array( $data['backgroundGradientDirection'] ?? '', [ 'horizontal', 'vertical', 'diagonal-right', 'diagonal-left', 'radial' ], true )
+                ? $data['backgroundGradientDirection']
+                : 'horizontal',
+            'backgroundGradientStops' => self::sanitize_gradient_stops( $data['backgroundGradientStops'] ?? [] ),
+            'backgroundGradientType' => in_array( $data['backgroundGradientType'] ?? '', [ 'linear', 'radial', 'conic' ], true )
+                ? $data['backgroundGradientType']
+                : 'linear',
+            'backgroundGradientAngle' => isset( $data['backgroundGradientAngle'] )
+                ? max( 0, min( 360, floatval( $data['backgroundGradientAngle'] ) ) )
+                : null,
+            'backgroundRadialShape' => in_array( $data['backgroundRadialShape'] ?? '', [ 'ellipse', 'circle' ], true )
+                ? $data['backgroundRadialShape']
+                : 'ellipse',
+            'backgroundRadialSize' => in_array( $data['backgroundRadialSize'] ?? '', [ 'closest-side', 'closest-corner', 'farthest-side', 'farthest-corner' ], true )
+                ? $data['backgroundRadialSize']
+                : 'farthest-corner',
+            'backgroundGradientCenterX' => isset( $data['backgroundGradientCenterX'] )
+                ? max( 0, min( 100, floatval( $data['backgroundGradientCenterX'] ) ) )
+                : 50,
+            'backgroundGradientCenterY' => isset( $data['backgroundGradientCenterY'] )
+                ? max( 0, min( 100, floatval( $data['backgroundGradientCenterY'] ) ) )
+                : 50,
             'backgroundImage'      => isset( $data['backgroundImage'] ) && $data['backgroundImage'] !== ''
                 ? esc_url_raw( $data['backgroundImage'] )
                 : null,
@@ -308,22 +544,34 @@ class WPSG_Layout_Templates {
                 'height'         => self::clamp_pct( $s['height'] ?? 25 ),
                 'zIndex'         => intval( $s['zIndex'] ?? 0 ),
                 'shape'          => in_array( $s['shape'] ?? '', $valid_shapes, true ) ? $s['shape'] : 'rectangle',
-                'clipPath'       => isset( $s['clipPath'] ) ? sanitize_text_field( $s['clipPath'] ) : null,
+                'clipPath'       => isset( $s['clipPath'] ) ? self::sanitize_css_value( $s['clipPath'], 'clip-path' ) : null,
                 'maskUrl'        => isset( $s['maskUrl'] ) ? esc_url_raw( $s['maskUrl'] ) : null,
+                'maskMode'       => in_array( $s['maskMode'] ?? '', [ 'luminance', 'alpha' ], true ) ? $s['maskMode'] : 'luminance',
                 'borderRadius'   => max( 0, intval( $s['borderRadius'] ?? 4 ) ),
                 'borderWidth'    => max( 0, intval( $s['borderWidth'] ?? 0 ) ),
-                'borderColor'    => sanitize_text_field( $s['borderColor'] ?? '#ffffff' ),
+                'borderColor'    => self::sanitize_css_value( $s['borderColor'] ?? '#ffffff', 'color' ),
                 'objectFit'      => in_array( $s['objectFit'] ?? '', $valid_fits, true ) ? $s['objectFit'] : 'cover',
-                'objectPosition' => sanitize_text_field( $s['objectPosition'] ?? '50% 50%' ),
+                'objectPosition' => self::sanitize_css_value( $s['objectPosition'] ?? '50% 50%', 'position' ),
                 'mediaId'        => isset( $s['mediaId'] ) ? sanitize_text_field( $s['mediaId'] ) : null,
                 'mediaAttachmentId' => isset( $s['mediaAttachmentId'] ) ? intval( $s['mediaAttachmentId'] ) : null,
                 'mediaUrl'       => isset( $s['mediaUrl'] ) ? esc_url_raw( $s['mediaUrl'] ) : null,
                 'clickAction'    => in_array( $s['clickAction'] ?? '', $valid_clicks, true ) ? $s['clickAction'] : 'lightbox',
                 'hoverEffect'    => in_array( $s['hoverEffect'] ?? '', $valid_hovers, true ) ? $s['hoverEffect'] : 'pop',
+                'glowColor'      => isset( $s['glowColor'] ) ? ( sanitize_hex_color( $s['glowColor'] ) ?: '#7c9ef8' ) : null,
+                'glowSpread'     => isset( $s['glowSpread'] ) ? max( 2, min( 60, intval( $s['glowSpread'] ) ) ) : null,
                 // ── Layer system (P16) ──
                 'name'           => isset( $s['name'] ) && is_string( $s['name'] ) ? sanitize_text_field( $s['name'] ) : null,
                 'visible'        => isset( $s['visible'] ) ? (bool) $s['visible'] : true,
                 'locked'         => isset( $s['locked'] ) ? (bool) $s['locked'] : false,
+                'lockAspectRatio' => isset( $s['lockAspectRatio'] ) ? (bool) $s['lockAspectRatio'] : false,
+                // ── Mask layer (P20) ──
+                'maskLayer'      => self::sanitize_mask_layer( $s['maskLayer'] ?? null ),
+                // ── Image effects (P20) ──
+                'filterEffects'  => self::sanitize_filter_effects( $s['filterEffects'] ?? null ),
+                'shadow'         => self::sanitize_shadow( $s['shadow'] ?? null ),
+                'tilt'           => self::sanitize_tilt( $s['tilt'] ?? null ),
+                'blendMode'      => self::sanitize_blend_mode( $s['blendMode'] ?? null ),
+                'overlayEffect'  => self::sanitize_overlay_effect( $s['overlayEffect'] ?? null ),
             ];
         }, $slots ) );
     }
@@ -340,13 +588,16 @@ class WPSG_Layout_Templates {
         }
 
         return array_values( array_filter( array_map( function ( $o ) {
-            $image_url = esc_url_raw( $o['imageUrl'] ?? '' );
+            $raw_url = $o['imageUrl'] ?? '';
 
             // Never persist blob URLs; they are local-tab only and break
-            // when viewed later in campaign rendering.
-            if ( strpos( $image_url, 'blob:' ) === 0 ) {
+            // when viewed later in campaign rendering.  Check the raw
+            // value *before* esc_url_raw() (which mangles the blob: scheme).
+            if ( is_string( $raw_url ) && strpos( $raw_url, 'blob:' ) === 0 ) {
                 return null;
             }
+
+            $image_url = esc_url_raw( $raw_url );
 
             return [
                 'id'            => sanitize_text_field( $o['id'] ?? wp_generate_uuid4() ),
@@ -379,24 +630,168 @@ class WPSG_Layout_Templates {
     }
 
     /**
+     * Sanitize gradient color stops (2–3 entries).
+     *
+     * @param  mixed $stops Raw stops data.
+     * @return array Sanitized stops.
+     */
+    private static function sanitize_gradient_stops( $stops ): array {
+        if ( ! is_array( $stops ) ) {
+            return [];
+        }
+        $result = [];
+        foreach ( array_slice( $stops, 0, 3 ) as $s ) {
+            if ( ! is_array( $s ) || ! isset( $s['color'] ) || ! is_string( $s['color'] ) ) {
+                continue;
+            }
+            $color = self::sanitize_css_value( $s['color'], 'color' );
+            if ( empty( $color ) ) {
+                continue; // Skip invalid colors entirely
+            }
+            $entry = [ 'color' => $color ];
+            if ( isset( $s['position'] ) && is_numeric( $s['position'] ) ) {
+                $entry['position'] = max( 0, min( 100, floatval( $s['position'] ) ) );
+            }
+            $result[] = $entry;
+        }
+        return $result;
+    }
+
+    /**
+     * Sanitize a mask layer object.
+     *
+     * @param  mixed $ml Raw mask layer data.
+     * @return array|null
+     */
+    private static function sanitize_mask_layer( $ml ) {
+        if ( ! is_array( $ml ) || empty( $ml['url'] ) ) {
+            return null;
+        }
+        return [
+            'url'     => esc_url_raw( $ml['url'] ),
+            'mode'    => in_array( $ml['mode'] ?? '', [ 'luminance', 'alpha' ], true ) ? $ml['mode'] : 'luminance',
+            'x'       => floatval( $ml['x'] ?? 0 ),
+            'y'       => floatval( $ml['y'] ?? 0 ),
+            'width'   => max( 1, floatval( $ml['width'] ?? 100 ) ),
+            'height'  => max( 1, floatval( $ml['height'] ?? 100 ) ),
+            'feather' => max( 0, min( 50, floatval( $ml['feather'] ?? 0 ) ) ),
+        ];
+    }
+
+    /**
+     * Sanitize filter effects object (8 numeric fields with defaults).
+     *
+     * @param  mixed $fx Raw filter effects data.
+     * @return array|null
+     */
+    private static function sanitize_filter_effects( $fx ) {
+        if ( ! is_array( $fx ) ) {
+            return null;
+        }
+        // Values are percentages matching the JS SlotFilterEffects type:
+        // brightness/contrast/saturate: 0–300 (100 = identity, slider max 200)
+        // blur: px 0–20
+        // grayscale/sepia/invert: 0–100 %
+        // hueRotate: 0–360 degrees
+        return [
+            'brightness' => max( 0, min( 300, floatval( $fx['brightness'] ?? 100 ) ) ),
+            'contrast'   => max( 0, min( 300, floatval( $fx['contrast'] ?? 100 ) ) ),
+            'saturate'   => max( 0, min( 300, floatval( $fx['saturate'] ?? 100 ) ) ),
+            'blur'       => max( 0, min( 20, floatval( $fx['blur'] ?? 0 ) ) ),
+            'grayscale'  => max( 0, min( 100, floatval( $fx['grayscale'] ?? 0 ) ) ),
+            'sepia'      => max( 0, min( 100, floatval( $fx['sepia'] ?? 0 ) ) ),
+            'hueRotate'  => max( 0, min( 360, floatval( $fx['hueRotate'] ?? 0 ) ) ),
+            'invert'     => max( 0, min( 100, floatval( $fx['invert'] ?? 0 ) ) ),
+        ];
+    }
+
+    /**
+     * Sanitize drop-shadow settings.
+     *
+     * @param  mixed $sh Raw shadow data.
+     * @return array|null
+     */
+    private static function sanitize_shadow( $sh ) {
+        if ( ! is_array( $sh ) ) {
+            return null;
+        }
+        return [
+            'offsetX' => max( -50, min( 50, intval( $sh['offsetX'] ?? 0 ) ) ),
+            'offsetY' => max( -50, min( 50, intval( $sh['offsetY'] ?? 2 ) ) ),
+            'blur'    => max( 0, min( 50, intval( $sh['blur'] ?? 4 ) ) ),
+            'color'   => self::sanitize_css_value( $sh['color'] ?? 'rgba(0,0,0,0.5)', 'color' ),
+        ];
+    }
+
+    /**
+     * Sanitize 3D tilt effect settings.
+     *
+     * @param  mixed $t Raw tilt data.
+     * @return array|null
+     */
+    private static function sanitize_tilt( $t ) {
+        if ( ! is_array( $t ) ) {
+            return null;
+        }
+        return [
+            'enabled'    => (bool) ( $t['enabled'] ?? false ),
+            'maxAngle'   => max( 1, min( 45, floatval( $t['maxAngle'] ?? 15 ) ) ),
+            'perspective' => max( 100, min( 5000, intval( $t['perspective'] ?? 1000 ) ) ),
+            'resetSpeed' => max( 50, min( 2000, intval( $t['resetSpeed'] ?? 300 ) ) ),
+        ];
+    }
+
+    /**
+     * Sanitize blend mode (allowlist of 16 CSS blend modes).
+     *
+     * @param  mixed $bm Raw blend mode.
+     * @return string|null
+     */
+    private static function sanitize_blend_mode( $bm ) {
+        if ( ! is_string( $bm ) ) {
+            return null;
+        }
+        $valid = [
+            'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
+            'color-dodge', 'color-burn', 'hard-light', 'soft-light',
+            'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity',
+        ];
+        return in_array( $bm, $valid, true ) ? $bm : null;
+    }
+
+    /**
+     * Sanitize overlay effect (darken/lighten with intensity).
+     *
+     * @param  mixed $oe Raw overlay effect data.
+     * @return array|null
+     */
+    private static function sanitize_overlay_effect( $oe ) {
+        if ( ! is_array( $oe ) ) {
+            return null;
+        }
+        $mode = in_array( $oe['mode'] ?? '', [ 'none', 'darken', 'lighten' ], true )
+            ? $oe['mode']
+            : 'none';
+        if ( $mode === 'none' ) {
+            return null;
+        }
+        return [
+            'mode'        => $mode,
+            'intensity'   => max( 0, min( 1, floatval( $oe['intensity'] ?? 0.3 ) ) ),
+            'onHoverOnly' => (bool) ( $oe['onHoverOnly'] ?? false ),
+        ];
+    }
+
+    /**
      * Check if the serialized template library exceeds the size limit.
      *
+     * @deprecated P20-I-1 — CPT storage removes the single-row bottleneck.
+     *             Kept for backward compatibility if called externally.
+     *
      * @param  array $all All templates.
-     * @return true|WP_Error
+     * @return true Always passes now.
      */
     private static function check_size_limit( array $all ) {
-        $size = strlen( serialize( $all ) );
-        if ( $size > self::SIZE_LIMIT ) {
-            return new WP_Error(
-                'storage_limit',
-                sprintf(
-                    'Layout template library size (%s KB) exceeds the %s KB limit. Consider removing unused templates or migrating to a dedicated database table.',
-                    round( $size / 1024, 1 ),
-                    round( self::SIZE_LIMIT / 1024, 1 )
-                ),
-                [ 'status' => 413 ]
-            );
-        }
         return true;
     }
 

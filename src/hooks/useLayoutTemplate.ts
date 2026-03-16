@@ -46,8 +46,8 @@ export function useLayoutTemplate(templateId: string | undefined | null): UseLay
     templateId ? `layout-template-${templateId}` : null,
     () => fetchPublicTemplate(templateId!),
     {
-      revalidateOnFocus: false,
-      dedupingInterval: 60_000, // 1 min dedup — templates rarely change
+      revalidateOnFocus: true,
+      dedupingInterval: 10_000, // 10 s dedup — balance between freshness and request volume
     },
   );
 

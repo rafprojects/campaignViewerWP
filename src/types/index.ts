@@ -136,8 +136,12 @@ export interface LayoutSlot {
   shape: LayoutSlotShape;
   /** Custom CSS clip-path (used when shape === 'custom') */
   clipPath?: string;
-  /** CSS mask-image URL */
+  /** CSS mask-image URL (legacy — prefer maskLayer for new templates) */
   maskUrl?: string;
+  /** CSS mask-mode (legacy — prefer maskLayer for new templates) */
+  maskMode?: 'luminance' | 'alpha';
+  /** Mask layer with full position/scale/feather controls (replaces maskUrl). */
+  maskLayer?: MaskLayer;
   /** Corner rounding in px (for rectangle shapes) */
   borderRadius: number;
   /** Border thickness in px (0 = none) */
@@ -158,6 +162,10 @@ export interface LayoutSlot {
   clickAction: 'lightbox' | 'none';
   /** Hover behavior in rendered gallery */
   hoverEffect: 'pop' | 'glow' | 'none';
+  /** Per-slot glow color (overrides campaign-level tileGlowColor when hoverEffect is 'glow'). */
+  glowColor?: string;
+  /** Per-slot glow spread in px (overrides campaign-level tileGlowSpread when hoverEffect is 'glow'). */
+  glowSpread?: number;
   // ── Layer system (P16) ──
   /** Human-readable label shown in the layer panel. Defaults to "Slot N" if absent. */
   name?: string;
@@ -165,6 +173,19 @@ export interface LayoutSlot {
   visible?: boolean;
   /** Prevents drag/resize in the builder. No effect on gallery rendering. */
   locked?: boolean;
+  /** When true, drag-resize handles maintain the width/height ratio. */
+  lockAspectRatio?: boolean;
+  // ── Image effects (P20 QA-R3) ──
+  /** CSS filter chain (brightness, contrast, etc.). */
+  filterEffects?: SlotFilterEffects;
+  /** Drop-shadow or glow applied via CSS filter. */
+  shadow?: SlotShadow;
+  /** 3D tilt on mouse interaction. Applied in gallery only (not builder). */
+  tilt?: SlotTiltEffect;
+  /** CSS mix-blend-mode. Default: 'normal'. */
+  blendMode?: SlotBlendMode;
+  /** Darken/lighten overlay on the slot. */
+  overlayEffect?: SlotOverlayEffect;
 }
 
 /** Sensible defaults for a new layout slot. */
@@ -212,6 +233,126 @@ export interface LayoutGraphicLayer {
   locked?: boolean;
 }
 
+export type BackgroundMode = 'none' | 'color' | 'gradient' | 'image';
+
+/** Gradient type: linear, radial, or conic. */
+export type GradientType = 'linear' | 'radial' | 'conic';
+
+/**
+ * Direction presets (kept for backward compat).
+ * With `gradientType` + `gradientAngle`, these serve as quick-select shortcuts.
+ */
+export type GradientDirection = 'horizontal' | 'vertical' | 'diagonal-right' | 'diagonal-left' | 'radial';
+
+/** Radial gradient shape: `circle` or `ellipse` (default). */
+export type RadialShape = 'circle' | 'ellipse';
+
+/** Radial gradient size keyword. */
+export type RadialSize = 'closest-side' | 'closest-corner' | 'farthest-side' | 'farthest-corner';
+
+export interface GradientStop {
+  color: string;      // rgba or hex
+  position?: number;  // 0–100 %
+}
+
+// ── Mask Layer Sub-System ─────────────────────────────────────────
+
+/**
+ * A mask layer sits as a child of a slot, controlling how the slot's image is
+ * clipped via CSS mask-image.  Position/size are percentages relative to the
+ * slot bounding box.
+ */
+export interface MaskLayer {
+  /** Mask image URL (SVG/PNG). */
+  url: string;
+  /** 'luminance' (default) interprets white=visible, black=hidden. 'alpha' uses transparency. */
+  mode: 'luminance' | 'alpha';
+  /** Horizontal offset as % of slot width (0 = left-aligned). */
+  x: number;
+  /** Vertical offset as % of slot height (0 = top-aligned). */
+  y: number;
+  /** Mask width as % of slot width (100 = same width). */
+  width: number;
+  /** Mask height as % of slot height (100 = same height). */
+  height: number;
+  /** Gaussian-blur feather intensity in px applied to the mask edges (0 = sharp). */
+  feather: number;
+  /** When false the mask is temporarily hidden without removing config. Defaults to true. */
+  visible?: boolean;
+}
+
+/** Default mask layer positioned to fill its slot. */
+export const DEFAULT_MASK_LAYER: Omit<MaskLayer, 'url'> = {
+  mode: 'luminance',
+  x: 0,
+  y: 0,
+  width: 100,
+  height: 100,
+  feather: 0,
+};
+
+// ── Image Effects ─────────────────────────────────────────────────
+
+/** CSS filter chain values.  All default to their identity/no-op value. */
+export interface SlotFilterEffects {
+  brightness?: number;   // 100 = identity, 0–200+
+  contrast?: number;     // 100 = identity, 0–200+
+  saturate?: number;     // 100 = identity, 0–200+
+  blur?: number;         // px, 0 = none
+  grayscale?: number;    // 0–100 %
+  sepia?: number;        // 0–100 %
+  hueRotate?: number;    // degrees 0–360
+  invert?: number;       // 0–100 %
+}
+
+/** Drop- or glow-shadow applied via CSS filter. */
+export interface SlotShadow {
+  offsetX: number;   // px
+  offsetY: number;   // px
+  blur: number;      // px
+  color: string;     // rgba
+}
+
+/** 3D tilt effect on mouse interaction.  Applied via CSS transform + JS onMouseMove. */
+export interface SlotTiltEffect {
+  enabled: boolean;
+  /** Max rotation angle in degrees (default 15). */
+  maxAngle: number;
+  /** Perspective distance in px (default 1000). */
+  perspective: number;
+  /** Transition speed in ms when resetting tilt (default 300). */
+  resetSpeed: number;
+}
+
+/** CSS mix-blend-mode for the slot element. */
+export type SlotBlendMode =
+  | 'normal'
+  | 'multiply'
+  | 'screen'
+  | 'overlay'
+  | 'darken'
+  | 'lighten'
+  | 'color-dodge'
+  | 'color-burn'
+  | 'hard-light'
+  | 'soft-light'
+  | 'difference'
+  | 'exclusion'
+  | 'hue'
+  | 'saturation'
+  | 'color'
+  | 'luminosity';
+
+/** Static darken/lighten overlay on the slot (applied as a CSS pseudo-layer). */
+export interface SlotOverlayEffect {
+  /** 'darken' adds semi-transparent black, 'lighten' adds semi-transparent white, 'none' disables. */
+  mode: 'none' | 'darken' | 'lighten';
+  /** Intensity 0–100 (maps to overlay opacity). */
+  intensity: number;
+  /** Whether overlay only appears on hover. */
+  onHoverOnly: boolean;
+}
+
 /**
  * A reusable layout template that defines the visual arrangement of media slots
  * on a fixed-ratio canvas. Stored globally in `wpsg_layout_templates` WP option.
@@ -227,8 +368,34 @@ export interface LayoutTemplate {
   canvasMinWidth: number;
   /** Maximum render width in px (0 = fill container) */
   canvasMaxWidth: number;
+  /**
+   * How canvas height is determined.
+   * - `'aspect-ratio'` (default): height = width / canvasAspectRatio
+   * - `'fixed-vh'`: height = canvasHeightVh % of viewport height
+   */
+  canvasHeightMode?: 'aspect-ratio' | 'fixed-vh';
+  /** Viewport-height percentage used when canvasHeightMode is 'fixed-vh' (1–100, default 50). */
+  canvasHeightVh?: number;
+  /** Background mode: 'none' (transparent), 'color', 'gradient', or 'image'. Default: 'color'. */
+  backgroundMode?: BackgroundMode;
   /** CSS background color for the canvas */
   backgroundColor: string;
+  /** Gradient type: linear, radial, or conic. Default: 'linear'. */
+  backgroundGradientType?: GradientType;
+  /** Gradient direction preset (legacy shortcut, maps to angle). */
+  backgroundGradientDirection?: GradientDirection;
+  /** Custom angle in degrees for linear/conic gradients (overrides direction preset). */
+  backgroundGradientAngle?: number;
+  /** Gradient color stops (2–3 entries). */
+  backgroundGradientStops?: GradientStop[];
+  /** Radial gradient shape. Default: 'ellipse'. */
+  backgroundRadialShape?: RadialShape;
+  /** Radial gradient size. Default: 'farthest-corner'. */
+  backgroundRadialSize?: RadialSize;
+  /** Radial / conic gradient center X as % (0–100). Default: 50. */
+  backgroundGradientCenterX?: number;
+  /** Radial / conic gradient center Y as % (0–100). Default: 50. */
+  backgroundGradientCenterY?: number;
   /** Optional background image URL (layered on top of backgroundColor) */
   backgroundImage?: string;
   /** How the background image fills the canvas (default: 'cover') */
@@ -483,6 +650,8 @@ export interface GalleryBehaviorSettings {
   authBarBackdropBlur: number;
   authBarMobileBreakpoint: number;
   cardAutoColumnsBreakpoints: string;
+  // P20-K: Session idle timeout (minutes). 0 = disabled.
+  sessionIdleTimeoutMinutes: number;
   // P15-A: Per-breakpoint gallery selection
   gallerySelectionMode: 'unified' | 'per-breakpoint';
   desktopImageAdapterId: string;
@@ -493,6 +662,13 @@ export interface GalleryBehaviorSettings {
   mobileVideoAdapterId: string;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
+  // P20-E: Uninstall data preservation
+  preserveDataOnUninstall: boolean;
+  // D-4: Archive purge safeguards
+  archivePurgeDays: number;
+  archivePurgeGraceDays: number;
+  // D-20: Analytics data retention
+  analyticsRetentionDays: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -673,6 +849,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   authBarBackdropBlur: 8,
   authBarMobileBreakpoint: 768,
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
+  // P20-K: Session idle timeout
+  sessionIdleTimeoutMinutes: 0,
   // P15-A: Per-breakpoint gallery selection
   gallerySelectionMode: 'unified',
   desktopImageAdapterId: 'classic',
@@ -682,6 +860,13 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   mobileImageAdapterId: 'classic',
   mobileVideoAdapterId: 'classic',
   layoutBuilderScope: 'full',
+  // P20-E: Uninstall data preservation
+  preserveDataOnUninstall: false,
+  // D-4: Archive purge safeguards
+  archivePurgeDays: 0,
+  archivePurgeGraceDays: 30,
+  // D-20: Analytics data retention
+  analyticsRetentionDays: 0,
   // P12-C defaults
   imageGalleryAdapterId: 'classic',
   videoGalleryAdapterId: 'classic',

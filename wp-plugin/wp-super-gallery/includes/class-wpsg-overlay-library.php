@@ -69,7 +69,7 @@ class WPSG_Overlay_Library {
     }
 
     /**
-     * Remove an overlay entry.  Does NOT delete the physical file.
+     * Remove an overlay entry and delete the physical file from disk.
      *
      * @param  string $id
      * @return bool  True if found and removed.
@@ -79,6 +79,28 @@ class WPSG_Overlay_Library {
         if ( ! is_array( $all ) || ! isset( $all[ $id ] ) ) {
             return false;
         }
+
+        // Attempt to delete the physical file.
+        $entry = $all[ $id ];
+        if ( ! empty( $entry['url'] ) ) {
+            $upload_dir = wp_upload_dir();
+            $base_url   = trailingslashit( $upload_dir['baseurl'] );
+            $base_dir   = trailingslashit( $upload_dir['basedir'] );
+
+            // Only delete if the URL lives inside our uploads directory.
+            if ( str_starts_with( $entry['url'], $base_url ) ) {
+                $relative  = substr( $entry['url'], strlen( $base_url ) );
+                $file_path = $base_dir . $relative;
+
+                // Prevent path traversal: resolve to a real path and ensure
+                // it still resides within the uploads directory.
+                $real_path = realpath( $file_path );
+                if ( $real_path && str_starts_with( $real_path, realpath( $upload_dir['basedir'] ) . DIRECTORY_SEPARATOR ) ) {
+                    wp_delete_file( $real_path );
+                }
+            }
+        }
+
         unset( $all[ $id ] );
         update_option( self::OPTION_KEY, $all, false );
         return true;
@@ -136,6 +158,25 @@ class WPSG_Overlay_Library {
             return new WP_Error( 'wpsg_overlay_dir', 'Could not create overlay upload directory.' );
         }
 
+        // L-8: Ensure the .htaccess with CSP headers exists in the overlays dir.
+        self::ensure_htaccess( $target_dir );
+
+        // 1a: Pre-flight SVG sanitizer dependency check. If the uploaded file
+        // appears to be an SVG, ensure the sanitizer class is loadable BEFORE
+        // the file is written to disk by wp_handle_upload().
+        $mime = $file['type'] ?? '';
+        if ( $mime === 'image/svg+xml' || ( isset( $file['name'] ) && preg_match( '/\.svgz?$/i', $file['name'] ) ) ) {
+            if ( ! class_exists( '\\enshrined\\svgSanitize\\Sanitizer' ) ) {
+                $autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
+                if ( file_exists( $autoload ) ) {
+                    require_once $autoload;
+                }
+            }
+            if ( ! class_exists( '\\enshrined\\svgSanitize\\Sanitizer' ) ) {
+                return new WP_Error( 'wpsg_svg_dep', 'SVG sanitizer library is not installed. SVG uploads are disabled until the dependency is available.' );
+            }
+        }
+
         // Move uploaded file.
         $overrides = [
             'test_form'   => false,
@@ -158,7 +199,20 @@ class WPSG_Overlay_Library {
             ];
         };
         add_filter( 'upload_dir', $upload_dir_filter );
-        $result = wp_handle_upload( $file, $overrides );
+
+        // Signal the image optimizer to process this upload.
+        if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = true;
+        }
+
+        try {
+            $result = wp_handle_upload( $file, $overrides );
+        } finally {
+            if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
+                WPSG_Image_Optimizer::$wpsg_upload_context = false;
+            }
+        }
+
         remove_filter( 'upload_dir', $upload_dir_filter );
 
         if ( isset( $result['error'] ) ) {
@@ -174,6 +228,254 @@ class WPSG_Overlay_Library {
             return new WP_Error( 'wpsg_overlay_type', 'Unsupported image type. Allowed: PNG, SVG, WebP, GIF, JPEG, AVIF.' );
         }
 
+        // L-2: Server-side SVG sanitization (P20-L).
+        // Strip <script>, event handlers, <foreignObject>, javascript: URIs,
+        // and external resource references. Re-serialization also destroys
+        // polyglot file properties (SVG/HTML or SVG/JS dual-format tricks).
+        if ( ( $result['type'] ?? '' ) === 'image/svg+xml' && ! empty( $result['file'] ) ) {
+            $sanitize_result = self::sanitize_svg_file( $result['file'] );
+            if ( is_wp_error( $sanitize_result ) ) {
+                wp_delete_file( $result['file'] );
+                return $sanitize_result;
+            }
+        }
+
         return $result['url'];
+    }
+
+    // ── Upload Directory Security (L-8) ────────────────────────
+
+    /**
+     * Ensure the wpsg-overlays directory has an .htaccess file that:
+     * 1. Sets Content-Security-Policy: script-src 'none' on SVG files
+     *    (prevents script execution even if served directly)
+     * 2. Sets Content-Disposition: inline (safe display, no download prompt)
+     * 3. Disables PHP execution in the uploads directory
+     *
+     * Nginx users should add equivalent rules manually — see docs.
+     */
+    public static function ensure_htaccess( string $dir ): void {
+        $htaccess_path = trailingslashit( $dir ) . '.htaccess';
+        if ( file_exists( $htaccess_path ) ) {
+            return;
+        }
+
+        $rules = <<<'HTACCESS'
+# WP Super Gallery — Overlay directory security (P20-L)
+# Prevents script execution in SVG files served directly.
+
+# Disable PHP execution.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# CSP and security headers for SVG files.
+<IfModule mod_headers.c>
+    <FilesMatch "\.svg$">
+        Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:"
+        Header set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+</IfModule>
+HTACCESS;
+
+        file_put_contents( $htaccess_path, $rules );
+    }
+
+    // ── SVG Sanitization (P20-L) ────────────────────────────────
+
+    /**
+     * Sanitize an SVG file on disk using enshrined/svg-sanitize.
+     *
+     * Reads the file, runs it through the sanitizer with remote references
+     * disabled, applies custom CSS and URI validation, and writes the clean
+     * output back. Returns WP_Error if the SVG is entirely malicious
+     * (empty after sanitization).
+     *
+     * @param  string $file_path  Absolute path to the SVG file.
+     * @return true|WP_Error      True on success, WP_Error on failure.
+     */
+    public static function sanitize_svg_file( string $file_path ) {
+        if ( ! file_exists( $file_path ) ) {
+            return new WP_Error( 'wpsg_svg_missing', 'SVG file not found.' );
+        }
+
+        $dirty = file_get_contents( $file_path );
+        if ( empty( $dirty ) ) {
+            return new WP_Error( 'wpsg_svg_empty', 'SVG file is empty.' );
+        }
+
+        $clean = self::sanitize_svg_string( $dirty );
+        if ( $clean === null || trim( $clean ) === '' ) {
+            return new WP_Error( 'wpsg_svg_malicious', 'SVG rejected: file contained only dangerous content.' );
+        }
+
+        // Write sanitized content back.
+        file_put_contents( $file_path, $clean );
+        return true;
+    }
+
+    /**
+     * Sanitize an SVG string and return the clean output.
+     *
+     * @param  string $dirty  Raw SVG markup.
+     * @return string|null    Clean SVG or null if entirely stripped.
+     */
+    public static function sanitize_svg_string( string $dirty ): ?string {
+        if ( ! class_exists( '\\enshrined\\svgSanitize\\Sanitizer' ) ) {
+            // Autoloader should handle this, but guard against misconfiguration.
+            $autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
+            if ( file_exists( $autoload ) ) {
+                require_once $autoload;
+            }
+        }
+
+        $sanitizer = new \enshrined\svgSanitize\Sanitizer();
+        $sanitizer->removeRemoteReferences( true );
+        $sanitizer->minify( true );
+
+        $clean = $sanitizer->sanitize( $dirty );
+        if ( $clean === false || $clean === null || trim( $clean ) === '' ) {
+            return null;
+        }
+
+        // Second pass: custom CSS and URI validation within the sanitized output.
+        $clean = self::sanitize_svg_css( $clean );
+        $clean = self::sanitize_svg_uris( $clean );
+
+        return $clean;
+    }
+
+    /**
+     * Sanitize CSS within SVG <style> blocks.
+     *
+     * Strips dangerous patterns while preserving legitimate styling:
+     * - Blocks: url() with external/data:text/data:image/svg+xml URIs,
+     *   @import, expression(), -moz-binding, behavior:
+     * - Allows: url(#internal), data:image/(png|jpeg|webp|gif), standard CSS
+     *
+     * @param  string $svg  Sanitized SVG markup.
+     * @return string       SVG with CSS blocks cleaned.
+     */
+    public static function sanitize_svg_css( string $svg ): string {
+        // Match <style> blocks and sanitize their contents.
+        return preg_replace_callback(
+            '/<style[^>]*>(.*?)<\/style>/si',
+            function ( $matches ) {
+                $css = $matches[1];
+
+                // Block @import rules entirely.
+                $css = preg_replace( '/@import\b[^;]*;?/i', '/* import rule removed */', $css );
+
+                // Block expression(), -moz-binding, behavior:
+                $css = preg_replace( '/expression\s*\(/i', '/* expression removed */(', $css );
+                $css = preg_replace( '/-moz-binding\s*:/i', '/* -moz-binding removed */:', $css );
+                $css = preg_replace( '/behavior\s*:/i', '/* behavior removed */:', $css );
+
+                // Validate url() references: allow only internal refs and safe data URIs.
+                $css = preg_replace_callback(
+                    '/url\s*\(\s*([\'"]?)(.*?)\1\s*\)/i',
+                    function ( $url_match ) {
+                        $uri = trim( $url_match[2] );
+
+                        // Allow internal SVG references: url(#gradientId)
+                        if ( str_starts_with( $uri, '#' ) ) {
+                            return $url_match[0];
+                        }
+
+                        // Allow safe embedded raster data URIs.
+                        if ( preg_match( '/^data:image\/(png|jpeg|webp|gif);base64,/i', $uri ) ) {
+                            return $url_match[0];
+                        }
+
+                        // Allow embedded font data URIs.
+                        if ( preg_match( '/^data:font\/(woff2?|ttf|otf|collection);base64,/i', $uri )
+                            || preg_match( '/^data:application\/(font-woff2?|x-font-ttf|x-font-otf);base64,/i', $uri ) ) {
+                            return $url_match[0];
+                        }
+
+                        // Block everything else (external URLs, data:image/svg+xml,
+                        // data:text/html, javascript:, blob:, etc.)
+                        return '/* url removed */';
+                    },
+                    $css
+                );
+
+                return '<style>' . $css . '</style>';
+            },
+            $svg
+        ) ?? $svg;
+    }
+
+    /**
+     * Validate and strip dangerous URIs from SVG attributes.
+     *
+     * Scans all attribute values that look like URIs and blocks:
+     * - javascript: scheme
+     * - data:image/svg+xml (recursive SVG)
+     * - data:text/html (HTML injection)
+     * - blob: scheme
+     * - External http(s): URLs (already handled by removeRemoteReferences,
+     *   but double-check as defence-in-depth)
+     *
+     * Allows:
+     * - Fragment references: #localId
+     * - Safe data URIs: data:image/(png|jpeg|webp|gif), data:font/*
+     *
+     * @param  string $svg  SVG markup.
+     * @return string       SVG with dangerous URIs neutralized.
+     */
+    public static function sanitize_svg_uris( string $svg ): string {
+        // Match common URI-bearing attributes.
+        $uri_attrs = 'href|xlink:href|src|data|action|formaction|poster';
+
+        return preg_replace_callback(
+            '/(\b(?:' . $uri_attrs . ')\s*=\s*)([\'"])(.*?)\2/i',
+            function ( $matches ) {
+                $prefix = $matches[1];
+                $quote  = $matches[2];
+                $uri    = trim( $matches[3] );
+
+                // Allow empty or fragment-only references.
+                if ( $uri === '' || str_starts_with( $uri, '#' ) ) {
+                    return $matches[0];
+                }
+
+                // Allow safe data URIs (raster images and fonts).
+                if ( preg_match( '/^data:image\/(png|jpeg|webp|gif);base64,/i', $uri ) ) {
+                    return $matches[0];
+                }
+                if ( preg_match( '/^data:font\/(woff2?|ttf|otf|collection);base64,/i', $uri )
+                    || preg_match( '/^data:application\/(font-woff2?|x-font-ttf|x-font-otf);base64,/i', $uri ) ) {
+                    return $matches[0];
+                }
+
+                // Block dangerous schemes.
+                $lower = strtolower( $uri );
+                if ( str_starts_with( $lower, 'javascript:' )
+                    || str_starts_with( $lower, 'data:image/svg+xml' )
+                    || str_starts_with( $lower, 'data:text/html' )
+                    || str_starts_with( $lower, 'data:text/xml' )
+                    || str_starts_with( $lower, 'blob:' )
+                    || str_starts_with( $lower, 'vbscript:' )
+                    || str_starts_with( $lower, 'data:application/xhtml' ) ) {
+                    return $prefix . $quote . $quote; // Empty attribute.
+                }
+
+                // Block any remaining external URLs (http/https/ftp/ftps).
+                if ( preg_match( '/^(https?|ftps?):\/\//i', $uri ) ) {
+                    return $prefix . $quote . $quote;
+                }
+
+                // Allow relative paths and anything else that survived the sanitizer.
+                return $matches[0];
+            },
+            $svg
+        ) ?? $svg;
     }
 }

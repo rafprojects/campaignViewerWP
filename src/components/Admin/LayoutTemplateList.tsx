@@ -5,7 +5,7 @@
  * grid/list toggle, search/filter, and action buttons (edit, duplicate,
  * delete). Includes import/export JSON functionality.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -40,8 +40,12 @@ import {
 import useSWR from 'swr';
 import type { ApiClient } from '@/services/apiClient';
 import type { LayoutTemplate } from '@/types';
-import { LayoutBuilderModal } from './LayoutBuilder';
-import { PresetGalleryModal } from './LayoutBuilder/PresetGalleryModal';
+const LayoutBuilderModal = lazy(() =>
+  import('./LayoutBuilder/LayoutBuilderModal').then((m) => ({ default: m.LayoutBuilderModal }))
+);
+const PresetGalleryModal = lazy(() =>
+  import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal }))
+);
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { createEmptyTemplate } from '@/hooks/useLayoutBuilderState';
 import type { LayoutPreset } from '@/data/layoutPresets';
@@ -166,11 +170,27 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
     setBuilderOpen(true);
   }, []);
 
-  const handleBuilderSaved = useCallback(() => {
-    setBuilderOpen(false);
-    setEditingTemplate(null);
-    mutate();
-  }, [mutate]);
+  const handleBuilderSaved = useCallback(
+    (saved: LayoutTemplate) => {
+      // Optimistically update the SWR cache so the template list (and any
+      // immediate re-open of the builder) reflect the latest server data
+      // without waiting for a background revalidation round-trip.
+      mutate(
+        (current) => {
+          if (!current) return [saved];
+          const idx = current.findIndex((t) => t.id === saved.id);
+          if (idx >= 0) {
+            const next = [...current];
+            next[idx] = saved;
+            return next;
+          }
+          return [...current, saved];
+        },
+        { revalidate: false },
+      );
+    },
+    [mutate],
+  );
 
   const handleBuilderClose = useCallback(() => {
     setBuilderOpen(false);
@@ -413,15 +433,19 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
       )}
 
       {/* Layout Builder Modal – key forces remount so useState re-inits */}
-      <LayoutBuilderModal
-        key={editingTemplate?.id ?? 'new'}
-        opened={builderOpen}
-        initialTemplate={editingTemplate ?? undefined}
-        apiClient={apiClient}
-        onSaved={handleBuilderSaved}
-        onClose={handleBuilderClose}
-        onNotify={onNotify}
-      />
+      <Suspense fallback={null}>
+        {builderOpen && (
+          <LayoutBuilderModal
+            key={editingTemplate?.id ?? 'new'}
+            opened={builderOpen}
+            initialTemplate={editingTemplate ?? undefined}
+            apiClient={apiClient}
+            onSaved={handleBuilderSaved}
+            onClose={handleBuilderClose}
+            onNotify={onNotify}
+          />
+        )}
+      </Suspense>
 
       {/* Delete confirmation */}
       <ConfirmModal
@@ -435,11 +459,15 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
       />
 
       {/* Preset gallery (P15-J.2) */}
-      <PresetGalleryModal
-        opened={presetGalleryOpen}
-        onClose={() => setPresetGalleryOpen(false)}
-        onSelect={handleCreateFromPreset}
-      />
+      <Suspense fallback={null}>
+        {presetGalleryOpen && (
+          <PresetGalleryModal
+            opened={presetGalleryOpen}
+            onClose={() => setPresetGalleryOpen(false)}
+            onSelect={handleCreateFromPreset}
+          />
+        )}
+      </Suspense>
     </Stack>
   );
 }

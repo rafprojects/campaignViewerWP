@@ -32,7 +32,7 @@ export function AuthBar({
       aria-label="User navigation"
       style={{
         position: 'sticky',
-        top: 0,
+        top: 'var(--wp-admin--admin-bar--height, 0px)',
         zIndex: 'var(--z-header, 100)',
         background: 'color-mix(in srgb, var(--wpsg-color-surface) 92%, transparent)',
         backdropFilter: 'blur(12px)',

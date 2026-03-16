@@ -14,10 +14,14 @@ export interface LayerPanelProps {
   selectedOverlayId?: string | null;
   /** Whether the Background row is currently selected. */
   isBackgroundSelected?: boolean;
+  /** Slot ID whose mask sublayer is currently selected. */
+  selectedMaskSlotId?: string | null;
   onSelectSlot: (id: string) => void;
   onSelectOverlay: (id: string) => void;
   /** Called when the user clicks the Background row. */
   onSelectBackground?: () => void;
+  /** Called when the user clicks a mask sublayer row. */
+  onSelectMask?: (parentSlotId: string) => void;
   onClearSelection: () => void;
   onRenameSlot: (id: string, name: string) => void;
   onRenameOverlay: (id: string, name: string) => void;
@@ -25,11 +29,17 @@ export interface LayerPanelProps {
   onToggleOverlayVisible: (id: string) => void;
   onToggleSlotLocked: (id: string) => void;
   onToggleOverlayLocked: (id: string) => void;
+  /** Toggle mask sublayer visibility (parentSlotId). */
+  onToggleMaskVisible?: (parentSlotId: string) => void;
   onReorderLayers: (draggedId: string, targetId: string) => void;
   onBringToFront: (id: string) => void;
   onSendToBack: (id: string) => void;
   onBringForward: (id: string) => void;
   onSendBackward: (id: string) => void;
+  /** Delete a specific layer by ID. */
+  onDeleteLayer?: (id: string, kind: 'slot' | 'graphic' | 'mask') => void;
+  /** Add an empty mask sublayer to a slot. */
+  onAddMask?: (slotId: string) => void;
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -39,9 +49,11 @@ export function LayerPanel({
   selectedSlotId,
   selectedOverlayId,
   isBackgroundSelected,
+  selectedMaskSlotId,
   onSelectSlot,
   onSelectOverlay,
   onSelectBackground,
+  onSelectMask,
   onClearSelection,
   onRenameSlot,
   onRenameOverlay,
@@ -49,11 +61,14 @@ export function LayerPanel({
   onToggleOverlayVisible,
   onToggleSlotLocked,
   onToggleOverlayLocked,
+  onToggleMaskVisible,
   onReorderLayers,
   onBringToFront,
   onSendToBack,
   onBringForward,
   onSendBackward,
+  onDeleteLayer,
+  onAddMask,
 }: LayerPanelProps) {
   const layers = buildLayerList(template);
   const dragIdRef = useRef<string | null>(null);
@@ -83,7 +98,7 @@ export function LayerPanel({
 
   // ── Keyboard navigation ───────────────────────────────────
   // Determine the single active ID across all layer types for navigation.
-  const activeLayerId = selectedSlotId ?? selectedOverlayId ?? (isBackgroundSelected ? 'background' : null);
+  const activeLayerId = selectedMaskSlotId ? `mask-${selectedMaskSlotId}` : selectedSlotId ?? selectedOverlayId ?? (isBackgroundSelected ? 'background' : null);
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const selectedIndex = layers.findIndex((l) => l.id === activeLayerId);
@@ -92,6 +107,7 @@ export function LayerPanel({
     function selectLayer(item: (typeof layers)[0]) {
       if (item.kind === 'slot') onSelectSlot(item.id);
       else if (item.kind === 'graphic') onSelectOverlay(item.id);
+      else if (item.kind === 'mask') onSelectMask?.(item.parentSlotId);
       else onSelectBackground?.();
     }
 
@@ -114,6 +130,7 @@ export function LayerPanel({
         const cur = layers[selectedIndex];
         if (cur.kind === 'slot') onToggleSlotVisible(cur.id);
         else if (cur.kind === 'graphic') onToggleOverlayVisible(cur.id);
+        else if (cur.kind === 'mask') onToggleMaskVisible?.(cur.parentSlotId);
         break;
       }
       case 'l':
@@ -177,18 +194,21 @@ export function LayerPanel({
         <Stack gap={0} py={4}>
           {layers.map((item) => {
             const isBackground = item.kind === 'background';
+            const isMask = item.kind === 'mask';
             const isSelected =
-              (item.kind === 'slot' && item.id === selectedSlotId) ||
+              (item.kind === 'slot' && item.id === selectedSlotId && !selectedMaskSlotId) ||
               (item.kind === 'graphic' && item.id === selectedOverlayId) ||
-              (item.kind === 'background' && !!isBackgroundSelected);
+              (item.kind === 'background' && !!isBackgroundSelected) ||
+              (item.kind === 'mask' && item.parentSlotId === selectedMaskSlotId);
             return (
               <LayerRow
                 key={item.id}
                 item={item}
                 template={template}
                 isSelected={isSelected}
-                onSelect={() => {
+                onSelect={(_id) => {
                   if (isBackground) onSelectBackground?.();
+                  else if (isMask) onSelectMask?.(item.parentSlotId);
                   else if (item.kind === 'graphic') onSelectOverlay(item.id);
                   else onSelectSlot(item.id);
                 }}
@@ -199,6 +219,7 @@ export function LayerPanel({
                 onToggleVisible={(id) => {
                   if (item.kind === 'slot') onToggleSlotVisible(id);
                   else if (item.kind === 'graphic') onToggleOverlayVisible(id);
+                  else if (item.kind === 'mask') onToggleMaskVisible?.(item.parentSlotId);
                 }}
                 onToggleLocked={(id) => {
                   if (item.kind === 'slot') onToggleSlotLocked(id);
@@ -208,6 +229,11 @@ export function LayerPanel({
                 onSendToBack={onSendToBack}
                 onBringForward={onBringForward}
                 onSendBackward={onSendBackward}
+                onDelete={onDeleteLayer ? (id) => {
+                  if (item.kind === 'mask') onDeleteLayer(item.parentSlotId, 'mask');
+                  else onDeleteLayer(id, item.kind === 'graphic' ? 'graphic' : 'slot');
+                } : undefined}
+                onAddMask={onAddMask}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}

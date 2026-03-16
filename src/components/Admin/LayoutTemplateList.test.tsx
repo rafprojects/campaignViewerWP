@@ -3,10 +3,9 @@ import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { LayoutTemplateList } from './LayoutTemplateList';
 
 // Stub heavy LayoutBuilder modal to keep tests fast
-vi.mock('./LayoutBuilder', () => ({
+vi.mock('./LayoutBuilder/LayoutBuilderModal', () => ({
   LayoutBuilderModal: ({ opened, onClose }: { opened: boolean; onClose: () => void }) =>
     opened ? <div data-testid="layout-builder-modal"><button onClick={onClose}>Close Builder</button></div> : null,
-  PresetGalleryModal: () => null,
 }));
 
 vi.mock('./LayoutBuilder/PresetGalleryModal', () => ({

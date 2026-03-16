@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { useHotkeys } from '@mantine/hooks';
-import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip } from '@mantine/core';
+import { getHotkeyHandler } from '@mantine/hooks';
+import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip, SegmentedControl } from '@mantine/core';
 import { IconHandGrab } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import type { IDockviewPanelProps } from 'dockview';
@@ -18,8 +18,33 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     setSnapThreshold,
     setSelectedOverlayId,
     setIsBackgroundSelected,
+    selectedMaskSlotId,
     announce,
   } = useBuilderDock();
+
+  // ── Canvas drop handlers ──────────────────────────────────
+  const handleAssetCanvasDrop = useCallback(
+    (assetUrl: string, x: number, y: number) => {
+      const id = builder.addOverlay(assetUrl);
+      builder.moveOverlay(id, x, y);
+      setSelectedOverlayId(id);
+      setIsBackgroundSelected(false);
+      builder.clearSelection();
+      announce('Graphic layer added to canvas');
+    },
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, announce],
+  );
+
+  const handleMediaCanvasDrop = useCallback(
+    (mediaId: string, meta: { attachmentId?: number; url?: string }, x: number, y: number) => {
+      const slotId = builder.addSlot();
+      builder.updateSlot(slotId, { x, y });
+      builder.assignMediaToSlot(slotId, mediaId, meta);
+      setIsBackgroundSelected(false);
+      announce('New slot created with assigned media');
+    },
+    [builder, setIsBackgroundSelected, announce],
+  );
 
   // ── Zoom / pan state ──────────────────────────────────────
   const [scale, setScale] = useState(1);
@@ -30,7 +55,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     transformRef.current?.resetTransform();
   }, []);
 
-  useHotkeys([
+  const handleCanvasHotkeys = getHotkeyHandler([
     ['h', () => setIsHandTool((v) => !v)],
     ['v', () => setIsHandTool(false)],
     ['0', () => transformRef.current?.resetTransform()],
@@ -41,7 +66,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
 
   return (
     <CanvasTransformContext.Provider value={{ scale, isHandTool }}>
-      <Box style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box
+        tabIndex={-1}
+        onKeyDown={handleCanvasHotkeys}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%', outline: 'none' }}
+      >
         {/* Canvas */}
         <Box
           style={{
@@ -92,6 +121,10 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 onOverlayMove={builder.moveOverlay}
                 onOverlayResize={builder.resizeOverlay}
                 onCanvasBgDoubleClick={handleResetZoom}
+                onSlotUpdate={(id, updates) => builder.updateSlot(id, updates)}
+                selectedMaskSlotId={selectedMaskSlotId}
+                onAssetCanvasDrop={handleAssetCanvasDrop}
+                onMediaCanvasDrop={handleMediaCanvasDrop}
               />
             </TransformComponent>
           </TransformWrapper>
@@ -143,6 +176,39 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               >
                 Fit to container
               </Button>
+              <Divider orientation="vertical" />
+              {/* Height mode toggle */}
+              <Group gap={4} wrap="nowrap">
+                <Text size="xs" c="dimmed">Height:</Text>
+                <SegmentedControl
+                  size="xs"
+                  value={builder.template.canvasHeightMode || 'aspect-ratio'}
+                  onChange={(val) => {
+                    builder.setCanvasHeightMode(val as 'aspect-ratio' | 'fixed-vh');
+                  }}
+                  data={[
+                    { label: 'Ratio', value: 'aspect-ratio' },
+                    { label: 'vh', value: 'fixed-vh' },
+                  ]}
+                  aria-label="Canvas height mode"
+                />
+                {(builder.template.canvasHeightMode || 'aspect-ratio') === 'fixed-vh' && (
+                  <NumberInput
+                    value={builder.template.canvasHeightVh || 50}
+                    onChange={(val) => {
+                      const n = Number(val) || 50;
+                      builder.setCanvasHeightVh(n);
+                    }}
+                    min={1}
+                    max={100}
+                    step={5}
+                    size="xs"
+                    w={64}
+                    suffix="vh"
+                    aria-label="Canvas height in viewport units"
+                  />
+                )}
+              </Group>
               <Divider orientation="vertical" />
               {/* Snap toggle + sensitivity */}
               <Group gap={6} wrap="nowrap">

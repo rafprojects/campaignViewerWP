@@ -240,6 +240,8 @@ class WPSG_Settings {
         'auth_bar_mobile_breakpoint'     => 768,
         'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
         // ── P15-A: Per-breakpoint gallery selection ───────────
+        // ── P20-K: Session idle timeout (minutes). 0 = disabled. ──
+        'session_idle_timeout_minutes' => 0,
         'gallery_selection_mode'         => 'unified',
         'desktop_image_adapter_id'       => 'classic',
         'desktop_video_adapter_id'       => 'classic',
@@ -248,6 +250,13 @@ class WPSG_Settings {
         'mobile_image_adapter_id'        => 'classic',
         'mobile_video_adapter_id'        => 'classic',
         'layout_builder_scope'           => 'full',
+        // ── P20-E: Uninstall data preservation ────────────────
+        'preserve_data_on_uninstall'     => false,
+        // ── D-4: Archive purge safeguards ─────────────────────
+        'archive_purge_days'             => 0,
+        'archive_purge_grace_days'       => 30,
+        // ── D-20: Analytics data retention ────────────────────
+        'analytics_retention_days'       => 0,
     ];
 
     /**
@@ -277,6 +286,11 @@ class WPSG_Settings {
         'login_form_max_width',
         'auth_bar_backdrop_blur',
         'auth_bar_mobile_breakpoint',
+        'session_idle_timeout_minutes',
+        'preserve_data_on_uninstall',
+        'archive_purge_days',
+        'archive_purge_grace_days',
+        'analytics_retention_days',
     ];
 
     /**
@@ -445,6 +459,10 @@ class WPSG_Settings {
         'login_form_max_width'        => [200, 800],
         'auth_bar_backdrop_blur'      => [0, 24],
         'auth_bar_mobile_breakpoint'  => [320, 1280],
+        'session_idle_timeout_minutes' => [0, 480],
+        'archive_purge_days'           => [0, 365],
+        'archive_purge_grace_days'     => [7, 90],
+        'analytics_retention_days'     => [0, 730],
     ];
 
     /**
@@ -866,14 +884,14 @@ class WPSG_Settings {
         }
 
         // P12-C: Gallery Adapters
+        $valid_adapters = class_exists('WPSG_CPT') ? WPSG_CPT::VALID_ADAPTERS
+            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
         if (isset($input['image_gallery_adapter_id'])) {
-            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
             $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['image_gallery_adapter_id']
                 : 'classic';
         }
         if (isset($input['video_gallery_adapter_id'])) {
-            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
             $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['video_gallery_adapter_id']
                 : 'classic';
@@ -882,7 +900,6 @@ class WPSG_Settings {
             $sanitized['unified_gallery_enabled'] = (bool) $input['unified_gallery_enabled'];
         }
         if (isset($input['unified_gallery_adapter_id'])) {
-            $valid_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'];
             $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], $valid_adapters, true)
                 ? $input['unified_gallery_adapter_id']
                 : 'compact-grid';
@@ -898,7 +915,7 @@ class WPSG_Settings {
             'tablet_image_adapter_id',  'tablet_video_adapter_id',
             'mobile_image_adapter_id',  'mobile_video_adapter_id',
         ];
-        $valid_bp_adapters = ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+        $valid_bp_adapters = $valid_adapters;
         foreach ($bp_adapter_fields as $field) {
             if (isset($input[$field])) {
                 $sanitized[$field] = in_array($input[$field], $valid_bp_adapters, true)

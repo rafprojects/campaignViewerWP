@@ -46,3 +46,4 @@ phpunit
 /*.jpg
 /*.gif
 *.txt
+!wp-plugin/wp-super-gallery/readme.txt

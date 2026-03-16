@@ -19,6 +19,13 @@ class WPSG_Image_Optimizer {
     const QUALITY_DEFAULT    = 82;
 
     /**
+     * Whether the current upload originated from a WPSG endpoint.
+     * Set to true by WPSG upload handlers so the optimizer only runs on
+     * plugin-initiated uploads, not on all site-wide media uploads.
+     */
+    public static bool $wpsg_upload_context = false;
+
+    /**
      * Register optimization hooks.
      */
     public static function register() {
@@ -53,6 +60,11 @@ class WPSG_Image_Optimizer {
     public static function optimize_on_upload($upload, $context = '') {
         // Only process images.
         if (empty($upload['type']) || strpos($upload['type'], 'image/') !== 0) {
+            return $upload;
+        }
+
+        // Only optimize uploads originating from WPSG endpoints.
+        if (!self::$wpsg_upload_context) {
             return $upload;
         }
 

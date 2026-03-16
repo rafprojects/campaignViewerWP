@@ -1,5 +1,5 @@
-import { useCallback, useReducer, useState } from 'react';
-import { useHotkeys } from '@mantine/hooks';
+import { useCallback, useReducer, useRef, useState } from 'react';
+import { getHotkeyHandler } from '@mantine/hooks';
 import type { ApiClient, CampaignExportPayload } from '@/services/apiClient';
 import type { CampaignFormState } from '@/components/Admin/CampaignFormModal';
 import type { AdminCampaign } from '@/hooks/useAdminSWR';
@@ -48,6 +48,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 
   const [duplicateSource, setDuplicateSource] = useState<AdminCampaign | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const savingRef = useRef(false);
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -86,6 +87,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   }, []);
 
   const saveCampaign = useCallback(async (formState: CampaignFormState) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSavingCampaign(true);
     const payload = {
       title: formState.title,
@@ -115,6 +118,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save campaign.') });
     } finally {
+      savingRef.current = false;
       setIsSavingCampaign(false);
     }
   }, [editingCampaign, apiClient, onNotify, closeCampaignForm, onMutate, onCampaignsUpdated]);
@@ -255,7 +259,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
-  useHotkeys([
+  const hotkeyHandler = getHotkeyHandler([
     ['?',            () => setShortcutHelpOpen(true)],
     ['mod+n',        () => { if (!campaignFormOpen) handleCreate(); }],
     ['mod+i',        () => setImportModalOpen(true)],
@@ -263,6 +267,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   ]);
 
   return {
+    // Scoped hotkey handler — attach via onKeyDown on a container
+    hotkeyHandler,
     // Form state
     editingCampaign,
     formState,

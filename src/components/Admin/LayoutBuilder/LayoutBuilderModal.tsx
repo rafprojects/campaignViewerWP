@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
+import { safeLocalStorage } from '../../../utils/safeLocalStorage';
 import {
   Modal,
   Group,
@@ -107,7 +108,7 @@ export function LayoutBuilderModal({
   useEffect(() => {
     if (!opened || !campaigns || campaigns.length === 0) return;
 
-    const saved = localStorage.getItem(campaignSelectionStorageKey);
+    const saved = safeLocalStorage.getItem(campaignSelectionStorageKey);
     const hasSaved = saved && campaigns.some((c) => String(c.id) === saved);
 
     if (hasSaved) {
@@ -124,7 +125,7 @@ export function LayoutBuilderModal({
   // Persist campaign selection per-layout while editing.
   useEffect(() => {
     if (!selectedCampaignId) return;
-    localStorage.setItem(campaignSelectionStorageKey, selectedCampaignId);
+    safeLocalStorage.setItem(campaignSelectionStorageKey, selectedCampaignId);
   }, [selectedCampaignId, campaignSelectionStorageKey]);
 
   // ── Fetch media for the selected campaign ──
@@ -165,6 +166,7 @@ export function LayoutBuilderModal({
   // ── Layer panel selection (overlay + background tracked locally; slot uses builder state) ──
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
   const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
+  const [selectedMaskSlotId, setSelectedMaskSlotId] = useState<string | null>(null);
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
 
   // ── Close with dirty guard ──
@@ -202,19 +204,27 @@ export function LayoutBuilderModal({
       debugLog('Slots returned:', saved.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
       debugGroupEnd();
 
-      builder.setTemplate(saved);
+      builder.setTemplate(saved, { preserveSelection: true });
       builder.markSaved();
       onSaved?.(saved);
       onNotify?.({ type: 'success', text: `Layout "${saved.name}" saved` });
+      return true;
     } catch (err) {
       onNotify?.({
         type: 'error',
         text: err instanceof Error ? err.message : 'Failed to save layout',
       });
+      return false;
     } finally {
       setIsSaving(false);
     }
   }, [builder, apiClient, onSaved, onNotify]);
+
+  // ── Save & Close ──
+  const handleSaveAndClose = useCallback(async () => {
+    const saved = await handleSave();
+    if (saved) onClose();
+  }, [handleSave, onClose]);
 
   // ── Delete selected slots ──
   const handleDeleteSelected = useCallback(() => {
@@ -265,26 +275,6 @@ export function LayoutBuilderModal({
     [apiClient, mutateOverlayLibrary, builder, announce, onNotify],
   );
 
-  const handleAddUrlToLibrary = useCallback(
-    async (url: string) => {
-      try {
-        const entry = await apiClient.post<OverlayLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/overlay-library',
-          { url, name: url.split('/').pop() ?? 'Overlay' },
-        );
-        await mutateOverlayLibrary();
-        builder.addOverlay(entry.url);
-        announce('Overlay added from URL');
-      } catch (err) {
-        onNotify?.({
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Failed to add overlay',
-        });
-      }
-    },
-    [apiClient, mutateOverlayLibrary, builder, announce, onNotify],
-  );
-
   const handleDeleteLibraryOverlay = useCallback(
     async (id: string) => {
       try {
@@ -325,6 +315,30 @@ export function LayoutBuilderModal({
       }
     },
     [apiClient, builder, announce, onNotify],
+  );
+
+  // ── Mask image upload (reuses overlay-library endpoint) ──
+  const handleUploadMask = useCallback(
+    async (file: File): Promise<string | null> => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
+        const entry = await apiClient.postForm<OverlayLibraryItem>(
+          '/wp-json/wp-super-gallery/v1/admin/overlay-library',
+          formData,
+        );
+        announce('Mask image uploaded');
+        return entry.url;
+      } catch (err) {
+        onNotify?.({
+          type: 'error',
+          text: err instanceof Error ? err.message : 'Mask upload failed',
+        });
+        return null;
+      }
+    },
+    [apiClient, announce, onNotify],
   );
 
   // ── Auto-assign media ──
@@ -430,7 +444,7 @@ export function LayoutBuilderModal({
         }
       }
     },
-    [builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave],
+    [announce, builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave],
   );
 
   // Attach/detach the document-level listener whenever the modal opens/closes.
@@ -501,12 +515,13 @@ export function LayoutBuilderModal({
     overlayLibrary, isUploadingOverlay, isUploadingBg,
     selectedSlot, selectedOverlayId, setSelectedOverlayId, selectedOverlay,
     selectedOverlayIndex, isBackgroundSelected, setIsBackgroundSelected,
+    selectedMaskSlotId, setSelectedMaskSlotId,
     snapEnabled, setSnapEnabled, snapThreshold, setSnapThreshold,
     designAssetsOpen, setDesignAssetsOpen, bgSectionRef, dockApiRef,
     announce,
     handleSave, handleClose, handleAutoAssign, handleUploadOverlay,
-    handleAddUrlToLibrary, handleDeleteLibraryOverlay, handleUploadBgImage,
-    handleDeleteSelected, handleDuplicateSelected,
+    handleDeleteLibraryOverlay, handleUploadBgImage,
+    handleDeleteSelected, handleDuplicateSelected, handleUploadMask,
   };
 
   return (
@@ -622,6 +637,15 @@ export function LayoutBuilderModal({
                 size="sm"
               >
                 Save
+              </Button>
+              <Button
+                variant="light"
+                onClick={handleSaveAndClose}
+                loading={isSaving}
+                disabled={!builder.isDirty}
+                size="sm"
+              >
+                Save &amp; Close
               </Button>
               <Button variant="subtle" onClick={handleClose} size="sm">
                 Close

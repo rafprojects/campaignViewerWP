@@ -1,17 +1,25 @@
 <?php
 /**
- * Plugin Name: WP Super Gallery
- * Description: Embeddable campaign gallery with Shadow DOM rendering.
- * Version: 0.17.0
- * Requires PHP: 8.0
- * Author: WP Super Gallery
+ * Plugin Name:       WP Super Gallery
+ * Plugin URI:        https://github.com/rafprojects/wp-super-gallery
+ * Description:       Embeddable campaign gallery with Shadow DOM rendering.
+ * Version:           0.18.0
+ * Requires at least: 6.0
+ * Tested up to:      6.7
+ * Requires PHP:      8.0
+ * Author:            WP Super Gallery
+ * Author URI:        https://github.com/rafprojects/wp-super-gallery
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       wp-super-gallery
+ * Domain Path:       /languages
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.17.0');
+define('WPSG_VERSION', '0.18.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -43,8 +51,11 @@ function wpsg_deactivate() {
     // Roles and capabilities are kept on deactivation
     // Only remove on uninstall if desired
     wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
+    wp_clear_scheduled_hook(WPSG_Maintenance::TRASH_PURGE_HOOK);
+    wp_clear_scheduled_hook(WPSG_Maintenance::ANALYTICS_PURGE_HOOK);
     wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
     wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
+    wp_clear_scheduled_hook(WPSG_Alerts::CRON_HOOK);
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -59,16 +70,25 @@ function wpsg_setup_roles_and_caps() {
         // Add manage_wpsg capability to Administrator role
         if ($admin_role) {
             $admin_role->add_cap('manage_wpsg');
+            // Grant custom CPT capabilities
+            foreach (WPSG_CPT::CPT_CAPS as $cap) {
+                $admin_role->add_cap($cap);
+            }
         }
         
-        // Create WPSG Admin role if it doesn't exist
+        // Create WPSG Admin role if it doesn't exist, or update caps
         $wpsg_role = get_role('wpsg_admin');
+        $wpsg_caps = array_merge(
+            ['read' => true, 'upload_files' => true, 'manage_wpsg' => true],
+            array_fill_keys(WPSG_CPT::CPT_CAPS, true)
+        );
         if (!$wpsg_role) {
-            add_role('wpsg_admin', 'Gallery Admin', [
-                'read' => true,
-                'upload_files' => true,
-                'manage_wpsg' => true,
-            ]);
+            add_role('wpsg_admin', __('Gallery Admin', 'wp-super-gallery'), $wpsg_caps);
+        } else {
+            // Ensure existing role gets CPT caps on upgrade
+            foreach (WPSG_CPT::CPT_CAPS as $cap) {
+                $wpsg_role->add_cap($cap);
+            }
         }
         
         // Clear setup flag
@@ -76,6 +96,9 @@ function wpsg_setup_roles_and_caps() {
     }
 }
 
+add_action('init', function () {
+    load_plugin_textdomain('wp-super-gallery', false, dirname(plugin_basename(__FILE__)) . '/languages');
+}, 0);
 add_action('init', ['WPSG_CPT', 'register']);
 add_action('rest_api_init', ['WPSG_REST', 'register_routes']);
 add_action('init', ['WPSG_Embed', 'register_shortcode']);
@@ -84,6 +107,24 @@ add_action('init', ['WPSG_DB', 'maybe_upgrade']);
 add_action('init', ['WPSG_Maintenance', 'register']);
 add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
+
+// P20-I-2: Automatically sync media refs whenever media_items meta is updated.
+add_action('updated_post_meta', function ($meta_id, $post_id, $meta_key, $meta_value) {
+    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
+        WPSG_DB::sync_media_refs((int) $post_id, is_array($meta_value) ? $meta_value : []);
+    }
+}, 10, 4);
+add_action('added_post_meta', function ($meta_id, $post_id, $meta_key, $meta_value) {
+    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
+        WPSG_DB::sync_media_refs((int) $post_id, is_array($meta_value) ? $meta_value : []);
+    }
+}, 10, 4);
+add_action('deleted_post_meta', function ($meta_ids, $post_id, $meta_key, $meta_value) {
+    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
+        // Clear all media refs for this post when media_items meta is deleted.
+        WPSG_DB::sync_media_refs((int) $post_id, []);
+    }
+}, 10, 4);
 add_action('init', ['WPSG_Sentry', 'init']);
 
 // P13-D: Campaign schedule auto-archive cron.
@@ -135,18 +176,9 @@ function wpsg_run_schedule_auto_archive() {
         }
     } while (!empty($query->posts));
 
-    // Clear campaign transient + timeout caches once after all updates.
+    // Bump cache version once after all updates (no LIKE queries needed).
     if ($archived_count > 0) {
-        global $wpdb;
-        $like = $wpdb->esc_like('_transient_wpsg_campaigns_') . '%';
-        $timeout_like = $wpdb->esc_like('_transient_timeout_wpsg_campaigns_') . '%';
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-                $like,
-                $timeout_like
-            )
-        );
+        WPSG_REST::bump_cache_version();
     }
 }
 

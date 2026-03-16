@@ -12,9 +12,19 @@ export function resolveAdapterId(
   mediaType: 'image' | 'video',
   breakpoint: Breakpoint,
 ): string {
+  let id: string;
   if (s.gallerySelectionMode !== 'per-breakpoint') {
-    return mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
+    id = mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
+  } else {
+    const key = `${breakpoint}${mediaType === 'image' ? 'Image' : 'Video'}AdapterId` as keyof GalleryBehaviorSettings;
+    id = (s[key] as string) || (mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId);
   }
-  const key = `${breakpoint}${mediaType === 'image' ? 'Image' : 'Video'}AdapterId` as keyof GalleryBehaviorSettings;
-  return (s[key] as string) || (mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId);
+
+  // Layout-builder is not supported on mobile — fall back to the unified adapter or classic.
+  if (id === 'layout-builder' && breakpoint === 'mobile') {
+    const fallback = mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
+    return (fallback && fallback !== 'layout-builder') ? fallback : 'classic';
+  }
+
+  return id;
 }
