@@ -1,5 +1,5 @@
 import { lazy, Suspense, useRef } from 'react';
-import { IconCalendar, IconTag } from '@tabler/icons-react';
+import { IconCalendar, IconTag, IconEdit, IconPhoto, IconArchive } from '@tabler/icons-react';
 import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
@@ -115,6 +115,10 @@ export function CampaignViewer({
   // P15-A: Per-breakpoint adapter resolution
   const containerRef = useRef<HTMLDivElement>(null);
   const breakpoint = useBreakpoint(containerRef);
+  // P21-F: Fullscreen and conditional rendering
+  const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
+  const galleriesOnly = s.campaignOpenMode === 'galleries-only';
+  const showStats = (s.showCampaignStats !== false) && (!s.campaignStatsAdminOnly || isAdmin);
   return (
     <Modal
       opened={opened}
@@ -124,10 +128,10 @@ export function CampaignViewer({
       withCloseButton
       closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
       transitionProps={{ transition, duration: s.modalTransitionDuration }}
-      radius={isMobile ? 0 : 'lg'}
-      fullScreen={!!isMobile}
+      radius={useFullscreen ? 0 : 'lg'}
+      fullScreen={useFullscreen}
       styles={{
-        content: isMobile
+        content: useFullscreen
           ? { overflow: 'auto', maxHeight: '100dvh' }
           : { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
@@ -135,7 +139,8 @@ export function CampaignViewer({
       }}
       aria-label={`Campaign details for ${campaign.title}`}
     >
-      {/* Cover Image Header */}
+      {/* Cover Image Header — hidden in galleries-only mode */}
+      {!galleriesOnly && (
       <Box pos="relative" h={{ base: coverHBase, sm: coverHSm, md: coverH }} component="div">
         <Image
           src={campaign.coverImage}
@@ -156,6 +161,7 @@ export function CampaignViewer({
         />
 
         {/* Company badge */}
+        {s.showCampaignCompanyName !== false && (
         <Badge
           pos="absolute"
           top={16}
@@ -168,12 +174,14 @@ export function CampaignViewer({
             <span>{campaign.company.name}</span>
           </Group>
         </Badge>
+        )}
 
         {/* Title and meta overlay */}
         <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
           <Title order={2} size="h3" mb="sm">
             {campaign.title}
           </Title>
+          {s.showCampaignDate !== false && (
           <Group gap="lg" wrap="wrap">
             <Group gap={4}>
               <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
@@ -192,19 +200,25 @@ export function CampaignViewer({
               </Text>
             </Group>
           </Group>
+          )}
         </Box>
       </Box>
+      )}
 
       {/* Content */}
       <Box ref={containerRef} p={{ base: 'md', md: 'xl' }} style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
-        <Stack gap="xl">
-          {/* Description */}
+        <Stack gap="lg">
+          {/* Description — hidden in galleries-only mode */}
+          {!galleriesOnly && s.showCampaignAbout !== false && (
           <Box>
-            <Title order={2} size="h4" mb="sm">About this Campaign</Title>
+            <Title order={2} size="h4" mb="sm">{s.campaignAboutHeadingText || 'About this Campaign'}</Title>
+            {s.showCampaignDescription !== false && (
             <Text c="dimmed" lh={1.6}>
               {campaign.description}
             </Text>
+            )}
           </Box>
+          )}
 
           {/* Access notice */}
           {!hasAccess && (
@@ -281,10 +295,11 @@ export function CampaignViewer({
             </Suspense>
           )}
 
-          {/* Campaign Stats */}
+          {/* Campaign Stats — conditional */}
+          {!galleriesOnly && showStats && (
           <Box component="section" aria-labelledby="campaign-stats-heading">
             <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
-            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="md" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
+            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
             <Paper p="md" radius="md" withBorder ta="center">
               <Text size="xl" fw={700}>{campaign.videos.length}</Text>
               <Text size="sm" c="dimmed">Videos</Text>
@@ -307,40 +322,41 @@ export function CampaignViewer({
             </Paper>
           </SimpleGrid>
           </Box>
+          )}
 
           {/* Admin Section */}
           {isAdmin && (
-            <Paper p="lg" radius="md" withBorder bg="var(--wpsg-color-surface)" component="section" aria-labelledby="admin-actions-heading">
-              <Stack gap="md">
-                <Box>
-                  <Title order={3} size="h5" mb={4} id="admin-actions-heading">Admin Actions</Title>
-                </Box>
-                
-                <Group gap="md" wrap="wrap">
+            <Paper p="md" radius="md" withBorder bg="var(--wpsg-color-surface)" component="section" aria-labelledby="admin-actions-heading">
+              <Stack gap="sm">
+                <Title order={3} size="h6" id="admin-actions-heading">Admin Actions</Title>
+                <Group gap="sm" wrap="wrap">
                   <Button
+                    leftSection={<IconEdit size={16} />}
+                    variant="light"
                     onClick={() => onEditCampaign?.(campaign)}
-                    style={{ flex: '1 1 160px' }}
                     size="sm"
                     aria-label={`Edit ${campaign.title}`}
                   >
                     Edit Campaign
                   </Button>
                   <Button
+                    leftSection={<IconPhoto size={16} />}
+                    variant="light"
                     onClick={() => onAddExternalMedia?.(campaign)}
-                    style={{ flex: '1 1 160px' }}
                     size="sm"
                     aria-label={`Manage media for ${campaign.title}`}
                   >
                     Manage Media
                   </Button>
                   <Button
+                    leftSection={<IconArchive size={16} />}
+                    variant="light"
                     color="red"
                     onClick={() => onArchiveCampaign?.(campaign)}
-                    style={{ flex: '1 1 160px' }}
                     size="sm"
                     aria-label={`Archive ${campaign.title}`}
                   >
-                    Archive Campaign
+                    Archive
                   </Button>
                 </Group>
               </Stack>

@@ -274,6 +274,15 @@ class WPSG_Settings {
         'card_max_columns'               => 0,
         'card_aspect_ratio'              => 'auto',
         'card_min_height'                => 0,
+        // ── P21-F: CampaignViewer enhancements ────────────────
+        'campaign_modal_fullscreen'      => false,
+        'show_campaign_company_name'     => true,
+        'show_campaign_date'             => true,
+        'show_campaign_about'            => true,
+        'show_campaign_description'      => true,
+        'show_campaign_stats'            => true,
+        'campaign_stats_admin_only'      => true,
+        'campaign_open_mode'             => 'full',
     ];
 
     /**
@@ -368,6 +377,8 @@ class WPSG_Settings {
         'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4'],
         // P21-G: Gallery label justification
         'gallery_label_justification' => ['left', 'center', 'right'],
+        // P21-F: Campaign open mode
+        'campaign_open_mode'          => ['full', 'galleries-only'],
     ];
 
     /**

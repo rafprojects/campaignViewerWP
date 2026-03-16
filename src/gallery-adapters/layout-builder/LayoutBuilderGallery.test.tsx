@@ -252,7 +252,7 @@ describe('LayoutBuilderGallery', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (2)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (2)')).toBeInTheDocument();
     });
 
     // Should render accessible buttons for lightbox-enabled slots
@@ -796,7 +796,7 @@ describe('LayoutBuilderGallery overlay rendering', () => {
 
     await waitFor(() => {
       // Canvas renders, but no img with the blob URL
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const blobImg = document.querySelector('img[src^="blob:"]');
@@ -899,7 +899,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     // The slot image should be rendered (clip-path inner div contains the img)
@@ -930,7 +930,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
@@ -965,7 +965,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
@@ -993,7 +993,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;

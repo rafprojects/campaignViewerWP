@@ -348,6 +348,61 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('showViewerBorder', e.currentTarget.checked)}
                 />
 
+                <Divider label="Campaign Viewer" labelPosition="center" />
+
+                <Switch
+                  label="Fullscreen Campaign Modal"
+                  description="Open campaign viewer in fullscreen mode instead of the default modal."
+                  checked={settings.campaignModalFullscreen ?? false}
+                  onChange={(e) => updateSetting('campaignModalFullscreen', e.currentTarget.checked)}
+                />
+                <Select
+                  label="Campaign Open Mode"
+                  description="What to show when a campaign is opened."
+                  data={[
+                    { value: 'full', label: 'Full (cover, about, galleries, stats)' },
+                    { value: 'galleries-only', label: 'Galleries only (skip header/about/stats)' },
+                  ]}
+                  value={settings.campaignOpenMode ?? 'full'}
+                  onChange={(v) => updateSetting('campaignOpenMode', (v ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
+                />
+                <Switch
+                  label="Show Company Name"
+                  description="Show the company badge on the campaign cover image."
+                  checked={settings.showCampaignCompanyName ?? true}
+                  onChange={(e) => updateSetting('showCampaignCompanyName', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Date"
+                  description="Show the creation date under the campaign title."
+                  checked={settings.showCampaignDate ?? true}
+                  onChange={(e) => updateSetting('showCampaignDate', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show About Section"
+                  description='Show the "About this Campaign" heading and description.'
+                  checked={settings.showCampaignAbout ?? true}
+                  onChange={(e) => updateSetting('showCampaignAbout', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Description"
+                  description="Show the campaign description text within the About section."
+                  checked={settings.showCampaignDescription ?? true}
+                  onChange={(e) => updateSetting('showCampaignDescription', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Campaign Stats"
+                  description="Show the statistics block (video count, image count, tags, visibility)."
+                  checked={settings.showCampaignStats ?? true}
+                  onChange={(e) => updateSetting('showCampaignStats', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Stats Admin-Only"
+                  description="When enabled, only admins can see the statistics block."
+                  checked={settings.campaignStatsAdminOnly ?? true}
+                  onChange={(e) => updateSetting('campaignStatsAdminOnly', e.currentTarget.checked)}
+                />
+
                 <Divider label="Security" labelPosition="center" />
 
                 <NumberInput

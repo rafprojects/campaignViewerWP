@@ -691,6 +691,15 @@ export interface GalleryBehaviorSettings {
   galleryVideoLabel: string;
   galleryLabelJustification: 'left' | 'center' | 'right';
   showGalleryLabelIcon: boolean;
+  // P21-F: CampaignViewer enhancements
+  campaignModalFullscreen: boolean;
+  showCampaignCompanyName: boolean;
+  showCampaignDate: boolean;
+  showCampaignAbout: boolean;
+  showCampaignDescription: boolean;
+  showCampaignStats: boolean;
+  campaignStatsAdminOnly: boolean;
+  campaignOpenMode: 'full' | 'galleries-only';
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -930,4 +939,13 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   galleryVideoLabel: 'Videos',
   galleryLabelJustification: 'left',
   showGalleryLabelIcon: false,
+  // P21-F: CampaignViewer enhancements
+  campaignModalFullscreen: false,
+  showCampaignCompanyName: true,
+  showCampaignDate: true,
+  showCampaignAbout: true,
+  showCampaignDescription: true,
+  showCampaignStats: true,
+  campaignStatsAdminOnly: true,
+  campaignOpenMode: 'full',
 };
