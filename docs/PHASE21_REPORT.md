@@ -11,12 +11,12 @@
 |-------|-------------|--------|--------|
 | P21-A | Bug fixes (theme persistence, modal unification, thumbnail upload freeze) | Complete ✅ | Medium (1–2 days) |
 | P21-B | Campaign card visibility toggles | Complete ✅ | Small (3–4 hours) |
-| P21-C | Card aspect ratio & max cards per row | Not started | Small (2–3 hours) |
+| P21-C | Card aspect ratio & max cards per row | Complete ✅ | Small (2–3 hours) |
 | P21-D | Viewer background & border controls | Complete ✅ | Small (2–3 hours) |
-| P21-E | Auth bar display modes (bar, floating, draggable, minimal, auto-hide) | Not started | Medium (4–6 hours) |
-| P21-F | CampaignViewer enhancements (fullscreen, toggles, galleries-only mode) | Not started | Medium (4–6 hours) |
-| P21-G | Gallery label editing & justification | Not started | Small (2–3 hours) |
-| P21-H | Settings tooltips infrastructure | Not started | Small (2–3 hours) |
+| P21-E | Auth bar display modes (bar, floating, draggable, minimal, auto-hide) | Complete ✅ | Medium (4–6 hours) |
+| P21-F | CampaignViewer enhancements (fullscreen, toggles, galleries-only mode) | Complete ✅ | Medium (4–6 hours) |
+| P21-G | Gallery label editing & justification | Complete ✅ | Small (2–3 hours) |
+| P21-H | Settings tooltips infrastructure | Complete ✅ | Small (2–3 hours) |
 | P21-I | Typography system & in-context settings popups | Not started | Large (2–3 days) |
 
 ---
@@ -390,6 +390,8 @@ When using auto (responsive) column mode (`cardGridColumns=0`), cards expand fre
 - [ ] All defaults (0, 'auto', 0) produce no visual change from current behavior
 - [ ] Responsive behavior still works within the max column cap
 
+**Completed:** commit 5b691ba — Added `cardAspectRatio`, `cardMinHeight`, `cardMaxColumns` with PHP defaults, TS types, responsive column capping in CardGallery, aspect-ratio/min-height styles in CampaignCard, 3 new SettingsPanel controls.
+
 ---
 
 ## Track P21-D — Viewer Background & Border Controls
@@ -580,6 +582,8 @@ function useScrollDirection() {
 - [ ] Minimal mode is ≤32px height
 - [ ] Sign-in prompt (unauthenticated) adapts to the same display mode (e.g., floating mode → floating sign-in icon)
 
+**Completed:** commit 0462217 — Created AuthBarFloating.tsx (shared floating + draggable with pointer-event drag, safeLocalStorage persistence, Popover), AuthBarMinimal.tsx (32px strip with Menu), mode router in AuthBar.tsx (useScrollDirection hook for auto-hide), App.tsx prop wiring, SettingsPanel Select + NumberInput controls.
+
 ---
 
 ## Track P21-F — CampaignViewer Enhancements
@@ -656,6 +660,8 @@ The CampaignViewer (`src/components/Campaign/CampaignViewer.tsx`) has no fullscr
 - [ ] Minimal spacing between stats block and admin buttons
 - [ ] Fullscreen mode shows stats in a dark overlay at the bottom
 - [ ] `campaignOpenMode='galleries-only'` → modal opens directly to galleries
+
+**Completed:** commit bb3349f — Added 8 CampaignViewer settings (fullscreen, openMode, 5 visibility toggles, statsAdminOnly) with PHP defaults, TS types, conditional rendering in CampaignViewer.tsx, admin Button icons, 8 new SettingsPanel controls.
 
 ---
 
@@ -744,6 +750,8 @@ Additionally, the `galleryTitleText` and `gallerySubtitleText` settings exist in
 - [ ] `galleryTitleText` and `gallerySubtitleText` now control the CardGallery header text
 - [ ] Empty label settings fall back to defaults ("Images", "Videos", "Campaign Gallery", etc.)
 
+**Completed:** commit f3e1431 — Added `galleryLabelText`, `videoLabelText`, `galleryLabelJustify`, `showGalleryLabelIcon` with PHP defaults, TS types, dynamic labels across all 7 adapters + carousels, `galleryTitleText`/`gallerySubtitleText` in CardGallery, 4 SettingsPanel controls. Updated LayoutBuilderGallery tests.
+
 ---
 
 ## Track P21-H — Settings Tooltips Infrastructure
@@ -819,6 +827,8 @@ Settings controls have no hover help text. Users must guess what each setting do
 - [ ] `showSettingsTooltips=false` hides all tooltip icons
 - [ ] Advanced tab is fully covered with tooltips
 - [ ] Tooltip text catalog is a separate importable file
+
+**Completed:** commit aeee612 — Created SettingTooltip.tsx component (Tooltip + IconInfoCircle, conditional on `enabled`), settingTooltips.ts catalog (~100 entries for all Advanced tab sections), `tt()` helper in SettingsPanel for concise wrapping, `showSettingsTooltips` toggle Switch in General tab Developer section. All Advanced tab labels wrapped.
 
 ---
 
