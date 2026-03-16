@@ -286,6 +286,8 @@ class WPSG_Settings {
         // P21-E: Auth bar display mode
         'auth_bar_display_mode'          => 'floating',
         'auth_bar_drag_margin'           => 16,
+        // P21-H: Settings tooltips
+        'show_settings_tooltips'         => true,
     ];
 
     /**

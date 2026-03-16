@@ -703,6 +703,8 @@ export interface GalleryBehaviorSettings {
   // P21-E: Auth bar display modes
   authBarDisplayMode: 'bar' | 'floating' | 'draggable' | 'minimal' | 'auto-hide';
   authBarDragMargin: number;
+  // P21-H: Settings tooltips
+  showSettingsTooltips: boolean;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -954,4 +956,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P21-E: Auth bar display modes
   authBarDisplayMode: 'floating',
   authBarDragMargin: 16,
+  // P21-H: Settings tooltips
+  showSettingsTooltips: true,
 };
