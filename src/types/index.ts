@@ -669,6 +669,19 @@ export interface GalleryBehaviorSettings {
   archivePurgeGraceDays: number;
   // D-20: Analytics data retention
   analyticsRetentionDays: number;
+  // P21-B: Card visibility toggles
+  showCardCompanyName: boolean;
+  showCardMediaCounts: boolean;
+  showCardTitle: boolean;
+  showCardDescription: boolean;
+  showCardBorder: boolean;
+  showCardAccessBadge: boolean;
+  showCardThumbnailFade: boolean;
+  // P21-D: Viewer background & border
+  viewerBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
+  viewerBgColor: string;
+  viewerBgGradient: string;
+  showViewerBorder: boolean;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -886,4 +899,17 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   tileGlowSpread: 12,
   tileHoverBounce: true,
   masonryColumns: 0,
+  // P21-B: Card visibility toggles
+  showCardCompanyName: true,
+  showCardMediaCounts: true,
+  showCardTitle: true,
+  showCardDescription: true,
+  showCardBorder: true,
+  showCardAccessBadge: true,
+  showCardThumbnailFade: true,
+  // P21-D: Viewer background & border
+  viewerBgType: 'theme',
+  viewerBgColor: '',
+  viewerBgGradient: '',
+  showViewerBorder: true,
 };

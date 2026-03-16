@@ -257,6 +257,19 @@ class WPSG_Settings {
         'archive_purge_grace_days'       => 30,
         // ── D-20: Analytics data retention ────────────────────
         'analytics_retention_days'       => 0,
+        // ── P21-B: Card visibility toggles ────────────────────
+        'show_card_company_name'         => true,
+        'show_card_media_counts'         => true,
+        'show_card_title'                => true,
+        'show_card_description'          => true,
+        'show_card_border'               => true,
+        'show_card_access_badge'         => true,
+        'show_card_thumbnail_fade'       => true,
+        // ── P21-D: Viewer background & border ─────────────────
+        'viewer_bg_type'                 => 'theme',
+        'viewer_bg_color'                => '',
+        'viewer_bg_gradient'             => '',
+        'show_viewer_border'             => true,
     ];
 
     /**
@@ -345,6 +358,8 @@ class WPSG_Settings {
         'mobile_image_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
         'mobile_video_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
         'layout_builder_scope'       => ['full', 'viewport'],
+        // P21-D: Viewer background type
+        'viewer_bg_type'             => ['theme', 'transparent', 'solid', 'gradient'],
     ];
 
     /**

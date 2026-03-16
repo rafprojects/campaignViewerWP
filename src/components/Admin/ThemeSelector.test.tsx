@@ -26,7 +26,7 @@ describe('ThemeSelector', () => {
 
     expect(screen.getByText('Theme')).toBeInTheDocument();
     expect(
-      screen.getByText('Choose a color theme. Changes apply instantly.'),
+      screen.getByText('Choose a color theme. Preview applies instantly; saved when you click Save.'),
     ).toBeInTheDocument();
   });
 

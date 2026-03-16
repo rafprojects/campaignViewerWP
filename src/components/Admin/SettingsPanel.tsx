@@ -42,6 +42,7 @@ import {
   type ViewportBgType,
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
+import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 
@@ -80,6 +81,7 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
+  const { setPreviewTheme, setTheme } = useTheme();
   const seedSettings: SettingsData = initialSettings
     ? { ...defaultSettings, ...initialSettings }
     : defaultSettings;
@@ -133,6 +135,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       setHasChanges(false);
       hasChangesRef.current = false;
       onSettingsSaved?.(saved);
+      // Commit the previewed theme as the saved theme
+      const themeVal = (settings as unknown as Record<string, unknown>).theme;
+      if (typeof themeVal === 'string') setTheme(themeVal);
+      setPreviewTheme(null);
       onNotify({ type: 'success', text: 'Settings saved successfully.' });
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save settings.') });
@@ -145,6 +151,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     setSettings(originalSettings);
     setHasChanges(false);
     hasChangesRef.current = false;
+    setPreviewTheme(null);
   };
 
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
@@ -153,7 +160,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   return (
     <Modal
       opened={opened}
-      onClose={onClose}
+      onClose={() => { setPreviewTheme(null); onClose(); }}
       title={
         <Group gap="sm">
           <IconSettings size={22} />
@@ -195,7 +202,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             <Tabs.Panel value="general" pt="md">
               <Stack gap="md">
                 <ThemeSelector
-                  description="Choose a color theme. Changes apply instantly and are saved automatically."
+                  description="Choose a color theme. Preview applies instantly; saved when you click Save."
+                  onThemeChange={(id) => updateSetting('theme' as keyof SettingsData, id as SettingsData[keyof SettingsData])}
                 />
 
                 <Select
@@ -302,6 +310,44 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('showSearchBox', e.currentTarget.checked)}
                 />
 
+                <Divider label="Viewer Background" labelPosition="center" />
+
+                <Select
+                  label="Background Type"
+                  description="Gallery container background style"
+                  data={[
+                    { value: 'theme', label: 'Theme (default gradient)' },
+                    { value: 'transparent', label: 'Transparent' },
+                    { value: 'solid', label: 'Solid color' },
+                    { value: 'gradient', label: 'Custom gradient' },
+                  ]}
+                  value={settings.viewerBgType ?? 'theme'}
+                  onChange={(v) => updateSetting('viewerBgType', (v ?? 'theme') as GalleryBehaviorSettings['viewerBgType'])}
+                />
+                {settings.viewerBgType === 'solid' && (
+                  <ColorInput
+                    label="Background Color"
+                    description="Solid background color for the gallery"
+                    value={settings.viewerBgColor}
+                    onChange={(v) => updateSetting('viewerBgColor', v)}
+                  />
+                )}
+                {settings.viewerBgType === 'gradient' && (
+                  <TextInput
+                    label="Background Gradient"
+                    description="CSS gradient, e.g. linear-gradient(135deg, #1a1b2e, #2d1b4e)"
+                    value={settings.viewerBgGradient}
+                    onChange={(e) => updateSetting('viewerBgGradient', e.currentTarget.value)}
+                    placeholder="linear-gradient(135deg, #1a1b2e, #2d1b4e)"
+                  />
+                )}
+                <Switch
+                  label="Show Header Border"
+                  description="Show border, shadow, and backdrop blur on the sticky gallery header."
+                  checked={settings.showViewerBorder ?? true}
+                  onChange={(e) => updateSetting('showViewerBorder', e.currentTarget.checked)}
+                />
+
                 <Divider label="Security" labelPosition="center" />
 
                 <NumberInput
@@ -401,6 +447,49 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         ]}
                         value={settings.cardThumbnailFit}
                         onChange={(v) => updateSetting('cardThumbnailFit', v ?? 'cover')}
+                      />
+
+                      <Divider label="Element Visibility" labelPosition="center" />
+
+                      <Switch
+                        label="Show company name badge"
+                        description="Company badge overlay on card thumbnail"
+                        checked={settings.showCardCompanyName ?? true}
+                        onChange={(e) => updateSetting('showCardCompanyName', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show access badge"
+                        description="Green 'Access' badge on accessible cards"
+                        checked={settings.showCardAccessBadge ?? true}
+                        onChange={(e) => updateSetting('showCardAccessBadge', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show card title"
+                        checked={settings.showCardTitle ?? true}
+                        onChange={(e) => updateSetting('showCardTitle', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show card description"
+                        checked={settings.showCardDescription ?? true}
+                        onChange={(e) => updateSetting('showCardDescription', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show media counts"
+                        description="Video and image count below description"
+                        checked={settings.showCardMediaCounts ?? true}
+                        onChange={(e) => updateSetting('showCardMediaCounts', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show card border"
+                        description="Accent border and hover border effect"
+                        checked={settings.showCardBorder ?? true}
+                        onChange={(e) => updateSetting('showCardBorder', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show thumbnail fade"
+                        description="Gradient overlay at bottom of thumbnail"
+                        checked={settings.showCardThumbnailFade ?? true}
+                        onChange={(e) => updateSetting('showCardThumbnailFade', e.currentTarget.checked)}
                       />
                     </Stack>
                   </Accordion.Panel>

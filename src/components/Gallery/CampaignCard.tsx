@@ -36,6 +36,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
       dramatic: '0 10px 25px rgba(0,0,0,0.2), 0 6px 10px rgba(0,0,0,0.1)',
     };
     const cardShadow = shadowMap[shadow] ?? shadowMap.subtle;
+    const showBorder = settings?.showCardBorder !== false && borderWidth > 0;
     return (
       <UnstyledButton
         ref={ref}
@@ -55,10 +56,10 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
         <Card
           padding={0}
           radius={borderRadius}
-          withBorder
+          withBorder={showBorder}
           style={{
             position: 'relative',
-            borderLeft: `${borderWidth}px solid ${resolvedBorderColor}`,
+            ...(showBorder ? { borderLeft: `${borderWidth}px solid ${resolvedBorderColor}` } : {}),
             boxShadow: cardShadow,
           }}
         >
@@ -78,6 +79,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             />
             
             {/* Overlay gradient */}
+            {settings?.showCardThumbnailFade !== false && (
             <Box
               pos="absolute"
               inset={0}
@@ -86,6 +88,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 pointerEvents: 'none'
               }}
             />
+            )}
             
             {/* Lock overlay for inaccessible cards */}
             {!hasAccess && (
@@ -124,7 +127,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             )}
 
             {/* Access indicator badge */}
-            {hasAccess && (
+            {hasAccess && settings?.showCardAccessBadge !== false && (
               <Badge
                 pos="absolute"
                 top={12}
@@ -137,6 +140,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             )}
 
             {/* Company badge */}
+            {settings?.showCardCompanyName !== false && (
             <Badge
               pos="absolute"
               top={12}
@@ -149,17 +153,22 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 <span>{campaign.company.name}</span>
               </Group>
             </Badge>
+            )}
           </Card.Section>
 
           {/* Content Section */}
           <Stack p="md" gap="sm">
+            {settings?.showCardTitle !== false && (
             <Text fw={600} size="lg" lineClamp={1}>
               {campaign.title}
             </Text>
+            )}
             
+            {settings?.showCardDescription !== false && (
             <Text size="sm" c="dimmed" lineClamp={2}>
               {campaign.description}
             </Text>
+            )}
 
             {/* Tags */}
             <Group gap={6}>
@@ -177,14 +186,16 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             </Group>
             */}
 
+            {settings?.showCardMediaCounts !== false && (
             <Group gap="xs" mt="auto" className={styles.mediaStats}>
               <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
               <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
             </Group>
+            )}
           </Stack>
 
           {/* Hover border effect */}
-          {hasAccess && (
+          {hasAccess && showBorder && (
             <div
               style={{
                 position: 'absolute',

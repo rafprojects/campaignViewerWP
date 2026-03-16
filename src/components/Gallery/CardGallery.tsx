@@ -201,10 +201,28 @@ export function CardGallery({
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
   const containerPaddingStyle = { paddingInline: galleryBehaviorSettings.appPadding };
 
+  // P21-D: Dynamic viewer background
+  const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
+    switch (galleryBehaviorSettings.viewerBgType) {
+      case 'transparent': return { background: 'transparent' };
+      case 'solid': return { background: galleryBehaviorSettings.viewerBgColor || 'transparent' };
+      case 'gradient': return { background: galleryBehaviorSettings.viewerBgGradient || undefined };
+      default: return undefined; // 'theme' — use SCSS default
+    }
+  }, [galleryBehaviorSettings.viewerBgType, galleryBehaviorSettings.viewerBgColor, galleryBehaviorSettings.viewerBgGradient]);
+
+  // P21-D: Header border/shadow control
+  const headerStyle = useMemo<React.CSSProperties | undefined>(() => {
+    if (galleryBehaviorSettings.showViewerBorder === false) {
+      return { borderBottom: 'none', boxShadow: 'none', backdropFilter: 'none', background: 'transparent' };
+    }
+    return undefined;
+  }, [galleryBehaviorSettings.showViewerBorder]);
+
   return (
-    <Box className={styles.gallery}>
+    <Box className={styles.gallery} style={galleryStyle}>
       {/* Header */}
-      <Box component="header" className={styles.header}>
+      <Box component="header" className={styles.header} style={headerStyle}>
         <Container size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
           <Stack gap="lg">
             {/* Title and subtitle */}

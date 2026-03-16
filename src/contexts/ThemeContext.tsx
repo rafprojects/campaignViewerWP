@@ -139,25 +139,41 @@ export function ThemeProvider({
   const initialId = forcedThemeId ?? resolveInitialThemeId(allowPersistence);
 
   const [themeId, setThemeIdState] = useState<string>(initialId);
+  const [previewThemeId, setPreviewThemeIdState] = useState<string | null>(null);
+
+  // The effective theme ID: preview overrides saved, forced overrides all
+  const effectiveThemeId = forcedThemeId ?? previewThemeId ?? themeId;
 
   // Lookup from the pre-computed registry — O(1), no re-computation
-  const entry: ThemeEntry = useMemo(() => getTheme(themeId), [themeId]);
+  const entry: ThemeEntry = useMemo(() => getTheme(effectiveThemeId), [effectiveThemeId]);
 
   // Available themes (static after startup, memoize once)
   const availableThemes = useMemo(() => getAllThemeMeta(), []);
 
-  // setTheme handler
+  // setTheme handler — persists the theme as the saved choice
   const setTheme = useCallback(
     (id: string) => {
       const resolvedId = hasTheme(id) ? id : DEFAULT_THEME_ID;
 
       setThemeIdState(resolvedId);
+      // Clear preview since the saved theme is now updated
+      setPreviewThemeIdState(null);
 
       if (allowPersistence && !forcedThemeId) {
         persistThemeId(resolvedId);
       }
     },
     [allowPersistence, forcedThemeId],
+  );
+
+  // setPreviewTheme — instant visual switch without persisting
+  const setPreviewTheme = useCallback(
+    (id: string | null) => {
+      if (id === null || hasTheme(id)) {
+        setPreviewThemeIdState(id);
+      }
+    },
+    [],
   );
 
   // Sync forced theme changes (e.g., admin changes during session)
@@ -186,14 +202,15 @@ export function ThemeProvider({
   // Context value — memoized to prevent unnecessary re-renders
   const value = useMemo<ThemeContextValue>(
     () => ({
-      themeId,
+      themeId: effectiveThemeId,
       mantineTheme: entry.mantine,
       colorScheme: entry.meta.colorScheme,
       cssVars: entry.cssVars,
       availableThemes,
       setTheme,
+      setPreviewTheme,
     }),
-    [themeId, entry, availableThemes, setTheme],
+    [effectiveThemeId, entry, availableThemes, setTheme, setPreviewTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

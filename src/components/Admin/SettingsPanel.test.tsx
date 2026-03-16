@@ -10,6 +10,19 @@ vi.mock('./ThemeSelector', () => ({
   ),
 }));
 
+// Mock useTheme since SettingsPanel calls it for preview control
+vi.mock('@/hooks/useTheme', () => ({
+  useTheme: () => ({
+    themeId: 'default-dark',
+    setTheme: vi.fn(),
+    setPreviewTheme: vi.fn(),
+    colorScheme: 'dark' as const,
+    cssVars: '',
+    mantineTheme: {},
+    availableThemes: [],
+  }),
+}));
+
 function createMockApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
     get: vi.fn(),

@@ -96,14 +96,17 @@ export interface ThemeSelectorProps {
   description?: string;
   /** Additional Select props pass-through */
   selectProps?: Partial<SelectProps>;
+  /** Called when the user selects a theme (for settings staging) */
+  onThemeChange?: (themeId: string) => void;
 }
 
 export function ThemeSelector({
   label = 'Theme',
-  description = 'Choose a color theme. Changes apply instantly.',
+  description = 'Choose a color theme. Preview applies instantly; saved when you click Save.',
   selectProps,
+  onThemeChange,
 }: ThemeSelectorProps) {
-  const { themeId, availableThemes, setTheme } = useTheme();
+  const { themeId, availableThemes, setPreviewTheme } = useTheme();
 
   const data = availableThemes.map((meta) => ({
     value: meta.id,
@@ -140,7 +143,10 @@ export function ThemeSelector({
       description={description}
       value={themeId}
       onChange={(value) => {
-        if (value) setTheme(value);
+        if (value) {
+          setPreviewTheme(value);
+          onThemeChange?.(value);
+        }
       }}
       data={data}
       renderOption={renderOption}
