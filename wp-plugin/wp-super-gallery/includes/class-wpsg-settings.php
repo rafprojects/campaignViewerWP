@@ -270,6 +270,10 @@ class WPSG_Settings {
         'viewer_bg_color'                => '',
         'viewer_bg_gradient'             => '',
         'show_viewer_border'             => true,
+        // ── P21-C: Card aspect ratio & max columns ────────────
+        'card_max_columns'               => 0,
+        'card_aspect_ratio'              => 'auto',
+        'card_min_height'                => 0,
     ];
 
     /**
@@ -360,6 +364,8 @@ class WPSG_Settings {
         'layout_builder_scope'       => ['full', 'viewport'],
         // P21-D: Viewer background type
         'viewer_bg_type'             => ['theme', 'transparent', 'solid', 'gradient'],
+        // P21-C: Card aspect ratio
+        'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4'],
     ];
 
     /**
@@ -478,6 +484,9 @@ class WPSG_Settings {
         'archive_purge_days'           => [0, 365],
         'archive_purge_grace_days'     => [7, 90],
         'analytics_retention_days'     => [0, 730],
+        // P21-C: Card max columns & min height
+        'card_max_columns'             => [0, 8],
+        'card_min_height'              => [0, 600],
     ];
 
     /**

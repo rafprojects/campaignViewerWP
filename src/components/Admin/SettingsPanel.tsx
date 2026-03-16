@@ -521,6 +521,36 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         max={48}
                         step={2}
                       />
+                      <NumberInput
+                        label="Max Columns (auto mode)"
+                        description="Cap the number of columns when using Auto layout. 0 = unlimited."
+                        value={settings.cardMaxColumns}
+                        onChange={(v) => updateSetting('cardMaxColumns', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={8}
+                      />
+                      <Select
+                        label="Card Aspect Ratio"
+                        description="Lock cards to a fixed aspect ratio"
+                        data={[
+                          { value: 'auto', label: 'Auto (natural)' },
+                          { value: '16:9', label: '16:9 (widescreen)' },
+                          { value: '4:3', label: '4:3 (standard)' },
+                          { value: '1:1', label: '1:1 (square)' },
+                          { value: '3:4', label: '3:4 (portrait)' },
+                        ]}
+                        value={settings.cardAspectRatio ?? 'auto'}
+                        onChange={(v) => updateSetting('cardAspectRatio', (v ?? 'auto') as GalleryBehaviorSettings['cardAspectRatio'])}
+                      />
+                      <NumberInput
+                        label="Card Min Height (px)"
+                        description="Minimum height for each card. 0 = no minimum."
+                        value={settings.cardMinHeight}
+                        onChange={(v) => updateSetting('cardMinHeight', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={600}
+                        step={10}
+                      />
 
                       <Divider label="Pagination" labelPosition="left" />
                       <Select

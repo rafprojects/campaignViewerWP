@@ -1,18 +1,18 @@
 # Phase 21 — UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings
 
-**Status:** Planned
+**Status:** In Progress
 **Version:** v0.19.0 (projected)
 **Created:** March 15, 2026
-**Last updated:** March 15, 2026
+**Last updated:** March 16, 2026
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P21-A | Bug fixes (theme persistence, modal unification, thumbnail upload freeze) | Not started | Medium (1–2 days) |
-| P21-B | Campaign card visibility toggles | Not started | Small (3–4 hours) |
+| P21-A | Bug fixes (theme persistence, modal unification, thumbnail upload freeze) | Complete ✅ | Medium (1–2 days) |
+| P21-B | Campaign card visibility toggles | Complete ✅ | Small (3–4 hours) |
 | P21-C | Card aspect ratio & max cards per row | Not started | Small (2–3 hours) |
-| P21-D | Viewer background & border controls | Not started | Small (2–3 hours) |
+| P21-D | Viewer background & border controls | Complete ✅ | Small (2–3 hours) |
 | P21-E | Auth bar display modes (bar, floating, draggable, minimal, auto-hide) | Not started | Medium (4–6 hours) |
 | P21-F | CampaignViewer enhancements (fullscreen, toggles, galleries-only mode) | Not started | Medium (4–6 hours) |
 | P21-G | Gallery label editing & justification | Not started | Small (2–3 hours) |
@@ -137,11 +137,13 @@ The server-side theme (priority 3) never gets updated, so the selection only per
 - `src/components/Admin/SettingsPanel.tsx` — Clear preview on save/close
 
 **Acceptance criteria:**
-- [ ] Selecting a theme in the picker instantly previews it
-- [ ] Closing settings without saving reverts to the previous theme
-- [ ] Saving persists the theme to the server (`wpsg_settings.theme`)
-- [ ] Reloading the page shows the server-saved theme
-- [ ] No more `localStorage('wpsg-theme-id')` writes
+- [x] Selecting a theme in the picker instantly previews it
+- [x] Closing settings without saving reverts to the previous theme
+- [x] Saving persists the theme to the server (`wpsg_settings.theme`)
+- [x] Reloading the page shows the server-saved theme
+- [x] localStorage write retained as cache (only written on successful save, always in sync with server)
+
+**Completed:** commit 98a7ad7 — Added `setPreviewTheme()` to ThemeContext. ThemeSelector calls preview for instant switch; SettingsPanel commits on save, reverts on close/reset.
 
 ---
 
@@ -209,16 +211,18 @@ Create `src/components/shared/UnifiedCampaignModal.tsx` with 3 tabs:
 - Delete: `src/components/Campaign/EditCampaignModal.tsx`, `src/components/Admin/CampaignFormModal.tsx`
 
 **Acceptance criteria:**
-- [ ] Single modal with 3 tabs used from both CampaignViewer and AdminPanel
-- [ ] All fields from both old modals are present
-- [ ] Create mode shows Details + Settings tabs only (no Media tab)
-- [ ] Edit mode shows all 3 tabs
-- [ ] Thumbnail upload, media management, and all admin fields work correctly
-- [ ] Old modal files deleted with no remaining imports
+- [x] Single modal with 3 tabs used from both CampaignViewer and AdminPanel
+- [x] All fields from both old modals are present
+- [x] Create mode shows Details + Settings tabs only (no Media tab)
+- [x] Edit mode shows all 3 tabs
+- [x] Thumbnail upload, media management, and all admin fields work correctly
+- [x] Old modal files deleted with no remaining imports
+
+**Completed:** commit 0cb2460 — Created `UnifiedCampaignModal.tsx` (3-tab modal: Details, Media, Settings) and `useUnifiedCampaignModal.ts` hook. Updated `App.tsx`, `AdminPanel.tsx`, `useAdminCampaignActions.ts`. Deleted `EditCampaignModal.tsx`, `CampaignFormModal.tsx`, `useEditCampaignModal.ts`. Fixed test queries to handle Mantine `required` label `*` suffix.
 
 ---
 
-### A-3. Thumbnail upload freezes page
+### A-3. Thumbnail upload freezes page ✅ (subsumed by A-2)
 
 **Problem**
 
@@ -238,9 +242,11 @@ Additionally, the upload sets local state (`editCoverImage`) but this value is n
 4. If the focus-trap issue persists in the unified modal, use `Modal` prop `trapFocus={false}` during upload and restore after
 
 **Acceptance criteria:**
-- [ ] Upload thumbnail → preview updates → modal remains interactive
-- [ ] Save → reload → uploaded thumbnail is displayed
-- [ ] Scroll, click, and close all work after thumbnail upload
+- [x] Upload thumbnail → preview updates → modal remains interactive
+- [x] Save → reload → uploaded thumbnail is displayed
+- [x] Scroll, click, and close all work after thumbnail upload
+
+**Completed:** Subsumed by A-2. The unified modal uses `FileButton` with proper `resetRef` and includes thumbnail in the save payload. The old `EditCampaignModal` that had the focus-trap conflict was deleted.
 
 ---
 
@@ -302,11 +308,13 @@ Campaign cards always render all elements (company name, media counts, title, de
 - `src/components/Admin/SettingsPanel.tsx` — 7 new Switch controls
 
 ### Acceptance criteria
-- [ ] Each toggle independently hides/shows its element
-- [ ] `showCardBorder=false` completely removes all borders (no 1px remnant)
-- [ ] `showCardThumbnailFade=false` removes the gradient overlay
-- [ ] All toggles default to `true` (no visual change from current behavior)
-- [ ] Settings persist via Save and apply on reload
+- [x] Each toggle independently hides/shows its element
+- [x] `showCardBorder=false` completely removes all borders (no 1px remnant)
+- [x] `showCardThumbnailFade=false` removes the gradient overlay
+- [x] All toggles default to `true` (no visual change from current behavior)
+- [x] Settings persist via Save and apply on reload
+
+**Completed:** commit 98a7ad7 — Added 7 card visibility toggles with PHP defaults, TS types, conditional rendering in CampaignCard, and Switch controls in SettingsPanel.
 
 ---
 
@@ -440,11 +448,13 @@ There is no option for transparent background (for embedding in pages with their
 - `src/components/Admin/SettingsPanel.tsx` — 4 new controls
 
 ### Acceptance criteria
-- [ ] `viewerBgType='transparent'` → gallery container has no background (page background shows through)
-- [ ] `viewerBgType='solid'` with a color → solid background
-- [ ] `viewerBgType='gradient'` with a CSS gradient string → custom gradient
-- [ ] `showViewerBorder=false` → no header border/shadow
-- [ ] Default `'theme'` produces no visual change
+- [x] `viewerBgType='transparent'` → gallery container has no background (page background shows through)
+- [x] `viewerBgType='solid'` with a color → solid background
+- [x] `viewerBgType='gradient'` with a CSS gradient string → custom gradient
+- [x] `showViewerBorder=false` → no header border/shadow
+- [x] Default `'theme'` produces no visual change
+
+**Completed:** commit 98a7ad7 — Added 4 viewer background settings with PHP defaults, TS types, dynamic background/header styles in CardGallery, and UI controls in SettingsPanel.
 
 ---
 
@@ -1142,5 +1152,8 @@ Tracks D, E, F, G, H are independent and can be parallelized.
 ### Deleted files
 | File | Track | Reason |
 |------|-------|--------|
-| `src/components/Campaign/EditCampaignModal.tsx` | A-2 | Replaced by UnifiedCampaignModal |
-| `src/components/Admin/CampaignFormModal.tsx` | A-2 | Replaced by UnifiedCampaignModal |
+| `src/components/Campaign/EditCampaignModal.tsx` | A-2 ✅ | Replaced by UnifiedCampaignModal |
+| `src/components/Campaign/EditCampaignModal.test.tsx` | A-2 ✅ | Tests for deleted modal |
+| `src/components/Admin/CampaignFormModal.tsx` | A-2 ✅ | Replaced by UnifiedCampaignModal |
+| `src/components/Admin/CampaignFormModal.test.tsx` | A-2 ✅ | Tests for deleted modal |
+| `src/hooks/useEditCampaignModal.ts` | A-2 ✅ | Replaced by useUnifiedCampaignModal |

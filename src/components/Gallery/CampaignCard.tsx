@@ -61,6 +61,8 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             position: 'relative',
             ...(showBorder ? { borderLeft: `${borderWidth}px solid ${resolvedBorderColor}` } : {}),
             boxShadow: cardShadow,
+            ...(settings?.cardAspectRatio && settings.cardAspectRatio !== 'auto' ? { aspectRatio: settings.cardAspectRatio.replace(':', ' / ') } : {}),
+            ...(settings?.cardMinHeight ? { minHeight: `${settings.cardMinHeight}px` } : {}),
           }}
         >
           {/* Thumbnail Section */}

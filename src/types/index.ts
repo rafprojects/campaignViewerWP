@@ -682,6 +682,10 @@ export interface GalleryBehaviorSettings {
   viewerBgColor: string;
   viewerBgGradient: string;
   showViewerBorder: boolean;
+  // P21-C: Card aspect ratio & max columns
+  cardMaxColumns: number;
+  cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4';
+  cardMinHeight: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -912,4 +916,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   viewerBgColor: '',
   viewerBgGradient: '',
   showViewerBorder: true,
+  // P21-C: Card aspect ratio & max columns
+  cardMaxColumns: 0,
+  cardAspectRatio: 'auto',
+  cardMinHeight: 0,
 };

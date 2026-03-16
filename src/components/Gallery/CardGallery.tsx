@@ -60,13 +60,15 @@ export function CardGallery({
   /** Resolve effective column count based on settings + current breakpoint. */
   const getEffectiveColumns = useCallback((): number => {
     const cols = galleryBehaviorSettings.cardGridColumns;
-    if (cols > 0) return cols;
+    const max = galleryBehaviorSettings.cardMaxColumns || 0;
+    if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
     // Responsive auto: match Mantine's base:1 sm:2 lg:3 breakpoints
     const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
-    if (w >= 1200) return 3;  // lg
-    if (w >= 768) return 2;   // sm
-    return 1;                 // base
-  }, [galleryBehaviorSettings.cardGridColumns]);
+    let auto = 1;
+    if (w >= 1200) auto = 3;
+    else if (w >= 768) auto = 2;
+    return max > 0 ? Math.min(auto, max) : auto;
+  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns]);
 
   const [effectiveColumns, setEffectiveColumns] = useState(getEffectiveColumns);
 
@@ -307,7 +309,9 @@ export function CardGallery({
             <SimpleGrid
               cols={galleryBehaviorSettings.cardGridColumns > 0
                 ? galleryBehaviorSettings.cardGridColumns
-                : { base: 1, sm: 2, lg: 3 }
+                : galleryBehaviorSettings.cardMaxColumns > 0
+                  ? { base: 1, sm: Math.min(2, galleryBehaviorSettings.cardMaxColumns), lg: Math.min(3, galleryBehaviorSettings.cardMaxColumns) }
+                  : { base: 1, sm: 2, lg: 3 }
               }
               spacing={galleryBehaviorSettings.cardGap}
             >
