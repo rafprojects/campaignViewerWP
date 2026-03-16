@@ -72,9 +72,9 @@ export function HexagonalGallery({ media, settings }: HexagonalGalleryProps) {
 
   return (
     <Stack gap="md">
-      <Title order={3} size="h5">
-        <Group gap={8} component="span">
-          <IconHexagon size={18} />
+      <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
+        <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
+          {settings.showGalleryLabelIcon && <IconHexagon size={18} />}
           Gallery ({media.length})
         </Group>
       </Title>

@@ -1628,10 +1628,46 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
+
+                {/* ── Gallery Labels ── */}
+                <Accordion.Item value="gallery-labels">
+                  <Accordion.Control>Gallery Labels</Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap="md">
+                      <TextInput
+                        label="Image Gallery Label"
+                        description="Custom label for image gallery sections. Count is appended automatically."
+                        value={settings.galleryImageLabel ?? 'Images'}
+                        onChange={(e) => updateSetting('galleryImageLabel', e.currentTarget.value)}
+                      />
+                      <TextInput
+                        label="Video Gallery Label"
+                        description="Custom label for video gallery sections. Count is appended automatically."
+                        value={settings.galleryVideoLabel ?? 'Videos'}
+                        onChange={(e) => updateSetting('galleryVideoLabel', e.currentTarget.value)}
+                      />
+                      <Select
+                        label="Label Justification"
+                        description="Horizontal alignment for gallery section labels"
+                        data={[
+                          { value: 'left', label: 'Left' },
+                          { value: 'center', label: 'Center' },
+                          { value: 'right', label: 'Right' },
+                        ]}
+                        value={settings.galleryLabelJustification ?? 'left'}
+                        onChange={(v) => updateSetting('galleryLabelJustification', (v ?? 'left') as GalleryBehaviorSettings['galleryLabelJustification'])}
+                      />
+                      <Switch
+                        label="Show Gallery Label Icon"
+                        description="Display an icon prefix before each gallery section label"
+                        checked={settings.showGalleryLabelIcon ?? false}
+                        onChange={(e) => updateSetting('showGalleryLabelIcon', e.currentTarget.checked)}
+                      />
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
               </Accordion>
             </Tabs.Panel>
-
-            {/* ── Advanced Tab (only visible when toggle is on) ─── */}
             {settings.advancedSettingsEnabled && (
               <Tabs.Panel value="advanced" pt="md">
                 <Text size="sm" c="dimmed" mb="md">

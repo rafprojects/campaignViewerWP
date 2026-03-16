@@ -366,6 +366,8 @@ class WPSG_Settings {
         'viewer_bg_type'             => ['theme', 'transparent', 'solid', 'gradient'],
         // P21-C: Card aspect ratio
         'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4'],
+        // P21-G: Gallery label justification
+        'gallery_label_justification' => ['left', 'center', 'right'],
     ];
 
     /**

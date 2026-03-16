@@ -82,9 +82,9 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
 
   return (
     <Stack gap="md">
-      <Title order={3} size="h5">
-        <Group gap={8} component="span">
-          <IconColumns size={18} />
+      <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
+        <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
+          {settings.showGalleryLabelIcon && <IconColumns size={18} />}
           Gallery ({media.length})
         </Group>
       </Title>

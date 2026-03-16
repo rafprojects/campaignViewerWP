@@ -232,8 +232,8 @@ export function CardGallery({
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
               {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
               <Stack gap={0}>
-                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3">Campaign Gallery</Title>}
-                {galleryBehaviorSettings.showGallerySubtitle && <Text c="dimmed" size="sm">Browse and access your campaign media</Text>}
+                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3">{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
+                {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm">{galleryBehaviorSettings.gallerySubtitleText}</Text>}
               </Stack>
               )}
 

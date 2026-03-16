@@ -686,6 +686,11 @@ export interface GalleryBehaviorSettings {
   cardMaxColumns: number;
   cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4';
   cardMinHeight: number;
+  // P21-G: Gallery label editing & justification
+  galleryImageLabel: string;
+  galleryVideoLabel: string;
+  galleryLabelJustification: 'left' | 'center' | 'right';
+  showGalleryLabelIcon: boolean;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -920,4 +925,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardMaxColumns: 0,
   cardAspectRatio: 'auto',
   cardMinHeight: 0,
+  // P21-G: Gallery label editing & justification
+  galleryImageLabel: 'Images',
+  galleryVideoLabel: 'Videos',
+  galleryLabelJustification: 'left',
+  showGalleryLabelIcon: false,
 };
