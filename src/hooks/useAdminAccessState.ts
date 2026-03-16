@@ -40,6 +40,7 @@ export function useAdminAccessState({
   const [accessSource, setAccessSource] = useState<'company' | 'campaign'>('campaign');
   const [accessAction, setAccessAction] = useState<'grant' | 'deny'>('grant');
   const [accessSaving, setAccessSaving] = useState(false);
+  const accessSavingRef = useRef(false);
 
   const [confirmArchiveCompany, setConfirmArchiveCompany] = useState<CompanyInfo | null>(null);
   const [archiveRevokeAccess, setArchiveRevokeAccess] = useState(false);
@@ -101,6 +102,7 @@ export function useAdminAccessState({
   }, [debouncedSearch, apiClient]);
 
   const handleGrantAccess = useCallback(async () => {
+    if (accessSavingRef.current) return;
     if (accessViewMode === 'campaign' && !accessCampaignId) return;
     if ((accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId) return;
 
@@ -119,6 +121,7 @@ export function useAdminAccessState({
       return;
     }
 
+    accessSavingRef.current = true;
     setAccessSaving(true);
     try {
       if (accessViewMode === 'campaign') {
@@ -137,11 +140,14 @@ export function useAdminAccessState({
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to update access.') });
     } finally {
+      accessSavingRef.current = false;
       setAccessSaving(false);
     }
   }, [accessViewMode, accessCampaignId, selectedCompanyId, selectedUser, accessUserId, accessSource, accessAction, apiClient, mutateAccess, onNotify]);
 
   const handleRevokeAccess = useCallback(async (entry: CompanyAccessGrantType) => {
+    if (accessSavingRef.current) return;
+    accessSavingRef.current = true;
     setAccessSaving(true);
     try {
       if (accessViewMode === 'campaign') {
@@ -157,6 +163,7 @@ export function useAdminAccessState({
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to revoke access.') });
     } finally {
+      accessSavingRef.current = false;
       setAccessSaving(false);
     }
   }, [accessViewMode, accessCampaignId, selectedCompanyId, apiClient, mutateAccess, onNotify]);

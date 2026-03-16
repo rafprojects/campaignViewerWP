@@ -38,6 +38,9 @@ export interface BuilderDockContextValue {
   selectedOverlayIndex: number;
   isBackgroundSelected: boolean;
   setIsBackgroundSelected: Dispatch<SetStateAction<boolean>>;
+  /** Slot ID whose mask sublayer is currently selected in the Layers panel. */
+  selectedMaskSlotId: string | null;
+  setSelectedMaskSlotId: Dispatch<SetStateAction<string | null>>;
 
   // Snap
   snapEnabled: boolean;
@@ -57,15 +60,16 @@ export interface BuilderDockContextValue {
   announce: (msg: string) => void;
 
   // Handlers
-  handleSave: () => Promise<void>;
+  handleSave: () => Promise<boolean | void>;
   handleClose: () => void;
   handleAutoAssign: () => void;
   handleUploadOverlay: (file: File | null) => Promise<void>;
-  handleAddUrlToLibrary: (url: string) => Promise<void>;
   handleDeleteLibraryOverlay: (id: string) => Promise<void>;
   handleUploadBgImage: (file: File | null) => Promise<void>;
   handleDeleteSelected: () => void;
   handleDuplicateSelected: () => void;
+  /** Upload a mask image (PNG/SVG) and return the URL to assign to a slot. */
+  handleUploadMask: (file: File) => Promise<string | null>;
 }
 
 // ── Context + hook ────────────────────────────────────────────

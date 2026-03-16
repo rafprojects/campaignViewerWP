@@ -1,0 +1,85 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# WP Super Gallery — Deploy existing release to WordPress.org SVN
+#
+# This workflow downloads a previously-built release ZIP from GitHub Releases
+# and deploys it to WordPress.org SVN — no rebuild required.
+# The exact bytes that were tested during the release are what get deployed.
+#
+# Requires repository secrets:
+#   SVN_USERNAME — WordPress.org username
+#   SVN_PASSWORD — WordPress.org password
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: SVN Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy (e.g., v0.18.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.tag }} to WordPress.org
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag exists
+        run: |
+          TAG="${{ inputs.tag }}"
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG does not exist in the repository"
+            exit 1
+          fi
+
+      - name: Download release ZIP
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          VERSION="${TAG#v}"
+          ZIP_NAME="wp-super-gallery-v${VERSION}.zip"
+
+          echo "Downloading $ZIP_NAME from release $TAG..."
+          gh release download "$TAG" --pattern "$ZIP_NAME" --output "$ZIP_NAME"
+
+          if [ ! -f "$ZIP_NAME" ]; then
+            echo "::error::Could not download $ZIP_NAME from release $TAG"
+            exit 1
+          fi
+
+          echo "Downloaded $(du -h "$ZIP_NAME" | cut -f1)"
+
+      - name: Extract release ZIP
+        id: extract
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          VERSION="${TAG#v}"
+          ZIP_NAME="wp-super-gallery-v${VERSION}.zip"
+
+          mkdir -p deploy-dir
+          unzip "$ZIP_NAME" -d deploy-dir
+          echo "Extracted to deploy-dir/wp-super-gallery/"
+          ls -la deploy-dir/wp-super-gallery/
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to WordPress.org SVN
+        uses: 10up/action-wordpress-plugin-deploy@v2
+        with:
+          generate-zip: false
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: wp-super-gallery
+          VERSION: ${{ steps.extract.outputs.version }}
+          BUILD_DIR: deploy-dir/wp-super-gallery

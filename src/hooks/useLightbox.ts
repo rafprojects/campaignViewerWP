@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseLightboxOptions {
   initialOpen?: boolean;
@@ -55,6 +55,17 @@ export function useLightbox(options: UseLightboxOptions = {}): UseLightboxResult
       unlockBodyScroll();
     };
   }, [isOpen, lockBodyScroll, unlockBodyScroll]);
+
+  // Keep a ref to the latest unlockBodyScroll so the unmount cleanup is never stale.
+  const unlockRef = useRef(unlockBodyScroll);
+  useEffect(() => { unlockRef.current = unlockBodyScroll; }, [unlockBodyScroll]);
+
+  // Ensure scroll is unlocked on unmount regardless of isOpen state
+  useEffect(() => {
+    return () => {
+      unlockRef.current();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;

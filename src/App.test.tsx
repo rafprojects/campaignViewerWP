@@ -67,12 +67,14 @@ describe('App', () => {
     vi.clearAllMocks();
     localStorage.clear();
     delete (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__;
+    delete window.__WPSG_CONFIG__;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
     delete (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__;
+    delete window.__WPSG_CONFIG__;
   });
 
   it('renders campaigns from API', async () => {
@@ -288,6 +290,7 @@ describe('App', () => {
   });
 
   it('edits campaign using modal', async () => {
+    window.__WPSG_CONFIG__ = { enableJwt: true };
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
     localStorage.setItem('wpsg_access_token', 'token');
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
@@ -302,11 +305,18 @@ describe('App', () => {
     fireEvent.click(card);
 
     // Test Edit Campaign with modal (CampaignViewer is lazy-loaded)
-    const editButton = await screen.findByRole('button', { name: 'Edit Campaign Alpha' });
+    await waitFor(() => {
+      const btn = screen.getByRole('button', { name: 'Edit Campaign Alpha' });
+      expect(document.body.contains(btn)).toBe(true);
+    }, { timeout: 5000 });
+    const editButton = screen.getByRole('button', { name: 'Edit Campaign Alpha' });
     fireEvent.click(editButton);
     // Edit modal opens - fill in title and description
-    const titleInput = await screen.findByLabelText('Title');
-    const descInput = await screen.findByLabelText('Description');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    const titleInput = screen.getByLabelText('Title');
+    const descInput = screen.getByLabelText('Description');
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
     fireEvent.change(descInput, { target: { value: 'Updated Description' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -355,6 +365,7 @@ describe('App', () => {
   });
 
   it('archives campaign using modal', async () => {
+    window.__WPSG_CONFIG__ = { enableJwt: true };
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
     localStorage.setItem('wpsg_access_token', 'token');
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
@@ -384,6 +395,7 @@ describe('App', () => {
   }, 30000);
 
   it('does not update when edit modal is cancelled', async () => {
+    window.__WPSG_CONFIG__ = { enableJwt: true };
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
     localStorage.setItem('wpsg_access_token', 'token');
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
@@ -411,6 +423,7 @@ describe('App', () => {
   });
 
   it('does not archive when modal is cancelled', async () => {
+    window.__WPSG_CONFIG__ = { enableJwt: true };
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
     localStorage.setItem('wpsg_access_token', 'token');
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
@@ -438,6 +451,7 @@ describe('App', () => {
   });
 
   it('does not add external media when modal is cancelled', async () => {
+    window.__WPSG_CONFIG__ = { enableJwt: true };
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
     localStorage.setItem('wpsg_access_token', 'token');
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));

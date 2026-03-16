@@ -181,4 +181,84 @@ class WPSG_Rate_Limiter_Test extends WP_UnitTestCase {
 
         $this->assertEquals( '0.0.0.0', $ip );
     }
+
+    // ------------------------------------------- P20-A: Default rate limit tests
+
+    /**
+     * Verify that the public rate limit filter default is now 60 (not 0).
+     *
+     * @since 0.18.0 P20-A
+     */
+    public function test_public_rate_limit_default_is_60() {
+        // apply_filters with no registered callbacks should return the default.
+        $limit = intval( apply_filters( 'wpsg_rate_limit_public', 60 ) );
+        $this->assertEquals( 60, $limit, 'Public rate limit default should be 60 req/min' );
+    }
+
+    /**
+     * Verify that the authenticated rate limit filter default is 120.
+     *
+     * @since 0.18.0 P20-A
+     */
+    public function test_authenticated_rate_limit_default_is_120() {
+        $limit = intval( apply_filters( 'wpsg_rate_limit_authenticated', 120 ) );
+        $this->assertEquals( 120, $limit, 'Authenticated rate limit default should be 120 req/min' );
+    }
+
+    /**
+     * Verify that public rate limit can be overridden via filter.
+     *
+     * @since 0.18.0 P20-A
+     */
+    public function test_public_rate_limit_filter_override() {
+        add_filter( 'wpsg_rate_limit_public', fn() => 200 );
+        $limit = intval( apply_filters( 'wpsg_rate_limit_public', 60 ) );
+        $this->assertEquals( 200, $limit, 'Filter should override public rate limit' );
+        remove_all_filters( 'wpsg_rate_limit_public' );
+    }
+
+    /**
+     * Verify that authenticated rate limit can be overridden via filter.
+     *
+     * @since 0.18.0 P20-A
+     */
+    public function test_authenticated_rate_limit_filter_override() {
+        add_filter( 'wpsg_rate_limit_authenticated', fn() => 500 );
+        $limit = intval( apply_filters( 'wpsg_rate_limit_authenticated', 120 ) );
+        $this->assertEquals( 500, $limit, 'Filter should override authenticated rate limit' );
+        remove_all_filters( 'wpsg_rate_limit_authenticated' );
+    }
+
+    /**
+     * With the new default of 60, rate_limit_check should trigger a 429
+     * after 60 requests from the same IP.
+     *
+     * @since 0.18.0 P20-A
+     */
+    public function test_default_public_limit_triggers_at_threshold() {
+        $limit = 5; // Use small value for test speed
+        add_filter( 'wpsg_rate_limit_max', fn() => $limit );
+
+        // Exhaust the allowance.
+        for ( $i = 0; $i < $limit; $i++ ) {
+            WPSG_Rate_Limiter::check( $this->test_ip, 'public' );
+        }
+
+        // Next call should be blocked.
+        $result = WPSG_Rate_Limiter::check( $this->test_ip, 'public' );
+        $this->assertFalse( $result['allowed'], 'Public rate limit should block after threshold' );
+
+        delete_transient( $this->transient_key( $this->test_ip, 'public' ) );
+        remove_all_filters( 'wpsg_rate_limit_max' );
+    }
+
+    /**
+     * Verify that window defaults to 60 seconds even without explicit config.
+     *
+     * @since 0.18.0 P20-A
+     */
+    public function test_rate_limit_window_default_is_60_seconds() {
+        $window = intval( apply_filters( 'wpsg_rate_limit_window', 60 ) );
+        $this->assertEquals( 60, $window, 'Rate limit window default should be 60 seconds' );
+    }
 }

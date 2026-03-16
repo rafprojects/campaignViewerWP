@@ -70,7 +70,9 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
     (typeof window !== 'undefined'
       ? window.__wpsgThemeId
       : undefined) ??
-    document.querySelector('[data-wpsg-theme]')?.getAttribute('data-wpsg-theme');
+    (typeof document !== 'undefined'
+      ? document.querySelector('[data-wpsg-theme]')?.getAttribute('data-wpsg-theme')
+      : undefined);
 
   if (wpConfigId && hasTheme(wpConfigId)) {
     return wpConfigId;

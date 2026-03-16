@@ -5,8 +5,12 @@ import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@/utils/smartGuides';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
+import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
+import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
+import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { ASSET_MIME } from './DesignAssetsGrid';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -32,6 +36,14 @@ export interface LayoutCanvasProps {
   snapThresholdPx?: number;
   /** Called on double-click on canvas background — used to reset zoom. */
   onCanvasBgDoubleClick?: () => void;
+  /** Generic slot property update callback (e.g. mask layer drag). */
+  onSlotUpdate?: (slotId: string, updates: Partial<import('@/types').LayoutSlot>) => void;
+  /** Slot ID whose mask sublayer is currently selected (for mask drag overlay). */
+  selectedMaskSlotId?: string | null;
+  /** Called when a Design Asset is dropped on the canvas background. x,y are canvas %. */
+  onAssetCanvasDrop?: (assetUrl: string, x: number, y: number) => void;
+  /** Called when campaign media is dropped on the canvas background. x,y are canvas %. */
+  onMediaCanvasDrop?: (mediaId: string, meta: { attachmentId?: number; url?: string }, x: number, y: number) => void;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -58,16 +70,27 @@ export function LayoutCanvas({
   onOverlayResize,
   snapThresholdPx = 5,
   onCanvasBgDoubleClick,
+  onSlotUpdate,
+  selectedMaskSlotId,
+  onAssetCanvasDrop,
+  onMediaCanvasDrop,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
+  const viewportHeight = useViewportHeight();
 
   // Compute canvas pixel dimensions from aspect ratio
   const canvasWidth = Math.max(
     MIN_CANVAS_PX,
     Math.min(MAX_CANVAS_PX, template.canvasMaxWidth || MAX_CANVAS_PX),
   );
-  const canvasHeight = Math.round(canvasWidth / template.canvasAspectRatio);
+  const canvasHeight =
+    template.canvasHeightMode === 'fixed-vh'
+      ? Math.round(
+          viewportHeight *
+            ((template.canvasHeightVh || 50) / 100),
+        )
+      : Math.round(canvasWidth / template.canvasAspectRatio);
 
   // Auto-assign media to slots for preview
   const { assignments: mediaAssignments } = useMemo(
@@ -134,7 +157,7 @@ export function LayoutCanvas({
       lastGuideResultRef.current = { snapX: result.snapX, snapY: result.snapY };
       setActiveGuides(result.guides);
     },
-    [snapEnabled, isPreview, template.slots, pxToPct, canvasWidth, canvasHeight],
+    [snapEnabled, isPreview, template.slots, pxToPct, canvasWidth, canvasHeight, snapThresholdPx],
   );
 
   /** On drag stop: apply snapping then commit. */
@@ -166,10 +189,14 @@ export function LayoutCanvas({
     [pxToPct, onSlotResize, onAnnounce],
   );
 
-  const handleCanvasClick = useCallback(
+  const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Only clear selection if clicking the canvas itself, not a slot
-      if (e.target === e.currentTarget) {
+      // Clear selection only when the pointer-down lands directly on the canvas
+      // background — not on a child slot.  Using mousedown instead of click
+      // prevents accidental deselection after a drag/resize where the mouseup
+      // lands on the canvas background (click fires on the common ancestor of
+      // mousedown/mouseup targets, but mousedown only on the actual target).
+      if (e.button === 0 && e.target === e.currentTarget) {
         onCanvasClick();
       }
     },
@@ -183,6 +210,62 @@ export function LayoutCanvas({
       }
     },
     [onCanvasBgDoubleClick],
+  );
+
+  // ── Canvas background drop handler (Design Assets + media) ──
+  const handleCanvasDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (
+        e.dataTransfer.types.includes(ASSET_MIME) ||
+        e.dataTransfer.types.includes('application/x-wpsg-media-id')
+      ) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    },
+    [],
+  );
+
+  const handleCanvasDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const pctX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+      const pctY = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+
+      // Design Asset drop → new graphic layer
+      const assetUrl = e.dataTransfer.getData(ASSET_MIME);
+      if (assetUrl && onAssetCanvasDrop) {
+        onAssetCanvasDrop(assetUrl, pctX, pctY);
+        return;
+      }
+
+      // Campaign media drop → new slot
+      const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
+      if (mediaId && onMediaCanvasDrop) {
+        const metaRaw = e.dataTransfer.getData('application/x-wpsg-media-meta');
+        let meta: { attachmentId?: number; url?: string } = {};
+        try { meta = metaRaw ? JSON.parse(metaRaw) : {}; } catch { /* ignore */ }
+        onMediaCanvasDrop(mediaId, meta, pctX, pctY);
+      }
+    },
+    [onAssetCanvasDrop, onMediaCanvasDrop],
+  );
+
+  // Memoize derived background values to avoid recomputation during drag/resize renders.
+  const safeBackgroundUrl = useMemo(
+    () => template.backgroundImage ? sanitizeCssUrl(template.backgroundImage) : undefined,
+    [template.backgroundImage],
+  );
+  const gradientBackground = useMemo(
+    () => buildGradientCss(templateToGradientOpts(template)) ?? 'transparent',
+    // templateToGradientOpts reads 7+ fields; template is replaced on any field change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [template.backgroundGradientType, template.backgroundGradientDirection,
+     template.backgroundGradientAngle, template.backgroundGradientStops,
+     template.backgroundRadialShape, template.backgroundRadialSize,
+     template.backgroundGradientCenterX, template.backgroundGradientCenterY],
   );
 
   return (
@@ -205,29 +288,40 @@ export function LayoutCanvas({
       {/* The canvas itself */}
       <div
         ref={canvasRef}
-        onClick={handleCanvasClick}
+        onMouseDown={handleCanvasMouseDown}
         onDoubleClick={handleCanvasDblClick}
+        onDragOver={handleCanvasDragOver}
+        onDrop={handleCanvasDrop}
         role="application"
         aria-label="Layout canvas"
         style={{
           position: 'relative',
           width: canvasWidth,
           height: canvasHeight,
-          backgroundColor: template.backgroundColor,
+          backgroundColor:
+            (template.backgroundMode ?? 'color') === 'color'
+              ? template.backgroundColor
+              : template.backgroundMode === 'image'
+                ? (template.backgroundColor || '#ffffff')
+                : (template.backgroundMode === 'none' ? 'transparent' : undefined),
+          backgroundImage: undefined,
+          backgroundSize: undefined,
+          backgroundPosition: undefined,
+          background:
+            (template.backgroundMode ?? 'color') === 'gradient'
+              ? gradientBackground
+              : undefined,
           border: isPreview
             ? 'none'
             : '2px solid var(--mantine-color-default-border)',
           borderRadius: 4,
-          // In edit mode use overflow:visible so Rnd resize handles at the
-          // canvas edge remain reachable (they would be clipped with 'hidden').
           overflow: isPreview ? 'hidden' : 'visible',
           boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-          // Provide a clip boundary visually while keeping overflow:visible
           clipPath: isPreview ? undefined : 'none',
         }}
       >
         {/* Background image layer (below slots) */}
-        {template.backgroundImage && (
+        {template.backgroundMode === 'image' && safeBackgroundUrl && (
           <div
             style={{
               position: 'absolute',
@@ -239,7 +333,7 @@ export function LayoutCanvas({
             }}
           >
             <img
-              src={template.backgroundImage}
+              src={safeBackgroundUrl}
               alt=""
               style={{
                 width: '100%',
@@ -277,6 +371,8 @@ export function LayoutCanvas({
               onToggleSelect={onSlotToggleSelect}
               onDragFrame={handleDragFrame}
               onMediaDrop={onMediaDrop}
+              onSlotUpdate={onSlotUpdate}
+              isMaskSelected={selectedMaskSlotId === slot.id}
             />
           );
         })}

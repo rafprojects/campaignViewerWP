@@ -12,7 +12,7 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         // Reset the static manifest cache so each test starts clean.
         $ref = new ReflectionProperty( WPSG_Embed::class, 'manifest_cache' );
         $ref->setAccessible( true );
-        $ref->setValue( null );
+        $ref->setValue( null, null );
         unset( $GLOBALS['wpsg_has_shortcode'] );
         delete_option( WPSG_Settings::OPTION_NAME );
     }
@@ -23,7 +23,7 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         // Reset manifest cache.
         $ref = new ReflectionProperty( WPSG_Embed::class, 'manifest_cache' );
         $ref->setAccessible( true );
-        $ref->setValue( null );
+        $ref->setValue( null, null );
         parent::tearDown();
     }
 

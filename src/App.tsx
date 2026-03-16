@@ -20,6 +20,8 @@ import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { mergeSettingsWithDefaults } from './utils/mergeSettingsWithDefaults';
 import { sortByOrder } from './utils/sortByOrder';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useEditCampaignModal } from './hooks/useEditCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
@@ -30,7 +32,10 @@ const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => 
 const SettingsPanel = lazy(() => import('./components/Admin/SettingsPanel').then(m => ({ default: m.SettingsPanel })));
 
 const getAuthProvider = (apiBaseUrl: string) => {
-  if (window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
+  // [P20-K] JWT auth is now opt-in. Only instantiate WpJwtProvider when the
+  // WordPress site defines WPSG_ENABLE_JWT_AUTH (surfaced as enableJwt in config).
+  const enableJwt = window.__WPSG_CONFIG__?.enableJwt === true;
+  if (enableJwt && window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
     return new WpJwtProvider({ apiBaseUrl });
   }
   return undefined;
@@ -64,12 +69,10 @@ const buildCompany = (companyId: string): Company => {
 const ACCESS_MODE_STORAGE_KEY = 'wpsg_access_mode';
 
 function AppContent({
-  hasProvider,
   apiBaseUrl,
   authProvider,
   accessMode,
 }: {
-  hasProvider: boolean;
   apiBaseUrl: string;
   authProvider?: AuthProviderInterface;
   accessMode: 'lock' | 'hide';
@@ -88,6 +91,14 @@ function AppContent({
   });
   const isAdmin = user?.role === 'admin';
   const [campaignLoadProgress, setCampaignLoadProgress] = useState<{ total: number; completed: number }>({ total: 0, completed: 0 });
+
+  // Close admin-only panels when the user signs out or loses admin privileges.
+  useEffect(() => {
+    if (!isAdmin) {
+      closeAdminPanel();
+      closeSettings();
+    }
+  }, [isAdmin, closeAdminPanel, closeSettings]);
 
   useEffect(() => {
     if (!actionMessage) return;
@@ -161,9 +172,16 @@ function AppContent({
   const appContainerFluid = resolvedSettings.appMaxWidth === 0;
   const appContainerPaddingStyle = { paddingInline: resolvedSettings.appPadding };
 
+  // [P20-K] Auto-logout after configurable period of inactivity.
+  useIdleTimeout({
+    timeoutMinutes: resolvedSettings.sessionIdleTimeoutMinutes,
+    isAuthenticated,
+    onTimeout: () => void logout(),
+  });
+
   return (
     <div className="wp-super-gallery">
-      {hasProvider && !isAuthenticated && isReady && (
+      {!isAuthenticated && isReady && (
         <>
           <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
             <Alert color="blue" variant="light" role="status" aria-live="polite">
@@ -332,12 +350,14 @@ interface AppProps {
 function App({ accessMode }: AppProps) {
   const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
   const provider = useMemo(() => getAuthProvider(apiBaseUrl), [apiBaseUrl]);
-  const hasProvider = Boolean(provider);
   const resolvedAccessMode = accessMode ?? window.__WPSG_ACCESS_MODE__ ?? 'lock';
+
+  // [P20-K] Keep WP nonce fresh in long-running tabs (no-op when JWT is active).
+  useNonceHeartbeat();
 
   return (
     <AuthProvider provider={provider} fallbackPermissions={[]}>
-      <AppContent hasProvider={hasProvider} apiBaseUrl={apiBaseUrl} authProvider={provider} accessMode={resolvedAccessMode} />
+      <AppContent apiBaseUrl={apiBaseUrl} authProvider={provider} accessMode={resolvedAccessMode} />
     </AuthProvider>
   );
 }

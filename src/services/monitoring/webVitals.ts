@@ -33,7 +33,10 @@ const defaultReport = (metric: VitalMetric) => {
   if (typeof window !== 'undefined') {
     window.__WPSG_VITALS__ = vitalsBuffer;
   }
-  console.info('[WPSG][Vitals]', metric.name, metric.value.toFixed(2));
+  // Gate verbose logging behind DEV mode (P20-H-12)
+  if (import.meta.env.DEV) {
+    console.info('[WPSG][Vitals]', metric.name, metric.value.toFixed(2));
+  }
 };
 
 const shouldSample = (sampleRate: number) => {
@@ -41,7 +44,12 @@ const shouldSample = (sampleRate: number) => {
   return Math.random() < sampleRate;
 };
 
+let _initialized = false;
+
 export function startWebVitalsMonitoring(options: WebVitalsOptions = {}) {
+  if (_initialized) return;
+  _initialized = true;
+
   if (typeof window === 'undefined') return;
   if (typeof PerformanceObserver === 'undefined') return;
 

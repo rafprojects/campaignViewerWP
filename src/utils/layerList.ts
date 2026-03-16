@@ -11,7 +11,7 @@ import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-export type LayerKind = 'slot' | 'graphic' | 'background';
+export type LayerKind = 'slot' | 'graphic' | 'background' | 'mask';
 
 export type SlotLayerItem = {
   kind: 'slot';
@@ -47,7 +47,20 @@ export type BackgroundLayerItem = {
   visible: boolean;
 };
 
-export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem;
+export type MaskLayerItem = {
+  kind: 'mask';
+  /** Synthetic id: `mask-{parentSlotId}` */
+  id: string;
+  /** The slot that owns this mask. */
+  parentSlotId: string;
+  /** Inherits the parent slot's zIndex for ordering purposes (sublayer). */
+  zIndex: number;
+  arrayIndex: -1;
+  name: string;
+  visible: boolean;
+};
+
+export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem | MaskLayerItem;
 
 // ── Name helper ──────────────────────────────────────────────────────────────
 
@@ -66,6 +79,9 @@ export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem;
 export function getLayerName(item: LayerItem, _template: LayoutTemplate): string {
   if (item.kind === 'background') {
     return item.name || 'Background';
+  }
+  if (item.kind === 'mask') {
+    return item.name || 'Mask';
   }
   if (item.name) return item.name;
   if (item.kind === 'slot') {
@@ -125,6 +141,28 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
     return b.arrayIndex - a.arrayIndex;
   });
 
+  // Insert mask sublayers right after their parent slot entries.
+  // We iterate in reverse so splice indices stay valid.
+  const slotMap = new Map<string, LayoutSlot>(
+    template.slots.map((s) => [s.id, s]),
+  );
+  for (let i = items.length - 1; i >= 0; i--) {
+    const item = items[i];
+    if (item.kind !== 'slot') continue;
+    const slot = slotMap.get(item.id);
+    if (!slot?.maskLayer) continue;
+    const maskItem: MaskLayerItem = {
+      kind: 'mask',
+      id: `mask-${slot.id}`,
+      parentSlotId: slot.id,
+      zIndex: item.zIndex,
+      arrayIndex: -1,
+      name: 'Mask',
+      visible: slot.maskLayer.visible !== false,
+    };
+    items.splice(i + 1, 0, maskItem);
+  }
+
   // Background is always the bottom-most row.
   const bgItem: BackgroundLayerItem = {
     kind: 'background',
@@ -159,9 +197,9 @@ export function computeReorderedZIndices(
   draggedId: string,
   targetId: string,
 ): Map<string, number> {
-  // Work only with non-background items
+  // Work only with non-background, non-mask items
   const movable = layers.filter((l): l is SlotLayerItem | GraphicLayerItem =>
-    l.kind !== 'background',
+    l.kind !== 'background' && l.kind !== 'mask',
   );
 
   const draggedIdx = movable.findIndex((l) => l.id === draggedId);

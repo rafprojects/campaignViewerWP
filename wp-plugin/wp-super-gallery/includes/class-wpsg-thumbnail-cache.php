@@ -87,7 +87,7 @@ class WPSG_Thumbnail_Cache {
         }
 
         // Deterministic filename from source URL.
-        $hash = md5($source_url);
+        $hash = hash('sha256', $source_url);
         $ext  = self::get_extension_from_url($url);
         $filename = $hash . '.' . $ext;
         $filepath = trailingslashit($cache_dir) . $filename;
@@ -160,11 +160,19 @@ class WPSG_Thumbnail_Cache {
      * @return string|null Local URL if cached and not expired, null otherwise.
      */
     public static function get_cached_url($source_url) {
-        $hash = md5($source_url);
+        $hash = hash('sha256', $source_url);
         $cache_index = get_option('wpsg_thumbnail_cache_index', []);
 
+        // Backward compat: migrate entries cached under old md5 key.
         if (!isset($cache_index[$hash])) {
-            return null;
+            $legacy_hash = md5($source_url);
+            if (isset($cache_index[$legacy_hash])) {
+                $cache_index[$hash] = $cache_index[$legacy_hash];
+                unset($cache_index[$legacy_hash]);
+                update_option('wpsg_thumbnail_cache_index', $cache_index, false);
+            } else {
+                return null;
+            }
         }
 
         $entry = $cache_index[$hash];

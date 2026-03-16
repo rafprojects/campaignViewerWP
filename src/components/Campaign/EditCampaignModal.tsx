@@ -1,4 +1,5 @@
 import { ActionIcon, Badge, Button, Card, Center, FileButton, Group, Image, Loader, Modal, Progress, Select, SimpleGrid, Stack, Tabs, Text, TextInput, Textarea, Tooltip } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
 import type { Campaign, MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
@@ -85,14 +86,16 @@ export function EditCampaignModal({
     onClose,
   });
 
+  const isExtraSmall = useMediaQuery('(max-width: 575px)');
+
   return (
     <>
     <Modal
       opened={opened}
       onClose={guardedClose}
       title={`Edit Campaign: ${campaign?.title ?? ''}`}
-      size={typeof window !== 'undefined' && window.innerWidth < 576 ? '100%' : 'xl'}
-      fullScreen={typeof window !== 'undefined' && window.innerWidth < 576}
+      size={isExtraSmall ? '100%' : 'xl'}
+      fullScreen={!!isExtraSmall}
       zIndex={300}
     >
       <Tabs value={editMediaTab} onChange={onEditMediaTabChange} aria-label="Edit campaign tabs">

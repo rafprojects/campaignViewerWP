@@ -132,7 +132,7 @@ describe('LayoutCanvas — canvas element', () => {
     const onCanvasClick = vi.fn();
     renderCanvas({ onCanvasClick });
     const canvas = screen.getByRole('application');
-    fireEvent.click(canvas);
+    fireEvent.mouseDown(canvas);
     expect(onCanvasClick).toHaveBeenCalledOnce();
   });
 });
@@ -142,7 +142,7 @@ describe('LayoutCanvas — canvas element', () => {
 describe('LayoutCanvas — background image', () => {
   it('renders background image element when template has backgroundImage', () => {
     const { container } = renderCanvas({
-      template: makeTemplate({ backgroundImage: 'https://example.com/bg.jpg' }),
+      template: makeTemplate({ backgroundMode: 'image', backgroundImage: 'https://example.com/bg.jpg' }),
     });
     const img = container.querySelector('img[src="https://example.com/bg.jpg"]');
     expect(img).toBeInTheDocument();
@@ -162,6 +162,7 @@ describe('LayoutCanvas — background image', () => {
   it('applies backgroundImageFit as objectFit on the bg image', () => {
     const { container } = renderCanvas({
       template: makeTemplate({
+        backgroundMode: 'image',
         backgroundImage: 'https://example.com/bg.jpg',
         backgroundImageFit: 'contain',
       }),
@@ -173,6 +174,7 @@ describe('LayoutCanvas — background image', () => {
   it('defaults backgroundImageFit to cover when not specified', () => {
     const { container } = renderCanvas({
       template: makeTemplate({
+        backgroundMode: 'image',
         backgroundImage: 'https://example.com/bg.jpg',
         backgroundImageFit: undefined,
       }),
@@ -184,6 +186,7 @@ describe('LayoutCanvas — background image', () => {
   it('applies backgroundImageOpacity to bg image', () => {
     const { container } = renderCanvas({
       template: makeTemplate({
+        backgroundMode: 'image',
         backgroundImage: 'https://example.com/bg.jpg',
         backgroundImageOpacity: 0.5,
       }),

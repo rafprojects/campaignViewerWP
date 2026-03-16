@@ -3,9 +3,16 @@
  * jsdom environment, avoiding Mantine modal portal state accumulated by the
  * larger AdminPanel test suite.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { AdminPanel } from './AdminPanel';
+
+// Warm the module cache for the lazy-loaded modal so React.lazy resolves it
+// synchronously. Without this, the Suspense fallback renders and findByRole
+// times out waiting for the heading.
+beforeAll(async () => {
+  await import('./QuickAddUserModal');
+});
 
 const campaignsPayload = {
   items: [
@@ -53,7 +60,10 @@ describe('AdminPanel – QuickAdd user', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
     fireEvent.click(await screen.findByRole('button', { name: /Quick add a new user/i }));
-    await screen.findByText('Quick Add User');
+    await waitFor(
+      () => expect(screen.getByRole('heading', { name: 'Quick Add User' })).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
 
     fireEvent.change(screen.getByPlaceholderText('user@example.com'), {
       target: { value: 'test@example.com' },
@@ -95,7 +105,10 @@ describe('AdminPanel – QuickAdd user', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
     fireEvent.click(await screen.findByRole('button', { name: /Quick add a new user/i }));
-    await screen.findByText('Quick Add User');
+    await waitFor(
+      () => expect(screen.getByRole('heading', { name: 'Quick Add User' })).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
 
     // Cancel should not call post - verify immediately without DOM-removal waitFor
     // (DOM-removal waitFor hangs due to Mantine exit-animation mutation observer loop)
@@ -126,7 +139,10 @@ describe('AdminPanel – QuickAdd user', () => {
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
     fireEvent.click(await screen.findByRole('button', { name: /Quick add a new user/i }));
-    await screen.findByText('Quick Add User');
+    await waitFor(
+      () => expect(screen.getByRole('heading', { name: 'Quick Add User' })).toBeInTheDocument(),
+      { timeout: 15000 },
+    );
 
     const createBtn = screen.getByRole('button', { name: /Create User/i });
     expect(createBtn).toBeDisabled();

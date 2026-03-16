@@ -7,7 +7,7 @@
  * - Cover image upload
  * - Library search & pagination
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign, MediaItem, UploadResponse } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -51,6 +51,13 @@ export function useEditCampaignModal({
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [librarySearch, setLibrarySearch] = useState('');
   const libraryAbortControllerRef = useRef<AbortController | null>(null);
+
+  // Abort in-flight library fetch on unmount
+  useEffect(() => {
+    return () => {
+      libraryAbortControllerRef.current?.abort();
+    };
+  }, []);
 
   const openEditModal = async (campaign: Campaign) => {
     if (!isAdmin) {

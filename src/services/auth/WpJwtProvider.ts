@@ -1,13 +1,26 @@
 import type { AuthProvider, AuthSession, AuthUser } from './AuthProvider';
+import { safeLocalStorage } from '../../utils/safeLocalStorage';
 
 interface WpJwtProviderOptions {
   apiBaseUrl: string;
 }
 
+// [WPSG_JWT_DISABLED] — localStorage keys preserved for future standalone SPA use.
+// Enable via WPSG_ENABLE_JWT_AUTH constant in wp-config.php.
+// See docs/FUTURE_TASKS.md § "JWT In-Memory Token Auth" for the planned
+// in-memory token + httpOnly refresh cookie upgrade path.
 const ACCESS_TOKEN_KEY = 'wpsg_access_token';
 const USER_KEY = 'wpsg_user';
 const PERMISSIONS_KEY = 'wpsg_permissions';
 
+/**
+ * JWT-based auth provider for cross-origin / headless deployments.
+ *
+ * [P20-K] This provider is only instantiated when WPSG_ENABLE_JWT_AUTH is
+ * explicitly set in wp-config.php. For the default same-origin WordPress
+ * deployment, authentication uses WP login cookie + X-WP-Nonce (no tokens
+ * in localStorage). See AuthContext.tsx for the nonce-only detection path.
+ */
 export class WpJwtProvider implements AuthProvider {
   private apiBaseUrl: string;
 
@@ -16,7 +29,7 @@ export class WpJwtProvider implements AuthProvider {
   }
 
   async init(): Promise<AuthSession | null> {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const token = safeLocalStorage.getItem(ACCESS_TOKEN_KEY);
     if (!token) {
       return null;
     }
@@ -52,26 +65,26 @@ export class WpJwtProvider implements AuthProvider {
       throw new Error('Missing token in response');
     }
 
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    safeLocalStorage.setItem(ACCESS_TOKEN_KEY, token);
 
     const user: AuthUser = {
       id: String(data?.user_id ?? ''),
       email: data?.user_email ?? email,
       role: 'viewer',
     };
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    safeLocalStorage.setItem(USER_KEY, JSON.stringify(user));
 
     return { accessToken: token, expiresAt: this.getTokenExpiryIso(token) ?? undefined };
   }
 
   async logout(): Promise<void> {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(PERMISSIONS_KEY);
+    safeLocalStorage.removeItem(ACCESS_TOKEN_KEY);
+    safeLocalStorage.removeItem(USER_KEY);
+    safeLocalStorage.removeItem(PERMISSIONS_KEY);
   }
 
   async getAccessToken(): Promise<string | null> {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const token = safeLocalStorage.getItem(ACCESS_TOKEN_KEY);
     if (!token) {
       return null;
     }
@@ -97,7 +110,7 @@ export class WpJwtProvider implements AuthProvider {
   }
 
   async getUser(): Promise<AuthUser | null> {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = safeLocalStorage.getItem(USER_KEY);
     if (!raw) return null;
     try {
       return JSON.parse(raw) as AuthUser;
@@ -107,7 +120,7 @@ export class WpJwtProvider implements AuthProvider {
   }
 
   async getPermissions(): Promise<string[]> {
-    const cached = localStorage.getItem(PERMISSIONS_KEY);
+    const cached = safeLocalStorage.getItem(PERMISSIONS_KEY);
     if (cached) {
       try {
         return JSON.parse(cached) as string[];
@@ -136,17 +149,17 @@ export class WpJwtProvider implements AuthProvider {
     const isAdmin = Boolean(data?.isAdmin);
 
     if (isAdmin) {
-      const raw = localStorage.getItem(USER_KEY);
+      const raw = safeLocalStorage.getItem(USER_KEY);
       if (raw) {
         try {
           const user = JSON.parse(raw) as AuthUser;
-          localStorage.setItem(USER_KEY, JSON.stringify({ ...user, role: 'admin' }));
+          safeLocalStorage.setItem(USER_KEY, JSON.stringify({ ...user, role: 'admin' }));
         } catch {
           // no-op
         }
       }
     }
-    localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(permissions));
+    safeLocalStorage.setItem(PERMISSIONS_KEY, JSON.stringify(permissions));
     return permissions;
   }
 

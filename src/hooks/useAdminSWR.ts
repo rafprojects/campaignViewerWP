@@ -57,6 +57,17 @@ export interface AdminCampaign {
 
 interface ApiCampaignResponse {
   items: AdminCampaign[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface CampaignPagination {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
 }
 
 export interface AuditEntry {
@@ -104,26 +115,69 @@ const ADMIN_SWR_OPTIONS = {
 
 /**
  * Fetch the admin campaign list (includes companyId, tags, etc.).
- * Cached under key 'admin-campaigns'. Re-open AdminPanel = instant render.
+ * Supports server-side pagination via page/perPage params.
+ * Cached under key ['admin-campaigns', page, perPage].
  */
-export function useAdminCampaigns(apiClient: ApiClient) {
-  const { data, error, isLoading, mutate } = useSWR<AdminCampaign[]>(
-    'admin-campaigns',
+export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20) {
+  const { data, error, isLoading, mutate } = useSWR<{ campaigns: AdminCampaign[]; pagination: CampaignPagination }>(
+    ['admin-campaigns', page, perPage],
     async () => {
       const response = await apiClient.get<ApiCampaignResponse>(
-        '/wp-json/wp-super-gallery/v1/campaigns?per_page=50',
+        `/wp-json/wp-super-gallery/v1/campaigns?page=${page}&per_page=${perPage}`,
       );
-      return response.items ?? [];
+      return {
+        campaigns: response.items ?? [],
+        pagination: {
+          page: response.page ?? page,
+          perPage: response.perPage ?? perPage,
+          total: response.total ?? 0,
+          totalPages: response.totalPages ?? 1,
+        },
+      };
     },
     ADMIN_SWR_OPTIONS,
   );
 
   return {
-    campaigns: data ?? [],
+    campaigns: data?.campaigns ?? [],
+    pagination: data?.pagination ?? { page, perPage, total: 0, totalPages: 1 },
     campaignsLoading: isLoading,
     campaignsError: error ? (error instanceof Error ? error.message : 'Failed to load campaigns') : null,
     mutateCampaigns: mutate,
   };
+}
+
+/**
+ * Fetch all campaigns for dropdown selectors (per_page=50, the endpoint max).
+ * Cached separately from the paginated table so selectors always show all
+ * campaigns regardless of which page the campaigns tab is on.
+ *
+ * TODO: Replace with a lightweight server endpoint returning id/title only
+ * to reduce payload size and sequential page walks on large installs.
+ */
+const MAX_SELECTOR_PAGES = 20; // Safety cap: 20 × 50 = 1 000 campaigns
+
+export function useAllCampaignOptions(apiClient: ApiClient) {
+  const { data } = useSWR<AdminCampaign[]>(
+    'admin-campaign-options',
+    async () => {
+      const all: AdminCampaign[] = [];
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const response = await apiClient.get<ApiCampaignResponse>(
+          `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}`,
+        );
+        all.push(...(response.items ?? []));
+        totalPages = response.totalPages ?? 1;
+        page++;
+      } while (page <= totalPages && page <= MAX_SELECTOR_PAGES);
+      return all;
+    },
+    ADMIN_SWR_OPTIONS,
+  );
+
+  return data ?? [];
 }
 
 /**
@@ -214,6 +268,46 @@ export function useAuditEntries(apiClient: ApiClient, campaignId: string) {
 
 // ── Prefetch: Access & Audit ───────────────────────────────────────────────────
 
+/** Max concurrent in-flight prefetch requests to avoid overwhelming the server. */
+const PREFETCH_CONCURRENCY = 4;
+
+/**
+ * Run async tasks with bounded concurrency + stagger delay.
+ * Returns a cancel function that stops scheduling of remaining batches
+ * and clears pending timers (already in-flight requests will complete).
+ */
+function staggeredPrefetch(
+  ids: string[],
+  run: (id: string) => Promise<void>,
+  staggerMs: number,
+): () => void {
+  let cancelled = false;
+  const timers: ReturnType<typeof setTimeout>[] = [];
+
+  // Chunk ids into batches of PREFETCH_CONCURRENCY
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += PREFETCH_CONCURRENCY) {
+    batches.push(ids.slice(i, i + PREFETCH_CONCURRENCY));
+  }
+
+  let batchIndex = 0;
+  function runNextBatch() {
+    if (cancelled || batchIndex >= batches.length) return;
+    const batch = batches[batchIndex++];
+    Promise.allSettled(batch.map(run)).then(() => {
+      if (!cancelled) {
+        timers.push(setTimeout(runNextBatch, staggerMs));
+      }
+    });
+  }
+
+  runNextBatch();
+  return () => {
+    cancelled = true;
+    timers.forEach(clearTimeout);
+  };
+}
+
 /**
  * Background-prefetch per-campaign access grants into SWR cache.
  *
@@ -228,25 +322,23 @@ export function prefetchAllCampaignAccess(
   apiClient: ApiClient,
   campaignIds: string[],
 ): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  campaignIds.forEach((id, index) => {
-    timers.push(
-      setTimeout(() => {
-        const key = ['admin-access', 'campaign', id];
-        void globalMutate(
-          key,
-          async () => {
-            const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
-              `/wp-json/wp-super-gallery/v1/campaigns/${id}/access`,
-            );
-            return normalizeListResponse(response);
-          },
-          { revalidate: false },
-        );
-      }, index * 100),
-    );
-  });
-  return () => timers.forEach(clearTimeout);
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => {
+      const key = ['admin-access', 'campaign', id];
+      return globalMutate(
+        key,
+        async () => {
+          const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
+            `/wp-json/wp-super-gallery/v1/campaigns/${id}/access`,
+          );
+          return normalizeListResponse(response);
+        },
+        { revalidate: false },
+      ) as Promise<void>;
+    },
+    100,
+  );
 }
 
 /**
@@ -261,25 +353,23 @@ export function prefetchAllCampaignAudit(
   apiClient: ApiClient,
   campaignIds: string[],
 ): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  campaignIds.forEach((id, index) => {
-    timers.push(
-      setTimeout(() => {
-        const key = ['admin-audit', id];
-        void globalMutate(
-          key,
-          async () => {
-            const response = await apiClient.get<ListResponse<AuditEntry>>(
-              `/wp-json/wp-super-gallery/v1/campaigns/${id}/audit`,
-            );
-            return normalizeListResponse(response);
-          },
-          { revalidate: false },
-        );
-      }, index * 100),
-    );
-  });
-  return () => timers.forEach(clearTimeout);
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => {
+      const key = ['admin-audit', id];
+      return globalMutate(
+        key,
+        async () => {
+          const response = await apiClient.get<ListResponse<AuditEntry>>(
+            `/wp-json/wp-super-gallery/v1/campaigns/${id}/audit`,
+          );
+          return normalizeListResponse(response);
+        },
+        { revalidate: false },
+      ) as Promise<void>;
+    },
+    100,
+  );
 }
 
 // ── Media Items ────────────────────────────────────────────────────────────────
@@ -332,27 +422,25 @@ export function prefetchAllCampaignMedia(
   apiClient: ApiClient,
   campaignIds: string[],
 ): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  campaignIds.forEach((id, index) => {
-    timers.push(
-      setTimeout(() => {
-        const key = mediaItemsKey(id);
-        if (!key) return;
-        void globalMutate(
-          key,
-          async () => {
-            const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
-              `/wp-json/wp-super-gallery/v1/campaigns/${id}/media`,
-            );
-            const items = Array.isArray(response) ? response : response.items ?? [];
-            return sortByOrder(items);
-          },
-          { revalidate: false },
-        );
-      }, index * 150),
-    );
-  });
-  return () => timers.forEach(clearTimeout);
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => {
+      const key = mediaItemsKey(id);
+      if (!key) return Promise.resolve();
+      return globalMutate(
+        key,
+        async () => {
+          const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
+            `/wp-json/wp-super-gallery/v1/campaigns/${id}/media`,
+          );
+          const items = Array.isArray(response) ? response : response.items ?? [];
+          return sortByOrder(items);
+        },
+        { revalidate: false },
+      ) as Promise<void>;
+    },
+    150,
+  );
 }
 
 // Re-export the mutator type for convenience

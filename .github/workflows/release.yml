@@ -1,0 +1,220 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# WP Super Gallery — Release workflow
+#
+# Triggered manually via workflow_dispatch.  Inputs:
+#   version     – "auto" to compute from conventional commits, or explicit "X.Y.Z"
+#   deploy_svn  – check to also push to WordPress.org SVN (requires secrets)
+#
+# Flow:
+#   1. Compute or validate version
+#   2. Bump version in package.json + plugin header + WPSG_VERSION constant
+#   3. Run tests (sanity gate)
+#   4. Production build (build:wp)
+#   5. Install production-only Composer deps
+#   6. Create distribution ZIP
+#   7. Commit version bump → create git tag → push
+#   8. Create GitHub Release with ZIP attached
+#   9. (Optional) Deploy to WordPress.org SVN
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (leave "auto" to compute from commits)'
+        required: true
+        default: 'auto'
+        type: string
+      deploy_svn:
+        description: 'Deploy to WordPress.org SVN'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # ── Checkout with full history (needed for tag detection + commit scan) ──
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Setup toolchains ────────────────────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl
+          tools: composer:v2
+
+      # ── Compute version ─────────────────────────────────────────────────────
+      - name: Determine version
+        id: version
+        run: |
+          INPUT_VERSION="${{ inputs.version }}"
+          if [ "$INPUT_VERSION" = "auto" ]; then
+            NEXT=$(bash scripts/compute-version.sh)
+            echo "Computed version from commits: $NEXT"
+          else
+            NEXT="$INPUT_VERSION"
+            echo "Using explicit version: $NEXT"
+          fi
+
+          # Validate format.
+          if ! echo "$NEXT" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format: $NEXT (expected X.Y.Z)"
+            exit 1
+          fi
+
+          # Check tag doesn't already exist.
+          if git rev-parse "v$NEXT" >/dev/null 2>&1; then
+            echo "::error::Tag v$NEXT already exists"
+            exit 1
+          fi
+
+          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "tag=v$NEXT" >> "$GITHUB_OUTPUT"
+
+      # ── Bump version in source files ────────────────────────────────────────
+      - name: Bump version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          PLUGIN_FILE="wp-plugin/wp-super-gallery/wp-super-gallery.php"
+
+          # 1. package.json
+          npm version "$VERSION" --no-git-tag-version
+
+          # 2. Plugin header: "Version: X.Y.Z"
+          sed -i "s/^ \* Version: .*/ * Version:           $VERSION/" "$PLUGIN_FILE"
+
+          # 3. WPSG_VERSION constant
+          sed -i "s/define('WPSG_VERSION', '.*')/define('WPSG_VERSION', '$VERSION')/" "$PLUGIN_FILE"
+
+          # 4. readme.txt stable tag
+          sed -i "s/^Stable tag: .*/Stable tag: $VERSION/" wp-plugin/wp-super-gallery/readme.txt
+
+          echo "Bumped to $VERSION"
+          grep -n "Version:" "$PLUGIN_FILE" | head -1
+          grep -n "WPSG_VERSION" "$PLUGIN_FILE" | head -1
+          grep "version" package.json | head -1
+
+      # ── Install & test ──────────────────────────────────────────────────────
+      - run: npm ci
+
+      - name: Vitest (sanity gate)
+        run: npm run test:coverage
+
+      - name: Build production assets
+        run: npm run build:wp
+
+      # ── PHPUnit sanity gate ─────────────────────────────────────────────────
+      - name: Install Composer dependencies (dev)
+        working-directory: wp-plugin/wp-super-gallery
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Start wp-env
+        run: npx wp-env start
+
+      - name: PHPUnit (sanity gate)
+        run: |
+          npx wp-env run tests-cli sh -c \
+            "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+
+      - name: Stop wp-env
+        if: always()
+        run: npx wp-env stop
+
+      # ── Production Composer deps ────────────────────────────────────────────
+      - name: Install production PHP deps
+        working-directory: wp-plugin/wp-super-gallery
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+      # ── Create distribution ZIP ─────────────────────────────────────────────
+      - name: Package distribution ZIP
+        id: zip
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          PLUGIN_DIR="wp-plugin/wp-super-gallery"
+          ZIP_NAME="wp-super-gallery-v${VERSION}.zip"
+
+          cd wp-plugin
+          zip -r "../${ZIP_NAME}" wp-super-gallery \
+            -x "wp-super-gallery/tests/*" \
+            -x "wp-super-gallery/phpunit.xml.dist" \
+            -x "wp-super-gallery/.phpunit.result.cache" \
+            -x "wp-super-gallery/composer.json" \
+            -x "wp-super-gallery/composer.lock" \
+            -x "wp-super-gallery/.wp-env.json" \
+            -x "wp-super-gallery/bin/*"
+          cd ..
+
+          echo "zip_path=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Created $ZIP_NAME ($(du -h "$ZIP_NAME" | cut -f1))"
+
+      # ── Commit, tag, push ───────────────────────────────────────────────────
+      - name: Commit version bump and create tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage only the files touched by the version bump step.
+          # (The ZIP is left intact for the GitHub Release upload step.)
+          git add package.json package-lock.json \
+            wp-plugin/wp-super-gallery/wp-super-gallery.php \
+            wp-plugin/wp-super-gallery/readme.txt
+          git commit -m "chore(release): ${TAG}" --no-verify
+          git tag -a "$TAG" -m "Release ${TAG}"
+          git push origin HEAD --follow-tags
+
+      # ── Create GitHub Release ───────────────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: ${{ steps.zip.outputs.zip_path }}
+
+      # ── Upload ZIP as workflow artifact (backup) ────────────────────────────
+      - name: Upload release ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-zip
+          path: ${{ steps.zip.outputs.zip_path }}
+          retention-days: 90
+
+      # ── Optional: Deploy to WordPress.org SVN ───────────────────────────────
+      - name: Deploy to WordPress.org SVN
+        if: ${{ inputs.deploy_svn }}
+        uses: 10up/action-wordpress-plugin-deploy@v2
+        with:
+          generate-zip: false
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: wp-super-gallery
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_DIR: wp-plugin/wp-super-gallery

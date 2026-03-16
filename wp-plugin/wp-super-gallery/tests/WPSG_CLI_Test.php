@@ -46,9 +46,13 @@ if ( ! class_exists( 'WP_CLI' ) ) {
 }
 
 /**
- * Minimal WP_CLI\Utils stub for format_items.
- * Define the stub class first, then alias — class_alias() requires the source class to exist.
+ * Minimal WP_CLI\Utils stub — defines the namespaced function so that
+ * `WP_CLI\Utils\format_items(...)` resolves at runtime.
  */
+if ( ! function_exists( 'WP_CLI\\Utils\\format_items' ) ) {
+    require_once __DIR__ . '/stubs/wp-cli-utils-format-items.php';
+}
+
 if ( ! class_exists( 'WP_CLI_Utils_Stub' ) ) {
     class WP_CLI_Utils_Stub {
         public static array $formatted = [];
@@ -225,7 +229,11 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         preg_match( '/New ID: (\d+)/', $this->last_success(), $m );
         $new_id   = intval( $m[1] ?? 0 );
         $new_media = get_post_meta( $new_id, 'media_items', true );
-        $this->assertSame( $media_items, $new_media );
+        // sanitize_media_items callback fills in default fields; just verify
+        // the core fields we set are still present.
+        $this->assertCount( 1, $new_media );
+        $this->assertEquals( 'abc', $new_media[0]['id'] );
+        $this->assertEquals( 'https://example.com/img.jpg', $new_media[0]['url'] );
     }
 
     public function test_campaign_duplicate_without_copy_media_does_not_copy(): void {
@@ -495,7 +503,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
 
         $log = get_post_meta( $id, 'audit_log', true );
         $this->assertIsArray( $log );
-        $events = array_column( $log, 'event' );
+        $events = array_column( $log, 'action' );
         $this->assertContains( 'campaign.archived', $events );
     }
 
@@ -504,7 +512,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $this->cli->campaign_restore( [ (string) $id ], [] );
 
         $log    = get_post_meta( $id, 'audit_log', true );
-        $events = array_column( is_array( $log ) ? $log : [], 'event' );
+        $events = array_column( is_array( $log ) ? $log : [], 'action' );
         $this->assertContains( 'campaign.restored', $events );
     }
 
@@ -516,7 +524,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $new_id = intval( $m[1] ?? 0 );
 
         $log    = get_post_meta( $new_id, 'audit_log', true );
-        $events = array_column( is_array( $log ) ? $log : [], 'event' );
+        $events = array_column( is_array( $log ) ? $log : [], 'action' );
         $this->assertContains( 'campaign.duplicated', $events );
     }
 }

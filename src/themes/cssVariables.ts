@@ -12,6 +12,7 @@
 
 import type { ResolvedColors } from './types';
 import type { ThemeDefinition } from './types';
+import { sanitizeCssValue } from '@/utils/sanitizeCss';
 
 // ---------------------------------------------------------------------------
 // CSS variable namespace prefix
@@ -77,15 +78,15 @@ export function generateCssVariables(
   vars.push(`${PREFIX}-radius-xl: ${def.radius.xl};`);
 
   // --- Shadows ---
-  vars.push(`${PREFIX}-shadow-xs: ${def.shadows.xs};`);
-  vars.push(`${PREFIX}-shadow-sm: ${def.shadows.sm};`);
-  vars.push(`${PREFIX}-shadow-md: ${def.shadows.md};`);
-  vars.push(`${PREFIX}-shadow-lg: ${def.shadows.lg};`);
-  vars.push(`${PREFIX}-shadow-xl: ${def.shadows.xl};`);
+  vars.push(`${PREFIX}-shadow-xs: ${sanitizeCssValue(def.shadows.xs) ?? 'none'};`);
+  vars.push(`${PREFIX}-shadow-sm: ${sanitizeCssValue(def.shadows.sm) ?? 'none'};`);
+  vars.push(`${PREFIX}-shadow-md: ${sanitizeCssValue(def.shadows.md) ?? 'none'};`);
+  vars.push(`${PREFIX}-shadow-lg: ${sanitizeCssValue(def.shadows.lg) ?? 'none'};`);
+  vars.push(`${PREFIX}-shadow-xl: ${sanitizeCssValue(def.shadows.xl) ?? 'none'};`);
 
   // --- Typography ---
-  vars.push(`${PREFIX}-font-family: ${def.typography.fontFamily};`);
-  vars.push(`${PREFIX}-font-family-mono: ${def.typography.fontFamilyMono};`);
+  vars.push(`${PREFIX}-font-family: ${sanitizeCssValue(def.typography.fontFamily) ?? 'inherit'};`);
+  vars.push(`${PREFIX}-font-family-mono: ${sanitizeCssValue(def.typography.fontFamilyMono) ?? 'monospace'};`);
 
   // --- Meta ---
   vars.push(`${PREFIX}-color-scheme: ${def.colorScheme};`);

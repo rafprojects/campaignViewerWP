@@ -70,14 +70,32 @@ export interface LayoutBuilderState {
 
 export interface LayoutBuilderActions {
   // ── Template-level ──
-  /** Replace the entire template (e.g., on load from API). */
-  setTemplate: (template: LayoutTemplate) => void;
+  /** Replace the entire template (e.g., on load from API). Pass `{ preserveSelection: true }` after save. */
+  setTemplate: (template: LayoutTemplate, opts?: { preserveSelection?: boolean }) => void;
   /** Update template name. */
   setName: (name: string) => void;
   /** Update canvas aspect ratio. */
   setAspectRatio: (ratio: number) => void;
   /** Update canvas background color. */
   setBackgroundColor: (color: string) => void;
+  /** Change background mode (none, color, gradient, image). */
+  setBackgroundMode: (mode: LayoutTemplate['backgroundMode']) => void;
+  /** Set gradient direction preset. */
+  setBackgroundGradientDirection: (dir: LayoutTemplate['backgroundGradientDirection']) => void;
+  /** Set gradient color stops (2–3 entries). */
+  setBackgroundGradientStops: (stops: LayoutTemplate['backgroundGradientStops']) => void;
+  /** Set gradient type (linear, radial, conic). */
+  setBackgroundGradientType: (t: LayoutTemplate['backgroundGradientType']) => void;
+  /** Set custom gradient angle in degrees. */
+  setBackgroundGradientAngle: (a: number | undefined) => void;
+  /** Set radial shape (circle/ellipse). */
+  setBackgroundRadialShape: (s: LayoutTemplate['backgroundRadialShape']) => void;
+  /** Set radial size keyword. */
+  setBackgroundRadialSize: (s: LayoutTemplate['backgroundRadialSize']) => void;
+  /** Set radial/conic center X %. */
+  setBackgroundGradientCenterX: (x: number) => void;
+  /** Set radial/conic center Y %. */
+  setBackgroundGradientCenterY: (y: number) => void;
 
   // ── Slot CRUD ──
   /** Add a new slot with defaults. Returns the new slot's ID. */
@@ -120,6 +138,10 @@ export interface LayoutBuilderActions {
   setBackgroundImageFit: (fit: 'cover' | 'contain' | 'fill') => void;
   /** Update background image opacity. */
   setBackgroundImageOpacity: (opacity: number) => void;
+  /** Set canvas height mode (aspect-ratio or fixed-vh). */
+  setCanvasHeightMode: (mode: 'aspect-ratio' | 'fixed-vh') => void;
+  /** Set canvas height in viewport units (1–100). */
+  setCanvasHeightVh: (vh: number) => void;
 
   // ── Overlay CRUD (P15-H) ──
   /** Add a new overlay. Returns the overlay's ID. */
@@ -234,13 +256,15 @@ export function useLayoutBuilderState(
 
   // ── Template-level actions ──
 
-  const setTemplate = useCallback((t: LayoutTemplate) => {
+  const setTemplate = useCallback((t: LayoutTemplate, opts?: { preserveSelection?: boolean }) => {
     setTemplateRaw(t);
     setPast([]);
     setFuture([]);
     setHistoryTrimmed(false);
     setIsDirty(false);
-    setSelectedSlotIds(new Set());
+    if (!opts?.preserveSelection) {
+      setSelectedSlotIds(new Set());
+    }
   }, []);
 
   const setName = useCallback(
@@ -258,6 +282,59 @@ export function useLayoutBuilderState(
     [mutate],
   );
 
+  const setBackgroundMode = useCallback(
+    (mode: LayoutTemplate['backgroundMode']) => mutate((d) => { d.backgroundMode = mode; }, 'Change background mode'),
+    [mutate],
+  );
+
+  const setBackgroundGradientDirection = useCallback(
+    (dir: LayoutTemplate['backgroundGradientDirection']) =>
+      mutate((d) => { d.backgroundGradientDirection = dir; }, 'Change gradient direction'),
+    [mutate],
+  );
+
+  const setBackgroundGradientStops = useCallback(
+    (stops: LayoutTemplate['backgroundGradientStops']) =>
+      mutate((d) => { d.backgroundGradientStops = stops; }, 'Change gradient stops'),
+    [mutate],
+  );
+
+  const setBackgroundGradientType = useCallback(
+    (t: LayoutTemplate['backgroundGradientType']) =>
+      mutate((d) => { d.backgroundGradientType = t; }, 'Change gradient type'),
+    [mutate],
+  );
+
+  const setBackgroundGradientAngle = useCallback(
+    (a: number | undefined) =>
+      mutate((d) => { d.backgroundGradientAngle = a; }, 'Change gradient angle'),
+    [mutate],
+  );
+
+  const setBackgroundRadialShape = useCallback(
+    (s: LayoutTemplate['backgroundRadialShape']) =>
+      mutate((d) => { d.backgroundRadialShape = s; }, 'Change radial shape'),
+    [mutate],
+  );
+
+  const setBackgroundRadialSize = useCallback(
+    (s: LayoutTemplate['backgroundRadialSize']) =>
+      mutate((d) => { d.backgroundRadialSize = s; }, 'Change radial size'),
+    [mutate],
+  );
+
+  const setBackgroundGradientCenterX = useCallback(
+    (x: number) =>
+      mutate((d) => { d.backgroundGradientCenterX = x; }, 'Change gradient center X'),
+    [mutate],
+  );
+
+  const setBackgroundGradientCenterY = useCallback(
+    (y: number) =>
+      mutate((d) => { d.backgroundGradientCenterY = y; }, 'Change gradient center Y'),
+    [mutate],
+  );
+
   const setBackgroundImage = useCallback(
     (url: string) => mutate((d) => { d.backgroundImage = url || undefined; }, 'Set background image'),
     [mutate],
@@ -270,6 +347,16 @@ export function useLayoutBuilderState(
 
   const setBackgroundImageOpacity = useCallback(
     (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }, 'Change image opacity'),
+    [mutate],
+  );
+
+  const setCanvasHeightMode = useCallback(
+    (mode: 'aspect-ratio' | 'fixed-vh') => mutate((d) => { d.canvasHeightMode = mode; }, 'Change height mode'),
+    [mutate],
+  );
+
+  const setCanvasHeightVh = useCallback(
+    (vh: number) => mutate((d) => { d.canvasHeightVh = Math.max(1, Math.min(100, vh)); }, 'Change height vh'),
     [mutate],
   );
 
@@ -844,9 +931,20 @@ export function useLayoutBuilderState(
     setName,
     setAspectRatio,
     setBackgroundColor,
+    setBackgroundMode,
+    setBackgroundGradientDirection,
+    setBackgroundGradientStops,
+    setBackgroundGradientType,
+    setBackgroundGradientAngle,
+    setBackgroundRadialShape,
+    setBackgroundRadialSize,
+    setBackgroundGradientCenterX,
+    setBackgroundGradientCenterY,
     setBackgroundImage,
     setBackgroundImageFit,
     setBackgroundImageOpacity,
+    setCanvasHeightMode,
+    setCanvasHeightVh,
     // Slot CRUD
     addSlot,
     removeSlots,

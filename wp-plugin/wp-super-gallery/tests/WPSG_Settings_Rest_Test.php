@@ -3,12 +3,10 @@
 class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
     public function setUp(): void {
         parent::setUp();
-        // Disable nonce verification for direct REST tests (no browser session).
-        add_filter('wpsg_require_rest_nonce', '__return_false');
+        // Nonce bypass handled via WPSG_ALLOW_NONCE_BYPASS constant in bootstrap.php.
     }
 
     public function tearDown(): void {
-        remove_filter('wpsg_require_rest_nonce', '__return_false');
         delete_option(WPSG_Settings::OPTION_NAME);
         parent::tearDown();
     }
@@ -39,6 +37,10 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
         $user->add_cap('manage_wpsg');
+        // Grant CPT caps introduced in J-4.
+        foreach ( WPSG_CPT::CPT_CAPS as $cap ) {
+            $user->add_cap( $cap );
+        }
         wp_set_current_user($user_id);
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');

@@ -8,7 +8,6 @@ import { AssetUploader } from './AssetUploader';
 function makeProps(overrides = {}) {
   return {
     onFileSelect: vi.fn(),
-    onUrlSubmit: vi.fn(),
     ...overrides,
   };
 }
@@ -19,8 +18,13 @@ describe('AssetUploader', () => {
     expect(screen.getByRole('button', { name: /upload image/i })).toBeInTheDocument();
   });
 
-  it('renders URL input with default placeholder', () => {
+  it('hides URL input when onUrlSubmit is not provided', () => {
     render(<AssetUploader {...makeProps()} />);
+    expect(screen.queryByPlaceholderText(/or paste image url/i)).toBeNull();
+  });
+
+  it('renders URL input when onUrlSubmit is provided', () => {
+    render(<AssetUploader {...makeProps({ onUrlSubmit: vi.fn() })} />);
     expect(screen.getByPlaceholderText(/or paste image url/i)).toBeInTheDocument();
   });
 
@@ -47,7 +51,7 @@ describe('AssetUploader', () => {
   });
 
   it('clears the URL input after a successful submit', () => {
-    render(<AssetUploader {...makeProps()} />);
+    render(<AssetUploader {...makeProps({ onUrlSubmit: vi.fn() })} />);
     const input = screen.getByPlaceholderText(/or paste image url/i);
     fireEvent.change(input, { target: { value: 'https://example.com/img.png' } });
     fireEvent.keyDown(input, { key: 'Enter' });
@@ -60,7 +64,7 @@ describe('AssetUploader', () => {
   });
 
   it('disables both inputs when disabled=true', () => {
-    render(<AssetUploader {...makeProps({ disabled: true })} />);
+    render(<AssetUploader {...makeProps({ disabled: true, onUrlSubmit: vi.fn() })} />);
     expect(screen.getByRole('button', { name: /upload image/i })).toBeDisabled();
     expect(screen.getByPlaceholderText(/or paste image url/i)).toBeDisabled();
   });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
+import { render, screen, fireEvent, waitFor, act } from '../../test/test-utils';
 import MediaTab from './MediaTab';
 import { showNotification } from '@mantine/notifications';
 
@@ -66,11 +66,17 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    expect(await screen.findByText('Item One')).toBeInTheDocument();
+    // Wait for SWR data + useEffect sync to stabilize
+    await waitFor(() => {
+      expect(document.body.contains(screen.getByText('Item One'))).toBe(true);
+    }, { timeout: 3000 });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
-    const captionInput = await screen.findByLabelText('Caption');
-    fireEvent.change(captionInput, { target: { value: 'Updated' } });
+    // Edit flow
+    await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0]); });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Caption')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    fireEvent.change(screen.getByLabelText('Caption'), { target: { value: 'Updated' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
@@ -80,9 +86,14 @@ describe('MediaTab', () => {
       );
     });
 
-    const dragHandles = screen.getAllByLabelText('Drag media to reorder');
-    dragHandles[0].focus();
-    fireEvent.keyDown(dragHandles[0], { key: 'ArrowRight', code: 'ArrowRight' });
+    // Reorder flow (keyboard)
+    await waitFor(() => {
+      const handles = screen.getAllByLabelText('Drag media to reorder');
+      expect(document.body.contains(handles[0])).toBe(true);
+    }, { timeout: 3000 });
+    const dragHandle = screen.getAllByLabelText('Drag media to reorder')[0];
+    dragHandle.focus();
+    await act(async () => { fireEvent.keyDown(dragHandle, { key: 'ArrowRight', code: 'ArrowRight' }); });
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
         '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
@@ -90,13 +101,12 @@ describe('MediaTab', () => {
       );
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete media' })[0]);
-    // Wait for the delete confirmation modal to appear
+    // Delete flow
+    await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: 'Delete media' })[0]); });
     await waitFor(() => {
-      expect(screen.getByText('Delete Media')).toBeInTheDocument();
-    });
-    // Confirm deletion in the modal
-    fireEvent.click(screen.getByRole('button', { name: 'Delete media Item Two' }));
+      expect(screen.getByText('Remove from Campaign')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Remove media Item Two' })); });
     await waitFor(() => {
       expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/media/m2');
     });
@@ -251,9 +261,15 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
-    const captionInput = await screen.findByLabelText('Caption');
-    fireEvent.change(captionInput, { target: { value: 'New caption' } });
+    // Wait for SWR data + useEffect sync to stabilize
+    await waitFor(() => {
+      expect(document.body.contains(screen.getByRole('button', { name: 'Edit' }))).toBe(true);
+    }, { timeout: 3000 });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Edit' })); });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Caption')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    fireEvent.change(screen.getByLabelText('Caption'), { target: { value: 'New caption' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
@@ -287,8 +303,17 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
-    const captionInput = await screen.findByLabelText('Caption');
+    // Wait for SWR data + useEffect sync to stabilize
+    await waitFor(() => {
+      const btn = screen.getByRole('button', { name: 'Edit' });
+      expect(document.body.contains(btn)).toBe(true);
+    }, { timeout: 3000 });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Edit' })); });
+    // Wait for modal to render (Portal + Transition)
+    await waitFor(() => {
+      expect(screen.getByLabelText('Caption')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    const captionInput = screen.getByLabelText('Caption');
     fireEvent.change(captionInput, { target: { value: 'Updated Caption' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -387,6 +412,7 @@ describe('MediaTab', () => {
   });
 
   it('shows delete error when delete fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -402,15 +428,23 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    fireEvent.click(await screen.findByLabelText('Delete media'));
-    await screen.findByText('Delete Media');
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete media Item One' }));
+    // Wait for SWR data + useEffect sync to stabilize
+    await waitFor(() => {
+      expect(document.body.contains(screen.getByLabelText('Delete media'))).toBe(true);
+    }, { timeout: 3000 });
+    await act(async () => { fireEvent.click(screen.getByLabelText('Delete media')); });
+    await waitFor(() => {
+      expect(screen.getByText('Remove from Campaign')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Remove media Item One' })); });
 
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Delete failed' }),
       );
     });
+
+    consoleSpy.mockRestore();
   });
 
   it('does not reorder when only one item exists', async () => {
@@ -462,14 +496,19 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    const dragHandles = await screen.findAllByLabelText('Drag media to reorder');
-    dragHandles[0].focus();
-    fireEvent.keyDown(dragHandles[0], { key: 'ArrowRight', code: 'ArrowRight' });
+    // Wait for SWR data + useEffect sync to stabilize
+    await waitFor(() => {
+      const handles = screen.getAllByLabelText('Drag media to reorder');
+      expect(document.body.contains(handles[0])).toBe(true);
+    }, { timeout: 3000 });
+    const dragHandle = screen.getAllByLabelText('Drag media to reorder')[0];
+    dragHandle.focus();
+    await act(async () => { fireEvent.keyDown(dragHandle, { key: 'ArrowRight', code: 'ArrowRight' }); });
     await waitFor(() => {
       expect(showNotification).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Reorder failed' }),
       );
-    });
+    }, { timeout: 3000 });
   });
 
   it('opens lightbox when image card is clicked and navigates prev/next', async () => {

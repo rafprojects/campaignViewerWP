@@ -28,6 +28,12 @@ if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
 	exit( 1 );
 }
 
+// Ensure WP_DEBUG is active so the nonce-bypass guard in verify_admin_auth()
+// can fire when WPSG_ALLOW_NONCE_BYPASS is also set.
+if ( ! defined( 'WP_DEBUG' ) ) {
+	define( 'WP_DEBUG', true );
+}
+
 // Give access to tests_add_filter() function.
 require_once "{$_tests_dir}/includes/functions.php";
 
@@ -54,6 +60,11 @@ if ( file_exists( $polyfill_autoload ) && ! defined( 'WP_TESTS_PHPUNIT_POLYFILLS
 }
 if ( file_exists( $polyfill_autoload ) ) {
 	require_once $polyfill_autoload;
+}
+
+// Allow nonce bypass in the test environment (WP_DEBUG is already true here).
+if ( ! defined( 'WPSG_ALLOW_NONCE_BYPASS' ) ) {
+	define( 'WPSG_ALLOW_NONCE_BYPASS', true );
 }
 
 // Start up the WP testing environment.

@@ -1,6 +1,6 @@
 # Phase 9 Report (Theme System)
 
-Implementation tracking for Phase 9. For architecture, schema, and all design decisions see the gold source: [THEME_SYSTEM_ASSESSMENT.md](THEME_SYSTEM_ASSESSMENT.md).
+Implementation tracking for Phase 9. For architecture, schema, and all design decisions see the gold source: [THEME_SYSTEM_ASSESSMENT.md](../THEME_SYSTEM_ASSESSMENT.md).
 
 ---
 
