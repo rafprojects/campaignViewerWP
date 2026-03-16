@@ -253,6 +253,21 @@ export function LayoutCanvas({
     [onAssetCanvasDrop, onMediaCanvasDrop],
   );
 
+  // Memoize derived background values to avoid recomputation during drag/resize renders.
+  const safeBackgroundUrl = useMemo(
+    () => template.backgroundImage ? sanitizeCssUrl(template.backgroundImage) : undefined,
+    [template.backgroundImage],
+  );
+  const gradientBackground = useMemo(
+    () => buildGradientCss(templateToGradientOpts(template)) ?? 'transparent',
+    // templateToGradientOpts reads 7+ fields; template is replaced on any field change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [template.backgroundGradientType, template.backgroundGradientDirection,
+     template.backgroundGradientAngle, template.backgroundGradientStops,
+     template.backgroundRadialShape, template.backgroundRadialSize,
+     template.backgroundGradientCenterX, template.backgroundGradientCenterY],
+  );
+
   return (
     <div style={{ position: 'relative' }}>
       {/* Canvas dimensions label */}
@@ -294,7 +309,7 @@ export function LayoutCanvas({
           backgroundPosition: undefined,
           background:
             (template.backgroundMode ?? 'color') === 'gradient'
-              ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
+              ? gradientBackground
               : undefined,
           border: isPreview
             ? 'none'
@@ -306,7 +321,7 @@ export function LayoutCanvas({
         }}
       >
         {/* Background image layer (below slots) */}
-        {template.backgroundMode === 'image' && template.backgroundImage && sanitizeCssUrl(template.backgroundImage) && (
+        {template.backgroundMode === 'image' && safeBackgroundUrl && (
           <div
             style={{
               position: 'absolute',
@@ -318,7 +333,7 @@ export function LayoutCanvas({
             }}
           >
             <img
-              src={sanitizeCssUrl(template.backgroundImage)}
+              src={safeBackgroundUrl}
               alt=""
               style={{
                 width: '100%',

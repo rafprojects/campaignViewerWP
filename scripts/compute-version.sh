@@ -31,14 +31,16 @@ if [ "$MAJOR" -eq 0 ]; then
   PRE_V1=true
 fi
 
-# Collect commit subjects since the last tag.
+# Collect commit subjects and bodies separately.
 if [ "$LAST_TAG" = "v0.0.0" ]; then
-  COMMITS=$(git log --pretty=format:"%s%n%b" HEAD 2>/dev/null || echo "")
+  SUBJECTS=$(git log --pretty=format:"%s" HEAD 2>/dev/null || echo "")
+  BODIES=$(git log --pretty=format:"%b" HEAD 2>/dev/null || echo "")
 else
-  COMMITS=$(git log --pretty=format:"%s%n%b" "${LAST_TAG}..HEAD" 2>/dev/null || echo "")
+  SUBJECTS=$(git log --pretty=format:"%s" "${LAST_TAG}..HEAD" 2>/dev/null || echo "")
+  BODIES=$(git log --pretty=format:"%b" "${LAST_TAG}..HEAD" 2>/dev/null || echo "")
 fi
 
-if [ -z "$COMMITS" ]; then
+if [ -z "$SUBJECTS" ]; then
   echo >&2 "No commits found since $LAST_TAG — defaulting to PATCH bump."
   echo "$MAJOR.$MINOR.$((PATCH + 1))"
   exit 0
@@ -48,19 +50,22 @@ fi
 HAS_BREAKING=false
 HAS_FEAT=false
 
+# Check subjects for type prefixes and breaking-change bangs.
 while IFS= read -r line; do
-  # Check for breaking change markers.
   if echo "$line" | grep -qiE '^[a-z]+(\(.+\))?!:'; then
     HAS_BREAKING=true
   fi
-  if echo "$line" | grep -qi 'BREAKING CHANGE'; then
-    HAS_BREAKING=true
-  fi
-  # Check for feat: commits.
   if echo "$line" | grep -qiE '^feat(\(.+\))?:'; then
     HAS_FEAT=true
   fi
-done <<< "$COMMITS"
+done <<< "$SUBJECTS"
+
+# Check bodies only for BREAKING CHANGE footers.
+while IFS= read -r line; do
+  if echo "$line" | grep -qiE '^BREAKING CHANGE:'; then
+    HAS_BREAKING=true
+  fi
+done <<< "$BODIES"
 
 # Determine bump level.
 if $HAS_BREAKING; then
