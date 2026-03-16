@@ -283,6 +283,9 @@ class WPSG_Settings {
         'show_campaign_stats'            => true,
         'campaign_stats_admin_only'      => true,
         'campaign_open_mode'             => 'full',
+        // P21-E: Auth bar display mode
+        'auth_bar_display_mode'          => 'floating',
+        'auth_bar_drag_margin'           => 16,
     ];
 
     /**
@@ -379,6 +382,8 @@ class WPSG_Settings {
         'gallery_label_justification' => ['left', 'center', 'right'],
         // P21-F: Campaign open mode
         'campaign_open_mode'          => ['full', 'galleries-only'],
+        // P21-E: Auth bar display mode
+        'auth_bar_display_mode'       => ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'],
     ];
 
     /**
@@ -500,6 +505,8 @@ class WPSG_Settings {
         // P21-C: Card max columns & min height
         'card_max_columns'             => [0, 8],
         'card_min_height'              => [0, 600],
+        // P21-E: Auth bar drag margin
+        'auth_bar_drag_margin'         => [0, 64],
     ];
 
     /**

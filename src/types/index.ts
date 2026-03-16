@@ -700,6 +700,9 @@ export interface GalleryBehaviorSettings {
   showCampaignStats: boolean;
   campaignStatsAdminOnly: boolean;
   campaignOpenMode: 'full' | 'galleries-only';
+  // P21-E: Auth bar display modes
+  authBarDisplayMode: 'bar' | 'floating' | 'draggable' | 'minimal' | 'auto-hide';
+  authBarDragMargin: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -948,4 +951,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   showCampaignStats: true,
   campaignStatsAdminOnly: true,
   campaignOpenMode: 'full',
+  // P21-E: Auth bar display modes
+  authBarDisplayMode: 'floating',
+  authBarDragMargin: 16,
 };

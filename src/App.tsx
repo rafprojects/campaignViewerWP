@@ -202,6 +202,8 @@ function AppContent({
           isAdmin={isAdmin}
           appMaxWidth={resolvedSettings.appMaxWidth}
           appPadding={resolvedSettings.appPadding}
+          displayMode={resolvedSettings.authBarDisplayMode}
+          dragMargin={resolvedSettings.authBarDragMargin}
           onOpenAdminPanel={openAdminPanel}
           onOpenSettings={openSettings}
           onLogout={() => void logout()}
