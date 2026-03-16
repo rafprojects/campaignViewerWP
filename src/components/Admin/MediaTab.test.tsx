@@ -412,6 +412,7 @@ describe('MediaTab', () => {
   });
 
   it('shows delete error when delete fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -442,6 +443,8 @@ describe('MediaTab', () => {
         expect.objectContaining({ title: 'Delete failed' }),
       );
     });
+
+    consoleSpy.mockRestore();
   });
 
   it('does not reorder when only one item exists', async () => {
