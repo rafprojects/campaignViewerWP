@@ -288,6 +288,9 @@ class WPSG_Settings {
         'auth_bar_drag_margin'           => 16,
         // P21-H: Settings tooltips
         'show_settings_tooltips'         => true,
+        // P21-I: Typography overrides & in-context editors
+        'typography_overrides'           => '{}',
+        'show_in_context_editors'        => true,
     ];
 
     /**
@@ -1142,6 +1145,48 @@ class WPSG_Settings {
         if (isset($input['cache_ttl'])) {
             $ttl = intval($input['cache_ttl']);
             $sanitized['cache_ttl'] = max(0, min(604800, $ttl));
+        }
+
+        // P21-I: Typography overrides — JSON object with per-element typography.
+        if (isset($input['typography_overrides'])) {
+            $raw = $input['typography_overrides'];
+            $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+            if (!is_array($decoded)) {
+                $decoded = [];
+            }
+            $allowed_keys = [
+                'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
+                'textTransform', 'textDecoration', 'lineHeight',
+                'letterSpacing', 'wordSpacing', 'color',
+                'textStrokeWidth', 'textStrokeColor',
+                'textShadowOffsetX', 'textShadowOffsetY', 'textShadowBlur', 'textShadowColor',
+                'textGlowColor', 'textGlowBlur',
+            ];
+            $clean = [];
+            foreach ($decoded as $element_id => $overrides) {
+                if (!is_string($element_id) || !is_array($overrides)) {
+                    continue;
+                }
+                $element_id = sanitize_key($element_id);
+                $element_clean = [];
+                foreach ($overrides as $prop => $val) {
+                    if (!in_array($prop, $allowed_keys, true)) {
+                        continue;
+                    }
+                    if ($prop === 'fontWeight') {
+                        $val = max(100, min(900, intval($val)));
+                    } elseif ($prop === 'lineHeight') {
+                        $val = max(0.5, min(5.0, floatval($val)));
+                    } else {
+                        $val = sanitize_text_field((string) $val);
+                    }
+                    $element_clean[$prop] = $val;
+                }
+                if (!empty($element_clean)) {
+                    $clean[$element_id] = $element_clean;
+                }
+            }
+            $sanitized['typography_overrides'] = wp_json_encode($clean);
         }
 
         // ── Generic fallback for P14+ settings not explicitly handled above ──

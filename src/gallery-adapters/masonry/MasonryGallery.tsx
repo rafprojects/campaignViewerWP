@@ -18,6 +18,7 @@ import { Box, Stack, Title, Group } from '@mantine/core';
 import { IconColumns, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
+import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
 import { LazyImage } from '@/components/Gallery/LazyImage';
@@ -43,6 +44,7 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const enriched = useMediaDimensions(media);
+  const galleryLabelStyle = useTypographyStyle('galleryLabel', settings);
 
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
@@ -82,7 +84,7 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
 
   return (
     <Stack gap="md">
-      <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
+      <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
         <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
           {settings.showGalleryLabelIcon && <IconColumns size={18} />}
           Gallery ({media.length})

@@ -22,6 +22,16 @@ export function mergeSettingsWithDefaults(
   >) {
     const incoming = (partial as Record<string, unknown>)[key];
     if (incoming !== undefined && incoming !== null) {
+      // P21-I: typography_overrides arrives as a JSON string from the PHP API.
+      if (key === 'typographyOverrides' && typeof incoming === 'string') {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (result as any)[key] = JSON.parse(incoming);
+        } catch {
+          // Invalid JSON — keep the default empty object.
+        }
+        continue;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[key] = incoming;
     }

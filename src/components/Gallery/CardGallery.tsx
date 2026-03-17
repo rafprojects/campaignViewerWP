@@ -6,6 +6,7 @@ import { OverlayArrows } from '@/components/Campaign/OverlayArrows';
 import { DotNavigator } from '@/components/Campaign/DotNavigator';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
+import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/Campaign/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -44,6 +45,8 @@ export function CardGallery({
   const displayedCampaign = selectedCampaign ?? lastCampaignRef.current;
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const viewerTitleStyle = useTypographyStyle('viewerTitle', galleryBehaviorSettings);
+  const viewerSubtitleStyle = useTypographyStyle('viewerSubtitle', galleryBehaviorSettings);
 
   // Load-more state
   const LOAD_MORE_SIZE = 12;
@@ -232,8 +235,8 @@ export function CardGallery({
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
               {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
               <Stack gap={0}>
-                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3">{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
-                {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm">{galleryBehaviorSettings.gallerySubtitleText}</Text>}
+                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
+                {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
               </Stack>
               )}
 

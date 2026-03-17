@@ -2,7 +2,9 @@ import { forwardRef } from 'react';
 import { IconLock, IconEye } from '@tabler/icons-react';
 import { Card, Image, Badge, Group, Text, Box, Stack, UnstyledButton } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
+import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { RequestAccessForm } from './RequestAccessForm';
 import styles from './CampaignCard.module.scss';
 
@@ -37,6 +39,8 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     };
     const cardShadow = shadowMap[shadow] ?? shadowMap.subtle;
     const showBorder = settings?.showCardBorder !== false && borderWidth > 0;
+    const safeSettings = settings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
+    const cardTitleStyle = useTypographyStyle('cardTitle', safeSettings);
     return (
       <UnstyledButton
         ref={ref}
@@ -161,7 +165,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           {/* Content Section */}
           <Stack p="md" gap="sm">
             {settings?.showCardTitle !== false && (
-            <Text fw={600} size="lg" lineClamp={1}>
+            <Text fw={600} size="lg" lineClamp={1} style={cardTitleStyle}>
               {campaign.title}
             </Text>
             )}

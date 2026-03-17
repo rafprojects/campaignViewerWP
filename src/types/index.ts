@@ -442,6 +442,32 @@ export type DotNavShape = 'circle' | 'pill' | 'square';
 export type ShadowPreset = 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
 export type ViewportBgType = 'none' | 'solid' | 'gradient' | 'image';
 
+// P21-I: Typography override type (Elementor-inspired)
+export interface TypographyOverride {
+  // Core typography
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: number;
+  fontStyle?: 'normal' | 'italic' | 'oblique';
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textDecoration?: 'none' | 'underline' | 'overline' | 'line-through';
+  lineHeight?: number;
+  letterSpacing?: string;
+  wordSpacing?: string;
+  color?: string;
+  // Text Stroke
+  textStrokeWidth?: string;
+  textStrokeColor?: string;
+  // Text Shadow
+  textShadowOffsetX?: string;
+  textShadowOffsetY?: string;
+  textShadowBlur?: string;
+  textShadowColor?: string;
+  // Text Glow
+  textGlowColor?: string;
+  textGlowBlur?: string;
+}
+
 export interface GalleryBehaviorSettings {
   videoViewportHeight: number;
   imageViewportHeight: number;
@@ -705,6 +731,9 @@ export interface GalleryBehaviorSettings {
   authBarDragMargin: number;
   // P21-H: Settings tooltips
   showSettingsTooltips: boolean;
+  // P21-I: Typography overrides & in-context editors
+  typographyOverrides: Record<string, TypographyOverride>;
+  showInContextEditors: boolean;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -958,4 +987,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   authBarDragMargin: 16,
   // P21-H: Settings tooltips
   showSettingsTooltips: true,
+  // P21-I: Typography overrides & in-context editors
+  typographyOverrides: {},
+  showInContextEditors: true,
 };

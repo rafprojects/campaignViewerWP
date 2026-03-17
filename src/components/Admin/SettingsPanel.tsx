@@ -27,11 +27,13 @@ import {
   IconPhoto,
   IconLayoutGrid,
   IconAdjustments,
+  IconTypography,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   type GalleryBehaviorSettings,
+  type TypographyOverride,
   type ScrollAnimationEasing,
   type ScrollAnimationStyle,
   type ScrollTransitionType,
@@ -43,6 +45,7 @@ import {
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { SettingTooltip } from './SettingTooltip';
+import { TypographyEditor } from '../shared/TypographyEditor';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
@@ -164,6 +167,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     <SettingTooltip label={label} tooltip={SETTING_TOOLTIPS[key] ?? ''} enabled={settings.showSettingsTooltips} />
   );
 
+  /** Update a single element's typography override. */
+  const updateTypoOverride = (elementId: string, override: TypographyOverride) => {
+    const next = { ...settings.typographyOverrides };
+    if (Object.keys(override).length === 0) {
+      delete next[elementId];
+    } else {
+      next[elementId] = override;
+    }
+    updateSetting('typographyOverrides', next);
+  };
+
   return (
     <Modal
       opened={opened}
@@ -203,6 +217,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   Advanced
                 </Tabs.Tab>
               )}
+              <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
+                Typography
+              </Tabs.Tab>
             </Tabs.List>
 
             {/* ── General Tab ───────────────────────────────────── */}
@@ -2072,6 +2089,180 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 </Accordion>
               </Tabs.Panel>
             )}
+
+            {/* ── Typography Tab ───────────────────────────────── */}
+            <Tabs.Panel value="typography" pt="md">
+              <Stack gap="md">
+                <Text size="sm" c="dimmed">
+                  Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults.
+                </Text>
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  disabled={Object.keys(settings.typographyOverrides).length === 0}
+                  onClick={() => updateSetting('typographyOverrides', {})}
+                >
+                  Reset all typography
+                </Button>
+                <Accordion variant="separated" chevronPosition="left">
+                  {/* Gallery Header */}
+                  <Accordion.Item value="viewerTitle">
+                    <Accordion.Control>Viewer Title</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['viewerTitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('viewerTitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="viewerSubtitle">
+                    <Accordion.Control>Viewer Subtitle</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['viewerSubtitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('viewerSubtitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Campaign Cards */}
+                  <Accordion.Item value="cardTitle">
+                    <Accordion.Control>Card Title</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardTitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardTitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="cardDescription">
+                    <Accordion.Control>Card Description</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardDescription'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardDescription', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="cardCompanyName">
+                    <Accordion.Control>Card Company Name</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardCompanyName'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardCompanyName', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="cardMediaCounts">
+                    <Accordion.Control>Card Media Counts</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardMediaCounts'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardMediaCounts', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Campaign Viewer */}
+                  <Accordion.Item value="campaignTitle">
+                    <Accordion.Control>Campaign Title</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignTitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignTitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignDescription">
+                    <Accordion.Control>Campaign Description</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignDescription'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignDescription', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignDate">
+                    <Accordion.Control>Campaign Date</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignDate'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignDate', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignAboutHeading">
+                    <Accordion.Control>Campaign About Heading</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignAboutHeading'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignAboutHeading', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignStatsValue">
+                    <Accordion.Control>Campaign Stats Value</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignStatsValue'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignStatsValue', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignStatsLabel">
+                    <Accordion.Control>Campaign Stats Label</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignStatsLabel'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignStatsLabel', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Gallery & Media */}
+                  <Accordion.Item value="galleryLabel">
+                    <Accordion.Control>Gallery Label</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['galleryLabel'] ?? {}}
+                        onChange={(v) => updateTypoOverride('galleryLabel', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="mediaCaption">
+                    <Accordion.Control>Media Caption</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['mediaCaption'] ?? {}}
+                        onChange={(v) => updateTypoOverride('mediaCaption', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Auth & Access */}
+                  <Accordion.Item value="authBarText">
+                    <Accordion.Control>Auth Bar Text</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['authBarText'] ?? {}}
+                        onChange={(v) => updateTypoOverride('authBarText', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="accessBadgeText">
+                    <Accordion.Control>Access Badge Text</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['accessBadgeText'] ?? {}}
+                        onChange={(v) => updateTypoOverride('accessBadgeText', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              </Stack>
+            </Tabs.Panel>
+
           </Tabs>
 
           {/* ── Footer (sticky) ─────────────────────────────── */}
