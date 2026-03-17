@@ -17,7 +17,7 @@
 | P21-F | CampaignViewer enhancements (fullscreen, toggles, galleries-only mode) | Complete ✅ | Medium (4–6 hours) |
 | P21-G | Gallery label editing & justification | Complete ✅ | Small (2–3 hours) |
 | P21-H | Settings tooltips infrastructure | Complete ✅ | Small (2–3 hours) |
-| P21-I | Typography system & in-context settings popups | Not started | Large (2–3 days) |
+| P21-I | Typography system & in-context settings popups | Complete ✅ | Large (2–3 days) |
 
 ---
 
@@ -1101,18 +1101,22 @@ interface InContextEditorProps {
 - `src/components/Admin/SettingsPanel.tsx` — New "Typography" tab
 
 ### Acceptance criteria
-- [ ] Typography overrides for all 16 element groups are configurable via SettingsPanel
-- [ ] All 17 override properties work: fontFamily, fontSize, fontWeight, fontStyle, textTransform, textDecoration, lineHeight, letterSpacing, wordSpacing, color, textStrokeWidth, textStrokeColor, textShadowOffsetX/Y/Blur/Color, textGlowColor/Blur
-- [ ] `useTypographyStyle` hook correctly applies overrides as inline styles
-- [ ] Text shadow and text glow combine into a single CSS `text-shadow` value when both are set
-- [ ] Text stroke renders via `-webkit-text-stroke` CSS properties
-- [ ] Overrides persist to server via `wpsg_settings.typography_overrides`
-- [ ] PHP sanitization validates override keys and values (whitelist of allowed keys, sanitize_text_field on string values, absint/floatval on numeric)
-- [ ] In-context editor icons visible only to admins
-- [ ] `showInContextEditors=false` hides all in-context icons
-- [ ] Clicking in-context icon opens a popover with relevant settings + typography controls
-- [ ] Changes from in-context popups apply immediately (live preview)
-- [ ] Changes auto-save after 500ms debounce
+- [x] Typography overrides for all 16 element groups are configurable via SettingsPanel
+- [x] All 18 override properties work: fontFamily, fontSize, fontWeight, fontStyle, textTransform, textDecoration, lineHeight, letterSpacing, wordSpacing, color, textStrokeWidth, textStrokeColor, textShadowOffsetX/Y/Blur/Color, textGlowColor/Blur
+- [x] `useTypographyStyle` hook correctly applies overrides as inline styles
+- [x] Text shadow and text glow combine into a single CSS `text-shadow` value when both are set
+- [x] Text stroke renders via `-webkit-text-stroke` CSS properties
+- [x] Overrides persist to server via `wpsg_settings.typography_overrides`
+- [x] PHP sanitization validates override keys and values (whitelist of allowed keys, sanitize_text_field on string values, absint/floatval on numeric)
+- [x] In-context editor icons visible only to admins
+- [x] `showInContextEditors=false` hides all in-context icons
+- [x] Clicking in-context icon opens a popover with relevant settings + typography controls
+- [x] Changes from in-context popups apply immediately (live preview)
+- [x] Changes auto-save after 500ms debounce
+
+### Commits
+- `badbfd4` — Typography override system: TypographyOverride type, useTypographyStyle hook, TypographyEditor component, Settings Typography tab, pilot wiring (Phase 1-3)
+- `9d87321` — In-context editors: InContextEditor component, useInContextSave hook, viewer header/about/stats popups, typography wiring (Phase 4-5)
 - [ ] "Reset to default" clears individual overrides
 - [ ] "Apply to group" applies typography across related elements
 - [ ] Typography tab in SettingsPanel lists all 16 groups with editors
