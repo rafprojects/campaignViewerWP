@@ -874,16 +874,38 @@ The following 16 unique text element groups need typography controls:
 
 ### Typography override type
 
+Inspired by [Elementor's Typography Group Control](https://developers.elementor.com/docs/editor-controls/group-control-typography/) which exposes 9 core properties (family, size, weight, style, transform, decoration, line-height, letter-spacing, word-spacing), plus their separate [Text Stroke](https://developers.elementor.com/docs/editor-controls/group-control-text-stroke/) and [Text Shadow](https://developers.elementor.com/docs/editor-controls/group-control-text-shadow/) group controls, our override type covers **all of the above** plus a text glow effect (implemented as a zero-offset `text-shadow`).
+
+> **How overrides work despite Mantine:** Mantine's theme system only controls `fontFamily` and heading sizes *globally* — there's no way to target a specific text element. The override mechanism bypasses the theme by applying inline `style` props directly to DOM elements. Since inline styles have higher CSS specificity than Mantine's class-based styles (`size="sm"`, `fw={600}`, etc.), they always win. When no override is set, the hook returns `{}` and Mantine defaults apply as before.
+
 ```typescript
 // src/types/index.ts
 interface TypographyOverride {
-  fontFamily?: string;
-  fontSize?: string;      // e.g., '14px', '0.875rem', 'sm', 'lg'
-  fontWeight?: number;    // e.g., 400, 500, 600, 700
-  lineHeight?: number;    // e.g., 1.4, 1.6
-  letterSpacing?: string; // e.g., '0.02em', 'normal'
+  // ── Core typography (Elementor parity) ──
+  fontFamily?: string;           // e.g., "'Inter', sans-serif"
+  fontSize?: string;             // e.g., '14px', '0.875rem', 'sm', 'lg'
+  fontWeight?: number;           // 100–900 (400 = normal, 700 = bold)
+  fontStyle?: 'normal' | 'italic' | 'oblique';
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
-  color?: string;         // hex color or CSS color
+  textDecoration?: 'none' | 'underline' | 'overline' | 'line-through';
+  lineHeight?: number;           // e.g., 1.4, 1.6
+  letterSpacing?: string;        // e.g., '0.02em', 'normal'
+  wordSpacing?: string;          // e.g., '0.1em', 'normal'
+  color?: string;                // hex color or CSS color
+
+  // ── Text Stroke (Elementor "Text Stroke" group) ──
+  textStrokeWidth?: string;      // e.g., '1px', '0.5px'
+  textStrokeColor?: string;      // hex or CSS color
+
+  // ── Text Shadow (Elementor "Text Shadow" group) ──
+  textShadowOffsetX?: string;    // e.g., '2px'
+  textShadowOffsetY?: string;    // e.g., '2px'
+  textShadowBlur?: string;       // e.g., '4px'
+  textShadowColor?: string;      // e.g., 'rgba(0,0,0,0.3)'
+
+  // ── Text Glow (zero-offset text-shadow with blur spread) ──
+  textGlowColor?: string;        // e.g., '#00ff88', 'rgba(0,255,136,0.8)'
+  textGlowBlur?: string;         // e.g., '10px', '20px'
 }
 
 // Stored in settings as:
@@ -927,13 +949,35 @@ export function useTypographyStyle(elementId: string, settings: GalleryBehaviorS
   const override = settings.typographyOverrides?.[elementId] ?? EMPTY;
   return useMemo(() => {
     const style: CSSProperties = {};
+
+    // Core typography
     if (override.fontFamily) style.fontFamily = override.fontFamily;
     if (override.fontSize) style.fontSize = override.fontSize;
     if (override.fontWeight) style.fontWeight = override.fontWeight;
+    if (override.fontStyle) style.fontStyle = override.fontStyle;
+    if (override.textTransform) style.textTransform = override.textTransform;
+    if (override.textDecoration) style.textDecoration = override.textDecoration;
     if (override.lineHeight) style.lineHeight = override.lineHeight;
     if (override.letterSpacing) style.letterSpacing = override.letterSpacing;
-    if (override.textTransform) style.textTransform = override.textTransform;
+    if (override.wordSpacing) style.wordSpacing = override.wordSpacing;
     if (override.color) style.color = override.color;
+
+    // Text Stroke (via -webkit-text-stroke)
+    if (override.textStrokeWidth) style.WebkitTextStrokeWidth = override.textStrokeWidth;
+    if (override.textStrokeColor) style.WebkitTextStrokeColor = override.textStrokeColor;
+
+    // Text Shadow + Text Glow (both map to CSS text-shadow, combined)
+    const shadows: string[] = [];
+    if (override.textShadowColor && override.textShadowBlur) {
+      shadows.push(
+        `${override.textShadowOffsetX ?? '0px'} ${override.textShadowOffsetY ?? '0px'} ${override.textShadowBlur} ${override.textShadowColor}`
+      );
+    }
+    if (override.textGlowColor && override.textGlowBlur) {
+      shadows.push(`0 0 ${override.textGlowBlur} ${override.textGlowColor}`);
+    }
+    if (shadows.length > 0) style.textShadow = shadows.join(', ');
+
     return style;
   }, [override]);
 }
@@ -1015,7 +1059,11 @@ interface InContextEditorProps {
    - Wire the hook into 3 pilot elements: `cardTitle`, `galleryLabel`, `viewerTitle`
 
 2. **Phase 2: Typography editor component** (Day 1–2)
-   - Create `src/components/shared/TypographyEditor.tsx` — a compact form with: font-family select, font-size input, font-weight select, line-height input, letter-spacing input, text-transform select, color picker
+   - Create `src/components/shared/TypographyEditor.tsx` — a compact form with:
+     - **Core section:** font-family select, font-size input, font-weight select (100–900), font-style select (normal/italic/oblique), text-transform select, text-decoration select (none/underline/overline/line-through), line-height input, letter-spacing input, word-spacing input, color picker
+     - **Stroke section** (collapsible): stroke width slider, stroke color picker
+     - **Shadow section** (collapsible): offset-X input, offset-Y input, blur input, shadow color picker
+     - **Glow section** (collapsible): glow color picker, glow blur slider
    - This is the reusable form used inside both SettingsPanel (dedicated typography section) and in-context popups
 
 3. **Phase 3: SettingsPanel typography section** (Day 2)
@@ -1054,9 +1102,12 @@ interface InContextEditorProps {
 
 ### Acceptance criteria
 - [ ] Typography overrides for all 16 element groups are configurable via SettingsPanel
+- [ ] All 17 override properties work: fontFamily, fontSize, fontWeight, fontStyle, textTransform, textDecoration, lineHeight, letterSpacing, wordSpacing, color, textStrokeWidth, textStrokeColor, textShadowOffsetX/Y/Blur/Color, textGlowColor/Blur
 - [ ] `useTypographyStyle` hook correctly applies overrides as inline styles
+- [ ] Text shadow and text glow combine into a single CSS `text-shadow` value when both are set
+- [ ] Text stroke renders via `-webkit-text-stroke` CSS properties
 - [ ] Overrides persist to server via `wpsg_settings.typography_overrides`
-- [ ] PHP sanitization validates override keys and values
+- [ ] PHP sanitization validates override keys and values (whitelist of allowed keys, sanitize_text_field on string values, absint/floatval on numeric)
 - [ ] In-context editor icons visible only to admins
 - [ ] `showInContextEditors=false` hides all in-context icons
 - [ ] Clicking in-context icon opens a popover with relevant settings + typography controls
