@@ -291,6 +291,13 @@ class WPSG_Settings {
         // P21-I: Typography overrides & in-context editors
         'typography_overrides'           => '{}',
         'show_in_context_editors'        => true,
+        // P21-J: QA fixes & UX enhancements
+        'show_card_info_panel'           => true,
+        'show_campaign_cover_image'      => true,
+        'show_campaign_tags'             => true,
+        'show_campaign_admin_actions'    => true,
+        'show_campaign_gallery_labels'   => true,
+        'fullscreen_content_max_width'   => 0,
     ];
 
     /**
@@ -382,7 +389,7 @@ class WPSG_Settings {
         // P21-D: Viewer background type
         'viewer_bg_type'             => ['theme', 'transparent', 'solid', 'gradient'],
         // P21-C: Card aspect ratio
-        'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4'],
+        'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4', '9:16', '2:3', '3:2', '21:9'],
         // P21-G: Gallery label justification
         'gallery_label_justification' => ['left', 'center', 'right'],
         // P21-F: Campaign open mode
@@ -512,6 +519,8 @@ class WPSG_Settings {
         'card_min_height'              => [0, 600],
         // P21-E: Auth bar drag margin
         'auth_bar_drag_margin'         => [0, 64],
+        // P21-J: Fullscreen content max width (0 = full responsive)
+        'fullscreen_content_max_width' => [0, 3000],
     ];
 
     /**
@@ -1154,7 +1163,7 @@ class WPSG_Settings {
             if (!is_array($decoded)) {
                 $decoded = [];
             }
-            $allowed_keys = [
+            $allowed_props = [
                 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
                 'textTransform', 'textDecoration', 'lineHeight',
                 'letterSpacing', 'wordSpacing', 'color',
@@ -1162,15 +1171,24 @@ class WPSG_Settings {
                 'textShadowOffsetX', 'textShadowOffsetY', 'textShadowBlur', 'textShadowColor',
                 'textGlowColor', 'textGlowBlur',
             ];
+            $allowed_elements = [
+                'viewerTitle', 'viewerSubtitle',
+                'cardTitle', 'cardDescription', 'cardCompanyName', 'cardMediaCounts',
+                'campaignTitle', 'campaignDescription', 'campaignDate',
+                'campaignAboutHeading', 'campaignStatsValue', 'campaignStatsLabel',
+                'galleryLabel', 'mediaCaption', 'authBarText', 'accessBadgeText',
+            ];
             $clean = [];
             foreach ($decoded as $element_id => $overrides) {
                 if (!is_string($element_id) || !is_array($overrides)) {
                     continue;
                 }
-                $element_id = sanitize_key($element_id);
+                if (!in_array($element_id, $allowed_elements, true)) {
+                    continue;
+                }
                 $element_clean = [];
                 foreach ($overrides as $prop => $val) {
-                    if (!in_array($prop, $allowed_keys, true)) {
+                    if (!in_array($prop, $allowed_props, true)) {
                         continue;
                     }
                     if ($prop === 'fontWeight') {

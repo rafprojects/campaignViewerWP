@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Container, Alert, Loader, Center, Stack, Group, Text, Button, Modal } from '@mantine/core';
+import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -182,30 +182,22 @@ function AppContent({
   return (
     <div className="wp-super-gallery">
       {!isAuthenticated && isReady && (
-        <>
-          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
-            <Alert color="blue" variant="light" role="status" aria-live="polite">
-              <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-                <Text size="sm">Sign in to access private campaigns.</Text>
-                <Button size="xs" onClick={openSignIn}>Sign in</Button>
-              </Group>
-            </Alert>
-          </Container>
-          <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
-            <LoginForm onSubmit={handleLogin} compact />
-          </Modal>
-        </>
+        <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
+          <LoginForm onSubmit={handleLogin} compact />
+        </Modal>
       )}
-      {isAuthenticated && user && (
+      {isReady && (
         <AuthBar
-          email={user.email}
+          email={user?.email ?? ''}
           isAdmin={isAdmin}
+          isAuthenticated={isAuthenticated}
           appMaxWidth={resolvedSettings.appMaxWidth}
           appPadding={resolvedSettings.appPadding}
           displayMode={resolvedSettings.authBarDisplayMode}
           dragMargin={resolvedSettings.authBarDragMargin}
           onOpenAdminPanel={openAdminPanel}
           onOpenSettings={openSettings}
+          onOpenSignIn={openSignIn}
           onLogout={() => void logout()}
         />
       )}

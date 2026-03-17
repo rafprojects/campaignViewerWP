@@ -18,6 +18,7 @@
 | P21-G | Gallery label editing & justification | Complete ✅ | Small (2–3 hours) |
 | P21-H | Settings tooltips infrastructure | Complete ✅ | Small (2–3 hours) |
 | P21-I | Typography system & in-context settings popups | Complete ✅ | Large (2–3 days) |
+| P21-J | QA fixes & UX enhancements | In Progress 🔧 | Medium (1–2 days) |
 
 ---
 
@@ -36,6 +37,7 @@
 - [Track P21-G — Gallery Label Editing & Justification](#track-p21-g--gallery-label-editing--justification)
 - [Track P21-H — Settings Tooltips Infrastructure](#track-p21-h--settings-tooltips-infrastructure)
 - [Track P21-I — Typography System & In-Context Settings Popups](#track-p21-i--typography-system--in-context-settings-popups)
+- [Track P21-J — QA Fixes & UX Enhancements](#track-p21-j--qa-fixes--ux-enhancements)
 - [Execution Priority](#execution-priority)
 - [Testing Strategy](#testing-strategy)
 - [Modified File Inventory](#modified-file-inventory)
@@ -1120,6 +1122,91 @@ interface InContextEditorProps {
 - [ ] "Reset to default" clears individual overrides
 - [ ] "Apply to group" applies typography across related elements
 - [ ] Typography tab in SettingsPanel lists all 16 groups with editors
+
+---
+
+## Track P21-J — QA Fixes & UX Enhancements
+
+**Priority:** 🔴 High (QA-driven fixes)
+**Effort:** Medium (1–2 days)
+**Depends on:** P21-E (auth bar), P21-I (typography + in-context editors)
+
+### Overview
+
+Post-implementation QA revealed several bugs and UX gaps. This track addresses:
+- **Phase 1 — Bug Fixes** (6 items): Auth bar signed-out state, draggable mode, icon choice, typography persistence, popup close behavior, stroke/shadow/glow
+- **Phase 2 — Feature Enhancements** (4 items): Card info panel toggle, additional aspect ratios, modal element toggles, fullscreen content width
+
+### Phase 1 — Bug Fixes
+
+#### 1A. Auth bar for signed-out users
+- **Problem:** Auth bar only renders when `isAuthenticated && user` in App.tsx — invisible when signed out
+- **Fix:** Always render AuthBar; pass `isAuthenticated` + `onOpenSignIn` props; signed-out floating icon shows "Sign in" popup on click
+- **Files:** `App.tsx`, `AuthBar.tsx`, `AuthBarFloating.tsx`
+
+#### 1B. Fix draggable mode
+- **Problem:** Draggable auth bar mode doesn't appear
+- **Fix:** Debug position calculation and rendering in AuthBarFloating
+- **Files:** `AuthBarFloating.tsx`
+
+#### 1C. Hamburger menu icon
+- **Problem:** Tool/wrench icon not intuitive for admin menu
+- **Fix:** Change `IconTool` → `IconMenu2` (hamburger)
+- **Files:** `AuthBarFloating.tsx`
+
+#### 1D. Typography changes revert (CRITICAL)
+- **Problem:** Font/size/weight changes flash then revert. Root cause: `useInContextSave` sends `typographyOverrides` as nested JS object, but PHP expects JSON string. Server ignores it, returns old value, `mergeSettingsWithDefaults` overwrites SWR cache.
+- **Fix:** `JSON.stringify(typographyOverrides)` before sending to API; same in `SettingsPanel.handleSave`
+- **Files:** `useInContextSave.ts`, `SettingsPanel.tsx`
+
+#### 1E. InContextEditor popup close behavior
+- **Problem:** Popup only closeable by clicking the gear icon; no Esc or click-outside support
+- **Fix:** Set `closeOnClickOutside={true}`, remove `trapFocus`
+- **Files:** `InContextEditor.tsx`
+
+#### 1F. Stroke/shadow/glow effects
+- **Problem:** Typography stroke, shadow, and glow controls don't produce visible effects
+- **Fix:** Verify CSS property mapping in `useTypographyStyle` and ensure styles propagate to rendered elements
+- **Files:** `useTypographyStyle.ts`, `TypographyEditor.tsx`
+
+### Phase 2 — Feature Enhancements
+
+#### 2A. Card info panel toggle
+- **Problem:** No way to hide card info panel for thumbnail-only card layouts
+- **Fix:** Add `showCardInfoPanel` boolean setting; wrap info panel in conditional
+- **Files:** `types/index.ts`, `CampaignCard.tsx`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+#### 2B. Additional aspect ratios
+- **Problem:** Missing popular ratios (9:16, 2:3, 3:2, 21:9)
+- **Fix:** Expand `cardAspectRatio` union type and PHP validation
+- **Files:** `types/index.ts`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+#### 2C. Modal element toggles
+- **Problem:** No way to hide individual modal sections for minimalist layouts
+- **Fix:** Add 4 boolean settings: `showCampaignCoverImage`, `showCampaignTags`, `showCampaignAdminActions`, `showCampaignGalleryLabels`; wrap sections in conditionals
+- **Files:** `types/index.ts`, `CampaignViewer.tsx`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+#### 2D. Fullscreen content width
+- **Problem:** Fullscreen modal has hardcoded `maxWidth: '64rem'`
+- **Fix:** Add `fullscreenContentMaxWidth` setting (0 or null = full responsive); apply dynamically in CampaignViewer
+- **Files:** `types/index.ts`, `CampaignViewer.tsx`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+### Checklist
+
+- [ ] 1A — Auth bar signed-out state
+- [ ] 1B — Draggable mode fix
+- [ ] 1C — Hamburger icon
+- [ ] 1D — Typography persistence fix
+- [ ] 1E — Popup close behavior
+- [ ] 1F — Stroke/shadow/glow effects
+- [ ] 2A — Card info panel toggle
+- [ ] 2B — Additional aspect ratios
+- [ ] 2C — Modal element toggles
+- [ ] 2D — Fullscreen content width
+- [ ] All TypeScript compiles clean
+- [ ] All Vitest tests pass
+- [ ] Vite build succeeds
+- [ ] Manual QA verification
 
 ---
 

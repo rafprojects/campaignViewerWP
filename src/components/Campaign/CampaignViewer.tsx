@@ -153,8 +153,8 @@ export function CampaignViewer({
       }}
       aria-label={`Campaign details for ${campaign.title}`}
     >
-      {/* Cover Image Header — hidden in galleries-only mode */}
-      {!galleriesOnly && (
+      {/* Cover Image Header — hidden in galleries-only mode or when cover image disabled */}
+      {!galleriesOnly && s.showCampaignCoverImage !== false && (
       <Box pos="relative" h={{ base: coverHBase, sm: coverHSm, md: coverH }} component="div">
         <InContextEditor
           visible={isAdmin && s.showInContextEditors}
@@ -227,12 +227,14 @@ export function CampaignViewer({
                 })}
               </Text>
             </Group>
+            {s.showCampaignTags !== false && (
             <Group gap={4}>
               <IconTag size={16} color="var(--wpsg-color-text-muted)" />
               <Text size="sm" c="dimmed">
                 {campaign.tags.join(', ')}
               </Text>
             </Group>
+            )}
           </Group>
           )}
         </Box>
@@ -240,7 +242,7 @@ export function CampaignViewer({
       )}
 
       {/* Content */}
-      <Box ref={containerRef} p={{ base: 'md', md: 'xl' }} style={{ maxWidth: '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
+      <Box ref={containerRef} p={{ base: 'md', md: 'xl' }} style={{ maxWidth: s.fullscreenContentMaxWidth && s.fullscreenContentMaxWidth > 0 ? `${s.fullscreenContentMaxWidth}px` : '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
         <Stack gap="lg">
           {/* Description — hidden in galleries-only mode */}
           {!galleriesOnly && s.showCampaignAbout !== false && (
@@ -389,7 +391,7 @@ export function CampaignViewer({
           )}
 
           {/* Admin Section */}
-          {isAdmin && (
+          {isAdmin && s.showCampaignAdminActions !== false && (
             <Paper p="md" radius="md" withBorder bg="var(--wpsg-color-surface)" component="section" aria-labelledby="admin-actions-heading">
               <Stack gap="sm">
                 <Title order={3} size="h6" id="admin-actions-heading">Admin Actions</Title>

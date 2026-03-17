@@ -1,18 +1,20 @@
 import { useState, useCallback, useRef } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
-import { IconUser, IconSettings, IconLogout, IconDashboard, IconGripVertical } from '@tabler/icons-react';
+import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
-const ICON_SIZE = 40;
+const ICON_SIZE = 44;
 
 interface AuthBarFloatingProps {
   email: string;
   isAdmin: boolean;
+  isAuthenticated?: boolean;
   draggable?: boolean;
   dragMargin?: number;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
+  onOpenSignIn?: () => void;
   onLogout: () => void;
 }
 
@@ -32,10 +34,12 @@ function readSavedPos(): { x: number; y: number } | null {
 export function AuthBarFloating({
   email,
   isAdmin,
+  isAuthenticated = true,
   draggable = false,
   dragMargin = 16,
   onOpenAdminPanel,
   onOpenSettings,
+  onOpenSignIn,
   onLogout,
 }: AuthBarFloatingProps) {
   const margin = dragMargin;
@@ -111,60 +115,81 @@ export function AuthBarFloating({
       };
 
   return (
-    <Popover opened={popoverOpen} onChange={setPopoverOpen} position="top-end" withArrow shadow="md" width={220}>
+    <Popover opened={popoverOpen} onChange={setPopoverOpen} position="top-end" withArrow shadow="md" width={220}
+      styles={{ dropdown: { backgroundColor: 'rgba(30, 30, 40, 0.95)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e0e6' } }}
+    >
       <Popover.Target>
         <ActionIcon
           size={ICON_SIZE}
           radius="xl"
           variant="filled"
-          aria-label="User menu"
-          style={buttonStyle}
+          aria-label="Admin menu"
+          style={{
+            ...buttonStyle,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.3)',
+          }}
           onClick={handleClick}
           onPointerDown={draggable ? onPointerDown : undefined}
           onPointerMove={draggable ? onPointerMove : undefined}
           onPointerUp={draggable ? onPointerUp : undefined}
         >
-          {draggable ? <IconGripVertical size={20} /> : <IconUser size={20} />}
+          {draggable ? <IconGripVertical size={22} /> : <IconMenu2 size={22} />}
         </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown>
         <Stack gap="xs">
-          <Text size="xs" c="dimmed" truncate>Signed in as {email}</Text>
-          <Divider />
-          {isAdmin && (
+          {isAuthenticated ? (
             <>
-              <Button
-                variant="subtle"
-                size="xs"
-                leftSection={<IconDashboard size={14} />}
-                justify="start"
-                onClick={() => { onOpenAdminPanel(); setPopoverOpen(false); }}
-              >
-                Admin Panel
-              </Button>
-              <Button
-                variant="subtle"
-                size="xs"
-                leftSection={<IconSettings size={14} />}
-                justify="start"
-                onClick={() => { onOpenSettings(); setPopoverOpen(false); }}
-              >
-                Settings
-              </Button>
+              <Text size="xs" c="dimmed" truncate>Signed in as {email}</Text>
               <Divider />
+              {isAdmin && (
+                <>
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    leftSection={<IconDashboard size={14} />}
+                    justify="start"
+                    onClick={() => { onOpenAdminPanel(); setPopoverOpen(false); }}
+                  >
+                    Admin Panel
+                  </Button>
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    leftSection={<IconSettings size={14} />}
+                    justify="start"
+                    onClick={() => { onOpenSettings(); setPopoverOpen(false); }}
+                  >
+                    Settings
+                  </Button>
+                  <Divider />
+                </>
+              )}
+              <Group justify="center">
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  color="red"
+                  leftSection={<IconLogout size={14} />}
+                  onClick={onLogout}
+                >
+                  Sign out
+                </Button>
+              </Group>
+            </>
+          ) : (
+            <>
+              <Text size="xs" c="dimmed">Sign in to access private campaigns.</Text>
+              <Button
+                variant="light"
+                size="xs"
+                leftSection={<IconLogin size={14} />}
+                onClick={() => { onOpenSignIn?.(); setPopoverOpen(false); }}
+              >
+                Sign in
+              </Button>
             </>
           )}
-          <Group justify="center">
-            <Button
-              variant="subtle"
-              size="xs"
-              color="red"
-              leftSection={<IconLogout size={14} />}
-              onClick={onLogout}
-            >
-              Sign out
-            </Button>
-          </Group>
         </Stack>
       </Popover.Dropdown>
     </Popover>

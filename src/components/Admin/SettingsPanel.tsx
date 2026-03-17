@@ -194,6 +194,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
       transitionProps={{ transition: 'fade', duration: 200 }}
+      overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
+      styles={{ content: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' }, header: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' } }}
     >
       {isLoading ? (
         <Center py="xl">
@@ -452,6 +454,40 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   checked={settings.campaignStatsAdminOnly ?? true}
                   onChange={(e) => updateSetting('campaignStatsAdminOnly', e.currentTarget.checked)}
                 />
+                <Switch
+                  label="Show Cover Image"
+                  description="Show the campaign cover image at the top of the viewer."
+                  checked={settings.showCampaignCoverImage ?? true}
+                  onChange={(e) => updateSetting('showCampaignCoverImage', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Tags"
+                  description="Show tags section in the campaign viewer."
+                  checked={settings.showCampaignTags ?? true}
+                  onChange={(e) => updateSetting('showCampaignTags', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Admin Actions"
+                  description="Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+                  checked={settings.showCampaignAdminActions ?? true}
+                  onChange={(e) => updateSetting('showCampaignAdminActions', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Gallery Labels"
+                  description="Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+                  checked={settings.showCampaignGalleryLabels ?? true}
+                  onChange={(e) => updateSetting('showCampaignGalleryLabels', e.currentTarget.checked)}
+                />
+                <NumberInput
+                  label="Fullscreen Content Max Width (px)"
+                  description="Limit content width in fullscreen mode. 0 = full responsive width."
+                  value={settings.fullscreenContentMaxWidth ?? 0}
+                  onChange={(value) => updateSetting('fullscreenContentMaxWidth', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={3000}
+                  step={50}
+                  placeholder="0 = full width"
+                />
 
                 <Divider label="Security" labelPosition="center" />
 
@@ -602,6 +638,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         checked={settings.showCardThumbnailFade ?? true}
                         onChange={(e) => updateSetting('showCardThumbnailFade', e.currentTarget.checked)}
                       />
+                      <Switch
+                        label="Show card info panel"
+                        description="Show title, description, tags & media counts below thumbnail"
+                        checked={settings.showCardInfoPanel ?? true}
+                        onChange={(e) => updateSetting('showCardInfoPanel', e.currentTarget.checked)}
+                      />
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -649,6 +691,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           { value: '4:3', label: '4:3 (standard)' },
                           { value: '1:1', label: '1:1 (square)' },
                           { value: '3:4', label: '3:4 (portrait)' },
+                          { value: '9:16', label: '9:16 (tall portrait)' },
+                          { value: '2:3', label: '2:3 (photo portrait)' },
+                          { value: '3:2', label: '3:2 (photo landscape)' },
+                          { value: '21:9', label: '21:9 (ultrawide)' },
                         ]}
                         value={settings.cardAspectRatio ?? 'auto'}
                         onChange={(v) => updateSetting('cardAspectRatio', (v ?? 'auto') as GalleryBehaviorSettings['cardAspectRatio'])}

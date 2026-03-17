@@ -163,6 +163,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           </Card.Section>
 
           {/* Content Section */}
+          {settings?.showCardInfoPanel !== false && (
           <Stack p="md" gap="sm">
             {settings?.showCardTitle !== false && (
             <Text fw={600} size="lg" lineClamp={1} style={cardTitleStyle}>
@@ -199,6 +200,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             </Group>
             )}
           </Stack>
+          )}
 
           {/* Hover border effect */}
           {hasAccess && showBorder && (

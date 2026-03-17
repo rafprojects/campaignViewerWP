@@ -99,12 +99,14 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
 
   return (
     <Stack gap="md">
+      {settings.showCampaignGalleryLabels !== false && (
       <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
         <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
           {settings.showGalleryLabelIcon && <IconPlayerPlay size={18} />}
           {settings.galleryVideoLabel || 'Videos'} ({videos.length})
         </Group>
       </Title>
+      )}
 
       {/* Player wrapper */}
       <Box

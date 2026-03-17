@@ -710,7 +710,7 @@ export interface GalleryBehaviorSettings {
   showViewerBorder: boolean;
   // P21-C: Card aspect ratio & max columns
   cardMaxColumns: number;
-  cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4';
+  cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2' | '21:9';
   cardMinHeight: number;
   // P21-G: Gallery label editing & justification
   galleryImageLabel: string;
@@ -734,6 +734,13 @@ export interface GalleryBehaviorSettings {
   // P21-I: Typography overrides & in-context editors
   typographyOverrides: Record<string, TypographyOverride>;
   showInContextEditors: boolean;
+  // P21-J: QA fixes & UX enhancements
+  showCardInfoPanel: boolean;
+  showCampaignCoverImage: boolean;
+  showCampaignTags: boolean;
+  showCampaignAdminActions: boolean;
+  showCampaignGalleryLabels: boolean;
+  fullscreenContentMaxWidth: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -990,4 +997,11 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P21-I: Typography overrides & in-context editors
   typographyOverrides: {},
   showInContextEditors: true,
+  // P21-J: QA fixes & UX enhancements
+  showCardInfoPanel: true,
+  showCampaignCoverImage: true,
+  showCampaignTags: true,
+  showCampaignAdminActions: true,
+  showCampaignGalleryLabels: true,
+  fullscreenContentMaxWidth: 0,
 };

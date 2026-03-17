@@ -20,14 +20,17 @@ export function useInContextSave(
   const { mutate } = useSWRConfig();
   const pendingRef = useRef<Record<string, unknown>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  // Ref to latest settings avoids stale closure in debounced callback
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   const save = useCallback(
     (key: string, value: unknown) => {
       if (!apiClient) return;
       pendingRef.current[key] = value;
 
-      // Optimistic SWR update
-      const optimistic = { ...settings, [key]: value } as GalleryBehaviorSettings;
+      // Optimistic SWR update — merge with latest settings via ref
+      const optimistic = { ...settingsRef.current, [key]: value } as GalleryBehaviorSettings;
       void mutate(SWR_KEY, optimistic, false);
 
       // Debounced server save
@@ -38,12 +41,17 @@ export function useInContextSave(
         try {
           const response = await apiClient.updateSettings(batch);
           void mutate(SWR_KEY, mergeSettingsWithDefaults(response as Partial<GalleryBehaviorSettings>), false);
-        } catch {
-          // On failure the optimistic state stays — next full load will correct.
+        } catch (err) {
+          console.error('[WPSG] In-context save failed:', err);
+          // Revert to server state on failure
+          try {
+            const fresh = await apiClient.getSettings();
+            void mutate(SWR_KEY, mergeSettingsWithDefaults(fresh as Partial<GalleryBehaviorSettings>), false);
+          } catch { /* keep optimistic state if refetch also fails */ }
         }
       }, delay);
     },
-    [apiClient, settings, delay, mutate],
+    [apiClient, delay, mutate],
   );
 
   return save;

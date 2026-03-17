@@ -41,7 +41,8 @@ export function InContextEditor({
         shadow="lg"
         width={340}
         withArrow
-        trapFocus
+        closeOnClickOutside
+        styles={{ dropdown: { backgroundColor: 'rgba(30, 30, 40, 0.95)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e0e6' } }}
       >
         <Popover.Target>
           <ActionIcon

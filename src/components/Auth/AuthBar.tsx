@@ -9,12 +9,14 @@ import { AuthBarMinimal } from './AuthBarMinimal';
 interface AuthBarProps {
   email: string;
   isAdmin: boolean;
+  isAuthenticated?: boolean;
   appMaxWidth?: number;
   appPadding?: number;
   displayMode?: GalleryBehaviorSettings['authBarDisplayMode'];
   dragMargin?: number;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
+  onOpenSignIn?: () => void;
   onLogout: () => void;
 }
 
@@ -37,12 +39,14 @@ function useScrollDirection() {
 export function AuthBar({
   email,
   isAdmin,
+  isAuthenticated = true,
   appMaxWidth,
   appPadding,
   displayMode = 'floating',
   dragMargin = 16,
   onOpenAdminPanel,
   onOpenSettings,
+  onOpenSignIn,
   onLogout,
 }: AuthBarProps) {
   // Route to the appropriate sub-component based on mode
@@ -51,8 +55,10 @@ export function AuthBar({
       <AuthBarFloating
         email={email}
         isAdmin={isAdmin}
+        isAuthenticated={isAuthenticated}
         onOpenAdminPanel={onOpenAdminPanel}
         onOpenSettings={onOpenSettings}
+        onOpenSignIn={onOpenSignIn}
         onLogout={onLogout}
       />
     );
@@ -63,10 +69,12 @@ export function AuthBar({
       <AuthBarFloating
         email={email}
         isAdmin={isAdmin}
+        isAuthenticated={isAuthenticated}
         draggable
         dragMargin={dragMargin}
         onOpenAdminPanel={onOpenAdminPanel}
         onOpenSettings={onOpenSettings}
+        onOpenSignIn={onOpenSignIn}
         onLogout={onLogout}
       />
     );
