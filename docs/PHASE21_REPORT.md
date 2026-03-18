@@ -1,9 +1,9 @@
 # Phase 21 — UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings
 
-**Status:** In Progress
-**Version:** v0.19.0 (projected)
+**Status:** Complete
+**Version:** v0.19.0
 **Created:** March 15, 2026
-**Last updated:** March 16, 2026
+**Last updated:** March 18, 2026
 
 ### Tracks
 

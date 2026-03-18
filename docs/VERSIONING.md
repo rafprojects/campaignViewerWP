@@ -12,6 +12,19 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.19.0 (March 18, 2026)
+- **MINOR**: Phase 21 — UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings
+  - **P21-A**: Bug fixes and UX hardening across theme persistence, modal unification, and settings workflows.
+  - **P21-B**: Campaign card visibility toggles (info panel, cover image, tags, admin actions, gallery labels).
+  - **P21-C**: Card aspect ratio controls and gallery card presentation refinements.
+  - **P21-D**: Viewer background controls (theme/transparent/solid/gradient) with structured gradient state.
+  - **P21-E**: Auth bar display modes — bar, floating, draggable, minimal, and auto-hide.
+  - **P21-F**: CampaignViewer enhancements including fullscreen and galleries-only mode support.
+  - **P21-G**: Gallery label text/icon/justification controls wired through frontend and backend settings.
+  - **P21-H**: Settings tooltip infrastructure and comprehensive tooltip audit.
+  - **P21-I**: Typography overrides and in-context editor popovers for targeted text styling.
+  - **P21-J/K**: QA hardening and PR-review follow-up fixes for persistence, sanitization, and test reliability.
+
 ### v0.18.0 (March 10, 2026)
 - **MINOR**: Phase 20 — Production Hardening, CI/CD Pipeline & Distribution Readiness
   - **P20-A**: Rate limiting defaults — public 60 req/min, authenticated 120 req/min with filter overrides.
@@ -259,6 +272,7 @@ Current development follows a phased approach:
 - **Phase 18**: ✅ Complete (Admin Power Features, Coverage & Canvas Polish — v0.16.0 release)
 - **Phase 19**: ✅ Complete (Builder Coverage, WP-CLI & Toolchain — v0.17.0 release)
 - **Phase 20**: ✅ Complete (Production Hardening, CI/CD Pipeline & Distribution Readiness — v0.18.0 release)
+- **Phase 21**: ✅ Complete (UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings — v0.19.0 release)
 
 ## Branching Strategy
 
