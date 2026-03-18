@@ -1309,3 +1309,45 @@ Tracks D, E, F, G, H are independent and can be parallelized.
 | `src/components/Admin/CampaignFormModal.tsx` | A-2 ✅ | Replaced by UnifiedCampaignModal |
 | `src/components/Admin/CampaignFormModal.test.tsx` | A-2 ✅ | Tests for deleted modal |
 | `src/hooks/useEditCampaignModal.ts` | A-2 ✅ | Replaced by useUnifiedCampaignModal |
+
+---
+
+## P21-K: QA Fixes & PR Review Resolutions
+
+### K1–K7 Feature Fixes
+
+| Fix | File(s) | Description |
+|-----|---------|-------------|
+| K1 | `AuthBarFloating.tsx` | Floating button inset increased 16→24 px for both fixed and draggable modes |
+| K2 | `AuthContext.tsx` | `window.location.reload()` on logout to clear stale caches |
+| K3 | `InContextEditor.tsx` | Added `closeOnEscape` prop + manual Escape keydown handler |
+| K4 | `loadGoogleFont.ts`, `TypographyEditor.tsx`, `CardGallery.tsx` | New `loadGoogleFont()` utility; fonts load on selection and on mount for saved overrides |
+| K5 | `App.tsx` | `background: transparent` on root wrapper when `viewerBgType === 'transparent'` |
+| K6 | `GradientEditor.tsx`, `SettingsPanel.tsx`, `CardGallery.tsx`, `types/index.ts`, `class-wpsg-settings.php`, `mergeSettingsWithDefaults.ts` | New shared `GradientEditor` component replaces raw TextInput; `viewerBgGradient` stored as `GradientOptions` object; PHP validation added |
+| K7 | `CampaignCard.tsx` | Restructured into 2 `<Card.Section>` elements with flex layout; image fills card when info panel hidden |
+
+### PR Review Round 1 (Copilot)
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 1 | `AuthBar.tsx` | `AuthBarMinimal`/`AuthBarFull` show signed-in UI even when unauthenticated; no way to trigger sign-in | **Accept** | Added `isAuthenticated`/`onOpenSignIn` props to both sub-components; they now render a "Sign in" button when not authenticated |
+| 2 | `mergeSettingsWithDefaults.ts` | PHP `[]` default deserializes to JS array, not object — breaks `buildGradientCss()` | **Accept** | Added `Array.isArray()` guard to normalize `[]` → `{}` before assignment |
+| 3 | `class-wpsg-settings.php` | `viewer_bg_gradient` default `[]` encodes to JSON array, not object | **Accept** | Changed default from `[]` to `(object) []` so `json_encode` emits `{}` |
+| 4 | `UnifiedCampaignModal.tsx` | Nested `<Tabs>` in Media tab with hardcoded value and no-op onChange — dead UI code | **Accept** | Removed the wrapper entirely; content renders directly in the panel |
+
+### PR Review Round 2 (Copilot)
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 5 | `AuthBarFloating.tsx` | `setPointerCapture(e.target)` could target inner SVG child instead of the ActionIcon root, making drag unreliable | **Accept** | Changed to `e.currentTarget` which always references the element with the handler attached |
+| 6 | `useAdminCampaignActions.ts` | `mod+n` hotkey always fires `handleCreate()` even if modal is already open, risking form data loss | **Accept** | Added `createModalOpen` option; hotkey no-ops when the modal is already open. Caller passes `unifiedModal.opened` |
+
+### Test Infrastructure Fixes
+
+| Fix | File(s) | Description |
+|-----|---------|-------------|
+| SettingsPanel hang | `SettingsPanel.tsx`, `SettingsPanel.test.tsx` | Lazy tab rendering (only active tab mounts); `initialSettings` prop skips async load; `seedSettings` in all tests — dropped from 28s+hang to 1–6s/test |
+| App.test.tsx flaky buttons | `App.test.tsx` | `openCampaignViewer()` helper uses `findByRole('button')` + waits for "Admin Actions" heading before clicking viewer action buttons |
+| AdminPanel mock gaps | `AdminPanel.test.tsx`, `AdminPanel.quickadd.test.tsx` | `withDefaults()` Proxy auto-provides missing API mocks; static imports replace dynamic `import()` in `beforeAll` |
+| SWR retry loops | `test-utils.tsx` | `shouldRetryOnError: false` in global SWR test config |
+| Worker timeouts | `vite.config.ts` | Added `hookTimeout: 60000` to prevent `snapshotSaved`/`onTaskUpdate` vitest IPC timeouts |

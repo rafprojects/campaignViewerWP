@@ -72,7 +72,7 @@ export function AuthBarFloating({
       setDragging(true);
       didDragRef.current = false;
       dragStartRef.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     },
     [draggable, pos],
   );

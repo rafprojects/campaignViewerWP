@@ -90,6 +90,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     apiClient, campaigns, onMutate: campaignsMutator, onCampaignsUpdated, onNotify,
     onOpenEdit: unifiedModal.openForEdit,
     onOpenCreate: unifiedModal.openForCreate,
+    createModalOpen: unifiedModal.opened,
   });
 
   const mutateAccessWrapped = useCallback(() => mutateAccess() as Promise<unknown>, [mutateAccess]);

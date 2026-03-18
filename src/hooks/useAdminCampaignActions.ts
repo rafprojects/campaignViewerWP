@@ -14,9 +14,11 @@ interface Options {
   onOpenEdit: (campaign: AdminCampaign) => void;
   /** Delegate campaign create to the unified modal. */
   onOpenCreate: () => void;
+  /** Whether the create/edit modal is currently open — guards hotkeys. */
+  createModalOpen?: boolean;
 }
 
-export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMutate, onCampaignsUpdated, onNotify, onOpenEdit, onOpenCreate }: Options) {
+export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMutate, onCampaignsUpdated, onNotify, onOpenEdit, onOpenCreate, createModalOpen }: Options) {
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<AdminCampaign | null>(null);
@@ -181,7 +183,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 
   const hotkeyHandler = getHotkeyHandler([
     ['?',            () => setShortcutHelpOpen(true)],
-    ['mod+n',        () => handleCreate()],
+    ['mod+n',        () => { if (!createModalOpen) handleCreate(); }],
     ['mod+i',        () => setImportModalOpen(true)],
     ['mod+shift+a',  () => handleToggleSelectMode()],
   ]);
