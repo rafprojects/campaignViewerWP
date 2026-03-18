@@ -33,9 +33,11 @@ export function mergeSettingsWithDefaults(
         continue;
       }
       // P21-K: viewerBgGradient migrated from string to GradientOptions object.
-      if (key === 'viewerBgGradient' && typeof incoming === 'string') {
-        // Old data was a raw CSS string — discard, use default empty object.
-        continue;
+      if (key === 'viewerBgGradient') {
+        if (typeof incoming === 'string' || Array.isArray(incoming)) {
+          // Old CSS string or PHP empty array — discard, use default.
+          continue;
+        }
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[key] = incoming;

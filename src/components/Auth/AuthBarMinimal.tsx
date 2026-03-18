@@ -1,23 +1,27 @@
 import { Box, Container, Group, Text, Menu, ActionIcon } from '@mantine/core';
-import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown } from '@tabler/icons-react';
+import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown, IconLogin } from '@tabler/icons-react';
 
 interface AuthBarMinimalProps {
   email: string;
   isAdmin: boolean;
+  isAuthenticated?: boolean;
   appMaxWidth?: number;
   appPadding?: number;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
+  onOpenSignIn?: () => void;
   onLogout: () => void;
 }
 
 export function AuthBarMinimal({
   email,
   isAdmin,
+  isAuthenticated = true,
   appMaxWidth,
   appPadding,
   onOpenAdminPanel,
   onOpenSettings,
+  onOpenSignIn,
   onLogout,
 }: AuthBarMinimalProps) {
   const containerSize = appMaxWidth && appMaxWidth > 0 ? appMaxWidth : undefined;
@@ -40,6 +44,15 @@ export function AuthBarMinimal({
     >
       <Container size={containerSize} fluid={containerFluid} py={4} style={containerPaddingStyle}>
         <Group justify="space-between" wrap="nowrap" gap={4}>
+          {!isAuthenticated ? (
+            <>
+              <Text size="xs" c="dimmed" truncate style={{ minWidth: 0, lineHeight: 1 }}>Sign in</Text>
+              <ActionIcon size={22} variant="subtle" onClick={onOpenSignIn} aria-label="Sign in">
+                <IconLogin size={14} />
+              </ActionIcon>
+            </>
+          ) : (
+          <>
           <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
             <ActionIcon size={22} variant="transparent" aria-hidden>
               <IconUser size={14} />
@@ -69,6 +82,7 @@ export function AuthBarMinimal({
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+          </>)}
         </Group>
       </Container>
     </Box>

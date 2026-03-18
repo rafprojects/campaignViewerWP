@@ -268,7 +268,7 @@ class WPSG_Settings {
         // ── P21-D: Viewer background & border ─────────────────
         'viewer_bg_type'                 => 'theme',
         'viewer_bg_color'                => '',
-        'viewer_bg_gradient'             => [],
+        'viewer_bg_gradient'             => (object) [],
         'show_viewer_border'             => true,
         // ── P21-C: Card aspect ratio & max columns ────────────
         'card_max_columns'               => 0,

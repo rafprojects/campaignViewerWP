@@ -61,6 +61,14 @@ const setupAdminFetch = () => {
   return fetchMock;
 };
 
+/** Click a campaign card by its accessible button role and wait for the CampaignViewer to load. */
+async function openCampaignViewer(title: string) {
+  const card = await screen.findByRole('button', { name: `Open campaign ${title}` });
+  fireEvent.click(card);
+  // CampaignViewer is lazy-loaded — wait for the Admin Actions heading to confirm it rendered
+  await screen.findByText('Admin Actions', {}, { timeout: 5000 });
+}
+
 describe('App', () => {
   beforeEach(() => {
     mutate(() => true, undefined);
@@ -303,12 +311,10 @@ describe('App', () => {
 
     render(<App />);
 
-    // Open campaign viewer
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     // CampaignViewer is lazy-loaded – wait for Edit button to appear
-    const editBtn = await screen.findByRole('button', { name: 'Edit Campaign Alpha' }, { timeout: 5000 });
+    const editBtn = await screen.findByRole('button', { name: 'Edit Campaign Alpha' });
     fireEvent.click(editBtn);
 
     // UnifiedCampaignModal opens on Details tab. Labels include '*' for required fields.
@@ -340,11 +346,10 @@ describe('App', () => {
     render(<App />);
 
     // Open campaign viewer
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     // Test Add External Media with modal
-    const manageMediaBtn = await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }, { timeout: 5000 });
+    const manageMediaBtn = await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' });
     fireEvent.click(manageMediaBtn);
     // External media modal opens
     const urlInput = await screen.findByLabelText('URL');
@@ -373,14 +378,13 @@ describe('App', () => {
     render(<App />);
 
     // Open campaign viewer
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     // Test Archive Campaign with modal
-    const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign Alpha' }, { timeout: 5000 });
+    const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign Alpha' });
     fireEvent.click(archiveCampaignBtn);
     // Archive confirmation modal opens
-    const archiveBtn = await screen.findByRole('button', { name: 'Archive campaign Campaign Alpha' }, { timeout: 5000 });
+    const archiveBtn = await screen.findByRole('button', { name: 'Archive campaign Campaign Alpha' });
     fireEvent.click(archiveBtn);
 
     await waitFor(() => {
@@ -401,10 +405,9 @@ describe('App', () => {
 
     render(<App />);
 
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit Campaign Alpha' }, { timeout: 5000 }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Campaign Alpha' }));
     
     // Modal opens - click Cancel instead of Save
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -429,10 +432,9 @@ describe('App', () => {
 
     render(<App />);
 
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive Campaign Alpha' }, { timeout: 5000 }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Archive
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -457,10 +459,9 @@ describe('App', () => {
 
     render(<App />);
 
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }, { timeout: 5000 }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Add Media
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });

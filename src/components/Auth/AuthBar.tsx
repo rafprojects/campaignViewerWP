@@ -85,10 +85,12 @@ export function AuthBar({
       <AuthBarMinimal
         email={email}
         isAdmin={isAdmin}
+        isAuthenticated={isAuthenticated}
         appMaxWidth={appMaxWidth}
         appPadding={appPadding}
         onOpenAdminPanel={onOpenAdminPanel}
         onOpenSettings={onOpenSettings}
+        onOpenSignIn={onOpenSignIn}
         onLogout={onLogout}
       />
     );
@@ -99,11 +101,13 @@ export function AuthBar({
     <AuthBarFull
       email={email}
       isAdmin={isAdmin}
+      isAuthenticated={isAuthenticated}
       appMaxWidth={appMaxWidth}
       appPadding={appPadding}
       autoHide={displayMode === 'auto-hide'}
       onOpenAdminPanel={onOpenAdminPanel}
       onOpenSettings={onOpenSettings}
+      onOpenSignIn={onOpenSignIn}
       onLogout={onLogout}
     />
   );
@@ -113,11 +117,13 @@ export function AuthBar({
 function AuthBarFull({
   email,
   isAdmin,
+  isAuthenticated = true,
   appMaxWidth,
   appPadding,
   autoHide = false,
   onOpenAdminPanel,
   onOpenSettings,
+  onOpenSignIn,
   onLogout,
 }: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean }) {
   const hidden = useScrollDirection();
@@ -144,6 +150,13 @@ function AuthBarFull({
     >
     <Container size={containerSize} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
       <Group justify="space-between" wrap="nowrap" gap="sm">
+        {!isAuthenticated ? (
+          <>
+            <Text size="sm" c="dimmed">Sign in to access private campaigns</Text>
+            <Button variant="light" size="sm" onClick={onOpenSignIn}>Sign in</Button>
+          </>
+        ) : (
+        <>
         <Text size="sm" truncate style={{ minWidth: 0 }}>
           Signed in as {email}
         </Text>
@@ -208,6 +221,7 @@ function AuthBarFull({
             </Button>
           </Group>
         )}
+        </>)}
       </Group>
     </Container>
     </Box>

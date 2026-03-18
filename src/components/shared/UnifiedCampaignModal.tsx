@@ -174,9 +174,6 @@ export function UnifiedCampaignModal({
           {/* ── Media Tab (edit only) ──────────────────────────────── */}
           {isEdit && (
             <Tabs.Panel value="media" pt="md">
-              <Tabs value={activeTab === 'media' ? 'media-list' : null} onChange={() => {}}>
-                {/* Sub-navigation via buttons instead of nested Tabs */}
-              </Tabs>
               {mediaLoading ? (
                 <Center py="xl"><Loader /></Center>
               ) : (
