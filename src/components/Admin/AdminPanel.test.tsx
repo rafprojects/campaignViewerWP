@@ -1,17 +1,11 @@
-import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { AdminPanel } from './AdminPanel';
 
-// Warm the module cache for lazy-loaded modals so React.lazy resolves them
-// synchronously. Without this, the Suspense fallback (null) renders and
-// findByRole times out waiting for the modal heading to appear.
-beforeAll(async () => {
-  await Promise.all([
-    import('./CampaignFormModal'),
-    import('./AdminCampaignArchiveModal'),
-    import('./AdminCampaignRestoreModal'),
-  ]);
-});
+// Static imports to warm the module cache for lazy-loaded modals.
+// This avoids dynamic import() in beforeAll which can hang under worker pressure.
+import './AdminCampaignArchiveModal';
+import './AdminCampaignRestoreModal';
 
 const campaignsPayload = {
   items: [
@@ -44,8 +38,26 @@ describe('AdminPanel', () => {
     localStorage.clear();
   });
 
+  /** Inject stubs for methods AdminPanel calls via SWR to prevent unhandled
+   *  errors that delay renders and leak timers across sequential tests. */
+  function withDefaults(partial: Record<string, unknown>) {
+    const base = {
+      getLayoutTemplates: vi.fn().mockResolvedValue([]),
+      listCampaignCategories: vi.fn().mockResolvedValue([]),
+      ...partial,
+    };
+    // Return a Proxy so any un-stubbed method returns a resolved promise
+    // instead of throwing TypeError.
+    return new Proxy(base, {
+      get(target, prop) {
+        if (prop in target) return (target as any)[prop];
+        return vi.fn().mockResolvedValue([]);
+      },
+    }) as any;
+  }
+
   it('loads campaigns and supports access grant/revoke', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
@@ -64,7 +76,7 @@ describe('AdminPanel', () => {
       }),
       post: vi.fn().mockResolvedValue({ message: 'ok' }),
       delete: vi.fn().mockResolvedValue({ message: 'ok' }),
-    } as any;
+    });
 
     const onNotify = vi.fn();
 
@@ -114,12 +126,12 @@ describe('AdminPanel', () => {
   }, 30000);
 
   it('shows error when campaigns fail to load', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn().mockRejectedValue(new Error('Load failed')),
       post: vi.fn(),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
 
     render(
       <AdminPanel
@@ -134,12 +146,12 @@ describe('AdminPanel', () => {
   });
 
   it('creates a new campaign and notifies', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn().mockResolvedValue({ items: [] }),
       post: vi.fn().mockResolvedValue({ id: '200' }),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
     const onCampaignsUpdated = vi.fn();
 
@@ -180,12 +192,12 @@ describe('AdminPanel', () => {
   });
 
   it('shows error when campaign creation fails', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn().mockResolvedValue({ items: [] }),
       post: vi.fn().mockRejectedValue(new Error('Create failed')),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(
@@ -215,7 +227,7 @@ describe('AdminPanel', () => {
   });
 
   it('validates access user id before applying', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
@@ -228,7 +240,7 @@ describe('AdminPanel', () => {
       post: vi.fn(),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(
@@ -253,7 +265,7 @@ describe('AdminPanel', () => {
   });
 
   it('loads audit entries when audit tab is opened', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
@@ -268,7 +280,7 @@ describe('AdminPanel', () => {
       post: vi.fn(),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
 
     render(
       <AdminPanel
@@ -284,12 +296,12 @@ describe('AdminPanel', () => {
   });
 
   it('edits an existing campaign', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn().mockResolvedValue(campaignsPayload),
       post: vi.fn(),
       delete: vi.fn(),
       put: vi.fn().mockResolvedValue({ id: '101' }),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(
@@ -320,7 +332,7 @@ describe('AdminPanel', () => {
   });
 
   it('grants access for a campaign', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
@@ -333,7 +345,7 @@ describe('AdminPanel', () => {
       post: vi.fn().mockResolvedValue({}),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(
@@ -358,7 +370,7 @@ describe('AdminPanel', () => {
   });
 
   it('shows company access helper text when source is company', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
           return Promise.resolve(campaignsPayload);
@@ -371,7 +383,7 @@ describe('AdminPanel', () => {
       post: vi.fn(),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
 
     render(
       <AdminPanel
@@ -393,12 +405,12 @@ describe('AdminPanel', () => {
   });
 
   it('archives campaign and handles errors', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn().mockResolvedValue(campaignsPayload),
       post: vi.fn().mockRejectedValue(new Error('Archive failed')),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(
@@ -425,12 +437,12 @@ describe('AdminPanel', () => {
   });
 
   it('archives campaign successfully', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn().mockResolvedValue(campaignsPayload),
       post: vi.fn().mockResolvedValue({}),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(
@@ -457,25 +469,30 @@ describe('AdminPanel', () => {
   });
 
   it('restores an archived campaign', async () => {
-    const apiClient = {
-      get: vi.fn().mockResolvedValue({
-        items: [
-          {
-            id: '999',
-            companyId: 'test',
-            title: 'Archived One',
-            status: 'archived',
-            visibility: 'private',
-            createdAt: '2026-01-01T00:00:00.000Z',
-            updatedAt: '2026-01-01T00:00:00.000Z',
-            tags: [],
-          },
-        ],
-      }),
+    const archivedPayload = {
+      items: [
+        {
+          id: '999',
+          companyId: 'test',
+          title: 'Archived One',
+          status: 'archived',
+          visibility: 'private',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+          tags: [],
+        },
+      ],
+      page: 1,
+      perPage: 20,
+      total: 1,
+      totalPages: 1,
+    };
+    const apiClient = withDefaults({
+      get: vi.fn().mockResolvedValue(archivedPayload),
       post: vi.fn().mockResolvedValue({}),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(

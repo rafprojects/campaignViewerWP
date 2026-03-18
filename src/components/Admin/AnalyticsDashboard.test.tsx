@@ -19,8 +19,8 @@ vi.mock('recharts', () => ({
 }));
 
 const mockAnalytics: CampaignAnalyticsResponse = {
-  total_views: 1200,
-  unique_visitors: 430,
+  totalViews: 1200,
+  uniqueVisitors: 430,
   daily: [
     { date: '2026-01-01', views: 100, unique: 40 },
     { date: '2026-01-02', views: 120, unique: 50 },
@@ -80,7 +80,7 @@ describe('AnalyticsDashboard', () => {
 
   it('renders empty state when no view events recorded', async () => {
     const apiClient = makeApiClient({
-      getCampaignAnalytics: vi.fn().mockResolvedValue({ total_views: 0, unique_visitors: 0, daily: [] }),
+      getCampaignAnalytics: vi.fn().mockResolvedValue({ totalViews: 0, uniqueVisitors: 0, daily: [] }),
     });
     render(<AnalyticsDashboard apiClient={apiClient} campaigns={campaigns} />);
     await waitFor(() =>

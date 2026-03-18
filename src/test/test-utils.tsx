@@ -10,7 +10,7 @@ function Providers({ children }: PropsWithChildren) {
     // P13-C: SWRConfig with a fresh Map cache per test prevents cross-test
     // cache pollution. `dedupingInterval: 0` disables SWR's 2s dedup window
     // so tests don't get stale responses from earlier renders.
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false }}>
       <MantineProvider theme={theme} env="test">
         <ModalsProvider>{children}</ModalsProvider>
       </MantineProvider>

@@ -3,16 +3,12 @@
  * jsdom environment, avoiding Mantine modal portal state accumulated by the
  * larger AdminPanel test suite.
  */
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { AdminPanel } from './AdminPanel';
 
-// Warm the module cache for the lazy-loaded modal so React.lazy resolves it
-// synchronously. Without this, the Suspense fallback renders and findByRole
-// times out waiting for the heading.
-beforeAll(async () => {
-  await import('./QuickAddUserModal');
-});
+// Static import to warm module cache for lazy-loaded modal.
+import './QuickAddUserModal';
 
 const campaignsPayload = {
   items: [
@@ -31,8 +27,23 @@ const campaignsPayload = {
 };
 
 describe('AdminPanel – QuickAdd user', () => {
+  /** Proxy-based mock factory — any un-stubbed method returns a resolved promise. */
+  function withDefaults(partial: Record<string, unknown>) {
+    const base = {
+      getLayoutTemplates: vi.fn().mockResolvedValue([]),
+      listCampaignCategories: vi.fn().mockResolvedValue([]),
+      ...partial,
+    };
+    return new Proxy(base, {
+      get(target, prop) {
+        if (prop in target) return (target as any)[prop];
+        return vi.fn().mockResolvedValue([]);
+      },
+    }) as any;
+  }
+
   it('opens QuickAdd user modal and submits', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50')) return Promise.resolve(campaignsPayload);
         if (path.includes('/access')) return Promise.resolve([]);
@@ -46,7 +57,7 @@ describe('AdminPanel – QuickAdd user', () => {
       }),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
     const onNotify = vi.fn();
 
     render(
@@ -83,7 +94,7 @@ describe('AdminPanel – QuickAdd user', () => {
   }, 30000);
 
   it('closes QuickAdd user modal with Cancel button', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50')) return Promise.resolve(campaignsPayload);
         if (path.includes('/access')) return Promise.resolve([]);
@@ -92,7 +103,7 @@ describe('AdminPanel – QuickAdd user', () => {
       post: vi.fn(),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
 
     render(
       <AdminPanel
@@ -117,7 +128,7 @@ describe('AdminPanel – QuickAdd user', () => {
   }, 30000);
 
   it('disables Create User button when fields are empty in QuickAdd modal', async () => {
-    const apiClient = {
+    const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50')) return Promise.resolve(campaignsPayload);
         if (path.includes('/access')) return Promise.resolve([]);
@@ -126,7 +137,7 @@ describe('AdminPanel – QuickAdd user', () => {
       post: vi.fn(),
       delete: vi.fn(),
       put: vi.fn(),
-    } as any;
+    });
 
     render(
       <AdminPanel

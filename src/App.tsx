@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Container, Alert, Loader, Center, Stack, Group, Text, Button, Modal } from '@mantine/core';
+import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/Gallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -8,7 +8,7 @@ import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
 import { LoginForm } from './components/Auth/LoginForm';
 import { AuthBar } from './components/Auth/AuthBar';
-import { EditCampaignModal } from './components/Campaign/EditCampaignModal';
+import { UnifiedCampaignModal } from './components/shared/UnifiedCampaignModal';
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
@@ -22,7 +22,7 @@ import { sortByOrder } from './utils/sortByOrder';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
-import { useEditCampaignModal } from './hooks/useEditCampaignModal';
+import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
 import useSWR from 'swr';
@@ -163,7 +163,7 @@ function AppContent({
 
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 
-  const editModal = useEditCampaignModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
+  const editModal = useUnifiedCampaignModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
   const archiveModal = useArchiveModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
   const externalMediaModal = useExternalMediaModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
 
@@ -180,30 +180,27 @@ function AppContent({
   });
 
   return (
-    <div className="wp-super-gallery">
+    <div
+      className="wp-super-gallery"
+      style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
+    >
       {!isAuthenticated && isReady && (
-        <>
-          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
-            <Alert color="blue" variant="light" role="status" aria-live="polite">
-              <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-                <Text size="sm">Sign in to access private campaigns.</Text>
-                <Button size="xs" onClick={openSignIn}>Sign in</Button>
-              </Group>
-            </Alert>
-          </Container>
-          <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
-            <LoginForm onSubmit={handleLogin} compact />
-          </Modal>
-        </>
+        <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
+          <LoginForm onSubmit={handleLogin} compact />
+        </Modal>
       )}
-      {isAuthenticated && user && (
+      {isReady && (
         <AuthBar
-          email={user.email}
+          email={user?.email ?? ''}
           isAdmin={isAdmin}
+          isAuthenticated={isAuthenticated}
           appMaxWidth={resolvedSettings.appMaxWidth}
           appPadding={resolvedSettings.appPadding}
+          displayMode={resolvedSettings.authBarDisplayMode}
+          dragMargin={resolvedSettings.authBarDragMargin}
           onOpenAdminPanel={openAdminPanel}
           onOpenSettings={openSettings}
+          onOpenSignIn={openSignIn}
           onLogout={() => void logout()}
         />
       )}
@@ -275,49 +272,14 @@ function AppContent({
           isAdmin={isAdmin}
           isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}
-          onEditCampaign={editModal.openEditModal}
+          onEditCampaign={editModal.openForEdit}
           onArchiveCampaign={archiveModal.handleArchiveCampaign}
           onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
           apiClient={apiClient}
         />
       )}
 
-      <EditCampaignModal
-        opened={!!editModal.editModalCampaign}
-        campaign={editModal.editModalCampaign}
-        editMediaTab={editModal.editMediaTab}
-        onEditMediaTabChange={editModal.setEditMediaTab}
-        editTitle={editModal.editTitle}
-        onEditTitleChange={editModal.setEditTitle}
-        editDescription={editModal.editDescription}
-        onEditDescriptionChange={editModal.setEditDescription}
-        editCoverImage={editModal.editCoverImage}
-        onEditCoverImageChange={editModal.handleSelectCoverImage}
-        onUploadCoverImage={editModal.handleUploadCoverImage}
-        coverImageUploading={editModal.coverImageUploading}
-        onClose={editModal.closeEditModal}
-        onConfirmEdit={editModal.confirmEditCampaign}
-        editMediaLoading={editModal.editMediaLoading}
-        editCampaignMedia={editModal.editCampaignMedia}
-        onRemoveMedia={editModal.handleRemoveMedia}
-        libraryMedia={editModal.libraryMedia}
-        libraryLoading={editModal.libraryLoading}
-        librarySearch={editModal.librarySearch}
-        onLibrarySearchChange={editModal.setLibrarySearch}
-        onLoadLibrary={editModal.loadLibraryMedia}
-        onAddFromLibrary={editModal.handleAddFromLibrary}
-        uploadFile={editModal.uploadFile}
-        uploadProgress={editModal.uploadProgress}
-        onUploadFile={editModal.handleUploadMediaInEdit}
-        addMediaType={editModal.addMediaType}
-        onAddMediaTypeChange={editModal.setAddMediaType}
-        addMediaUrl={editModal.addMediaUrl}
-        onAddMediaUrlChange={editModal.setAddMediaUrl}
-        addMediaCaption={editModal.addMediaCaption}
-        onAddMediaCaptionChange={editModal.setAddMediaCaption}
-        addMediaLoading={editModal.addMediaLoading}
-        onAddExternalMedia={editModal.handleAddExternalMediaInEdit}
-      />
+      <UnifiedCampaignModal modal={editModal} />
 
       <ArchiveCampaignModal
         opened={!!archiveModal.archiveModalCampaign}

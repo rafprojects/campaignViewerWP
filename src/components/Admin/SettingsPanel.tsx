@@ -27,11 +27,13 @@ import {
   IconPhoto,
   IconLayoutGrid,
   IconAdjustments,
+  IconTypography,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   type GalleryBehaviorSettings,
+  type TypographyOverride,
   type ScrollAnimationEasing,
   type ScrollAnimationStyle,
   type ScrollTransitionType,
@@ -42,8 +44,13 @@ import {
   type ViewportBgType,
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
+import { SettingTooltip } from './SettingTooltip';
+import { TypographyEditor } from '../shared/TypographyEditor';
+import { GradientEditor } from '../shared/GradientEditor';
+import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
+import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
 export interface SettingsData extends GalleryBehaviorSettings {
   galleryLayout: 'grid' | 'masonry' | 'carousel';
@@ -80,6 +87,7 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
 });
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
+  const { setPreviewTheme, setTheme } = useTheme();
   const seedSettings: SettingsData = initialSettings
     ? { ...defaultSettings, ...initialSettings }
     : defaultSettings;
@@ -108,10 +116,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   }, [apiClient]);
 
   useEffect(() => {
-    if (opened) {
+    if (opened && !initialSettings) {
       void loadSettings();
     }
-  }, [opened, loadSettings]);
+  }, [opened, loadSettings, initialSettings]);
 
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
     setSettings((prev) => {
@@ -133,6 +141,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       setHasChanges(false);
       hasChangesRef.current = false;
       onSettingsSaved?.(saved);
+      // Commit the previewed theme as the saved theme
+      const themeVal = (settings as unknown as Record<string, unknown>).theme;
+      if (typeof themeVal === 'string') setTheme(themeVal);
+      setPreviewTheme(null);
       onNotify({ type: 'success', text: 'Settings saved successfully.' });
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save settings.') });
@@ -145,15 +157,32 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     setSettings(originalSettings);
     setHasChanges(false);
     hasChangesRef.current = false;
+    setPreviewTheme(null);
   };
 
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
   const isExtraSmall = useMediaQuery('(max-width: 575px)');
 
+  /** Shorthand: wrap a label with an info tooltip when tooltips are enabled. */
+  const tt = (label: string, key: string) => (
+    <SettingTooltip label={label} tooltip={SETTING_TOOLTIPS[key] ?? ''} enabled={settings.showSettingsTooltips} />
+  );
+
+  /** Update a single element's typography override. */
+  const updateTypoOverride = (elementId: string, override: TypographyOverride) => {
+    const next = { ...settings.typographyOverrides };
+    if (Object.keys(override).length === 0) {
+      delete next[elementId];
+    } else {
+      next[elementId] = override;
+    }
+    updateSetting('typographyOverrides', next);
+  };
+
   return (
     <Modal
       opened={opened}
-      onClose={onClose}
+      onClose={() => { setPreviewTheme(null); onClose(); }}
       title={
         <Group gap="sm">
           <IconSettings size={22} />
@@ -166,6 +195,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
       transitionProps={{ transition: 'fade', duration: 200 }}
+      overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
+      styles={{ content: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' }, header: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' } }}
     >
       {isLoading ? (
         <Center py="xl">
@@ -189,13 +220,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   Advanced
                 </Tabs.Tab>
               )}
+              <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
+                Typography
+              </Tabs.Tab>
             </Tabs.List>
 
             {/* ── General Tab ───────────────────────────────────── */}
             <Tabs.Panel value="general" pt="md">
-              <Stack gap="md">
+              {activeTab === 'general' && <Stack gap="md">
                 <ThemeSelector
-                  description="Choose a color theme. Changes apply instantly and are saved automatically."
+                  description="Choose a color theme. Preview applies instantly; saved when you click Save."
+                  onThemeChange={(id) => updateSetting('theme' as keyof SettingsData, id as SettingsData[keyof SettingsData])}
                 />
 
                 <Select
@@ -302,6 +337,156 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('showSearchBox', e.currentTarget.checked)}
                 />
 
+                <Divider label="Viewer Background" labelPosition="center" />
+
+                <Select
+                  label="Background Type"
+                  description="Gallery container background style"
+                  data={[
+                    { value: 'theme', label: 'Theme (default gradient)' },
+                    { value: 'transparent', label: 'Transparent' },
+                    { value: 'solid', label: 'Solid color' },
+                    { value: 'gradient', label: 'Custom gradient' },
+                  ]}
+                  value={settings.viewerBgType ?? 'theme'}
+                  onChange={(v) => updateSetting('viewerBgType', (v ?? 'theme') as GalleryBehaviorSettings['viewerBgType'])}
+                />
+                {settings.viewerBgType === 'solid' && (
+                  <ColorInput
+                    label="Background Color"
+                    description="Solid background color for the gallery"
+                    value={settings.viewerBgColor}
+                    onChange={(v) => updateSetting('viewerBgColor', v)}
+                  />
+                )}
+                {settings.viewerBgType === 'gradient' && (
+                  <GradientEditor
+                    value={settings.viewerBgGradient ?? {}}
+                    onChange={(opts) => updateSetting('viewerBgGradient', opts)}
+                  />
+                )}
+                <Switch
+                  label="Show Header Border"
+                  description="Show border, shadow, and backdrop blur on the sticky gallery header."
+                  checked={settings.showViewerBorder ?? true}
+                  onChange={(e) => updateSetting('showViewerBorder', e.currentTarget.checked)}
+                />
+
+                <Divider label="Auth Bar" labelPosition="center" />
+
+                <Select
+                  label="Auth Bar Display Mode"
+                  description="How the authentication bar appears on the page."
+                  data={[
+                    { value: 'bar', label: 'Bar (full-width sticky bar)' },
+                    { value: 'floating', label: 'Floating (circular icon, bottom-right)' },
+                    { value: 'draggable', label: 'Draggable (movable floating icon)' },
+                    { value: 'minimal', label: 'Minimal (thin strip, ≤32px)' },
+                    { value: 'auto-hide', label: 'Auto-hide (bar hides on scroll)' },
+                  ]}
+                  value={settings.authBarDisplayMode ?? 'floating'}
+                  onChange={(v) => updateSetting('authBarDisplayMode', (v ?? 'floating') as GalleryBehaviorSettings['authBarDisplayMode'])}
+                />
+                {settings.authBarDisplayMode === 'draggable' && (
+                  <NumberInput
+                    label="Drag Margin (px)"
+                    description="Minimum distance from viewport edges when dragging."
+                    value={settings.authBarDragMargin ?? 16}
+                    onChange={(v) => updateSetting('authBarDragMargin', Number(v) || 16)}
+                    min={0}
+                    max={64}
+                  />
+                )}
+
+                <Divider label="Campaign Viewer" labelPosition="center" />
+
+                <Switch
+                  label="Fullscreen Campaign Modal"
+                  description="Open campaign viewer in fullscreen mode instead of the default modal."
+                  checked={settings.campaignModalFullscreen ?? false}
+                  onChange={(e) => updateSetting('campaignModalFullscreen', e.currentTarget.checked)}
+                />
+                <Select
+                  label="Campaign Open Mode"
+                  description="What to show when a campaign is opened."
+                  data={[
+                    { value: 'full', label: 'Full (cover, about, galleries, stats)' },
+                    { value: 'galleries-only', label: 'Galleries only (skip header/about/stats)' },
+                  ]}
+                  value={settings.campaignOpenMode ?? 'full'}
+                  onChange={(v) => updateSetting('campaignOpenMode', (v ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
+                />
+                <Switch
+                  label="Show Company Name"
+                  description="Show the company badge on the campaign cover image."
+                  checked={settings.showCampaignCompanyName ?? true}
+                  onChange={(e) => updateSetting('showCampaignCompanyName', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Date"
+                  description="Show the creation date under the campaign title."
+                  checked={settings.showCampaignDate ?? true}
+                  onChange={(e) => updateSetting('showCampaignDate', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show About Section"
+                  description='Show the "About this Campaign" heading and description.'
+                  checked={settings.showCampaignAbout ?? true}
+                  onChange={(e) => updateSetting('showCampaignAbout', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Description"
+                  description="Show the campaign description text within the About section."
+                  checked={settings.showCampaignDescription ?? true}
+                  onChange={(e) => updateSetting('showCampaignDescription', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Campaign Stats"
+                  description="Show the statistics block (video count, image count, tags, visibility)."
+                  checked={settings.showCampaignStats ?? true}
+                  onChange={(e) => updateSetting('showCampaignStats', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Stats Admin-Only"
+                  description="When enabled, only admins can see the statistics block."
+                  checked={settings.campaignStatsAdminOnly ?? true}
+                  onChange={(e) => updateSetting('campaignStatsAdminOnly', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Cover Image"
+                  description="Show the campaign cover image at the top of the viewer."
+                  checked={settings.showCampaignCoverImage ?? true}
+                  onChange={(e) => updateSetting('showCampaignCoverImage', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Tags"
+                  description="Show tags section in the campaign viewer."
+                  checked={settings.showCampaignTags ?? true}
+                  onChange={(e) => updateSetting('showCampaignTags', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Admin Actions"
+                  description="Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+                  checked={settings.showCampaignAdminActions ?? true}
+                  onChange={(e) => updateSetting('showCampaignAdminActions', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Gallery Labels"
+                  description="Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+                  checked={settings.showCampaignGalleryLabels ?? true}
+                  onChange={(e) => updateSetting('showCampaignGalleryLabels', e.currentTarget.checked)}
+                />
+                <NumberInput
+                  label="Fullscreen Content Max Width (px)"
+                  description="Limit content width in fullscreen mode. 0 = full responsive width."
+                  value={settings.fullscreenContentMaxWidth ?? 0}
+                  onChange={(value) => updateSetting('fullscreenContentMaxWidth', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={3000}
+                  step={50}
+                  placeholder="0 = full width"
+                />
+
                 <Divider label="Security" labelPosition="center" />
 
                 <NumberInput
@@ -323,12 +508,18 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   checked={settings.advancedSettingsEnabled}
                   onChange={(e) => updateSetting('advancedSettingsEnabled', e.currentTarget.checked)}
                 />
-              </Stack>
+                <Switch
+                  label="Show Settings Tooltips"
+                  description="Display info icons next to Advanced-tab labels that explain each setting on hover."
+                  checked={settings.showSettingsTooltips}
+                  onChange={(e) => updateSetting('showSettingsTooltips', e.currentTarget.checked)}
+                />
+              </Stack>}
             </Tabs.Panel>
 
             {/* ── Campaign Cards Tab ────────────────────────── */}
             <Tabs.Panel value="cards" pt="md">
-              <Accordion variant="separated" defaultValue="appearance">
+              {activeTab === 'cards' && <Accordion variant="separated" defaultValue="appearance">
                 {/* ── Card Appearance ── */}
                 <Accordion.Item value="appearance">
                   <Accordion.Control>Card Appearance</Accordion.Control>
@@ -402,6 +593,55 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         value={settings.cardThumbnailFit}
                         onChange={(v) => updateSetting('cardThumbnailFit', v ?? 'cover')}
                       />
+
+                      <Divider label="Element Visibility" labelPosition="center" />
+
+                      <Switch
+                        label="Show company name badge"
+                        description="Company badge overlay on card thumbnail"
+                        checked={settings.showCardCompanyName ?? true}
+                        onChange={(e) => updateSetting('showCardCompanyName', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show access badge"
+                        description="Green 'Access' badge on accessible cards"
+                        checked={settings.showCardAccessBadge ?? true}
+                        onChange={(e) => updateSetting('showCardAccessBadge', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show card title"
+                        checked={settings.showCardTitle ?? true}
+                        onChange={(e) => updateSetting('showCardTitle', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show card description"
+                        checked={settings.showCardDescription ?? true}
+                        onChange={(e) => updateSetting('showCardDescription', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show media counts"
+                        description="Video and image count below description"
+                        checked={settings.showCardMediaCounts ?? true}
+                        onChange={(e) => updateSetting('showCardMediaCounts', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show card border"
+                        description="Accent border and hover border effect"
+                        checked={settings.showCardBorder ?? true}
+                        onChange={(e) => updateSetting('showCardBorder', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show thumbnail fade"
+                        description="Gradient overlay at bottom of thumbnail"
+                        checked={settings.showCardThumbnailFade ?? true}
+                        onChange={(e) => updateSetting('showCardThumbnailFade', e.currentTarget.checked)}
+                      />
+                      <Switch
+                        label="Show card info panel"
+                        description="Show title, description, tags & media counts below thumbnail"
+                        checked={settings.showCardInfoPanel ?? true}
+                        onChange={(e) => updateSetting('showCardInfoPanel', e.currentTarget.checked)}
+                      />
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -431,6 +671,40 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         min={0}
                         max={48}
                         step={2}
+                      />
+                      <NumberInput
+                        label="Max Columns (auto mode)"
+                        description="Cap the number of columns when using Auto layout. 0 = unlimited."
+                        value={settings.cardMaxColumns}
+                        onChange={(v) => updateSetting('cardMaxColumns', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={8}
+                      />
+                      <Select
+                        label="Card Aspect Ratio"
+                        description="Lock cards to a fixed aspect ratio"
+                        data={[
+                          { value: 'auto', label: 'Auto (natural)' },
+                          { value: '16:9', label: '16:9 (widescreen)' },
+                          { value: '4:3', label: '4:3 (standard)' },
+                          { value: '1:1', label: '1:1 (square)' },
+                          { value: '3:4', label: '3:4 (portrait)' },
+                          { value: '9:16', label: '9:16 (tall portrait)' },
+                          { value: '2:3', label: '2:3 (photo portrait)' },
+                          { value: '3:2', label: '3:2 (photo landscape)' },
+                          { value: '21:9', label: '21:9 (ultrawide)' },
+                        ]}
+                        value={settings.cardAspectRatio ?? 'auto'}
+                        onChange={(v) => updateSetting('cardAspectRatio', (v ?? 'auto') as GalleryBehaviorSettings['cardAspectRatio'])}
+                      />
+                      <NumberInput
+                        label="Card Min Height (px)"
+                        description="Minimum height for each card. 0 = no minimum."
+                        value={settings.cardMinHeight}
+                        onChange={(v) => updateSetting('cardMinHeight', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={600}
+                        step={10}
                       />
 
                       <Divider label="Pagination" labelPosition="left" />
@@ -523,12 +797,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-              </Accordion>
+              </Accordion>}
             </Tabs.Panel>
 
             {/* ── Media Gallery Tab ────────────────────────────── */}
             <Tabs.Panel value="gallery" pt="md">
-              <Accordion variant="separated" defaultValue="viewport">
+              {activeTab === 'gallery' && <Accordion variant="separated" defaultValue="viewport">
                 {/* ── Viewport & Layout ── */}
                 <Accordion.Item value="viewport">
                   <Accordion.Control>Viewport &amp; Layout</Accordion.Control>
@@ -1509,13 +1783,49 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-              </Accordion>
-            </Tabs.Panel>
 
-            {/* ── Advanced Tab (only visible when toggle is on) ─── */}
+                {/* ── Gallery Labels ── */}
+                <Accordion.Item value="gallery-labels">
+                  <Accordion.Control>Gallery Labels</Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap="md">
+                      <TextInput
+                        label="Image Gallery Label"
+                        description="Custom label for image gallery sections. Count is appended automatically."
+                        value={settings.galleryImageLabel ?? 'Images'}
+                        onChange={(e) => updateSetting('galleryImageLabel', e.currentTarget.value)}
+                      />
+                      <TextInput
+                        label="Video Gallery Label"
+                        description="Custom label for video gallery sections. Count is appended automatically."
+                        value={settings.galleryVideoLabel ?? 'Videos'}
+                        onChange={(e) => updateSetting('galleryVideoLabel', e.currentTarget.value)}
+                      />
+                      <Select
+                        label="Label Justification"
+                        description="Horizontal alignment for gallery section labels"
+                        data={[
+                          { value: 'left', label: 'Left' },
+                          { value: 'center', label: 'Center' },
+                          { value: 'right', label: 'Right' },
+                        ]}
+                        value={settings.galleryLabelJustification ?? 'left'}
+                        onChange={(v) => updateSetting('galleryLabelJustification', (v ?? 'left') as GalleryBehaviorSettings['galleryLabelJustification'])}
+                      />
+                      <Switch
+                        label="Show Gallery Label Icon"
+                        description="Display an icon prefix before each gallery section label"
+                        checked={settings.showGalleryLabelIcon ?? false}
+                        onChange={(e) => updateSetting('showGalleryLabelIcon', e.currentTarget.checked)}
+                      />
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>}
+            </Tabs.Panel>
             {settings.advancedSettingsEnabled && (
               <Tabs.Panel value="advanced" pt="md">
-                <Text size="sm" c="dimmed" mb="md">
+                {activeTab === 'advanced' && <><Text size="sm" c="dimmed" mb="md">
                   Fine-grained controls for power users. These settings override internal defaults
                   across all gallery components. Change with care.
                 </Text>
@@ -1525,42 +1835,42 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Card Appearance</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <Text size="sm" fw={500}>Locked Card Opacity</Text>
+                        <Text size="sm" fw={500}>{tt('Locked Card Opacity', 'cardLockedOpacity')}</Text>
                         <Slider
                           value={settings.cardLockedOpacity}
                           onChange={(v) => updateSetting('cardLockedOpacity', v)}
                           min={0} max={1} step={0.05}
                           marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
                         />
-                        <Text size="sm" fw={500}>Gradient Start Opacity</Text>
+                        <Text size="sm" fw={500}>{tt('Gradient Start Opacity', 'cardGradientStartOpacity')}</Text>
                         <Slider
                           value={settings.cardGradientStartOpacity}
                           onChange={(v) => updateSetting('cardGradientStartOpacity', v)}
                           min={0} max={1} step={0.05}
                         />
-                        <Text size="sm" fw={500}>Gradient End Opacity</Text>
+                        <Text size="sm" fw={500}>{tt('Gradient End Opacity', 'cardGradientEndOpacity')}</Text>
                         <Slider
                           value={settings.cardGradientEndOpacity}
                           onChange={(v) => updateSetting('cardGradientEndOpacity', v)}
                           min={0} max={1} step={0.05}
                         />
-                        <NumberInput label="Lock Icon Size (px)" value={settings.cardLockIconSize}
+                        <NumberInput label={tt('Lock Icon Size (px)', 'cardLockIconSize')} value={settings.cardLockIconSize}
                           onChange={(v) => updateSetting('cardLockIconSize', typeof v === 'number' ? v : 32)} min={12} max={64} />
-                        <NumberInput label="Access Icon Size (px)" value={settings.cardAccessIconSize}
+                        <NumberInput label={tt('Access Icon Size (px)', 'cardAccessIconSize')} value={settings.cardAccessIconSize}
                           onChange={(v) => updateSetting('cardAccessIconSize', typeof v === 'number' ? v : 14)} min={8} max={32} />
-                        <NumberInput label="Badge Offset Y (px)" value={settings.cardBadgeOffsetY}
+                        <NumberInput label={tt('Badge Offset Y (px)', 'cardBadgeOffsetY')} value={settings.cardBadgeOffsetY}
                           onChange={(v) => updateSetting('cardBadgeOffsetY', typeof v === 'number' ? v : 8)} min={0} max={32} />
-                        <NumberInput label="Company Badge Max Width (px)" value={settings.cardCompanyBadgeMaxWidth}
+                        <NumberInput label={tt('Company Badge Max Width (px)', 'cardCompanyBadgeMaxWidth')} value={settings.cardCompanyBadgeMaxWidth}
                           onChange={(v) => updateSetting('cardCompanyBadgeMaxWidth', typeof v === 'number' ? v : 160)} min={60} max={400} />
-                        <NumberInput label="Thumbnail Hover Transition (ms)" value={settings.cardThumbnailHoverTransitionMs}
+                        <NumberInput label={tt('Thumbnail Hover Transition (ms)', 'cardThumbnailHoverTransitionMs')} value={settings.cardThumbnailHoverTransitionMs}
                           onChange={(v) => updateSetting('cardThumbnailHoverTransitionMs', typeof v === 'number' ? v : 300)} min={0} max={1000} />
-                        <Text size="sm" fw={500}>Page Transition Opacity</Text>
+                        <Text size="sm" fw={500}>{tt('Page Transition Opacity', 'cardPageTransitionOpacity')}</Text>
                         <Slider
                           value={settings.cardPageTransitionOpacity}
                           onChange={(v) => updateSetting('cardPageTransitionOpacity', v)}
                           min={0} max={1} step={0.05}
                         />
-                        <TextInput label="Auto Columns Breakpoints" description="Format: 480:1,768:2,1024:3,1280:4"
+                        <TextInput label={tt('Auto Columns Breakpoints', 'cardAutoColumnsBreakpoints')} description="Format: 480:1,768:2,1024:3,1280:4"
                           value={settings.cardAutoColumnsBreakpoints}
                           onChange={(e) => updateSetting('cardAutoColumnsBreakpoints', e.currentTarget.value)} />
                       </Stack>
@@ -1572,13 +1882,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Gallery Text</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <TextInput label="Gallery Title" description="Main heading text shown above the gallery."
+                        <TextInput label={tt('Gallery Title', 'galleryTitleText')} description="Main heading text shown above the gallery."
                           value={settings.galleryTitleText}
                           onChange={(e) => updateSetting('galleryTitleText', e.currentTarget.value)} />
-                        <TextInput label="Gallery Subtitle" description="Subtitle text shown beneath the title."
+                        <TextInput label={tt('Gallery Subtitle', 'gallerySubtitleText')} description="Subtitle text shown beneath the title."
                           value={settings.gallerySubtitleText}
                           onChange={(e) => updateSetting('gallerySubtitleText', e.currentTarget.value)} />
-                        <TextInput label="Campaign About Heading" description='Heading for the campaign description section (default "About").'
+                        <TextInput label={tt('Campaign About Heading', 'campaignAboutHeadingText')} description='Heading for the campaign description section (default "About").'
                           value={settings.campaignAboutHeadingText}
                           onChange={(e) => updateSetting('campaignAboutHeadingText', e.currentTarget.value)} />
                       </Stack>
@@ -1590,23 +1900,23 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Modal / Viewer</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <Text size="sm" fw={500}>Cover Mobile Ratio</Text>
+                        <Text size="sm" fw={500}>{tt('Cover Mobile Ratio', 'modalCoverMobileRatio')}</Text>
                         <Slider value={settings.modalCoverMobileRatio} onChange={(v) => updateSetting('modalCoverMobileRatio', v)}
                           min={0.2} max={1} step={0.05} />
-                        <Text size="sm" fw={500}>Cover Tablet Ratio</Text>
+                        <Text size="sm" fw={500}>{tt('Cover Tablet Ratio', 'modalCoverTabletRatio')}</Text>
                         <Slider value={settings.modalCoverTabletRatio} onChange={(v) => updateSetting('modalCoverTabletRatio', v)}
                           min={0.2} max={1} step={0.05} />
-                        <NumberInput label="Close Button Size (px)" value={settings.modalCloseButtonSize}
+                        <NumberInput label={tt('Close Button Size (px)', 'modalCloseButtonSize')} value={settings.modalCloseButtonSize}
                           onChange={(v) => updateSetting('modalCloseButtonSize', typeof v === 'number' ? v : 36)} min={20} max={64} />
-                        <TextInput label="Close Button Background" value={settings.modalCloseButtonBgColor}
+                        <TextInput label={tt('Close Button Background', 'modalCloseButtonBgColor')} value={settings.modalCloseButtonBgColor}
                           onChange={(e) => updateSetting('modalCloseButtonBgColor', e.currentTarget.value)} />
-                        <NumberInput label="Content Max Width (px)" value={settings.modalContentMaxWidth}
+                        <NumberInput label={tt('Content Max Width (px)', 'modalContentMaxWidth')} value={settings.modalContentMaxWidth}
                           onChange={(v) => updateSetting('modalContentMaxWidth', typeof v === 'number' ? v : 900)} min={400} max={2000} />
-                        <Text size="sm" fw={500}>Description Line Height</Text>
+                        <Text size="sm" fw={500}>{tt('Description Line Height', 'campaignDescriptionLineHeight')}</Text>
                         <Slider value={settings.campaignDescriptionLineHeight}
                           onChange={(v) => updateSetting('campaignDescriptionLineHeight', v)}
                           min={1} max={3} step={0.1} />
-                        <NumberInput label="Mobile Breakpoint (px)" value={settings.modalMobileBreakpoint}
+                        <NumberInput label={tt('Mobile Breakpoint (px)', 'modalMobileBreakpoint')} value={settings.modalMobileBreakpoint}
                           onChange={(v) => updateSetting('modalMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
                       </Stack>
                     </Accordion.Panel>
@@ -1617,43 +1927,43 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Upload / Media</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <NumberInput label="Upload Max Size (MB)" value={settings.uploadMaxSizeMb}
+                        <NumberInput label={tt('Upload Max Size (MB)', 'uploadMaxSizeMb')} value={settings.uploadMaxSizeMb}
                           onChange={(v) => updateSetting('uploadMaxSizeMb', typeof v === 'number' ? v : 50)} min={1} max={500} />
-                        <TextInput label="Allowed Upload Types" description="Comma-separated MIME patterns (e.g. image/*,video/*)"
+                        <TextInput label={tt('Allowed Upload Types', 'uploadAllowedTypes')} description="Comma-separated MIME patterns (e.g. image/*,video/*)"
                           value={settings.uploadAllowedTypes}
                           onChange={(e) => updateSetting('uploadAllowedTypes', e.currentTarget.value)} />
-                        <NumberInput label="Library Page Size" value={settings.libraryPageSize}
+                        <NumberInput label={tt('Library Page Size', 'libraryPageSize')} value={settings.libraryPageSize}
                           onChange={(v) => updateSetting('libraryPageSize', typeof v === 'number' ? v : 20)} min={5} max={100} />
-                        <NumberInput label="Media List Page Size" value={settings.mediaListPageSize}
+                        <NumberInput label={tt('Media List Page Size', 'mediaListPageSize')} value={settings.mediaListPageSize}
                           onChange={(v) => updateSetting('mediaListPageSize', typeof v === 'number' ? v : 50)} min={10} max={200} />
-                        <NumberInput label="Compact Card Height (px)" value={settings.mediaCompactCardHeight}
+                        <NumberInput label={tt('Compact Card Height (px)', 'mediaCompactCardHeight')} value={settings.mediaCompactCardHeight}
                           onChange={(v) => updateSetting('mediaCompactCardHeight', typeof v === 'number' ? v : 100)} min={40} max={300} />
-                        <NumberInput label="Small Card Height (px)" value={settings.mediaSmallCardHeight}
+                        <NumberInput label={tt('Small Card Height (px)', 'mediaSmallCardHeight')} value={settings.mediaSmallCardHeight}
                           onChange={(v) => updateSetting('mediaSmallCardHeight', typeof v === 'number' ? v : 80)} min={40} max={300} />
-                        <NumberInput label="Medium Card Height (px)" value={settings.mediaMediumCardHeight}
+                        <NumberInput label={tt('Medium Card Height (px)', 'mediaMediumCardHeight')} value={settings.mediaMediumCardHeight}
                           onChange={(v) => updateSetting('mediaMediumCardHeight', typeof v === 'number' ? v : 240)} min={100} max={600} />
-                        <NumberInput label="Large Card Height (px)" value={settings.mediaLargeCardHeight}
+                        <NumberInput label={tt('Large Card Height (px)', 'mediaLargeCardHeight')} value={settings.mediaLargeCardHeight}
                           onChange={(v) => updateSetting('mediaLargeCardHeight', typeof v === 'number' ? v : 340)} min={100} max={800} />
-                        <NumberInput label="Media List Min Width (px)" value={settings.mediaListMinWidth}
+                        <NumberInput label={tt('Media List Min Width (px)', 'mediaListMinWidth')} value={settings.mediaListMinWidth}
                           onChange={(v) => updateSetting('mediaListMinWidth', typeof v === 'number' ? v : 600)} min={300} max={1200} />
-                        <NumberInput label="SWR Deduping Interval (ms)" value={settings.swrDedupingIntervalMs}
+                        <NumberInput label={tt('SWR Deduping Interval (ms)', 'swrDedupingIntervalMs')} value={settings.swrDedupingIntervalMs}
                           onChange={(v) => updateSetting('swrDedupingIntervalMs', typeof v === 'number' ? v : 5000)} min={0} max={30000} />
-                        <NumberInput label="Notification Dismiss (ms)" value={settings.notificationDismissMs}
+                        <NumberInput label={tt('Notification Dismiss (ms)', 'notificationDismissMs')} value={settings.notificationDismissMs}
                           onChange={(v) => updateSetting('notificationDismissMs', typeof v === 'number' ? v : 4000)} min={1000} max={30000} />
                         <Divider label="Image Optimization" labelPosition="center" />
-                        <Switch label="Optimize on Upload" description="Automatically resize and compress images on upload."
+                        <Switch label={tt('Optimize on Upload', 'optimizeOnUpload')} description="Automatically resize and compress images on upload."
                           checked={settings.optimizeOnUpload}
                           onChange={(e) => updateSetting('optimizeOnUpload', e.currentTarget.checked)} />
-                        <NumberInput label="Max Width (px)" value={settings.optimizeMaxWidth}
+                        <NumberInput label={tt('Max Width (px)', 'optimizeMaxWidth')} value={settings.optimizeMaxWidth}
                           onChange={(v) => updateSetting('optimizeMaxWidth', typeof v === 'number' ? v : 1920)} min={100} max={4096} />
-                        <NumberInput label="Max Height (px)" value={settings.optimizeMaxHeight}
+                        <NumberInput label={tt('Max Height (px)', 'optimizeMaxHeight')} value={settings.optimizeMaxHeight}
                           onChange={(v) => updateSetting('optimizeMaxHeight', typeof v === 'number' ? v : 1920)} min={100} max={4096} />
-                        <NumberInput label="Quality (%)" value={settings.optimizeQuality}
+                        <NumberInput label={tt('Quality (%)', 'optimizeQuality')} value={settings.optimizeQuality}
                           onChange={(v) => updateSetting('optimizeQuality', typeof v === 'number' ? v : 82)} min={10} max={100} />
-                        <Switch label="WebP Conversion" description="Generate WebP copies alongside originals."
+                        <Switch label={tt('WebP Conversion', 'optimizeWebpEnabled')} description="Generate WebP copies alongside originals."
                           checked={settings.optimizeWebpEnabled}
                           onChange={(e) => updateSetting('optimizeWebpEnabled', e.currentTarget.checked)} />
-                        <NumberInput label="Thumbnail Cache TTL (s)" description="How long cached external thumbnails are kept (seconds)."
+                        <NumberInput label={tt('Thumbnail Cache TTL (s)', 'thumbnailCacheTtl')} description="How long cached external thumbnails are kept (seconds)."
                           value={settings.thumbnailCacheTtl}
                           onChange={(v) => updateSetting('thumbnailCacheTtl', typeof v === 'number' ? v : 86400)} min={0} max={604800} />
                       </Stack>
@@ -1665,43 +1975,43 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Tile / Adapter</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <Text size="sm" fw={500}>Hover Overlay Opacity</Text>
+                        <Text size="sm" fw={500}>{tt('Hover Overlay Opacity', 'tileHoverOverlayOpacity')}</Text>
                         <Slider value={settings.tileHoverOverlayOpacity} onChange={(v) => updateSetting('tileHoverOverlayOpacity', v)}
                           min={0} max={1} step={0.05} />
-                        <Text size="sm" fw={500}>Bounce Scale (Hover)</Text>
+                        <Text size="sm" fw={500}>{tt('Bounce Scale (Hover)', 'tileBounceScaleHover')}</Text>
                         <Slider value={settings.tileBounceScaleHover} onChange={(v) => updateSetting('tileBounceScaleHover', v)}
                           min={1} max={1.3} step={0.01} />
-                        <Text size="sm" fw={500}>Bounce Scale (Active)</Text>
+                        <Text size="sm" fw={500}>{tt('Bounce Scale (Active)', 'tileBounceScaleActive')}</Text>
                         <Slider value={settings.tileBounceScaleActive} onChange={(v) => updateSetting('tileBounceScaleActive', v)}
                           min={0.9} max={1.1} step={0.01} />
-                        <NumberInput label="Bounce Duration (ms)" value={settings.tileBounceDurationMs}
+                        <NumberInput label={tt('Bounce Duration (ms)', 'tileBounceDurationMs')} value={settings.tileBounceDurationMs}
                           onChange={(v) => updateSetting('tileBounceDurationMs', typeof v === 'number' ? v : 300)} min={0} max={1000} />
-                        <NumberInput label="Base Transition Duration (ms)" value={settings.tileBaseTransitionDurationMs}
+                        <NumberInput label={tt('Base Transition Duration (ms)', 'tileBaseTransitionDurationMs')} value={settings.tileBaseTransitionDurationMs}
                           onChange={(v) => updateSetting('tileBaseTransitionDurationMs', typeof v === 'number' ? v : 250)} min={0} max={1000} />
-                        <NumberInput label="Tile Transition Duration (ms)" value={settings.tileTransitionDurationMs}
+                        <NumberInput label={tt('Tile Transition Duration (ms)', 'tileTransitionDurationMs')} value={settings.tileTransitionDurationMs}
                           onChange={(v) => updateSetting('tileTransitionDurationMs', typeof v === 'number' ? v : 200)} min={0} max={1000} />
-                        <Text size="sm" fw={500}>Hex Vertical Overlap Ratio</Text>
+                        <Text size="sm" fw={500}>{tt('Hex Vertical Overlap Ratio', 'hexVerticalOverlapRatio')}</Text>
                         <Slider value={settings.hexVerticalOverlapRatio} onChange={(v) => updateSetting('hexVerticalOverlapRatio', v)}
                           min={0} max={0.5} step={0.01} />
-                        <Text size="sm" fw={500}>Diamond Vertical Overlap Ratio</Text>
+                        <Text size="sm" fw={500}>{tt('Diamond Vertical Overlap Ratio', 'diamondVerticalOverlapRatio')}</Text>
                         <Slider value={settings.diamondVerticalOverlapRatio} onChange={(v) => updateSetting('diamondVerticalOverlapRatio', v)}
                           min={0} max={0.5} step={0.01} />
-                        <TextInput label="Hex Clip Path" value={settings.hexClipPath}
+                        <TextInput label={tt('Hex Clip Path', 'hexClipPath')} value={settings.hexClipPath}
                           onChange={(e) => updateSetting('hexClipPath', e.currentTarget.value)} />
-                        <TextInput label="Diamond Clip Path" value={settings.diamondClipPath}
+                        <TextInput label={tt('Diamond Clip Path', 'diamondClipPath')} value={settings.diamondClipPath}
                           onChange={(e) => updateSetting('diamondClipPath', e.currentTarget.value)} />
-                        <NumberInput label="Default Per Row" value={settings.tileDefaultPerRow}
+                        <NumberInput label={tt('Default Per Row', 'tileDefaultPerRow')} value={settings.tileDefaultPerRow}
                           onChange={(v) => updateSetting('tileDefaultPerRow', typeof v === 'number' ? v : 5)} min={1} max={12} />
-                        <NumberInput label="Photo Normalize Height (px)" value={settings.photoNormalizeHeight}
+                        <NumberInput label={tt('Photo Normalize Height (px)', 'photoNormalizeHeight')} value={settings.photoNormalizeHeight}
                           onChange={(v) => updateSetting('photoNormalizeHeight', typeof v === 'number' ? v : 300)} min={100} max={800} />
-                        <TextInput label="Masonry Auto Column Breakpoints" description="Format: 480:2,768:3,1024:4,1280:5"
+                        <TextInput label={tt('Masonry Auto Column Breakpoints', 'masonryAutoColumnBreakpoints')} description="Format: 480:2,768:3,1024:4,1280:5"
                           value={settings.masonryAutoColumnBreakpoints}
                           onChange={(e) => updateSetting('masonryAutoColumnBreakpoints', e.currentTarget.value)} />
-                        <TextInput label="Grid Card Hover Shadow" value={settings.gridCardHoverShadow}
+                        <TextInput label={tt('Grid Card Hover Shadow', 'gridCardHoverShadow')} value={settings.gridCardHoverShadow}
                           onChange={(e) => updateSetting('gridCardHoverShadow', e.currentTarget.value)} />
-                        <TextInput label="Grid Card Default Shadow" value={settings.gridCardDefaultShadow}
+                        <TextInput label={tt('Grid Card Default Shadow', 'gridCardDefaultShadow')} value={settings.gridCardDefaultShadow}
                           onChange={(e) => updateSetting('gridCardDefaultShadow', e.currentTarget.value)} />
-                        <Text size="sm" fw={500}>Grid Card Hover Scale</Text>
+                        <Text size="sm" fw={500}>{tt('Grid Card Hover Scale', 'gridCardHoverScale')}</Text>
                         <Slider value={settings.gridCardHoverScale} onChange={(v) => updateSetting('gridCardHoverScale', v)}
                           min={1} max={1.2} step={0.01} />
                       </Stack>
@@ -1713,21 +2023,21 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Lightbox</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <NumberInput label="Transition Duration (ms)" value={settings.lightboxTransitionMs}
+                        <NumberInput label={tt('Transition Duration (ms)', 'lightboxTransitionMs')} value={settings.lightboxTransitionMs}
                           onChange={(v) => updateSetting('lightboxTransitionMs', typeof v === 'number' ? v : 250)} min={0} max={1000} />
-                        <TextInput label="Backdrop Color" value={settings.lightboxBackdropColor}
+                        <TextInput label={tt('Backdrop Color', 'lightboxBackdropColor')} value={settings.lightboxBackdropColor}
                           onChange={(e) => updateSetting('lightboxBackdropColor', e.currentTarget.value)} />
-                        <Text size="sm" fw={500}>Entry Scale</Text>
+                        <Text size="sm" fw={500}>{tt('Entry Scale', 'lightboxEntryScale')}</Text>
                         <Slider value={settings.lightboxEntryScale} onChange={(v) => updateSetting('lightboxEntryScale', v)}
                           min={0.5} max={1} step={0.01} />
-                        <NumberInput label="Video Max Width (px)" value={settings.lightboxVideoMaxWidth}
+                        <NumberInput label={tt('Video Max Width (px)', 'lightboxVideoMaxWidth')} value={settings.lightboxVideoMaxWidth}
                           onChange={(v) => updateSetting('lightboxVideoMaxWidth', typeof v === 'number' ? v : 900)} min={300} max={1920} />
-                        <NumberInput label="Video Height (px)" value={settings.lightboxVideoHeight}
+                        <NumberInput label={tt('Video Height (px)', 'lightboxVideoHeight')} value={settings.lightboxVideoHeight}
                           onChange={(v) => updateSetting('lightboxVideoHeight', typeof v === 'number' ? v : 506)} min={200} max={1080} />
-                        <TextInput label="Media Max Height" description="CSS value, e.g. 85vh"
+                        <TextInput label={tt('Media Max Height', 'lightboxMediaMaxHeight')} description="CSS value, e.g. 85vh"
                           value={settings.lightboxMediaMaxHeight}
                           onChange={(e) => updateSetting('lightboxMediaMaxHeight', e.currentTarget.value)} />
-                        <NumberInput label="Z-Index" value={settings.lightboxZIndex}
+                        <NumberInput label={tt('Z-Index', 'lightboxZIndex')} value={settings.lightboxZIndex}
                           onChange={(v) => updateSetting('lightboxZIndex', typeof v === 'number' ? v : 1000)} min={1} max={10000} />
                       </Stack>
                     </Accordion.Panel>
@@ -1738,27 +2048,27 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Navigation</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <NumberInput label="Max Visible Dots" value={settings.dotNavMaxVisibleDots}
+                        <NumberInput label={tt('Max Visible Dots', 'dotNavMaxVisibleDots')} value={settings.dotNavMaxVisibleDots}
                           onChange={(v) => updateSetting('dotNavMaxVisibleDots', typeof v === 'number' ? v : 7)} min={3} max={20} />
-                        <NumberInput label="Arrow Edge Inset (px)" value={settings.navArrowEdgeInset}
+                        <NumberInput label={tt('Arrow Edge Inset (px)', 'navArrowEdgeInset')} value={settings.navArrowEdgeInset}
                           onChange={(v) => updateSetting('navArrowEdgeInset', typeof v === 'number' ? v : 8)} min={0} max={48} />
-                        <NumberInput label="Arrow Min Hit Target (px)" value={settings.navArrowMinHitTarget}
+                        <NumberInput label={tt('Arrow Min Hit Target (px)', 'navArrowMinHitTarget')} value={settings.navArrowMinHitTarget}
                           onChange={(v) => updateSetting('navArrowMinHitTarget', typeof v === 'number' ? v : 44)} min={24} max={80} />
-                        <NumberInput label="Arrow Fade Duration (ms)" value={settings.navArrowFadeDurationMs}
+                        <NumberInput label={tt('Arrow Fade Duration (ms)', 'navArrowFadeDurationMs')} value={settings.navArrowFadeDurationMs}
                           onChange={(v) => updateSetting('navArrowFadeDurationMs', typeof v === 'number' ? v : 200)} min={0} max={1000} />
-                        <NumberInput label="Arrow Scale Transition (ms)" value={settings.navArrowScaleTransitionMs}
+                        <NumberInput label={tt('Arrow Scale Transition (ms)', 'navArrowScaleTransitionMs')} value={settings.navArrowScaleTransitionMs}
                           onChange={(v) => updateSetting('navArrowScaleTransitionMs', typeof v === 'number' ? v : 150)} min={0} max={1000} />
-                        <Text size="sm" fw={500}>Viewport Height Mobile Ratio</Text>
+                        <Text size="sm" fw={500}>{tt('Viewport Height Mobile Ratio', 'viewportHeightMobileRatio')}</Text>
                         <Slider value={settings.viewportHeightMobileRatio}
                           onChange={(v) => updateSetting('viewportHeightMobileRatio', v)}
                           min={0.3} max={1} step={0.05} />
-                        <Text size="sm" fw={500}>Viewport Height Tablet Ratio</Text>
+                        <Text size="sm" fw={500}>{tt('Viewport Height Tablet Ratio', 'viewportHeightTabletRatio')}</Text>
                         <Slider value={settings.viewportHeightTabletRatio}
                           onChange={(v) => updateSetting('viewportHeightTabletRatio', v)}
                           min={0.3} max={1} step={0.05} />
-                        <NumberInput label="Search Input Min Width (px)" value={settings.searchInputMinWidth}
+                        <NumberInput label={tt('Search Input Min Width (px)', 'searchInputMinWidth')} value={settings.searchInputMinWidth}
                           onChange={(v) => updateSetting('searchInputMinWidth', typeof v === 'number' ? v : 200)} min={100} max={400} />
-                        <NumberInput label="Search Input Max Width (px)" value={settings.searchInputMaxWidth}
+                        <NumberInput label={tt('Search Input Max Width (px)', 'searchInputMaxWidth')} value={settings.searchInputMaxWidth}
                           onChange={(v) => updateSetting('searchInputMaxWidth', typeof v === 'number' ? v : 280)} min={150} max={600} />
                       </Stack>
                     </Accordion.Panel>
@@ -1769,21 +2079,21 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>System</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <NumberInput label="Expiry Warning Threshold (ms)" description="How early to show token-expiry warnings."
+                        <NumberInput label={tt('Expiry Warning Threshold (ms)', 'expiryWarningThresholdMs')} description="How early to show token-expiry warnings."
                           value={settings.expiryWarningThresholdMs}
                           onChange={(v) => updateSetting('expiryWarningThresholdMs', typeof v === 'number' ? v : 300000)} min={0} max={600000} />
-                        <NumberInput label="Admin Search Debounce (ms)" value={settings.adminSearchDebounceMs}
+                        <NumberInput label={tt('Admin Search Debounce (ms)', 'adminSearchDebounceMs')} value={settings.adminSearchDebounceMs}
                           onChange={(v) => updateSetting('adminSearchDebounceMs', typeof v === 'number' ? v : 300)} min={0} max={2000} />
-                        <NumberInput label="Min Password Length" value={settings.loginMinPasswordLength}
+                        <NumberInput label={tt('Min Password Length', 'loginMinPasswordLength')} value={settings.loginMinPasswordLength}
                           onChange={(v) => updateSetting('loginMinPasswordLength', typeof v === 'number' ? v : 1)} min={1} max={32} />
-                        <NumberInput label="Login Form Max Width (px)" value={settings.loginFormMaxWidth}
+                        <NumberInput label={tt('Login Form Max Width (px)', 'loginFormMaxWidth')} value={settings.loginFormMaxWidth}
                           onChange={(v) => updateSetting('loginFormMaxWidth', typeof v === 'number' ? v : 400)} min={200} max={800} />
-                        <NumberInput label="Auth Bar Backdrop Blur (px)" value={settings.authBarBackdropBlur}
+                        <NumberInput label={tt('Auth Bar Backdrop Blur (px)', 'authBarBackdropBlur')} value={settings.authBarBackdropBlur}
                           onChange={(v) => updateSetting('authBarBackdropBlur', typeof v === 'number' ? v : 8)} min={0} max={24} />
-                        <NumberInput label="Auth Bar Mobile Breakpoint (px)" value={settings.authBarMobileBreakpoint}
+                        <NumberInput label={tt('Auth Bar Mobile Breakpoint (px)', 'authBarMobileBreakpoint')} value={settings.authBarMobileBreakpoint}
                           onChange={(v) => updateSetting('authBarMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
                         <Switch
-                          label="Preserve data on plugin removal"
+                          label={tt('Preserve data on plugin removal', 'preserveDataOnUninstall')}
                           description="When enabled, all campaigns, templates, analytics, and uploaded files are kept if you uninstall the plugin."
                           checked={settings.preserveDataOnUninstall ?? false}
                           onChange={(e) => updateSetting('preserveDataOnUninstall', e.currentTarget.checked)}
@@ -1797,21 +2107,21 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <Stack gap="md">
                         <NumberInput
-                          label="Archive Purge After (days)"
+                          label={tt('Archive Purge After (days)', 'archivePurgeDays')}
                           description="Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging."
                           value={settings.archivePurgeDays ?? 0}
                           onChange={(v) => updateSetting('archivePurgeDays', typeof v === 'number' ? v : 0)}
                           min={0} max={365}
                         />
                         <NumberInput
-                          label="Trash Grace Period (days)"
+                          label={tt('Trash Grace Period (days)', 'archivePurgeGraceDays')}
                           description="Trashed campaigns are permanently deleted after this many days. Minimum 7 days."
                           value={settings.archivePurgeGraceDays ?? 30}
                           onChange={(v) => updateSetting('archivePurgeGraceDays', typeof v === 'number' ? v : 30)}
                           min={7} max={90}
                         />
                         <NumberInput
-                          label="Analytics Retention (days)"
+                          label={tt('Analytics Retention (days)', 'analyticsRetentionDays')}
                           description="Analytics events older than this are purged weekly. Set to 0 to keep indefinitely."
                           value={settings.analyticsRetentionDays ?? 0}
                           onChange={(v) => updateSetting('analyticsRetentionDays', typeof v === 'number' ? v : 0)}
@@ -1820,9 +2130,183 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
-                </Accordion>
+                </Accordion></>}
               </Tabs.Panel>
             )}
+
+            {/* ── Typography Tab ───────────────────────────────── */}
+            <Tabs.Panel value="typography" pt="md">
+              {activeTab === 'typography' && <Stack gap="md">
+                <Text size="sm" c="dimmed">
+                  Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults.
+                </Text>
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  disabled={Object.keys(settings.typographyOverrides).length === 0}
+                  onClick={() => updateSetting('typographyOverrides', {})}
+                >
+                  Reset all typography
+                </Button>
+                <Accordion variant="separated" chevronPosition="left">
+                  {/* Gallery Header */}
+                  <Accordion.Item value="viewerTitle">
+                    <Accordion.Control>Viewer Title</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['viewerTitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('viewerTitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="viewerSubtitle">
+                    <Accordion.Control>Viewer Subtitle</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['viewerSubtitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('viewerSubtitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Campaign Cards */}
+                  <Accordion.Item value="cardTitle">
+                    <Accordion.Control>Card Title</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardTitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardTitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="cardDescription">
+                    <Accordion.Control>Card Description</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardDescription'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardDescription', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="cardCompanyName">
+                    <Accordion.Control>Card Company Name</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardCompanyName'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardCompanyName', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="cardMediaCounts">
+                    <Accordion.Control>Card Media Counts</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['cardMediaCounts'] ?? {}}
+                        onChange={(v) => updateTypoOverride('cardMediaCounts', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Campaign Viewer */}
+                  <Accordion.Item value="campaignTitle">
+                    <Accordion.Control>Campaign Title</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignTitle'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignTitle', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignDescription">
+                    <Accordion.Control>Campaign Description</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignDescription'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignDescription', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignDate">
+                    <Accordion.Control>Campaign Date</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignDate'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignDate', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignAboutHeading">
+                    <Accordion.Control>Campaign About Heading</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignAboutHeading'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignAboutHeading', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignStatsValue">
+                    <Accordion.Control>Campaign Stats Value</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignStatsValue'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignStatsValue', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="campaignStatsLabel">
+                    <Accordion.Control>Campaign Stats Label</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['campaignStatsLabel'] ?? {}}
+                        onChange={(v) => updateTypoOverride('campaignStatsLabel', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Gallery & Media */}
+                  <Accordion.Item value="galleryLabel">
+                    <Accordion.Control>Gallery Label</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['galleryLabel'] ?? {}}
+                        onChange={(v) => updateTypoOverride('galleryLabel', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="mediaCaption">
+                    <Accordion.Control>Media Caption</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['mediaCaption'] ?? {}}
+                        onChange={(v) => updateTypoOverride('mediaCaption', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+
+                  {/* Auth & Access */}
+                  <Accordion.Item value="authBarText">
+                    <Accordion.Control>Auth Bar Text</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['authBarText'] ?? {}}
+                        onChange={(v) => updateTypoOverride('authBarText', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                  <Accordion.Item value="accessBadgeText">
+                    <Accordion.Control>Access Badge Text</Accordion.Control>
+                    <Accordion.Panel>
+                      <TypographyEditor
+                        value={settings.typographyOverrides['accessBadgeText'] ?? {}}
+                        onChange={(v) => updateTypoOverride('accessBadgeText', v)}
+                      />
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              </Stack>}
+            </Tabs.Panel>
+
           </Tabs>
 
           {/* ── Footer (sticky) ─────────────────────────────── */}

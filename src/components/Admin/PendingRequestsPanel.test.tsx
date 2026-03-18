@@ -15,19 +15,19 @@ function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
 const pendingRequest: AccessRequest = {
   token: 'tok-abc',
   email: 'alice@example.com',
-  campaign_id: 101,
+  campaignId: 101,
   status: 'pending',
-  requested_at: '2026-01-15T10:00:00Z',
-  resolved_at: null,
+  requestedAt: '2026-01-15T10:00:00Z',
+  resolvedAt: null,
 };
 
 const approvedRequest: AccessRequest = {
   token: 'tok-xyz',
   email: 'bob@example.com',
-  campaign_id: 101,
+  campaignId: 101,
   status: 'approved',
-  requested_at: '2026-01-10T08:00:00Z',
-  resolved_at: '2026-01-11T09:00:00Z',
+  requestedAt: '2026-01-10T08:00:00Z',
+  resolvedAt: '2026-01-11T09:00:00Z',
 };
 
 describe('PendingRequestsPanel', () => {

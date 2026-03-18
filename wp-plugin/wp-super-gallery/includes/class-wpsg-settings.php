@@ -257,6 +257,52 @@ class WPSG_Settings {
         'archive_purge_grace_days'       => 30,
         // ── D-20: Analytics data retention ────────────────────
         'analytics_retention_days'       => 0,
+        // ── P21-B: Card visibility toggles ────────────────────
+        'show_card_company_name'         => true,
+        'show_card_media_counts'         => true,
+        'show_card_title'                => true,
+        'show_card_description'          => true,
+        'show_card_border'               => true,
+        'show_card_access_badge'         => true,
+        'show_card_thumbnail_fade'       => true,
+        // ── P21-D: Viewer background & border ─────────────────
+        'viewer_bg_type'                 => 'theme',
+        'viewer_bg_color'                => '',
+        'viewer_bg_gradient'             => (object) [],
+        'show_viewer_border'             => true,
+        // ── P21-C: Card aspect ratio & max columns ────────────
+        'card_max_columns'               => 0,
+        'card_aspect_ratio'              => 'auto',
+        'card_min_height'                => 0,
+        // ── P21-F: CampaignViewer enhancements ────────────────
+        'campaign_modal_fullscreen'      => false,
+        'show_campaign_company_name'     => true,
+        'show_campaign_date'             => true,
+        'show_campaign_about'            => true,
+        'show_campaign_description'      => true,
+        'show_campaign_stats'            => true,
+        'campaign_stats_admin_only'      => true,
+        'campaign_open_mode'             => 'full',
+        // P21-E: Auth bar display mode
+        'auth_bar_display_mode'          => 'floating',
+        'auth_bar_drag_margin'           => 16,
+        // P21-H: Settings tooltips
+        'show_settings_tooltips'         => true,
+        // P21-I: Typography overrides & in-context editors
+        'typography_overrides'           => '{}',
+        'show_in_context_editors'        => true,
+        // P21-J: QA fixes & UX enhancements
+        'show_card_info_panel'           => true,
+        'show_campaign_cover_image'      => true,
+        'show_campaign_tags'             => true,
+        'show_campaign_admin_actions'    => true,
+        'show_campaign_gallery_labels'   => true,
+        'fullscreen_content_max_width'   => 0,
+        // P21-G: Gallery label customisation
+        'gallery_image_label'            => 'Images',
+        'gallery_video_label'            => 'Videos',
+        'gallery_label_justification'    => 'left',
+        'show_gallery_label_icon'        => false,
     ];
 
     /**
@@ -345,6 +391,16 @@ class WPSG_Settings {
         'mobile_image_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
         'mobile_video_adapter_id'    => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
         'layout_builder_scope'       => ['full', 'viewport'],
+        // P21-D: Viewer background type
+        'viewer_bg_type'             => ['theme', 'transparent', 'solid', 'gradient'],
+        // P21-C: Card aspect ratio
+        'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4', '9:16', '2:3', '3:2', '21:9'],
+        // P21-G: Gallery label justification
+        'gallery_label_justification' => ['left', 'center', 'right'],
+        // P21-F: Campaign open mode
+        'campaign_open_mode'          => ['full', 'galleries-only'],
+        // P21-E: Auth bar display mode
+        'auth_bar_display_mode'       => ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'],
     ];
 
     /**
@@ -463,6 +519,13 @@ class WPSG_Settings {
         'archive_purge_days'           => [0, 365],
         'archive_purge_grace_days'     => [7, 90],
         'analytics_retention_days'     => [0, 730],
+        // P21-C: Card max columns & min height
+        'card_max_columns'             => [0, 8],
+        'card_min_height'              => [0, 600],
+        // P21-E: Auth bar drag margin
+        'auth_bar_drag_margin'         => [0, 64],
+        // P21-J: Fullscreen content max width (0 = full responsive)
+        'fullscreen_content_max_width' => [0, 3000],
     ];
 
     /**
@@ -1096,6 +1159,114 @@ class WPSG_Settings {
         if (isset($input['cache_ttl'])) {
             $ttl = intval($input['cache_ttl']);
             $sanitized['cache_ttl'] = max(0, min(604800, $ttl));
+        }
+
+        // P21-I: Typography overrides — JSON object with per-element typography.
+        if (isset($input['typography_overrides'])) {
+            $raw = $input['typography_overrides'];
+            $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+            if (!is_array($decoded)) {
+                $decoded = [];
+            }
+            $allowed_props = [
+                'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
+                'textTransform', 'textDecoration', 'lineHeight',
+                'letterSpacing', 'wordSpacing', 'color',
+                'textStrokeWidth', 'textStrokeColor',
+                'textShadowOffsetX', 'textShadowOffsetY', 'textShadowBlur', 'textShadowColor',
+                'textGlowColor', 'textGlowBlur',
+            ];
+            $allowed_elements = [
+                'viewerTitle', 'viewerSubtitle',
+                'cardTitle', 'cardDescription', 'cardCompanyName', 'cardMediaCounts',
+                'campaignTitle', 'campaignDescription', 'campaignDate',
+                'campaignAboutHeading', 'campaignStatsValue', 'campaignStatsLabel',
+                'galleryLabel', 'mediaCaption', 'authBarText', 'accessBadgeText',
+            ];
+            $clean = [];
+            foreach ($decoded as $element_id => $overrides) {
+                if (!is_string($element_id) || !is_array($overrides)) {
+                    continue;
+                }
+                if (!in_array($element_id, $allowed_elements, true)) {
+                    continue;
+                }
+                $element_clean = [];
+                foreach ($overrides as $prop => $val) {
+                    if (!in_array($prop, $allowed_props, true)) {
+                        continue;
+                    }
+                    if ($prop === 'fontWeight') {
+                        $val = max(100, min(900, intval($val)));
+                    } elseif ($prop === 'lineHeight') {
+                        $val = max(0.5, min(5.0, floatval($val)));
+                    } else {
+                        $val = sanitize_text_field((string) $val);
+                    }
+                    $element_clean[$prop] = $val;
+                }
+                if (!empty($element_clean)) {
+                    $clean[$element_id] = $element_clean;
+                }
+            }
+            $sanitized['typography_overrides'] = wp_json_encode($clean);
+        }
+
+        // P21-K: Viewer background gradient — structured JSON object.
+        if (isset($input['viewer_bg_gradient'])) {
+            $raw = $input['viewer_bg_gradient'];
+            $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+            if (!is_array($decoded)) {
+                $decoded = [];
+            }
+            $clean_grad = [];
+            $allowed_types = ['linear', 'radial', 'conic'];
+            $allowed_dirs  = ['horizontal', 'vertical', 'diagonal-right', 'diagonal-left'];
+            $allowed_shapes = ['circle', 'ellipse'];
+            $allowed_sizes  = ['farthest-corner', 'farthest-side', 'closest-corner', 'closest-side'];
+            if (isset($decoded['type']) && in_array($decoded['type'], $allowed_types, true)) {
+                $clean_grad['type'] = $decoded['type'];
+            }
+            if (isset($decoded['direction']) && in_array($decoded['direction'], $allowed_dirs, true)) {
+                $clean_grad['direction'] = $decoded['direction'];
+            }
+            if (isset($decoded['angle'])) {
+                $clean_grad['angle'] = max(0, min(360, intval($decoded['angle'])));
+            }
+            if (isset($decoded['radialShape']) && in_array($decoded['radialShape'], $allowed_shapes, true)) {
+                $clean_grad['radialShape'] = $decoded['radialShape'];
+            }
+            if (isset($decoded['radialSize']) && in_array($decoded['radialSize'], $allowed_sizes, true)) {
+                $clean_grad['radialSize'] = $decoded['radialSize'];
+            }
+            if (isset($decoded['centerX'])) {
+                $clean_grad['centerX'] = max(0, min(100, intval($decoded['centerX'])));
+            }
+            if (isset($decoded['centerY'])) {
+                $clean_grad['centerY'] = max(0, min(100, intval($decoded['centerY'])));
+            }
+            if (isset($decoded['stops']) && is_array($decoded['stops'])) {
+                $clean_stops = [];
+                foreach (array_slice($decoded['stops'], 0, 3) as $stop) {
+                    if (!is_array($stop)) {
+                        continue;
+                    }
+                    $clean_stop = [];
+                    if (isset($stop['color'])) {
+                        $clean_stop['color'] = sanitize_text_field((string) $stop['color']);
+                    }
+                    if (isset($stop['position'])) {
+                        $clean_stop['position'] = max(0, min(100, intval($stop['position'])));
+                    }
+                    if (!empty($clean_stop)) {
+                        $clean_stops[] = $clean_stop;
+                    }
+                }
+                if (!empty($clean_stops)) {
+                    $clean_grad['stops'] = $clean_stops;
+                }
+            }
+            $sanitized['viewer_bg_gradient'] = empty($clean_grad) ? (object) [] : $clean_grad;
         }
 
         // ── Generic fallback for P14+ settings not explicitly handled above ──

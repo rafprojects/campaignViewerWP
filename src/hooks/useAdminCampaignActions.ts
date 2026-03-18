@@ -1,27 +1,8 @@
-import { useCallback, useReducer, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
 import type { ApiClient, CampaignExportPayload } from '@/services/apiClient';
-import type { CampaignFormState } from '@/components/Admin/CampaignFormModal';
 import type { AdminCampaign } from '@/hooks/useAdminSWR';
-import type { Campaign } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-
-const emptyForm: CampaignFormState = {
-  title: '',
-  description: '',
-  company: '',
-  status: 'draft' as Campaign['status'],
-  visibility: 'private' as Campaign['visibility'],
-  tags: '',
-  publishAt: '',
-  unpublishAt: '',
-  layoutTemplateId: '',
-  imageAdapterId: '',
-  videoAdapterId: '',
-  categories: [],
-};
-
-const campaignFormReducer = (_state: CampaignFormState, next: CampaignFormState): CampaignFormState => next;
 
 interface Options {
   apiClient: ApiClient;
@@ -29,13 +10,15 @@ interface Options {
   onMutate: () => Promise<unknown>;
   onCampaignsUpdated: () => void;
   onNotify: (msg: { type: 'error' | 'success'; text: string }) => void;
+  /** Delegate campaign edit to the unified modal. */
+  onOpenEdit: (campaign: AdminCampaign) => void;
+  /** Delegate campaign create to the unified modal. */
+  onOpenCreate: () => void;
+  /** Whether the create/edit modal is currently open — guards hotkeys. */
+  createModalOpen?: boolean;
 }
 
-export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMutate, onCampaignsUpdated, onNotify }: Options) {
-  const [editingCampaign, setEditingCampaign] = useState<AdminCampaign | null>(null);
-  const [formState, dispatchFormState] = useReducer(campaignFormReducer, { ...emptyForm });
-  const [isSavingCampaign, setIsSavingCampaign] = useState(false);
-  const [campaignFormOpen, setCampaignFormOpen] = useState(false);
+export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMutate, onCampaignsUpdated, onNotify, onOpenEdit, onOpenCreate, createModalOpen }: Options) {
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<AdminCampaign | null>(null);
@@ -48,7 +31,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 
   const [duplicateSource, setDuplicateSource] = useState<AdminCampaign | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
-  const savingRef = useRef(false);
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -56,72 +38,12 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
   const handleEdit = useCallback((campaign: AdminCampaign) => {
-    setEditingCampaign(campaign);
-    dispatchFormState({
-      title: campaign.title ?? '',
-      description: campaign.description ?? '',
-      company: campaign.companyId ?? '',
-      status: campaign.status ?? 'draft',
-      visibility: campaign.visibility ?? 'private',
-      tags: (campaign.tags ?? []).join(', '),
-      publishAt: campaign.publishAt ?? '',
-      unpublishAt: campaign.unpublishAt ?? '',
-      layoutTemplateId: campaign.layoutTemplateId ?? '',
-      imageAdapterId: campaign.imageAdapterId ?? '',
-      videoAdapterId: campaign.videoAdapterId ?? '',
-      categories: campaign.categories ?? [],
-    });
-    setCampaignFormOpen(true);
-  }, []);
+    onOpenEdit(campaign);
+  }, [onOpenEdit]);
 
   const handleCreate = useCallback(() => {
-    setEditingCampaign(null);
-    dispatchFormState({ ...emptyForm });
-    setCampaignFormOpen(true);
-  }, []);
-
-  const closeCampaignForm = useCallback(() => {
-    setCampaignFormOpen(false);
-    setEditingCampaign(null);
-    dispatchFormState({ ...emptyForm });
-  }, []);
-
-  const saveCampaign = useCallback(async (formState: CampaignFormState) => {
-    if (savingRef.current) return;
-    savingRef.current = true;
-    setIsSavingCampaign(true);
-    const payload = {
-      title: formState.title,
-      description: formState.description,
-      company: formState.company,
-      status: formState.status,
-      visibility: formState.visibility,
-      tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
-      categories: formState.categories,
-      publishAt: formState.publishAt || '',
-      unpublishAt: formState.unpublishAt || '',
-      layoutTemplateId: formState.layoutTemplateId || '',
-      imageAdapterId: formState.imageAdapterId || '',
-      videoAdapterId: formState.videoAdapterId || '',
-    };
-    try {
-      if (editingCampaign) {
-        await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${editingCampaign.id}`, payload);
-        onNotify({ type: 'success', text: 'Campaign updated.' });
-      } else {
-        await apiClient.post('/wp-json/wp-super-gallery/v1/campaigns', payload);
-        onNotify({ type: 'success', text: 'Campaign created.' });
-      }
-      closeCampaignForm();
-      await onMutate();
-      onCampaignsUpdated();
-    } catch (err) {
-      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save campaign.') });
-    } finally {
-      savingRef.current = false;
-      setIsSavingCampaign(false);
-    }
-  }, [editingCampaign, apiClient, onNotify, closeCampaignForm, onMutate, onCampaignsUpdated]);
+    onOpenCreate();
+  }, [onOpenCreate]);
 
   const archiveCampaign = useCallback(async (campaign: AdminCampaign) => {
     const id = String(campaign.id);
@@ -261,7 +183,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 
   const hotkeyHandler = getHotkeyHandler([
     ['?',            () => setShortcutHelpOpen(true)],
-    ['mod+n',        () => { if (!campaignFormOpen) handleCreate(); }],
+    ['mod+n',        () => { if (!createModalOpen) handleCreate(); }],
     ['mod+i',        () => setImportModalOpen(true)],
     ['mod+shift+a',  () => handleToggleSelectMode()],
   ]);
@@ -269,12 +191,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   return {
     // Scoped hotkey handler — attach via onKeyDown on a container
     hotkeyHandler,
-    // Form state
-    editingCampaign,
-    formState,
-    dispatchFormState,
-    isSavingCampaign,
-    campaignFormOpen,
     // Archive/restore
     confirmArchive,
     setConfirmArchive,
@@ -300,8 +216,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     // Handlers
     handleEdit,
     handleCreate,
-    closeCampaignForm,
-    saveCampaign,
     archiveCampaign,
     restoreCampaign,
     handleToggleSelectMode,

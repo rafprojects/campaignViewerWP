@@ -1,23 +1,24 @@
 # Phase 21 — UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings
 
-**Status:** Planned
+**Status:** In Progress
 **Version:** v0.19.0 (projected)
 **Created:** March 15, 2026
-**Last updated:** March 15, 2026
+**Last updated:** March 16, 2026
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P21-A | Bug fixes (theme persistence, modal unification, thumbnail upload freeze) | Not started | Medium (1–2 days) |
-| P21-B | Campaign card visibility toggles | Not started | Small (3–4 hours) |
-| P21-C | Card aspect ratio & max cards per row | Not started | Small (2–3 hours) |
-| P21-D | Viewer background & border controls | Not started | Small (2–3 hours) |
-| P21-E | Auth bar display modes (bar, floating, draggable, minimal, auto-hide) | Not started | Medium (4–6 hours) |
-| P21-F | CampaignViewer enhancements (fullscreen, toggles, galleries-only mode) | Not started | Medium (4–6 hours) |
-| P21-G | Gallery label editing & justification | Not started | Small (2–3 hours) |
-| P21-H | Settings tooltips infrastructure | Not started | Small (2–3 hours) |
-| P21-I | Typography system & in-context settings popups | Not started | Large (2–3 days) |
+| P21-A | Bug fixes (theme persistence, modal unification, thumbnail upload freeze) | Complete ✅ | Medium (1–2 days) |
+| P21-B | Campaign card visibility toggles | Complete ✅ | Small (3–4 hours) |
+| P21-C | Card aspect ratio & max cards per row | Complete ✅ | Small (2–3 hours) |
+| P21-D | Viewer background & border controls | Complete ✅ | Small (2–3 hours) |
+| P21-E | Auth bar display modes (bar, floating, draggable, minimal, auto-hide) | Complete ✅ | Medium (4–6 hours) |
+| P21-F | CampaignViewer enhancements (fullscreen, toggles, galleries-only mode) | Complete ✅ | Medium (4–6 hours) |
+| P21-G | Gallery label editing & justification | Complete ✅ | Small (2–3 hours) |
+| P21-H | Settings tooltips infrastructure | Complete ✅ | Small (2–3 hours) |
+| P21-I | Typography system & in-context settings popups | Complete ✅ | Large (2–3 days) |
+| P21-J | QA fixes & UX enhancements | In Progress 🔧 | Medium (1–2 days) |
 
 ---
 
@@ -36,6 +37,7 @@
 - [Track P21-G — Gallery Label Editing & Justification](#track-p21-g--gallery-label-editing--justification)
 - [Track P21-H — Settings Tooltips Infrastructure](#track-p21-h--settings-tooltips-infrastructure)
 - [Track P21-I — Typography System & In-Context Settings Popups](#track-p21-i--typography-system--in-context-settings-popups)
+- [Track P21-J — QA Fixes & UX Enhancements](#track-p21-j--qa-fixes--ux-enhancements)
 - [Execution Priority](#execution-priority)
 - [Testing Strategy](#testing-strategy)
 - [Modified File Inventory](#modified-file-inventory)
@@ -137,11 +139,13 @@ The server-side theme (priority 3) never gets updated, so the selection only per
 - `src/components/Admin/SettingsPanel.tsx` — Clear preview on save/close
 
 **Acceptance criteria:**
-- [ ] Selecting a theme in the picker instantly previews it
-- [ ] Closing settings without saving reverts to the previous theme
-- [ ] Saving persists the theme to the server (`wpsg_settings.theme`)
-- [ ] Reloading the page shows the server-saved theme
-- [ ] No more `localStorage('wpsg-theme-id')` writes
+- [x] Selecting a theme in the picker instantly previews it
+- [x] Closing settings without saving reverts to the previous theme
+- [x] Saving persists the theme to the server (`wpsg_settings.theme`)
+- [x] Reloading the page shows the server-saved theme
+- [x] localStorage write retained as cache (only written on successful save, always in sync with server)
+
+**Completed:** commit 98a7ad7 — Added `setPreviewTheme()` to ThemeContext. ThemeSelector calls preview for instant switch; SettingsPanel commits on save, reverts on close/reset.
 
 ---
 
@@ -209,16 +213,18 @@ Create `src/components/shared/UnifiedCampaignModal.tsx` with 3 tabs:
 - Delete: `src/components/Campaign/EditCampaignModal.tsx`, `src/components/Admin/CampaignFormModal.tsx`
 
 **Acceptance criteria:**
-- [ ] Single modal with 3 tabs used from both CampaignViewer and AdminPanel
-- [ ] All fields from both old modals are present
-- [ ] Create mode shows Details + Settings tabs only (no Media tab)
-- [ ] Edit mode shows all 3 tabs
-- [ ] Thumbnail upload, media management, and all admin fields work correctly
-- [ ] Old modal files deleted with no remaining imports
+- [x] Single modal with 3 tabs used from both CampaignViewer and AdminPanel
+- [x] All fields from both old modals are present
+- [x] Create mode shows Details + Settings tabs only (no Media tab)
+- [x] Edit mode shows all 3 tabs
+- [x] Thumbnail upload, media management, and all admin fields work correctly
+- [x] Old modal files deleted with no remaining imports
+
+**Completed:** commit 0cb2460 — Created `UnifiedCampaignModal.tsx` (3-tab modal: Details, Media, Settings) and `useUnifiedCampaignModal.ts` hook. Updated `App.tsx`, `AdminPanel.tsx`, `useAdminCampaignActions.ts`. Deleted `EditCampaignModal.tsx`, `CampaignFormModal.tsx`, `useEditCampaignModal.ts`. Fixed test queries to handle Mantine `required` label `*` suffix.
 
 ---
 
-### A-3. Thumbnail upload freezes page
+### A-3. Thumbnail upload freezes page ✅ (subsumed by A-2)
 
 **Problem**
 
@@ -238,9 +244,11 @@ Additionally, the upload sets local state (`editCoverImage`) but this value is n
 4. If the focus-trap issue persists in the unified modal, use `Modal` prop `trapFocus={false}` during upload and restore after
 
 **Acceptance criteria:**
-- [ ] Upload thumbnail → preview updates → modal remains interactive
-- [ ] Save → reload → uploaded thumbnail is displayed
-- [ ] Scroll, click, and close all work after thumbnail upload
+- [x] Upload thumbnail → preview updates → modal remains interactive
+- [x] Save → reload → uploaded thumbnail is displayed
+- [x] Scroll, click, and close all work after thumbnail upload
+
+**Completed:** Subsumed by A-2. The unified modal uses `FileButton` with proper `resetRef` and includes thumbnail in the save payload. The old `EditCampaignModal` that had the focus-trap conflict was deleted.
 
 ---
 
@@ -302,11 +310,13 @@ Campaign cards always render all elements (company name, media counts, title, de
 - `src/components/Admin/SettingsPanel.tsx` — 7 new Switch controls
 
 ### Acceptance criteria
-- [ ] Each toggle independently hides/shows its element
-- [ ] `showCardBorder=false` completely removes all borders (no 1px remnant)
-- [ ] `showCardThumbnailFade=false` removes the gradient overlay
-- [ ] All toggles default to `true` (no visual change from current behavior)
-- [ ] Settings persist via Save and apply on reload
+- [x] Each toggle independently hides/shows its element
+- [x] `showCardBorder=false` completely removes all borders (no 1px remnant)
+- [x] `showCardThumbnailFade=false` removes the gradient overlay
+- [x] All toggles default to `true` (no visual change from current behavior)
+- [x] Settings persist via Save and apply on reload
+
+**Completed:** commit 98a7ad7 — Added 7 card visibility toggles with PHP defaults, TS types, conditional rendering in CampaignCard, and Switch controls in SettingsPanel.
 
 ---
 
@@ -382,6 +392,8 @@ When using auto (responsive) column mode (`cardGridColumns=0`), cards expand fre
 - [ ] All defaults (0, 'auto', 0) produce no visual change from current behavior
 - [ ] Responsive behavior still works within the max column cap
 
+**Completed:** commit 5b691ba — Added `cardAspectRatio`, `cardMinHeight`, `cardMaxColumns` with PHP defaults, TS types, responsive column capping in CardGallery, aspect-ratio/min-height styles in CampaignCard, 3 new SettingsPanel controls.
+
 ---
 
 ## Track P21-D — Viewer Background & Border Controls
@@ -440,11 +452,13 @@ There is no option for transparent background (for embedding in pages with their
 - `src/components/Admin/SettingsPanel.tsx` — 4 new controls
 
 ### Acceptance criteria
-- [ ] `viewerBgType='transparent'` → gallery container has no background (page background shows through)
-- [ ] `viewerBgType='solid'` with a color → solid background
-- [ ] `viewerBgType='gradient'` with a CSS gradient string → custom gradient
-- [ ] `showViewerBorder=false` → no header border/shadow
-- [ ] Default `'theme'` produces no visual change
+- [x] `viewerBgType='transparent'` → gallery container has no background (page background shows through)
+- [x] `viewerBgType='solid'` with a color → solid background
+- [x] `viewerBgType='gradient'` with a CSS gradient string → custom gradient
+- [x] `showViewerBorder=false` → no header border/shadow
+- [x] Default `'theme'` produces no visual change
+
+**Completed:** commit 98a7ad7 — Added 4 viewer background settings with PHP defaults, TS types, dynamic background/header styles in CardGallery, and UI controls in SettingsPanel.
 
 ---
 
@@ -570,6 +584,8 @@ function useScrollDirection() {
 - [ ] Minimal mode is ≤32px height
 - [ ] Sign-in prompt (unauthenticated) adapts to the same display mode (e.g., floating mode → floating sign-in icon)
 
+**Completed:** commit 0462217 — Created AuthBarFloating.tsx (shared floating + draggable with pointer-event drag, safeLocalStorage persistence, Popover), AuthBarMinimal.tsx (32px strip with Menu), mode router in AuthBar.tsx (useScrollDirection hook for auto-hide), App.tsx prop wiring, SettingsPanel Select + NumberInput controls.
+
 ---
 
 ## Track P21-F — CampaignViewer Enhancements
@@ -646,6 +662,8 @@ The CampaignViewer (`src/components/Campaign/CampaignViewer.tsx`) has no fullscr
 - [ ] Minimal spacing between stats block and admin buttons
 - [ ] Fullscreen mode shows stats in a dark overlay at the bottom
 - [ ] `campaignOpenMode='galleries-only'` → modal opens directly to galleries
+
+**Completed:** commit bb3349f — Added 8 CampaignViewer settings (fullscreen, openMode, 5 visibility toggles, statsAdminOnly) with PHP defaults, TS types, conditional rendering in CampaignViewer.tsx, admin Button icons, 8 new SettingsPanel controls.
 
 ---
 
@@ -734,6 +752,8 @@ Additionally, the `galleryTitleText` and `gallerySubtitleText` settings exist in
 - [ ] `galleryTitleText` and `gallerySubtitleText` now control the CardGallery header text
 - [ ] Empty label settings fall back to defaults ("Images", "Videos", "Campaign Gallery", etc.)
 
+**Completed:** commit f3e1431 — Added `galleryLabelText`, `videoLabelText`, `galleryLabelJustify`, `showGalleryLabelIcon` with PHP defaults, TS types, dynamic labels across all 7 adapters + carousels, `galleryTitleText`/`gallerySubtitleText` in CardGallery, 4 SettingsPanel controls. Updated LayoutBuilderGallery tests.
+
 ---
 
 ## Track P21-H — Settings Tooltips Infrastructure
@@ -810,6 +830,8 @@ Settings controls have no hover help text. Users must guess what each setting do
 - [ ] Advanced tab is fully covered with tooltips
 - [ ] Tooltip text catalog is a separate importable file
 
+**Completed:** commit aeee612 — Created SettingTooltip.tsx component (Tooltip + IconInfoCircle, conditional on `enabled`), settingTooltips.ts catalog (~100 entries for all Advanced tab sections), `tt()` helper in SettingsPanel for concise wrapping, `showSettingsTooltips` toggle Switch in General tab Developer section. All Advanced tab labels wrapped.
+
 ---
 
 ## Track P21-I — Typography System & In-Context Settings Popups
@@ -854,16 +876,38 @@ The following 16 unique text element groups need typography controls:
 
 ### Typography override type
 
+Inspired by [Elementor's Typography Group Control](https://developers.elementor.com/docs/editor-controls/group-control-typography/) which exposes 9 core properties (family, size, weight, style, transform, decoration, line-height, letter-spacing, word-spacing), plus their separate [Text Stroke](https://developers.elementor.com/docs/editor-controls/group-control-text-stroke/) and [Text Shadow](https://developers.elementor.com/docs/editor-controls/group-control-text-shadow/) group controls, our override type covers **all of the above** plus a text glow effect (implemented as a zero-offset `text-shadow`).
+
+> **How overrides work despite Mantine:** Mantine's theme system only controls `fontFamily` and heading sizes *globally* — there's no way to target a specific text element. The override mechanism bypasses the theme by applying inline `style` props directly to DOM elements. Since inline styles have higher CSS specificity than Mantine's class-based styles (`size="sm"`, `fw={600}`, etc.), they always win. When no override is set, the hook returns `{}` and Mantine defaults apply as before.
+
 ```typescript
 // src/types/index.ts
 interface TypographyOverride {
-  fontFamily?: string;
-  fontSize?: string;      // e.g., '14px', '0.875rem', 'sm', 'lg'
-  fontWeight?: number;    // e.g., 400, 500, 600, 700
-  lineHeight?: number;    // e.g., 1.4, 1.6
-  letterSpacing?: string; // e.g., '0.02em', 'normal'
+  // ── Core typography (Elementor parity) ──
+  fontFamily?: string;           // e.g., "'Inter', sans-serif"
+  fontSize?: string;             // e.g., '14px', '0.875rem', 'sm', 'lg'
+  fontWeight?: number;           // 100–900 (400 = normal, 700 = bold)
+  fontStyle?: 'normal' | 'italic' | 'oblique';
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
-  color?: string;         // hex color or CSS color
+  textDecoration?: 'none' | 'underline' | 'overline' | 'line-through';
+  lineHeight?: number;           // e.g., 1.4, 1.6
+  letterSpacing?: string;        // e.g., '0.02em', 'normal'
+  wordSpacing?: string;          // e.g., '0.1em', 'normal'
+  color?: string;                // hex color or CSS color
+
+  // ── Text Stroke (Elementor "Text Stroke" group) ──
+  textStrokeWidth?: string;      // e.g., '1px', '0.5px'
+  textStrokeColor?: string;      // hex or CSS color
+
+  // ── Text Shadow (Elementor "Text Shadow" group) ──
+  textShadowOffsetX?: string;    // e.g., '2px'
+  textShadowOffsetY?: string;    // e.g., '2px'
+  textShadowBlur?: string;       // e.g., '4px'
+  textShadowColor?: string;      // e.g., 'rgba(0,0,0,0.3)'
+
+  // ── Text Glow (zero-offset text-shadow with blur spread) ──
+  textGlowColor?: string;        // e.g., '#00ff88', 'rgba(0,255,136,0.8)'
+  textGlowBlur?: string;         // e.g., '10px', '20px'
 }
 
 // Stored in settings as:
@@ -907,13 +951,35 @@ export function useTypographyStyle(elementId: string, settings: GalleryBehaviorS
   const override = settings.typographyOverrides?.[elementId] ?? EMPTY;
   return useMemo(() => {
     const style: CSSProperties = {};
+
+    // Core typography
     if (override.fontFamily) style.fontFamily = override.fontFamily;
     if (override.fontSize) style.fontSize = override.fontSize;
     if (override.fontWeight) style.fontWeight = override.fontWeight;
+    if (override.fontStyle) style.fontStyle = override.fontStyle;
+    if (override.textTransform) style.textTransform = override.textTransform;
+    if (override.textDecoration) style.textDecoration = override.textDecoration;
     if (override.lineHeight) style.lineHeight = override.lineHeight;
     if (override.letterSpacing) style.letterSpacing = override.letterSpacing;
-    if (override.textTransform) style.textTransform = override.textTransform;
+    if (override.wordSpacing) style.wordSpacing = override.wordSpacing;
     if (override.color) style.color = override.color;
+
+    // Text Stroke (via -webkit-text-stroke)
+    if (override.textStrokeWidth) style.WebkitTextStrokeWidth = override.textStrokeWidth;
+    if (override.textStrokeColor) style.WebkitTextStrokeColor = override.textStrokeColor;
+
+    // Text Shadow + Text Glow (both map to CSS text-shadow, combined)
+    const shadows: string[] = [];
+    if (override.textShadowColor && override.textShadowBlur) {
+      shadows.push(
+        `${override.textShadowOffsetX ?? '0px'} ${override.textShadowOffsetY ?? '0px'} ${override.textShadowBlur} ${override.textShadowColor}`
+      );
+    }
+    if (override.textGlowColor && override.textGlowBlur) {
+      shadows.push(`0 0 ${override.textGlowBlur} ${override.textGlowColor}`);
+    }
+    if (shadows.length > 0) style.textShadow = shadows.join(', ');
+
     return style;
   }, [override]);
 }
@@ -995,7 +1061,11 @@ interface InContextEditorProps {
    - Wire the hook into 3 pilot elements: `cardTitle`, `galleryLabel`, `viewerTitle`
 
 2. **Phase 2: Typography editor component** (Day 1–2)
-   - Create `src/components/shared/TypographyEditor.tsx` — a compact form with: font-family select, font-size input, font-weight select, line-height input, letter-spacing input, text-transform select, color picker
+   - Create `src/components/shared/TypographyEditor.tsx` — a compact form with:
+     - **Core section:** font-family select, font-size input, font-weight select (100–900), font-style select (normal/italic/oblique), text-transform select, text-decoration select (none/underline/overline/line-through), line-height input, letter-spacing input, word-spacing input, color picker
+     - **Stroke section** (collapsible): stroke width slider, stroke color picker
+     - **Shadow section** (collapsible): offset-X input, offset-Y input, blur input, shadow color picker
+     - **Glow section** (collapsible): glow color picker, glow blur slider
    - This is the reusable form used inside both SettingsPanel (dedicated typography section) and in-context popups
 
 3. **Phase 3: SettingsPanel typography section** (Day 2)
@@ -1033,18 +1103,110 @@ interface InContextEditorProps {
 - `src/components/Admin/SettingsPanel.tsx` — New "Typography" tab
 
 ### Acceptance criteria
-- [ ] Typography overrides for all 16 element groups are configurable via SettingsPanel
-- [ ] `useTypographyStyle` hook correctly applies overrides as inline styles
-- [ ] Overrides persist to server via `wpsg_settings.typography_overrides`
-- [ ] PHP sanitization validates override keys and values
-- [ ] In-context editor icons visible only to admins
-- [ ] `showInContextEditors=false` hides all in-context icons
-- [ ] Clicking in-context icon opens a popover with relevant settings + typography controls
-- [ ] Changes from in-context popups apply immediately (live preview)
-- [ ] Changes auto-save after 500ms debounce
+- [x] Typography overrides for all 16 element groups are configurable via SettingsPanel
+- [x] All 18 override properties work: fontFamily, fontSize, fontWeight, fontStyle, textTransform, textDecoration, lineHeight, letterSpacing, wordSpacing, color, textStrokeWidth, textStrokeColor, textShadowOffsetX/Y/Blur/Color, textGlowColor/Blur
+- [x] `useTypographyStyle` hook correctly applies overrides as inline styles
+- [x] Text shadow and text glow combine into a single CSS `text-shadow` value when both are set
+- [x] Text stroke renders via `-webkit-text-stroke` CSS properties
+- [x] Overrides persist to server via `wpsg_settings.typography_overrides`
+- [x] PHP sanitization validates override keys and values (whitelist of allowed keys, sanitize_text_field on string values, absint/floatval on numeric)
+- [x] In-context editor icons visible only to admins
+- [x] `showInContextEditors=false` hides all in-context icons
+- [x] Clicking in-context icon opens a popover with relevant settings + typography controls
+- [x] Changes from in-context popups apply immediately (live preview)
+- [x] Changes auto-save after 500ms debounce
+
+### Commits
+- `badbfd4` — Typography override system: TypographyOverride type, useTypographyStyle hook, TypographyEditor component, Settings Typography tab, pilot wiring (Phase 1-3)
+- `9d87321` — In-context editors: InContextEditor component, useInContextSave hook, viewer header/about/stats popups, typography wiring (Phase 4-5)
 - [ ] "Reset to default" clears individual overrides
 - [ ] "Apply to group" applies typography across related elements
 - [ ] Typography tab in SettingsPanel lists all 16 groups with editors
+
+---
+
+## Track P21-J — QA Fixes & UX Enhancements
+
+**Priority:** 🔴 High (QA-driven fixes)
+**Effort:** Medium (1–2 days)
+**Depends on:** P21-E (auth bar), P21-I (typography + in-context editors)
+
+### Overview
+
+Post-implementation QA revealed several bugs and UX gaps. This track addresses:
+- **Phase 1 — Bug Fixes** (6 items): Auth bar signed-out state, draggable mode, icon choice, typography persistence, popup close behavior, stroke/shadow/glow
+- **Phase 2 — Feature Enhancements** (4 items): Card info panel toggle, additional aspect ratios, modal element toggles, fullscreen content width
+
+### Phase 1 — Bug Fixes
+
+#### 1A. Auth bar for signed-out users
+- **Problem:** Auth bar only renders when `isAuthenticated && user` in App.tsx — invisible when signed out
+- **Fix:** Always render AuthBar; pass `isAuthenticated` + `onOpenSignIn` props; signed-out floating icon shows "Sign in" popup on click
+- **Files:** `App.tsx`, `AuthBar.tsx`, `AuthBarFloating.tsx`
+
+#### 1B. Fix draggable mode
+- **Problem:** Draggable auth bar mode doesn't appear
+- **Fix:** Debug position calculation and rendering in AuthBarFloating
+- **Files:** `AuthBarFloating.tsx`
+
+#### 1C. Hamburger menu icon
+- **Problem:** Tool/wrench icon not intuitive for admin menu
+- **Fix:** Change `IconTool` → `IconMenu2` (hamburger)
+- **Files:** `AuthBarFloating.tsx`
+
+#### 1D. Typography changes revert (CRITICAL)
+- **Problem:** Font/size/weight changes flash then revert. Root cause: `useInContextSave` sends `typographyOverrides` as nested JS object, but PHP expects JSON string. Server ignores it, returns old value, `mergeSettingsWithDefaults` overwrites SWR cache.
+- **Fix:** `JSON.stringify(typographyOverrides)` before sending to API; same in `SettingsPanel.handleSave`
+- **Files:** `useInContextSave.ts`, `SettingsPanel.tsx`
+
+#### 1E. InContextEditor popup close behavior
+- **Problem:** Popup only closeable by clicking the gear icon; no Esc or click-outside support
+- **Fix:** Set `closeOnClickOutside={true}`, remove `trapFocus`
+- **Files:** `InContextEditor.tsx`
+
+#### 1F. Stroke/shadow/glow effects
+- **Problem:** Typography stroke, shadow, and glow controls don't produce visible effects
+- **Fix:** Verify CSS property mapping in `useTypographyStyle` and ensure styles propagate to rendered elements
+- **Files:** `useTypographyStyle.ts`, `TypographyEditor.tsx`
+
+### Phase 2 — Feature Enhancements
+
+#### 2A. Card info panel toggle
+- **Problem:** No way to hide card info panel for thumbnail-only card layouts
+- **Fix:** Add `showCardInfoPanel` boolean setting; wrap info panel in conditional
+- **Files:** `types/index.ts`, `CampaignCard.tsx`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+#### 2B. Additional aspect ratios
+- **Problem:** Missing popular ratios (9:16, 2:3, 3:2, 21:9)
+- **Fix:** Expand `cardAspectRatio` union type and PHP validation
+- **Files:** `types/index.ts`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+#### 2C. Modal element toggles
+- **Problem:** No way to hide individual modal sections for minimalist layouts
+- **Fix:** Add 4 boolean settings: `showCampaignCoverImage`, `showCampaignTags`, `showCampaignAdminActions`, `showCampaignGalleryLabels`; wrap sections in conditionals
+- **Files:** `types/index.ts`, `CampaignViewer.tsx`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+#### 2D. Fullscreen content width
+- **Problem:** Fullscreen modal has hardcoded `maxWidth: '64rem'`
+- **Fix:** Add `fullscreenContentMaxWidth` setting (0 or null = full responsive); apply dynamically in CampaignViewer
+- **Files:** `types/index.ts`, `CampaignViewer.tsx`, `SettingsPanel.tsx`, `class-wpsg-settings.php`
+
+### Checklist
+
+- [ ] 1A — Auth bar signed-out state
+- [ ] 1B — Draggable mode fix
+- [ ] 1C — Hamburger icon
+- [ ] 1D — Typography persistence fix
+- [ ] 1E — Popup close behavior
+- [ ] 1F — Stroke/shadow/glow effects
+- [ ] 2A — Card info panel toggle
+- [ ] 2B — Additional aspect ratios
+- [ ] 2C — Modal element toggles
+- [ ] 2D — Fullscreen content width
+- [ ] All TypeScript compiles clean
+- [ ] All Vitest tests pass
+- [ ] Vite build succeeds
+- [ ] Manual QA verification
 
 ---
 
@@ -1142,5 +1304,63 @@ Tracks D, E, F, G, H are independent and can be parallelized.
 ### Deleted files
 | File | Track | Reason |
 |------|-------|--------|
-| `src/components/Campaign/EditCampaignModal.tsx` | A-2 | Replaced by UnifiedCampaignModal |
-| `src/components/Admin/CampaignFormModal.tsx` | A-2 | Replaced by UnifiedCampaignModal |
+| `src/components/Campaign/EditCampaignModal.tsx` | A-2 ✅ | Replaced by UnifiedCampaignModal |
+| `src/components/Campaign/EditCampaignModal.test.tsx` | A-2 ✅ | Tests for deleted modal |
+| `src/components/Admin/CampaignFormModal.tsx` | A-2 ✅ | Replaced by UnifiedCampaignModal |
+| `src/components/Admin/CampaignFormModal.test.tsx` | A-2 ✅ | Tests for deleted modal |
+| `src/hooks/useEditCampaignModal.ts` | A-2 ✅ | Replaced by useUnifiedCampaignModal |
+
+---
+
+## P21-K: QA Fixes & PR Review Resolutions
+
+### K1–K7 Feature Fixes
+
+| Fix | File(s) | Description |
+|-----|---------|-------------|
+| K1 | `AuthBarFloating.tsx` | Floating button inset increased 16→24 px for both fixed and draggable modes |
+| K2 | `AuthContext.tsx` | `window.location.reload()` on logout to clear stale caches |
+| K3 | `InContextEditor.tsx` | Added `closeOnEscape` prop + manual Escape keydown handler |
+| K4 | `loadGoogleFont.ts`, `TypographyEditor.tsx`, `CardGallery.tsx` | New `loadGoogleFont()` utility; fonts load on selection and on mount for saved overrides |
+| K5 | `App.tsx` | `background: transparent` on root wrapper when `viewerBgType === 'transparent'` |
+| K6 | `GradientEditor.tsx`, `SettingsPanel.tsx`, `CardGallery.tsx`, `types/index.ts`, `class-wpsg-settings.php`, `mergeSettingsWithDefaults.ts` | New shared `GradientEditor` component replaces raw TextInput; `viewerBgGradient` stored as `GradientOptions` object; PHP validation added |
+| K7 | `CampaignCard.tsx` | Restructured into 2 `<Card.Section>` elements with flex layout; image fills card when info panel hidden |
+
+### PR Review Round 1 (Copilot)
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 1 | `AuthBar.tsx` | `AuthBarMinimal`/`AuthBarFull` show signed-in UI even when unauthenticated; no way to trigger sign-in | **Accept** | Added `isAuthenticated`/`onOpenSignIn` props to both sub-components; they now render a "Sign in" button when not authenticated |
+| 2 | `mergeSettingsWithDefaults.ts` | PHP `[]` default deserializes to JS array, not object — breaks `buildGradientCss()` | **Accept** | Added `Array.isArray()` guard to normalize `[]` → `{}` before assignment |
+| 3 | `class-wpsg-settings.php` | `viewer_bg_gradient` default `[]` encodes to JSON array, not object | **Accept** | Changed default from `[]` to `(object) []` so `json_encode` emits `{}` |
+| 4 | `UnifiedCampaignModal.tsx` | Nested `<Tabs>` in Media tab with hardcoded value and no-op onChange — dead UI code | **Accept** | Removed the wrapper entirely; content renders directly in the panel |
+
+### PR Review Round 2 (Copilot)
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 5 | `AuthBarFloating.tsx` | `setPointerCapture(e.target)` could target inner SVG child instead of the ActionIcon root, making drag unreliable | **Accept** | Changed to `e.currentTarget` which always references the element with the handler attached |
+| 6 | `useAdminCampaignActions.ts` | `mod+n` hotkey always fires `handleCreate()` even if modal is already open, risking form data loss | **Accept** | Added `createModalOpen` option; hotkey no-ops when the modal is already open. Caller passes `unifiedModal.opened` |
+
+### Test Infrastructure Fixes
+
+| Fix | File(s) | Description |
+|-----|---------|-------------|
+| SettingsPanel hang | `SettingsPanel.tsx`, `SettingsPanel.test.tsx` | Lazy tab rendering (only active tab mounts); `initialSettings` prop skips async load; `seedSettings` in all tests — dropped from 28s+hang to 1–6s/test |
+| App.test.tsx flaky buttons | `App.test.tsx` | `openCampaignViewer()` helper uses `findByRole('button')` + waits for "Admin Actions" heading before clicking viewer action buttons |
+| AdminPanel mock gaps | `AdminPanel.test.tsx`, `AdminPanel.quickadd.test.tsx` | `withDefaults()` Proxy auto-provides missing API mocks; static imports replace dynamic `import()` in `beforeAll` |
+| SWR retry loops | `test-utils.tsx` | `shouldRetryOnError: false` in global SWR test config |
+| Worker timeouts | `vite.config.ts` | Added `hookTimeout: 60000` to prevent `snapshotSaved`/`onTaskUpdate` vitest IPC timeouts |
+
+### PR Review — Round 3
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 7 | `class-wpsg-settings.php` | `sanitize_settings()` assigns `$clean_grad` (empty PHP `[]`) which JSON-encodes to `[]` (array), not `{}` (object) — reintroducing the array/object mismatch fixed in Round 1 for the default value | **Accept** | Correct catch — we fixed the default but missed the sanitization path. Added `empty($clean_grad) ? (object) [] : $clean_grad` so the REST payload is always an object shape |
+| 8 | `useInContextSave.ts` | No cleanup effect to clear the debounced `setTimeout` on unmount — stale callback can fire network calls and SWR mutations after the component is torn down (e.g. route change, modal close) | **Accept** | Classic React cleanup omission. Added a `useEffect` teardown that calls `clearTimeout(timerRef.current)` on unmount, preventing orphaned network requests |
+
+### PR Review — Round 4
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 9 | `class-wpsg-settings.php` | P21-G gallery label settings (`gallery_image_label`, `gallery_video_label`, `gallery_label_justification`, `show_gallery_label_icon`) are listed in `$valid_options` and consumed by the React frontend, but missing from `$defaults`. Since the generic fallback sanitizer skips keys not in `$defaults`, these values are silently dropped on save — the SettingsPanel controls appear to work but never persist. | **Accept** | Valid catch — the TS types and defaults were correct, but the PHP `$defaults` array was missing these 4 keys. Added `gallery_image_label => 'Images'`, `gallery_video_label => 'Videos'`, `gallery_label_justification => 'left'`, `show_gallery_label_icon => false` to align with the React defaults. |

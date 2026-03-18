@@ -442,6 +442,32 @@ export type DotNavShape = 'circle' | 'pill' | 'square';
 export type ShadowPreset = 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
 export type ViewportBgType = 'none' | 'solid' | 'gradient' | 'image';
 
+// P21-I: Typography override type (Elementor-inspired)
+export interface TypographyOverride {
+  // Core typography
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: number;
+  fontStyle?: 'normal' | 'italic' | 'oblique';
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textDecoration?: 'none' | 'underline' | 'overline' | 'line-through';
+  lineHeight?: number;
+  letterSpacing?: string;
+  wordSpacing?: string;
+  color?: string;
+  // Text Stroke
+  textStrokeWidth?: string;
+  textStrokeColor?: string;
+  // Text Shadow
+  textShadowOffsetX?: string;
+  textShadowOffsetY?: string;
+  textShadowBlur?: string;
+  textShadowColor?: string;
+  // Text Glow
+  textGlowColor?: string;
+  textGlowBlur?: string;
+}
+
 export interface GalleryBehaviorSettings {
   videoViewportHeight: number;
   imageViewportHeight: number;
@@ -669,6 +695,52 @@ export interface GalleryBehaviorSettings {
   archivePurgeGraceDays: number;
   // D-20: Analytics data retention
   analyticsRetentionDays: number;
+  // P21-B: Card visibility toggles
+  showCardCompanyName: boolean;
+  showCardMediaCounts: boolean;
+  showCardTitle: boolean;
+  showCardDescription: boolean;
+  showCardBorder: boolean;
+  showCardAccessBadge: boolean;
+  showCardThumbnailFade: boolean;
+  // P21-D: Viewer background & border
+  viewerBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
+  viewerBgColor: string;
+  viewerBgGradient: import('@/utils/gradientCss').GradientOptions;
+  showViewerBorder: boolean;
+  // P21-C: Card aspect ratio & max columns
+  cardMaxColumns: number;
+  cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2' | '21:9';
+  cardMinHeight: number;
+  // P21-G: Gallery label editing & justification
+  galleryImageLabel: string;
+  galleryVideoLabel: string;
+  galleryLabelJustification: 'left' | 'center' | 'right';
+  showGalleryLabelIcon: boolean;
+  // P21-F: CampaignViewer enhancements
+  campaignModalFullscreen: boolean;
+  showCampaignCompanyName: boolean;
+  showCampaignDate: boolean;
+  showCampaignAbout: boolean;
+  showCampaignDescription: boolean;
+  showCampaignStats: boolean;
+  campaignStatsAdminOnly: boolean;
+  campaignOpenMode: 'full' | 'galleries-only';
+  // P21-E: Auth bar display modes
+  authBarDisplayMode: 'bar' | 'floating' | 'draggable' | 'minimal' | 'auto-hide';
+  authBarDragMargin: number;
+  // P21-H: Settings tooltips
+  showSettingsTooltips: boolean;
+  // P21-I: Typography overrides & in-context editors
+  typographyOverrides: Record<string, TypographyOverride>;
+  showInContextEditors: boolean;
+  // P21-J: QA fixes & UX enhancements
+  showCardInfoPanel: boolean;
+  showCampaignCoverImage: boolean;
+  showCampaignTags: boolean;
+  showCampaignAdminActions: boolean;
+  showCampaignGalleryLabels: boolean;
+  fullscreenContentMaxWidth: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -886,4 +958,50 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   tileGlowSpread: 12,
   tileHoverBounce: true,
   masonryColumns: 0,
+  // P21-B: Card visibility toggles
+  showCardCompanyName: true,
+  showCardMediaCounts: true,
+  showCardTitle: true,
+  showCardDescription: true,
+  showCardBorder: true,
+  showCardAccessBadge: true,
+  showCardThumbnailFade: true,
+  // P21-D: Viewer background & border
+  viewerBgType: 'theme',
+  viewerBgColor: '',
+  viewerBgGradient: {},
+  showViewerBorder: true,
+  // P21-C: Card aspect ratio & max columns
+  cardMaxColumns: 0,
+  cardAspectRatio: 'auto',
+  cardMinHeight: 0,
+  // P21-G: Gallery label editing & justification
+  galleryImageLabel: 'Images',
+  galleryVideoLabel: 'Videos',
+  galleryLabelJustification: 'left',
+  showGalleryLabelIcon: false,
+  // P21-F: CampaignViewer enhancements
+  campaignModalFullscreen: false,
+  showCampaignCompanyName: true,
+  showCampaignDate: true,
+  showCampaignAbout: true,
+  showCampaignDescription: true,
+  showCampaignStats: true,
+  campaignStatsAdminOnly: true,
+  campaignOpenMode: 'full',
+  // P21-E: Auth bar display modes
+  authBarDisplayMode: 'floating',
+  authBarDragMargin: 16,
+  // P21-H: Settings tooltips
+  showSettingsTooltips: true,
+  // P21-I: Typography overrides & in-context editors
+  typographyOverrides: {},
+  showInContextEditors: true,
+  // P21-J: QA fixes & UX enhancements
+  showCardInfoPanel: true,
+  showCampaignCoverImage: true,
+  showCampaignTags: true,
+  showCampaignAdminActions: true,
+  showCampaignGalleryLabels: true,
+  fullscreenContentMaxWidth: 0,
 };

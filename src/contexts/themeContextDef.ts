@@ -35,6 +35,12 @@ export interface ThemeContextValue {
    * default-dark silently (with dev warning).
    */
   setTheme: (id: string) => void;
+
+  /**
+   * Set a preview theme for instant visual feedback without persisting.
+   * Pass null to clear the preview and revert to the saved theme.
+   */
+  setPreviewTheme: (id: string | null) => void;
 }
 
 // ---------------------------------------------------------------------------

@@ -41,98 +41,29 @@ const baseOptions = {
   onMutate: vi.fn().mockResolvedValue(undefined),
   onCampaignsUpdated: vi.fn(),
   onNotify: vi.fn(),
-};
-
-const testFormState = {
-  title: 'New Campaign',
-  description: 'Desc',
-  company: '',
-  status: 'active' as const,
-  visibility: 'private' as const,
-  tags: '',
-  publishAt: '',
-  unpublishAt: '',
-  layoutTemplateId: '',
-  imageAdapterId: '',
-  videoAdapterId: '',
-  categories: [],
+  onOpenEdit: vi.fn(),
+  onOpenCreate: vi.fn(),
 };
 
 describe('useAdminCampaignActions', () => {
   afterEach(() => { vi.clearAllMocks(); });
 
-  it('handleCreate opens campaign form with empty state', () => {
+  it('handleCreate delegates to onOpenCreate', () => {
+    const onOpenCreate = vi.fn();
     const { result } = renderHook(() =>
-      useAdminCampaignActions({ apiClient: makeApiClient(), ...baseOptions }),
+      useAdminCampaignActions({ apiClient: makeApiClient(), ...baseOptions, onOpenCreate }),
     );
-    expect(result.current.campaignFormOpen).toBe(false);
     act(() => { result.current.handleCreate(); });
-    expect(result.current.campaignFormOpen).toBe(true);
-    expect(result.current.editingCampaign).toBeNull();
+    expect(onOpenCreate).toHaveBeenCalled();
   });
 
-  it('handleEdit opens campaign form with campaign data', () => {
+  it('handleEdit delegates to onOpenEdit with campaign', () => {
+    const onOpenEdit = vi.fn();
     const { result } = renderHook(() =>
-      useAdminCampaignActions({ apiClient: makeApiClient(), ...baseOptions }),
+      useAdminCampaignActions({ apiClient: makeApiClient(), ...baseOptions, onOpenEdit }),
     );
     act(() => { result.current.handleEdit(mockCampaign); });
-    expect(result.current.campaignFormOpen).toBe(true);
-    expect(result.current.editingCampaign).toEqual(mockCampaign);
-  });
-
-  it('closeCampaignForm closes the form', () => {
-    const { result } = renderHook(() =>
-      useAdminCampaignActions({ apiClient: makeApiClient(), ...baseOptions }),
-    );
-    act(() => { result.current.handleCreate(); });
-    act(() => { result.current.closeCampaignForm(); });
-    expect(result.current.campaignFormOpen).toBe(false);
-  });
-
-  it('saveCampaign calls POST when creating a new campaign', async () => {
-    const post = vi.fn().mockResolvedValue({ id: 99 });
-    const apiClient = makeApiClient({ post });
-    const { result } = renderHook(() =>
-      useAdminCampaignActions({ apiClient, ...baseOptions }),
-    );
-    act(() => { result.current.handleCreate(); });
-    await act(async () => { await result.current.saveCampaign(testFormState); });
-    expect(post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns',
-      expect.objectContaining({ title: 'New Campaign' }),
-    );
-    expect(baseOptions.onNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'success' }),
-    );
-  });
-
-  it('saveCampaign calls PUT when editing an existing campaign', async () => {
-    const put = vi.fn().mockResolvedValue({ id: 1 });
-    const apiClient = makeApiClient({ put });
-    const { result } = renderHook(() =>
-      useAdminCampaignActions({ apiClient, ...baseOptions }),
-    );
-    act(() => { result.current.handleEdit(mockCampaign); });
-    await act(async () => { await result.current.saveCampaign(testFormState); });
-    expect(put).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/1',
-      expect.objectContaining({ title: 'New Campaign' }),
-    );
-  });
-
-  it('saveCampaign notifies error on API failure', async () => {
-    const onNotify = vi.fn();
-    const apiClient = makeApiClient({
-      post: vi.fn().mockRejectedValue(new Error('Server error')),
-    });
-    const { result } = renderHook(() =>
-      useAdminCampaignActions({ apiClient, ...baseOptions, onNotify }),
-    );
-    act(() => { result.current.handleCreate(); });
-    await act(async () => { await result.current.saveCampaign(testFormState); });
-    expect(onNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'error' }),
-    );
+    expect(onOpenEdit).toHaveBeenCalledWith(mockCampaign);
   });
 
   it('archiveCampaign posts to archive endpoint', async () => {

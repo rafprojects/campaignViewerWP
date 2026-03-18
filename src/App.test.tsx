@@ -61,6 +61,14 @@ const setupAdminFetch = () => {
   return fetchMock;
 };
 
+/** Click a campaign card by its accessible button role and wait for the CampaignViewer to load. */
+async function openCampaignViewer(title: string) {
+  const card = await screen.findByRole('button', { name: `Open campaign ${title}` });
+  fireEvent.click(card);
+  // CampaignViewer is lazy-loaded — wait for the Admin Actions heading to confirm it rendered
+  await screen.findByText('Admin Actions', {}, { timeout: 5000 });
+}
+
 describe('App', () => {
   beforeEach(() => {
     mutate(() => true, undefined);
@@ -134,6 +142,10 @@ describe('App', () => {
     } as Response);
 
     render(<App />);
+
+    // P21-J: sign-in prompt moved into the floating AuthBar popover
+    const menuBtn = await screen.findByRole('button', { name: 'Admin menu' });
+    fireEvent.click(menuBtn);
 
     expect(await screen.findByText('Sign in to access private campaigns.')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument();
@@ -296,27 +308,18 @@ describe('App', () => {
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     const fetchMock = setupAdminFetch();
-    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock as typeof fetch);
 
     render(<App />);
 
-    // Open campaign viewer
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
-    // Test Edit Campaign with modal (CampaignViewer is lazy-loaded)
-    await waitFor(() => {
-      const btn = screen.getByRole('button', { name: 'Edit Campaign Alpha' });
-      expect(document.body.contains(btn)).toBe(true);
-    }, { timeout: 5000 });
-    const editButton = screen.getByRole('button', { name: 'Edit Campaign Alpha' });
-    fireEvent.click(editButton);
-    // Edit modal opens - fill in title and description
-    await waitFor(() => {
-      expect(screen.getByLabelText('Title')).toBeInTheDocument();
-    }, { timeout: 3000 });
-    const titleInput = screen.getByLabelText('Title');
-    const descInput = screen.getByLabelText('Description');
+    // CampaignViewer is lazy-loaded – wait for Edit button to appear
+    const editBtn = await screen.findByRole('button', { name: 'Edit Campaign Alpha' });
+    fireEvent.click(editBtn);
+
+    // UnifiedCampaignModal opens on Details tab. Labels include '*' for required fields.
+    const titleInput = await screen.findByRole('textbox', { name: /^Title/ });
+    const descInput = screen.getByRole('textbox', { name: /^Description/ });
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
     fireEvent.change(descInput, { target: { value: 'Updated Description' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -343,8 +346,7 @@ describe('App', () => {
     render(<App />);
 
     // Open campaign viewer
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     // Test Add External Media with modal
     const manageMediaBtn = await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' });
@@ -376,8 +378,7 @@ describe('App', () => {
     render(<App />);
 
     // Open campaign viewer
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     // Test Archive Campaign with modal
     const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign Alpha' });
@@ -404,8 +405,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     fireEvent.click(await screen.findByRole('button', { name: 'Edit Campaign Alpha' }));
     
@@ -432,8 +432,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     fireEvent.click(await screen.findByRole('button', { name: 'Archive Campaign Alpha' }));
 
@@ -460,8 +459,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const card = await screen.findByText('Campaign Alpha');
-    fireEvent.click(card);
+    await openCampaignViewer('Campaign Alpha');
 
     fireEvent.click(await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }));
 

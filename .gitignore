@@ -46,4 +46,13 @@ phpunit
 /*.jpg
 /*.gif
 *.txt
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 !wp-plugin/wp-super-gallery/readme.txt
+=======
+.txt
+>>>>>>> Stashed changes
+=======
+.txt
+>>>>>>> Stashed changes
+PHP_REACT_INTEGRATION_REVIEW.md

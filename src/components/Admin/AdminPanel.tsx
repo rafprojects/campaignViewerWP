@@ -17,6 +17,8 @@ import {
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
 } from '@/hooks/useAdminSWR';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
+import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
+import { UnifiedCampaignModal } from '@/components/shared/UnifiedCampaignModal';
 import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useAccessRows } from '@/hooks/useAccessRows';
@@ -24,7 +26,6 @@ import { useAuditRows } from '@/hooks/useAuditRows';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
-const CampaignFormModal = lazy(() => import('./CampaignFormModal').then((m) => ({ default: m.CampaignFormModal })));
 const CampaignDuplicateModal = lazy(() => import('./CampaignDuplicateModal').then((m) => ({ default: m.CampaignDuplicateModal })));
 const CampaignImportModal = lazy(() => import('./CampaignImportModal').then((m) => ({ default: m.CampaignImportModal })));
 const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal').then((m) => ({ default: m.KeyboardShortcutsModal })));
@@ -81,8 +82,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, companiesEnabled);
   const { auditEntries, auditLoading } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '');
 
+  const unifiedModal = useUnifiedCampaignModal({
+    apiClient, isAdmin: true, onMutate: campaignsMutator, onNotify,
+  });
+
   const campaignActions = useAdminCampaignActions({
     apiClient, campaigns, onMutate: campaignsMutator, onCampaignsUpdated, onNotify,
+    onOpenEdit: unifiedModal.openForEdit,
+    onOpenCreate: unifiedModal.openForCreate,
+    createModalOpen: unifiedModal.opened,
   });
 
   const mutateAccessWrapped = useCallback(() => mutateAccess() as Promise<unknown>, [mutateAccess]);
@@ -245,23 +253,12 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           })()}
         </Tabs.Panel>
 
-        {campaignActions.campaignFormOpen && (
-          <Suspense fallback={null}>
-            <CampaignFormModal
-              opened={campaignActions.campaignFormOpen}
-              editingCampaign={campaignActions.editingCampaign}
-              formState={campaignActions.formState}
-              onFormChange={campaignActions.dispatchFormState}
-              onClose={campaignActions.closeCampaignForm}
-              onSave={() => campaignActions.saveCampaign(campaignActions.formState)}
-              isSaving={campaignActions.isSavingCampaign}
-              onGoToMedia={(id) => { setMediaCampaignId(id); campaignActions.closeCampaignForm(); setActiveTab('media'); }}
-              layoutTemplates={layoutTemplates ?? []}
-              onEditLayout={(id) => { campaignActions.closeCampaignForm(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
-              availableCategories={availableCategoryNames}
-            />
-          </Suspense>
-        )}
+        <UnifiedCampaignModal
+          modal={unifiedModal}
+          layoutTemplates={layoutTemplates ?? []}
+          onEditLayout={(id) => { unifiedModal.close(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
+          availableCategories={availableCategoryNames}
+        />
 
         <Tabs.Panel value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">

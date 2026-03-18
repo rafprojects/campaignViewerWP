@@ -194,6 +194,8 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
     }
     setUser(null);
     setPermissions(fallbackPermissions);
+    // Reload the page to fully reset WP session state
+    window.location.reload();
   }, [fallbackPermissions, provider]);
 
   const value = useMemo<AuthContextValue>(

@@ -86,12 +86,14 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
 
   return (
     <Stack gap="md">
-      <Title order={3} size="h5">
-        <Group gap={8} component="span">
-          <IconPhoto size={18} />
-          Images ({images.length})
+      {settings.showCampaignGalleryLabels !== false && (
+      <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
+        <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
+          {settings.showGalleryLabelIcon && <IconPhoto size={18} />}
+          {settings.galleryImageLabel || 'Images'} ({images.length})
         </Group>
       </Title>
+      )}
 
       {/* Image viewer */}
       <Box

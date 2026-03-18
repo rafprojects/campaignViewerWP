@@ -2,7 +2,9 @@ import { forwardRef } from 'react';
 import { IconLock, IconEye } from '@tabler/icons-react';
 import { Card, Image, Badge, Group, Text, Box, Stack, UnstyledButton } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
+import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { RequestAccessForm } from './RequestAccessForm';
 import styles from './CampaignCard.module.scss';
 
@@ -36,6 +38,10 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
       dramatic: '0 10px 25px rgba(0,0,0,0.2), 0 6px 10px rgba(0,0,0,0.1)',
     };
     const cardShadow = shadowMap[shadow] ?? shadowMap.subtle;
+    const showBorder = settings?.showCardBorder !== false && borderWidth > 0;
+    const showInfo = settings?.showCardInfoPanel !== false;
+    const safeSettings = settings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
+    const cardTitleStyle = useTypographyStyle('cardTitle', safeSettings);
     return (
       <UnstyledButton
         ref={ref}
@@ -55,19 +61,29 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
         <Card
           padding={0}
           radius={borderRadius}
-          withBorder
+          withBorder={showBorder}
           style={{
             position: 'relative',
-            borderLeft: `${borderWidth}px solid ${resolvedBorderColor}`,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            ...(showBorder ? { borderLeft: `${borderWidth}px solid ${resolvedBorderColor}` } : {}),
             boxShadow: cardShadow,
+            ...(settings?.cardAspectRatio && settings.cardAspectRatio !== 'auto' ? { aspectRatio: settings.cardAspectRatio.replace(':', ' / ') } : {}),
+            ...(settings?.cardMinHeight ? { minHeight: `${settings.cardMinHeight}px` } : {}),
           }}
         >
           {/* Thumbnail Section */}
-          <Card.Section pos="relative" h={{ base: Math.round(thumbHeight * 0.8), sm: thumbHeight }} component="div">
+          <Card.Section
+            pos="relative"
+            h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : undefined}
+            style={!showInfo ? { flex: 1, overflow: 'hidden' } : undefined}
+            component="div"
+          >
             <Image 
               src={campaign.thumbnail} 
               alt={campaign.title}
-              h={{ base: Math.round(thumbHeight * 0.8), sm: thumbHeight }}
+              h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : '100%'}
               fit={thumbFit}
               loading="lazy"
               style={{ 
@@ -78,6 +94,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             />
             
             {/* Overlay gradient */}
+            {settings?.showCardThumbnailFade !== false && (
             <Box
               pos="absolute"
               inset={0}
@@ -86,6 +103,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 pointerEvents: 'none'
               }}
             />
+            )}
             
             {/* Lock overlay for inaccessible cards */}
             {!hasAccess && (
@@ -124,7 +142,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             )}
 
             {/* Access indicator badge */}
-            {hasAccess && (
+            {hasAccess && settings?.showCardAccessBadge !== false && (
               <Badge
                 pos="absolute"
                 top={12}
@@ -137,6 +155,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             )}
 
             {/* Company badge */}
+            {settings?.showCardCompanyName !== false && (
             <Badge
               pos="absolute"
               top={12}
@@ -149,17 +168,24 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 <span>{campaign.company.name}</span>
               </Group>
             </Badge>
+            )}
           </Card.Section>
 
           {/* Content Section */}
-          <Stack p="md" gap="sm">
-            <Text fw={600} size="lg" lineClamp={1}>
+          {showInfo && (
+          <Card.Section p="md">
+          <Stack gap="sm">
+            {settings?.showCardTitle !== false && (
+            <Text fw={600} size="lg" lineClamp={1} style={cardTitleStyle}>
               {campaign.title}
             </Text>
+            )}
             
+            {settings?.showCardDescription !== false && (
             <Text size="sm" c="dimmed" lineClamp={2}>
               {campaign.description}
             </Text>
+            )}
 
             {/* Tags */}
             <Group gap={6}>
@@ -177,14 +203,18 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             </Group>
             */}
 
+            {settings?.showCardMediaCounts !== false && (
             <Group gap="xs" mt="auto" className={styles.mediaStats}>
               <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
               <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
             </Group>
+            )}
           </Stack>
+          </Card.Section>
+          )}
 
           {/* Hover border effect */}
-          {hasAccess && (
+          {hasAccess && showBorder && (
             <div
               style={{
                 position: 'absolute',

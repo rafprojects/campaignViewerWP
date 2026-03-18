@@ -1,11 +1,17 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput } from '@mantine/core';
+import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput, Switch, Select, ColorInput } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
 import { OverlayArrows } from '@/components/Campaign/OverlayArrows';
 import { DotNavigator } from '@/components/Campaign/DotNavigator';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
+import { useTypographyStyle } from '@/hooks/useTypographyStyle';
+import { useInContextSave } from '@/hooks/useInContextSave';
+import { InContextEditor } from '@/components/shared/InContextEditor';
+import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/shared/TypographyEditor';
+import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
+import { buildGradientCss } from '@/utils/gradientCss';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/Campaign/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -44,6 +50,14 @@ export function CardGallery({
   const displayedCampaign = selectedCampaign ?? lastCampaignRef.current;
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const viewerTitleStyle = useTypographyStyle('viewerTitle', galleryBehaviorSettings);
+  const viewerSubtitleStyle = useTypographyStyle('viewerSubtitle', galleryBehaviorSettings);
+  const inContextSave = useInContextSave(apiClient, galleryBehaviorSettings);
+
+  // Load Google Fonts referenced in typography overrides
+  useEffect(() => {
+    loadGoogleFontsFromOverrides(galleryBehaviorSettings.typographyOverrides, GOOGLE_FONT_NAMES);
+  }, [galleryBehaviorSettings.typographyOverrides]);
 
   // Load-more state
   const LOAD_MORE_SIZE = 12;
@@ -60,13 +74,15 @@ export function CardGallery({
   /** Resolve effective column count based on settings + current breakpoint. */
   const getEffectiveColumns = useCallback((): number => {
     const cols = galleryBehaviorSettings.cardGridColumns;
-    if (cols > 0) return cols;
+    const max = galleryBehaviorSettings.cardMaxColumns || 0;
+    if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
     // Responsive auto: match Mantine's base:1 sm:2 lg:3 breakpoints
     const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
-    if (w >= 1200) return 3;  // lg
-    if (w >= 768) return 2;   // sm
-    return 1;                 // base
-  }, [galleryBehaviorSettings.cardGridColumns]);
+    let auto = 1;
+    if (w >= 1200) auto = 3;
+    else if (w >= 768) auto = 2;
+    return max > 0 ? Math.min(auto, max) : auto;
+  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns]);
 
   const [effectiveColumns, setEffectiveColumns] = useState(getEffectiveColumns);
 
@@ -201,10 +217,90 @@ export function CardGallery({
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
   const containerPaddingStyle = { paddingInline: galleryBehaviorSettings.appPadding };
 
+  // P21-D: Dynamic viewer background
+  const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
+    switch (galleryBehaviorSettings.viewerBgType) {
+      case 'transparent': return { background: 'transparent' };
+      case 'solid': return { background: galleryBehaviorSettings.viewerBgColor || 'transparent' };
+      case 'gradient': return { background: buildGradientCss(galleryBehaviorSettings.viewerBgGradient) || undefined };
+      default: return undefined; // 'theme' — use SCSS default
+    }
+  }, [galleryBehaviorSettings.viewerBgType, galleryBehaviorSettings.viewerBgColor, galleryBehaviorSettings.viewerBgGradient]);
+
+  // P21-D: Header border/shadow control
+  const headerStyle = useMemo<React.CSSProperties | undefined>(() => {
+    if (galleryBehaviorSettings.showViewerBorder === false) {
+      return { borderBottom: 'none', boxShadow: 'none', backdropFilter: 'none', background: 'transparent' };
+    }
+    return undefined;
+  }, [galleryBehaviorSettings.showViewerBorder]);
+
   return (
-    <Box className={styles.gallery}>
+    <Box className={styles.gallery} style={galleryStyle}>
       {/* Header */}
-      <Box component="header" className={styles.header}>
+      <Box component="header" className={styles.header} style={{ ...headerStyle, position: 'relative' }}>
+        <InContextEditor
+          visible={!!isAdmin && galleryBehaviorSettings.showInContextEditors}
+          position="top-right"
+        >
+          <Stack gap="sm">
+            <Text fw={600} size="xs">Viewer Header Settings</Text>
+            <Switch
+              label="Show Title"
+              checked={galleryBehaviorSettings.showGalleryTitle}
+              onChange={(e) => inContextSave('showGalleryTitle', e.currentTarget.checked)}
+              size="xs"
+            />
+            <Switch
+              label="Show Subtitle"
+              checked={galleryBehaviorSettings.showGallerySubtitle}
+              onChange={(e) => inContextSave('showGallerySubtitle', e.currentTarget.checked)}
+              size="xs"
+            />
+            <TextInput
+              label="Title Text"
+              value={galleryBehaviorSettings.galleryTitleText}
+              onChange={(e) => inContextSave('galleryTitleText', e.currentTarget.value)}
+              size="xs"
+            />
+            <TextInput
+              label="Subtitle Text"
+              value={galleryBehaviorSettings.gallerySubtitleText}
+              onChange={(e) => inContextSave('gallerySubtitleText', e.currentTarget.value)}
+              size="xs"
+            />
+            <Select
+              label="Background Type"
+              value={galleryBehaviorSettings.viewerBgType}
+              onChange={(v) => inContextSave('viewerBgType', v)}
+              data={[
+                { value: 'theme', label: 'Theme' },
+                { value: 'transparent', label: 'Transparent' },
+                { value: 'solid', label: 'Solid Color' },
+                { value: 'gradient', label: 'Gradient' },
+              ]}
+              size="xs"
+            />
+            {galleryBehaviorSettings.viewerBgType === 'solid' && (
+              <ColorInput
+                label="Background Color"
+                value={galleryBehaviorSettings.viewerBgColor}
+                onChange={(v) => inContextSave('viewerBgColor', v)}
+                size="xs"
+              />
+            )}
+            <Text fw={500} size="xs" mt="xs">Title Typography</Text>
+            <TypographyEditor
+              value={galleryBehaviorSettings.typographyOverrides['viewerTitle'] ?? {}}
+              onChange={(v) => {
+                const overrides = { ...galleryBehaviorSettings.typographyOverrides };
+                if (Object.keys(v).length === 0) delete overrides['viewerTitle'];
+                else overrides['viewerTitle'] = v;
+                inContextSave('typographyOverrides', overrides);
+              }}
+            />
+          </Stack>
+        </InContextEditor>
         <Container size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
           <Stack gap="lg">
             {/* Title and subtitle */}
@@ -212,8 +308,8 @@ export function CardGallery({
             <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
               {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
               <Stack gap={0}>
-                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3">Campaign Gallery</Title>}
-                {galleryBehaviorSettings.showGallerySubtitle && <Text c="dimmed" size="sm">Browse and access your campaign media</Text>}
+                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
+                {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
               </Stack>
               )}
 
@@ -289,7 +385,9 @@ export function CardGallery({
             <SimpleGrid
               cols={galleryBehaviorSettings.cardGridColumns > 0
                 ? galleryBehaviorSettings.cardGridColumns
-                : { base: 1, sm: 2, lg: 3 }
+                : galleryBehaviorSettings.cardMaxColumns > 0
+                  ? { base: 1, sm: Math.min(2, galleryBehaviorSettings.cardMaxColumns), lg: Math.min(3, galleryBehaviorSettings.cardMaxColumns) }
+                  : { base: 1, sm: 2, lg: 3 }
               }
               spacing={galleryBehaviorSettings.cardGap}
             >
@@ -377,6 +475,7 @@ export function CardGallery({
             hasAccess={hasAccess(displayedCampaign.id, displayedCampaign.visibility)}
             galleryBehaviorSettings={galleryBehaviorSettings}
             isAdmin={isAdmin}
+            apiClient={apiClient}
             onEditCampaign={onEditCampaign}
             onArchiveCampaign={onArchiveCampaign}
             onAddExternalMedia={onAddExternalMedia}

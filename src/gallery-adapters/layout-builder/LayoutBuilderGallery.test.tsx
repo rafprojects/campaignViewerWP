@@ -252,7 +252,7 @@ describe('LayoutBuilderGallery', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (2)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (2)')).toBeInTheDocument();
     });
 
     // Should render accessible buttons for lightbox-enabled slots
@@ -311,13 +311,14 @@ describe('LayoutBuilderGallery', () => {
   });
 });
 
-// ─── CampaignFormModal layoutTemplateId tests ────────────────────────────────
+// ─── UnifiedCampaignModal layoutTemplateId tests ─────────────────────────────
 
-describe('CampaignFormModal layout selector', () => {
+describe('UnifiedCampaignModal layout selector', () => {
   const defaultFormState = {
     title: 'Test',
     description: 'Desc',
     company: 'co',
+    coverImage: '',
     status: 'draft' as const,
     visibility: 'private' as const,
     tags: '',
@@ -326,7 +327,48 @@ describe('CampaignFormModal layout selector', () => {
     layoutTemplateId: '',
     imageAdapterId: '',
     videoAdapterId: '',
+    categories: [] as string[],
   };
+
+  function makeMockModal(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      opened: true,
+      mode: 'edit' as const,
+      editingCampaignId: 'c1',
+      formState: { ...defaultFormState, ...overrides },
+      updateForm: vi.fn(),
+      isSaving: false,
+      coverImageUploading: false,
+      handleSelectCoverImage: vi.fn(),
+      handleUploadCoverImage: vi.fn(),
+      activeTab: 'settings',
+      setActiveTab: vi.fn(),
+      mediaItems: [],
+      mediaLoading: false,
+      handleRemoveMedia: vi.fn(),
+      handleAddFromLibrary: vi.fn(),
+      handleUploadMedia: vi.fn(),
+      handleAddExternalMedia: vi.fn(),
+      uploadFile: null,
+      uploadProgress: null,
+      addMediaUrl: '',
+      setAddMediaUrl: vi.fn(),
+      addMediaType: 'video' as const,
+      setAddMediaType: vi.fn(),
+      addMediaCaption: '',
+      setAddMediaCaption: vi.fn(),
+      addMediaLoading: false,
+      libraryMedia: [],
+      libraryLoading: false,
+      librarySearch: '',
+      setLibrarySearch: vi.fn(),
+      loadLibraryMedia: vi.fn(),
+      openForEdit: vi.fn(),
+      openForCreate: vi.fn(),
+      close: vi.fn(),
+      save: vi.fn(),
+    };
+  }
 
   const mockTemplates = [
     {
@@ -362,27 +404,17 @@ describe('CampaignFormModal layout selector', () => {
     },
   ];
 
-  beforeEach(() => {
-    // Mantine's Modal→ScrollArea needs ResizeObserver — ensure it exists
-    // (test/setup.ts provides a base mock, but restoreAllMocks can clear vi.stubGlobal calls)
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
   it('renders layout template selector when templates are provided', async () => {
-    const { CampaignFormModal } = await import('@/components/Admin/CampaignFormModal');
+    const { UnifiedCampaignModal } = await import('@/components/shared/UnifiedCampaignModal');
+    const modal = makeMockModal();
 
     render(
-      <CampaignFormModal
-        opened={true}
-        editingCampaign={{ id: 'c1' }}
-        formState={defaultFormState}
-        onFormChange={vi.fn()}
-        onClose={vi.fn()}
-        onSave={vi.fn()}
-        isSaving={false}
+      <UnifiedCampaignModal
+        modal={modal as never}
         layoutTemplates={mockTemplates}
       />,
     );
@@ -391,17 +423,12 @@ describe('CampaignFormModal layout selector', () => {
   });
 
   it('does not render layout selector when no templates', async () => {
-    const { CampaignFormModal } = await import('@/components/Admin/CampaignFormModal');
+    const { UnifiedCampaignModal } = await import('@/components/shared/UnifiedCampaignModal');
+    const modal = makeMockModal();
 
     render(
-      <CampaignFormModal
-        opened={true}
-        editingCampaign={{ id: 'c1' }}
-        formState={defaultFormState}
-        onFormChange={vi.fn()}
-        onClose={vi.fn()}
-        onSave={vi.fn()}
-        isSaving={false}
+      <UnifiedCampaignModal
+        modal={modal as never}
         layoutTemplates={[]}
       />,
     );
@@ -410,18 +437,13 @@ describe('CampaignFormModal layout selector', () => {
   });
 
   it('shows Edit Layout button when a template is selected', async () => {
-    const { CampaignFormModal } = await import('@/components/Admin/CampaignFormModal');
+    const { UnifiedCampaignModal } = await import('@/components/shared/UnifiedCampaignModal');
     const onEditLayout = vi.fn();
+    const modal = makeMockModal({ layoutTemplateId: 'tpl-1' });
 
     render(
-      <CampaignFormModal
-        opened={true}
-        editingCampaign={{ id: 'c1' }}
-        formState={{ ...defaultFormState, layoutTemplateId: 'tpl-1' }}
-        onFormChange={vi.fn()}
-        onClose={vi.fn()}
-        onSave={vi.fn()}
-        isSaving={false}
+      <UnifiedCampaignModal
+        modal={modal as never}
         layoutTemplates={mockTemplates}
         onEditLayout={onEditLayout}
       />,
@@ -774,7 +796,7 @@ describe('LayoutBuilderGallery overlay rendering', () => {
 
     await waitFor(() => {
       // Canvas renders, but no img with the blob URL
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const blobImg = document.querySelector('img[src^="blob:"]');
@@ -877,7 +899,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     // The slot image should be rendered (clip-path inner div contains the img)
@@ -908,7 +930,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
@@ -943,7 +965,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
@@ -971,7 +993,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Layout Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;

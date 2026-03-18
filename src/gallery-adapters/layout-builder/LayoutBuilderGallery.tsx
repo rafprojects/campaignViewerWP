@@ -558,10 +558,10 @@ function LayoutBuilderGalleryInner({
       <style>{hoverStylesCss}</style>
 
       {/* Header */}
-      <Text size="sm" fw={500} component="div">
+      <Text size="sm" fw={500} component="div" ta={settings.galleryLabelJustification || 'left'}>
         <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <IconLayoutDashboard size={16} />
-          Layout Gallery ({mediaCount})
+          {settings.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
+          Gallery ({mediaCount})
         </Box>
       </Text>
 
