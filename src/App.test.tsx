@@ -65,8 +65,8 @@ const setupAdminFetch = () => {
 async function openCampaignViewer(title: string) {
   const card = await screen.findByRole('button', { name: `Open campaign ${title}` });
   fireEvent.click(card);
-  // CampaignViewer is lazy-loaded — wait for the Admin Actions heading to confirm it rendered
-  await screen.findByText('Admin Actions', {}, { timeout: 5000 });
+  // CampaignViewer is lazy-loaded — wait for a concrete action button in the loaded view
+  await screen.findByRole('button', { name: `Edit ${title}` }, { timeout: 5000 });
 }
 
 describe('App', () => {
