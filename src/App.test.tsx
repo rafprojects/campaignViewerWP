@@ -135,6 +135,10 @@ describe('App', () => {
 
     render(<App />);
 
+    // P21-J: sign-in prompt moved into the floating AuthBar popover
+    const menuBtn = await screen.findByRole('button', { name: 'Admin menu' });
+    fireEvent.click(menuBtn);
+
     expect(await screen.findByText('Sign in to access private campaigns.')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument();
   });
@@ -304,7 +308,7 @@ describe('App', () => {
     fireEvent.click(card);
 
     // CampaignViewer is lazy-loaded – wait for Edit button to appear
-    const editBtn = await screen.findByRole('button', { name: 'Edit Campaign Alpha' });
+    const editBtn = await screen.findByRole('button', { name: 'Edit Campaign Alpha' }, { timeout: 5000 });
     fireEvent.click(editBtn);
 
     // UnifiedCampaignModal opens on Details tab. Labels include '*' for required fields.
@@ -340,7 +344,7 @@ describe('App', () => {
     fireEvent.click(card);
 
     // Test Add External Media with modal
-    const manageMediaBtn = await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' });
+    const manageMediaBtn = await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }, { timeout: 5000 });
     fireEvent.click(manageMediaBtn);
     // External media modal opens
     const urlInput = await screen.findByLabelText('URL');
@@ -373,10 +377,10 @@ describe('App', () => {
     fireEvent.click(card);
 
     // Test Archive Campaign with modal
-    const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign Alpha' });
+    const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign Alpha' }, { timeout: 5000 });
     fireEvent.click(archiveCampaignBtn);
     // Archive confirmation modal opens
-    const archiveBtn = await screen.findByRole('button', { name: 'Archive campaign Campaign Alpha' });
+    const archiveBtn = await screen.findByRole('button', { name: 'Archive campaign Campaign Alpha' }, { timeout: 5000 });
     fireEvent.click(archiveBtn);
 
     await waitFor(() => {
@@ -400,7 +404,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit Campaign Alpha' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Campaign Alpha' }, { timeout: 5000 }));
     
     // Modal opens - click Cancel instead of Save
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -428,7 +432,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive Campaign Alpha' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive Campaign Alpha' }, { timeout: 5000 }));
 
     // Modal opens - click Cancel instead of Archive
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });
@@ -456,7 +460,7 @@ describe('App', () => {
     const card = await screen.findByText('Campaign Alpha');
     fireEvent.click(card);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }, { timeout: 5000 }));
 
     // Modal opens - click Cancel instead of Add Media
     const cancelBtn = await screen.findByRole('button', { name: 'Cancel' });

@@ -39,6 +39,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     };
     const cardShadow = shadowMap[shadow] ?? shadowMap.subtle;
     const showBorder = settings?.showCardBorder !== false && borderWidth > 0;
+    const showInfo = settings?.showCardInfoPanel !== false;
     const safeSettings = settings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
     const cardTitleStyle = useTypographyStyle('cardTitle', safeSettings);
     return (
@@ -63,6 +64,9 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           withBorder={showBorder}
           style={{
             position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
             ...(showBorder ? { borderLeft: `${borderWidth}px solid ${resolvedBorderColor}` } : {}),
             boxShadow: cardShadow,
             ...(settings?.cardAspectRatio && settings.cardAspectRatio !== 'auto' ? { aspectRatio: settings.cardAspectRatio.replace(':', ' / ') } : {}),
@@ -70,11 +74,16 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           }}
         >
           {/* Thumbnail Section */}
-          <Card.Section pos="relative" h={{ base: Math.round(thumbHeight * 0.8), sm: thumbHeight }} component="div">
+          <Card.Section
+            pos="relative"
+            h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : undefined}
+            style={!showInfo ? { flex: 1, overflow: 'hidden' } : undefined}
+            component="div"
+          >
             <Image 
               src={campaign.thumbnail} 
               alt={campaign.title}
-              h={{ base: Math.round(thumbHeight * 0.8), sm: thumbHeight }}
+              h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : '100%'}
               fit={thumbFit}
               loading="lazy"
               style={{ 
@@ -163,8 +172,9 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           </Card.Section>
 
           {/* Content Section */}
-          {settings?.showCardInfoPanel !== false && (
-          <Stack p="md" gap="sm">
+          {showInfo && (
+          <Card.Section p="md">
+          <Stack gap="sm">
             {settings?.showCardTitle !== false && (
             <Text fw={600} size="lg" lineClamp={1} style={cardTitleStyle}>
               {campaign.title}
@@ -200,6 +210,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             </Group>
             )}
           </Stack>
+          </Card.Section>
           )}
 
           {/* Hover border effect */}

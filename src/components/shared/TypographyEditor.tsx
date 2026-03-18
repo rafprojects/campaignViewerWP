@@ -12,11 +12,18 @@ import {
 } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import type { TypographyOverride } from '@/types';
+import { loadGoogleFont } from '@/utils/loadGoogleFont';
 
 interface TypographyEditorProps {
   value: TypographyOverride;
   onChange: (updated: TypographyOverride) => void;
 }
+
+/** Names that need to be loaded from Google Fonts CDN. */
+export const GOOGLE_FONT_NAMES = new Set([
+  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat',
+  'Poppins', 'Oswald', 'Raleway', 'Playfair Display', 'Merriweather',
+]);
 
 const FONT_FAMILIES = [
   { value: '', label: '(default)' },
@@ -115,7 +122,13 @@ export function TypographyEditor({ value, onChange }: TypographyEditorProps) {
       <Select
         label="Font Family"
         value={value.fontFamily ?? ''}
-        onChange={(v) => set('fontFamily', v ?? undefined)}
+        onChange={(v) => {
+          if (v) {
+            const name = v.split(',')[0].trim();
+            if (GOOGLE_FONT_NAMES.has(name)) loadGoogleFont(name);
+          }
+          set('fontFamily', v ?? undefined);
+        }}
         data={FONT_FAMILIES}
         searchable
         clearable

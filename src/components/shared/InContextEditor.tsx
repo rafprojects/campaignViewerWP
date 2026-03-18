@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { ActionIcon, Popover, ScrollArea, Box } from '@mantine/core';
 import { IconSettings } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
@@ -30,10 +30,17 @@ export function InContextEditor({
 }: InContextEditorProps) {
   const [opened, { toggle, close }] = useDisclosure(false);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') { close(); e.stopPropagation(); }
+    },
+    [close],
+  );
+
   if (!visible) return null;
 
   return (
-    <Box style={positionStyles[position]}>
+    <Box style={positionStyles[position]} onKeyDown={handleKeyDown}>
       <Popover
         opened={opened}
         onClose={close}
@@ -42,6 +49,7 @@ export function InContextEditor({
         width={340}
         withArrow
         closeOnClickOutside
+        closeOnEscape
         styles={{ dropdown: { backgroundColor: 'rgba(30, 30, 40, 0.95)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e0e6' } }}
       >
         <Popover.Target>

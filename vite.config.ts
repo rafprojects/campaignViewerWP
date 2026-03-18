@@ -40,7 +40,6 @@ export default defineConfig({
   },
   // @ts-expect-error Vitest config extension
   test: {
-    threads: 4,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],

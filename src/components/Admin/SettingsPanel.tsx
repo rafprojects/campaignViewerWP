@@ -46,6 +46,7 @@ import {
 import { ThemeSelector } from './ThemeSelector';
 import { SettingTooltip } from './SettingTooltip';
 import { TypographyEditor } from '../shared/TypographyEditor';
+import { GradientEditor } from '../shared/GradientEditor';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
@@ -115,10 +116,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   }, [apiClient]);
 
   useEffect(() => {
-    if (opened) {
+    if (opened && !initialSettings) {
       void loadSettings();
     }
-  }, [opened, loadSettings]);
+  }, [opened, loadSettings, initialSettings]);
 
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
     setSettings((prev) => {
@@ -226,7 +227,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
             {/* ── General Tab ───────────────────────────────────── */}
             <Tabs.Panel value="general" pt="md">
-              <Stack gap="md">
+              {activeTab === 'general' && <Stack gap="md">
                 <ThemeSelector
                   description="Choose a color theme. Preview applies instantly; saved when you click Save."
                   onThemeChange={(id) => updateSetting('theme' as keyof SettingsData, id as SettingsData[keyof SettingsData])}
@@ -359,12 +360,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   />
                 )}
                 {settings.viewerBgType === 'gradient' && (
-                  <TextInput
-                    label="Background Gradient"
-                    description="CSS gradient, e.g. linear-gradient(135deg, #1a1b2e, #2d1b4e)"
-                    value={settings.viewerBgGradient}
-                    onChange={(e) => updateSetting('viewerBgGradient', e.currentTarget.value)}
-                    placeholder="linear-gradient(135deg, #1a1b2e, #2d1b4e)"
+                  <GradientEditor
+                    value={settings.viewerBgGradient ?? {}}
+                    onChange={(opts) => updateSetting('viewerBgGradient', opts)}
                   />
                 )}
                 <Switch
@@ -516,12 +514,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   checked={settings.showSettingsTooltips}
                   onChange={(e) => updateSetting('showSettingsTooltips', e.currentTarget.checked)}
                 />
-              </Stack>
+              </Stack>}
             </Tabs.Panel>
 
             {/* ── Campaign Cards Tab ────────────────────────── */}
             <Tabs.Panel value="cards" pt="md">
-              <Accordion variant="separated" defaultValue="appearance">
+              {activeTab === 'cards' && <Accordion variant="separated" defaultValue="appearance">
                 {/* ── Card Appearance ── */}
                 <Accordion.Item value="appearance">
                   <Accordion.Control>Card Appearance</Accordion.Control>
@@ -799,12 +797,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-              </Accordion>
+              </Accordion>}
             </Tabs.Panel>
 
             {/* ── Media Gallery Tab ────────────────────────────── */}
             <Tabs.Panel value="gallery" pt="md">
-              <Accordion variant="separated" defaultValue="viewport">
+              {activeTab === 'gallery' && <Accordion variant="separated" defaultValue="viewport">
                 {/* ── Viewport & Layout ── */}
                 <Accordion.Item value="viewport">
                   <Accordion.Control>Viewport &amp; Layout</Accordion.Control>
@@ -1823,11 +1821,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-              </Accordion>
+              </Accordion>}
             </Tabs.Panel>
             {settings.advancedSettingsEnabled && (
               <Tabs.Panel value="advanced" pt="md">
-                <Text size="sm" c="dimmed" mb="md">
+                {activeTab === 'advanced' && <><Text size="sm" c="dimmed" mb="md">
                   Fine-grained controls for power users. These settings override internal defaults
                   across all gallery components. Change with care.
                 </Text>
@@ -2132,13 +2130,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
-                </Accordion>
+                </Accordion></>}
               </Tabs.Panel>
             )}
 
             {/* ── Typography Tab ───────────────────────────────── */}
             <Tabs.Panel value="typography" pt="md">
-              <Stack gap="md">
+              {activeTab === 'typography' && <Stack gap="md">
                 <Text size="sm" c="dimmed">
                   Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults.
                 </Text>
@@ -2306,7 +2304,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Accordion.Panel>
                   </Accordion.Item>
                 </Accordion>
-              </Stack>
+              </Stack>}
             </Tabs.Panel>
 
           </Tabs>

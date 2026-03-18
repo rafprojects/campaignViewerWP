@@ -268,7 +268,7 @@ class WPSG_Settings {
         // ── P21-D: Viewer background & border ─────────────────
         'viewer_bg_type'                 => 'theme',
         'viewer_bg_color'                => '',
-        'viewer_bg_gradient'             => '',
+        'viewer_bg_gradient'             => [],
         'show_viewer_border'             => true,
         // ── P21-C: Card aspect ratio & max columns ────────────
         'card_max_columns'               => 0,
@@ -1205,6 +1205,63 @@ class WPSG_Settings {
                 }
             }
             $sanitized['typography_overrides'] = wp_json_encode($clean);
+        }
+
+        // P21-K: Viewer background gradient — structured JSON object.
+        if (isset($input['viewer_bg_gradient'])) {
+            $raw = $input['viewer_bg_gradient'];
+            $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+            if (!is_array($decoded)) {
+                $decoded = [];
+            }
+            $clean_grad = [];
+            $allowed_types = ['linear', 'radial', 'conic'];
+            $allowed_dirs  = ['horizontal', 'vertical', 'diagonal-right', 'diagonal-left'];
+            $allowed_shapes = ['circle', 'ellipse'];
+            $allowed_sizes  = ['farthest-corner', 'farthest-side', 'closest-corner', 'closest-side'];
+            if (isset($decoded['type']) && in_array($decoded['type'], $allowed_types, true)) {
+                $clean_grad['type'] = $decoded['type'];
+            }
+            if (isset($decoded['direction']) && in_array($decoded['direction'], $allowed_dirs, true)) {
+                $clean_grad['direction'] = $decoded['direction'];
+            }
+            if (isset($decoded['angle'])) {
+                $clean_grad['angle'] = max(0, min(360, intval($decoded['angle'])));
+            }
+            if (isset($decoded['radialShape']) && in_array($decoded['radialShape'], $allowed_shapes, true)) {
+                $clean_grad['radialShape'] = $decoded['radialShape'];
+            }
+            if (isset($decoded['radialSize']) && in_array($decoded['radialSize'], $allowed_sizes, true)) {
+                $clean_grad['radialSize'] = $decoded['radialSize'];
+            }
+            if (isset($decoded['centerX'])) {
+                $clean_grad['centerX'] = max(0, min(100, intval($decoded['centerX'])));
+            }
+            if (isset($decoded['centerY'])) {
+                $clean_grad['centerY'] = max(0, min(100, intval($decoded['centerY'])));
+            }
+            if (isset($decoded['stops']) && is_array($decoded['stops'])) {
+                $clean_stops = [];
+                foreach (array_slice($decoded['stops'], 0, 3) as $stop) {
+                    if (!is_array($stop)) {
+                        continue;
+                    }
+                    $clean_stop = [];
+                    if (isset($stop['color'])) {
+                        $clean_stop['color'] = sanitize_text_field((string) $stop['color']);
+                    }
+                    if (isset($stop['position'])) {
+                        $clean_stop['position'] = max(0, min(100, intval($stop['position'])));
+                    }
+                    if (!empty($clean_stop)) {
+                        $clean_stops[] = $clean_stop;
+                    }
+                }
+                if (!empty($clean_stops)) {
+                    $clean_grad['stops'] = $clean_stops;
+                }
+            }
+            $sanitized['viewer_bg_gradient'] = $clean_grad;
         }
 
         // ── Generic fallback for P14+ settings not explicitly handled above ──

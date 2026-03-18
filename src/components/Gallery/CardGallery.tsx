@@ -9,7 +9,9 @@ import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useInContextSave } from '@/hooks/useInContextSave';
 import { InContextEditor } from '@/components/shared/InContextEditor';
-import { TypographyEditor } from '@/components/shared/TypographyEditor';
+import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/shared/TypographyEditor';
+import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
+import { buildGradientCss } from '@/utils/gradientCss';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/Campaign/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -51,6 +53,11 @@ export function CardGallery({
   const viewerTitleStyle = useTypographyStyle('viewerTitle', galleryBehaviorSettings);
   const viewerSubtitleStyle = useTypographyStyle('viewerSubtitle', galleryBehaviorSettings);
   const inContextSave = useInContextSave(apiClient, galleryBehaviorSettings);
+
+  // Load Google Fonts referenced in typography overrides
+  useEffect(() => {
+    loadGoogleFontsFromOverrides(galleryBehaviorSettings.typographyOverrides, GOOGLE_FONT_NAMES);
+  }, [galleryBehaviorSettings.typographyOverrides]);
 
   // Load-more state
   const LOAD_MORE_SIZE = 12;
@@ -215,7 +222,7 @@ export function CardGallery({
     switch (galleryBehaviorSettings.viewerBgType) {
       case 'transparent': return { background: 'transparent' };
       case 'solid': return { background: galleryBehaviorSettings.viewerBgColor || 'transparent' };
-      case 'gradient': return { background: galleryBehaviorSettings.viewerBgGradient || undefined };
+      case 'gradient': return { background: buildGradientCss(galleryBehaviorSettings.viewerBgGradient) || undefined };
       default: return undefined; // 'theme' — use SCSS default
     }
   }, [galleryBehaviorSettings.viewerBgType, galleryBehaviorSettings.viewerBgColor, galleryBehaviorSettings.viewerBgGradient]);

@@ -706,7 +706,7 @@ export interface GalleryBehaviorSettings {
   // P21-D: Viewer background & border
   viewerBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   viewerBgColor: string;
-  viewerBgGradient: string;
+  viewerBgGradient: import('@/utils/gradientCss').GradientOptions;
   showViewerBorder: boolean;
   // P21-C: Card aspect ratio & max columns
   cardMaxColumns: number;
@@ -969,7 +969,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P21-D: Viewer background & border
   viewerBgType: 'theme',
   viewerBgColor: '',
-  viewerBgGradient: '',
+  viewerBgGradient: {},
   showViewerBorder: true,
   // P21-C: Card aspect ratio & max columns
   cardMaxColumns: 0,

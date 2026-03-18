@@ -180,7 +180,10 @@ function AppContent({
   });
 
   return (
-    <div className="wp-super-gallery">
+    <div
+      className="wp-super-gallery"
+      style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
+    >
       {!isAuthenticated && isReady && (
         <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
           <LoginForm onSubmit={handleLogin} compact />

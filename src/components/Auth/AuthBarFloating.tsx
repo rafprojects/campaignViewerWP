@@ -109,8 +109,8 @@ export function AuthBarFloating({
       }
     : {
         position: 'fixed',
-        right: 16,
-        bottom: 16,
+        right: 24,
+        bottom: 24,
         zIndex: 9999,
       };
 
