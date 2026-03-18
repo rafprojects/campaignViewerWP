@@ -298,6 +298,11 @@ class WPSG_Settings {
         'show_campaign_admin_actions'    => true,
         'show_campaign_gallery_labels'   => true,
         'fullscreen_content_max_width'   => 0,
+        // P21-G: Gallery label customisation
+        'gallery_image_label'            => 'Images',
+        'gallery_video_label'            => 'Videos',
+        'gallery_label_justification'    => 'left',
+        'show_gallery_label_icon'        => false,
     ];
 
     /**

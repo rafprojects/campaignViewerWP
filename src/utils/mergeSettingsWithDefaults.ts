@@ -29,6 +29,7 @@ export function mergeSettingsWithDefaults(
           (result as any)[key] = JSON.parse(incoming);
         } catch {
           // Invalid JSON — keep the default empty object.
+          console.warn('[WPSG] Failed to parse typographyOverrides JSON:', incoming);
         }
         continue;
       }

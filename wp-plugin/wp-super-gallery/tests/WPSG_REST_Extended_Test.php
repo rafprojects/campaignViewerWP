@@ -231,7 +231,7 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
 
         $this->assertEquals(200, $res->get_status());
         $data = $res->get_data();
-        $this->assertArrayHasKey('total_views', $data);
+        $this->assertArrayHasKey('totalViews', $data);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

@@ -1358,3 +1358,9 @@ Tracks D, E, F, G, H are independent and can be parallelized.
 |---|------|-------|----------|-----------|
 | 7 | `class-wpsg-settings.php` | `sanitize_settings()` assigns `$clean_grad` (empty PHP `[]`) which JSON-encodes to `[]` (array), not `{}` (object) — reintroducing the array/object mismatch fixed in Round 1 for the default value | **Accept** | Correct catch — we fixed the default but missed the sanitization path. Added `empty($clean_grad) ? (object) [] : $clean_grad` so the REST payload is always an object shape |
 | 8 | `useInContextSave.ts` | No cleanup effect to clear the debounced `setTimeout` on unmount — stale callback can fire network calls and SWR mutations after the component is torn down (e.g. route change, modal close) | **Accept** | Classic React cleanup omission. Added a `useEffect` teardown that calls `clearTimeout(timerRef.current)` on unmount, preventing orphaned network requests |
+
+### PR Review — Round 4
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 9 | `class-wpsg-settings.php` | P21-G gallery label settings (`gallery_image_label`, `gallery_video_label`, `gallery_label_justification`, `show_gallery_label_icon`) are listed in `$valid_options` and consumed by the React frontend, but missing from `$defaults`. Since the generic fallback sanitizer skips keys not in `$defaults`, these values are silently dropped on save — the SettingsPanel controls appear to work but never persist. | **Accept** | Valid catch — the TS types and defaults were correct, but the PHP `$defaults` array was missing these 4 keys. Added `gallery_image_label => 'Images'`, `gallery_video_label => 'Videos'`, `gallery_label_justification => 'left'`, `show_gallery_label_icon => false` to align with the React defaults. |

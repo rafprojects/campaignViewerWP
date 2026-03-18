@@ -226,10 +226,10 @@ export function useCompanies(apiClient: ApiClient, enabled: boolean) {
   const { data, error, isLoading, mutate } = useSWR<CompanyInfo[]>(
     enabled ? 'admin-companies' : null,
     async () => {
-      const response = await apiClient.get<CompanyInfo[]>(
+      const response = await apiClient.get<ListResponse<CompanyInfo>>(
         '/wp-json/wp-super-gallery/v1/companies',
       );
-      return response ?? [];
+      return normalizeListResponse(response);
     },
     ADMIN_SWR_OPTIONS,
   );
@@ -269,7 +269,7 @@ export function useAuditEntries(apiClient: ApiClient, campaignId: string) {
 // ── Prefetch: Access & Audit ───────────────────────────────────────────────────
 
 /** Max concurrent in-flight prefetch requests to avoid overwhelming the server. */
-const PREFETCH_CONCURRENCY = 4;
+const PREFETCH_CONCURRENCY = 6;
 
 /**
  * Run async tasks with bounded concurrency + stagger delay.
@@ -337,7 +337,7 @@ export function prefetchAllCampaignAccess(
         { revalidate: false },
       ) as Promise<void>;
     },
-    100,
+    60,
   );
 }
 
@@ -368,7 +368,7 @@ export function prefetchAllCampaignAudit(
         { revalidate: false },
       ) as Promise<void>;
     },
-    100,
+    60,
   );
 }
 
@@ -439,7 +439,7 @@ export function prefetchAllCampaignMedia(
         { revalidate: false },
       ) as Promise<void>;
     },
-    150,
+    80,
   );
 }
 

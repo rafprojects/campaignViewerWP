@@ -135,12 +135,12 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <StatCard
               label="Total Views"
-              value={data?.total_views ?? null}
+              value={data?.totalViews ?? null}
               icon={<IconEye size={18} color="var(--mantine-color-blue-5)" />}
             />
             <StatCard
               label="Unique Visitors"
-              value={data?.unique_visitors ?? null}
+              value={data?.uniqueVisitors ?? null}
               icon={<IconUsers size={18} color="var(--mantine-color-teal-5)" />}
             />
           </SimpleGrid>

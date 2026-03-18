@@ -846,6 +846,10 @@ class WPSG_REST {
 
         $media_by_campaign = [];
         if ($include_media && !empty($query->posts)) {
+            // Prime the WP object cache with a single batch query so the
+            // per-campaign get_post_meta() calls below are cache hits.
+            update_meta_cache('post', wp_list_pluck($query->posts, 'ID'));
+
             foreach ($query->posts as $post) {
                 $campaign_id = (string) $post->ID;
                 $media_items = get_post_meta($post->ID, 'media_items', true);
@@ -1004,7 +1008,7 @@ class WPSG_REST {
         $new_name = sanitize_text_field(
             $request->get_param('name') ?: ($source->post_title . ' (Copy)')
         );
-        $copy_media = (bool) $request->get_param('copy_media');
+        $copy_media = (bool) $request->get_param('copyMedia');
 
         $new_id = wp_insert_post([
             'post_type'    => 'wpsg_campaign',
@@ -1054,7 +1058,7 @@ class WPSG_REST {
 
         self::add_audit_entry($new_id, 'campaign.duplicated', [
             'source_id'  => $source_id,
-            'copy_media' => $copy_media,
+            'copyMedia'  => $copy_media,
         ]);
         self::clear_accessible_campaigns_cache();
 
@@ -1268,11 +1272,11 @@ class WPSG_REST {
             return new WP_Error('wpsg_analytics_disabled', 'Analytics disabled', ['status' => 403]);
         }
 
-        $campaign_id = intval($request->get_param('campaign_id'));
-        $event_type  = sanitize_text_field($request->get_param('event_type') ?? 'view');
+        $campaign_id = intval($request->get_param('campaignId'));
+        $event_type  = sanitize_text_field($request->get_param('eventType') ?? 'view');
 
         if ($campaign_id <= 0) {
-            return new WP_Error('wpsg_invalid_campaign_id', 'Invalid campaign_id', ['status' => 400]);
+            return new WP_Error('wpsg_invalid_campaign_id', 'Invalid campaignId', ['status' => 400]);
         }
         if (!self::campaign_exists($campaign_id)) {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
@@ -1301,7 +1305,7 @@ class WPSG_REST {
 
     /**
      * GET /analytics/campaigns/{id}?from=YYYY-MM-DD&to=YYYY-MM-DD
-     * Admin-only. Returns total_views, unique_visitors, daily breakdown.
+     * Admin-only. Returns totalViews, uniqueVisitors, daily breakdown.
      */
     public static function get_campaign_analytics($request) {
         $campaign_id = intval($request->get_param('id'));
@@ -1362,8 +1366,8 @@ class WPSG_REST {
         }
 
         return new WP_REST_Response([
-            'total_views'      => (int) $total_views,
-            'unique_visitors'  => $total_unique,
+            'totalViews'       => (int) $total_views,
+            'uniqueVisitors'   => $total_unique,
             'daily'            => array_map(function ($row) {
                 return [
                     'date'    => $row['date'],
@@ -1617,7 +1621,7 @@ class WPSG_REST {
             return $entry;
         }, $effective);
 
-        return new WP_REST_Response($enriched, 200);
+        return new WP_REST_Response(['items' => $enriched], 200);
     }
 
     public static function grant_access($request) {
@@ -1730,12 +1734,12 @@ class WPSG_REST {
      */
     private static function format_access_request(array $row): array {
         return [
-            'token'        => $row['token'],
-            'email'        => $row['email'],
-            'campaign_id'  => (int) $row['campaign_id'],
-            'status'       => $row['status'],
-            'requested_at' => gmdate('c', strtotime($row['requested_at'])),
-            'resolved_at'  => $row['resolved_at']
+            'token'       => $row['token'],
+            'email'       => $row['email'],
+            'campaignId'  => (int) $row['campaign_id'],
+            'status'      => $row['status'],
+            'requestedAt' => gmdate('c', strtotime($row['requested_at'])),
+            'resolvedAt'  => $row['resolved_at']
                 ? gmdate('c', strtotime($row['resolved_at']))
                 : null,
         ];
@@ -1822,7 +1826,7 @@ class WPSG_REST {
         $rows = WPSG_DB::list_access_requests($post_id, $status);
         $result = array_map([self::class, 'format_access_request'], $rows);
 
-        return new WP_REST_Response($result, 200);
+        return new WP_REST_Response(['items' => $result], 200);
     }
 
     /**
@@ -1955,6 +1959,19 @@ class WPSG_REST {
         $per_page = max(1, min(100, intval($request->get_param('per_page') ?? 50)));
         $offset = ($page - 1) * $per_page;
 
+        // Transient cache (same invalidation strategy as list_campaigns).
+        $cache_version = get_option('wpsg_cache_version', 0);
+        $cache_key = "wpsg_companies_{$page}_{$per_page}_{$cache_version}";
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            $response = new WP_REST_Response($cached, 200);
+            $total = wp_count_terms('wpsg_company', ['hide_empty' => false]);
+            $response->header('X-WPSG-Total', (string) $total);
+            $response->header('X-WPSG-Page', (string) $page);
+            $response->header('X-WPSG-Per-Page', (string) $per_page);
+            return $response;
+        }
+
         $terms = get_terms([
             'taxonomy' => 'wpsg_company',
             'hide_empty' => false,
@@ -1984,6 +2001,13 @@ class WPSG_REST {
                     ],
                 ],
             ]);
+        }
+
+        // Prime meta + term caches in batch to eliminate N+1 queries in the loop.
+        if (!empty($all_campaigns)) {
+            $campaign_ids = wp_list_pluck($all_campaigns, 'ID');
+            update_meta_cache('post', $campaign_ids);
+            update_object_term_cache($campaign_ids, 'wpsg_company');
         }
 
         // Index campaigns by company term_id for O(1) lookup per company.
@@ -2032,8 +2056,16 @@ class WPSG_REST {
             ];
         }
 
-        $response = new WP_REST_Response($companies, 200);
-        $total = wp_count_terms('wpsg_company', ['hide_empty' => false]);
+        $response_data = ['items' => $companies, 'total' => (int) wp_count_terms('wpsg_company', ['hide_empty' => false])];
+
+        $ttl = 300;
+        if (class_exists('WPSG_Settings')) {
+            $ttl = intval(WPSG_Settings::get_setting('cache_ttl') ?: 300);
+        }
+        set_transient($cache_key, $response_data, $ttl);
+
+        $response = new WP_REST_Response($response_data, 200);
+        $total = $response_data['total'];
         $response->header('X-WPSG-Total', (string) $total);
         $response->header('X-WPSG-Page', (string) $page);
         $response->header('X-WPSG-Per-Page', (string) $per_page);
@@ -2126,7 +2158,7 @@ class WPSG_REST {
             return $entry;
         }, $all_grants);
 
-        $response = new WP_REST_Response($enriched, 200);
+        $response = new WP_REST_Response(['items' => $enriched], 200);
         self::log_slow_rest('companies.access', $start, [
             'companyId' => $term_id,
             'entries' => count($enriched),
@@ -2619,7 +2651,7 @@ class WPSG_REST {
 
         $entries = get_post_meta($post_id, 'audit_log', true);
         $entries = is_array($entries) ? $entries : [];
-        return new WP_REST_Response($entries, 200);
+        return new WP_REST_Response(['items' => $entries], 200);
     }
 
     public static function upload_media($request) {
@@ -4165,7 +4197,7 @@ class WPSG_REST {
         ]);
 
         if (is_wp_error($terms)) {
-            return new WP_REST_Response([], 200);
+            return new WP_REST_Response(['items' => []], 200);
         }
 
         $result = array_map(function ($term) {
@@ -4177,7 +4209,7 @@ class WPSG_REST {
             ];
         }, $terms);
 
-        return new WP_REST_Response($result, 200);
+        return new WP_REST_Response(['items' => $result], 200);
     }
 
     public static function list_media_tags() {
@@ -4189,7 +4221,7 @@ class WPSG_REST {
         ]);
 
         if (is_wp_error($terms)) {
-            return new WP_REST_Response([], 200);
+            return new WP_REST_Response(['items' => []], 200);
         }
 
         $result = array_map(function ($term) {
@@ -4201,7 +4233,7 @@ class WPSG_REST {
             ];
         }, $terms);
 
-        return new WP_REST_Response($result, 200);
+        return new WP_REST_Response(['items' => $result], 200);
     }
 
     // ── P15-B: Layout Template Handlers ──────────────────────

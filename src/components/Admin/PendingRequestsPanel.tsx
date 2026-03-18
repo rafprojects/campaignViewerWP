@@ -133,7 +133,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
                       </Table.Td>
                       <Table.Td>
                         <Text size="xs" c="dimmed">
-                          {formatDate(req.requested_at)}
+                          {formatDate(req.requestedAt)}
                         </Text>
                       </Table.Td>
                       <Table.Td>
@@ -201,7 +201,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
                       </Table.Td>
                       <Table.Td>
                         <Text size="xs" c="dimmed">
-                          {req.resolved_at ? formatDate(req.resolved_at) : '—'}
+                          {req.resolvedAt ? formatDate(req.resolvedAt) : '—'}
                         </Text>
                       </Table.Td>
                     </Table.Tr>

@@ -121,57 +121,115 @@ export class ApiClient {
     return response.json() as Promise<T>;
   }
 
+  /**
+   * Attempt to refresh the WP REST nonce after a 403 response.
+   * Returns true if a new nonce was obtained and the request should be retried.
+   */
+  private async refreshNonce(): Promise<boolean> {
+    try {
+      const currentNonce =
+        window.__WPSG_CONFIG__?.restNonce ?? window.__WPSG_REST_NONCE__;
+      const response = await fetch(
+        `${this.baseUrl}/wp-json/wp-super-gallery/v1/nonce`,
+        {
+          credentials: 'same-origin',
+          headers: currentNonce ? { 'X-WP-Nonce': currentNonce } : {},
+        },
+      );
+      if (!response.ok) return false;
+      const data: { nonce?: string } = await response.json();
+      if (data.nonce) {
+        if (window.__WPSG_CONFIG__) {
+          window.__WPSG_CONFIG__.restNonce = data.nonce;
+        }
+        (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__ =
+          data.nonce;
+        return true;
+      }
+    } catch {
+      // refresh failed — don't retry
+    }
+    return false;
+  }
+
+  /**
+   * Execute a request function. On 403, attempt a nonce refresh and retry once.
+   */
+  private async withNonceRetry<T>(request: () => Promise<T>): Promise<T> {
+    try {
+      return await request();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        const refreshed = await this.refreshNonce();
+        if (refreshed) {
+          return request();
+        }
+      }
+      throw err;
+    }
+  }
+
   async get<T>(path: string, init?: RequestInit): Promise<T> {
-    this.assertOnline();
-    const headers = await this.getHeaders();
-    const requestInit: RequestInit = {
-      ...init,
-      headers: {
-        ...headers,
-        ...(init?.headers as Record<string, string> | undefined),
-      },
-    };
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, requestInit);
-    return this.handleResponse<T>(response);
+    return this.withNonceRetry(async () => {
+      this.assertOnline();
+      const headers = await this.getHeaders();
+      const requestInit: RequestInit = {
+        ...init,
+        headers: {
+          ...headers,
+          ...(init?.headers as Record<string, string> | undefined),
+        },
+      };
+      const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, requestInit);
+      return this.handleResponse<T>(response);
+    });
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
-    this.assertOnline();
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
-      method: 'POST',
-      headers: await this.getHeaders(),
-      body: JSON.stringify(body),
+    return this.withNonceRetry(async () => {
+      this.assertOnline();
+      const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
+        method: 'POST',
+        headers: await this.getHeaders(),
+        body: JSON.stringify(body),
+      });
+      return this.handleResponse<T>(response);
     });
-    return this.handleResponse<T>(response);
   }
 
   async postForm<T>(path: string, formData: FormData): Promise<T> {
-    this.assertOnline();
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
-      method: 'POST',
-      headers: await this.buildAuthHeaders(),
-      body: formData,
+    return this.withNonceRetry(async () => {
+      this.assertOnline();
+      const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
+        method: 'POST',
+        headers: await this.buildAuthHeaders(),
+        body: formData,
+      });
+      return this.handleResponse<T>(response);
     });
-    return this.handleResponse<T>(response);
   }
 
   async put<T>(path: string, body: unknown): Promise<T> {
-    this.assertOnline();
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
-      method: 'PUT',
-      headers: await this.getHeaders(),
-      body: JSON.stringify(body),
+    return this.withNonceRetry(async () => {
+      this.assertOnline();
+      const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
+        method: 'PUT',
+        headers: await this.getHeaders(),
+        body: JSON.stringify(body),
+      });
+      return this.handleResponse<T>(response);
     });
-    return this.handleResponse<T>(response);
   }
 
   async delete<T>(path: string): Promise<T> {
-    this.assertOnline();
-    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
-      method: 'DELETE',
-      headers: await this.getHeaders(),
+    return this.withNonceRetry(async () => {
+      this.assertOnline();
+      const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
+        method: 'DELETE',
+        headers: await this.getHeaders(),
+      });
+      return this.handleResponse<T>(response);
     });
-    return this.handleResponse<T>(response);
   }
 
   // Settings API methods
@@ -226,7 +284,7 @@ export class ApiClient {
   ): Promise<{ id: string; title: string }> {
     return this.post<{ id: string; title: string }>(
       `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/duplicate`,
-      { name: options.name, copy_media: options.copyMedia ?? false },
+      { name: options.name, copyMedia: options.copyMedia ?? false },
     );
   }
 
@@ -256,8 +314,8 @@ export class ApiClient {
 
   async recordAnalyticsEvent(campaignId: string, eventType = 'view'): Promise<void> {
     await this.post('/wp-json/wp-super-gallery/v1/analytics/event', {
-      campaign_id: campaignId,
-      event_type: eventType,
+      campaignId,
+      eventType,
     });
   }
 
@@ -565,8 +623,8 @@ export interface CampaignAnalyticsDayEntry {
   unique: number;
 }
 export interface CampaignAnalyticsResponse {
-  total_views: number;
-  unique_visitors: number;
+  totalViews: number;
+  uniqueVisitors: number;
   daily: CampaignAnalyticsDayEntry[];
 }
 
@@ -590,10 +648,10 @@ export interface CampaignCategoryEntry {
 export interface AccessRequest {
   token: string;
   email: string;
-  campaign_id: number;
+  campaignId: number;
   status: 'pending' | 'approved' | 'denied';
-  requested_at: string;
-  resolved_at: string | null;
+  requestedAt: string;
+  resolvedAt: string | null;
 }
 
 export class ApiError extends Error {
