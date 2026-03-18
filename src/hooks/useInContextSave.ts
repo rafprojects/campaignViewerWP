@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useSWRConfig } from 'swr';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
@@ -53,6 +53,13 @@ export function useInContextSave(
     },
     [apiClient, delay, mutate],
   );
+
+  // Clear pending debounce timer on unmount to prevent stale network calls
+  useEffect(() => {
+    return () => {
+      clearTimeout(timerRef.current);
+    };
+  }, []);
 
   return save;
 }

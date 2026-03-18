@@ -1351,3 +1351,10 @@ Tracks D, E, F, G, H are independent and can be parallelized.
 | AdminPanel mock gaps | `AdminPanel.test.tsx`, `AdminPanel.quickadd.test.tsx` | `withDefaults()` Proxy auto-provides missing API mocks; static imports replace dynamic `import()` in `beforeAll` |
 | SWR retry loops | `test-utils.tsx` | `shouldRetryOnError: false` in global SWR test config |
 | Worker timeouts | `vite.config.ts` | Added `hookTimeout: 60000` to prevent `snapshotSaved`/`onTaskUpdate` vitest IPC timeouts |
+
+### PR Review — Round 3
+
+| # | File | Issue | Decision | Rationale |
+|---|------|-------|----------|-----------|
+| 7 | `class-wpsg-settings.php` | `sanitize_settings()` assigns `$clean_grad` (empty PHP `[]`) which JSON-encodes to `[]` (array), not `{}` (object) — reintroducing the array/object mismatch fixed in Round 1 for the default value | **Accept** | Correct catch — we fixed the default but missed the sanitization path. Added `empty($clean_grad) ? (object) [] : $clean_grad` so the REST payload is always an object shape |
+| 8 | `useInContextSave.ts` | No cleanup effect to clear the debounced `setTimeout` on unmount — stale callback can fire network calls and SWR mutations after the component is torn down (e.g. route change, modal close) | **Accept** | Classic React cleanup omission. Added a `useEffect` teardown that calls `clearTimeout(timerRef.current)` on unmount, preventing orphaned network requests |

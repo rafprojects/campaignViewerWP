@@ -1261,7 +1261,7 @@ class WPSG_Settings {
                     $clean_grad['stops'] = $clean_stops;
                 }
             }
-            $sanitized['viewer_bg_gradient'] = $clean_grad;
+            $sanitized['viewer_bg_gradient'] = empty($clean_grad) ? (object) [] : $clean_grad;
         }
 
         // ── Generic fallback for P14+ settings not explicitly handled above ──
