@@ -4,7 +4,7 @@ Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.18.0
+Stable tag: 0.19.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,13 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 5. Advanced settings accordion.
 
 == Changelog ==
+
+= 0.19.0 =
+**Phase 21 — UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings**
+
+* Added: campaign card visibility toggles, aspect ratio controls, auth bar display modes, viewer background/border controls, gallery label customization, in-context typography editors and settings tooltips.
+* Improved: CampaignViewer behavior and fullscreen/galleries-only experiences, modal flow unification, and settings persistence/reliability fixes.
+* Fixed: multiple QA and PR-review issues including gradient object-shape sanitization, debounced save cleanup on unmount, and missing PHP defaults for P21-G label settings persistence.
 
 = 0.18.0 =
 **Phase 20 — Production Hardening, CI/CD Pipeline & Distribution Readiness**

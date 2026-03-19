@@ -5,6 +5,27 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-03-18
+
+### Added - Phase 21: UX Overhaul, Viewer Controls & In-Context Editing
+
+- **P21-A** Bug fixes and UX hardening across Settings and modal workflows.
+- **P21-B** Campaign card visibility toggles (info panel, cover image, tags, admin actions, gallery labels).
+- **P21-C** Card aspect ratio controls and layout refinements.
+- **P21-D** Viewer background type controls (theme/transparent/solid/gradient) and structured gradient settings.
+- **P21-E** Auth bar display modes: bar, floating, draggable, minimal, auto-hide.
+- **P21-F** CampaignViewer enhancements including fullscreen and galleries-only mode controls.
+- **P21-G** Gallery label editing controls (image/video labels, label icon toggle, justification).
+- **P21-H** Settings tooltip infrastructure and copy cleanup.
+- **P21-I** Typography overrides system with in-context editor popovers.
+- **P21-J/K** QA stabilization and follow-up fixes from PR review rounds.
+
+### Fixed
+
+- Empty gradient sanitization now preserves object shape (`{}`) in PHP default/sanitization paths.
+- Debounced in-context save now clears pending timers on unmount to avoid stale updates.
+- Added missing PHP defaults for P21-G gallery label settings so SettingsPanel values persist correctly.
+
 ## [0.18.0] - 2026-03-10
 
 ### Added - Phase 20: Production Hardening, CI/CD Pipeline & Distribution Readiness
