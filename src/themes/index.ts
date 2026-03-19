@@ -41,6 +41,8 @@ import tokyoNightDef from './definitions/tokyo-night.json';
 import gruvboxDarkDef from './definitions/gruvbox-dark.json';
 import cyberpunkDef from './definitions/cyberpunk.json';
 import synthwaveDef from './definitions/synthwave.json';
+import githubLightDef from './definitions/github-light.json';
+import catppuccinLatteDef from './definitions/catppuccin-latte.json';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -179,6 +181,8 @@ function initializeRegistry(): void {
     gruvboxDarkDef as unknown as ThemeExtension,
     cyberpunkDef as unknown as ThemeExtension,
     synthwaveDef as unknown as ThemeExtension,
+    githubLightDef as unknown as ThemeExtension,
+    catppuccinLatteDef as unknown as ThemeExtension,
   ];
 
   let successCount = 0;

@@ -1,0 +1,30 @@
+{
+  "_comment": "GitHub Light — inspired by GitHub's default light UI palette",
+  "id": "github-light",
+  "name": "GitHub Light",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#ffffff",
+    "surface": "#f6f8fa",
+    "surface2": "#eaeef2",
+    "surface3": "#d0d7de",
+
+    "text": "#1f2328",
+    "textMuted": "#59636e",
+    "textMuted2": "#636c76",
+
+    "border": "#d0d7de",
+
+    "primary": "#0969da",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#1a7f37",
+    "warning": "#9a6700",
+    "error": "#cf222e",
+    "info": "#0969da",
+
+    "accent": "#0969da",
+    "accentGreen": "#1a7f37",
+    "accentPurple": "#8250df"
+  }
+}

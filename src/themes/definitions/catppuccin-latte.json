@@ -1,0 +1,30 @@
+{
+  "_comment": "Catppuccin Latte — the light variant of the soothing pastel Catppuccin palette",
+  "id": "catppuccin-latte",
+  "name": "Catppuccin Latte",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#eff1f5",
+    "surface": "#e6e9ef",
+    "surface2": "#dce0e8",
+    "surface3": "#ccd0da",
+
+    "text": "#4c4f69",
+    "textMuted": "#6c6f85",
+    "textMuted2": "#65687c",
+
+    "border": "#bcc0cc",
+
+    "primary": "#1e66f5",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#40a02b",
+    "warning": "#df8e1d",
+    "error": "#d20f39",
+    "info": "#1e66f5",
+
+    "accent": "#1e66f5",
+    "accentGreen": "#40a02b",
+    "accentPurple": "#8839ef"
+  }
+}
