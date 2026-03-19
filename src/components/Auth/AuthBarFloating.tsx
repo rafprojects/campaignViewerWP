@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
@@ -44,37 +44,69 @@ export function AuthBarFloating({
 }: AuthBarFloatingProps) {
   const margin = dragMargin;
 
-  const [pos, setPos] = useState<{ x: number; y: number }>(() => {
-    if (!draggable) return { x: 0, y: 0 }; // ignored for non-draggable
-    const saved = readSavedPos();
-    return saved ?? {
-      x: Math.max(margin, (typeof window !== 'undefined' ? window.innerWidth : 800) - ICON_SIZE - margin),
-      y: Math.max(margin, (typeof window !== 'undefined' ? window.innerHeight : 600) - ICON_SIZE - margin),
-    };
-  });
+  // Read saved position (works in SSR — just returns null)
+  const saved = readSavedPos();
+
+  // Start with saved position or null (default computed in useEffect after mount)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(
+    !draggable ? { x: 0, y: 0 } : saved,
+  );
 
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const didDragRef = useRef(false);
+  const posRef = useRef(pos); // always-current position for save
 
   const clamp = useCallback(
     (x: number, y: number) => ({
-      x: Math.max(margin, Math.min((typeof window !== 'undefined' ? window.innerWidth : 800) - ICON_SIZE - margin, x)),
-      y: Math.max(margin, Math.min((typeof window !== 'undefined' ? window.innerHeight : 600) - ICON_SIZE - margin, y)),
+      x: Math.max(margin, Math.min(window.innerWidth - ICON_SIZE - margin, x)),
+      y: Math.max(margin, Math.min(window.innerHeight - ICON_SIZE - margin, y)),
     }),
     [margin],
   );
 
+  // Compute default position in browser after mount (reliable window dimensions)
+  useEffect(() => {
+    if (!draggable || pos !== null) return;
+    const defaultPos = {
+      x: Math.max(margin, window.innerWidth - ICON_SIZE - margin),
+      y: Math.max(margin, window.innerHeight - ICON_SIZE - margin),
+    };
+    setPos(defaultPos);
+    posRef.current = defaultPos;
+    // Save immediately so next load reads a valid position
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(defaultPos));
+  }, [draggable, margin, pos]);
+
+  // Re-clamp position on window resize (prevent icon going off-screen)
+  useEffect(() => {
+    if (!draggable) return;
+    const handleResize = () => {
+      setPos((prev) => {
+        if (!prev) return prev;
+        const clamped = clamp(prev.x, prev.y);
+        if (clamped.x !== prev.x || clamped.y !== prev.y) {
+          posRef.current = clamped;
+          safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(clamped));
+          return clamped;
+        }
+        return prev;
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [draggable, clamp]);
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (!draggable) return;
+      if (!draggable || !posRef.current) return;
       setDragging(true);
       didDragRef.current = false;
-      dragStartRef.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+      dragStartRef.current = { x: e.clientX - posRef.current.x, y: e.clientY - posRef.current.y };
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [draggable, pos],
+    [draggable],
   );
 
   const onPointerMove = useCallback(
@@ -82,6 +114,7 @@ export function AuthBarFloating({
       if (!dragging) return;
       didDragRef.current = true;
       const next = clamp(e.clientX - dragStartRef.current.x, e.clientY - dragStartRef.current.y);
+      posRef.current = next;
       requestAnimationFrame(() => setPos(next));
     },
     [dragging, clamp],
@@ -90,9 +123,9 @@ export function AuthBarFloating({
   const onPointerUp = useCallback(() => {
     if (!dragging) return;
     setDragging(false);
-    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(posRef.current));
     if (!didDragRef.current) setPopoverOpen((o) => !o);
-  }, [dragging, pos]);
+  }, [dragging]);
 
   const handleClick = draggable
     ? undefined
@@ -101,8 +134,8 @@ export function AuthBarFloating({
   const buttonStyle: React.CSSProperties = draggable
     ? {
         position: 'fixed',
-        left: pos.x,
-        top: pos.y,
+        left: pos?.x ?? 0,
+        top: pos?.y ?? 0,
         zIndex: 9999,
         cursor: dragging ? 'grabbing' : 'grab',
         touchAction: 'none',
@@ -114,9 +147,12 @@ export function AuthBarFloating({
         zIndex: 9999,
       };
 
+  // Don't render until position is computed (prevents flash at wrong location)
+  if (draggable && pos === null) return null;
+
   return (
     <Popover opened={popoverOpen} onChange={setPopoverOpen} position="top-end" withArrow shadow="md" width={220}
-      styles={{ dropdown: { backgroundColor: 'rgba(30, 30, 40, 0.95)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', color: '#e0e0e6' } }}
+      styles={{ dropdown: { backdropFilter: 'blur(8px)' } }}
     >
       <Popover.Target>
         <ActionIcon
