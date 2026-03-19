@@ -13,6 +13,7 @@
  */
 import { useState, useCallback } from 'react';
 import { RowsPhotoAlbum } from 'react-photo-album';
+import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { Box, Stack, Title, Group } from '@mantine/core';
 import { IconLayoutRows, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
@@ -140,8 +141,8 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
                 {isVideo && (
                   <Box style={{
                     position: 'absolute', top: 5, left: 5,
-                    background: 'rgba(0,0,0,0.65)', borderRadius: 4,
-                    padding: '2px 5px', fontSize: 10, color: 'white', fontWeight: 600,
+                    background: OVERLAY_BG, borderRadius: 4,
+                    padding: '2px 5px', fontSize: 10, color: OVERLAY_TEXT, fontWeight: 600,
                   }}>VIDEO</Box>
                 )}
               </Box>

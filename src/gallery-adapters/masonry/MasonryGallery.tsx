@@ -13,6 +13,7 @@
  * the `masonryColumns` setting (0 = auto/responsive).
  */
 import { useState, useCallback } from 'react';
+import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { MasonryPhotoAlbum } from 'react-photo-album';
 import { Box, Stack, Title, Group } from '@mantine/core';
 import { IconColumns, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
@@ -154,9 +155,9 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
                 {isVideo && (
                   <Box style={{
                     position: 'absolute', top: 5, left: 5,
-                    background: 'rgba(0,0,0,0.65)',
+                    background: OVERLAY_BG,
                     borderRadius: 4, padding: '2px 5px',
-                    fontSize: 10, color: 'white', fontWeight: 600,
+                    fontSize: 10, color: OVERLAY_TEXT, fontWeight: 600,
                   }}>VIDEO</Box>
                 )}
               </Box>

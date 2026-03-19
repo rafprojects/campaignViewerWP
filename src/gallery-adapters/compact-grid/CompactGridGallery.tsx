@@ -12,6 +12,7 @@
 import { useState, useCallback } from 'react';
 import { Box, Group, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
+import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
@@ -189,11 +190,11 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
             position: 'absolute',
             top: 6,
             left: 6,
-            background: 'rgba(0,0,0,0.65)',
+            background: OVERLAY_BG,
             borderRadius: 4,
             padding: '2px 6px',
             fontSize: 10,
-            color: 'white',
+            color: OVERLAY_TEXT,
             fontWeight: 600,
             letterSpacing: '0.04em',
             pointerEvents: 'none',

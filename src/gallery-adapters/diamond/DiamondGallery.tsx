@@ -13,6 +13,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconDiamond, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
+import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Campaign/Lightbox';
@@ -150,8 +151,8 @@ export function DiamondGallery({ media, settings }: DiamondGalleryProps) {
                         style={{
                           position: 'absolute', bottom: '26%', left: '50%',
                           transform: 'translateX(-50%)',
-                          background: 'rgba(0,0,0,0.65)', borderRadius: 4,
-                          padding: '1px 4px', fontSize: 8, color: 'white', fontWeight: 600,
+                          background: OVERLAY_BG, borderRadius: 4,
+                          padding: '1px 4px', fontSize: 8, color: OVERLAY_TEXT, fontWeight: 600,
                           pointerEvents: 'none',
                           whiteSpace: 'nowrap',
                         }}
