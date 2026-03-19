@@ -17,6 +17,7 @@
 | P22-G | WCAG AA compliance fixes | Complete ✅ | Medium (3–4 hours) |
 | P22-H | Light theme additions | Complete ✅ | Small (2–3 hours) |
 | P22-I | Draggable auth bar position fix | Complete ✅ | Small (1–2 hours) |
+| P22-J | CardGallery column & gap QA fix | Planned 📋 | Small (1–2 hours) |
 
 ---
 
@@ -756,3 +757,51 @@ All 9 tracks implemented and verified.
 - All unit tests pass (`npm run test:silent`)
 - Production build succeeds (`npm run build:wp`)
 - Type check passes (`tsc -b`)
+
+---
+
+## Track P22-J — CardGallery Column & Gap QA Fix
+
+**Priority:** 🔴 High — user-reported broken settings
+**Effort:** Small (~30 min)
+**Depends on:** P22-A (already committed)
+
+### Problem
+
+QA testing revealed two bugs in the P22-A flex layout implementation:
+
+1. **Flex branch ignores `cardGridColumns` / `cardMaxColumns`**: The flex wrapper has no `maxWidth` constraint. Cards wrap freely based on container width alone — column settings do nothing. Horizontal gap also appears capped because unconstrained rows fill the full width.
+2. **SimpleGrid branch ignores `effectiveColumns`**: The SimpleGrid duplicates column logic inline instead of using the `effectiveColumns` value already computed via `useMediaQuery`.
+
+**Note:** A `galleryPaddingH` setting was initially considered (J-3) but dropped after QA review confirmed that the existing `appPadding` setting already applies `paddingInline` on the gallery container (CardGallery L208), making a second padding control redundant.
+
+### Fix
+
+**J-1. Constrain flex branch with column-aware maxWidth**
+
+Add a `maxCols` useMemo (only used by flex branch):
+- `cardGridColumns > 0` → use `cardGridColumns`
+- else `cardMaxColumns > 0` → use `cardMaxColumns`
+- else fallback to **4**
+
+Compute `rowMaxWidth = maxCols * cardMaxWidth + (maxCols - 1) * cardGapH`.
+Apply `maxWidth: rowMaxWidth`, `marginInline: 'auto'` to the flex `<Box>` to center the constrained row.
+
+**J-2. SimpleGrid uses effectiveColumns**
+
+Replace inline column logic with `cols={effectiveColumns}` (the existing responsive+clamped value computed at L85-95 via `useMediaQuery`).
+
+### Decisions
+- Default column cap when both `cardGridColumns` and `cardMaxColumns` are 0: **4 columns** (flex branch only)
+- SimpleGrid branch: **use `effectiveColumns`** (single source of truth)
+- `galleryPaddingH`: **Dropped** — `appPadding` already handles this via `paddingInline` on the gallery container
+
+### Files to modify
+- `src/components/Gallery/CardGallery.tsx` — J-1 (maxCols useMemo + flex maxWidth), J-2 (SimpleGrid cols)
+
+### Acceptance Criteria
+- With `cardMaxWidth=300`, `cardGridColumns=3`: exactly 3 cards per row, centered
+- With `cardMaxWidth=300`, `cardMaxColumns=2`: max 2 cards per row
+- With `cardMaxWidth=0`: SimpleGrid uses `effectiveColumns` correctly
+- `cardGapH` values >48 work correctly in both modes
+- No regression in pagination slide transitions

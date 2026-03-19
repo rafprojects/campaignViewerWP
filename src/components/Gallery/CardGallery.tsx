@@ -84,6 +84,15 @@ export function CardGallery({
     return max > 0 ? Math.min(auto, max) : auto;
   }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isLg, isSm]);
 
+  /** Max columns for fixed-width (flex) branch — used to compute row maxWidth. */
+  const maxCols = useMemo((): number => {
+    const cols = galleryBehaviorSettings.cardGridColumns;
+    const max = galleryBehaviorSettings.cardMaxColumns || 0;
+    if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
+    if (max > 0) return max;
+    return 4;
+  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns]);
+
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
   const hasAccess = useCallback((campaignId: string, visibility: 'public' | 'private') => {
@@ -380,6 +389,8 @@ export function CardGallery({
                   gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
                   justifyContent: 'center',
                   width: '100%',
+                  maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,
+                  marginInline: 'auto',
                 }}
               >
                 {visibleCampaigns.map((campaign) => (
@@ -396,12 +407,7 @@ export function CardGallery({
               </Box>
             ) : (
               <SimpleGrid
-                cols={galleryBehaviorSettings.cardGridColumns > 0
-                  ? galleryBehaviorSettings.cardGridColumns
-                  : galleryBehaviorSettings.cardMaxColumns > 0
-                    ? { base: 1, sm: Math.min(2, galleryBehaviorSettings.cardMaxColumns), lg: Math.min(3, galleryBehaviorSettings.cardMaxColumns) }
-                    : { base: 1, sm: 2, lg: 3 }
-                }
+                cols={effectiveColumns}
                 spacing={galleryBehaviorSettings.cardGapH}
                 verticalSpacing={galleryBehaviorSettings.cardGapV}
               >
