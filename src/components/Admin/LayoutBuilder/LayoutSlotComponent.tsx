@@ -172,7 +172,7 @@ function MaskDragOverlay({ maskLayer, maskUrl, slotWidth, slotHeight, onUpdate }
         height: `${dispH}%`,
         backgroundImage: `url(${maskUrl})`,
         backgroundSize: '100% 100%',
-        opacity: 0.4,
+        opacity: 0.6,
         border: '1.5px dashed var(--mantine-color-violet-5)',
         cursor: 'grab',
         zIndex: 5,
@@ -679,7 +679,7 @@ export function LayoutSlotComponent({
                   justifyContent: 'center',
                 }}
               >
-                <Text size="xs" c="dimmed" style={{ userSelect: 'none', pointerEvents: 'none' }}>
+                <Text size="xs" c="dimmed" style={{ pointerEvents: 'none' }}>
                   {index + 1}
                 </Text>
               </div>
@@ -785,7 +785,7 @@ export function LayoutSlotComponent({
                 justifyContent: 'center',
               }}
             >
-              <Text size="xs" c="dimmed" style={{ userSelect: 'none', pointerEvents: 'none' }}>
+              <Text size="xs" c="dimmed" style={{ pointerEvents: 'none' }}>
                 {index + 1}
               </Text>
             </div>

@@ -5,12 +5,14 @@ import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useInContextSave } from '@/hooks/useInContextSave';
 import { InContextEditor } from '@/components/shared/InContextEditor';
 import { TypographyEditor } from '@/components/shared/TypographyEditor';
 import { resolveAdapterId } from '@/utils/resolveAdapterId';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { CompanyLogo } from '@/components/shared/CompanyLogo';
 
 /**
  * Dispatch a gallery adapter by ID. 'classic' and 'layout-builder' are handled
@@ -87,6 +89,59 @@ const LayoutBuilderGallery = lazy(() =>
   }))
 );
 
+/* ── Local gallery section components (extracted from IIFEs) ────────── */
+
+interface GallerySectionProps {
+  campaign: Campaign;
+  settings: GalleryBehaviorSettings;
+  isAdmin: boolean;
+}
+
+function UnifiedGallerySection({ campaign, settings: s, isAdmin }: GallerySectionProps) {
+  const allMedia = [...campaign.videos, ...campaign.images].sort((a, b) => a.order - b.order);
+  if (allMedia.length === 0) return null;
+  const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
+  const effectiveId = campaign.imageAdapterId || s.unifiedGalleryAdapterId;
+  const inner = effectiveId === 'layout-builder' && campaign.layoutTemplateId
+    ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
+    : renderAdapter(effectiveId, allMedia, s);
+  return s.unifiedBgType !== 'none'
+    ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+    : <>{inner}</>;
+}
+
+interface PerTypeGallerySectionProps extends GallerySectionProps {
+  breakpoint: Breakpoint;
+}
+
+function VideoGallerySection({ campaign, settings: s, breakpoint, isAdmin }: PerTypeGallerySectionProps) {
+  const id = campaign.videoAdapterId || resolveAdapterId(s, 'video', breakpoint);
+  const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
+  const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
+  const inner = id === 'classic'
+    ? <VideoCarousel videos={campaign.videos} settings={videoSettings} />
+    : id === 'layout-builder' && campaign.layoutTemplateId
+      ? <LayoutBuilderGallery media={campaign.videos} settings={videoSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
+      : renderAdapter(id, campaign.videos, videoSettings);
+  return s.videoBgType !== 'none'
+    ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+    : <>{inner}</>;
+}
+
+function ImageGallerySection({ campaign, settings: s, breakpoint, isAdmin }: PerTypeGallerySectionProps) {
+  const id = campaign.imageAdapterId || resolveAdapterId(s, 'image', breakpoint);
+  const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
+  const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
+  const inner = id === 'classic'
+    ? <ImageCarousel images={campaign.images} settings={imageSettings} />
+    : id === 'layout-builder' && campaign.layoutTemplateId
+      ? <LayoutBuilderGallery media={campaign.images} settings={imageSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
+      : renderAdapter(id, campaign.images, imageSettings);
+  return s.imageBgType !== 'none'
+    ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
+    : <>{inner}</>;
+}
+
 interface CampaignViewerProps {
   campaign: Campaign;
   opened: boolean;
@@ -149,7 +204,7 @@ export function CampaignViewer({
           ? { overflow: 'auto', maxHeight: '100dvh' }
           : { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
-        close: { color: 'white', background: 'rgba(0,0,0,0.45)', borderRadius: '50%', width: 36, height: 36 },
+        close: { color: 'white', background: 'rgba(0,0,0,0.65)', borderRadius: '50%', width: 36, height: 36 },
       }}
       aria-label={`Campaign details for ${campaign.title}`}
     >
@@ -204,7 +259,7 @@ export function CampaignViewer({
           size="lg"
         >
           <Group gap={8}>
-            <span>{campaign.company.logo}</span>
+            <CompanyLogo logo={campaign.company.logo} companyName={campaign.company.name} />
             <span>{campaign.company.name}</span>
           </Group>
         </Badge>
@@ -296,64 +351,27 @@ export function CampaignViewer({
               </Center>
             }>
               {galleryBehaviorSettings.unifiedGalleryEnabled ? (
-                // Unified mode: all media merged and sorted by order → single adapter
-                (() => {
-                  const allMedia = [...campaign.videos, ...campaign.images].sort(
-                    (a, b) => a.order - b.order,
-                  );
-                  if (allMedia.length === 0) return null;
-                  const s = galleryBehaviorSettings;
-                  const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
-                  // Per-campaign adapter override (image adapter takes precedence in unified mode)
-                  const effectiveId = campaign.imageAdapterId || s.unifiedGalleryAdapterId;
-                  const inner = effectiveId === 'layout-builder' && campaign.layoutTemplateId
-                    ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
-                    : renderAdapter(effectiveId, allMedia, s);
-                  return s.unifiedBgType !== 'none'
-                    ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
-                    : inner;
-                })()
+                <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} isAdmin={isAdmin} />
               ) : (
-                // Per-type mode: each media kind uses its own adapter
                 <>
-                  {campaign.videos.length > 0 && (() => {
-                    const s = galleryBehaviorSettings;
-                    const id = campaign.videoAdapterId || resolveAdapterId(s, 'video', breakpoint);
-                    // Override tileSize with per-gallery videoTileSize for shape adapters
-                    const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
-                    const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
-                    const inner = id === 'classic'
-                      ? <VideoCarousel videos={campaign.videos} settings={videoSettings} />
-                      : id === 'layout-builder' && campaign.layoutTemplateId
-                        ? <LayoutBuilderGallery media={campaign.videos} settings={videoSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
-                        : renderAdapter(id, campaign.videos, videoSettings);
-                    return s.videoBgType !== 'none'
-                      ? <Box style={{ ...bgStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
-                      : inner;
-                  })()}
-                  {campaign.images.length > 0 && (() => {
-                    const s = galleryBehaviorSettings;
-                    const id = campaign.imageAdapterId || resolveAdapterId(s, 'image', breakpoint);
-                    // Override tileSize with per-gallery imageTileSize for shape adapters
-                    const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
-                    const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
-                    const inner = id === 'classic'
-                      ? <ImageCarousel images={campaign.images} settings={imageSettings} />
-                      : id === 'layout-builder' && campaign.layoutTemplateId
-                        ? <LayoutBuilderGallery media={campaign.images} settings={imageSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
-                        : renderAdapter(id, campaign.images, imageSettings);
-                    return s.imageBgType !== 'none'
-                      ? <Box style={{ ...bgStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
-                      : inner;
-                  })()}
+                  {campaign.videos.length > 0 && (
+                    <VideoGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
+                  )}
+                  {campaign.images.length > 0 && (
+                    <ImageGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
+                  )}
                 </>
               )}
             </Suspense>
           )}
 
+          {hasAccess && campaign.videos.length === 0 && campaign.images.length === 0 && (
+            <Text c="dimmed" ta="center" py="xl">No media available for this campaign.</Text>
+          )}
+
           {/* Campaign Stats — conditional */}
           {!galleriesOnly && showStats && (
-          <Box component="section" aria-labelledby="campaign-stats-heading" pos="relative">
+          <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
             <InContextEditor
               visible={isAdmin && s.showInContextEditors}
               position="top-right"
