@@ -4019,7 +4019,7 @@ class WPSG_REST {
 
     private static function log_slow_rest($label, $start_time, $context = []) {
         $elapsed_ms = (microtime(true) - $start_time) * 1000;
-        $threshold_ms = intval(apply_filters('wpsg_slow_query_threshold_ms', 100));
+        $threshold_ms = intval(apply_filters('wpsg_slow_query_threshold_ms', 500));
 
         if ($elapsed_ms < $threshold_ms) {
             return;

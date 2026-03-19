@@ -302,6 +302,92 @@ function generateComponentOverrides(
         },
       }),
     },
+
+    Accordion: {
+      styles: () => ({
+        item: {
+          borderColor: rc.border,
+          backgroundColor: rc.surface,
+        },
+        control: {
+          color: rc.text,
+          '&:hover': { backgroundColor: rc.surface2 },
+        },
+        label: { color: rc.text },
+        panel: { color: rc.text },
+        chevron: { color: rc.textMuted },
+      }),
+    },
+
+    Popover: {
+      styles: () => ({
+        dropdown: {
+          backgroundColor: rc.surface,
+          border: `1px solid ${rc.border}`,
+          color: rc.text,
+        },
+      }),
+    },
+
+    Divider: {
+      styles: () => ({
+        root: { borderColor: rc.border },
+      }),
+    },
+
+    Slider: {
+      styles: () => ({
+        track: { backgroundColor: rc.surface3 },
+        bar: { backgroundColor: rc.primary[5] },
+        thumb: { borderColor: rc.primary[5], backgroundColor: rc.surface },
+        label: { backgroundColor: rc.primary[5] },
+      }),
+    },
+
+    NumberInput: {
+      styles: () => ({
+        input: {
+          backgroundColor: rc.surface2,
+          borderColor: rc.border,
+          color: rc.text,
+        },
+        label: { color: rc.textMuted, fontWeight: 500 },
+        control: { borderColor: rc.border, color: rc.text },
+      }),
+    },
+
+    ColorInput: {
+      styles: () => ({
+        input: {
+          backgroundColor: rc.surface2,
+          borderColor: rc.border,
+          color: rc.text,
+        },
+        label: { color: rc.textMuted, fontWeight: 500 },
+        dropdown: {
+          backgroundColor: rc.surface,
+          border: `1px solid ${rc.border}`,
+        },
+      }),
+    },
+
+    Progress: {
+      styles: () => ({
+        root: { backgroundColor: rc.surface3 },
+      }),
+    },
+
+    Chip: {
+      styles: () => ({
+        label: {
+          color: rc.text,
+          borderColor: rc.border,
+          '&[data-checked]': {
+            backgroundColor: rc.primary[5],
+          },
+        },
+      }),
+    },
   };
 }
 

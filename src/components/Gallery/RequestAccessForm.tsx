@@ -71,7 +71,7 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       <Stack gap="xs">
         <Text size="xs" fw={500} ta="center" c="dimmed">
           Request access to{' '}
-          <Text component="span" fw={700} c="white" inherit>
+          <Text component="span" fw={700} inherit>
             {campaignTitle}
           </Text>
         </Text>
@@ -99,9 +99,9 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
           disabled={submitState === 'loading'}
           styles={{
             input: {
-              background: 'rgba(255,255,255,0.08)',
-              color: 'var(--wpsg-color-text, #fff)',
-              borderColor: 'rgba(255,255,255,0.2)',
+              background: 'var(--mantine-color-default)',
+              color: 'var(--mantine-color-text)',
+              borderColor: 'var(--mantine-color-default-border)',
             },
           }}
         />

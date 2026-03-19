@@ -127,7 +127,9 @@ class WPSG_Settings {
         'card_thumbnail_height'      => 200,
         'card_thumbnail_fit'         => 'cover',
         'card_grid_columns'          => 0,
-        'card_gap'                   => 16,
+        'card_gap_h'                 => 16,
+        'card_gap_v'                 => 16,
+        'card_max_width'             => 0,
         'modal_cover_height'         => 240,
         'modal_transition'           => 'pop',
         'modal_transition_duration'  => 300,
@@ -268,7 +270,7 @@ class WPSG_Settings {
         // ── P21-D: Viewer background & border ─────────────────
         'viewer_bg_type'                 => 'theme',
         'viewer_bg_color'                => '',
-        'viewer_bg_gradient'             => (object) [],
+        'viewer_bg_gradient'             => [],
         'show_viewer_border'             => true,
         // ── P21-C: Card aspect ratio & max columns ────────────
         'card_max_columns'               => 0,
@@ -442,7 +444,8 @@ class WPSG_Settings {
         'card_border_width'           => [0, 8],
         'card_thumbnail_height'       => [100, 400],
         'card_grid_columns'           => [0, 4],
-        'card_gap'                    => [0, 48],
+        'card_gap_h'                  => [0, 48],
+        'card_gap_v'                  => [0, 48],
         'modal_cover_height'          => [100, 400],
         'modal_transition_duration'   => [100, 1000],
         'modal_max_height'            => [50, 100],
@@ -721,7 +724,12 @@ class WPSG_Settings {
             if (!$admin && in_array($snake, self::$admin_only_fields, true)) {
                 continue;
             }
-            $result[self::snake_to_camel($snake)] = $settings[$snake] ?? $default;
+            $val = $settings[$snake] ?? $default;
+            // Ensure gradient is always a JSON object, never an array.
+            if ($snake === 'viewer_bg_gradient' && is_array($val) && empty($val)) {
+                $val = (object) [];
+            }
+            $result[self::snake_to_camel($snake)] = $val;
         }
         return $result;
     }
@@ -1072,8 +1080,11 @@ class WPSG_Settings {
         if (isset($input['card_grid_columns'])) {
             $sanitized['card_grid_columns'] = max(0, min(4, intval($input['card_grid_columns'])));
         }
-        if (isset($input['card_gap'])) {
-            $sanitized['card_gap'] = max(0, min(48, intval($input['card_gap'])));
+        if (isset($input['card_gap_h'])) {
+            $sanitized['card_gap_h'] = max(0, min(48, intval($input['card_gap_h'])));
+        }
+        if (isset($input['card_gap_v'])) {
+            $sanitized['card_gap_v'] = max(0, min(48, intval($input['card_gap_v'])));
         }
         if (isset($input['modal_cover_height'])) {
             $sanitized['modal_cover_height'] = max(100, min(400, intval($input['modal_cover_height'])));

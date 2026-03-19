@@ -551,7 +551,9 @@ export interface GalleryBehaviorSettings {
   cardThumbnailHeight: number;
   cardThumbnailFit: string;
   cardGridColumns: number;
-  cardGap: number;
+  cardGapH: number;
+  cardGapV: number;
+  cardMaxWidth: number;
   modalCoverHeight: number;
   modalTransition: string;
   modalTransitionDuration: number;
@@ -807,7 +809,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardThumbnailHeight: 200,
   cardThumbnailFit: 'cover',
   cardGridColumns: 0,
-  cardGap: 16,
+  cardGapH: 16,
+  cardGapV: 16,
+  cardMaxWidth: 0,
   modalCoverHeight: 240,
   modalTransition: 'pop',
   modalTransitionDuration: 300,

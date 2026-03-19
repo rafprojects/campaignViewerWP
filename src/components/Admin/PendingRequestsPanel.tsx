@@ -42,8 +42,9 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
     { revalidateOnFocus: false },
   );
 
-  const pendingRequests = (requests ?? []).filter((r) => r.status === 'pending');
-  const resolvedRequests = (requests ?? []).filter((r) => r.status !== 'pending');
+  const safeRequests = Array.isArray(requests) ? requests : [];
+  const pendingRequests = safeRequests.filter((r) => r.status === 'pending');
+  const resolvedRequests = safeRequests.filter((r) => r.status !== 'pending');
 
   const handleApprove = async (token: string) => {
     setActionLoading(token);
@@ -84,7 +85,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
   return (
     <Stack gap="sm">
       <Group justify="space-between" align="center">
-        <Title order={6} c="gray.2">
+        <Title order={6}>
           Access Requests
         </Title>
         {pendingRequests.length > 0 && (

@@ -26,7 +26,7 @@ export function CampaignSelector({
 }: CampaignSelectorProps) {
   return (
     <Select
-      label={<Text size="sm" fw={500} c="gray.2">{label}</Text>}
+      label={<Text size="sm" fw={500}>{label}</Text>}
       placeholder={placeholder}
       data={data}
       value={value}

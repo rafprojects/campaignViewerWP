@@ -13,6 +13,7 @@ import {
   Switch,
   NumberInput,
   Modal,
+  NativeScrollArea,
   Tabs,
   Text,
   Divider,
@@ -196,13 +197,18 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       closeOnEscape={!hasChanges}
       transitionProps={{ transition: 'fade', duration: 200 }}
       overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
-      styles={{ content: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' }, header: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' } }}
+      scrollAreaComponent={NativeScrollArea}
+      styles={{
+        body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
+      }}
     >
       {isLoading ? (
         <Center py="xl">
           <Loader size="lg" />
         </Center>
       ) : (
+        <>
+        <Box style={{ flex: 1, overflowY: 'auto', padding: 'var(--mantine-spacing-md)' }}>
         <Stack gap="md">
           <Tabs value={activeTab} onChange={setActiveTab}>
             <Tabs.List grow>
@@ -343,7 +349,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   label="Background Type"
                   description="Gallery container background style"
                   data={[
-                    { value: 'theme', label: 'Theme (default gradient)' },
+                    { value: 'theme', label: 'Default Theme' },
                     { value: 'transparent', label: 'Transparent' },
                     { value: 'solid', label: 'Solid color' },
                     { value: 'gradient', label: 'Custom gradient' },
@@ -659,27 +665,50 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           { value: '2', label: '2 columns' },
                           { value: '3', label: '3 columns' },
                           { value: '4', label: '4 columns' },
+                          { value: '5', label: '5 columns' },
+                          { value: '6', label: '6 columns' },
                         ]}
                         value={String(settings.cardGridColumns)}
                         onChange={(v) => updateSetting('cardGridColumns', parseInt(v ?? '0', 10))}
                       />
                       <NumberInput
-                        label="Card Gap (px)"
-                        description="Spacing between campaign cards"
-                        value={settings.cardGap}
-                        onChange={(v) => updateSetting('cardGap', typeof v === 'number' ? v : 16)}
+                        label="Horizontal Gap (px)"
+                        description="Horizontal spacing between campaign cards"
+                        value={settings.cardGapH}
+                        onChange={(v) => updateSetting('cardGapH', typeof v === 'number' ? v : 16)}
                         min={0}
                         max={48}
                         step={2}
                       />
                       <NumberInput
-                        label="Max Columns (auto mode)"
-                        description="Cap the number of columns when using Auto layout. 0 = unlimited."
-                        value={settings.cardMaxColumns}
-                        onChange={(v) => updateSetting('cardMaxColumns', typeof v === 'number' ? v : 0)}
+                        label="Vertical Gap (px)"
+                        description="Vertical spacing between campaign card rows"
+                        value={settings.cardGapV}
+                        onChange={(v) => updateSetting('cardGapV', typeof v === 'number' ? v : 16)}
                         min={0}
-                        max={8}
+                        max={48}
+                        step={2}
                       />
+                      <NumberInput
+                        label="Card Max Width (px)"
+                        description="Limit individual card width. 0 = no limit (fill column)."
+                        value={settings.cardMaxWidth}
+                        onChange={(v) => updateSetting('cardMaxWidth', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={800}
+                        step={10}
+                        placeholder="0 = unlimited"
+                      />
+                      {settings.cardGridColumns === 0 && (
+                        <NumberInput
+                          label="Max Columns (auto mode)"
+                          description="Cap the number of columns when using Auto layout. 0 = unlimited."
+                          value={settings.cardMaxColumns}
+                          onChange={(v) => updateSetting('cardMaxColumns', typeof v === 'number' ? v : 0)}
+                          min={0}
+                          max={8}
+                        />
+                      )}
                       <Select
                         label="Card Aspect Ratio"
                         description="Lock cards to a fixed aspect ratio"
@@ -2308,17 +2337,16 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             </Tabs.Panel>
 
           </Tabs>
+        </Stack>
+        </Box>
 
-          {/* ── Footer (sticky) ─────────────────────────────── */}
+          {/* ── Footer (fixed outside scroll area) ───────── */}
           <Box
             style={{
-              position: 'sticky',
-              bottom: 0,
-              zIndex: 10,
-              background: 'var(--mantine-color-body)',
+              flexShrink: 0,
               borderTop: '1px solid var(--mantine-color-default-border)',
-              padding: 'var(--mantine-spacing-sm) 0',
-              marginTop: 'var(--mantine-spacing-md)',
+              boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
+              padding: 'var(--mantine-spacing-sm) var(--mantine-spacing-md)',
             }}
           >
             <Group justify="flex-end" gap="sm">
@@ -2332,7 +2360,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               </Button>
             </Group>
           </Box>
-        </Stack>
+        </>
       )}
     </Modal>
   );

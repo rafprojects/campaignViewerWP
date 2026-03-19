@@ -634,12 +634,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
           />
         </Table.Td>
         <Table.Td>
-          <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
+          <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
           <Group gap={4} mt={4}>
             <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
             <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
           </Group>
-          <Text size="xs" c="gray.4" lineClamp={1}>{item.url}</Text>
+          <Text size="xs" c="dimmed" lineClamp={1}>{item.url}</Text>
         </Table.Td>
         <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
         <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
@@ -719,7 +719,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     <div>
       <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
         <Group gap="md" wrap="wrap">
-          <Text fw={700} c="white">Media</Text>
+          <Text fw={700}>Media</Text>
           <Text size="sm" c="dimmed">({displayedMedia.length}{orphanFilter ? ` / ${media.length}` : ''} items)</Text>
         </Group>
         <Group gap="sm" wrap="wrap" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
@@ -845,7 +845,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
           <DragOverlay>
             {activeMediaItem ? (
               <Card withBorder shadow="sm" radius="md" p="xs" style={{ minWidth: 160, opacity: 0.95 }}>
-                <Text size="sm" c="gray.1" lineClamp={1}>{activeMediaItem.caption || 'Dragging media'}</Text>
+                <Text size="sm" lineClamp={1}>{activeMediaItem.caption || 'Dragging media'}</Text>
               </Card>
             ) : null}
           </DragOverlay>

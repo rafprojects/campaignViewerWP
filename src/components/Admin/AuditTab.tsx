@@ -37,7 +37,7 @@ export function AuditTab({
 }: AuditTabProps) {
   return (
     <>
-      <Text size="sm" fw={600} c="gray.2" id="audit-heading" mb="xs">
+      <Text size="sm" fw={600} id="audit-heading" mb="xs">
         Campaign Audit Log
       </Text>
       <Group mb="md">

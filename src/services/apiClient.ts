@@ -363,7 +363,10 @@ export class ApiClient {
 
   async listAccessRequests(campaignId: string, status?: string): Promise<AccessRequest[]> {
     const qs = status ? `?status=${encodeURIComponent(status)}` : '';
-    return this.get<AccessRequest[]>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests${qs}`);
+    const response = await this.get<AccessRequest[] | { items?: AccessRequest[] }>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests${qs}`);
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response.items)) return response.items;
+    return [];
   }
 
   async approveAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
@@ -465,7 +468,8 @@ export interface SettingsResponse {
   cardThumbnailHeight?: number;
   cardThumbnailFit?: string;
   cardGridColumns?: number;
-  cardGap?: number;
+  cardGapH?: number;
+  cardGapV?: number;
   modalCoverHeight?: number;
   modalTransition?: string;
   modalTransitionDuration?: number;

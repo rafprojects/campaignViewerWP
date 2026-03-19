@@ -88,11 +88,12 @@ function ThemedApp({
       forceColorScheme={colorScheme}
       // Scope Mantine CSS variables into shadow root or document :root
       cssVariablesSelector={isShadowDom ? ':host' : ':root'}
-      // Portal targets (modals, tooltips) render inside shadow root
+      // getRootElement controls where data-mantine-color-scheme is set.
+      // Must match cssVariablesSelector: :host → shadow host, :root → <html>.
       getRootElement={() =>
         isShadowDom && shadowRootEl
-          ? (shadowRootEl.querySelector('[data-wpsg-mount]') as HTMLElement) ?? document.body
-          : document.body
+          ? (shadowRootEl.host as HTMLElement) ?? document.documentElement
+          : document.documentElement
       }
     >
       <Notifications />

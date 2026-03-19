@@ -29,7 +29,7 @@ export function ArchiveCompanyModal({
   onConfirm,
   accessSaving,
 }: ArchiveCompanyModalProps) {
-  const campaignsToArchive = company?.campaigns.filter((c) => c.status !== 'archived') ?? [];
+  const campaignsToArchive = (Array.isArray(company?.campaigns) ? company.campaigns : []).filter((c) => c.status !== 'archived');
 
   return (
     <ConfirmModal
