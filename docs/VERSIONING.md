@@ -12,6 +12,18 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.20.0 (March 19, 2026)
+- **MINOR**: Phase 22 — Layout Fixes, Theme Contrast & WCAG AA Compliance
+  - **P22-A**: CardGallery cardMaxWidth layout fix — replaced wrapper div pattern with conditional flex/SimpleGrid.
+  - **P22-B**: Company logo auto-detection — shared CompanyLogo component renders URLs as images, text as spans.
+  - **P22-C**: CampaignViewer IIFE refactor — extracted 3 local gallery section components.
+  - **P22-D**: Replaced getEffectiveColumns manual resize listener with Mantine useMediaQuery hooks.
+  - **P22-E**: Gallery overlay contrast hardening — shared constants at rgba(0,0,0,0.7), applied to all 6 adapters.
+  - **P22-F**: Theme textMuted2 WCAG AA contrast audit — all 13 non-compliant themes corrected to ≥4.5:1.
+  - **P22-G**: WCAG AA compliance fixes — close button contrast, icon opacity, stats role, empty media message, aria-labels.
+  - **P22-H**: Added github-light and catppuccin-latte light themes.
+  - **P22-I**: Draggable auth bar position fix — deferred init via useEffect, resize re-clamping, null guard.
+
 ### v0.19.0 (March 18, 2026)
 - **MINOR**: Phase 21 — UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings
   - **P21-A**: Bug fixes and UX hardening across theme persistence, modal unification, and settings workflows.
