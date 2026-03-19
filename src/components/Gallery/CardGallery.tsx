@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput, Switch, Select, ColorInput } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
 import { OverlayArrows } from '@/components/Campaign/OverlayArrows';
@@ -72,27 +73,16 @@ export function CardGallery({
   const displayMode = galleryBehaviorSettings.cardDisplayMode ?? 'load-more';
 
   /** Resolve effective column count based on settings + current breakpoint. */
-  const getEffectiveColumns = useCallback((): number => {
+  const isLg = useMediaQuery('(min-width: 1200px)');
+  const isSm = useMediaQuery('(min-width: 768px)');
+  const effectiveColumns = useMemo((): number => {
     const cols = galleryBehaviorSettings.cardGridColumns;
     const max = galleryBehaviorSettings.cardMaxColumns || 0;
     if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
-    // Responsive auto: match Mantine's base:1 sm:2 lg:3 breakpoints
-    const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
-    let auto = 1;
-    if (w >= 1200) auto = 3;
-    else if (w >= 768) auto = 2;
+    // Responsive auto: base:1 sm:2 lg:3
+    const auto = isLg ? 3 : isSm ? 2 : 1;
     return max > 0 ? Math.min(auto, max) : auto;
-  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns]);
-
-  const [effectiveColumns, setEffectiveColumns] = useState(getEffectiveColumns);
-
-  // Update columns on resize
-  useEffect(() => {
-    if (displayMode !== 'paginated') return;
-    const handleResize = () => setEffectiveColumns(getEffectiveColumns());
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [displayMode, getEffectiveColumns]);
+  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isLg, isSm]);
 
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
@@ -382,26 +372,51 @@ export function CardGallery({
           aria-label={displayMode === 'paginated' ? `Card gallery page ${currentPage + 1} of ${totalPages}` : undefined}
         >
           <div style={slideStyle}>
-            <SimpleGrid
-              cols={galleryBehaviorSettings.cardGridColumns > 0
-                ? galleryBehaviorSettings.cardGridColumns
-                : galleryBehaviorSettings.cardMaxColumns > 0
-                  ? { base: 1, sm: Math.min(2, galleryBehaviorSettings.cardMaxColumns), lg: Math.min(3, galleryBehaviorSettings.cardMaxColumns) }
-                  : { base: 1, sm: 2, lg: 3 }
-              }
-              spacing={galleryBehaviorSettings.cardGap}
-            >
-              {visibleCampaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  hasAccess={hasAccess(campaign.id, campaign.visibility)}
-                  onClick={() => setSelectedCampaign(campaign)}
-                  settings={galleryBehaviorSettings}
-                  apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
-                />
-              ))}
-            </SimpleGrid>
+            {galleryBehaviorSettings.cardMaxWidth > 0 ? (
+              <Box
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
+                  justifyContent: 'center',
+                  width: '100%',
+                }}
+              >
+                {visibleCampaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    hasAccess={hasAccess(campaign.id, campaign.visibility)}
+                    onClick={() => setSelectedCampaign(campaign)}
+                    settings={galleryBehaviorSettings}
+                    apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
+                    maxWidth={galleryBehaviorSettings.cardMaxWidth}
+                  />
+                ))}
+              </Box>
+            ) : (
+              <SimpleGrid
+                cols={galleryBehaviorSettings.cardGridColumns > 0
+                  ? galleryBehaviorSettings.cardGridColumns
+                  : galleryBehaviorSettings.cardMaxColumns > 0
+                    ? { base: 1, sm: Math.min(2, galleryBehaviorSettings.cardMaxColumns), lg: Math.min(3, galleryBehaviorSettings.cardMaxColumns) }
+                    : { base: 1, sm: 2, lg: 3 }
+                }
+                spacing={galleryBehaviorSettings.cardGapH}
+                verticalSpacing={galleryBehaviorSettings.cardGapV}
+              >
+                {visibleCampaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    hasAccess={hasAccess(campaign.id, campaign.visibility)}
+                    onClick={() => setSelectedCampaign(campaign)}
+                    settings={galleryBehaviorSettings}
+                    apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
+                  />
+                ))}
+              </SimpleGrid>
+            )}
           </div>
 
           {/* Overlay arrows for paginated mode */}
@@ -441,6 +456,7 @@ export function CardGallery({
               variant="light"
               size="md"
               onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_SIZE)}
+              aria-label={`Load ${filteredCampaigns.length - visibleCount} more campaigns`}
             >
               Load more ({filteredCampaigns.length - visibleCount} remaining)
             </Button>

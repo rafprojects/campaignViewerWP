@@ -6,6 +6,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { RequestAccessForm } from './RequestAccessForm';
+import { CompanyLogo } from '@/components/shared/CompanyLogo';
 import styles from './CampaignCard.module.scss';
 
 interface CampaignCardProps {
@@ -14,10 +15,11 @@ interface CampaignCardProps {
   onClick: () => void;
   settings?: GalleryBehaviorSettings;
   apiClient?: ApiClient;
+  maxWidth?: number;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
-  ({ campaign, hasAccess, onClick, settings, apiClient }, ref) => {
+  ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth }, ref) => {
     const borderRadius = settings?.cardBorderRadius ?? 8;
     const borderWidth = settings?.cardBorderWidth ?? 4;
     const borderMode = settings?.cardBorderMode ?? 'auto';
@@ -56,6 +58,8 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
         style={{
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,
+          width: '100%',
+          ...(maxWidth ? { maxWidth: `${maxWidth}px` } : {}),
         }}
       >
         <Card
@@ -164,7 +168,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
               style={{ backgroundColor: campaign.company.brandColor, overflow: 'hidden', textOverflow: 'ellipsis' }}
             >
               <Group gap={6}>
-                <span>{campaign.company.logo}</span>
+                <CompanyLogo logo={campaign.company.logo} companyName={campaign.company.name} />
                 <span>{campaign.company.name}</span>
               </Group>
             </Badge>
