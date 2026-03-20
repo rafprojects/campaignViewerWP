@@ -37,6 +37,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rate-limiter.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-image-optimizer.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-layout-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-overlay-library.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');

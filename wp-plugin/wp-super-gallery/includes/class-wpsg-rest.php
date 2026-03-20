@@ -560,6 +560,28 @@ class WPSG_REST {
             ],
         ]);
 
+        // P22-L5: Custom font library (admin, campaign-agnostic).
+        register_rest_route('wp-super-gallery/v1', '/admin/font-library', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_font_library'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'upload_font'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/font-library/(?P<id>[a-f0-9\-]{36})', [
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_font'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // P15-B: Public read-only endpoint for rendering (no auth, ID-based only).
         register_rest_route('wp-super-gallery/v1', '/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
             [
@@ -4367,6 +4389,58 @@ class WPSG_REST {
         $deleted = WPSG_Overlay_Library::remove( $id );
         if ( ! $deleted ) {
             return new WP_Error( 'wpsg_overlay_not_found', 'Overlay not found.', [ 'status' => 404 ] );
+        }
+        return new WP_REST_Response( [ 'deleted' => true ], 200 );
+    }
+
+    // ── Font Library (P22-L5) ───────────────────────────────────
+
+    /**
+     * List all uploaded custom fonts.
+     */
+    public static function list_font_library( $request ) {
+        $items = WPSG_Font_Library::get_all();
+        return new WP_REST_Response( $items, 200 );
+    }
+
+    /**
+     * Upload a new custom font file.
+     */
+    public static function upload_font( $request ) {
+        if ( empty( $_FILES['file'] ) ) {
+            return new WP_Error( 'wpsg_missing_file', 'A font file is required.', [ 'status' => 400 ] );
+        }
+
+        $result = WPSG_Font_Library::handle_upload( $_FILES['file'] );
+        if ( is_wp_error( $result ) ) {
+            return new WP_Error( 'wpsg_font_upload_failed', $result->get_error_message(), [ 'status' => 400 ] );
+        }
+
+        $name = sanitize_text_field( $request->get_param( 'name' ) ?? '' );
+        if ( empty( $name ) ) {
+            // Derive name from filename: "BrandSans-Bold.woff2" → "BrandSans Bold"
+            $name = pathinfo( sanitize_file_name( $_FILES['file']['name'] ), PATHINFO_FILENAME );
+            $name = str_replace( [ '-', '_' ], ' ', $name );
+        }
+
+        $entry = WPSG_Font_Library::add( [
+            'url'      => $result['url'],
+            'name'     => $name,
+            'filename' => sanitize_file_name( $_FILES['file']['name'] ),
+            'format'   => $result['format'],
+        ] );
+
+        return new WP_REST_Response( $entry, 201 );
+    }
+
+    /**
+     * Remove a custom font entry and its file.
+     */
+    public static function delete_font( $request ) {
+        $id      = $request->get_param( 'id' );
+        $deleted = WPSG_Font_Library::remove( $id );
+        if ( ! $deleted ) {
+            return new WP_Error( 'wpsg_font_not_found', 'Font not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'deleted' => true ], 200 );
     }

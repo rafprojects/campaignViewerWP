@@ -46,8 +46,9 @@ import {
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { SettingTooltip } from './SettingTooltip';
-import { TypographyEditor } from '../shared/TypographyEditor';
+import { TypographyEditor, type CustomFontEntry } from '../shared/TypographyEditor';
 import { GradientEditor } from '../shared/GradientEditor';
+import { FontLibraryManager } from './FontLibraryManager';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
@@ -99,6 +100,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const [hasChanges, setHasChanges] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<SettingsData>(seedSettings);
   const [activeTab, setActiveTab] = useState<string | null>('general');
+  const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
   const hasChangesRef = useRef(false);
 
   const loadSettings = useCallback(async () => {
@@ -2209,6 +2211,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 <Text size="sm" c="dimmed">
                   Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults.
                 </Text>
+                <FontLibraryManager
+                  apiClient={apiClient}
+                  onFontsChange={(fonts) => setCustomFonts(fonts.map((f) => ({ name: f.name, family: `'${f.name}', sans-serif` })))}
+                />
+
+                <Divider label="Element Overrides" labelPosition="left" />
+
                 <Button
                   variant="subtle"
                   color="red"
@@ -2225,6 +2234,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['viewerTitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('viewerTitle', v)}
                       />
                     </Accordion.Panel>
@@ -2234,6 +2244,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['viewerSubtitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('viewerSubtitle', v)}
                       />
                     </Accordion.Panel>
@@ -2245,6 +2256,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardTitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardTitle', v)}
                       />
                     </Accordion.Panel>
@@ -2254,6 +2266,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardDescription'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardDescription', v)}
                       />
                     </Accordion.Panel>
@@ -2263,6 +2276,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardCompanyName'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardCompanyName', v)}
                       />
                     </Accordion.Panel>
@@ -2272,6 +2286,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardMediaCounts'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardMediaCounts', v)}
                       />
                     </Accordion.Panel>
@@ -2283,6 +2298,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignTitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignTitle', v)}
                       />
                     </Accordion.Panel>
@@ -2292,6 +2308,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignDescription'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignDescription', v)}
                       />
                     </Accordion.Panel>
@@ -2301,6 +2318,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignDate'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignDate', v)}
                       />
                     </Accordion.Panel>
@@ -2310,6 +2328,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignAboutHeading'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignAboutHeading', v)}
                       />
                     </Accordion.Panel>
@@ -2319,6 +2338,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignStatsValue'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignStatsValue', v)}
                       />
                     </Accordion.Panel>
@@ -2328,6 +2348,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignStatsLabel'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignStatsLabel', v)}
                       />
                     </Accordion.Panel>
@@ -2339,6 +2360,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['galleryLabel'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('galleryLabel', v)}
                       />
                     </Accordion.Panel>
@@ -2348,6 +2370,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['mediaCaption'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('mediaCaption', v)}
                       />
                     </Accordion.Panel>
@@ -2359,6 +2382,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['authBarText'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('authBarText', v)}
                       />
                     </Accordion.Panel>
@@ -2368,6 +2392,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['accessBadgeText'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('accessBadgeText', v)}
                       />
                     </Accordion.Panel>

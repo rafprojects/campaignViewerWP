@@ -679,6 +679,58 @@ class WPSG_Settings {
     }
 
     /**
+     * Google Font family names that may be loaded from the CDN.
+     * Must stay in sync with GOOGLE_FONT_NAMES in TypographyEditor.tsx.
+     */
+    const GOOGLE_FONT_NAMES = [
+        // Sans-serif
+        'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins',
+        'Oswald', 'Raleway', 'Nunito', 'Source Sans 3', 'PT Sans', 'Noto Sans',
+        'Work Sans', 'Quicksand', 'Barlow', 'Cabin', 'DM Sans', 'Fira Sans',
+        'Karla', 'Mulish', 'Rubik', 'Ubuntu', 'Josefin Sans', 'Manrope',
+        'Plus Jakarta Sans', 'Outfit',
+        // Serif
+        'Playfair Display', 'Merriweather', 'Libre Baskerville', 'Crimson Text',
+        'EB Garamond', 'Bitter', 'Cormorant Garamond', 'Lora', 'PT Serif',
+        'Noto Serif',
+        // Display / Handwriting
+        'Dancing Script', 'Pacifico', 'Lobster', 'Caveat', 'Satisfy',
+        // Monospace
+        'Fira Code', 'JetBrains Mono', 'Source Code Pro',
+    ];
+
+    /**
+     * Extract Google Font family names from typography_overrides.
+     *
+     * @param array $settings Plugin settings array.
+     * @return array Deduplicated Google Font family names.
+     */
+    public static function extract_google_font_families($settings) {
+        $raw = isset($settings['typography_overrides']) ? $settings['typography_overrides'] : '{}';
+        $overrides = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : []);
+        if (!is_array($overrides)) {
+            return [];
+        }
+
+        $families = [];
+        $google_set = array_flip(self::GOOGLE_FONT_NAMES);
+
+        foreach ($overrides as $entry) {
+            if (!is_array($entry) || empty($entry['fontFamily'])) {
+                continue;
+            }
+            // fontFamily is like "Roboto, sans-serif" — extract first name.
+            $parts = explode(',', $entry['fontFamily']);
+            $name = trim($parts[0], " \t\n\r\0\x0B\"'");
+            if ($name !== '' && isset($google_set[$name])) {
+                $families[$name] = true;
+            }
+        }
+
+        return array_keys($families);
+    }
+
+    /**
      * Get all settings with defaults applied.
      *
      * @return array Settings array.
@@ -1189,7 +1241,8 @@ class WPSG_Settings {
                 $decoded = [];
             }
             $allowed_props = [
-                'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
+                'fontFamily', 'fontFallback1', 'fontFallback2',
+                'fontSize', 'fontWeight', 'fontStyle',
                 'textTransform', 'textDecoration', 'lineHeight',
                 'letterSpacing', 'wordSpacing', 'color',
                 'textStrokeWidth', 'textStrokeColor',
