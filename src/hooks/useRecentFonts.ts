@@ -8,14 +8,24 @@ function emitChange() {
   for (const l of listeners) l();
 }
 
+/** Cached snapshot — avoids creating a new array reference on every getSnapshot call. */
+let cachedRaw: string | null = null;
+let cachedSnapshot: string[] = [];
+
 function getSnapshot(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
+    if (raw !== cachedRaw) {
+      cachedRaw = raw;
+      cachedSnapshot = raw ? (JSON.parse(raw) as string[]) : [];
+    }
+    return cachedSnapshot;
   } catch {
-    return [];
+    return cachedSnapshot;
   }
 }
+
+const SERVER_SNAPSHOT: string[] = [];
 
 function subscribe(listener: () => void): () => void {
   listeners = [...listeners, listener];
@@ -30,7 +40,7 @@ function subscribe(listener: () => void): () => void {
  * page sees the same list without prop-drilling.
  */
 export function useRecentFonts() {
-  const recent = useSyncExternalStore(subscribe, getSnapshot, () => [] as string[]);
+  const recent = useSyncExternalStore(subscribe, getSnapshot, () => SERVER_SNAPSHOT);
 
   const addRecentFont = useCallback((fontFamily: string) => {
     if (!fontFamily) return;
