@@ -106,8 +106,13 @@ class WPSG_Embed {
         if (class_exists('WPSG_Settings')) {
             $families = WPSG_Settings::extract_google_font_families($settings);
             if (!empty($families)) {
-                $params = array_map(function ($f) {
-                    return 'family=' . rawurlencode($f) . ':ital,wght@0,100..900;1,100..900';
+                $specs = WPSG_Settings::GOOGLE_FONT_SPECS;
+                $params = array_map(function ($f) use ($specs) {
+                    $spec = isset($specs[$f]) ? $specs[$f] : null;
+                    if ($spec === null) {
+                        return 'family=' . rawurlencode($f);
+                    }
+                    return 'family=' . rawurlencode($f) . ':' . $spec;
                 }, $families);
                 $url = 'https://fonts.googleapis.com/css2?' . implode('&', $params) . '&display=swap';
                 wp_enqueue_style('wpsg-google-fonts', $url, [], null);

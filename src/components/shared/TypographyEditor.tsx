@@ -253,6 +253,9 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
             // Auto-populate fallback 1 from the suggestion map
             const suggestions = FONT_FALLBACK_MAP[name];
             const autoFb1 = (!value.fontFallback1 && suggestions?.[0]) ? suggestions[0] : value.fontFallback1;
+            if (!value.fontFallback1 && suggestions?.[0]) {
+              console.debug(`[WP Super Gallery] Auto-selected fallback "${suggestions[0]}" for font "${name}"`);
+            }
             onChange(clean({ ...value, fontFamily: v, fontFallback1: autoFb1 }));
           } else {
             // Cleared primary — clear fallbacks too
