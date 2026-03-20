@@ -186,6 +186,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
 
   const fontFamilyData = useMemo(() => {
     const groups: { group: string; items: { value: string; label: string }[] }[] = [];
+    const usedValues = new Set<string>();
 
     if (recentFonts.length > 0) {
       // Build recent options from all pools
@@ -195,15 +196,19 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
       const recentItems = recentFonts
         .map((name) => allOptions.find((o) => o.label === name))
         .filter((o): o is { value: string; label: string } => !!o);
-      if (recentItems.length > 0) groups.push({ group: 'Recently Used', items: recentItems });
+      if (recentItems.length > 0) {
+        groups.push({ group: 'Recently Used', items: recentItems });
+        for (const item of recentItems) usedValues.add(item.value);
+      }
     }
 
     if (customFonts && customFonts.length > 0) {
-      groups.push({ group: 'Custom Fonts', items: customFonts.map((f) => ({ value: f.family, label: f.name })) });
+      const items = customFonts.map((f) => ({ value: f.family, label: f.name })).filter((o) => !usedValues.has(o.value));
+      if (items.length > 0) groups.push({ group: 'Custom Fonts', items });
     }
 
-    groups.push({ group: 'System Fonts', items: [...SYSTEM_FONT_OPTIONS] });
-    groups.push({ group: 'Google Fonts', items: [...GOOGLE_FONT_OPTIONS] });
+    groups.push({ group: 'System Fonts', items: SYSTEM_FONT_OPTIONS.filter((o) => !usedValues.has(o.value)) });
+    groups.push({ group: 'Google Fonts', items: GOOGLE_FONT_OPTIONS.filter((o) => !usedValues.has(o.value)) });
 
     return groups;
   }, [recentFonts, customFonts]);
