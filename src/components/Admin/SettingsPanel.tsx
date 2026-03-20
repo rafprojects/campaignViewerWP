@@ -1989,6 +1989,15 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           min={1} max={3} step={0.1} />
                         <NumberInput label={tt('Mobile Breakpoint (px)', 'modalMobileBreakpoint')} value={settings.modalMobileBreakpoint}
                           onChange={(v) => updateSetting('modalMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
+                        <NumberInput label={tt('Gallery Max Width (px)', 'modalGalleryMaxWidth')} description="0 = full responsive width in fullscreen mode"
+                          value={settings.modalGalleryMaxWidth}
+                          onChange={(v) => updateSetting('modalGalleryMaxWidth', typeof v === 'number' ? v : 0)} min={0} max={3000} step={50} />
+                        <NumberInput label={tt('Gallery Section Gap (px)', 'modalGalleryGap')}
+                          value={settings.modalGalleryGap}
+                          onChange={(v) => updateSetting('modalGalleryGap', typeof v === 'number' ? v : 32)} min={0} max={120} step={4} />
+                        <NumberInput label={tt('Gallery Edge Margin (px)', 'modalGalleryMargin')}
+                          value={settings.modalGalleryMargin}
+                          onChange={(v) => updateSetting('modalGalleryMargin', typeof v === 'number' ? v : 0)} min={0} max={120} step={4} />
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>

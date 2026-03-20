@@ -752,6 +752,10 @@ export interface GalleryBehaviorSettings {
   modalBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   modalBgColor: string;
   modalBgGradient: import('@/utils/gradientCss').GradientOptions;
+  // P22-M: Modal gallery width/gap/margin
+  modalGalleryMaxWidth: number;
+  modalGalleryGap: number;
+  modalGalleryMargin: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -1022,4 +1026,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   modalBgType: 'theme',
   modalBgColor: '',
   modalBgGradient: {},
+  // P22-M: Modal gallery width/gap/margin
+  modalGalleryMaxWidth: 0,
+  modalGalleryGap: 32,
+  modalGalleryMargin: 0,
 };

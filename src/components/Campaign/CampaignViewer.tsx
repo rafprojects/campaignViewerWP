@@ -362,6 +362,12 @@ export function CampaignViewer({
 
           {/* Media Sections */}
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
+          <Box style={{
+            maxWidth: s.modalGalleryMaxWidth > 0 ? `${s.modalGalleryMaxWidth}px` : '100%',
+            marginInline: 'auto',
+            paddingLeft: s.modalGalleryMargin > 0 ? `${s.modalGalleryMargin}px` : undefined,
+            paddingRight: s.modalGalleryMargin > 0 ? `${s.modalGalleryMargin}px` : undefined,
+          }}>
             <Suspense fallback={
               <Center py="xl" mih={200}>
                 <Stack align="center" gap="xs">
@@ -370,6 +376,7 @@ export function CampaignViewer({
                 </Stack>
               </Center>
             }>
+            <Stack gap={s.modalGalleryGap ?? 32}>
               {galleryBehaviorSettings.unifiedGalleryEnabled ? (
                 <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} isAdmin={isAdmin} />
               ) : (
@@ -382,7 +389,9 @@ export function CampaignViewer({
                   )}
                 </>
               )}
+            </Stack>
             </Suspense>
+          </Box>
           )}
 
           {hasAccess && campaign.videos.length === 0 && campaign.images.length === 0 && (

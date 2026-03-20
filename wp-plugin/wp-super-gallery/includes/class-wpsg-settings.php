@@ -310,6 +310,10 @@ class WPSG_Settings {
         'gallery_video_label'            => 'Videos',
         'gallery_label_justification'    => 'left',
         'show_gallery_label_icon'        => false,
+        // P22-M: Modal gallery width/gap/margin
+        'modal_gallery_max_width'        => 0,
+        'modal_gallery_gap'              => 32,
+        'modal_gallery_margin'           => 0,
     ];
 
     /**
@@ -538,6 +542,10 @@ class WPSG_Settings {
         'fullscreen_content_max_width' => [0, 3000],
         // P22-K: Modal max width (0 = default 'xl')
         'modal_max_width'              => [0, 3000],
+        // P22-M: Modal gallery width/gap/margin
+        'modal_gallery_max_width'      => [0, 3000],
+        'modal_gallery_gap'            => [0, 120],
+        'modal_gallery_margin'         => [0, 120],
     ];
 
     /**
