@@ -1,5 +1,5 @@
 # Phase 22 — Layout Fixes, Theme Contrast & WCAG AA Compliance
-**Status:** In Progress 🚧 (P22-A–J complete, K implemented, L tracks planned)
+**Status:** In Progress 🚧 (P22-A–J complete, K implemented, L1–L6 complete)
 **Version:** v0.20.0
 **Created:** March 19, 2026
 **Last updated:** March 20, 2026
@@ -23,12 +23,12 @@
 | P22-K3 | Fullscreen modal background settings | Complete ✅ | Low–Medium (2–3 hours) |
 | P22-K4 | Mirror card distribution to CompactGrid adapter | Complete ✅ | Medium (2–3 hours) |
 | P22-K5 | Move admin actions into AuthBar | Complete ✅ | Medium (3–4 hours) |
-| P22-L1 | Font loading resilience & error handling | Planned 📋 | Small (1–2 hours) |
-| P22-L2 | Grouped font picker + expanded Google Fonts list | Planned 📋 | Medium (2–3 hours) |
-| P22-L3 | Font fallback chain picker | Planned 📋 | Medium (2–3 hours) |
-| P22-L4 | PHP server-side Google Fonts enqueueing | Planned 📋 | Small (1–2 hours) |
-| P22-L5 | Custom font upload infrastructure (PHP) | Planned 📋 | Medium (3–4 hours) |
-| P22-L6 | Custom font upload UI + font picker integration | Planned 📋 | Medium (3–4 hours) |
+| P22-L1 | Font loading resilience & error handling | Complete ✅ | Small (1–2 hours) |
+| P22-L2 | Grouped font picker + expanded Google Fonts list | Complete ✅ | Medium (2–3 hours) |
+| P22-L3 | Font fallback chain picker | Complete ✅ | Medium (2–3 hours) |
+| P22-L4 | PHP server-side Google Fonts enqueueing | Complete ✅ | Small (1–2 hours) |
+| P22-L5 | Custom font upload infrastructure (PHP) | Complete ✅ | Medium (3–4 hours) |
+| P22-L6 | Custom font upload UI + font picker integration | Complete ✅ | Medium (3–4 hours) |
 | P22-L7 | Font system end-to-end manual QA | Planned 📋 | Small (1–2 hours) |
 
 ---
@@ -1325,11 +1325,17 @@ Add a module-level `Set<string>` tracking fonts that failed to load. Export `get
 - `src/components/Campaign/CampaignViewer.tsx` — add loadGoogleFontsFromOverrides useEffect
 
 ### Acceptance Criteria
-- [ ] `crossOrigin="anonymous"` present on all injected `<link>` elements
-- [ ] When Google Fonts CDN is blocked: `console.warn` appears with font name
-- [ ] CampaignViewer preloads Google Fonts from typography overrides on open
-- [ ] `getFailedFonts()` correctly tracks fonts that failed to load
-- [ ] Fonts that loaded successfully are not re-requested (dedup still works)
+- [x] `crossOrigin="anonymous"` present on all injected `<link>` elements
+- [x] When Google Fonts CDN is blocked: `console.warn` appears with font name
+- [x] CampaignViewer preloads Google Fonts from typography overrides on open
+- [x] `getFailedFonts()` correctly tracks fonts that failed to load
+- [x] Fonts that loaded successfully are not re-requested (dedup still works)
+
+### Implementation Result
+
+**Commit:** `9c5d2f2` (with L-2)
+- `loadGoogleFont.ts`: Added `crossOrigin = 'anonymous'`, `onerror` handler with `console.warn`, module-level `failed` Set, exported `getFailedFonts()`
+- `CampaignViewer.tsx`: Added `loadGoogleFontsFromOverrides` useEffect on settings change
 
 ---
 
@@ -1380,14 +1386,22 @@ Add optional `customFonts?: Array<{ name: string; family: string }>` prop to rec
 - `src/utils/loadGoogleFont.ts` — expanded GOOGLE_FONT_NAMES set (or move to shared data file)
 
 ### Acceptance Criteria
-- [ ] Font picker shows 4 groups: Recently Used, System Fonts, Google Fonts, Custom Fonts
-- [ ] ~40 Google Fonts available in the Google Fonts group
-- [ ] System Fonts group contains ~10 always-available fonts
-- [ ] Recently Used group shows last 8 selected fonts (persisted across page loads via localStorage)
-- [ ] Selecting a Google Font triggers `loadGoogleFont()` as before
-- [ ] Selecting a System Font does NOT trigger any CDN request
-- [ ] Custom Fonts group is empty (populated later by L-6)
-- [ ] Searchable — typing a font name filters across all groups
+- [x] Font picker shows 4 groups: Recently Used, System Fonts, Google Fonts, Custom Fonts
+- [x] ~40 Google Fonts available in the Google Fonts group
+- [x] System Fonts group contains ~10 always-available fonts
+- [x] Recently Used group shows last 8 selected fonts (persisted across page loads via localStorage)
+- [x] Selecting a Google Font triggers `loadGoogleFont()` as before
+- [x] Selecting a System Font does NOT trigger any CDN request
+- [x] Custom Fonts group is empty (populated later by L-6)
+- [x] Searchable — typing a font name filters across all groups
+
+### Implementation Result
+
+**Commit:** `9c5d2f2`
+- Expanded `GOOGLE_FONT_NAMES` (10→44 fonts) and `FONT_FAMILIES` (flat array→grouped format)
+- Added `SYSTEM_FONT_OPTIONS` (10 system fonts) and `GOOGLE_FONT_OPTIONS` (44 Google fonts)
+- `useMemo`-based `fontFamilyData` groups: Recently Used / Custom / System / Google
+- Created `useRecentFonts` hook with `useSyncExternalStore` + localStorage
 
 ---
 
@@ -1443,12 +1457,22 @@ If the primary font is in `getFailedFonts()` (from L-1), show a warning badge ne
 - `src/utils/loadGoogleFont.ts` — consume `getFailedFonts()` for warning display
 
 ### Acceptance Criteria
-- [ ] When a primary font is selected, fallback section appears with 2 optional fallback slots
-- [ ] Terminal fallback (`system-ui, sans-serif`) always appended automatically based on font category
-- [ ] Selecting fallbacks updates the stored `fontFamily` CSS string correctly
-- [ ] Clearing all fallbacks preserves the primary + terminal only
-- [ ] Auto-suggest populates fallback 1 with a visually similar font (editable)
-- [ ] Failed fonts show an inline warning badge
+- [x] When a primary font is selected, fallback section appears with 2 optional fallback slots
+- [x] Terminal fallback (`system-ui, sans-serif`) always appended automatically based on font category
+- [x] Selecting fallbacks updates the stored `fontFamily` CSS string correctly
+- [x] Clearing all fallbacks preserves the primary + terminal only
+- [x] Auto-suggest populates fallback 1 with a visually similar font (editable)
+- [x] Failed fonts show an inline warning badge
+
+### Implementation Result
+
+**Commit:** `68f0095`
+- Created `src/data/fontFallbackMap.ts` with `FONT_FALLBACK_MAP` (visual similarity) and `getTerminalFamily()`
+- Added `fontFallback1`/`fontFallback2` to `TypographyOverride` interface
+- Updated `useTypographyStyle.ts` to build combined CSS `fontFamily` string
+- Fallback chain UI: two Selects + terminal label + failed font warning Badge
+- Auto-populates fallback 1 from map on primary selection
+- Fixed batching issue: single `onChange(clean({...}))` call
 - [ ] Existing typography overrides with old-format `fontFamily` values continue to work (backward compatible — the first segment is still the primary font)
 
 ---
@@ -1505,11 +1529,20 @@ WordPress handles the rest — caching plugins, CDN rewrites, and security plugi
 - `wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php` (or equivalent) — `wp_enqueue_style` call in render path
 
 ### Acceptance Criteria
-- [ ] Google Fonts CSS is enqueued via `wp_enqueue_style` when typography overrides reference Google Fonts
-- [ ] Fonts load even when client-side JavaScript injection is blocked
-- [ ] No duplicate font requests (server enqueue + client-side dedup)
-- [ ] Empty typography overrides = no font enqueue (no unnecessary requests)
-- [ ] Fonts not in the Google Fonts list are ignored (no arbitrary URL injection)
+- [x] Google Fonts CSS is enqueued via `wp_enqueue_style` when typography overrides reference Google Fonts
+- [x] Fonts load even when client-side JavaScript injection is blocked
+- [x] No duplicate font requests (server enqueue + client-side dedup)
+- [x] Empty typography overrides = no font enqueue (no unnecessary requests)
+- [x] Fonts not in the Google Fonts list are ignored (no arbitrary URL injection)
+
+### Implementation Result
+
+**Commit:** `20372f1` (with L-5/L-6)
+- Added `GOOGLE_FONT_NAMES` constant (44 fonts) to `class-wpsg-settings.php`
+- Added `extract_google_font_families()` static method
+- Added `wp_enqueue_style('wpsg-google-fonts', ...)` in `class-wpsg-embed.php::render_shortcode()`
+- Google Fonts CSS2 API with `ital,wght@0,100..900;1,100..900` and `display=swap`
+- Added `fontFallback1`/`fontFallback2` to `$allowed_props` in sanitize_settings
 
 ---
 
@@ -1581,14 +1614,24 @@ This CSS is either:
 - `wp-plugin/wp-super-gallery/wp-super-gallery.php` — require new class file
 
 ### Acceptance Criteria
-- [ ] `POST /wp-super-gallery/v1/admin/font-library` accepts .woff2/.woff/.ttf/.otf files (admin-only)
-- [ ] Uploaded fonts stored in `wp-content/uploads/wpsg-fonts/`
-- [ ] `GET /wp-super-gallery/v1/admin/font-library` returns list of uploaded fonts with URLs
-- [ ] `DELETE /wp-super-gallery/v1/admin/font-library/{id}` removes file + metadata
-- [ ] `.htaccess` in `wpsg-fonts/` sets correct Content-Type headers
-- [ ] MIME validation rejects non-font files (e.g., .php, .svg, .js)
-- [ ] Path traversal attempts are blocked
-- [ ] `@font-face` CSS generated correctly for all uploaded fonts
+- [x] `POST /wp-super-gallery/v1/admin/font-library` accepts .woff2/.woff/.ttf/.otf files (admin-only)
+- [x] Uploaded fonts stored in `wp-content/uploads/wpsg-fonts/`
+- [x] `GET /wp-super-gallery/v1/admin/font-library` returns list of uploaded fonts with URLs
+- [x] `DELETE /wp-super-gallery/v1/admin/font-library/{id}` removes file + metadata
+- [x] `.htaccess` in `wpsg-fonts/` sets correct Content-Type headers
+- [x] MIME validation rejects non-font files (e.g., .php, .svg, .js)
+- [x] Path traversal attempts are blocked
+- [x] `@font-face` CSS generated correctly for all uploaded fonts
+
+### Implementation Result
+
+**Commit:** `20372f1` (with L-4/L-6)
+- Created `class-wpsg-font-library.php` modeled on overlay library pattern
+- Upload: `wp_handle_upload()`, MIME validation, format detection, max 2MB
+- Storage: `wpsg_font_library` option with id, name, filename, url, format, uploadedAt
+- `generate_font_face_css()` produces `@font-face` rules with `font-display: swap`
+- `ensure_htaccess()` with PHP execution disabled, CORS headers, MIME corrections
+- REST routes registered in `class-wpsg-rest.php`, required in main plugin file
 
 ---
 
@@ -1635,13 +1678,22 @@ Custom fonts are available in the fallback picker's font list alongside system a
 - `src/services/apiClient.ts` (or equivalent) — font library API calls
 
 ### Acceptance Criteria
-- [ ] Upload .woff2/.woff/.ttf/.otf files via SettingsPanel UI
-- [ ] Uploaded fonts listed with name, format, delete button
-- [ ] Delete removes file from server and refreshes list
-- [ ] Custom fonts appear in "Custom Fonts" group of the font picker
-- [ ] Selecting a custom font applies it correctly (via @font-face injection)
-- [ ] Custom fonts available as fallback options in L-3 fallback chain picker
-- [ ] Non-admin users cannot see or access the upload UI
+- [x] Upload .woff2/.woff/.ttf/.otf files via SettingsPanel UI
+- [x] Uploaded fonts listed with name, format, delete button
+- [x] Delete removes file from server and refreshes list
+- [x] Custom fonts appear in "Custom Fonts" group of the font picker
+- [x] Selecting a custom font applies it correctly (via @font-face injection)
+- [x] Custom fonts available as fallback options in L-3 fallback chain picker
+- [x] Non-admin users cannot see or access the upload UI
+
+### Implementation Result
+
+**Commit:** `20372f1` (with L-4/L-5)
+- Created `FontLibraryManager.tsx` with FileButton upload, font list, format badges, delete
+- Created `loadCustomFonts.ts` utility for `@font-face` injection via `<style>` element
+- Wired into SettingsPanel: `customFonts` state, `FontLibraryManager` in Typography tab
+- `customFonts` prop passed to all 16 TypographyEditor instances
+- Custom fonts appear in grouped font picker via `customFonts` prop
 
 ---
 
