@@ -13,6 +13,8 @@ import { TypographyEditor } from '@/components/shared/TypographyEditor';
 import { resolveAdapterId } from '@/utils/resolveAdapterId';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { buildGradientCss } from '@/utils/gradientCss';
+import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
+import { GOOGLE_FONT_NAMES } from '@/components/shared/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { CompanyLogo } from '@/components/shared/CompanyLogo';
 
@@ -170,6 +172,10 @@ export function CampaignViewer({
     setActiveCampaign(opened ? campaign : null);
     return () => setActiveCampaign(null);
   }, [opened, campaign, setActiveCampaign]);
+  // P22-L1: Preload Google Fonts referenced in typography overrides
+  useEffect(() => {
+    loadGoogleFontsFromOverrides(s.typographyOverrides, GOOGLE_FONT_NAMES);
+  }, [s.typographyOverrides]);
   const inContextSave = useInContextSave(apiClient, s);
   const campaignTitleStyle = useTypographyStyle('campaignTitle', s);
   const campaignDateStyle = useTypographyStyle('campaignDate', s);

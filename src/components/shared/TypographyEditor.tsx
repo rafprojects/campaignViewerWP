@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Accordion,
   ColorInput,
@@ -13,20 +13,57 @@ import {
 import { IconTrash } from '@tabler/icons-react';
 import type { TypographyOverride } from '@/types';
 import { loadGoogleFont } from '@/utils/loadGoogleFont';
+import { useRecentFonts } from '@/hooks/useRecentFonts';
+
+export interface CustomFontEntry {
+  /** Display name, e.g. "BrandSans" */
+  name: string;
+  /** CSS font-family value, e.g. "BrandSans, sans-serif" */
+  family: string;
+}
 
 interface TypographyEditorProps {
   value: TypographyOverride;
   onChange: (updated: TypographyOverride) => void;
+  /** Custom-uploaded fonts available on this site (populated by L-6). */
+  customFonts?: CustomFontEntry[];
 }
 
 /** Names that need to be loaded from Google Fonts CDN. */
-export const GOOGLE_FONT_NAMES = new Set([
-  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat',
-  'Poppins', 'Oswald', 'Raleway', 'Playfair Display', 'Merriweather',
+export const GOOGLE_FONT_NAMES: ReadonlySet<string> = new Set([
+  // Sans-serif
+  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins',
+  'Oswald', 'Raleway', 'Nunito', 'Source Sans 3', 'PT Sans', 'Noto Sans',
+  'Work Sans', 'Quicksand', 'Barlow', 'Cabin', 'DM Sans', 'Fira Sans',
+  'Karla', 'Mulish', 'Rubik', 'Ubuntu', 'Josefin Sans', 'Manrope',
+  'Plus Jakarta Sans', 'Outfit',
+  // Serif
+  'Playfair Display', 'Merriweather', 'Libre Baskerville', 'Crimson Text',
+  'EB Garamond', 'Bitter', 'Cormorant Garamond', 'Lora', 'PT Serif',
+  'Noto Serif',
+  // Display / Handwriting
+  'Dancing Script', 'Pacifico', 'Lobster', 'Caveat', 'Satisfy',
+  // Monospace
+  'Fira Code', 'JetBrains Mono', 'Source Code Pro',
 ]);
 
-const FONT_FAMILIES = [
-  { value: '', label: '(default)' },
+/* ── System fonts — always available, no CDN dependency ──────────────── */
+const SYSTEM_FONT_OPTIONS = [
+  { value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', label: 'System UI' },
+  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+  { value: 'Helvetica, Arial, sans-serif', label: 'Helvetica' },
+  { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
+  { value: 'Tahoma, Geneva, sans-serif', label: 'Tahoma' },
+  { value: 'Trebuchet MS, sans-serif', label: 'Trebuchet MS' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'Times New Roman, Times, serif', label: 'Times New Roman' },
+  { value: 'Courier New, Courier, monospace', label: 'Courier New' },
+  { value: 'monospace', label: 'Monospace' },
+];
+
+/* ── Google Fonts — require CDN load ─────────────────────────────────── */
+const GOOGLE_FONT_OPTIONS = [
+  // Sans-serif
   { value: 'Inter, sans-serif', label: 'Inter' },
   { value: 'Roboto, sans-serif', label: 'Roboto' },
   { value: 'Open Sans, sans-serif', label: 'Open Sans' },
@@ -35,11 +72,45 @@ const FONT_FAMILIES = [
   { value: 'Poppins, sans-serif', label: 'Poppins' },
   { value: 'Oswald, sans-serif', label: 'Oswald' },
   { value: 'Raleway, sans-serif', label: 'Raleway' },
+  { value: 'Nunito, sans-serif', label: 'Nunito' },
+  { value: 'Source Sans 3, sans-serif', label: 'Source Sans 3' },
+  { value: 'PT Sans, sans-serif', label: 'PT Sans' },
+  { value: 'Noto Sans, sans-serif', label: 'Noto Sans' },
+  { value: 'Work Sans, sans-serif', label: 'Work Sans' },
+  { value: 'Quicksand, sans-serif', label: 'Quicksand' },
+  { value: 'Barlow, sans-serif', label: 'Barlow' },
+  { value: 'Cabin, sans-serif', label: 'Cabin' },
+  { value: 'DM Sans, sans-serif', label: 'DM Sans' },
+  { value: 'Fira Sans, sans-serif', label: 'Fira Sans' },
+  { value: 'Karla, sans-serif', label: 'Karla' },
+  { value: 'Mulish, sans-serif', label: 'Mulish' },
+  { value: 'Rubik, sans-serif', label: 'Rubik' },
+  { value: 'Ubuntu, sans-serif', label: 'Ubuntu' },
+  { value: 'Josefin Sans, sans-serif', label: 'Josefin Sans' },
+  { value: 'Manrope, sans-serif', label: 'Manrope' },
+  { value: 'Plus Jakarta Sans, sans-serif', label: 'Plus Jakarta Sans' },
+  { value: 'Outfit, sans-serif', label: 'Outfit' },
+  // Serif
   { value: 'Playfair Display, serif', label: 'Playfair Display' },
   { value: 'Merriweather, serif', label: 'Merriweather' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: 'system-ui, sans-serif', label: 'System UI' },
-  { value: 'monospace', label: 'Monospace' },
+  { value: 'Libre Baskerville, serif', label: 'Libre Baskerville' },
+  { value: 'Crimson Text, serif', label: 'Crimson Text' },
+  { value: 'EB Garamond, serif', label: 'EB Garamond' },
+  { value: 'Bitter, serif', label: 'Bitter' },
+  { value: 'Cormorant Garamond, serif', label: 'Cormorant Garamond' },
+  { value: 'Lora, serif', label: 'Lora' },
+  { value: 'PT Serif, serif', label: 'PT Serif' },
+  { value: 'Noto Serif, serif', label: 'Noto Serif' },
+  // Display / Handwriting
+  { value: 'Dancing Script, cursive', label: 'Dancing Script' },
+  { value: 'Pacifico, cursive', label: 'Pacifico' },
+  { value: 'Lobster, cursive', label: 'Lobster' },
+  { value: 'Caveat, cursive', label: 'Caveat' },
+  { value: 'Satisfy, cursive', label: 'Satisfy' },
+  // Monospace
+  { value: 'Fira Code, monospace', label: 'Fira Code' },
+  { value: 'JetBrains Mono, monospace', label: 'JetBrains Mono' },
+  { value: 'Source Code Pro, monospace', label: 'Source Code Pro' },
 ];
 
 const FONT_WEIGHTS = [
@@ -87,7 +158,9 @@ function clean(override: TypographyOverride): TypographyOverride {
   return result as TypographyOverride;
 }
 
-export function TypographyEditor({ value, onChange }: TypographyEditorProps) {
+export function TypographyEditor({ value, onChange, customFonts }: TypographyEditorProps) {
+  const { recentFonts, addRecentFont } = useRecentFonts();
+
   const set = useCallback(
     <K extends keyof TypographyOverride>(key: K, v: TypographyOverride[K] | '' | undefined) => {
       const next = { ...value, [key]: v === '' ? undefined : v };
@@ -95,6 +168,30 @@ export function TypographyEditor({ value, onChange }: TypographyEditorProps) {
     },
     [value, onChange],
   );
+
+  const fontFamilyData = useMemo(() => {
+    const groups: { group: string; items: { value: string; label: string }[] }[] = [];
+
+    if (recentFonts.length > 0) {
+      // Build recent options from all pools
+      const allOptions = [...SYSTEM_FONT_OPTIONS, ...GOOGLE_FONT_OPTIONS,
+        ...(customFonts ?? []).map((f) => ({ value: f.family, label: f.name })),
+      ];
+      const recentItems = recentFonts
+        .map((name) => allOptions.find((o) => o.label === name))
+        .filter((o): o is { value: string; label: string } => !!o);
+      if (recentItems.length > 0) groups.push({ group: 'Recently Used', items: recentItems });
+    }
+
+    if (customFonts && customFonts.length > 0) {
+      groups.push({ group: 'Custom Fonts', items: customFonts.map((f) => ({ value: f.family, label: f.name })) });
+    }
+
+    groups.push({ group: 'System Fonts', items: [...SYSTEM_FONT_OPTIONS] });
+    groups.push({ group: 'Google Fonts', items: [...GOOGLE_FONT_OPTIONS] });
+
+    return groups;
+  }, [recentFonts, customFonts]);
 
   const hasStroke = !!(value.textStrokeWidth || value.textStrokeColor);
   const hasShadow = !!(value.textShadowBlur || value.textShadowColor);
@@ -126,10 +223,11 @@ export function TypographyEditor({ value, onChange }: TypographyEditorProps) {
           if (v) {
             const name = v.split(',')[0].trim();
             if (GOOGLE_FONT_NAMES.has(name)) loadGoogleFont(name);
+            addRecentFont(name);
           }
           set('fontFamily', v ?? undefined);
         }}
-        data={FONT_FAMILIES}
+        data={fontFamilyData}
         searchable
         clearable
         size="xs"
