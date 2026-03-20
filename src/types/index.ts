@@ -446,6 +446,10 @@ export type ViewportBgType = 'none' | 'solid' | 'gradient' | 'image';
 export interface TypographyOverride {
   // Core typography
   fontFamily?: string;
+  /** First fallback font name (system font), e.g. "Helvetica" */
+  fontFallback1?: string;
+  /** Second fallback font name (system font), e.g. "Arial" */
+  fontFallback2?: string;
   fontSize?: string;
   fontWeight?: number;
   fontStyle?: 'normal' | 'italic' | 'oblique';

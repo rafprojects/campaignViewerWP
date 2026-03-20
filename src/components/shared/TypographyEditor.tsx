@@ -9,11 +9,13 @@ import {
   TextInput,
   ActionIcon,
   Text,
+  Badge,
 } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import type { TypographyOverride } from '@/types';
-import { loadGoogleFont } from '@/utils/loadGoogleFont';
+import { loadGoogleFont, getFailedFonts } from '@/utils/loadGoogleFont';
 import { useRecentFonts } from '@/hooks/useRecentFonts';
+import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
 
 export interface CustomFontEntry {
   /** Display name, e.g. "BrandSans" */
@@ -113,6 +115,19 @@ const GOOGLE_FONT_OPTIONS = [
   { value: 'Source Code Pro, monospace', label: 'Source Code Pro' },
 ];
 
+/* ── Fallback options — system fonts only (guaranteed available) ──────── */
+const FALLBACK_FONT_OPTIONS = [
+  { value: '', label: '(none)' },
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Helvetica', label: 'Helvetica' },
+  { value: 'Verdana', label: 'Verdana' },
+  { value: 'Tahoma', label: 'Tahoma' },
+  { value: 'Trebuchet MS', label: 'Trebuchet MS' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Times New Roman', label: 'Times New Roman' },
+  { value: 'Courier New', label: 'Courier New' },
+];
+
 const FONT_WEIGHTS = [
   { value: '', label: '(default)' },
   { value: '100', label: '100 — Thin' },
@@ -193,6 +208,12 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
     return groups;
   }, [recentFonts, customFonts]);
 
+  // ── Fallback chain derived state ──
+  const primaryLabel = (value.fontFamily ?? '').split(',')[0].trim();
+  const suggestedFb1 = FONT_FALLBACK_MAP[primaryLabel]?.[0] ?? '';
+  const terminalFamily = primaryLabel ? getTerminalFamily(primaryLabel) : '';
+  const isFailed = primaryLabel ? getFailedFonts().has(primaryLabel) : false;
+
   const hasStroke = !!(value.textStrokeWidth || value.textStrokeColor);
   const hasShadow = !!(value.textShadowBlur || value.textShadowColor);
   const hasGlow = !!(value.textGlowColor || value.textGlowBlur);
@@ -224,14 +245,53 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
             const name = v.split(',')[0].trim();
             if (GOOGLE_FONT_NAMES.has(name)) loadGoogleFont(name);
             addRecentFont(name);
+            // Auto-populate fallback 1 from the suggestion map
+            const suggestions = FONT_FALLBACK_MAP[name];
+            const autoFb1 = (!value.fontFallback1 && suggestions?.[0]) ? suggestions[0] : value.fontFallback1;
+            onChange(clean({ ...value, fontFamily: v, fontFallback1: autoFb1 }));
+          } else {
+            // Cleared primary — clear fallbacks too
+            onChange(clean({ ...value, fontFamily: undefined, fontFallback1: undefined, fontFallback2: undefined }));
           }
-          set('fontFamily', v ?? undefined);
         }}
         data={fontFamilyData}
         searchable
         clearable
         size="xs"
       />
+
+      {/* ── Fallback Chain (shown when a primary font is selected) ── */}
+      {primaryLabel && GOOGLE_FONT_NAMES.has(primaryLabel) && (
+        <Stack gap={4}>
+          {isFailed && (
+            <Badge color="orange" variant="light" size="sm" radius="sm" style={{ alignSelf: 'flex-start' }}>
+              ⚠ Font failed to load — first available fallback will be used
+            </Badge>
+          )}
+          <Group grow gap="sm">
+            <Select
+              label="Fallback 1"
+              description={suggestedFb1 && !value.fontFallback1 ? `Suggested: ${suggestedFb1}` : undefined}
+              value={value.fontFallback1 ?? ''}
+              onChange={(v) => set('fontFallback1', v || undefined)}
+              data={FALLBACK_FONT_OPTIONS}
+              size="xs"
+              clearable
+            />
+            <Select
+              label="Fallback 2"
+              value={value.fontFallback2 ?? ''}
+              onChange={(v) => set('fontFallback2', v || undefined)}
+              data={FALLBACK_FONT_OPTIONS}
+              size="xs"
+              clearable
+            />
+          </Group>
+          <Text size="xs" c="dimmed">
+            Terminal: {terminalFamily}
+          </Text>
+        </Stack>
+      )}
 
       <Group grow gap="sm">
         <TextInput
