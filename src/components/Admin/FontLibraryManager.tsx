@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -25,6 +25,8 @@ export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
   const [fonts, setFonts] = useState<FontLibraryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const onFontsChangeRef = useRef(onFontsChange);
+  onFontsChangeRef.current = onFontsChange;
 
   const fetchFonts = useCallback(async () => {
     try {
@@ -33,13 +35,13 @@ export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
       );
       setFonts(data);
       loadCustomFonts(data);
-      onFontsChange?.(data);
+      onFontsChangeRef.current?.(data);
     } catch {
       // Silent — admin may not have access
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient, onFontsChange]);
+  }, [apiClient]);
 
   useEffect(() => { fetchFonts(); }, [fetchFonts]);
 
