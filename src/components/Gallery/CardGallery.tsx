@@ -25,9 +25,6 @@ interface CardGalleryProps {
   isAdmin?: boolean;
   isAuthenticated?: boolean;
   onAccessModeChange?: (mode: 'lock' | 'hide') => void;
-  onEditCampaign?: (campaign: Campaign) => void;
-  onArchiveCampaign?: (campaign: Campaign) => void;
-  onAddExternalMedia?: (campaign: Campaign) => void;
   apiClient?: ApiClient;
 }
 
@@ -39,9 +36,6 @@ export function CardGallery({
   isAdmin = false,
   isAuthenticated = false,
   onAccessModeChange,
-  onEditCampaign,
-  onArchiveCampaign,
-  onAddExternalMedia,
   apiClient,
 }: CardGalleryProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -498,9 +492,6 @@ export function CardGallery({
             galleryBehaviorSettings={galleryBehaviorSettings}
             isAdmin={isAdmin}
             apiClient={apiClient}
-            onEditCampaign={onEditCampaign}
-            onArchiveCampaign={onArchiveCampaign}
-            onAddExternalMedia={onAddExternalMedia}
             onClose={() => setSelectedCampaign(null)}
           />
         </Suspense>

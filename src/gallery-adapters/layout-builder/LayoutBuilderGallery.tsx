@@ -534,10 +534,13 @@ function LayoutBuilderGalleryInner({
   const maxW = template.canvasMaxWidth || 9999;
   const minW = template.canvasMinWidth || 0;
   const effectiveWidth = Math.max(minW, Math.min(containerWidth, maxW));
+  // Respect template's designed width so Layout Builder canvases aren't
+  // shrunk below their authored size by a narrower modal.
+  const finalCanvasWidth = Math.max(effectiveWidth, template.canvasMaxWidth || 0);
   const canvasHeight =
     template.canvasHeightMode === 'fixed-vh'
       ? viewportHeight * ((template.canvasHeightVh || 50) / 100)
-      : effectiveWidth / (template.canvasAspectRatio || 16 / 9);
+      : finalCanvasWidth / (template.canvasAspectRatio || 16 / 9);
 
   // ── Hover styles ──────────────────────────────────────────────────────────
   // Two sets — drop-shadow for clip-path shapes (on wrapper div), box-shadow for rectangles.
@@ -631,13 +634,13 @@ function LayoutBuilderGalleryInner({
       {/* Canvas container */}
       <div
         ref={containerRef}
-        style={{ width: '100%', maxWidth: maxW || undefined }}
+        style={{ width: '100%', maxWidth: maxW || undefined, overflowX: 'auto' }}
       >
         {containerWidth > 0 && (
           <div
             style={{
               position: 'relative',
-              width: effectiveWidth,
+              width: finalCanvasWidth,
               height: canvasHeight,
               backgroundColor:
                 (template.backgroundMode ?? 'color') === 'color'
@@ -682,7 +685,7 @@ function LayoutBuilderGalleryInner({
                   key={slot.id}
                   slot={slot}
                   assigned={assigned}
-                  effectiveWidth={effectiveWidth}
+                  effectiveWidth={finalCanvasWidth}
                   canvasHeight={canvasHeight}
                   onOpenAt={onOpenAt}
                   mediaIndexMap={mediaIndexMap}

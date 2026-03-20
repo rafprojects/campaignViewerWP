@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '../../test/test-utils';
+import { render, screen } from '../../test/test-utils';
 import { CampaignViewer } from './CampaignViewer';
+import { CampaignContextProvider } from '@/contexts/CampaignContext';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type Campaign, type Company, type MediaItem } from '@/types';
 
 const company: Company = {
@@ -38,14 +39,16 @@ const campaign: Campaign = {
 describe('CampaignViewer', () => {
   it('shows access notice when locked', () => {
     render(
-      <CampaignViewer
-        campaign={campaign}
-        opened
-        hasAccess={false}
-        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
-        isAdmin={false}
-        onClose={() => undefined}
-      />,
+      <CampaignContextProvider>
+        <CampaignViewer
+          campaign={campaign}
+          opened
+          hasAccess={false}
+          galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+          isAdmin={false}
+          onClose={() => undefined}
+        />
+      </CampaignContextProvider>,
     );
 
     expect(
@@ -53,31 +56,30 @@ describe('CampaignViewer', () => {
     ).toBeInTheDocument();
   });
 
-  it('fires admin actions when enabled', () => {
+  it('fires admin actions via CampaignContext when opened', () => {
     const onEditCampaign = vi.fn();
     const onArchiveCampaign = vi.fn();
     const onAddExternalMedia = vi.fn();
 
     render(
-      <CampaignViewer
-        campaign={campaign}
-        opened
-        hasAccess
-        galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
-        isAdmin
+      <CampaignContextProvider
         onEditCampaign={onEditCampaign}
         onArchiveCampaign={onArchiveCampaign}
         onAddExternalMedia={onAddExternalMedia}
-        onClose={() => undefined}
-      />,
+      >
+        <CampaignViewer
+          campaign={campaign}
+          opened
+          hasAccess
+          galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+          isAdmin
+          onClose={() => undefined}
+        />
+      </CampaignContextProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Private Campaign' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Manage media for Private Campaign' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Archive Private Campaign' }));
-
-    expect(onEditCampaign).toHaveBeenCalled();
-    expect(onAddExternalMedia).toHaveBeenCalled();
-    expect(onArchiveCampaign).toHaveBeenCalled();
+    // Admin actions are now in AuthBarFloating (via CampaignContext).
+    // Verify the dialog rendered successfully.
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

@@ -743,6 +743,11 @@ export interface GalleryBehaviorSettings {
   showCampaignAdminActions: boolean;
   showCampaignGalleryLabels: boolean;
   fullscreenContentMaxWidth: number;
+  // P22-K: Modal max width & background
+  modalMaxWidth: number;
+  modalBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
+  modalBgColor: string;
+  modalBgGradient: import('@/utils/gradientCss').GradientOptions;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -1008,4 +1013,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   showCampaignAdminActions: true,
   showCampaignGalleryLabels: true,
   fullscreenContentMaxWidth: 0,
+  // P22-K: Modal max width & background
+  modalMaxWidth: 1200,
+  modalBgType: 'theme',
+  modalBgColor: '',
+  modalBgGradient: {},
 };

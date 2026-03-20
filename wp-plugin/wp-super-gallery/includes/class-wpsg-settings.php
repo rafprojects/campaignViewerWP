@@ -300,6 +300,11 @@ class WPSG_Settings {
         'show_campaign_admin_actions'    => true,
         'show_campaign_gallery_labels'   => true,
         'fullscreen_content_max_width'   => 0,
+        // P22-K: Modal max width & background
+        'modal_max_width'                => 1200,
+        'modal_bg_type'                  => 'theme',
+        'modal_bg_color'                 => '',
+        'modal_bg_gradient'              => '{}',
         // P21-G: Gallery label customisation
         'gallery_image_label'            => 'Images',
         'gallery_video_label'            => 'Videos',
@@ -395,6 +400,8 @@ class WPSG_Settings {
         'layout_builder_scope'       => ['full', 'viewport'],
         // P21-D: Viewer background type
         'viewer_bg_type'             => ['theme', 'transparent', 'solid', 'gradient'],
+        // P22-K: Modal background type
+        'modal_bg_type'              => ['theme', 'transparent', 'solid', 'gradient'],
         // P21-C: Card aspect ratio
         'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4', '9:16', '2:3', '3:2', '21:9'],
         // P21-G: Gallery label justification
@@ -529,6 +536,8 @@ class WPSG_Settings {
         'auth_bar_drag_margin'         => [0, 64],
         // P21-J: Fullscreen content max width (0 = full responsive)
         'fullscreen_content_max_width' => [0, 3000],
+        // P22-K: Modal max width (0 = default 'xl')
+        'modal_max_width'              => [0, 3000],
     ];
 
     /**

@@ -25,6 +25,7 @@ import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
+import { CampaignContextProvider } from './contexts/CampaignContext';
 import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
@@ -180,6 +181,11 @@ function AppContent({
   });
 
   return (
+    <CampaignContextProvider
+      onEditCampaign={editModal.openForEdit}
+      onArchiveCampaign={archiveModal.handleArchiveCampaign}
+      onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
+    >
     <div
       className="wp-super-gallery"
       style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
@@ -272,9 +278,6 @@ function AppContent({
           isAdmin={isAdmin}
           isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}
-          onEditCampaign={editModal.openForEdit}
-          onArchiveCampaign={archiveModal.handleArchiveCampaign}
-          onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
           apiClient={apiClient}
         />
       )}
@@ -302,6 +305,7 @@ function AppContent({
         onConfirm={externalMediaModal.confirmAddExternalMedia}
       />
     </div>
+    </CampaignContextProvider>
   );
 }
 

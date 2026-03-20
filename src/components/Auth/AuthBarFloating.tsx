@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
-import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin } from '@tabler/icons-react';
+import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
+import { useCampaignContext } from '@/contexts/CampaignContext';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
 const ICON_SIZE = 44;
@@ -43,6 +44,7 @@ export function AuthBarFloating({
   onLogout,
 }: AuthBarFloatingProps) {
   const margin = dragMargin;
+  const { activeCampaign, onEditCampaign, onArchiveCampaign, onAddExternalMedia } = useCampaignContext();
 
   // Read saved position (works in SSR — just returns null)
   const saved = readSavedPos();
@@ -198,6 +200,42 @@ export function AuthBarFloating({
                   >
                     Settings
                   </Button>
+                  {activeCampaign && (
+                    <>
+                      <Divider label="Campaign" labelPosition="center" />
+                      <Button
+                        variant="subtle"
+                        size="xs"
+                        leftSection={<IconEdit size={14} />}
+                        justify="start"
+                        onClick={() => { onEditCampaign?.(activeCampaign); setPopoverOpen(false); }}
+                        aria-label={`Edit ${activeCampaign.title}`}
+                      >
+                        Edit Campaign
+                      </Button>
+                      <Button
+                        variant="subtle"
+                        size="xs"
+                        leftSection={<IconPhoto size={14} />}
+                        justify="start"
+                        onClick={() => { onAddExternalMedia?.(activeCampaign); setPopoverOpen(false); }}
+                        aria-label={`Manage media for ${activeCampaign.title}`}
+                      >
+                        Manage Media
+                      </Button>
+                      <Button
+                        variant="subtle"
+                        size="xs"
+                        color="red"
+                        leftSection={<IconArchive size={14} />}
+                        justify="start"
+                        onClick={() => { onArchiveCampaign?.(activeCampaign); setPopoverOpen(false); }}
+                        aria-label={`Archive ${activeCampaign.title}`}
+                      >
+                        Archive
+                      </Button>
+                    </>
+                  )}
                   <Divider />
                 </>
               )}

@@ -493,6 +493,46 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   placeholder="0 = full width"
                 />
 
+                <NumberInput
+                  label="Modal Max Width (px)"
+                  description="Maximum width of the campaign modal when not fullscreen. 0 = default size."
+                  value={settings.modalMaxWidth ?? 1200}
+                  onChange={(value) => updateSetting('modalMaxWidth', typeof value === 'number' ? value : 1200)}
+                  min={0}
+                  max={3000}
+                  step={50}
+                  placeholder="1200"
+                />
+
+                <Divider label="Modal Background (Fullscreen)" labelPosition="center" />
+
+                <Select
+                  label="Background Type"
+                  description="Background style for the fullscreen campaign modal"
+                  data={[
+                    { value: 'theme', label: 'Default Theme' },
+                    { value: 'transparent', label: 'Transparent' },
+                    { value: 'solid', label: 'Solid color' },
+                    { value: 'gradient', label: 'Custom gradient' },
+                  ]}
+                  value={settings.modalBgType ?? 'theme'}
+                  onChange={(v) => updateSetting('modalBgType', (v ?? 'theme') as GalleryBehaviorSettings['modalBgType'])}
+                />
+                {settings.modalBgType === 'solid' && (
+                  <ColorInput
+                    label="Modal Background Color"
+                    description="Solid background color for the fullscreen modal"
+                    value={settings.modalBgColor}
+                    onChange={(v) => updateSetting('modalBgColor', v)}
+                  />
+                )}
+                {settings.modalBgType === 'gradient' && (
+                  <GradientEditor
+                    value={settings.modalBgGradient ?? {}}
+                    onChange={(opts) => updateSetting('modalBgGradient', opts)}
+                  />
+                )}
+
                 <Divider label="Security" labelPosition="center" />
 
                 <NumberInput

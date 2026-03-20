@@ -41,6 +41,8 @@ export function CompactGridGallery({ media, settings }: CompactGridGalleryProps)
   const cardHeight = settings.gridCardHeight;
   const borderRadius = settings.imageBorderRadius;
   const gap = settings.thumbnailGap;
+  const maxCols = settings.cardGridColumns || settings.cardMaxColumns || 5;
+  const gridMaxWidth = maxCols * cardWidth + (maxCols - 1) * gap;
 
   return (
     <Stack gap="md">
@@ -52,6 +54,7 @@ export function CompactGridGallery({ media, settings }: CompactGridGalleryProps)
       </Title>
 
       {/* Responsive auto-fill grid — use min() to ensure cards scale down on mobile */}
+      <Box style={{ maxWidth: gridMaxWidth, marginInline: 'auto' }}>
       <Box
         style={{
           display: 'grid',
@@ -70,6 +73,7 @@ export function CompactGridGallery({ media, settings }: CompactGridGalleryProps)
             onOpen={openAt}
           />
         ))}
+      </Box>
       </Box>
 
       <Lightbox

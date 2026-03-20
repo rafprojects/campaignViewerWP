@@ -1,6 +1,6 @@
-import { lazy, Suspense, useRef } from 'react';
-import { IconCalendar, IconTag, IconEdit, IconPhoto, IconArchive } from '@tabler/icons-react';
-import { Modal, Image, Button, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader, Switch } from '@mantine/core';
+import { lazy, Suspense, useEffect, useMemo, useRef } from 'react';
+import { IconCalendar, IconTag } from '@tabler/icons-react';
+import { Modal, Image, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader, Switch } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
@@ -12,6 +12,8 @@ import { InContextEditor } from '@/components/shared/InContextEditor';
 import { TypographyEditor } from '@/components/shared/TypographyEditor';
 import { resolveAdapterId } from '@/utils/resolveAdapterId';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { buildGradientCss } from '@/utils/gradientCss';
+import { useCampaignContext } from '@/contexts/CampaignContext';
 import { CompanyLogo } from '@/components/shared/CompanyLogo';
 
 /**
@@ -149,9 +151,6 @@ interface CampaignViewerProps {
   galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin: boolean;
   apiClient?: ApiClient;
-  onEditCampaign?: (campaign: Campaign) => void;
-  onArchiveCampaign?: (campaign: Campaign) => void;
-  onAddExternalMedia?: (campaign: Campaign) => void;
   onClose: () => void;
 }
 
@@ -162,12 +161,15 @@ export function CampaignViewer({
   galleryBehaviorSettings,
   isAdmin,
   apiClient,
-  onEditCampaign,
-  onArchiveCampaign,
-  onAddExternalMedia,
   onClose,
 }: CampaignViewerProps) {
   const s = galleryBehaviorSettings;
+  const { setActiveCampaign } = useCampaignContext();
+  // P22-K5: Keep CampaignContext in sync with viewer open/close
+  useEffect(() => {
+    setActiveCampaign(opened ? campaign : null);
+    return () => setActiveCampaign(null);
+  }, [opened, campaign, setActiveCampaign]);
   const inContextSave = useInContextSave(apiClient, s);
   const campaignTitleStyle = useTypographyStyle('campaignTitle', s);
   const campaignDateStyle = useTypographyStyle('campaignDate', s);
@@ -188,11 +190,23 @@ export function CampaignViewer({
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
   const galleriesOnly = s.campaignOpenMode === 'galleries-only';
   const showStats = (s.showCampaignStats !== false) && (!s.campaignStatsAdminOnly || isAdmin);
+  // P22-K3: Modal background style (only applied in fullscreen)
+  const modalBgStyle = useMemo<React.CSSProperties | undefined>(() => {
+    if (!useFullscreen) return undefined;
+    const t = s.modalBgType ?? 'theme';
+    if (t === 'transparent') return { background: 'transparent' };
+    if (t === 'solid' && s.modalBgColor) return { background: s.modalBgColor };
+    if (t === 'gradient') {
+      const css = buildGradientCss(s.modalBgGradient);
+      if (css) return { background: css };
+    }
+    return undefined; // 'theme' = no override
+  }, [useFullscreen, s.modalBgType, s.modalBgColor, s.modalBgGradient]);
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      size="xl"
+      size={useFullscreen ? '100%' : (s.modalMaxWidth > 0 ? `${s.modalMaxWidth}px` : 'xl')}
       padding={0}
       withCloseButton
       closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
@@ -201,7 +215,7 @@ export function CampaignViewer({
       fullScreen={useFullscreen}
       styles={{
         content: useFullscreen
-          ? { overflow: 'auto', maxHeight: '100dvh' }
+          ? { overflow: 'auto', maxHeight: '100dvh', ...modalBgStyle }
           : { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
         close: { color: 'white', background: 'rgba(0,0,0,0.65)', borderRadius: '50%', width: 36, height: 36 },
@@ -297,7 +311,7 @@ export function CampaignViewer({
       )}
 
       {/* Content */}
-      <Box ref={containerRef} p={{ base: 'md', md: 'xl' }} style={{ maxWidth: s.fullscreenContentMaxWidth && s.fullscreenContentMaxWidth > 0 ? `${s.fullscreenContentMaxWidth}px` : '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
+      <Box ref={containerRef} p={galleriesOnly || useFullscreen ? 0 : { base: 'md', md: 'xl' }} style={{ maxWidth: s.fullscreenContentMaxWidth && s.fullscreenContentMaxWidth > 0 ? `${s.fullscreenContentMaxWidth}px` : '64rem', marginLeft: 'auto', marginRight: 'auto' }}>
         <Stack gap="lg">
           {/* Description — hidden in galleries-only mode */}
           {!galleriesOnly && s.showCampaignAbout !== false && (
@@ -406,45 +420,6 @@ export function CampaignViewer({
             </Paper>
           </SimpleGrid>
           </Box>
-          )}
-
-          {/* Admin Section */}
-          {isAdmin && s.showCampaignAdminActions !== false && (
-            <Paper p="md" radius="md" withBorder bg="var(--wpsg-color-surface)" component="section" aria-labelledby="admin-actions-heading">
-              <Stack gap="sm">
-                <Title order={3} size="h6" id="admin-actions-heading">Admin Actions</Title>
-                <Group gap="sm" wrap="wrap">
-                  <Button
-                    leftSection={<IconEdit size={16} />}
-                    variant="light"
-                    onClick={() => onEditCampaign?.(campaign)}
-                    size="sm"
-                    aria-label={`Edit ${campaign.title}`}
-                  >
-                    Edit Campaign
-                  </Button>
-                  <Button
-                    leftSection={<IconPhoto size={16} />}
-                    variant="light"
-                    onClick={() => onAddExternalMedia?.(campaign)}
-                    size="sm"
-                    aria-label={`Manage media for ${campaign.title}`}
-                  >
-                    Manage Media
-                  </Button>
-                  <Button
-                    leftSection={<IconArchive size={16} />}
-                    variant="light"
-                    color="red"
-                    onClick={() => onArchiveCampaign?.(campaign)}
-                    size="sm"
-                    aria-label={`Archive ${campaign.title}`}
-                  >
-                    Archive
-                  </Button>
-                </Group>
-              </Stack>
-            </Paper>
           )}
         </Stack>
       </Box>
