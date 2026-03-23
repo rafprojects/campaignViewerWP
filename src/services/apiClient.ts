@@ -389,6 +389,8 @@ export interface SettingsResponse {
   cacheTtl?: number;
   videoViewportHeight?: number;
   imageViewportHeight?: number;
+  gallerySizingMode?: 'auto' | 'viewport' | 'manual';
+  galleryManualHeight?: string;
   thumbnailScrollSpeed?: number;
   scrollAnimationStyle?: 'smooth' | 'instant';
   scrollAnimationDurationMs?: number;

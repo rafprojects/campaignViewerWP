@@ -1,14 +1,14 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
-import { CardGallery } from './components/Gallery/CardGallery';
+import { CardGallery } from './components/CampaignGallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
 import { LoginForm } from './components/Auth/LoginForm';
 import { AuthBar } from './components/Auth/AuthBar';
-import { UnifiedCampaignModal } from './components/shared/UnifiedCampaignModal';
+import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal';
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';

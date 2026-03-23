@@ -29,6 +29,7 @@ import {
   IconLayoutGrid,
   IconAdjustments,
   IconTypography,
+  IconEye,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
@@ -46,8 +47,8 @@ import {
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { SettingTooltip } from './SettingTooltip';
-import { TypographyEditor, type CustomFontEntry } from '../shared/TypographyEditor';
-import { GradientEditor } from '../shared/GradientEditor';
+import { TypographyEditor, type CustomFontEntry } from '../Common/TypographyEditor';
+import { GradientEditor } from '../Common/GradientEditor';
 import { FontLibraryManager } from './FontLibraryManager';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -223,6 +224,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               <Tabs.Tab value="gallery" leftSection={<IconPhoto size={16} />}>
                 Media Gallery
               </Tabs.Tab>
+              <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
+                Campaign Viewer
+              </Tabs.Tab>
               {settings.advancedSettingsEnabled && (
                 <Tabs.Tab value="advanced" leftSection={<IconAdjustments size={16} />}>
                   Advanced
@@ -257,7 +261,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
                 <NumberInput
                   label="Items Per Page"
-                  description="Number of items to display per page (1–100)."
+                  description="Number of items to display per page (1-100)."
                   value={settings.itemsPerPage}
                   onChange={(value) => updateSetting('itemsPerPage', typeof value === 'number' ? value : 12)}
                   min={1}
@@ -265,7 +269,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   step={1}
                 />
 
-                <Divider label="Header Visibility" labelPosition="center" />
+                <Divider label="App Container" labelPosition="center" />
 
                 <NumberInput
                   label="App Max Width (px)"
@@ -300,7 +304,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('wpFullBleedDesktop', e.currentTarget.checked)}
                 />
                 <Switch
-                  label="WP Full Bleed — Tablet (768–1023px)"
+                  label="WP Full Bleed — Tablet (768-1023px)"
                   description="Break out of the WordPress page container padding on tablet viewports. Requires page refresh."
                   checked={settings.wpFullBleedTablet}
                   onChange={(e) => updateSetting('wpFullBleedTablet', e.currentTarget.checked)}
@@ -312,7 +316,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('wpFullBleedMobile', e.currentTarget.checked)}
                 />
 
-                <Divider label="Header Visibility" labelPosition="center" />
+                <Divider label="Viewer Header Visibility" labelPosition="center" />
 
                 <Switch
                   label="Show Gallery Title"
@@ -403,135 +407,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     onChange={(v) => updateSetting('authBarDragMargin', Number(v) || 16)}
                     min={0}
                     max={64}
-                  />
-                )}
-
-                <Divider label="Campaign Viewer" labelPosition="center" />
-
-                <Switch
-                  label="Fullscreen Campaign Modal"
-                  description="Open campaign viewer in fullscreen mode instead of the default modal."
-                  checked={settings.campaignModalFullscreen ?? false}
-                  onChange={(e) => updateSetting('campaignModalFullscreen', e.currentTarget.checked)}
-                />
-                <Select
-                  label="Campaign Open Mode"
-                  description="What to show when a campaign is opened."
-                  data={[
-                    { value: 'full', label: 'Full (cover, about, galleries, stats)' },
-                    { value: 'galleries-only', label: 'Galleries only (skip header/about/stats)' },
-                  ]}
-                  value={settings.campaignOpenMode ?? 'full'}
-                  onChange={(v) => updateSetting('campaignOpenMode', (v ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
-                />
-                <Switch
-                  label="Show Company Name"
-                  description="Show the company badge on the campaign cover image."
-                  checked={settings.showCampaignCompanyName ?? true}
-                  onChange={(e) => updateSetting('showCampaignCompanyName', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Date"
-                  description="Show the creation date under the campaign title."
-                  checked={settings.showCampaignDate ?? true}
-                  onChange={(e) => updateSetting('showCampaignDate', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show About Section"
-                  description='Show the "About this Campaign" heading and description.'
-                  checked={settings.showCampaignAbout ?? true}
-                  onChange={(e) => updateSetting('showCampaignAbout', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Description"
-                  description="Show the campaign description text within the About section."
-                  checked={settings.showCampaignDescription ?? true}
-                  onChange={(e) => updateSetting('showCampaignDescription', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Campaign Stats"
-                  description="Show the statistics block (video count, image count, tags, visibility)."
-                  checked={settings.showCampaignStats ?? true}
-                  onChange={(e) => updateSetting('showCampaignStats', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Stats Admin-Only"
-                  description="When enabled, only admins can see the statistics block."
-                  checked={settings.campaignStatsAdminOnly ?? true}
-                  onChange={(e) => updateSetting('campaignStatsAdminOnly', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Cover Image"
-                  description="Show the campaign cover image at the top of the viewer."
-                  checked={settings.showCampaignCoverImage ?? true}
-                  onChange={(e) => updateSetting('showCampaignCoverImage', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Tags"
-                  description="Show tags section in the campaign viewer."
-                  checked={settings.showCampaignTags ?? true}
-                  onChange={(e) => updateSetting('showCampaignTags', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Admin Actions"
-                  description="Show admin action buttons (edit, archive, etc.) in the campaign viewer."
-                  checked={settings.showCampaignAdminActions ?? true}
-                  onChange={(e) => updateSetting('showCampaignAdminActions', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Gallery Labels"
-                  description="Show 'Images' and 'Videos' heading labels above galleries in the viewer."
-                  checked={settings.showCampaignGalleryLabels ?? true}
-                  onChange={(e) => updateSetting('showCampaignGalleryLabels', e.currentTarget.checked)}
-                />
-                <NumberInput
-                  label="Fullscreen Content Max Width (px)"
-                  description="Limit content width in fullscreen mode. 0 = full responsive width."
-                  value={settings.fullscreenContentMaxWidth ?? 0}
-                  onChange={(value) => updateSetting('fullscreenContentMaxWidth', typeof value === 'number' ? value : 0)}
-                  min={0}
-                  max={3000}
-                  step={50}
-                  placeholder="0 = full width"
-                />
-
-                <NumberInput
-                  label="Modal Max Width (px)"
-                  description="Maximum width of the campaign modal when not fullscreen. 0 = default size."
-                  value={settings.modalMaxWidth ?? 1200}
-                  onChange={(value) => updateSetting('modalMaxWidth', typeof value === 'number' ? value : 1200)}
-                  min={0}
-                  max={3000}
-                  step={50}
-                  placeholder="1200"
-                />
-
-                <Divider label="Modal Background (Fullscreen)" labelPosition="center" />
-
-                <Select
-                  label="Background Type"
-                  description="Background style for the fullscreen campaign modal"
-                  data={[
-                    { value: 'theme', label: 'Default Theme' },
-                    { value: 'transparent', label: 'Transparent' },
-                    { value: 'solid', label: 'Solid color' },
-                    { value: 'gradient', label: 'Custom gradient' },
-                  ]}
-                  value={settings.modalBgType ?? 'theme'}
-                  onChange={(v) => updateSetting('modalBgType', (v ?? 'theme') as GalleryBehaviorSettings['modalBgType'])}
-                />
-                {settings.modalBgType === 'solid' && (
-                  <ColorInput
-                    label="Modal Background Color"
-                    description="Solid background color for the fullscreen modal"
-                    value={settings.modalBgColor}
-                    onChange={(v) => updateSetting('modalBgColor', v)}
-                  />
-                )}
-                {settings.modalBgType === 'gradient' && (
-                  <GradientEditor
-                    value={settings.modalBgGradient ?? {}}
-                    onChange={(opts) => updateSetting('modalBgGradient', opts)}
                   />
                 )}
 
@@ -895,29 +770,27 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
                       <Divider label="Viewport Dimensions" labelPosition="center" />
 
-                      <NumberInput
-                        label="Video Gallery Height (px)"
-                        description="Standard viewport height for video gallery player area."
-                        value={settings.videoViewportHeight}
-                        onChange={(value) =>
-                          updateSetting('videoViewportHeight', typeof value === 'number' ? value : defaultSettings.videoViewportHeight)
-                        }
-                        min={180}
-                        max={900}
-                        step={10}
+                      <Select
+                        label={tt('Height Constraint', 'gallerySizingMode')}
+                        description="Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
+                        data={[
+                          { value: 'auto', label: 'No restraint' },
+                          { value: 'viewport', label: 'Restrain to view' },
+                          { value: 'manual', label: 'Manually control height' },
+                        ]}
+                        value={settings.gallerySizingMode ?? 'auto'}
+                        onChange={(v) => updateSetting('gallerySizingMode', (v ?? 'auto') as GalleryBehaviorSettings['gallerySizingMode'])}
                       />
 
-                      <NumberInput
-                        label="Image Gallery Height (px)"
-                        description="Standard viewport height for image gallery viewer area."
-                        value={settings.imageViewportHeight}
-                        onChange={(value) =>
-                          updateSetting('imageViewportHeight', typeof value === 'number' ? value : defaultSettings.imageViewportHeight)
-                        }
-                        min={180}
-                        max={900}
-                        step={10}
+                      {settings.gallerySizingMode === 'manual' && (<>
+                      <TextInput
+                        label={tt('Manual Gallery Height', 'galleryManualHeight')}
+                        description="Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
+                        value={settings.galleryManualHeight}
+                        onChange={(event) => updateSetting('galleryManualHeight', event.currentTarget.value)}
+                        placeholder="420px"
                       />
+                      </>)}
 
                       <Divider label="Border Radius" labelPosition="center" />
 
@@ -1012,7 +885,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         value={settings.imageBgType}
                         onChange={(value) => updateSetting('imageBgType', (value as ViewportBgType) ?? 'none')}
                         data={[
-                          { value: 'none', label: 'None' },
+                          { value: 'none', label: 'Transparent' },
                           { value: 'solid', label: 'Solid Color' },
                           { value: 'gradient', label: 'Gradient' },
                           { value: 'image', label: 'Image URL' },
@@ -1050,7 +923,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         value={settings.videoBgType}
                         onChange={(value) => updateSetting('videoBgType', (value as ViewportBgType) ?? 'none')}
                         data={[
-                          { value: 'none', label: 'None' },
+                          { value: 'none', label: 'Transparent' },
                           { value: 'solid', label: 'Solid Color' },
                           { value: 'gradient', label: 'Gradient' },
                           { value: 'image', label: 'Image URL' },
@@ -1088,7 +961,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         value={settings.unifiedBgType}
                         onChange={(value) => updateSetting('unifiedBgType', (value as ViewportBgType) ?? 'none')}
                         data={[
-                          { value: 'none', label: 'None' },
+                          { value: 'none', label: 'Transparent' },
                           { value: 'solid', label: 'Solid Color' },
                           { value: 'gradient', label: 'Gradient' },
                           { value: 'image', label: 'Image URL' },
@@ -1329,7 +1202,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         ? ['justified', 'mosaic'].includes(settings.unifiedGalleryAdapterId)
                         : ['justified', 'mosaic'].includes(settings.imageGalleryAdapterId) ||
                           ['justified', 'mosaic'].includes(settings.videoGalleryAdapterId)
-                      ) && (
+                      ) && (<>
                         <NumberInput
                           label="Target Row Height (px)"
                           description="Ideal height for each justified row. Rows scale slightly to fill container width while preserving aspect ratios."
@@ -1339,7 +1212,16 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           }
                           min={60} max={600} step={10}
                         />
-                      )}
+                        <NumberInput
+                          label="Photo Normalize Height (px)"
+                          description="Normalization height used to scale image dimensions before layout. Lower values produce smaller tiles."
+                          value={settings.photoNormalizeHeight}
+                          onChange={(value) =>
+                            updateSetting('photoNormalizeHeight', typeof value === 'number' ? value : 300)
+                          }
+                          min={100} max={800} step={10}
+                        />
+                      </>)}
 
                       {/* ── Masonry columns ── */}
                       {(settings.unifiedGalleryEnabled
@@ -1894,6 +1776,173 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 </Accordion.Item>
               </Accordion>}
             </Tabs.Panel>
+
+            {/* ── Campaign Viewer Tab ──────────────────────────── */}
+            <Tabs.Panel value="viewer" pt="md">
+              {activeTab === 'viewer' && <Stack gap="md">
+                <Divider label="Open Mode" labelPosition="center" />
+
+                <Switch
+                  label="Fullscreen Campaign Modal"
+                  description="Open campaign viewer in fullscreen mode instead of the default modal."
+                  checked={settings.campaignModalFullscreen ?? false}
+                  onChange={(e) => updateSetting('campaignModalFullscreen', e.currentTarget.checked)}
+                />
+                <Select
+                  label="Campaign Open Mode"
+                  description="What to show when a campaign is opened."
+                  data={[
+                    { value: 'full', label: 'Full (cover, about, galleries, stats)' },
+                    { value: 'galleries-only', label: 'Galleries only (skip header/about/stats)' },
+                  ]}
+                  value={settings.campaignOpenMode ?? 'full'}
+                  onChange={(v) => updateSetting('campaignOpenMode', (v ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
+                />
+                <NumberInput
+                  label="Fullscreen Content Max Width (px)"
+                  description="Limit content width in fullscreen mode. 0 = full responsive width."
+                  value={settings.fullscreenContentMaxWidth ?? 0}
+                  onChange={(value) => updateSetting('fullscreenContentMaxWidth', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={3000}
+                  step={50}
+                  placeholder="0 = full width"
+                />
+                <NumberInput
+                  label="Modal Max Width (px)"
+                  description="Maximum width of the campaign modal when not fullscreen. 0 = default size."
+                  value={settings.modalMaxWidth ?? 1200}
+                  onChange={(value) => updateSetting('modalMaxWidth', typeof value === 'number' ? value : 1200)}
+                  min={0}
+                  max={3000}
+                  step={50}
+                  placeholder="1200"
+                />
+
+                <Divider label="Visibility" labelPosition="center" />
+
+                <Box style={settings.campaignOpenMode === 'galleries-only' ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
+                  <Stack gap="md">
+                <Switch
+                  label="Show Company Name"
+                  description="Show the company badge on the campaign cover image."
+                  checked={settings.showCampaignCompanyName ?? true}
+                  onChange={(e) => updateSetting('showCampaignCompanyName', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Date"
+                  description="Show the creation date under the campaign title."
+                  checked={settings.showCampaignDate ?? true}
+                  onChange={(e) => updateSetting('showCampaignDate', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show About Section"
+                  description='Show the "About this Campaign" heading and description.'
+                  checked={settings.showCampaignAbout ?? true}
+                  onChange={(e) => updateSetting('showCampaignAbout', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Description"
+                  description="Show the campaign description text within the About section."
+                  checked={settings.showCampaignDescription ?? true}
+                  onChange={(e) => updateSetting('showCampaignDescription', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Campaign Stats"
+                  description="Show the statistics block (video count, image count, tags, visibility)."
+                  checked={settings.showCampaignStats ?? true}
+                  onChange={(e) => updateSetting('showCampaignStats', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Stats Admin-Only"
+                  description="When enabled, only admins can see the statistics block."
+                  checked={settings.campaignStatsAdminOnly ?? true}
+                  onChange={(e) => updateSetting('campaignStatsAdminOnly', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Cover Image"
+                  description="Show the campaign cover image at the top of the viewer."
+                  checked={settings.showCampaignCoverImage ?? true}
+                  onChange={(e) => updateSetting('showCampaignCoverImage', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Tags"
+                  description="Show tags section in the campaign viewer."
+                  checked={settings.showCampaignTags ?? true}
+                  onChange={(e) => updateSetting('showCampaignTags', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                  </Stack>
+                </Box>
+                <Switch
+                  label="Show Admin Actions"
+                  description="Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+                  checked={settings.showCampaignAdminActions ?? true}
+                  onChange={(e) => updateSetting('showCampaignAdminActions', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Gallery Labels"
+                  description="Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+                  checked={settings.showCampaignGalleryLabels ?? true}
+                  onChange={(e) => updateSetting('showCampaignGalleryLabels', e.currentTarget.checked)}
+                />
+
+                <Divider label="Modal Background (Fullscreen)" labelPosition="center" />
+
+                <Select
+                  label="Background Type"
+                  description="Background style for the fullscreen campaign modal"
+                  data={[
+                    { value: 'theme', label: 'Default Theme' },
+                    { value: 'transparent', label: 'Transparent' },
+                    { value: 'solid', label: 'Solid color' },
+                    { value: 'gradient', label: 'Custom gradient' },
+                  ]}
+                  value={settings.modalBgType ?? 'theme'}
+                  onChange={(v) => updateSetting('modalBgType', (v ?? 'theme') as GalleryBehaviorSettings['modalBgType'])}
+                />
+                {settings.modalBgType === 'solid' && (
+                  <ColorInput
+                    label="Modal Background Color"
+                    description="Solid background color for the fullscreen modal"
+                    value={settings.modalBgColor}
+                    onChange={(v) => updateSetting('modalBgColor', v)}
+                  />
+                )}
+                {settings.modalBgType === 'gradient' && (
+                  <GradientEditor
+                    value={settings.modalBgGradient ?? {}}
+                    onChange={(opts) => updateSetting('modalBgGradient', opts)}
+                  />
+                )}
+
+                <Divider label="Cover Image" labelPosition="center" />
+
+                <Text size="sm" fw={500}>Cover Mobile Ratio</Text>
+                <Slider value={settings.modalCoverMobileRatio} onChange={(v) => updateSetting('modalCoverMobileRatio', v)}
+                  min={0.2} max={1} step={0.05} />
+                <Text size="sm" fw={500}>Cover Tablet Ratio</Text>
+                <Slider value={settings.modalCoverTabletRatio} onChange={(v) => updateSetting('modalCoverTabletRatio', v)}
+                  min={0.2} max={1} step={0.05} />
+
+                <Divider label="Modal Controls" labelPosition="center" />
+
+                <NumberInput label="Close Button Size (px)" value={settings.modalCloseButtonSize}
+                  onChange={(v) => updateSetting('modalCloseButtonSize', typeof v === 'number' ? v : 36)} min={20} max={64} />
+                <Text size="sm" fw={500}>Description Line Height</Text>
+                <Slider value={settings.campaignDescriptionLineHeight}
+                  onChange={(v) => updateSetting('campaignDescriptionLineHeight', v)}
+                  min={1} max={3} step={0.1} />
+              </Stack>}
+            </Tabs.Panel>
+
             {settings.advancedSettingsEnabled && (
               <Tabs.Panel value="advanced" pt="md">
                 {activeTab === 'advanced' && <><Text size="sm" c="dimmed" mb="md">
@@ -1971,22 +2020,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Modal / Viewer</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <Text size="sm" fw={500}>{tt('Cover Mobile Ratio', 'modalCoverMobileRatio')}</Text>
-                        <Slider value={settings.modalCoverMobileRatio} onChange={(v) => updateSetting('modalCoverMobileRatio', v)}
-                          min={0.2} max={1} step={0.05} />
-                        <Text size="sm" fw={500}>{tt('Cover Tablet Ratio', 'modalCoverTabletRatio')}</Text>
-                        <Slider value={settings.modalCoverTabletRatio} onChange={(v) => updateSetting('modalCoverTabletRatio', v)}
-                          min={0.2} max={1} step={0.05} />
-                        <NumberInput label={tt('Close Button Size (px)', 'modalCloseButtonSize')} value={settings.modalCloseButtonSize}
-                          onChange={(v) => updateSetting('modalCloseButtonSize', typeof v === 'number' ? v : 36)} min={20} max={64} />
                         <TextInput label={tt('Close Button Background', 'modalCloseButtonBgColor')} value={settings.modalCloseButtonBgColor}
                           onChange={(e) => updateSetting('modalCloseButtonBgColor', e.currentTarget.value)} />
                         <NumberInput label={tt('Content Max Width (px)', 'modalContentMaxWidth')} value={settings.modalContentMaxWidth}
                           onChange={(v) => updateSetting('modalContentMaxWidth', typeof v === 'number' ? v : 900)} min={400} max={2000} />
-                        <Text size="sm" fw={500}>{tt('Description Line Height', 'campaignDescriptionLineHeight')}</Text>
-                        <Slider value={settings.campaignDescriptionLineHeight}
-                          onChange={(v) => updateSetting('campaignDescriptionLineHeight', v)}
-                          min={1} max={3} step={0.1} />
                         <NumberInput label={tt('Mobile Breakpoint (px)', 'modalMobileBreakpoint')} value={settings.modalMobileBreakpoint}
                           onChange={(v) => updateSetting('modalMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
                         <NumberInput label={tt('Gallery Max Width (px)', 'modalGalleryMaxWidth')} description="0 = full responsive width in fullscreen mode"
@@ -2082,8 +2119,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           onChange={(e) => updateSetting('diamondClipPath', e.currentTarget.value)} />
                         <NumberInput label={tt('Default Per Row', 'tileDefaultPerRow')} value={settings.tileDefaultPerRow}
                           onChange={(v) => updateSetting('tileDefaultPerRow', typeof v === 'number' ? v : 5)} min={1} max={12} />
-                        <NumberInput label={tt('Photo Normalize Height (px)', 'photoNormalizeHeight')} value={settings.photoNormalizeHeight}
-                          onChange={(v) => updateSetting('photoNormalizeHeight', typeof v === 'number' ? v : 300)} min={100} max={800} />
                         <TextInput label={tt('Masonry Auto Column Breakpoints', 'masonryAutoColumnBreakpoints')} description="Format: 480:2,768:3,1024:4,1280:5"
                           value={settings.masonryAutoColumnBreakpoints}
                           onChange={(e) => updateSetting('masonryAutoColumnBreakpoints', e.currentTarget.value)} />

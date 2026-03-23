@@ -16,9 +16,9 @@ import mantineNotificationsStyles from '@mantine/notifications/styles.css?inline
 import rowsPhotoAlbumStyles from 'react-photo-album/rows.css?inline';
 import masonryPhotoAlbumStyles from 'react-photo-album/masonry.css?inline';
 import globalStyles from './styles/global.scss?inline';
-import campaignCardStyles from './components/Gallery/CampaignCard.module.scss?inline';
-import cardGalleryStyles from './components/Gallery/CardGallery.module.scss?inline';
-import campaignViewerStyles from './components/Campaign/CampaignViewer.module.scss?inline';
+import campaignCardStyles from './components/CampaignGallery/CampaignCard.module.scss?inline';
+import cardGalleryStyles from './components/CampaignGallery/CardGallery.module.scss?inline';
+import campaignViewerStyles from './components/CardViewer/CampaignViewer.module.scss?inline';
 
 export const shadowStyles = [
   mantineCoreStyles,

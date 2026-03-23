@@ -1,4 +1,4 @@
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmModal } from '@/components/Common/ConfirmModal';
 
 type CampaignSummary = {
   id: string;

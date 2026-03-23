@@ -756,6 +756,9 @@ export interface GalleryBehaviorSettings {
   modalGalleryMaxWidth: number;
   modalGalleryGap: number;
   modalGalleryMargin: number;
+  // P22-M: Gallery height constraint mode + manual CSS height
+  gallerySizingMode: 'auto' | 'viewport' | 'manual';
+  galleryManualHeight: string;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -1030,4 +1033,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   modalGalleryMaxWidth: 0,
   modalGalleryGap: 32,
   modalGalleryMargin: 0,
+  // P22-M: Gallery height constraint mode + manual CSS height
+  gallerySizingMode: 'auto',
+  galleryManualHeight: '420px',
 };

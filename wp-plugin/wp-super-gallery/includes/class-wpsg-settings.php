@@ -314,6 +314,9 @@ class WPSG_Settings {
         'modal_gallery_max_width'        => 0,
         'modal_gallery_gap'              => 32,
         'modal_gallery_margin'           => 0,
+        // P22-M: Gallery sizing mode + manual height constraint
+        'gallery_sizing_mode'            => 'auto',
+        'gallery_manual_height'          => '420px',
     ];
 
     /**
@@ -414,6 +417,8 @@ class WPSG_Settings {
         'campaign_open_mode'          => ['full', 'galleries-only'],
         // P21-E: Auth bar display mode
         'auth_bar_display_mode'       => ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'],
+        // P22-M: Gallery sizing mode
+        'gallery_sizing_mode'         => ['auto', 'viewport', 'manual'],
     ];
 
     /**
@@ -937,6 +942,16 @@ class WPSG_Settings {
         if (isset($input['image_viewport_height'])) {
             $height = intval($input['image_viewport_height']);
             $sanitized['image_viewport_height'] = max(180, min(900, $height));
+        }
+
+        if (isset($input['gallery_manual_height'])) {
+            $height = sanitize_text_field((string) $input['gallery_manual_height']);
+            $height = trim($height);
+            if (preg_match('/^\d+(?:\.\d+)?\s*(px|em|rem|vh|dvh|svh|lvh|vw|%)$/i', $height)) {
+                $sanitized['gallery_manual_height'] = $height;
+            } else {
+                $sanitized['gallery_manual_height'] = self::$defaults['gallery_manual_height'];
+            }
         }
 
         if (isset($input['thumbnail_scroll_speed'])) {

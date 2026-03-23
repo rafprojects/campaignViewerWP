@@ -22,7 +22,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } from '@tabler/icons-react';
-import { CampaignSelector, type CampaignSelectItem } from '@/components/shared/CampaignSelector';
+import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { PendingRequestsPanel } from './PendingRequestsPanel';
 import type { ApiClient } from '@/services/apiClient';
 

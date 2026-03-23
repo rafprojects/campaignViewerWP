@@ -140,8 +140,7 @@ describe('SettingsPanel', () => {
 
     expect(screen.getByText('Enable Lightbox')).toBeDefined();
     expect(screen.getByText('Enable Animations')).toBeDefined();
-    expect(screen.getByText('Video Gallery Height (px)')).toBeDefined();
-    expect(screen.getByText('Image Gallery Height (px)')).toBeDefined();
+    expect(screen.getByText('Height Constraint')).toBeDefined();
   });
 
   it('uses defaults when getSettings fails', async () => {

@@ -9,7 +9,7 @@ import { BulkActionsBar } from './BulkActionsBar';
 import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
-import { CampaignSelector } from '@/components/shared/CampaignSelector';
+import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import useSWR from 'swr';
 import type { LayoutTemplate } from '@/types';
 import {
@@ -18,7 +18,7 @@ import {
 } from '@/hooks/useAdminSWR';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
-import { UnifiedCampaignModal } from '@/components/shared/UnifiedCampaignModal';
+import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
 import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useAccessRows } from '@/hooks/useAccessRows';

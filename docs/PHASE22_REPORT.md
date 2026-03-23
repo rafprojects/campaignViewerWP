@@ -1,8 +1,8 @@
 # Phase 22 — Layout Fixes, Theme Contrast & WCAG AA Compliance
-**Status:** In Progress 🚧 (P22-A–J complete, K implemented, L1–L6 complete)
+**Status:** In Progress 🚧 (P22-A–J complete, K implemented, L1–L6 complete, M partially implemented, N complete, O in progress)
 **Version:** v0.20.0
 **Created:** March 19, 2026
-**Last updated:** March 20, 2026
+**Last updated:** March 22, 2026
 
 ### Tracks
 
@@ -30,6 +30,16 @@
 | P22-L5 | Custom font upload infrastructure (PHP) | Complete ✅ | Medium (3–4 hours) |
 | P22-L6 | Custom font upload UI + font picker integration | Complete ✅ | Medium (3–4 hours) |
 | P22-L7 | Font system end-to-end manual QA | Planned 📋 | Small (1–2 hours) |
+| P22-M1 | Gallery responsive height fix | Complete ✅ | Small (1–2 hours) |
+| P22-M2 | Gallery height constraint control | In Progress 🚧 | Medium (3–4 hours) |
+| P22-M3 | Viewport backgrounds: transparent option | Planned 📋 | Small (<1 hour) |
+| P22-M4 | Campaign Viewer settings → own tab | Planned 📋 | Small (1–2 hours) |
+| P22-M5 | Galleries-only conditional disabling | Planned 📋 | Small (~1 hour) |
+| P22-M6 | Advanced settings audit & reorganization | Planned 📋 | Small (1–2 hours) |
+| P22-M7 | Justified gallery oversizing fix | Complete ✅ | Small (<1 hour) |
+| P22-M8 | Google Font URL specification fix | Complete ✅ | Medium (2–3 hours) |
+| P22-N | Fullscreen gallery sizing semantics & width propagation | Complete ✅ | Medium (2–4 hours) |
+| P22-O | Responsive layout controls & breakpoint-aware settings | In Progress 🚧 | Medium-Large (4–8 hours) |
 
 ---
 
@@ -141,17 +151,119 @@
     - [Fix](#fix-12)
     - [Files to modify](#files-to-modify-14)
     - [Acceptance Criteria](#acceptance-criteria-14)
-  - [Track P22-L1 — Font Loading Resilience](#track-p22-l1--font-loading-resilience)
-  - [Track P22-L2 — Grouped Font Picker + Expanded Google Fonts](#track-p22-l2--grouped-font-picker--expanded-google-fonts)
-  - [Track P22-L3 — Font Fallback Chain Picker](#track-p22-l3--font-fallback-chain-picker)
-  - [Track P22-L4 — PHP Server-Side Google Fonts Enqueueing](#track-p22-l4--php-server-side-google-fonts-enqueueing)
-  - [Track P22-L5 — Custom Font Upload Infrastructure](#track-p22-l5--custom-font-upload-infrastructure)
-  - [Track P22-L6 — Custom Font Upload UI](#track-p22-l6--custom-font-upload-ui)
-  - [Track P22-L7 — Font System End-to-End QA](#track-p22-l7--font-system-end-to-end-qa)
   - [Adapter Distribution Feasibility Assessment](#adapter-distribution-feasibility-assessment)
     - [Unified Strategy](#unified-strategy)
     - [Summary Table](#summary-table)
     - [Detailed Notes](#detailed-notes)
+  - [Track P22-L1 — Font Loading Resilience](#track-p22-l1--font-loading-resilience)
+    - [Problem](#problem-13)
+    - [Fix](#fix-13)
+    - [Files to modify](#files-to-modify-15)
+    - [Acceptance Criteria](#acceptance-criteria-15)
+    - [Implementation Result](#implementation-result)
+  - [Track P22-L2 — Grouped Font Picker + Expanded Google Fonts](#track-p22-l2--grouped-font-picker--expanded-google-fonts)
+    - [Problem](#problem-14)
+    - [Fix](#fix-14)
+    - [Files to modify](#files-to-modify-16)
+    - [Acceptance Criteria](#acceptance-criteria-16)
+    - [Implementation Result](#implementation-result-1)
+  - [Track P22-L3 — Font Fallback Chain Picker](#track-p22-l3--font-fallback-chain-picker)
+    - [Problem](#problem-15)
+    - [Current State](#current-state-5)
+    - [Fix](#fix-15)
+    - [Files to modify](#files-to-modify-17)
+    - [Acceptance Criteria](#acceptance-criteria-17)
+    - [Implementation Result](#implementation-result-2)
+  - [Track P22-L4 — PHP Server-Side Google Fonts Enqueueing](#track-p22-l4--php-server-side-google-fonts-enqueueing)
+    - [Problem](#problem-16)
+    - [Current State](#current-state-6)
+    - [Fix](#fix-16)
+    - [Files to modify](#files-to-modify-18)
+    - [Acceptance Criteria](#acceptance-criteria-18)
+    - [Implementation Result](#implementation-result-3)
+  - [Track P22-L5 — Custom Font Upload Infrastructure (PHP)](#track-p22-l5--custom-font-upload-infrastructure-php)
+    - [Problem](#problem-17)
+    - [Architecture Decision](#architecture-decision)
+    - [Fix](#fix-17)
+    - [Files to modify](#files-to-modify-19)
+    - [Acceptance Criteria](#acceptance-criteria-19)
+    - [Implementation Result](#implementation-result-4)
+  - [Track P22-L6 — Custom Font Upload UI](#track-p22-l6--custom-font-upload-ui)
+    - [Problem](#problem-18)
+    - [Fix](#fix-18)
+    - [Files to modify](#files-to-modify-20)
+    - [Acceptance Criteria](#acceptance-criteria-20)
+    - [Implementation Result](#implementation-result-5)
+  - [Track P22-L7 — Font System End-to-End QA](#track-p22-l7--font-system-end-to-end-qa)
+    - [Purpose](#purpose)
+    - [QA Scenarios](#qa-scenarios)
+    - [Acceptance Criteria](#acceptance-criteria-21)
+  - [Track P22-M — QA Fixes, Gallery Responsiveness \& Settings Reorg](#track-p22-m--qa-fixes-gallery-responsiveness--settings-reorg)
+    - [Key Decisions (M-Track)](#key-decisions-m-track)
+    - [Execution Order](#execution-order)
+  - [Track P22-M1 — Gallery Responsive Height Fix](#track-p22-m1--gallery-responsive-height-fix)
+    - [Original Problem](#original-problem)
+    - [Current State](#current-state-7)
+    - [Fix (Implemented)](#fix-implemented)
+    - [Files to modify](#files-to-modify-21)
+    - [Acceptance Criteria](#acceptance-criteria-22)
+    - [Implementation Result](#implementation-result-6)
+  - [Track P22-M2 — Gallery Height Constraint Control](#track-p22-m2--gallery-height-constraint-control)
+    - [Problem](#problem-19)
+    - [Current State](#current-state-8)
+    - [Fix](#fix-19)
+    - [Settings Pipeline](#settings-pipeline-3)
+    - [Files to modify](#files-to-modify-22)
+    - [Acceptance Criteria](#acceptance-criteria-23)
+  - [Track P22-M3 — Viewport Backgrounds: Transparent Option](#track-p22-m3--viewport-backgrounds-transparent-option)
+    - [Problem](#problem-20)
+    - [Fix](#fix-20)
+    - [Files to modify](#files-to-modify-23)
+    - [Acceptance Criteria](#acceptance-criteria-24)
+  - [Track P22-M4 — Campaign Viewer Settings → Own Tab](#track-p22-m4--campaign-viewer-settings--own-tab)
+    - [Problem](#problem-21)
+    - [Current State](#current-state-9)
+    - [Fix](#fix-21)
+    - [Files to modify](#files-to-modify-24)
+    - [Acceptance Criteria](#acceptance-criteria-25)
+  - [Track P22-M5 — Galleries-Only Conditional Disabling](#track-p22-m5--galleries-only-conditional-disabling)
+    - [Problem](#problem-22)
+    - [Current State](#current-state-10)
+    - [Fix](#fix-22)
+    - [Files to modify](#files-to-modify-25)
+    - [Acceptance Criteria](#acceptance-criteria-26)
+  - [Track P22-M6 — Advanced Settings Audit \& Reorganization](#track-p22-m6--advanced-settings-audit--reorganization)
+    - [Problem](#problem-23)
+    - [Current State](#current-state-11)
+    - [Fix](#fix-23)
+    - [Files to modify](#files-to-modify-26)
+    - [Acceptance Criteria](#acceptance-criteria-27)
+  - [Track P22-M7 — Justified Gallery Oversizing Fix](#track-p22-m7--justified-gallery-oversizing-fix)
+    - [Original Problem](#original-problem-1)
+    - [Current State](#current-state-12)
+    - [Fix (Implemented)](#fix-implemented-1)
+    - [Files to modify](#files-to-modify-27)
+    - [Acceptance Criteria](#acceptance-criteria-28)
+    - [Implementation Result](#implementation-result-7)
+  - [Track P22-M8 — Google Font URL Specification Fix](#track-p22-m8--google-font-url-specification-fix)
+    - [Problem](#problem-24)
+    - [Fix (Implemented)](#fix-implemented-2)
+    - [Files modified](#files-modified)
+    - [Acceptance Criteria](#acceptance-criteria-29)
+  - [Track P22-N — Fullscreen Gallery Sizing Semantics \& Width Propagation](#track-p22-n--fullscreen-gallery-sizing-semantics--width-propagation)
+    - [Problem](#problem-25)
+    - [Current State](#current-state-13)
+    - [Fix](#fix-24)
+    - [Files to modify](#files-to-modify-28)
+    - [Acceptance Criteria](#acceptance-criteria-30)
+    - [Decisions](#decisions-1)
+  - [Track P22-O — Responsive Layout Controls \& Breakpoint-Aware Settings](#track-p22-o--responsive-layout-controls--breakpoint-aware-settings)
+    - [Problem](#problem-26)
+    - [Current State](#current-state-14)
+    - [Fix](#fix-25)
+    - [Files to modify](#files-to-modify-29)
+    - [Acceptance Criteria](#acceptance-criteria-31)
+    - [Decisions](#decisions-2)
 
 ---
 
@@ -186,6 +298,14 @@ The common thread: visual polish and accessibility. The `cardMaxWidth` wrapper b
 | Q | Mirror distribution scope | **CompactGrid now** using existing `cardMaxColumns`/`cardGridColumns` (no new setting). Other adapters assessed for future — see feasibility section. |
 | R | modalMaxWidth default | **1200** (matches current Mantine `xl`). Value 0 also accepted as Mantine `xl`. Range: 0–3000. |
 | S | Fullscreen bg options | **Match viewerBgType** (theme/transparent/solid/gradient). No image option. Named `modalBg*` (shorter, since bg only applies in fullscreen). |
+| T | Gallery height responsiveness | **Replace `window.innerWidth` snap** with container-aware `useBreakpoint` hook. Height recalculates on container resize, not just on mount. |
+| U | Gallery layout mode | **New `gallerySizingMode` dropdown** with Auto (content-driven) and Manual (explicit px dimensions). Auto uses content-driven height for image galleries, 16:9 aspect for video. |
+| V | Manual mode width semantics | **px maxWidth** (0 = 100% full width). Consistent with existing `appMaxWidth` and `modalMaxWidth` patterns. |
+| W | Unified gallery + Manual mode | **One set of controls** when unified is enabled (single container), two sets when separate. |
+| X | Viewport bg transparent | **Rename label** from "None" to "Transparent" and apply `{ background: 'transparent' }` in `resolveViewportBg()`. |
+| Y | Campaign Viewer settings tab | **Own top-level tab** in SettingsPanel alongside General, Cards, Media Gallery, Typography, Advanced. |
+| Z | Galleries-only disabling | **Disable + dim** irrelevant toggles with `opacity: 0.4` + `pointerEvents: 'none'` + `disabled` prop when `campaignOpenMode === 'galleries-only'`. |
+| AA | Justified singleRowMaxHeight | **Cap at `targetRowHeight * 1.5`** (from `* 2`). Simple, no separate setting. |
 
 ---
 
@@ -1759,3 +1879,781 @@ Manual end-to-end QA of the complete font system to verify all tracks work toget
 - [ ] No console errors (only expected warnings for blocked CDN test)
 - [ ] No visual flash-of-unstyled-text in normal operation
 - [ ] Font picker is searchable and groups are correctly categorized
+
+---
+
+## Track P22-M — QA Fixes, Gallery Responsiveness & Settings Reorg
+
+QA testing revealed a cluster of related issues around gallery responsiveness, settings organization, and gallery adapter sizing. These are grouped as Track M with 8 sub-tracks. M1, M7, and M8 are already reflected in the current codebase; the remaining M tracks are planning items.
+
+### Key Decisions (M-Track)
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| T | Gallery height responsiveness | **Replace `window.innerWidth` snap** with container-aware `useBreakpoint` hook. Height recalculates on container resize, not just on mount. |
+| U | Gallery layout mode | **New `gallerySizingMode` control** with No restraint, Restrain to view, and Manual height entry. The viewport-constrained path now needs a second pass to derive an effective width cap from the same viewport budget so wide desktop fullscreen mode actually changes size. |
+| V | Manual mode width semantics | **px maxWidth** (0 = 100% full width). Consistent with existing `appMaxWidth` and `modalMaxWidth` patterns. |
+| W | Unified gallery + Manual mode | **One set of controls** when unified is enabled (single container), two sets when separate. |
+| X | Viewport bg transparent | **Rename label** from "None" to "Transparent" and apply explicit `{ background: 'transparent' }` in `resolveViewportBg()`. |
+| Y | Campaign Viewer settings tab | **Own top-level tab** in SettingsPanel alongside General, Cards, Media Gallery, Typography, Advanced. |
+| Z | Galleries-only disabling | **Disable + dim** irrelevant toggles with `opacity: 0.4` + `pointerEvents: 'none'` + `disabled` prop when `campaignOpenMode === 'galleries-only'`. |
+| AA | Justified singleRowMaxHeight | **Cap at `targetRowHeight * 1.5`** (from `* 2`). Simple, no separate setting. |
+
+### Execution Order
+
+```
+Phase 1:             M3 (transparent bg)
+Phase 2:             M4 (Campaign Viewer tab)
+Phase 3:             M5 (galleries-only disabling) — depends on M4
+Phase 4:             M2 (height constraint control) — depends on M1
+Phase 5:             M6 (advanced audit) — depends on M2 + M4
+Phase 6:             O1/O2 (responsive layout controls rollout) — depends on M2 follow-up
+```
+
+---
+
+## Track P22-M1 — Gallery Responsive Height Fix
+
+**Status:** Complete ✅
+**Priority:** 🔴 High — galleries don't respond to container/window resize
+**Effort:** Small (1–2 hours)
+**Depends on:** None
+
+### Original Problem
+
+Both `ImageCarousel` and `VideoCarousel` compute their responsive height inside a `useMemo` that reads `window.innerWidth` once on mount:
+
+```tsx
+// ImageCarousel.tsx ~L65–68
+const standardViewerHeight = useMemo(() => {
+  const base = Math.max(180, Math.min(900, settings.imageViewportHeight));
+  const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  return w < 576 ? `${Math.round(base * 0.55)}px`
+       : w < 768 ? `${Math.round(base * 0.75)}px`
+       : `${base}px`;
+}, [settings.imageViewportHeight]);
+```
+
+The dependency array includes **only** the height setting — `window.innerWidth` is captured once and never recalculated. Window resizes (orientation change, drag-to-resize, WP column layout changes) have no effect. Meanwhile, the existing `useBreakpoint` hook uses `ResizeObserver` on the actual container and updates on resize — but is never consulted for height scaling.
+
+Additionally, `window.innerWidth` is incorrect for WordPress embeds where the gallery might be in a sidebar or narrow column — the container width can be much less than the viewport width.
+
+### Current State
+
+- `ImageCarousel.tsx` accepts `breakpoint` and derives its height multiplier from `'mobile' | 'tablet' | 'desktop'`
+- `VideoCarousel.tsx` uses the same breakpoint-driven height calculation
+- `CampaignViewer.tsx` already threads `breakpoint` into the classic image/video carousel path through the local gallery section components
+
+### Fix (Implemented)
+
+**Step 1: Accept `breakpoint` prop in both carousel components**
+
+Both `ImageCarousel` and `VideoCarousel` should accept a `breakpoint: Breakpoint` prop (already passed from `CampaignViewer` to gallery sections — just needs threading through to the carousel components).
+
+**Step 2: Replace `window.innerWidth` with breakpoint-derived multiplier**
+
+```tsx
+const heightMultiplier = breakpoint === 'mobile' ? 0.55
+                       : breakpoint === 'tablet' ? 0.75
+                       : 1.0;
+
+const standardViewerHeight = useMemo(() => {
+  const base = Math.max(180, Math.min(900, settings.imageViewportHeight));
+  return `${Math.round(base * heightMultiplier)}px`;
+}, [settings.imageViewportHeight, heightMultiplier]);
+```
+
+This is now container-aware (ResizeObserver-backed), SSR-safe, and recalculates when the container resizes.
+
+### Files to modify
+- `src/components/Campaign/ImageCarousel.tsx` — Props interface + height calculation (~L65–68)
+- `src/components/Campaign/VideoCarousel.tsx` — Same pattern (~L55–58)
+- `src/components/Campaign/CampaignViewer.tsx` — Thread `breakpoint` prop to carousel components (if not already passed)
+
+### Acceptance Criteria
+- [x] Resize browser window from desktop → mobile: gallery height animates/updates without page reload
+- [x] WordPress narrow-column embed (<576px container): carousel uses mobile height (0.55× multiplier)
+- [x] Orientation change on tablet: height updates from 0.75× ↔ 1.0× based on resulting container width
+- [x] No `window.innerWidth` references remain in ImageCarousel or VideoCarousel
+- [x] Existing responsive behavior (mobile=55%, tablet=75%, desktop=100%) preserved with identical breakpoints
+
+### Implementation Result
+
+The current carousel path already matches the intended M1 fix. `ImageCarousel.tsx` and `VideoCarousel.tsx` both accept the resolved `breakpoint` and derive their height multiplier from it, removing the old `window.innerWidth` dependency and making the classic carousel height responsive to the observed container breakpoint.
+
+---
+
+## Track P22-M2 — Gallery Height Constraint Control
+
+**Status:** In Progress 🚧
+**Priority:** 🟡 Medium — responsiveness feature
+**Effort:** Medium (3–4 hours)
+**Depends on:** M1 (responsive height fix must land first)
+
+### Problem
+
+Classic gallery sizing needs a clearer height policy. Allowing galleries to scale freely can produce fullscreen overbleed, but a fixed pixel height is too rigid for large screens and responsive layouts. The UI needs an explicit constraint control that supports three practical modes: unrestricted sizing, viewport-constrained sizing, and manual CSS height entry.
+
+### Current State
+
+- Classic galleries support responsive aspect-ratio sizing in auto mode
+- A viewport-constrained mode can cap classic gallery height to the visible screen while preserving aspect ratio
+- Manual mode can use a CSS height string instead of a fixed numeric px-only input
+- Adapter-driven galleries are still outside this control for now
+- Desktop fullscreen QA shows the current viewport mode does not produce a meaningful visual restraint yet because the height cap is too loose and does not derive an effective width cap from the same viewport budget
+
+**Implementation progress:**
+- The classic carousel path now supports three height-constraint behaviors: no restraint, viewport restraint, and manual CSS height
+- The Media Gallery settings UI exposes the new control and a manual text input when needed
+- Adapter-driven galleries remain a separate follow-up if equivalent constraint modes are needed there
+- The viewport-constrained path is being refined so it constrains the effective frame width from the same viewport-height budget instead of only applying `max-height`
+
+### Fix
+
+**Setting:** `gallerySizingMode: 'auto' | 'viewport' | 'manual'` (default `'auto'`)
+
+**Supporting field:** `galleryManualHeight: string` (default `'420px'`)
+
+**No restraint:**
+- **Image galleries**: Height is content-driven with a `3 / 2` aspect ratio for the classic carousel
+- **Video galleries**: Height is content-driven with a `16 / 9` aspect ratio for the classic carousel
+- This is the current full-bleed behavior and can overrun the viewport on very large screens
+
+**Restrain to view:**
+- Keeps the same responsive aspect-ratio sizing but applies a viewport-based `max-height`
+- Intended for fullscreen campaigns where classic galleries should stay within the visible screen instead of bleeding past it
+- Follow-up implementation derives a matching effective `max-width` from the same viewport budget so wide desktop layouts visibly shrink instead of remaining full-width
+
+**Manual:**
+- Reveals a single text input for CSS height values such as `420px`, `32em`, `75vh`, or `90%`
+- Classic gallery frames use that exact height value
+- Invalid values fall back to the existing computed height path
+
+**UI layout in Media Gallery tab:**
+
+```
+┌─────────────────────────────────────────────┐
+│ Height Constraint                           │
+│ ┌─────────────────────────────────────────┐ │
+│ │ Restrain to view               ▼        │ │
+│ └─────────────────────────────────────────┘ │
+│ Keep classic galleries within the visible   │
+│ screen while preserving their aspect ratio. │
+│                                             │
+│ (Manual selected → reveals controls below)  │
+│                                             │
+│ Manual Gallery Height [ 420px ]             │
+└─────────────────────────────────────────────┘
+```
+
+**Integration with carousel components:**
+
+- `ImageCarousel`: `auto` uses `aspectRatio: '3 / 2'`, `viewport` adds a viewport-based `maxHeight`, and `manual` uses `galleryManualHeight`
+- `VideoCarousel`: same pattern with `aspectRatio: '16 / 9'`
+- `CampaignViewer.tsx`: width propagation from P22-N remains in place and combines with the new height constraint modes
+
+**Layout Builder exception:** The Layout Builder adapter always uses its own canvas sizing model (`canvasHeightMode`) regardless of `gallerySizingMode`. This is already self-contained.
+
+### Settings Pipeline
+- **TS type:** `GalleryBehaviorSettings.gallerySizingMode: 'auto' | 'viewport' | 'manual'`
+- **TS defaults:** `gallerySizingMode: 'auto'`, `galleryManualHeight: '420px'`
+- **PHP defaults:** `'gallery_sizing_mode' => 'auto'`, `'gallery_manual_height' => '420px'`
+- **PHP validation:** `'gallery_sizing_mode'` in `['auto', 'viewport', 'manual']`, `gallery_manual_height` sanitized to numeric CSS units only
+
+### Files to modify
+- `src/types/index.ts` — expand `gallerySizingMode`, add `galleryManualHeight`
+- `src/components/Admin/SettingsPanel.tsx` — replace the old fixed-height UI with the three-option constraint control + manual text entry
+- `src/components/Campaign/ImageCarousel.tsx` — implement no-restraint, viewport-constrained, and manual-height behavior
+- `src/components/Campaign/VideoCarousel.tsx` — same for video
+- `src/services/apiClient.ts` — add settings response fields
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php` — PHP defaults, valid options, and manual height sanitization
+
+### Acceptance Criteria
+- [ ] No restraint: classic image gallery fills width with responsive `3 / 2` sizing and may overflow the viewport
+- [ ] No restraint: classic video gallery fills width with responsive `16 / 9` sizing and may overflow the viewport
+- [ ] Restrain to view: classic galleries remain within the visible screen height while preserving aspect ratio
+- [ ] Manual: entering `420px`, `32em`, `75vh`, or `90%` applies that height to the classic gallery frame
+- [ ] Invalid manual height values fall back safely to the existing computed height path
+- [ ] Layout Builder and adapter-driven galleries remain unaffected by this control in the current phase
+- [ ] Restrain to view measurably reduces classic gallery size on wide desktop fullscreen layouts instead of appearing identical to no-restraint mode
+
+---
+
+## Track P22-M3 — Viewport Backgrounds: Transparent Option
+
+**Priority:** 🟢 Low — cosmetic label fix + minor behavior improvement
+**Effort:** Small (<1 hour)
+**Depends on:** None
+
+### Problem
+
+The video/image/unified gallery section backgrounds use `ViewportBgType = 'none' | 'solid' | 'gradient' | 'image'`. The `'none'` option is labeled "None" in the dropdown and applies an empty style object `{}` in `resolveViewportBg()`:
+
+```tsx
+// CampaignViewer.tsx ~L46–52
+function resolveViewportBg(type, color, gradient, imageUrl) {
+  if (type === 'solid') return { background: color };
+  if (type === 'gradient') return { background: gradient };
+  if (type === 'image') return { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' };
+  return {}; // 'none' — empty, no override
+}
+```
+
+**Two issues:**
+1. **Label is confusing**: "None" doesn't communicate that the background will be transparent. Users expect "None" to mean "no background styling applied" but may not realize inherited backgrounds or theme defaults will leak through.
+2. **No explicit transparent override**: Returning `{}` means any parent CSS `background` property is inherited. If the modal or a parent container sets a background, it bleeds into the gallery section. An explicit `background: 'transparent'` would override inheritance.
+
+### Fix
+
+**Step 1: Rename the dropdown label**
+
+In `SettingsPanel.tsx`, change the `'none'` option in all three viewport background Select components (image, video, unified):
+
+```diff
+- { value: 'none', label: 'None' },
++ { value: 'none', label: 'Transparent' },
+```
+
+**Step 2: Apply explicit transparent background**
+
+In `CampaignViewer.tsx`, update `resolveViewportBg()`:
+
+```diff
+- return {}; // 'none'
++ return { background: 'transparent' }; // explicit override — prevents inheritance
+```
+
+No type changes needed — `ViewportBgType` already includes `'none'`.
+
+### Files to modify
+- `src/components/Admin/SettingsPanel.tsx` — Three Select `data` arrays (image bg, video bg, unified bg) — rename label
+- `src/components/Campaign/CampaignViewer.tsx` — `resolveViewportBg()` return value for `'none'`
+
+### Acceptance Criteria
+- [ ] All three background dropdowns show "Transparent" instead of "None"
+- [ ] Setting background to "Transparent" applies `background: transparent` (visible in DevTools)
+- [ ] Parent container backgrounds do not leak through when "Transparent" is selected
+- [ ] Solid, Gradient, and Image options continue to work identically
+- [ ] PHP settings remain unchanged (stores/validates `'none'` value — only the UI label changed)
+
+---
+
+## Track P22-M4 — Campaign Viewer Settings → Own Tab
+
+**Priority:** 🟡 Medium — settings discoverability
+**Effort:** Small (1–2 hours)
+**Depends on:** None
+
+### Problem
+
+The General tab in SettingsPanel contains a "Campaign Viewer" divider section (~14 settings) that are exclusively CampaignViewer-specific. These include:
+
+| Setting | Control |
+|---------|---------|
+| Campaign Open Mode | Select (`'full'` / `'galleries-only'`) |
+| Fullscreen Campaign Modal | Switch |
+| Show Company Name | Switch |
+| Show Date | Switch |
+| Show About Section | Switch |
+| Show Description | Switch |
+| Show Cover Image | Switch |
+| Show Tags | Switch |
+| Show Admin Actions | Switch |
+| Show Gallery Labels | Switch |
+| Show Campaign Stats | Switch |
+| Stats Admin-Only | Switch |
+| Fullscreen Content Max Width | NumberInput |
+| Modal Max Width | NumberInput |
+
+These don't belong in General because:
+1. They don't affect the main gallery listing — only the campaign detail viewer
+2. They clutter General, making it harder to find global settings like theme, layout, and container sizing
+3. Users looking for "campaign viewer" settings wouldn't think to look in "General"
+
+### Current State
+
+The General tab layout in `SettingsPanel.tsx` is structured with divider-separated groups:
+1. Theme + Layout + Container sizing
+2. Header Visibility
+3. Viewer Background
+4. Auth Bar
+5. **Campaign Viewer** ← this section moves out
+
+### Fix
+
+**Step 1: Add new tab**
+
+Add `"viewer"` to the Tabs component:
+```tsx
+<Tabs.List>
+  <Tabs.Tab value="general">General</Tabs.Tab>
+  <Tabs.Tab value="cards">Campaign Cards</Tabs.Tab>
+  <Tabs.Tab value="media">Media Gallery</Tabs.Tab>
+  <Tabs.Tab value="viewer">Campaign Viewer</Tabs.Tab>  {/* NEW */}
+  <Tabs.Tab value="typography">Typography</Tabs.Tab>
+  {advancedSettingsEnabled && <Tabs.Tab value="advanced">Advanced</Tabs.Tab>}
+</Tabs.List>
+```
+
+**Step 2: Move the Campaign Viewer section**
+
+Cut the entire "Campaign Viewer" divider section from General tab (the `<Divider label="Campaign Viewer" .../>` through the last setting before the next divider or closing `</Stack>`) and paste into a new `<Tabs.Panel value="viewer">`.
+
+**Step 3: Organize the new tab**
+
+Layout for the Campaign Viewer tab:
+
+```
+┌─────────────────────────────────────────────┐
+│ ── Open Mode ──────────────────────────     │
+│ Campaign Open Mode    [Full ▼]              │
+│ Fullscreen Campaign Modal  [toggle]         │
+│ Modal Max Width (px)  [1200]                │
+│ Fullscreen Content Max Width (px) [0]       │
+│                                             │
+│ ── Visibility ─────────────────────────     │
+│ Show Company Name    [toggle]               │
+│ Show Date            [toggle]               │
+│ Show About Section   [toggle]               │
+│ Show Description     [toggle]               │
+│ Show Cover Image     [toggle]               │
+│ Show Tags            [toggle]               │
+│ Show Gallery Labels  [toggle]               │
+│ Show Admin Actions   [toggle]               │
+│ Show Campaign Stats  [toggle]               │
+│ Stats Admin-Only     [toggle]               │
+└─────────────────────────────────────────────┘
+```
+
+**Step 4: Clean up General tab**
+
+After removal, the General tab becomes a clean global-settings page:
+- Theme selector
+- Default layout dropdown
+- Items per page
+- Container sizing (appMaxWidth, appPadding)
+- WP Full Bleed toggles
+- Header visibility (gallery title, subtitle, access mode, filter tabs, search box)
+- Viewer Background
+- Auth Bar
+
+### Files to modify
+- `src/components/Admin/SettingsPanel.tsx` — Tab list, new panel, move Campaign Viewer controls
+
+### Acceptance Criteria
+- [ ] "Campaign Viewer" tab appears in the tab bar between "Media Gallery" and "Typography"
+- [ ] All 14 Campaign Viewer settings render and function in the new tab
+- [ ] General tab no longer contains any Campaign Viewer settings
+- [ ] Settings persistence is unaffected — same keys, same defaults, same PHP pipeline
+- [ ] Tab switching preserves unsaved changes (existing behavior)
+- [ ] Responsive tab bar wraps on mobile without clipping
+
+---
+
+## Track P22-M5 — Galleries-Only Conditional Disabling
+
+**Priority:** 🟡 Medium — UX clarity
+**Effort:** Small (~1 hour)
+**Depends on:** M4 (settings must be in Campaign Viewer tab)
+
+### Problem
+
+When `campaignOpenMode === 'galleries-only'`, the viewer skips the cover image header, about section, stats block, and all campaign metadata — going straight to galleries. However, all the visibility toggles for those sections remain fully interactive in the settings panel. Toggling them has no visible effect, which is confusing.
+
+### Current State
+
+CampaignViewer rendering gates (`CampaignViewer.tsx`):
+```tsx
+const galleriesOnly = s.campaignOpenMode === 'galleries-only';
+
+// Cover image — skipped when galleriesOnly
+{!galleriesOnly && s.showCampaignCoverImage && (
+  <Box pos="relative" h={...}> ... </Box>
+)}
+
+// About section — skipped when galleriesOnly
+{!galleriesOnly && s.showCampaignAbout && (
+  <Box> ... </Box>
+)}
+
+// Stats — skipped when galleriesOnly
+{!galleriesOnly && s.showCampaignStats && (
+  <Box role="region"> ... </Box>
+)}
+```
+
+### Fix
+
+In the Campaign Viewer tab (from M4), wrap the affected settings in a conditional disabled state:
+
+```tsx
+const isGalleriesOnly = settings.campaignOpenMode === 'galleries-only';
+
+<Box
+  style={{
+    opacity: isGalleriesOnly ? 0.4 : 1,
+    pointerEvents: isGalleriesOnly ? 'none' : 'auto',
+    transition: 'opacity 200ms ease',
+  }}
+>
+  {isGalleriesOnly && (
+    <Text size="xs" c="dimmed" mb="xs">
+      These settings apply only when Campaign Open Mode is "Full".
+    </Text>
+  )}
+  <Switch label="Show Company Name" disabled={isGalleriesOnly} ... />
+  <Switch label="Show Date" disabled={isGalleriesOnly} ... />
+  <Switch label="Show About Section" disabled={isGalleriesOnly} ... />
+  <Switch label="Show Description" disabled={isGalleriesOnly} ... />
+  <Switch label="Show Cover Image" disabled={isGalleriesOnly} ... />
+  <Switch label="Show Tags" disabled={isGalleriesOnly} ... />
+  <Switch label="Show Campaign Stats" disabled={isGalleriesOnly} ... />
+  <Switch label="Stats Admin-Only" disabled={isGalleriesOnly} ... />
+  <NumberInput label="Fullscreen Content Max Width" disabled={isGalleriesOnly} ... />
+</Box>
+```
+
+**Settings that remain always active** (relevant in both modes):
+- Campaign Open Mode (the mode selector itself)
+- Fullscreen Campaign Modal
+- Modal Max Width
+- Show Gallery Labels (labels appear above gallery sections)
+- Show Admin Actions (visible in galleries-only mode via AuthBar)
+
+### Files to modify
+- `src/components/Admin/SettingsPanel.tsx` — Campaign Viewer tab: conditional disabled wrapper
+
+### Acceptance Criteria
+- [ ] Selecting "Galleries Only" immediately dims the affected toggles (smooth 200ms transition)
+- [ ] Dimmed controls are non-interactive (`pointerEvents: none` + `disabled` prop)
+- [ ] Helper text appears explaining the disabled state
+- [ ] Switching back to "Full" immediately re-enables all controls
+- [ ] Campaign Open Mode, Fullscreen toggle, Modal Max Width, Gallery Labels, and Admin Actions remain interactive in both modes
+- [ ] Underlying setting values are preserved when toggling between modes (not reset)
+
+---
+
+## Track P22-M6 — Advanced Settings Audit & Reorganization
+
+**Priority:** 🟢 Low — post-reorg cleanup
+**Effort:** Small (1–2 hours)
+**Depends on:** M2 (layout mode), M4 (Campaign Viewer tab)
+
+### Problem
+
+After introducing the layout mode dropdown (M2) and the Campaign Viewer tab (M4), several Advanced Settings need reassignment or gating:
+
+1. **`photoNormalizeHeight`** and **`mosaicTargetRowHeight`** — buried in Advanced → Tile/Adapter but directly affect gallery appearance visible to all users. Should be surfaced.
+2. **Cover mobile/tablet ratios** — relate to campaign cover image display, not general advanced tuning. Belong in Campaign Viewer tab.
+3. **Content max width, gallery section gaps/margins** — these overlap with the new Manual layout mode's width controls. Need clarification on when each applies.
+4. **`photoNormalizeHeight`** bug discovered during research — setting exists in UI but is completely ignored by `JustifiedGallery.tsx` (uses hardcoded 400 instead). Fixed in M7.
+
+### Current State
+
+Advanced → Modal/Viewer accordion:
+- `coverMobileRatio`, `coverTabletRatio` — campaign cover image aspect ratios per breakpoint
+- `closeButtonSize` — close button in campaign modal
+- `fullscreenContentMaxWidth` — already in Campaign Viewer (General tab); duplicated?
+- `campaignDescriptionLineHeight` — campaign viewer text formatting
+- `mobileBreakpoint` — when to switch mobile layouts
+- `modalGalleryGap`, `modalGalleryMargin` — spacing around gallery sections in the modal
+
+Advanced → Tile/Adapter accordion:
+- `photoNormalizeHeight` — justified gallery normalization (100–800, default 300)
+- `mosaicTargetRowHeight` — justified gallery target row height
+- Various hover, bounce, transition settings (fine where they are)
+
+### Fix
+
+**Step 1: Move cover settings to Campaign Viewer tab**
+
+Move from Advanced → Modal/Viewer to Campaign Viewer tab:
+- `coverMobileRatio` → Campaign Viewer tab, under a "Cover Image" sub-section
+- `coverTabletRatio` → same
+- `campaignDescriptionLineHeight` → Campaign Viewer tab, under "Text Formatting"
+- `closeButtonSize` → Campaign Viewer tab, under "Modal Controls"
+
+**Step 2: Surface gallery layout settings in Media Gallery tab**
+
+Move from Advanced → Tile/Adapter to Media Gallery tab:
+- `photoNormalizeHeight` → Media Gallery tab, under "Justified Gallery" sub-section
+- `mosaicTargetRowHeight` → same sub-section
+
+These are user-facing gallery appearance controls, not advanced tuning.
+
+**Step 3: Clarify gallery spacing vs Manual mode width**
+
+- `modalGalleryGap` — vertical gap between video/image gallery sections (Stack gap) → stays in Advanced (fine-tuning)
+- `modalGalleryMargin` — horizontal padding around gallery container → stays in Advanced but add tooltip clarifying this is additional padding beyond Manual mode width constraints
+- `modalGalleryMaxWidth` — if it exists, reconcile with `imageViewportWidth`/`videoViewportWidth` from M2
+
+**Step 4: Remove duplicate `fullscreenContentMaxWidth`**
+
+Check if `fullscreenContentMaxWidth` appears in both General and Advanced. If duplicated, remove from Advanced (canonical location is Campaign Viewer tab after M4).
+
+### Files to modify
+- `src/components/Admin/SettingsPanel.tsx` — Move controls between tabs/accordions
+- `src/data/settingTooltips.ts` — Update/add tooltips for relocated settings
+
+### Acceptance Criteria
+- [ ] `photoNormalizeHeight` and `mosaicTargetRowHeight` are in the Media Gallery tab (not Advanced)
+- [ ] Cover ratios and description line height are in the Campaign Viewer tab (not Advanced)
+- [ ] No duplicate settings across tabs
+- [ ] Advanced tab remains clean: only tuning values that most users shouldn't need to touch
+- [ ] All relocated settings continue to save/load correctly via the same PHP pipeline
+- [ ] Tooltips reflect the new context (e.g., "Controls image normalization in the justified gallery layout")
+
+---
+
+## Track P22-M7 — Justified Gallery Oversizing Fix
+
+**Status:** Complete ✅
+**Priority:** 🔴 High — gallery images are excessively large
+**Effort:** Small (<1 hour)
+**Depends on:** None
+
+### Original Problem
+
+`JustifiedGallery.tsx` computes photo dimensions for `react-photo-album`'s row-packing algorithm using a hardcoded `NORMALIZE_HEIGHT = 400`:
+
+```tsx
+// JustifiedGallery.tsx ~L60
+const NORMALIZE_HEIGHT = 400;
+const photos: RpaPhoto[] = enriched.map((item) => {
+  const ratio = item.width / item.height;
+  return {
+    src: item.thumbnail || item.url,
+    width: Math.round(NORMALIZE_HEIGHT * ratio),
+    height: NORMALIZE_HEIGHT,
+    ...
+  };
+});
+```
+
+**Issue 1: Settings disconnect** — `settings.photoNormalizeHeight` (default 300, range 100–800) is exposed in the Advanced UI as "Photo Normalize Height (px)" with a tooltip "Target height (px) for normalizing photo aspect ratios in the justified gallery." But the code completely ignores it and uses hardcoded 400. Users can adjust this setting all day with zero effect.
+
+**Issue 2: Oversized rows** — The row constraint `singleRowMaxHeight: targetRowHeight * 2` (with default `targetRowHeight = 200`) allows rows up to 400px tall. Combined with the inflated normalize height of 400 (vs the intended 300), the row-packing algorithm produces rows that are far too tall, especially when there are few images or wide aspect ratios. A single wide image can fill an entire row at nearly 400px height.
+
+### Current State
+
+- `normalizeHeight = settings.photoNormalizeHeight ?? 300`
+- `settings.mosaicTargetRowHeight` still controls the target row height
+- `singleRowMaxHeight = Math.round(targetRowHeight * 1.5)`
+- The exposed Advanced setting now affects the justified layout as intended
+
+### Fix (Implemented)
+
+
+**Step 1: Use the setting**
+
+```diff
+- const NORMALIZE_HEIGHT = 400;
++ const normalizeHeight = settings.photoNormalizeHeight ?? 300;
+```
+
+Replace all references to `NORMALIZE_HEIGHT` with `normalizeHeight`.
+
+**Step 2: Tighten row height cap**
+
+```diff
+- rowConstraints={{ singleRowMaxHeight: targetRowHeight * 2 }}
++ rowConstraints={{ singleRowMaxHeight: Math.round(targetRowHeight * 1.5) }}
+```
+
+At default `targetRowHeight = 200`:
+- Before: max row height = 400px (often hit with wide images)
+- After: max row height = 300px (more balanced, still allows layout flexibility)
+
+**Combined effect:**
+- Normalize height: 400 → 300 (33% reduction in input dimensions to the packing algorithm)
+- Max row height: 400px → 300px (25% reduction in worst-case row height)
+- Images that previously filled a row at 400px height will now be constrained to ~300px — still prominent but not dominating the viewport
+
+### Files to modify
+- `src/gallery-adapters/justified/JustifiedGallery.tsx` — Replace `NORMALIZE_HEIGHT`, update `rowConstraints`
+
+### Acceptance Criteria
+- [x] Hardcoded `NORMALIZE_HEIGHT` is removed — uses `settings.photoNormalizeHeight`
+- [x] Default behavior (300 normalize, 200 target row): justified gallery rows are visibly smaller than before
+- [x] Changing `photoNormalizeHeight` in Advanced settings actually affects justified layout
+- [x] Wide aspect ratio images (4:1, 3:1) no longer produce 400px-tall rows — capped at ~300px
+- [x] Narrow images and mixed-ratio rows still produce aesthetically balanced justified layouts
+- [x] `singleRowMaxHeight` is `targetRowHeight * 1.5` (300px at default)
+
+### Implementation Result
+
+The current `JustifiedGallery.tsx` implementation already reflects this fix. The adapter now uses `settings.photoNormalizeHeight ?? 300` instead of a hardcoded normalization height, and the row cap is tightened to `Math.round(targetRowHeight * 1.5)`.
+
+---
+
+## Track P22-M8 — Google Font URL Specification Fix
+
+**Priority:** 🔴 High — fonts failing to load (HTTP 400 errors)
+**Effort:** Medium (2–3 hours)
+**Status:** Complete ✅ (committed as `57c81cb`)
+
+### Problem
+
+The universal URL template `:ital,wght@0,100..900;1,100..900` in `loadGoogleFont.ts` produces HTTP 400 errors for many Google Fonts. Different fonts require different CSS API v2 axis specifications:
+- **Full-range variable fonts**: `ital,wght@0,100..900;1,100..900` (only ~6 fonts)
+- **Restricted-range variable**: varying ranges like `ital,wght@0,300..800;1,300..800`
+- **No-italic variable**: `wght@200..700` (no italic axis)
+- **Static fonts** (Lato, Poppins, etc.): discrete weight values like `ital,wght@0,100;0,300;0,400;...`
+- **Single-weight fonts** (Pacifico, Lobster, Satisfy): no axis specification needed
+
+### Fix (Implemented)
+
+1. **All 39 Google Fonts** in the app's font list were individually tested against the CSS API v2
+2. A `GOOGLE_FONT_SPECS` map was created with verified per-font axis specifications in both:
+   - `src/utils/loadGoogleFont.ts` (TypeScript, for admin preview)
+   - `wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php` (PHP, for server-side `wp_enqueue_style`)
+3. `loadGoogleFont()` was updated to look up per-font specs instead of the universal template
+4. `class-wpsg-embed.php` server-side enqueue was updated to use `WPSG_Settings::GOOGLE_FONT_SPECS`
+
+### Files modified
+- `src/utils/loadGoogleFont.ts` — `GOOGLE_FONT_SPECS` map + `loadGoogleFont()` refactor
+- `src/components/shared/TypographyEditor.tsx` — Console logging for fallback auto-selection (already existed)
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php` — `GOOGLE_FONT_SPECS` PHP constant
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php` — Server-side enqueue updated
+
+### Acceptance Criteria
+- [x] All 39 Google Fonts load without HTTP 400 errors
+- [x] TypeScript compiles cleanly
+- [x] All 1055 tests pass
+- [x] Vite build succeeds
+- [x] Committed as `57c81cb` on `feat/phase22-ux-fixes`
+
+---
+
+## Track P22-N — Fullscreen Gallery Sizing Semantics & Width Propagation
+
+**Priority:** 🔴 High — fullscreen galleries do not honor the intended width settings contract
+**Effort:** Medium (2–4 hours)
+**Depends on:** None
+
+### Problem
+
+Fullscreen modal sizing still behaves inconsistently with the settings UI. The Campaign Viewer settings describe `fullscreenContentMaxWidth = 0` as full responsive width and `modalGalleryMaxWidth = 0` as full responsive width, but the fullscreen content wrapper in `CampaignViewer.tsx` still falls back to a static `64rem` max width. This means fullscreen mode can remain visibly clamped even when the admin has selected unconstrained sizing.
+
+There is also a secondary container-contract issue inside the media section. The modal gallery wrapper, its inner `Stack`, and the local gallery section components do not consistently establish `width: '100%'` at the same points where they apply max-width constraints. That makes the current layout harder to reason about and leaves classic image/video carousels especially prone to looking artificially constrained.
+
+This is separate from the already-implemented responsive height work in M1 and from the justified-gallery tuning in M7. The issue here is the fullscreen width contract and its propagation through `CampaignViewer`.
+
+### Current State
+
+- `CampaignViewer` fullscreen content wrapper falls back to a fixed `64rem` width when `fullscreenContentMaxWidth` is `0`
+- The media gallery wrapper applies `modalGalleryMaxWidth`, but its descendants do not consistently declare `width: '100%'` where width inheritance is expected
+- `ImageCarousel` and `VideoCarousel` still use fixed-height frames, which can exaggerate the appearance of width clamping on large screens even after the height logic itself is responsive
+- `CompactGridGallery` already computes its own centered grid max width, while `JustifiedGallery` and `MasonryGallery` are more directly parent-width-driven
+
+### Fix
+
+**Phase N1: Restore correct fullscreen width semantics**
+- Update `CampaignViewer` so `fullscreenContentMaxWidth = 0` means truly full responsive width in fullscreen mode
+- Preserve the current non-fullscreen modal width behavior separately through `modalMaxWidth`
+
+**Phase N2: Tighten width propagation through the media container chain**
+- Add explicit `width: '100%'` where the fullscreen content wrapper, media wrapper, and inner `Stack` are expected to constrain descendants
+- Thread `modalGalleryMaxWidth` through the local gallery section components so section wrappers participate in the same width contract
+
+**Phase N3: Apply the same contract to classic carousels**
+- Extend `ImageCarousel` and `VideoCarousel` to accept a width constraint from `CampaignViewer`
+- Ensure their outer `Stack` and primary viewer/player frames use `width: '100%'` and honor an optional max-width value
+
+**Phase N4: Adapter audit only if necessary after N1–N3**
+- Verify `CompactGridGallery`, `JustifiedGallery`, `MasonryGallery`, and `LayoutBuilderGallery` after the wrapper fix lands
+- Only add adapter-specific max-width handling if QA still reproduces incorrect fullscreen sizing
+
+### Files to modify
+
+- `src/components/Campaign/CampaignViewer.tsx` — fullscreen content semantics, media wrapper width contract, local gallery sections
+- `src/components/Campaign/ImageCarousel.tsx` — classic image carousel width handling
+- `src/components/Campaign/VideoCarousel.tsx` — classic video carousel width handling
+- `src/gallery-adapters/compact-grid/CompactGridGallery.tsx` — verify whether existing `gridMaxWidth` logic is sufficient after container fixes
+- `src/gallery-adapters/justified/JustifiedGallery.tsx` — verify parent-width behavior after container fixes
+- `src/gallery-adapters/masonry/MasonryGallery.tsx` — verify parent-width behavior after container fixes
+- `src/components/Admin/SettingsPanel.tsx` — descriptions already define the intended semantics; verify no copy changes are needed beyond consistency
+
+### Acceptance Criteria
+
+- [ ] `fullscreenContentMaxWidth = 0` produces true fullscreen responsive width with no fallback `64rem` clamp
+- [ ] `fullscreenContentMaxWidth > 0` still produces a centered constrained content area in fullscreen mode
+- [ ] `modalGalleryMaxWidth` is honored consistently by the gallery section path in fullscreen mode
+- [ ] Classic image and video carousels fill the intended container width and no longer appear constrained by an unintentional wrapper cap
+- [ ] At least one adapter-driven gallery is visually verified after the core fix to determine whether adapter-specific follow-up is required
+
+### Decisions
+
+- This track is intentionally separate from M1 and M7 because it addresses fullscreen width semantics, not height responsiveness or justified-row sizing
+- The first implementation pass is limited to `CampaignViewer`, its local section wrappers, and the classic carousels
+- Adapter-specific changes are follow-up work only if the core wrapper fix proves insufficient
+
+---
+
+## Track P22-O — Responsive Layout Controls & Breakpoint-Aware Settings
+
+**Status:** In Progress 🚧
+**Priority:** 🟡 Medium-High — needed for consistent designer control across desktop, tablet, and mobile
+**Effort:** Medium-Large (4–8 hours)
+**Depends on:** M2 follow-up for classic viewport restraint
+
+### Problem
+
+The repo already has responsive behavior and one production per-breakpoint settings pattern, but layout-oriented controls are still modeled and surfaced inconsistently. Some settings are global, some are split into one-off mobile/tablet fields, and some use explicit desktop/tablet/mobile grids. That makes responsive layout tuning harder than it needs to be and prevents designers from adjusting viewer and gallery behavior with the same confidence they get from Elementor-style responsive controls.
+
+At the same time, the current classic gallery viewport restraint issue shows that desktop, tablet, and mobile should not necessarily share identical layout assumptions. The system needs a reusable breakpoint-aware model before more layout settings are expanded.
+
+### Current State
+
+- `useBreakpoint()` already provides container-aware `desktop | tablet | mobile` labels in runtime code
+- Per-breakpoint gallery adapter selection already ships through `gallerySelectionMode` plus six adapter fields and `resolveAdapterId()`
+- Several layout-related settings remain one-off or global, including classic gallery sizing, viewport heights, and viewer width constraints
+- `SettingsPanel` does not yet have a reusable responsive-control shell; the existing per-breakpoint adapter UI is a dedicated 3x2 grid
+
+### Fix
+
+**Phase O1: Add responsive layout groundwork**
+- Introduce a shared breakpoint-value resolver utility for layout settings
+- Use the utility immediately in classic carousel viewport restraint logic so desktop, tablet, and mobile can apply different viewport budgets through a single resolution path
+
+**Phase O2: Establish the inheritance model**
+- Use desktop as the base value
+- Allow tablet overrides that fall back to desktop
+- Allow mobile overrides that fall back to tablet and then desktop
+- Keep storage flat in the existing settings pipeline instead of introducing nested JSON blobs
+
+**Phase O3: Build a reusable settings-shell pattern**
+- Add an Elementor-inspired responsive selector control for eligible settings in `SettingsPanel`
+- Show inherited vs overridden state clearly
+- Provide a reset-to-inherit path for tablet/mobile overrides
+
+**Phase O4: Roll out layout-oriented settings first**
+- Limit the first rollout to Media Gallery and Campaign Viewer settings such as classic gallery height behavior, viewport heights, and viewer width constraints
+- Leave broader migration of existing breakpoint-specific controls out of scope until the new pattern proves itself
+
+### Files to modify
+
+- `src/utils/resolveBreakpointValue.ts` — shared breakpoint-aware value resolution for future responsive layout settings
+- `src/hooks/useBreakpoint.ts` — existing runtime breakpoint source used by responsive resolution
+- `src/components/Campaign/ImageCarousel.tsx` — consume the shared resolver for viewport-constrained sizing behavior
+- `src/components/Campaign/VideoCarousel.tsx` — same as `ImageCarousel`
+- `src/components/Campaign/CampaignViewer.tsx` — future consumer for breakpoint-aware viewer sizing settings
+- `src/components/Admin/SettingsPanel.tsx` — future home for the responsive control shell in Media Gallery and Campaign Viewer settings
+- `src/types/index.ts` — future flat per-breakpoint layout fields and defaults
+- `src/services/apiClient.ts` — future API typing for responsive layout fields
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php` — future defaults and sanitization for responsive layout overrides
+
+### Acceptance Criteria
+
+- [ ] A shared breakpoint-value resolver exists and is covered by unit tests
+- [ ] Classic carousel viewport restraint uses the shared resolver and applies meaningfully different viewport budgets across desktop, tablet, and mobile
+- [ ] The first responsive layout implementation keeps backward compatibility for installations with only base values set
+- [ ] The next rollout target is clearly limited to Media Gallery and Campaign Viewer layout controls
+- [ ] The responsive-control UI shell is tracked separately from the broader settings migration work
+
+### Decisions
+
+- This track is the implementation umbrella for responsive layout controls, but the first rollout remains intentionally narrow
+- The repo will keep its existing three breakpoint buckets for now instead of coupling this work to custom breakpoint editing
+- Responsive settings will use flat per-breakpoint fields plus shared resolution logic, not nested responsive objects
+- The UI direction is Elementor-inspired but Mantine-native: a compact device selector with explicit inherited/override state instead of a full settings-wide rewrite in one pass
