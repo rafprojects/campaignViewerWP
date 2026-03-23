@@ -13,7 +13,7 @@ import { useState, useCallback } from 'react';
 import { Box, Group, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -21,9 +21,10 @@ import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 interface CompactGridGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  containerDimensions?: ContainerDimensions;
 }
 
-export function CompactGridGallery({ media, settings }: CompactGridGalleryProps) {
+export function CompactGridGallery({ media, settings, containerDimensions }: CompactGridGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
 
@@ -42,7 +43,10 @@ export function CompactGridGallery({ media, settings }: CompactGridGalleryProps)
   const borderRadius = settings.imageBorderRadius;
   const gap = settings.thumbnailGap;
   const maxCols = settings.cardGridColumns || settings.cardMaxColumns || 5;
-  const gridMaxWidth = maxCols * cardWidth + (maxCols - 1) * gap;
+  let gridMaxWidth = maxCols * cardWidth + (maxCols - 1) * gap;
+  if (containerDimensions && containerDimensions.width > 0) {
+    gridMaxWidth = Math.min(gridMaxWidth, containerDimensions.width);
+  }
 
   return (
     <Stack gap="md">

@@ -16,7 +16,7 @@ import { RowsPhotoAlbum } from 'react-photo-album';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { Box, Stack, Title, Group } from '@mantine/core';
 import { IconLayoutRows, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
@@ -37,6 +37,7 @@ interface RpaPhoto {
 interface JustifiedGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  containerDimensions?: ContainerDimensions;
 }
 
 export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {

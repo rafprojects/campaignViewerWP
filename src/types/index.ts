@@ -36,6 +36,12 @@ export interface Campaign {
   categories?: string[];
 }
 
+/** Measured dimensions of a gallery section container, passed to child adapters. */
+export interface ContainerDimensions {
+  width: number;
+  height: number;
+}
+
 export interface MediaItem {
   id: string;
   type: 'video' | 'image' | 'other';
@@ -759,6 +765,18 @@ export interface GalleryBehaviorSettings {
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto' | 'viewport' | 'manual';
   galleryManualHeight: string;
+  // P22-P2: Dimension propagation — gallery section sizing
+  gallerySectionMaxWidth: number;
+  gallerySectionMaxHeight: number;
+  gallerySectionHeightMode: 'auto' | 'manual' | 'viewport';
+  gallerySectionMinWidth: number;
+  gallerySectionMinHeight: number;
+  perTypeSectionEqualHeight: boolean;
+  modalInnerPadding: number;
+  gallerySectionPadding: number;
+  adapterSizingMode: 'fill' | 'manual';
+  adapterMaxWidthPct: number;
+  adapterMaxHeightPct: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -1036,4 +1054,16 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto',
   galleryManualHeight: '420px',
+  // P22-P2: Dimension propagation — gallery section sizing
+  gallerySectionMaxWidth: 0,
+  gallerySectionMaxHeight: 0,
+  gallerySectionHeightMode: 'auto',
+  gallerySectionMinWidth: 300,
+  gallerySectionMinHeight: 150,
+  perTypeSectionEqualHeight: false,
+  modalInnerPadding: 16,
+  gallerySectionPadding: 16,
+  adapterSizingMode: 'fill',
+  adapterMaxWidthPct: 100,
+  adapterMaxHeightPct: 100,
 };

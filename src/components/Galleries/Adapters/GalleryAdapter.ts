@@ -7,7 +7,7 @@
  * single adapter can display all campaign media in one layout.
  */
 import type { ComponentType } from 'react';
-import type { MediaItem, GalleryBehaviorSettings } from '@/types';
+import type { MediaItem, GalleryBehaviorSettings, ContainerDimensions } from '@/types';
 
 /** Declared capabilities a gallery adapter can support. */
 export type AdapterCapability =
@@ -24,6 +24,8 @@ export interface GalleryAdapterProps {
   /** All media items for this campaign (images + videos, pre-sorted by order). */
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  /** Measured container dimensions from GallerySectionWrapper. Optional during migration. */
+  containerDimensions?: ContainerDimensions;
 }
 
 /** Registered metadata for a gallery adapter. */

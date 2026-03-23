@@ -14,7 +14,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconDiamond, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -29,9 +29,10 @@ const V_OVERLAP = 0.5;
 interface DiamondGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  containerDimensions?: ContainerDimensions;
 }
 
-export function DiamondGallery({ media, settings }: DiamondGalleryProps) {
+export function DiamondGallery({ media, settings, containerDimensions: _containerDimensions }: DiamondGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const containerRef = useRef<HTMLDivElement>(null);

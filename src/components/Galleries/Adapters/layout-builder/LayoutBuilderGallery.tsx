@@ -18,7 +18,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Box, Center, Loader, Text, Stack } from '@mantine/core';
 import { IconLayoutDashboard, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem, LayoutTemplate, CampaignLayoutBinding, SlotTiltEffect, LayoutSlot } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, LayoutTemplate, CampaignLayoutBinding, SlotTiltEffect, LayoutSlot, ContainerDimensions } from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
@@ -404,6 +404,8 @@ export interface LayoutBuilderGalleryProps {
   slotOverrides?: CampaignLayoutBinding['slotOverrides'];
   /** When true, show admin-level assignment info banners. */
   isAdmin?: boolean;
+  /** Measured container dimensions from GallerySectionWrapper. */
+  containerDimensions?: ContainerDimensions;
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -414,6 +416,7 @@ export function LayoutBuilderGallery({
   templateId,
   slotOverrides = {},
   isAdmin = false,
+  containerDimensions: _containerDimensions,
 }: LayoutBuilderGalleryProps) {
   const { template, isLoading, error } = useLayoutTemplate(templateId);
 

@@ -1,163 +1,21 @@
-import { lazy, Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader, Switch } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import type { Campaign, GalleryBehaviorSettings, MediaItem } from '@/types';
+import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
-import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useInContextSave } from '@/hooks/useInContextSave';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
-import { resolveAdapterId } from '@/utils/resolveAdapterId';
-import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { buildGradientCss } from '@/utils/gradientCss';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
-
-/**
- * Dispatch a gallery adapter by ID. 'classic' and 'layout-builder' are handled
- * separately in the caller because they need different props. All other adapter
- * IDs are resolved here. Unknown IDs fall back to CompactGridGallery.
- */
-function renderAdapter(id: string, media: MediaItem[], settings: GalleryBehaviorSettings) {
-  switch (id) {
-    case 'justified':
-    case 'mosaic': // legacy alias → justified (fixes single-column bug)
-      return <JustifiedGallery media={media} settings={settings} />;
-    case 'masonry':
-      return <MasonryGallery media={media} settings={settings} />;
-    case 'hexagonal':
-      return <HexagonalGallery media={media} settings={settings} />;
-    case 'circular':
-      return <CircularGallery media={media} settings={settings} />;
-    case 'diamond':
-      return <DiamondGallery media={media} settings={settings} />;
-    case 'compact-grid':
-    default:
-      return <CompactGridGallery media={media} settings={settings} />;
-  }
-}
-
-/** Return a CSS background style object from viewport background settings. */
-function resolveViewportBg(type: string, color: string, gradient: string, imageUrl: string) {
-  switch (type) {
-    case 'solid':    return { background: color };
-    case 'gradient': return { background: gradient };
-    case 'image': {
-      const safeUrl = sanitizeCssUrl(imageUrl);
-      return safeUrl ? { backgroundImage: `url(${safeUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
-    }
-    default:         return { background: 'transparent' };
-  }
-}
-
-const VideoCarousel = lazy(() => import('@/components/Galleries/Shared/VideoCarousel').then((m) => ({ default: m.VideoCarousel })));
-const ImageCarousel = lazy(() => import('@/components/Galleries/Shared/ImageCarousel').then((m) => ({ default: m.ImageCarousel })));
-const CompactGridGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/compact-grid/CompactGridGallery').then((m) => ({
-    default: m.CompactGridGallery,
-  }))
-);
-const JustifiedGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/justified/JustifiedGallery').then((m) => ({
-    default: m.JustifiedGallery,
-  }))
-);
-const MasonryGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/masonry/MasonryGallery').then((m) => ({
-    default: m.MasonryGallery,
-  }))
-);
-const HexagonalGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/hexagonal/HexagonalGallery').then((m) => ({
-    default: m.HexagonalGallery,
-  }))
-);
-const CircularGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/circular/CircularGallery').then((m) => ({
-    default: m.CircularGallery,
-  }))
-);
-const DiamondGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/diamond/DiamondGallery').then((m) => ({
-    default: m.DiamondGallery,
-  }))
-);
-const LayoutBuilderGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({
-    default: m.LayoutBuilderGallery,
-  }))
-);
-
-/* ── Local gallery section components (extracted from IIFEs) ────────── */
-
-interface GallerySectionProps {
-  campaign: Campaign;
-  settings: GalleryBehaviorSettings;
-  isAdmin: boolean;
-  maxWidth?: number;
-}
-
-function UnifiedGallerySection({ campaign, settings: s, isAdmin, maxWidth = 0 }: GallerySectionProps) {
-  const allMedia = [...campaign.videos, ...campaign.images].sort((a, b) => a.order - b.order);
-  if (allMedia.length === 0) return null;
-  const bgStyle = resolveViewportBg(s.unifiedBgType, s.unifiedBgColor, s.unifiedBgGradient, s.unifiedBgImageUrl);
-  const effectiveId = campaign.imageAdapterId || s.unifiedGalleryAdapterId;
-  const sectionStyle = {
-    width: '100%',
-    maxWidth: maxWidth > 0 ? `${maxWidth}px` : undefined,
-  } satisfies React.CSSProperties;
-  const inner = effectiveId === 'layout-builder' && campaign.layoutTemplateId
-    ? <LayoutBuilderGallery media={allMedia} settings={s} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
-    : renderAdapter(effectiveId, allMedia, s);
-  return s.unifiedBgType !== 'none'
-    ? <Box style={{ ...bgStyle, ...sectionStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
-    : <Box style={sectionStyle}>{inner}</Box>;
-}
-
-interface PerTypeGallerySectionProps extends GallerySectionProps {
-  breakpoint: Breakpoint;
-}
-
-function VideoGallerySection({ campaign, settings: s, breakpoint, isAdmin, maxWidth = 0 }: PerTypeGallerySectionProps) {
-  const id = campaign.videoAdapterId || resolveAdapterId(s, 'video', breakpoint);
-  const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
-  const bgStyle = resolveViewportBg(s.videoBgType, s.videoBgColor, s.videoBgGradient, s.videoBgImageUrl);
-  const sectionStyle = {
-    width: '100%',
-    maxWidth: maxWidth > 0 ? `${maxWidth}px` : undefined,
-  } satisfies React.CSSProperties;
-  const inner = id === 'classic'
-    ? <VideoCarousel videos={campaign.videos} settings={videoSettings} breakpoint={breakpoint} maxWidth={maxWidth} />
-    : id === 'layout-builder' && campaign.layoutTemplateId
-      ? <LayoutBuilderGallery media={campaign.videos} settings={videoSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
-      : renderAdapter(id, campaign.videos, videoSettings);
-  return s.videoBgType !== 'none'
-    ? <Box style={{ ...bgStyle, ...sectionStyle, borderRadius: s.videoBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
-    : <Box style={sectionStyle}>{inner}</Box>;
-}
-
-function ImageGallerySection({ campaign, settings: s, breakpoint, isAdmin, maxWidth = 0 }: PerTypeGallerySectionProps) {
-  const id = campaign.imageAdapterId || resolveAdapterId(s, 'image', breakpoint);
-  const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
-  const bgStyle = resolveViewportBg(s.imageBgType, s.imageBgColor, s.imageBgGradient, s.imageBgImageUrl);
-  const sectionStyle = {
-    width: '100%',
-    maxWidth: maxWidth > 0 ? `${maxWidth}px` : undefined,
-  } satisfies React.CSSProperties;
-  const inner = id === 'classic'
-    ? <ImageCarousel images={campaign.images} settings={imageSettings} breakpoint={breakpoint} maxWidth={maxWidth} />
-    : id === 'layout-builder' && campaign.layoutTemplateId
-      ? <LayoutBuilderGallery media={campaign.images} settings={imageSettings} templateId={campaign.layoutTemplateId} isAdmin={isAdmin} />
-      : renderAdapter(id, campaign.images, imageSettings);
-  return s.imageBgType !== 'none'
-    ? <Box style={{ ...bgStyle, ...sectionStyle, borderRadius: s.imageBorderRadius, overflow: 'hidden', padding: '16px' }}>{inner}</Box>
-    : <Box style={sectionStyle}>{inner}</Box>;
-}
+import { UnifiedGallerySection } from './UnifiedGallerySection';
+import { PerTypeGallerySection } from './PerTypeGallerySection';
 
 interface CampaignViewerProps {
   campaign: Campaign;
@@ -395,16 +253,9 @@ export function CampaignViewer({
             }>
             <Stack gap={s.modalGalleryGap ?? 32} style={{ width: '100%' }}>
               {galleryBehaviorSettings.unifiedGalleryEnabled ? (
-                <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} isAdmin={isAdmin} maxWidth={s.modalGalleryMaxWidth} />
+                <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} isAdmin={isAdmin} />
               ) : (
-                <>
-                  {campaign.videos.length > 0 && (
-                    <VideoGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} maxWidth={s.modalGalleryMaxWidth} />
-                  )}
-                  {campaign.images.length > 0 && (
-                    <ImageGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} maxWidth={s.modalGalleryMaxWidth} />
-                  )}
-                </>
+                <PerTypeGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
               )}
             </Stack>
             </Suspense>

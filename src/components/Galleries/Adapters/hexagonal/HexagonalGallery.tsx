@@ -13,7 +13,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconHexagon, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -28,9 +28,10 @@ const V_OVERLAP = 0.25;
 interface HexagonalGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  containerDimensions?: ContainerDimensions;
 }
 
-export function HexagonalGallery({ media, settings }: HexagonalGalleryProps) {
+export function HexagonalGallery({ media, settings, containerDimensions: _containerDimensions }: HexagonalGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const containerRef = useRef<HTMLDivElement>(null);

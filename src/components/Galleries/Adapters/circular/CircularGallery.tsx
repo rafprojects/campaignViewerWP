@@ -10,7 +10,7 @@ import { useState, useCallback } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconCircles, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -21,6 +21,7 @@ const SCOPE = 'circle';
 interface CircularGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  containerDimensions?: ContainerDimensions;
 }
 
 export function CircularGallery({ media, settings }: CircularGalleryProps) {

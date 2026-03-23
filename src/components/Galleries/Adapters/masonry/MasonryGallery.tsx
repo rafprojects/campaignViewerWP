@@ -17,13 +17,14 @@ import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { MasonryPhotoAlbum } from 'react-photo-album';
 import { Box, Stack, Title, Group } from '@mantine/core';
 import { IconColumns, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem } from '@/types';
+import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 
 const SCOPE = 'masonry';
 
@@ -39,9 +40,10 @@ interface RpaPhoto {
 interface MasonryGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  containerDimensions?: ContainerDimensions;
 }
 
-export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
+export function MasonryGallery({ media, settings, containerDimensions: _containerDimensions }: MasonryGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const enriched = useMediaDimensions(media);
@@ -57,15 +59,10 @@ export function MasonryGallery({ media, settings }: MasonryGalleryProps) {
   const gap = settings.thumbnailGap ?? 6;
   const pinned = settings.masonryColumns ?? 0;
 
-  // Responsive column function — honour user's pin when set, otherwise auto.
+  // Responsive column function — uses shared helper; honours user's pin when set.
   const columns = pinned > 0
     ? pinned
-    : (containerWidth: number) => {
-        if (containerWidth < 400) return 1;
-        if (containerWidth < 700) return 2;
-        if (containerWidth < 1000) return 3;
-        return 4;
-      };
+    : (containerWidth: number) => resolveColumnsFromWidth(containerWidth, 0);
 
   // Normalize all photos to a consistent reference height so large-resolution
   // images don't dominate the layout. react-photo-album uses width/height
