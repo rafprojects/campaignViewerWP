@@ -1807,6 +1807,15 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         max={32}
                         step={4}
                       />
+                      <NumberInput
+                        label="Adapter Content Padding (px)"
+                        description="Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
+                        value={settings.adapterContentPadding ?? 0}
+                        onChange={(v) => updateSetting('adapterContentPadding', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={24}
+                        step={4}
+                      />
                       <Divider label="Gallery Spacing" labelPosition="center" />
                       <NumberInput
                         label="Gallery Max Width (px)"
@@ -1823,8 +1832,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         value={settings.modalGalleryGap}
                         onChange={(v) => updateSetting('modalGalleryGap', typeof v === 'number' ? v : 32)}
                         min={0}
-                        max={120}
-                        step={4}
+                        max={64}
+                        step={8}
                       />
                       <NumberInput
                         label="Gallery Edge Margin (px)"

@@ -261,7 +261,7 @@ export function CampaignViewer({
                 </Stack>
               </Center>
             }>
-            <Stack gap={s.modalGalleryGap ?? 32} style={{ width: '100%' }}>
+            <Stack gap={Math.max(0, Math.min(64, s.modalGalleryGap ?? 32))} style={{ width: '100%' }}>
               {galleryBehaviorSettings.unifiedGalleryEnabled ? (
                 <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} isAdmin={isAdmin} />
               ) : (

@@ -558,8 +558,10 @@ function LayoutBuilderGalleryInner({
   const mediaCount = media.length;
   const hasMismatch = slotCount !== mediaCount;
 
+  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+
   return (
-    <Stack gap="md">
+    <Stack gap="md" style={adapterPad ? { padding: adapterPad } : undefined}>
       {/* Hover styles injected into DOM */}
       <style>{hoverStylesCss}</style>
 

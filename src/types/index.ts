@@ -774,6 +774,7 @@ export interface GalleryBehaviorSettings {
   perTypeSectionEqualHeight: boolean;
   modalInnerPadding: number;
   gallerySectionPadding: number;
+  adapterContentPadding: number;
   adapterSizingMode: 'fill' | 'manual';
   adapterMaxWidthPct: number;
   adapterMaxHeightPct: number;
@@ -1063,6 +1064,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   perTypeSectionEqualHeight: false,
   modalInnerPadding: 16,
   gallerySectionPadding: 16,
+  adapterContentPadding: 0,
   adapterSizingMode: 'fill',
   adapterMaxWidthPct: 100,
   adapterMaxHeightPct: 100,

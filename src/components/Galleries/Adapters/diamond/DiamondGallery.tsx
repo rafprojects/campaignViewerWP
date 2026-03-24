@@ -71,8 +71,10 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
     rows.push(media.slice(i, i + tilesPerRow));
   }
 
+  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+
   return (
-    <Stack gap="md">
+    <Stack gap="md" style={adapterPad ? { padding: adapterPad } : undefined}>
       <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
         <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
           {settings.showGalleryLabelIcon && <IconDiamond size={18} />}

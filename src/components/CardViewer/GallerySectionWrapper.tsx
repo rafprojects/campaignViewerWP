@@ -98,7 +98,7 @@ export function GallerySectionWrapper({
       : '100%',
     maxHeight: resolvedMaxHeight,
     minHeight: `${s.gallerySectionMinHeight}px`,
-    padding: `${s.gallerySectionPadding}px`,
+    padding: `${Math.max(0, Math.min(32, s.gallerySectionPadding))}px`,
     marginInline: 'auto',
     overflow: resolvedMaxHeight ? 'hidden' : undefined,
     borderRadius: borderRadius != null ? `${borderRadius}px` : undefined,
