@@ -778,6 +778,12 @@ export interface GalleryBehaviorSettings {
   adapterSizingMode: 'fill' | 'manual';
   adapterMaxWidthPct: number;
   adapterMaxHeightPct: number;
+  // P22-P7: Card width responsive unit & last-row justification
+  cardMaxWidthUnit: 'px' | '%';
+  cardJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
+  // P22-P7: Unified adapter item gap & justification
+  adapterItemGap: number;
+  adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -1068,4 +1074,10 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   adapterSizingMode: 'fill',
   adapterMaxWidthPct: 100,
   adapterMaxHeightPct: 100,
+  // P22-P7: Card width responsive unit & last-row justification
+  cardMaxWidthUnit: 'px',
+  cardJustifyContent: 'center',
+  // P22-P7: Unified adapter item gap & justification
+  adapterItemGap: 16,
+  adapterJustifyContent: 'center',
 };

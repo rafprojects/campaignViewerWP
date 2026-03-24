@@ -24,7 +24,7 @@ interface CompactGridGalleryProps {
   containerDimensions?: ContainerDimensions;
 }
 
-export function CompactGridGallery({ media, settings, containerDimensions }: CompactGridGalleryProps) {
+export function CompactGridGallery({ media, settings, containerDimensions: _containerDimensions }: CompactGridGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
 
@@ -41,17 +41,17 @@ export function CompactGridGallery({ media, settings, containerDimensions }: Com
   const cardWidth = settings.gridCardWidth;
   const cardHeight = settings.gridCardHeight;
   const borderRadius = settings.imageBorderRadius;
-  const gap = settings.thumbnailGap;
-  const maxCols = settings.cardGridColumns || settings.cardMaxColumns || 5;
-  let gridMaxWidth = maxCols * cardWidth + (maxCols - 1) * gap;
-  if (containerDimensions && containerDimensions.width > 0) {
-    gridMaxWidth = Math.min(gridMaxWidth, containerDimensions.width);
-  }
+  const gap = settings.adapterItemGap ?? 16;
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  // Adapter sizing: fill = no maxWidth restriction; manual = percentage of parent
+  const isManual = settings.adapterSizingMode === 'manual';
+  const adapterSizing: React.CSSProperties = isManual
+    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
+    : {};
 
   return (
-    <Stack gap="md" style={adapterPad ? { padding: adapterPad } : undefined}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
       <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
         <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
           {settings.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
@@ -59,13 +59,13 @@ export function CompactGridGallery({ media, settings, containerDimensions }: Com
         </Group>
       </Title>
 
-      {/* Responsive auto-fill grid — use min() to ensure cards scale down on mobile */}
-      <Box style={{ maxWidth: gridMaxWidth, marginInline: 'auto' }}>
+      {/* Responsive auto-fill grid — fills container in 'fill' mode */}
       <Box
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(auto-fill, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), 1fr))`,
           gap: `${gap}px`,
+          justifyContent: settings.adapterJustifyContent || 'center',
         }}
       >
         {media.map((item, index) => (
@@ -79,7 +79,6 @@ export function CompactGridGallery({ media, settings, containerDimensions }: Com
             onOpen={openAt}
           />
         ))}
-      </Box>
       </Box>
 
       <Lightbox

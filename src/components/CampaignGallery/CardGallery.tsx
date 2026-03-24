@@ -67,16 +67,18 @@ export function CardGallery({
   const displayMode = galleryBehaviorSettings.cardDisplayMode ?? 'load-more';
 
   /** Resolve effective column count based on settings + current breakpoint. */
+  const isXxl = useMediaQuery('(min-width: 1800px)');
+  const isXl = useMediaQuery('(min-width: 1400px)');
   const isLg = useMediaQuery('(min-width: 1200px)');
   const isSm = useMediaQuery('(min-width: 768px)');
   const effectiveColumns = useMemo((): number => {
     const cols = galleryBehaviorSettings.cardGridColumns;
     const max = galleryBehaviorSettings.cardMaxColumns || 0;
     if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
-    // Responsive auto: base:1 sm:2 lg:3
-    const auto = isLg ? 3 : isSm ? 2 : 1;
+    // Responsive auto: base:1 sm:2 lg:3 xl:4 xxl:5
+    const auto = isXxl ? 5 : isXl ? 4 : isLg ? 3 : isSm ? 2 : 1;
     return max > 0 ? Math.min(auto, max) : auto;
-  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isLg, isSm]);
+  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isXxl, isXl, isLg, isSm]);
 
   /** Max columns for fixed-width (flex) branch — used to compute row maxWidth. */
   const maxCols = useMemo((): number => {
@@ -84,8 +86,9 @@ export function CardGallery({
     const max = galleryBehaviorSettings.cardMaxColumns || 0;
     if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
     if (max > 0) return max;
-    return 4;
-  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns]);
+    // Same breakpoint ladder as effectiveColumns (no hardcoded cap)
+    return isXxl ? 5 : isXl ? 4 : isLg ? 3 : isSm ? 2 : 1;
+  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isXxl, isXl, isLg, isSm]);
 
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
@@ -381,10 +384,12 @@ export function CardGallery({
                   display: 'flex',
                   flexWrap: 'wrap',
                   gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
-                  justifyContent: 'center',
+                  justifyContent: galleryBehaviorSettings.cardJustifyContent || 'center',
                   width: '100%',
-                  maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,
-                  marginInline: 'auto',
+                  ...(galleryBehaviorSettings.cardMaxWidthUnit !== '%' ? {
+                    maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,
+                    marginInline: 'auto',
+                  } : {}),
                 }}
               >
                 {visibleCampaigns.map((campaign) => (
@@ -396,6 +401,7 @@ export function CardGallery({
                     settings={galleryBehaviorSettings}
                     apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
                     maxWidth={galleryBehaviorSettings.cardMaxWidth}
+                    maxWidthUnit={galleryBehaviorSettings.cardMaxWidthUnit}
                   />
                 ))}
               </Box>

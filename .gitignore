@@ -48,3 +48,6 @@ phpunit
 /*.gif
 *.txt
 
+# local working scripts
+scripts/phase5_restructure.py
+scripts/phase22-move-files.sh

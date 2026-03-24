@@ -81,9 +81,12 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
   });
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
+    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
+    : {};
 
   return (
-    <Stack gap="md" style={adapterPad ? { padding: adapterPad } : undefined}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
       <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
         <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
           {settings.showGalleryLabelIcon && <IconColumns size={18} />}

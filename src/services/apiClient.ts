@@ -1,5 +1,6 @@
 import type { AuthProvider } from '@/services/auth/AuthProvider';
-import type { LayoutTemplate } from '@/types';
+import type { LayoutTemplate, TypographyOverride } from '@/types';
+import type { GradientOptions } from '@/utils/gradientCss';
 
 export interface ApiClientOptions {
   baseUrl: string;
@@ -591,6 +592,86 @@ export interface SettingsResponse {
   mobileImageAdapterId?: string;
   mobileVideoAdapterId?: string;
   layoutBuilderScope?: 'full' | 'viewport';
+  // P20-K
+  sessionIdleTimeoutMinutes?: number;
+  // P20-B: Data retention
+  preserveDataOnUninstall?: boolean;
+  archivePurgeDays?: number;
+  archivePurgeGraceDays?: number;
+  analyticsRetentionDays?: number;
+  // P21-C: Card appearance
+  showCardCompanyName?: boolean;
+  showCardMediaCounts?: boolean;
+  showCardTitle?: boolean;
+  showCardDescription?: boolean;
+  showCardBorder?: boolean;
+  showCardAccessBadge?: boolean;
+  showCardThumbnailFade?: boolean;
+  // P21-D: Viewer background
+  viewerBgType?: 'theme' | 'transparent' | 'solid' | 'gradient';
+  viewerBgColor?: string;
+  viewerBgGradient?: GradientOptions;
+  showViewerBorder?: boolean;
+  // P21-C: Card aspect ratio & max columns
+  cardMaxColumns?: number;
+  cardAspectRatio?: string;
+  cardMinHeight?: number;
+  // P21-G: Gallery labels
+  galleryImageLabel?: string;
+  galleryVideoLabel?: string;
+  galleryLabelJustification?: 'left' | 'center' | 'right';
+  showGalleryLabelIcon?: boolean;
+  // P21-F: CampaignViewer enhancements
+  campaignModalFullscreen?: boolean;
+  showCampaignCompanyName?: boolean;
+  showCampaignDate?: boolean;
+  showCampaignAbout?: boolean;
+  showCampaignDescription?: boolean;
+  showCampaignStats?: boolean;
+  campaignStatsAdminOnly?: boolean;
+  campaignOpenMode?: 'full' | 'galleries-only';
+  // P21-E: Auth bar display modes
+  authBarDisplayMode?: 'bar' | 'floating' | 'draggable' | 'minimal' | 'auto-hide';
+  authBarDragMargin?: number;
+  // P21-H: Settings tooltips
+  showSettingsTooltips?: boolean;
+  // P21-I: Typography overrides
+  typographyOverrides?: Record<string, TypographyOverride>;
+  showInContextEditors?: boolean;
+  // P21-J: QA fixes
+  showCardInfoPanel?: boolean;
+  showCampaignCoverImage?: boolean;
+  showCampaignTags?: boolean;
+  showCampaignAdminActions?: boolean;
+  showCampaignGalleryLabels?: boolean;
+  fullscreenContentMaxWidth?: number;
+  // P22-K: Modal max width & background
+  modalMaxWidth?: number;
+  modalBgType?: 'theme' | 'transparent' | 'solid' | 'gradient';
+  modalBgColor?: string;
+  modalBgGradient?: GradientOptions;
+  // P22-M: Modal gallery width/gap/margin
+  modalGalleryMaxWidth?: number;
+  modalGalleryGap?: number;
+  modalGalleryMargin?: number;
+  // P22-P2: Dimension propagation — gallery section sizing
+  gallerySectionMaxWidth?: number;
+  gallerySectionMaxHeight?: number;
+  gallerySectionHeightMode?: 'auto' | 'manual' | 'viewport';
+  gallerySectionMinWidth?: number;
+  gallerySectionMinHeight?: number;
+  perTypeSectionEqualHeight?: boolean;
+  modalInnerPadding?: number;
+  gallerySectionPadding?: number;
+  adapterContentPadding?: number;
+  adapterSizingMode?: 'fill' | 'manual';
+  adapterMaxWidthPct?: number;
+  adapterMaxHeightPct?: number;
+  // P22-P7: Card width unit, justification, adapter gap & justification
+  cardMaxWidthUnit?: 'px' | '%';
+  cardJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
+  adapterItemGap?: number;
+  adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
 }
 
 /**

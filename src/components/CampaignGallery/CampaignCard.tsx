@@ -16,10 +16,11 @@ interface CampaignCardProps {
   settings?: GalleryBehaviorSettings;
   apiClient?: ApiClient;
   maxWidth?: number;
+  maxWidthUnit?: 'px' | '%';
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
-  ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth }, ref) => {
+  ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth, maxWidthUnit = 'px' }, ref) => {
     const borderRadius = settings?.cardBorderRadius ?? 8;
     const borderWidth = settings?.cardBorderWidth ?? 4;
     const borderMode = settings?.cardBorderMode ?? 'auto';
@@ -59,7 +60,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,
           width: '100%',
-          ...(maxWidth ? { maxWidth: `${maxWidth}px` } : {}),
+          ...(maxWidth ? { maxWidth: `${maxWidth}${maxWidthUnit}` } : {}),
         }}
       >
         <Card

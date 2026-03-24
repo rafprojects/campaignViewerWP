@@ -620,6 +620,33 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         step={10}
                         placeholder="0 = unlimited"
                       />
+                      {settings.cardMaxWidth > 0 && (
+                        <Select
+                          label="Card Max Width Unit"
+                          description="Unit for the card max width value"
+                          data={[
+                            { value: 'px', label: 'Pixels (px)' },
+                            { value: '%', label: 'Percent (%)' },
+                          ]}
+                          value={settings.cardMaxWidthUnit ?? 'px'}
+                          onChange={(v) => updateSetting('cardMaxWidthUnit', (v ?? 'px') as GalleryBehaviorSettings['cardMaxWidthUnit'])}
+                        />
+                      )}
+                      {settings.cardMaxWidth > 0 && (
+                        <Select
+                          label="Card Justification"
+                          description="How cards are distributed in the last (partial) row"
+                          data={[
+                            { value: 'start', label: 'Start' },
+                            { value: 'center', label: 'Center' },
+                            { value: 'end', label: 'End' },
+                            { value: 'space-between', label: 'Space Between' },
+                            { value: 'space-evenly', label: 'Space Evenly' },
+                          ]}
+                          value={settings.cardJustifyContent ?? 'center'}
+                          onChange={(v) => updateSetting('cardJustifyContent', (v ?? 'center') as GalleryBehaviorSettings['cardJustifyContent'])}
+                        />
+                      )}
                       {settings.cardGridColumns === 0 && (
                         <NumberInput
                           label="Max Columns (auto mode)"
@@ -1885,6 +1912,29 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           />
                         </>
                       )}
+                      <NumberInput
+                        label="Adapter Item Gap (px)"
+                        description="Spacing between items in grid adapters (Compact Grid). 0 = no gap."
+                        value={settings.adapterItemGap ?? 16}
+                        onChange={(v) => updateSetting('adapterItemGap', typeof v === 'number' ? v : 16)}
+                        min={0}
+                        max={64}
+                        step={4}
+                      />
+                      <Select
+                        label="Adapter Justification"
+                        description="How adapter items distribute within the container (Compact Grid, Circular)."
+                        data={[
+                          { value: 'start', label: 'Start' },
+                          { value: 'center', label: 'Center' },
+                          { value: 'end', label: 'End' },
+                          { value: 'space-between', label: 'Space Between' },
+                          { value: 'space-evenly', label: 'Space Evenly' },
+                          { value: 'stretch', label: 'Stretch' },
+                        ]}
+                        value={settings.adapterJustifyContent ?? 'center'}
+                        onChange={(v) => updateSetting('adapterJustifyContent', (v ?? 'center') as GalleryBehaviorSettings['adapterJustifyContent'])}
+                      />
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>

@@ -317,6 +317,24 @@ class WPSG_Settings {
         // P22-M: Gallery sizing mode + manual height constraint
         'gallery_sizing_mode'            => 'auto',
         'gallery_manual_height'          => '420px',
+        // P22-P2: Dimension propagation — gallery section sizing
+        'gallery_section_max_width'      => 0,
+        'gallery_section_max_height'     => 0,
+        'gallery_section_height_mode'    => 'auto',
+        'gallery_section_min_width'      => 300,
+        'gallery_section_min_height'     => 150,
+        'per_type_section_equal_height'  => false,
+        'modal_inner_padding'            => 16,
+        'gallery_section_padding'        => 16,
+        'adapter_content_padding'        => 0,
+        'adapter_sizing_mode'            => 'fill',
+        'adapter_max_width_pct'          => 100,
+        'adapter_max_height_pct'         => 100,
+        // P22-P7: Card width unit, justification, adapter gap & justification
+        'card_max_width_unit'            => 'px',
+        'card_justify_content'           => 'center',
+        'adapter_item_gap'               => 16,
+        'adapter_justify_content'        => 'center',
     ];
 
     /**
@@ -419,6 +437,16 @@ class WPSG_Settings {
         'auth_bar_display_mode'       => ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'],
         // P22-M: Gallery sizing mode
         'gallery_sizing_mode'         => ['auto', 'viewport', 'manual'],
+        // P22-P2: Gallery section height mode
+        'gallery_section_height_mode' => ['auto', 'manual', 'viewport'],
+        // P22-P2: Adapter sizing mode
+        'adapter_sizing_mode'         => ['fill', 'manual'],
+        // P22-P7: Card max width unit
+        'card_max_width_unit'         => ['px', '%'],
+        // P22-P7: Card justification
+        'card_justify_content'        => ['start', 'center', 'end', 'space-between', 'space-evenly'],
+        // P22-P7: Adapter justification
+        'adapter_justify_content'     => ['start', 'center', 'end', 'space-between', 'space-evenly', 'stretch'],
     ];
 
     /**
@@ -459,7 +487,7 @@ class WPSG_Settings {
         'card_border_radius'          => [0, 24],
         'card_border_width'           => [0, 8],
         'card_thumbnail_height'       => [100, 400],
-        'card_grid_columns'           => [0, 4],
+        'card_grid_columns'           => [0, 6],
         'card_gap_h'                  => [0, 48],
         'card_gap_v'                  => [0, 48],
         'modal_cover_height'          => [100, 400],
@@ -551,6 +579,18 @@ class WPSG_Settings {
         'modal_gallery_max_width'      => [0, 3000],
         'modal_gallery_gap'            => [0, 120],
         'modal_gallery_margin'         => [0, 120],
+        // P22-P2: Gallery section sizing ranges
+        'gallery_section_max_width'    => [0, 3000],
+        'gallery_section_max_height'   => [0, 3000],
+        'gallery_section_min_width'    => [0, 1200],
+        'gallery_section_min_height'   => [0, 1200],
+        'modal_inner_padding'          => [0, 64],
+        'gallery_section_padding'      => [0, 32],
+        'adapter_content_padding'      => [0, 24],
+        'adapter_max_width_pct'        => [50, 100],
+        'adapter_max_height_pct'       => [50, 100],
+        // P22-P7: Adapter item gap
+        'adapter_item_gap'             => [0, 64],
     ];
 
     /**
@@ -1219,7 +1259,7 @@ class WPSG_Settings {
             $sanitized['card_thumbnail_fit'] = $input['card_thumbnail_fit'];
         }
         if (isset($input['card_grid_columns'])) {
-            $sanitized['card_grid_columns'] = max(0, min(4, intval($input['card_grid_columns'])));
+            $sanitized['card_grid_columns'] = max(0, min(6, intval($input['card_grid_columns'])));
         }
         if (isset($input['card_gap_h'])) {
             $sanitized['card_gap_h'] = max(0, min(48, intval($input['card_gap_h'])));

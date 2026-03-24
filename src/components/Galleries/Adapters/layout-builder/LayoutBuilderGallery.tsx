@@ -559,9 +559,12 @@ function LayoutBuilderGalleryInner({
   const hasMismatch = slotCount !== mediaCount;
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
+    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
+    : {};
 
   return (
-    <Stack gap="md" style={adapterPad ? { padding: adapterPad } : undefined}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
       {/* Hover styles injected into DOM */}
       <style>{hoverStylesCss}</style>
 
