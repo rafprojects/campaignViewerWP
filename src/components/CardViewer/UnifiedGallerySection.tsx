@@ -9,6 +9,9 @@ import type { Campaign, GalleryBehaviorSettings, ContainerDimensions } from '@/t
 import type { GalleryAdapterProps } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
 
+const MediaCarouselAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/MediaCarouselAdapter').then((m) => ({ default: m.MediaCarouselAdapter })),
+);
 const CompactGridGallery = lazy(() =>
   import('@/components/Galleries/Adapters/compact-grid/CompactGridGallery').then((m) => ({ default: m.CompactGridGallery })),
 );
@@ -33,6 +36,9 @@ const LayoutBuilderGallery = lazy(() =>
 
 function resolveAdapterComponent(id: string): ComponentType<GalleryAdapterProps> {
   switch (id) {
+    case 'carousel':
+    case 'classic':
+      return MediaCarouselAdapter as ComponentType<GalleryAdapterProps>;
     case 'justified':
     case 'mosaic':
       return JustifiedGallery as ComponentType<GalleryAdapterProps>;

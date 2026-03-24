@@ -10,9 +10,18 @@
  */
 import type { AdapterRegistration, GalleryAdapterProps } from './GalleryAdapter';
 import type { ComponentType } from 'react';
+import { MediaCarouselAdapter } from './MediaCarouselAdapter';
 
 // Internal map keyed by adapter id
 const registry = new Map<string, AdapterRegistration>();
+
+// Built-in carousel adapter (P22-P3)
+registerAdapter({
+  id: 'carousel',
+  label: 'Carousel',
+  capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe'],
+  component: MediaCarouselAdapter,
+});
 
 export function registerAdapter(reg: AdapterRegistration): void {
   registry.set(reg.id, reg);

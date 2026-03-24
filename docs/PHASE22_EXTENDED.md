@@ -587,6 +587,10 @@ Remove in a follow-up PR after thorough testing.
 - `src/components/Galleries/Shared/VideoCarousel.tsx` — deprecation wrapper
 - `src/components/CardViewer/CampaignViewer.tsx` — use adapter registry instead of direct carousel imports
 
+### Also Fixed: Compact-Grid Hover "Pop"
+
+The compact-grid hover effect (`scale(1.05)`) was applied to the `LazyImage` inside the card rather than the card wrapper itself. This caused the image to pop outside its container bounds instead of smoothly scaling the entire card. Fixed by moving the `transform` to the card wrapper `Box` and combining the transition with the existing `box-shadow` animation. (`CompactGridGallery.tsx`)
+
 ---
 
 ## Phase 4: Modal Dimension Controls + Responsive Containment
@@ -868,6 +872,55 @@ See Phase 1 table above for complete move list.
 - [ ] Mobile viewport → fullscreen modal, stacked sections, responsive adapters
 - [ ] Tablet viewport → two-column sections (when enabled), tablet-sized adapters
 - [ ] Desktop viewport → full layout with all controls applied
+
+### After Phase 7 (Layout Polish — if needed)
+- [ ] `gridCardSizingMode='responsive'` → cards resize proportionally with container
+- [ ] `gridCardSizingMode='static'` → cards use fixed `gridCardWidth`/`gridCardHeight` (current behavior)
+- [ ] `adapterJustifyContent='center'` → partial rows center within section
+- [ ] `adapterJustifyContent='start'` → partial rows align left
+- [ ] CardGallery justification matches selected setting (not hardcoded center)
+
+---
+
+## Phase 7: Gallery Layout Polish & Justification Controls
+
+> **NOTE:** Evaluate whether these items need addressing based on QA after Phases 1–6 are complete. Some may already be handled by earlier phases or prove unnecessary in practice.
+
+**Goal:** Address remaining layout polish items — card sizing mode flexibility, justification/alignment controls for gallery items within their sections, and any remaining visual inconsistencies.
+
+### 7a. Card Sizing Mode Toggle (Static vs Responsive)
+
+The compact-grid adapter currently uses static pixel values for card dimensions (`gridCardWidth: 160`, `gridCardHeight: 224` in settings). These may conflict with responsively adjusted dimensions from Phase 2's `containerDimensions` propagation.
+
+**Tasks:**
+- Add `gridCardSizingMode: 'static' | 'responsive'` setting (default: `'static'` for backward compat)
+- When `'responsive'`, derive card dimensions from `containerDimensions.width` and column count instead of fixed pixel values
+- Ensure `gridCardWidth` / `gridCardHeight` are still available as max constraints in responsive mode
+- Add admin UI controls with conditional visibility based on mode
+
+### 7b. Gallery Item Justification Controls
+
+Currently, adapter gallery items (compact-grid, masonry, justified, etc.) don't have user-configurable justification within their gallery section. Items are typically left-aligned or stretch to fill.
+
+**Tasks:**
+- Add `adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly'` setting (default: `'start'`)
+- Apply to each adapter's container element (CSS grid `justify-content` / flexbox `justify-content` as appropriate)
+- Consider per-adapter applicability: justified layout inherently fills rows (may not need this), carousel is single-item (N/A), etc.
+- Add admin UI control in the appropriate settings tab
+
+### 7c. Expand CardGallery Justification Options
+
+The `CardGallery` flex branch (when `cardMaxWidth > 0`) currently hardcodes `justifyContent: 'center'` for multi-row centering. This should be configurable.
+
+**Tasks:**
+- Add `cardJustifyContent` setting or reuse the `adapterJustifyContent` setting from 7b
+- Replace the hardcoded `'center'` in CardGallery's flex container with the setting value
+- Ensure backward compatibility (default to `'center'` which matches current behavior)
+
+### Already Addressed
+
+- **Gap controls** — Already fully implemented: `thumbnailGap` (masonry/justified/compact-grid), `tileGapX`/`tileGapY` (hexagonal/diamond/circular), `cardGapH`/`cardGapV` (card gallery). No further work needed.
+- **Compact-grid hover pop** — Fixed in Phase 3 commit (moved `scale(1.05)` from LazyImage to card wrapper Box in `CompactGridGallery.tsx`).
 
 ---
 

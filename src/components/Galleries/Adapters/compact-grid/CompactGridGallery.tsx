@@ -134,11 +134,12 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
         overflow: 'hidden',
         position: 'relative',
         background: 'var(--wpsg-color-surface, #1a1a2e)',
-        /* Elevation on hover */
+        /* Elevation + pop on hover */
         boxShadow: hovered
           ? '0 8px 24px rgba(0,0,0,0.35)'
           : '0 2px 6px rgba(0,0,0,0.15)',
-        transition: 'box-shadow 0.25s ease',
+        transform: hovered ? 'scale(1.05)' : 'scale(1)',
+        transition: 'transform 0.3s ease, box-shadow 0.25s ease',
       }}
     >
       {/* Cover thumbnail */}
@@ -150,8 +151,7 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
           height: '100%',
           objectFit: 'cover',
           display: 'block',
-          transform: hovered ? 'scale(1.05)' : 'scale(1)',
-          transition: 'transform 0.3s ease, opacity 0.2s ease',
+          transition: 'opacity 0.2s ease',
         }}
       />
 

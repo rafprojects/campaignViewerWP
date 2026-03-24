@@ -13,11 +13,8 @@ import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { resolveAdapterId } from '@/utils/resolveAdapterId';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
 
-const VideoCarousel = lazy(() =>
-  import('@/components/Galleries/Shared/VideoCarousel').then((m) => ({ default: m.VideoCarousel })),
-);
-const ImageCarousel = lazy(() =>
-  import('@/components/Galleries/Shared/ImageCarousel').then((m) => ({ default: m.ImageCarousel })),
+const MediaCarouselAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/MediaCarouselAdapter').then((m) => ({ default: m.MediaCarouselAdapter })),
 );
 const CompactGridGallery = lazy(() =>
   import('@/components/Galleries/Adapters/compact-grid/CompactGridGallery').then((m) => ({ default: m.CompactGridGallery })),
@@ -43,6 +40,9 @@ const LayoutBuilderGallery = lazy(() =>
 
 function resolveAdapterComponent(id: string): ComponentType<GalleryAdapterProps> {
   switch (id) {
+    case 'carousel':
+    case 'classic':
+      return MediaCarouselAdapter as ComponentType<GalleryAdapterProps>;
     case 'justified':
     case 'mosaic':
       return JustifiedGallery as ComponentType<GalleryAdapterProps>;
@@ -110,9 +110,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
       style={s.perTypeSectionEqualHeight ? { minHeight: '100%' } : undefined}
     >
       {(dims: ContainerDimensions) =>
-        videoId === 'classic'
-          ? <VideoCarousel videos={campaign.videos} settings={videoSettings} breakpoint={breakpoint} maxWidth={dims.width} />
-          : renderAdapterForSection(videoId, campaign.videos, videoSettings, dims, campaign, isAdmin)
+        renderAdapterForSection(videoId, campaign.videos, videoSettings, dims, campaign, isAdmin)
       }
     </GallerySectionWrapper>
   );
@@ -128,9 +126,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
       style={s.perTypeSectionEqualHeight ? { minHeight: '100%' } : undefined}
     >
       {(dims: ContainerDimensions) =>
-        imageId === 'classic'
-          ? <ImageCarousel images={campaign.images} settings={imageSettings} breakpoint={breakpoint} maxWidth={dims.width} />
-          : renderAdapterForSection(imageId, campaign.images, imageSettings, dims, campaign, isAdmin)
+        renderAdapterForSection(imageId, campaign.images, imageSettings, dims, campaign, isAdmin)
       }
     </GallerySectionWrapper>
   );
