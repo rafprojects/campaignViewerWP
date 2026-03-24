@@ -733,12 +733,14 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                       />
                       <NumberInput
                         label="Modal Max Height (vh%)"
-                        description="Maximum height of the campaign modal as a percentage of viewport"
+                        description="Maximum height of the campaign modal as a percentage of viewport (clamped 50–95)."
                         value={settings.modalMaxHeight}
                         onChange={(v) => updateSetting('modalMaxHeight', typeof v === 'number' ? v : 90)}
                         min={50}
-                        max={100}
+                        max={95}
                         step={5}
+                        disabled={!!settings.campaignModalFullscreen}
+                        style={settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined}
                       />
                     </Stack>
                   </Accordion.Panel>
@@ -1807,16 +1809,42 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   max={3000}
                   step={50}
                   placeholder="0 = full width"
+                  disabled={!settings.campaignModalFullscreen}
+                  style={!settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined}
+                />
+                <Box style={settings.campaignModalFullscreen ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
+                  <Stack gap="md">
+                    <NumberInput
+                      label="Modal Max Width (px)"
+                      description="Maximum width of the campaign modal when not fullscreen (clamped 600–1600)."
+                      value={settings.modalMaxWidth ?? 1200}
+                      onChange={(value) => updateSetting('modalMaxWidth', typeof value === 'number' ? value : 1200)}
+                      min={600}
+                      max={1600}
+                      step={50}
+                      placeholder="1200"
+                      disabled={!!settings.campaignModalFullscreen}
+                    />
+                  </Stack>
+                </Box>
+                <NumberInput
+                  label="Content Max Width (px)"
+                  description="Maximum width of the content area inside the modal. 0 = full width."
+                  value={settings.modalContentMaxWidth ?? 900}
+                  onChange={(value) => updateSetting('modalContentMaxWidth', typeof value === 'number' ? value : 900)}
+                  min={0}
+                  max={2000}
+                  step={50}
+                  placeholder="900"
                 />
                 <NumberInput
-                  label="Modal Max Width (px)"
-                  description="Maximum width of the campaign modal when not fullscreen. 0 = default size."
-                  value={settings.modalMaxWidth ?? 1200}
-                  onChange={(value) => updateSetting('modalMaxWidth', typeof value === 'number' ? value : 1200)}
+                  label="Modal Inner Padding (px)"
+                  description="Padding inside the modal content area (clamped 0–48)."
+                  value={settings.modalInnerPadding ?? 16}
+                  onChange={(value) => updateSetting('modalInnerPadding', typeof value === 'number' ? value : 16)}
                   min={0}
-                  max={3000}
-                  step={50}
-                  placeholder="1200"
+                  max={48}
+                  step={4}
                 />
 
                 <Divider label="Visibility" labelPosition="center" />

@@ -67,9 +67,18 @@ export function CampaignViewer({
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
   const galleriesOnly = s.campaignOpenMode === 'galleries-only';
   const showStats = (s.showCampaignStats !== false) && (!s.campaignStatsAdminOnly || isAdmin);
+  // P22-P4: Modal dimension clamping
+  const MODAL_MIN_WIDTH = 600;
+  const MODAL_MAX_WIDTH = 1600;
+  const MODAL_MIN_HEIGHT_DVH = 50;
+  const MODAL_MAX_HEIGHT_DVH = 95;
+  const clampedWidth = Math.max(MODAL_MIN_WIDTH, Math.min(MODAL_MAX_WIDTH, s.modalMaxWidth || 1200));
+  const clampedMaxHeight = Math.max(MODAL_MIN_HEIGHT_DVH, Math.min(MODAL_MAX_HEIGHT_DVH, s.modalMaxHeight));
+  const modalSize = useFullscreen ? '100%' : `${clampedWidth}px`;
+  const clampedInnerPadding = Math.max(0, Math.min(48, s.modalInnerPadding));
   const contentMaxWidth = useFullscreen
     ? (s.fullscreenContentMaxWidth > 0 ? `${s.fullscreenContentMaxWidth}px` : '100%')
-    : '64rem';
+    : (s.modalContentMaxWidth > 0 ? `${s.modalContentMaxWidth}px` : '100%');
   // P22-K3: Modal background style (only applied in fullscreen)
   const modalBgStyle = useMemo<React.CSSProperties | undefined>(() => {
     if (!useFullscreen) return undefined;
@@ -86,7 +95,7 @@ export function CampaignViewer({
     <Modal
       opened={opened}
       onClose={onClose}
-      size={useFullscreen ? '100%' : (s.modalMaxWidth > 0 ? `${s.modalMaxWidth}px` : 'xl')}
+      size={modalSize}
       padding={0}
       withCloseButton
       closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
@@ -94,9 +103,10 @@ export function CampaignViewer({
       radius={useFullscreen ? 0 : 'lg'}
       fullScreen={useFullscreen}
       styles={{
+        body: { padding: 0 },
         content: useFullscreen
           ? { overflow: 'auto', maxHeight: '100dvh', ...modalBgStyle }
-          : { overflow: 'auto', maxHeight: `${s.modalMaxHeight}dvh` },
+          : { overflow: 'auto', maxHeight: `${clampedMaxHeight}dvh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
         close: { color: 'white', background: 'rgba(0,0,0,0.65)', borderRadius: '50%', width: 36, height: 36 },
       }}
@@ -191,7 +201,7 @@ export function CampaignViewer({
       )}
 
       {/* Content */}
-      <Box ref={containerRef} p={galleriesOnly || useFullscreen ? 0 : { base: 'md', md: 'xl' }} style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto' }}>
+      <Box ref={containerRef} style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : clampedInnerPadding, display: 'flex', flexDirection: 'column' as const }}>
         <Stack gap="lg" style={{ width: '100%' }}>
           {/* Description — hidden in galleries-only mode */}
           {!galleriesOnly && s.showCampaignAbout !== false && (
