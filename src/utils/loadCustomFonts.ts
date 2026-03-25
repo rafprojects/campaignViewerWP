@@ -16,11 +16,12 @@ export interface FontLibraryEntry {
 const STYLE_ID = 'wpsg-custom-fonts';
 
 export function loadCustomFonts(fonts: FontLibraryEntry[]): void {
-  // Remove stale style if present (will re-create with current data).
   const existing = document.getElementById(STYLE_ID);
-  if (existing) existing.remove();
 
-  if (fonts.length === 0) return;
+  if (fonts.length === 0) {
+    if (existing) existing.remove();
+    return;
+  }
 
   const css = fonts
     .map((f) => {
@@ -28,6 +29,9 @@ export function loadCustomFonts(fonts: FontLibraryEntry[]): void {
       return `@font-face {\n  font-family: '${f.name}';\n  src: url('${f.url}')${fmt};\n  font-display: swap;\n}`;
     })
     .join('\n');
+
+  if (existing?.textContent === css) return;
+  if (existing) existing.remove();
 
   const style = document.createElement('style');
   style.id = STYLE_ID;

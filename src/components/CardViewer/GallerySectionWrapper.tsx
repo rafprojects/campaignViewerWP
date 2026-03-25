@@ -63,13 +63,18 @@ export function GallerySectionWrapper({
     return () => ro.disconnect();
   }, []);
 
+  const availableWidth = measuredWidth > 0 ? measuredWidth : 0;
+  const effectiveMinWidth = Math.max(0, Math.min(s.gallerySectionMinWidth, s.gallerySectionMaxWidth || s.gallerySectionMinWidth));
+
   // Clamp user settings to measured available space
-  const effectiveMaxWidth = clampDimension(
-    s.gallerySectionMaxWidth,
-    s.gallerySectionMinWidth,
-    2000,
-    measuredWidth || Infinity,
-  );
+  const effectiveMaxWidth = availableWidth > 0
+    ? clampDimension(
+        s.gallerySectionMaxWidth,
+        effectiveMinWidth,
+        2000,
+        availableWidth,
+      )
+    : 0;
 
   const resolvedMaxHeight =
     s.gallerySectionHeightMode === 'manual' && s.gallerySectionMaxHeight > 0
@@ -81,7 +86,7 @@ export function GallerySectionWrapper({
   const effectiveMaxHeight =
     s.gallerySectionHeightMode === 'manual' && s.gallerySectionMaxHeight > 0
       ? clampDimension(s.gallerySectionMaxHeight, s.gallerySectionMinHeight, 2000, Infinity)
-      : measuredHeight || Infinity;
+      : measuredHeight > 0 ? measuredHeight : 0;
 
   const containerDimensions: ContainerDimensions = {
     width: effectiveMaxWidth,
@@ -94,8 +99,9 @@ export function GallerySectionWrapper({
   const wrapperStyle: CSSProperties = {
     width: '100%',
     maxWidth: s.gallerySectionMaxWidth > 0
-      ? `clamp(${s.gallerySectionMinWidth}px, ${s.gallerySectionMaxWidth}px, 100%)`
+      ? `min(100%, ${Math.max(effectiveMinWidth, s.gallerySectionMaxWidth)}px)`
       : '100%',
+    minWidth: effectiveMinWidth > 0 ? `min(100%, ${effectiveMinWidth}px)` : undefined,
     maxHeight: resolvedMaxHeight,
     minHeight: `${s.gallerySectionMinHeight}px`,
     padding: `${Math.max(0, Math.min(32, s.gallerySectionPadding))}px`,

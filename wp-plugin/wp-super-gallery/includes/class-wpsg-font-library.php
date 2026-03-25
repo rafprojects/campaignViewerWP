@@ -252,8 +252,12 @@ class WPSG_Font_Library {
 
 # Correct Content-Type headers for font files.
 <IfModule mod_headers.c>
-    <FilesMatch "\.(woff2?)$">
+    <FilesMatch "\.woff2$">
         Header set Content-Type "font/woff2"
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+    <FilesMatch "\.woff$">
+        Header set Content-Type "font/woff"
         Header set Access-Control-Allow-Origin "*"
     </FilesMatch>
     <FilesMatch "\.(ttf|otf)$">

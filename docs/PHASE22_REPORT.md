@@ -1,6 +1,6 @@
 # Phase 22 — Layout Fixes, Theme Contrast & WCAG AA Compliance
 **Status:** In Progress 🚧 (P22-A–J complete, K implemented, L1–L6 complete, M partially implemented, N complete, O in progress)
-**Version:** v0.20.0
+**Version:** v0.21.0
 **Created:** March 19, 2026
 **Last updated:** March 22, 2026
 
@@ -1003,7 +1003,7 @@ The `pos` state type changes from `{ x: number; y: number }` to `{ x: number; y:
 
 ## Implementation Summary
 
-Tracks P22-A through P22-I implemented, verified, and committed (v0.20.0). Track P22-J (QA fix) committed. Tracks P22-K1 through P22-K5 are planned — CampaignViewer modal enhancements.
+Tracks P22-A through P22-I implemented, verified, and committed (v0.21.0). Track P22-J (QA fix) committed. Tracks P22-K1 through P22-K5 are planned — CampaignViewer modal enhancements.
 
 ### Key Decisions During Implementation
 

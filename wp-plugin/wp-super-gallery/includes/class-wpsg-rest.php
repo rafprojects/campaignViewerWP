@@ -4407,11 +4407,42 @@ class WPSG_REST {
      * Upload a new custom font file.
      */
     public static function upload_font( $request ) {
-        if ( empty( $_FILES['file'] ) ) {
+        $files = $request->get_file_params();
+        if ( empty( $files['file'] ) ) {
             return new WP_Error( 'wpsg_missing_file', 'A font file is required.', [ 'status' => 400 ] );
         }
 
-        $result = WPSG_Font_Library::handle_upload( $_FILES['file'] );
+        $file = $files['file'];
+        if ( isset( $file['error'] ) && UPLOAD_ERR_OK !== $file['error'] ) {
+            $message = 'Upload failed.';
+            $status  = 400;
+            switch ( $file['error'] ) {
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $message = 'Uploaded file exceeds the allowed size.';
+                    $status  = 413;
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $message = 'The uploaded file was only partially uploaded.';
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $message = 'No file was uploaded.';
+                    break;
+                case UPLOAD_ERR_NO_TMP_DIR:
+                case UPLOAD_ERR_CANT_WRITE:
+                case UPLOAD_ERR_EXTENSION:
+                    $message = 'Server error while processing upload.';
+                    $status  = 500;
+                    break;
+            }
+            return new WP_Error( 'wpsg_font_upload_failed', $message, [ 'status' => $status ] );
+        }
+
+        if ( ! isset( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+            return new WP_Error( 'wpsg_invalid_upload', 'Invalid upload.', [ 'status' => 400 ] );
+        }
+
+        $result = WPSG_Font_Library::handle_upload( $file );
         if ( is_wp_error( $result ) ) {
             return new WP_Error( 'wpsg_font_upload_failed', $result->get_error_message(), [ 'status' => 400 ] );
         }
@@ -4419,14 +4450,14 @@ class WPSG_REST {
         $name = sanitize_text_field( $request->get_param( 'name' ) ?? '' );
         if ( empty( $name ) ) {
             // Derive name from filename: "BrandSans-Bold.woff2" → "BrandSans Bold"
-            $name = pathinfo( sanitize_file_name( $_FILES['file']['name'] ), PATHINFO_FILENAME );
+            $name = pathinfo( sanitize_file_name( $file['name'] ), PATHINFO_FILENAME );
             $name = str_replace( [ '-', '_' ], ' ', $name );
         }
 
         $entry = WPSG_Font_Library::add( [
             'url'      => $result['url'],
             'name'     => $name,
-            'filename' => sanitize_file_name( $_FILES['file']['name'] ),
+            'filename' => sanitize_file_name( $file['name'] ),
             'format'   => $result['format'],
         ] );
 
