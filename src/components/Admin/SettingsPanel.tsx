@@ -1608,8 +1608,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 {/* ── Carousel Settings ── */}
                 {(settings.unifiedGalleryEnabled
                   ? settings.unifiedGalleryAdapterId === 'classic'
-                  : settings.imageGalleryAdapterId === 'classic' ||
-                    settings.videoGalleryAdapterId === 'classic'
+                  : settings.gallerySelectionMode === 'per-breakpoint'
+                    ? [
+                        settings.desktopImageAdapterId, settings.tabletImageAdapterId, settings.mobileImageAdapterId,
+                        settings.desktopVideoAdapterId, settings.tabletVideoAdapterId, settings.mobileVideoAdapterId,
+                      ].includes('classic')
+                    : settings.imageGalleryAdapterId === 'classic' ||
+                      settings.videoGalleryAdapterId === 'classic'
                 ) && (
                   <Accordion.Item value="carousel-settings">
                     <Accordion.Control>Carousel Settings</Accordion.Control>

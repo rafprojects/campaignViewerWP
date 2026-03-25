@@ -603,8 +603,8 @@ class WPSG_Settings {
         'gallery_section_min_width'    => [0, 1200],
         'gallery_section_min_height'   => [0, 1200],
         'modal_inner_padding'          => [0, 64],
-        'gallery_section_padding'      => [0, 32],
-        'adapter_content_padding'      => [0, 24],
+        'gallery_section_padding'      => [0, 60],
+        'adapter_content_padding'      => [0, 48],
         'adapter_max_width_pct'        => [50, 100],
         'adapter_max_height_pct'       => [50, 100],
         // P22-P7: Adapter item gap
