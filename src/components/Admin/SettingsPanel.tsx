@@ -1332,6 +1332,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           value={settings.unifiedGalleryAdapterId}
                           onChange={(value) => updateSetting('unifiedGalleryAdapterId', value ?? 'compact-grid')}
                           data={[
+                            { value: 'classic', label: 'Classic (Carousel)' },
                             { value: 'compact-grid', label: 'Compact Grid' },
                             { value: 'justified', label: 'Justified Rows (Flickr-style)' },
                             { value: 'masonry', label: 'Masonry' },
