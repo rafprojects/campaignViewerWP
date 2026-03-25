@@ -762,6 +762,8 @@ export interface GalleryBehaviorSettings {
   modalGalleryMaxWidth: number;
   modalGalleryGap: number;
   modalGalleryMargin: number;
+  // P22-P8: Vertical alignment of modal content
+  modalContentVerticalAlign: 'top' | 'center' | 'bottom';
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto' | 'viewport' | 'manual';
   galleryManualHeight: string;
@@ -1058,6 +1060,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   modalGalleryMaxWidth: 0,
   modalGalleryGap: 32,
   modalGalleryMargin: 0,
+  modalContentVerticalAlign: 'top',
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto',
   galleryManualHeight: '420px',

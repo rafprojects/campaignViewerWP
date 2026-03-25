@@ -335,6 +335,8 @@ class WPSG_Settings {
         'card_justify_content'           => 'center',
         'adapter_item_gap'               => 16,
         'adapter_justify_content'        => 'center',
+        // P22-P8: Modal content vertical alignment
+        'modal_content_vertical_align'   => 'top',
     ];
 
     /**
@@ -447,6 +449,8 @@ class WPSG_Settings {
         'card_justify_content'        => ['start', 'center', 'end', 'space-between', 'space-evenly'],
         // P22-P7: Adapter justification
         'adapter_justify_content'     => ['start', 'center', 'end', 'space-between', 'space-evenly', 'stretch'],
+        // P22-P8: Modal content vertical alignment
+        'modal_content_vertical_align' => ['top', 'center', 'bottom'],
     ];
 
     /**

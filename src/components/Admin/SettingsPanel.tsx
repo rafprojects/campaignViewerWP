@@ -1843,6 +1843,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                         max={24}
                         step={4}
                       />
+                      <Select
+                        label="Content Vertical Alignment"
+                        description="Vertical alignment of content within the modal."
+                        data={[
+                          { value: 'top', label: 'Top' },
+                          { value: 'center', label: 'Center' },
+                          { value: 'bottom', label: 'Bottom' },
+                        ]}
+                        value={settings.modalContentVerticalAlign || 'top'}
+                        onChange={(v) => updateSetting('modalContentVerticalAlign', (v || 'top') as 'top' | 'center' | 'bottom')}
+                      />
                       <Divider label="Gallery Spacing" labelPosition="center" />
                       <NumberInput
                         label="Gallery Max Width (px)"

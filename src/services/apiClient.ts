@@ -654,6 +654,7 @@ export interface SettingsResponse {
   modalGalleryMaxWidth?: number;
   modalGalleryGap?: number;
   modalGalleryMargin?: number;
+  modalContentVerticalAlign?: 'top' | 'center' | 'bottom';
   // P22-P2: Dimension propagation — gallery section sizing
   gallerySectionMaxWidth?: number;
   gallerySectionMaxHeight?: number;
