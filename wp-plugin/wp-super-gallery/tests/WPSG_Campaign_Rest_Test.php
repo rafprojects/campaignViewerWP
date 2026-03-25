@@ -167,9 +167,9 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_sanitize_visibility_whitelists_values() {
         $this->assertEquals( 'public', WPSG_CPT::sanitize_visibility( 'public' ) );
         $this->assertEquals( 'private', WPSG_CPT::sanitize_visibility( 'private' ) );
-        // Invalid value falls back to 'public'
-        $this->assertEquals( 'public', WPSG_CPT::sanitize_visibility( 'evil_visibility' ) );
-        $this->assertEquals( 'public', WPSG_CPT::sanitize_visibility( '<script>alert(1)</script>' ) );
+        // Invalid value falls back to the safer private default.
+        $this->assertEquals( 'private', WPSG_CPT::sanitize_visibility( 'evil_visibility' ) );
+        $this->assertEquals( 'private', WPSG_CPT::sanitize_visibility( '<script>alert(1)</script>' ) );
     }
 
     /**

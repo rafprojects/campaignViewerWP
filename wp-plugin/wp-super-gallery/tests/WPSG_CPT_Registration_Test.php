@@ -102,10 +102,10 @@ class WPSG_CPT_Registration_Test extends WP_UnitTestCase {
         $this->assertEquals('private', WPSG_CPT::sanitize_visibility('private'));
     }
 
-    public function test_sanitize_visibility_invalid_returns_public() {
-        $this->assertEquals('public', WPSG_CPT::sanitize_visibility('invalid'));
-        $this->assertEquals('public', WPSG_CPT::sanitize_visibility(''));
-        $this->assertEquals('public', WPSG_CPT::sanitize_visibility('unlisted'));
+    public function test_sanitize_visibility_invalid_returns_private() {
+        $this->assertEquals('private', WPSG_CPT::sanitize_visibility('invalid'));
+        $this->assertEquals('private', WPSG_CPT::sanitize_visibility(''));
+        $this->assertEquals('private', WPSG_CPT::sanitize_visibility('unlisted'));
     }
 
     public function test_sanitize_status_valid_values() {
