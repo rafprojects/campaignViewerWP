@@ -12,6 +12,14 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.21.0 (March 25, 2026)
+- **MINOR**: Phase 22 — Carousel Overhaul, Viewer Alignment & Gallery Layout Fixes
+  - **P22-P8b**: Compact grid justification fix — switched CSS Grid from `auto-fill` to `auto-fit` so incomplete rows align properly.
+  - **P22-P8c**: Gallery label toggle wiring hardened across all adapters.
+  - **P22-P8**: CampaignViewer gallery section vertical alignment setting added (`top`, `center`, `bottom`).
+  - **P22-P8d**: Classic carousel migrated to Embla with multi-card layout, autoplay, pause-on-hover, direction, drag enablement, darken-unfocused overlay, edge fade, loop, and gap controls.
+  - **Settings UI**: Added Carousel Settings accordion and enabled classic carousel selection in unified gallery mode.
+
 ### v0.20.0 (March 19, 2026)
 - **MINOR**: Phase 22 — Layout Fixes, Theme Contrast & WCAG AA Compliance
   - **P22-A**: CardGallery cardMaxWidth layout fix — replaced wrapper div pattern with conditional flex/SimpleGrid.

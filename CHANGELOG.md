@@ -5,6 +5,19 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-03-25
+
+### Added - Phase 22: Carousel Overhaul, Viewer Alignment & Gallery Layout Fixes
+
+- **P22-P8d** Embla carousel migration — replaced custom carousel internals with `embla-carousel-react` + autoplay plugin, adding multi-card view, autoplay, drag, loop, gap, edge fade, and darken-unfocused controls.
+- Carousel settings accordion in SettingsPanel, including unified-gallery support for the classic carousel adapter.
+- `modalContentVerticalAlign` setting for top/center/bottom alignment of gallery sections within CampaignViewer.
+
+### Fixed
+
+- Compact grid row justification now uses `auto-fit` instead of `auto-fill`, allowing incomplete rows to align correctly.
+- Carousel settings visibility now works in unified, unified-selection, and per-breakpoint adapter modes.
+
 ## [0.20.0] - 2026-03-19
 
 ### Added - Phase 22: Layout Fixes, Theme Contrast & WCAG AA Compliance

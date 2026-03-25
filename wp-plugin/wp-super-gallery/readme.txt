@@ -4,7 +4,7 @@ Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.19.0
+Stable tag: 0.21.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,15 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 5. Advanced settings accordion.
 
 == Changelog ==
+
+= 0.21.0 =
+**Phase 22 — Carousel Overhaul, Viewer Alignment & Gallery Layout Fixes**
+
+* Added: Embla-powered classic carousel with multi-card view, autoplay, drag, edge fade, darken-unfocused, loop, and gap controls.
+* Added: carousel settings controls in Settings Panel, including unified-gallery support for the classic carousel adapter.
+* Added: modal content vertical alignment setting for campaign viewer gallery sections.
+* Fixed: compact grid justification by switching to `auto-fit` so incomplete rows align correctly.
+* Fixed: carousel settings visibility logic so classic adapter settings appear in unified, unified-selection, and per-breakpoint modes.
 
 = 0.19.0 =
 **Phase 21 — UX Overhaul: Bugs, Campaign Cards, Viewer, Typography & In-Context Settings**
