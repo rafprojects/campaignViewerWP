@@ -1,3 +1,5 @@
+import { sanitizeCssUrl } from './sanitizeCss';
+
 /**
  * Inject @font-face CSS for custom uploaded fonts into document.head.
  *
@@ -15,6 +17,13 @@ export interface FontLibraryEntry {
 
 const STYLE_ID = 'wpsg-custom-fonts';
 
+function escapeCssString(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/[\r\n\f]/g, ' ');
+}
+
 export function loadCustomFonts(fonts: FontLibraryEntry[]): void {
   const existing = document.getElementById(STYLE_ID);
 
@@ -25,10 +34,20 @@ export function loadCustomFonts(fonts: FontLibraryEntry[]): void {
 
   const css = fonts
     .map((f) => {
-      const fmt = f.format ? ` format('${f.format}')` : '';
-      return `@font-face {\n  font-family: '${f.name}';\n  src: url('${f.url}')${fmt};\n  font-display: swap;\n}`;
+      const safeUrl = sanitizeCssUrl(f.url);
+      if (!safeUrl) return '';
+
+      const safeName = escapeCssString(f.name);
+      const fmt = f.format ? ` format('${escapeCssString(f.format)}')` : '';
+      return `@font-face {\n  font-family: '${safeName}';\n  src: url('${safeUrl}')${fmt};\n  font-display: swap;\n}`;
     })
+    .filter(Boolean)
     .join('\n');
+
+  if (!css) {
+    if (existing) existing.remove();
+    return;
+  }
 
   if (existing?.textContent === css) return;
   if (existing) existing.remove();

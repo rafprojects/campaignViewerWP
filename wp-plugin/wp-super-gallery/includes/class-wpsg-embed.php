@@ -115,7 +115,8 @@ class WPSG_Embed {
                     return 'family=' . rawurlencode($f) . ':' . $spec;
                 }, $families);
                 $url = 'https://fonts.googleapis.com/css2?' . implode('&', $params) . '&display=swap';
-                wp_enqueue_style('wpsg-google-fonts', $url, [], null);
+                $font_handle = 'wpsg-google-fonts-' . md5($url);
+                wp_enqueue_style($font_handle, $url, [], null);
             }
         }
 

@@ -98,7 +98,12 @@ class WPSG_Font_Library {
             $base_dir   = trailingslashit( $upload_dir['basedir'] );
 
             if ( str_starts_with( $entry['url'], $base_url ) ) {
-                $relative  = substr( $entry['url'], strlen( $base_url ) );
+                $relative  = ltrim( substr( $entry['url'], strlen( $base_url ) ), '/' );
+                if ( ! str_starts_with( $relative, trailingslashit( self::UPLOAD_SUBDIR ) ) ) {
+                    unset( $all[ $id ] );
+                    update_option( self::OPTION_KEY, $all, false );
+                    return true;
+                }
                 $file_path = $base_dir . $relative;
 
                 $real_path = realpath( $file_path );
@@ -274,6 +279,9 @@ class WPSG_Font_Library {
 </IfModule>
 HTACCESS;
 
-        file_put_contents( $htaccess_path, $rules );
+        if ( false === file_put_contents( $htaccess_path, $rules ) ) {
+            error_log( '[WPSG] Failed to write font directory .htaccess: ' . $htaccess_path );
+            do_action( 'wpsg_font_htaccess_write_failed', $htaccess_path );
+        }
     }
 }

@@ -21,13 +21,28 @@ if (!globalThis.IntersectionObserver) {
 vi.mock('embla-carousel-react', async () => {
 	const React = await vi.importActual<typeof import('react')>('react');
 
+	type EmblaListener = (...args: unknown[]) => void;
+	type EmblaApi = {
+		scrollPrev: () => void;
+		scrollNext: () => void;
+		scrollTo: (index: number) => void;
+		selectedScrollSnap: () => number;
+		slidesInView: () => number[];
+		on: (event: string, cb: EmblaListener) => EmblaApi | null;
+		off: (event: string, cb: EmblaListener) => EmblaApi | null;
+		canScrollPrev: () => boolean;
+		canScrollNext: () => boolean;
+		destroy: () => void;
+		reInit: () => void;
+	};
+
 	function useEmblaCarousel(options: Record<string, unknown> = {}) {
 		const stateRef = React.useRef<{
 			selected: number;
 			total: number;
 			loop: boolean;
-			listeners: Record<string, Set<(...args: unknown[]) => void>>;
-			api: ReturnType<typeof buildApi> | null;
+			listeners: Record<string, Set<EmblaListener>>;
+			api: EmblaApi | null;
 		} | null>(null);
 		const [, setTick] = React.useState(0);
 
@@ -36,16 +51,15 @@ vi.mock('embla-carousel-react', async () => {
 				selected: 0,
 				total: 0,
 				loop: (options.loop as boolean) ?? true,
-				listeners: {} as Record<string, Set<(...args: unknown[]) => void>>,
-				api: null as ReturnType<typeof buildApi> | null,
+				listeners: {} as Record<string, Set<EmblaListener>>,
+				api: null as EmblaApi | null,
 			};
 
 			function fire(event: string) {
 				s.listeners[event]?.forEach((fn) => fn(s.api));
 			}
 
-			function buildApi() {
-				return {
+				const api: EmblaApi = {
 					scrollPrev: () => {
 						if (s.total === 0) return;
 						s.selected = s.loop
@@ -73,23 +87,22 @@ vi.mock('embla-carousel-react', async () => {
 					},
 					selectedScrollSnap: () => s.selected,
 					slidesInView: () => [s.selected],
-					on: (event: string, cb: (...args: unknown[]) => void) => {
+					on: (event: string, cb: EmblaListener) => {
 						if (!s.listeners[event]) s.listeners[event] = new Set();
 						s.listeners[event].add(cb);
-						return s.api;
+						return api;
 					},
-					off: (event: string, cb: (...args: unknown[]) => void) => {
+					off: (event: string, cb: EmblaListener) => {
 						s.listeners[event]?.delete(cb);
-						return s.api;
+						return api;
 					},
 					canScrollPrev: () => true,
 					canScrollNext: () => true,
 					destroy: () => {},
 					reInit: () => {},
 				};
-			}
 
-			s.api = buildApi();
+			s.api = api;
 			stateRef.current = s;
 		}
 

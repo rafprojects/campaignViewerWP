@@ -21,6 +21,13 @@ class WPSG_REST {
         $response->header('ETag', $etag);
         return $response;
     }
+
+    private static function error_response($message, $status, $code = 'wpsg_error') {
+        return new WP_REST_Response([
+            'code' => $code,
+            'message' => $message,
+        ], $status);
+    }
     public static function register_routes() {
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
             [
@@ -1294,8 +1301,8 @@ class WPSG_REST {
             return new WP_Error('wpsg_analytics_disabled', 'Analytics disabled', ['status' => 403]);
         }
 
-        $campaign_id = intval($request->get_param('campaignId'));
-        $event_type  = sanitize_text_field($request->get_param('eventType') ?? 'view');
+        $campaign_id = intval($request->get_param('campaignId') ?? $request->get_param('campaign_id'));
+        $event_type  = sanitize_text_field($request->get_param('eventType') ?? $request->get_param('event_type') ?? 'view');
 
         if ($campaign_id <= 0) {
             return new WP_Error('wpsg_invalid_campaign_id', 'Invalid campaignId', ['status' => 400]);
@@ -1518,7 +1525,19 @@ class WPSG_REST {
     }
 
     public static function create_media($request) {
-        $post_id = intval($request->get_param('id'));
+        $post_id = intval($request->get_param('campaignId') ?? 0);
+        if ($post_id <= 0) {
+            $route = method_exists($request, 'get_route') ? $request->get_route() : '';
+            if (is_string($route) && preg_match('#/campaigns/(\d+)/media$#', $route, $matches)) {
+                $post_id = intval($matches[1]);
+            }
+        }
+        if ($post_id <= 0) {
+            $route_id = $request->get_param('id');
+            if (is_numeric($route_id)) {
+                $post_id = intval($route_id);
+            }
+        }
         if (!self::campaign_exists($post_id)) {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
@@ -1532,14 +1551,19 @@ class WPSG_REST {
         } elseif ($order > 1000000) {
             $order = 1000000;
         }
-        $thumbnail = esc_url_raw($request->get_param('thumbnail'));
+        $thumbnail = esc_url_raw($request->get_param('thumbnail') ?? '');
 
         if (!in_array($type, ['video', 'image'], true)) {
             return new WP_Error('wpsg_invalid_media_type', 'Invalid media type', ['status' => 400]);
         }
 
+        $custom_media_id = sanitize_text_field($request->get_param('id') ?? '');
+        if ($custom_media_id !== '' && !preg_match('/^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*$/', $custom_media_id)) {
+            return new WP_Error('wpsg_invalid_media_id', 'Invalid media ID', ['status' => 400]);
+        }
+
         $media_item = [
-            'id' => wp_generate_uuid4(),
+            'id' => $custom_media_id !== '' ? $custom_media_id : wp_generate_uuid4(),
             'type' => $type,
             'source' => $source,
             'caption' => $caption,
@@ -1759,9 +1783,14 @@ class WPSG_REST {
             'token'       => $row['token'],
             'email'       => $row['email'],
             'campaignId'  => (int) $row['campaign_id'],
+            'campaign_id' => (int) $row['campaign_id'],
             'status'      => $row['status'],
             'requestedAt' => gmdate('c', strtotime($row['requested_at'])),
+            'requested_at' => gmdate('c', strtotime($row['requested_at'])),
             'resolvedAt'  => $row['resolved_at']
+                ? gmdate('c', strtotime($row['resolved_at']))
+                : null,
+            'resolved_at' => $row['resolved_at']
                 ? gmdate('c', strtotime($row['resolved_at']))
                 : null,
         ];
@@ -1848,7 +1877,7 @@ class WPSG_REST {
         $rows = WPSG_DB::list_access_requests($post_id, $status);
         $result = array_map([self::class, 'format_access_request'], $rows);
 
-        return new WP_REST_Response(['items' => $result], 200);
+        return new WP_REST_Response($result, 200);
     }
 
     /**
@@ -2866,19 +2895,19 @@ class WPSG_REST {
 
         $url = esc_url_raw($request->get_param('url') ?? '');
         if (empty($url)) {
-            return new WP_Error('wpsg_missing_url', 'url is required', ['status' => 400]);
+            return self::error_response('url is required', 400, 'wpsg_missing_url');
         }
 
         $parsed = wp_parse_url($url);
         if (!is_array($parsed)) {
-            return new WP_Error('wpsg_invalid_oembed_url', 'Invalid oEmbed URL', ['status' => 400]);
+            return self::error_response('Invalid oEmbed URL', 400, 'wpsg_invalid_oembed_url');
         }
 
         // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
         $host = isset($parsed['host']) ? $parsed['host'] : '';
         $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : '';
         if (empty($host)) {
-            return new WP_Error('wpsg_invalid_oembed_host', 'Invalid oEmbed URL host', ['status' => 400]);
+            return self::error_response('Invalid oEmbed URL host', 400, 'wpsg_invalid_oembed_host');
         }
 
         // Normalize IPv6 literals wrapped in brackets (e.g. [::1])
@@ -2887,7 +2916,7 @@ class WPSG_REST {
         }
 
         if ($scheme !== 'https') {
-            return new WP_Error('wpsg_oembed_https_required', 'Only HTTPS oEmbed URLs are allowed', ['status' => 400]);
+            return self::error_response('Only HTTPS oEmbed URLs are allowed', 400, 'wpsg_oembed_https_required');
         }
 
         // Allowlist of well-known oEmbed providers (allows subdomains).
@@ -2935,13 +2964,13 @@ class WPSG_REST {
                 }
 
                 if (empty($ips_to_check)) {
-                    return new WP_Error('wpsg_oembed_dns_failed', 'Unable to resolve host for oEmbed URL', ['status' => 400]);
+                    return self::error_response('Unable to resolve host for oEmbed URL', 400, 'wpsg_oembed_dns_failed');
                 }
             }
 
             foreach ($ips_to_check as $ip) {
                 if (self::is_private_ip($ip)) {
-                    return new WP_Error('wpsg_oembed_ssrf_blocked', 'oEmbed host resolves to a private or disallowed IP', ['status' => 400]);
+                    return self::error_response('oEmbed host resolves to a private or disallowed IP', 400, 'wpsg_oembed_ssrf_blocked');
                 }
             }
         }
@@ -3025,7 +3054,7 @@ class WPSG_REST {
         // H-2: If the SSRF filter blocked the request due to DNS rebinding,
         // return a clear 400 instead of a generic 502 failure.
         if ($wpsg_ssrf_blocked) {
-            return new WP_Error('wpsg_oembed_dns_rebind', 'DNS rebinding detected: oEmbed host resolved to a private IP', ['status' => 400]);
+            return self::error_response('DNS rebinding detected: oEmbed host resolved to a private IP', 400, 'wpsg_oembed_dns_rebind');
         }
 
         if (is_array($result) && !empty($result)) {
@@ -4081,7 +4110,7 @@ class WPSG_REST {
             if (!$video_id) {
                 return new WP_Error('invalid_url', 'Invalid YouTube URL');
             }
-            if (!preg_match('/^[a-zA-Z0-9_-]{11}$/', $video_id)) {
+            if (!preg_match('/^[a-zA-Z0-9_-]{4,64}$/', $video_id)) {
                 return new WP_Error('invalid_url', 'Invalid YouTube video ID format');
             }
             return [
