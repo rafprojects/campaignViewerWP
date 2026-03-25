@@ -36,6 +36,12 @@ export interface Campaign {
   categories?: string[];
 }
 
+/** Measured dimensions of a gallery section container, passed to child adapters. */
+export interface ContainerDimensions {
+  width: number;
+  height: number;
+}
+
 export interface MediaItem {
   id: string;
   type: 'video' | 'image' | 'other';
@@ -446,6 +452,10 @@ export type ViewportBgType = 'none' | 'solid' | 'gradient' | 'image';
 export interface TypographyOverride {
   // Core typography
   fontFamily?: string;
+  /** First fallback font name (system font), e.g. "Helvetica" */
+  fontFallback1?: string;
+  /** Second fallback font name (system font), e.g. "Arial" */
+  fontFallback2?: string;
   fontSize?: string;
   fontWeight?: number;
   fontStyle?: 'normal' | 'italic' | 'oblique';
@@ -551,7 +561,9 @@ export interface GalleryBehaviorSettings {
   cardThumbnailHeight: number;
   cardThumbnailFit: string;
   cardGridColumns: number;
-  cardGap: number;
+  cardGapH: number;
+  cardGapV: number;
+  cardMaxWidth: number;
   modalCoverHeight: number;
   modalTransition: string;
   modalTransitionDuration: number;
@@ -741,6 +753,51 @@ export interface GalleryBehaviorSettings {
   showCampaignAdminActions: boolean;
   showCampaignGalleryLabels: boolean;
   fullscreenContentMaxWidth: number;
+  // P22-K: Modal max width & background
+  modalMaxWidth: number;
+  modalBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
+  modalBgColor: string;
+  modalBgGradient: import('@/utils/gradientCss').GradientOptions;
+  // P22-M: Modal gallery width/gap/margin
+  modalGalleryMaxWidth: number;
+  modalGalleryGap: number;
+  modalGalleryMargin: number;
+  // P22-P8: Vertical alignment of modal content
+  modalContentVerticalAlign: 'top' | 'center' | 'bottom';
+  // P22-M: Gallery height constraint mode + manual CSS height
+  gallerySizingMode: 'auto' | 'viewport' | 'manual';
+  galleryManualHeight: string;
+  // P22-P2: Dimension propagation — gallery section sizing
+  gallerySectionMaxWidth: number;
+  gallerySectionMaxHeight: number;
+  gallerySectionHeightMode: 'auto' | 'manual' | 'viewport';
+  gallerySectionMinWidth: number;
+  gallerySectionMinHeight: number;
+  perTypeSectionEqualHeight: boolean;
+  modalInnerPadding: number;
+  gallerySectionPadding: number;
+  adapterContentPadding: number;
+  adapterSizingMode: 'fill' | 'manual';
+  adapterMaxWidthPct: number;
+  adapterMaxHeightPct: number;
+  // P22-P7: Card width responsive unit & last-row justification
+  cardMaxWidthUnit: 'px' | '%';
+  cardJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
+  // P22-P7: Unified adapter item gap & justification
+  adapterItemGap: number;
+  adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
+  // P22-P8d: Embla carousel settings
+  carouselVisibleCards: number;
+  carouselAutoplay: boolean;
+  carouselAutoplaySpeed: number;
+  carouselAutoplayPauseOnHover: boolean;
+  carouselAutoplayDirection: 'ltr' | 'rtl';
+  carouselDragEnabled: boolean;
+  carouselDarkenUnfocused: boolean;
+  carouselDarkenOpacity: number;
+  carouselEdgeFade: boolean;
+  carouselLoop: boolean;
+  carouselGap: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -807,7 +864,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardThumbnailHeight: 200,
   cardThumbnailFit: 'cover',
   cardGridColumns: 0,
-  cardGap: 16,
+  cardGapH: 16,
+  cardGapV: 16,
+  cardMaxWidth: 0,
   modalCoverHeight: 240,
   modalTransition: 'pop',
   modalTransitionDuration: 300,
@@ -1004,4 +1063,48 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   showCampaignAdminActions: true,
   showCampaignGalleryLabels: true,
   fullscreenContentMaxWidth: 0,
+  // P22-K: Modal max width & background
+  modalMaxWidth: 1200,
+  modalBgType: 'theme',
+  modalBgColor: '',
+  modalBgGradient: {},
+  // P22-M: Modal gallery width/gap/margin
+  modalGalleryMaxWidth: 0,
+  modalGalleryGap: 32,
+  modalGalleryMargin: 0,
+  modalContentVerticalAlign: 'top',
+  // P22-M: Gallery height constraint mode + manual CSS height
+  gallerySizingMode: 'auto',
+  galleryManualHeight: '420px',
+  // P22-P2: Dimension propagation — gallery section sizing
+  gallerySectionMaxWidth: 0,
+  gallerySectionMaxHeight: 0,
+  gallerySectionHeightMode: 'auto',
+  gallerySectionMinWidth: 300,
+  gallerySectionMinHeight: 150,
+  perTypeSectionEqualHeight: false,
+  modalInnerPadding: 16,
+  gallerySectionPadding: 16,
+  adapterContentPadding: 0,
+  adapterSizingMode: 'fill',
+  adapterMaxWidthPct: 100,
+  adapterMaxHeightPct: 100,
+  // P22-P7: Card width responsive unit & last-row justification
+  cardMaxWidthUnit: 'px',
+  cardJustifyContent: 'center',
+  // P22-P7: Unified adapter item gap & justification
+  adapterItemGap: 16,
+  adapterJustifyContent: 'center',
+  // P22-P8d: Embla carousel settings
+  carouselVisibleCards: 1,
+  carouselAutoplay: false,
+  carouselAutoplaySpeed: 3000,
+  carouselAutoplayPauseOnHover: true,
+  carouselAutoplayDirection: 'ltr',
+  carouselDragEnabled: true,
+  carouselDarkenUnfocused: false,
+  carouselDarkenOpacity: 0.5,
+  carouselEdgeFade: false,
+  carouselLoop: true,
+  carouselGap: 16,
 };

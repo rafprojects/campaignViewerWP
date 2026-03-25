@@ -88,9 +88,9 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
           {!compact ? (
             <Group justify="space-between" mt="sm">
               <Box style={{ flex: 1, minWidth: 0 }}>
-                <Text size="sm" c="gray.1" lineClamp={1}>{item.caption || '—'}</Text>
+                <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
                 {showUrl && item.url && (
-                  <Text size="xs" c="gray.4" lineClamp={1}>
+                  <Text size="xs" c="dimmed" lineClamp={1}>
                     <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{item.url}</a>
                   </Text>
                 )}

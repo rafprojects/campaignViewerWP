@@ -127,21 +127,20 @@ describe('SettingsPanel', () => {
     // Tab buttons visible
     expect(screen.getByRole('tab', { name: /General/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /Campaign Cards/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Media Gallery/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Media Display/i })).toBeDefined();
   });
 
-  it('shows gallery tab settings when Media Gallery tab is clicked', async () => {
+  it('shows gallery tab settings when Media Display tab is clicked', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
+    await clickTabAndWait('Media Display', 'Enable Lightbox');
 
     expect(screen.getByText('Enable Lightbox')).toBeDefined();
     expect(screen.getByText('Enable Animations')).toBeDefined();
-    expect(screen.getByText('Video Gallery Height (px)')).toBeDefined();
-    expect(screen.getByText('Image Gallery Height (px)')).toBeDefined();
+    expect(screen.getByText('Height Constraint')).toBeDefined();
   });
 
   it('uses defaults when getSettings fails', async () => {
@@ -187,7 +186,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
+    await clickTabAndWait('Media Display', 'Enable Lightbox');
 
     // Toggle "Enable Lightbox" by its label
     toggleSwitchByLabel('Enable Lightbox');
@@ -214,7 +213,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Gallery', 'Enable Animations');
+    await clickTabAndWait('Media Display', 'Enable Animations');
 
     // Toggle "Enable Animations" by its label, then reset
     toggleSwitchByLabel('Enable Animations');
@@ -237,7 +236,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
+    await clickTabAndWait('Media Display', 'Enable Lightbox');
 
     toggleSwitchByLabel('Enable Lightbox');
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -337,13 +336,13 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
-  it('interacts with Media Gallery tab controls', async () => {
+  it('interacts with Media Display tab controls', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Gallery', 'Enable Lightbox');
+    await clickTabAndWait('Media Display', 'Enable Lightbox');
 
     // Toggle named switches
     toggleSwitchByLabel('Enable Lightbox');

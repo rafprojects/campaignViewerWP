@@ -102,6 +102,34 @@ class WPSG_Embed {
         $enable_lightbox = isset($settings['enable_lightbox']) ? $settings['enable_lightbox'] : true;
         $enable_animations = isset($settings['enable_animations']) ? $settings['enable_animations'] : true;
 
+        // Enqueue Google Fonts server-side so they load even if JS injection is blocked.
+        if (class_exists('WPSG_Settings')) {
+            $families = WPSG_Settings::extract_google_font_families($settings);
+            if (!empty($families)) {
+                $specs = WPSG_Settings::GOOGLE_FONT_SPECS;
+                $params = array_map(function ($f) use ($specs) {
+                    $spec = isset($specs[$f]) ? $specs[$f] : null;
+                    if ($spec === null) {
+                        return 'family=' . rawurlencode($f);
+                    }
+                    return 'family=' . rawurlencode($f) . ':' . $spec;
+                }, $families);
+                $url = 'https://fonts.googleapis.com/css2?' . implode('&', $params) . '&display=swap';
+                $font_handle = 'wpsg-google-fonts-' . md5($url);
+                wp_enqueue_style($font_handle, $url, [], null);
+            }
+        }
+
+        // Enqueue @font-face CSS for custom uploaded fonts (P22-L5).
+        if (class_exists('WPSG_Font_Library')) {
+            $font_css = WPSG_Font_Library::generate_font_face_css();
+            if (!empty($font_css)) {
+                wp_register_style('wpsg-custom-fonts', false);
+                wp_enqueue_style('wpsg-custom-fonts');
+                wp_add_inline_style('wpsg-custom-fonts', $font_css);
+            }
+        }
+
         $manifest = self::get_manifest();
         $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
         if ($entry && !empty($entry['css'])) {

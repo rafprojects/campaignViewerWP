@@ -5,6 +5,39 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-03-25
+
+### Added - Phase 22: Carousel Overhaul, Viewer Alignment & Gallery Layout Fixes
+
+- **P22-P8d** Embla carousel migration — replaced custom carousel internals with `embla-carousel-react` + autoplay plugin, adding multi-card view, autoplay, drag, loop, gap, edge fade, and darken-unfocused controls.
+- Carousel settings accordion in SettingsPanel, including unified-gallery support for the classic carousel adapter.
+- `modalContentVerticalAlign` setting for top/center/bottom alignment of gallery sections within CampaignViewer.
+
+### Fixed
+
+- Compact grid row justification now uses `auto-fit` instead of `auto-fill`, allowing incomplete rows to align correctly.
+- Carousel settings visibility now works in unified, unified-selection, and per-breakpoint adapter modes.
+
+## [0.20.0] - 2026-03-19
+
+### Added - Phase 22: Layout Fixes, Theme Contrast & WCAG AA Compliance
+
+- **P22-A** CardGallery cardMaxWidth layout fix — conditional flex/SimpleGrid replaces wrapper div pattern.
+- **P22-B** Company logo auto-detection — shared CompanyLogo renders URLs as images, text/emojis as spans.
+- **P22-C** CampaignViewer IIFE refactor — extracted UnifiedGallerySection, VideoGallerySection, ImageGallerySection.
+- **P22-D** Replaced getEffectiveColumns resize listener with Mantine useMediaQuery hooks.
+- **P22-E** Gallery overlay contrast hardening — shared constants (rgba(0,0,0,0.7)) across all 6 adapters.
+- **P22-F** Theme textMuted2 WCAG AA contrast audit — all 13 non-compliant themes corrected to ≥4.5:1.
+- **P22-G** WCAG AA compliance: close button contrast, icon opacity, stats role, empty media message, aria-labels.
+- **P22-H** New light themes: github-light and catppuccin-latte.
+
+### Fixed
+
+- **P22-I** Draggable auth bar positioning — deferred default via useEffect, resize re-clamping, null guard on mount.
+- Close button contrast increased from rgba(0,0,0,0.45) to rgba(0,0,0,0.65) in CampaignViewer.
+- BuilderHistoryPanel icon opacity raised from 0.3 to 0.5 for WCAG 1.4.11 compliance.
+- LayoutSlotComponent mask opacity increased from 0.4 to 0.6; removed userSelect:none from text content.
+
 ## [0.19.0] - 2026-03-18
 
 ### Added - Phase 21: UX Overhaul, Viewer Controls & In-Context Editing

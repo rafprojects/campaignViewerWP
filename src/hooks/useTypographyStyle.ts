@@ -18,8 +18,14 @@ export function useTypographyStyle(
   return useMemo(() => {
     const style: CSSProperties = {};
 
-    // Core typography
-    if (override.fontFamily) style.fontFamily = override.fontFamily;
+    // Core typography — build fontFamily with fallback chain
+    if (override.fontFamily) {
+      const segments = override.fontFamily.split(',').map((s) => s.trim());
+      const primary = segments[0];
+      const terminal = segments.slice(1).join(', ');
+      const fb = [override.fontFallback1, override.fontFallback2].filter(Boolean);
+      style.fontFamily = [primary, ...fb, terminal].filter(Boolean).join(', ');
+    }
     if (override.fontSize) style.fontSize = override.fontSize;
     if (override.fontWeight) style.fontWeight = override.fontWeight;
     if (override.fontStyle) style.fontStyle = override.fontStyle;

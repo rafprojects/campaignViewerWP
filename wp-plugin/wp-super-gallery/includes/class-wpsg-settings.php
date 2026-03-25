@@ -127,7 +127,9 @@ class WPSG_Settings {
         'card_thumbnail_height'      => 200,
         'card_thumbnail_fit'         => 'cover',
         'card_grid_columns'          => 0,
-        'card_gap'                   => 16,
+        'card_gap_h'                 => 16,
+        'card_gap_v'                 => 16,
+        'card_max_width'             => 0,
         'modal_cover_height'         => 240,
         'modal_transition'           => 'pop',
         'modal_transition_duration'  => 300,
@@ -268,7 +270,7 @@ class WPSG_Settings {
         // ── P21-D: Viewer background & border ─────────────────
         'viewer_bg_type'                 => 'theme',
         'viewer_bg_color'                => '',
-        'viewer_bg_gradient'             => (object) [],
+        'viewer_bg_gradient'             => [],
         'show_viewer_border'             => true,
         // ── P21-C: Card aspect ratio & max columns ────────────
         'card_max_columns'               => 0,
@@ -298,11 +300,55 @@ class WPSG_Settings {
         'show_campaign_admin_actions'    => true,
         'show_campaign_gallery_labels'   => true,
         'fullscreen_content_max_width'   => 0,
+        // P22-K: Modal max width & background
+        'modal_max_width'                => 1200,
+        'modal_bg_type'                  => 'theme',
+        'modal_bg_color'                 => '',
+        'modal_bg_gradient'              => '{}',
         // P21-G: Gallery label customisation
         'gallery_image_label'            => 'Images',
         'gallery_video_label'            => 'Videos',
         'gallery_label_justification'    => 'left',
         'show_gallery_label_icon'        => false,
+        // P22-M: Modal gallery width/gap/margin
+        'modal_gallery_max_width'        => 0,
+        'modal_gallery_gap'              => 32,
+        'modal_gallery_margin'           => 0,
+        // P22-M: Gallery sizing mode + manual height constraint
+        'gallery_sizing_mode'            => 'auto',
+        'gallery_manual_height'          => '420px',
+        // P22-P2: Dimension propagation — gallery section sizing
+        'gallery_section_max_width'      => 0,
+        'gallery_section_max_height'     => 0,
+        'gallery_section_height_mode'    => 'auto',
+        'gallery_section_min_width'      => 300,
+        'gallery_section_min_height'     => 150,
+        'per_type_section_equal_height'  => false,
+        'modal_inner_padding'            => 16,
+        'gallery_section_padding'        => 16,
+        'adapter_content_padding'        => 0,
+        'adapter_sizing_mode'            => 'fill',
+        'adapter_max_width_pct'          => 100,
+        'adapter_max_height_pct'         => 100,
+        // P22-P7: Card width unit, justification, adapter gap & justification
+        'card_max_width_unit'            => 'px',
+        'card_justify_content'           => 'center',
+        'adapter_item_gap'               => 16,
+        'adapter_justify_content'        => 'center',
+        // P22-P8: Modal content vertical alignment
+        'modal_content_vertical_align'   => 'top',
+        // P22-P8d: Embla carousel settings
+        'carousel_visible_cards'         => 1,
+        'carousel_autoplay'              => false,
+        'carousel_autoplay_speed'        => 3000,
+        'carousel_autoplay_pause_on_hover' => true,
+        'carousel_autoplay_direction'    => 'ltr',
+        'carousel_drag_enabled'          => true,
+        'carousel_darken_unfocused'      => false,
+        'carousel_darken_opacity'        => 0.5,
+        'carousel_edge_fade'             => false,
+        'carousel_loop'                  => true,
+        'carousel_gap'                   => 16,
     ];
 
     /**
@@ -393,6 +439,8 @@ class WPSG_Settings {
         'layout_builder_scope'       => ['full', 'viewport'],
         // P21-D: Viewer background type
         'viewer_bg_type'             => ['theme', 'transparent', 'solid', 'gradient'],
+        // P22-K: Modal background type
+        'modal_bg_type'              => ['theme', 'transparent', 'solid', 'gradient'],
         // P21-C: Card aspect ratio
         'card_aspect_ratio'          => ['auto', '16:9', '4:3', '1:1', '3:4', '9:16', '2:3', '3:2', '21:9'],
         // P21-G: Gallery label justification
@@ -401,6 +449,22 @@ class WPSG_Settings {
         'campaign_open_mode'          => ['full', 'galleries-only'],
         // P21-E: Auth bar display mode
         'auth_bar_display_mode'       => ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'],
+        // P22-M: Gallery sizing mode
+        'gallery_sizing_mode'         => ['auto', 'viewport', 'manual'],
+        // P22-P2: Gallery section height mode
+        'gallery_section_height_mode' => ['auto', 'manual', 'viewport'],
+        // P22-P2: Adapter sizing mode
+        'adapter_sizing_mode'         => ['fill', 'manual'],
+        // P22-P7: Card max width unit
+        'card_max_width_unit'         => ['px', '%'],
+        // P22-P7: Card justification
+        'card_justify_content'        => ['start', 'center', 'end', 'space-between', 'space-evenly'],
+        // P22-P7: Adapter justification
+        'adapter_justify_content'     => ['start', 'center', 'end', 'space-between', 'space-evenly', 'stretch'],
+        // P22-P8: Modal content vertical alignment
+        'modal_content_vertical_align' => ['top', 'center', 'bottom'],
+        // P22-P8d: Embla carousel settings
+        'carousel_autoplay_direction'  => ['ltr', 'rtl'],
     ];
 
     /**
@@ -441,8 +505,9 @@ class WPSG_Settings {
         'card_border_radius'          => [0, 24],
         'card_border_width'           => [0, 8],
         'card_thumbnail_height'       => [100, 400],
-        'card_grid_columns'           => [0, 4],
-        'card_gap'                    => [0, 48],
+        'card_grid_columns'           => [0, 6],
+        'card_gap_h'                  => [0, 48],
+        'card_gap_v'                  => [0, 48],
         'modal_cover_height'          => [100, 400],
         'modal_transition_duration'   => [100, 1000],
         'modal_max_height'            => [50, 100],
@@ -526,6 +591,29 @@ class WPSG_Settings {
         'auth_bar_drag_margin'         => [0, 64],
         // P21-J: Fullscreen content max width (0 = full responsive)
         'fullscreen_content_max_width' => [0, 3000],
+        // P22-K: Modal max width (0 = default 'xl')
+        'modal_max_width'              => [0, 3000],
+        // P22-M: Modal gallery width/gap/margin
+        'modal_gallery_max_width'      => [0, 3000],
+        'modal_gallery_gap'            => [0, 120],
+        'modal_gallery_margin'         => [0, 120],
+        // P22-P2: Gallery section sizing ranges
+        'gallery_section_max_width'    => [0, 3000],
+        'gallery_section_max_height'   => [0, 3000],
+        'gallery_section_min_width'    => [0, 1200],
+        'gallery_section_min_height'   => [0, 1200],
+        'modal_inner_padding'          => [0, 64],
+        'gallery_section_padding'      => [0, 60],
+        'adapter_content_padding'      => [0, 48],
+        'adapter_max_width_pct'        => [50, 100],
+        'adapter_max_height_pct'       => [50, 100],
+        // P22-P7: Adapter item gap
+        'adapter_item_gap'             => [0, 64],
+        // P22-P8d: Embla carousel settings
+        'carousel_visible_cards'       => [1, 10],
+        'carousel_autoplay_speed'      => [500, 15000],
+        'carousel_darken_opacity'      => [0, 1],
+        'carousel_gap'                 => [0, 64],
     ];
 
     /**
@@ -667,6 +755,115 @@ class WPSG_Settings {
     }
 
     /**
+     * Google Font family names that may be loaded from the CDN.
+     * Must stay in sync with GOOGLE_FONT_NAMES in TypographyEditor.tsx.
+     */
+    const GOOGLE_FONT_NAMES = [
+        // Sans-serif
+        'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins',
+        'Oswald', 'Raleway', 'Nunito', 'Source Sans 3', 'PT Sans', 'Noto Sans',
+        'Work Sans', 'Quicksand', 'Barlow', 'Cabin', 'DM Sans', 'Fira Sans',
+        'Karla', 'Mulish', 'Rubik', 'Ubuntu', 'Josefin Sans', 'Manrope',
+        'Plus Jakarta Sans', 'Outfit',
+        // Serif
+        'Playfair Display', 'Merriweather', 'Libre Baskerville', 'Crimson Text',
+        'EB Garamond', 'Bitter', 'Cormorant Garamond', 'Lora', 'PT Serif',
+        'Noto Serif',
+        // Display / Handwriting
+        'Dancing Script', 'Pacifico', 'Lobster', 'Caveat', 'Satisfy',
+        // Monospace
+        'Fira Code', 'JetBrains Mono', 'Source Code Pro',
+    ];
+
+    /**
+     * Per-font axis specifications for Google Fonts CSS API v2.
+     * Must stay in sync with GOOGLE_FONT_SPECS in loadGoogleFont.ts.
+     *
+     * null = no axes needed (regular 400 only, e.g. Pacifico).
+     */
+    const GOOGLE_FONT_SPECS = [
+        // Sans-serif
+        'Inter'             => 'ital,wght@0,100..900;1,100..900',
+        'Roboto'            => 'ital,wght@0,100..900;1,100..900',
+        'Open Sans'         => 'ital,wght@0,300..800;1,300..800',
+        'Lato'              => 'ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900',
+        'Montserrat'        => 'ital,wght@0,100..900;1,100..900',
+        'Poppins'           => 'ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900',
+        'Oswald'            => 'wght@200..700',
+        'Raleway'           => 'ital,wght@0,100..900;1,100..900',
+        'Nunito'            => 'ital,wght@0,200..1000;1,200..1000',
+        'Source Sans 3'     => 'ital,wght@0,200..900;1,200..900',
+        'PT Sans'           => 'ital,wght@0,400;0,700;1,400;1,700',
+        'Noto Sans'         => 'ital,wght@0,100..900;1,100..900',
+        'Work Sans'         => 'ital,wght@0,100..900;1,100..900',
+        'Quicksand'         => 'wght@300..700',
+        'Barlow'            => 'ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900',
+        'Cabin'             => 'ital,wght@0,400..700;1,400..700',
+        'DM Sans'           => 'ital,wght@0,100..1000;1,100..1000',
+        'Fira Sans'         => 'ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900',
+        'Karla'             => 'ital,wght@0,200..800;1,200..800',
+        'Mulish'            => 'ital,wght@0,200..1000;1,200..1000',
+        'Rubik'             => 'ital,wght@0,300..900;1,300..900',
+        'Ubuntu'            => 'ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700',
+        'Josefin Sans'      => 'ital,wght@0,100..700;1,100..700',
+        'Manrope'           => 'wght@200..800',
+        'Plus Jakarta Sans' => 'ital,wght@0,200..800;1,200..800',
+        'Outfit'            => 'wght@100..900',
+        // Serif
+        'Playfair Display'   => 'ital,wght@0,400..900;1,400..900',
+        'Merriweather'       => 'ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900',
+        'Libre Baskerville'  => 'ital,wght@0,400;0,700;1,400',
+        'Crimson Text'       => 'ital,wght@0,400;0,600;0,700;1,400;1,600;1,700',
+        'EB Garamond'        => 'ital,wght@0,400..800;1,400..800',
+        'Bitter'             => 'ital,wght@0,100..900;1,100..900',
+        'Cormorant Garamond' => 'ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700',
+        'Lora'               => 'ital,wght@0,400..700;1,400..700',
+        'PT Serif'           => 'ital,wght@0,400;0,700;1,400;1,700',
+        'Noto Serif'         => 'ital,wght@0,100..900;1,100..900',
+        // Display / Handwriting
+        'Dancing Script' => 'wght@400..700',
+        'Pacifico'       => null,
+        'Lobster'        => null,
+        'Caveat'         => 'wght@400..700',
+        'Satisfy'        => null,
+        // Monospace
+        'Fira Code'      => 'wght@300..700',
+        'JetBrains Mono' => 'ital,wght@0,100..800;1,100..800',
+        'Source Code Pro' => 'ital,wght@0,200..900;1,200..900',
+    ];
+
+    /**
+     * Extract Google Font family names from typography_overrides.
+     *
+     * @param array $settings Plugin settings array.
+     * @return array Deduplicated Google Font family names.
+     */
+    public static function extract_google_font_families($settings) {
+        $raw = isset($settings['typography_overrides']) ? $settings['typography_overrides'] : '{}';
+        $overrides = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : []);
+        if (!is_array($overrides)) {
+            return [];
+        }
+
+        $families = [];
+        $google_set = array_flip(self::GOOGLE_FONT_NAMES);
+
+        foreach ($overrides as $entry) {
+            if (!is_array($entry) || empty($entry['fontFamily'])) {
+                continue;
+            }
+            // fontFamily is like "Roboto, sans-serif" — extract first name.
+            $parts = explode(',', $entry['fontFamily']);
+            $name = trim($parts[0], " \t\n\r\0\x0B\"'");
+            if ($name !== '' && isset($google_set[$name])) {
+                $families[$name] = true;
+            }
+        }
+
+        return array_keys($families);
+    }
+
+    /**
      * Get all settings with defaults applied.
      *
      * @return array Settings array.
@@ -721,7 +918,12 @@ class WPSG_Settings {
             if (!$admin && in_array($snake, self::$admin_only_fields, true)) {
                 continue;
             }
-            $result[self::snake_to_camel($snake)] = $settings[$snake] ?? $default;
+            $val = $settings[$snake] ?? $default;
+            // Ensure gradient is always a JSON object, never an array.
+            if ($snake === 'viewer_bg_gradient' && is_array($val) && empty($val)) {
+                $val = (object) [];
+            }
+            $result[self::snake_to_camel($snake)] = $val;
         }
         return $result;
     }
@@ -803,6 +1005,16 @@ class WPSG_Settings {
         if (isset($input['image_viewport_height'])) {
             $height = intval($input['image_viewport_height']);
             $sanitized['image_viewport_height'] = max(180, min(900, $height));
+        }
+
+        if (isset($input['gallery_manual_height'])) {
+            $height = sanitize_text_field((string) $input['gallery_manual_height']);
+            $height = trim($height);
+            if (preg_match('/^\d+(?:\.\d+)?\s*(px|em|rem|vh|dvh|svh|lvh|vw|%)$/i', $height)) {
+                $sanitized['gallery_manual_height'] = $height;
+            } else {
+                $sanitized['gallery_manual_height'] = self::$defaults['gallery_manual_height'];
+            }
         }
 
         if (isset($input['thumbnail_scroll_speed'])) {
@@ -1070,10 +1282,13 @@ class WPSG_Settings {
             $sanitized['card_thumbnail_fit'] = $input['card_thumbnail_fit'];
         }
         if (isset($input['card_grid_columns'])) {
-            $sanitized['card_grid_columns'] = max(0, min(4, intval($input['card_grid_columns'])));
+            $sanitized['card_grid_columns'] = max(0, min(6, intval($input['card_grid_columns'])));
         }
-        if (isset($input['card_gap'])) {
-            $sanitized['card_gap'] = max(0, min(48, intval($input['card_gap'])));
+        if (isset($input['card_gap_h'])) {
+            $sanitized['card_gap_h'] = max(0, min(48, intval($input['card_gap_h'])));
+        }
+        if (isset($input['card_gap_v'])) {
+            $sanitized['card_gap_v'] = max(0, min(48, intval($input['card_gap_v'])));
         }
         if (isset($input['modal_cover_height'])) {
             $sanitized['modal_cover_height'] = max(100, min(400, intval($input['modal_cover_height'])));
@@ -1169,7 +1384,8 @@ class WPSG_Settings {
                 $decoded = [];
             }
             $allowed_props = [
-                'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
+                'fontFamily', 'fontFallback1', 'fontFallback2',
+                'fontSize', 'fontWeight', 'fontStyle',
                 'textTransform', 'textDecoration', 'lineHeight',
                 'letterSpacing', 'wordSpacing', 'color',
                 'textStrokeWidth', 'textStrokeColor',

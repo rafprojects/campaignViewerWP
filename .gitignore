@@ -10,6 +10,7 @@ dist/
 .env
 .env.local
 .env.*.local
+docs/critiques/
 
 # testing
 coverage/
@@ -46,13 +47,7 @@ phpunit
 /*.jpg
 /*.gif
 *.txt
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-!wp-plugin/wp-super-gallery/readme.txt
-=======
-.txt
->>>>>>> Stashed changes
-=======
-.txt
->>>>>>> Stashed changes
-PHP_REACT_INTEGRATION_REVIEW.md
+
+# local working scripts
+scripts/phase5_restructure.py
+scripts/phase22-move-files.sh

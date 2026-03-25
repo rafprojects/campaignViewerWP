@@ -29,6 +29,11 @@ export const SETTING_TOOLTIPS: Record<string, string> = {
   modalContentMaxWidth: 'Maximum width (px) of the content area inside the campaign modal.',
   campaignDescriptionLineHeight: 'Line height multiplier for the campaign description text.',
   modalMobileBreakpoint: 'Viewport width (px) below which the modal enters mobile layout.',
+  modalGalleryMaxWidth: 'Maximum width of the image/video galleries inside the campaign modal. 0 = full responsive width.',
+  modalGalleryGap: 'Vertical gap (px) between gallery sections (images, videos) inside the modal.',
+  modalGalleryMargin: 'Horizontal margin (px) from the modal edges for gallery content.',
+  gallerySizingMode: 'Controls whether classic galleries can overrun the viewport, are restrained to the visible screen, or use a manually entered CSS height.',
+  galleryManualHeight: 'Manual CSS height for classic galleries. Accepts units such as px, em, rem, vh, dvh, vw, or %.',
 
   // ── Upload / Media (advanced) ──
   uploadMaxSizeMb: 'Maximum file size (MB) allowed for a single media upload.',

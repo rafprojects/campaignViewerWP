@@ -1,5 +1,5 @@
 import { Alert, Box, Checkbox, ScrollArea, Stack, Text } from '@mantine/core';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmModal } from '@/components/Common/ConfirmModal';
 
 type CompanyCampaign = { id: number; title: string; status: string };
 
@@ -29,7 +29,7 @@ export function ArchiveCompanyModal({
   onConfirm,
   accessSaving,
 }: ArchiveCompanyModalProps) {
-  const campaignsToArchive = company?.campaigns.filter((c) => c.status !== 'archived') ?? [];
+  const campaignsToArchive = (Array.isArray(company?.campaigns) ? company.campaigns : []).filter((c) => c.status !== 'archived');
 
   return (
     <ConfirmModal

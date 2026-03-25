@@ -33,7 +33,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
       >
         <IconClockHour4
           size={32}
-          style={{ opacity: 0.3, marginBottom: 8 }}
+          style={{ opacity: 0.5, marginBottom: 8 }}
         />
         <Text size="sm" c="dimmed" ta="center">
           No history yet.
@@ -143,7 +143,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
             <Text size="xs" c="dimmed" fs="italic" style={{ flex: 1 }}>
               {isHistoryTrimmed ? 'Oldest state' : 'Initial state'}
             </Text>
-            <IconTrash size={12} style={{ opacity: 0.3 }} />
+            <IconTrash size={12} style={{ opacity: 0.5 }} />
           </UnstyledButton>
         </Stack>
       </ScrollArea>

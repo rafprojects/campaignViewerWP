@@ -65,8 +65,14 @@ const setupAdminFetch = () => {
 async function openCampaignViewer(title: string) {
   const card = await screen.findByRole('button', { name: `Open campaign ${title}` });
   fireEvent.click(card);
-  // CampaignViewer is lazy-loaded — wait for the modal close button as a stable ready marker
-  await screen.findByRole('button', { name: 'Close campaign viewer' }, { timeout: 5000 });
+  // CampaignViewer is lazy-loaded — wait for the About heading to confirm it rendered
+  await screen.findByText('About', {}, { timeout: 5000 });
+}
+
+/** Open the AuthBar admin menu popover (campaign actions live here since K-5). */
+async function openAdminMenu() {
+  const menuBtn = await screen.findByRole('button', { name: 'Admin menu' });
+  fireEvent.click(menuBtn);
 }
 
 describe('App', () => {
@@ -313,7 +319,8 @@ describe('App', () => {
 
     await openCampaignViewer('Campaign Alpha');
 
-    // CampaignViewer is lazy-loaded – wait for Edit button to appear
+    // K-5: Campaign actions are now in the AuthBar admin menu
+    await openAdminMenu();
     const editBtn = await screen.findByRole('button', { name: 'Edit Campaign Alpha' });
     fireEvent.click(editBtn);
 
@@ -380,7 +387,8 @@ describe('App', () => {
     // Open campaign viewer
     await openCampaignViewer('Campaign Alpha');
 
-    // Test Archive Campaign with modal
+    // K-5: Campaign actions are now in the AuthBar admin menu
+    await openAdminMenu();
     const archiveCampaignBtn = await screen.findByRole('button', { name: 'Archive Campaign Alpha' });
     fireEvent.click(archiveCampaignBtn);
     // Archive confirmation modal opens
@@ -407,6 +415,7 @@ describe('App', () => {
 
     await openCampaignViewer('Campaign Alpha');
 
+    await openAdminMenu();
     fireEvent.click(await screen.findByRole('button', { name: 'Edit Campaign Alpha' }));
     
     // Modal opens - click Cancel instead of Save
@@ -434,6 +443,7 @@ describe('App', () => {
 
     await openCampaignViewer('Campaign Alpha');
 
+    await openAdminMenu();
     fireEvent.click(await screen.findByRole('button', { name: 'Archive Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Archive
@@ -461,6 +471,7 @@ describe('App', () => {
 
     await openCampaignViewer('Campaign Alpha');
 
+    await openAdminMenu();
     fireEvent.click(await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' }));
 
     // Modal opens - click Cancel instead of Add Media

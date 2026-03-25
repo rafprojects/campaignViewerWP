@@ -1,6 +1,6 @@
 import { Button, Group, Modal, Stack, TextInput, Textarea } from '@mantine/core';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmModal } from '@/components/Common/ConfirmModal';
 
 interface MediaEditModalProps {
   opened: boolean;

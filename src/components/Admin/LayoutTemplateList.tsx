@@ -46,7 +46,7 @@ const LayoutBuilderModal = lazy(() =>
 const PresetGalleryModal = lazy(() =>
   import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal }))
 );
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { createEmptyTemplate } from '@/hooks/useLayoutBuilderState';
 import type { LayoutPreset } from '@/data/layoutPresets';
 

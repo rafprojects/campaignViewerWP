@@ -14,7 +14,7 @@
  * Gold source: docs/THEME_SYSTEM_ASSESSMENT.md §12
  */
 
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
 import {
   Select,
   Group,
@@ -108,6 +108,14 @@ export function ThemeSelector({
 }: ThemeSelectorProps) {
   const { themeId, availableThemes, setPreviewTheme } = useTheme();
 
+  // Local state ensures the dropdown reflects the selection immediately,
+  // even if the MantineProvider re-render introduced by setPreviewTheme
+  // causes the Select to lose its controlled value momentarily.
+  const [localValue, setLocalValue] = useState(themeId);
+
+  // Keep in sync when context themeId changes externally (e.g. on reset)
+  useEffect(() => { setLocalValue(themeId); }, [themeId]);
+
   const data = availableThemes.map((meta) => ({
     value: meta.id,
     label: meta.name,
@@ -141,9 +149,10 @@ export function ThemeSelector({
     <Select
       label={label}
       description={description}
-      value={themeId}
+      value={localValue}
       onChange={(value) => {
         if (value) {
+          setLocalValue(value);
           setPreviewTheme(value);
           onThemeChange?.(value);
         }

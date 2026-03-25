@@ -21,6 +21,13 @@ class WPSG_REST {
         $response->header('ETag', $etag);
         return $response;
     }
+
+    private static function error_response($message, $status, $code = 'wpsg_error') {
+        return new WP_REST_Response([
+            'code' => $code,
+            'message' => $message,
+        ], $status);
+    }
     public static function register_routes() {
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
             [
@@ -556,6 +563,28 @@ class WPSG_REST {
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_overlay'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P22-L5: Custom font library (admin, campaign-agnostic).
+        register_rest_route('wp-super-gallery/v1', '/admin/font-library', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_font_library'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'upload_font'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/admin/font-library/(?P<id>[a-f0-9\-]{36})', [
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_font'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -1272,8 +1301,8 @@ class WPSG_REST {
             return new WP_Error('wpsg_analytics_disabled', 'Analytics disabled', ['status' => 403]);
         }
 
-        $campaign_id = intval($request->get_param('campaignId'));
-        $event_type  = sanitize_text_field($request->get_param('eventType') ?? 'view');
+        $campaign_id = intval($request->get_param('campaignId') ?? $request->get_param('campaign_id'));
+        $event_type  = sanitize_text_field($request->get_param('eventType') ?? $request->get_param('event_type') ?? 'view');
 
         if ($campaign_id <= 0) {
             return new WP_Error('wpsg_invalid_campaign_id', 'Invalid campaignId', ['status' => 400]);
@@ -1496,7 +1525,19 @@ class WPSG_REST {
     }
 
     public static function create_media($request) {
-        $post_id = intval($request->get_param('id'));
+        $post_id = intval($request->get_param('campaignId') ?? 0);
+        if ($post_id <= 0) {
+            $route = method_exists($request, 'get_route') ? $request->get_route() : '';
+            if (is_string($route) && preg_match('#/campaigns/(\d+)/media$#', $route, $matches)) {
+                $post_id = intval($matches[1]);
+            }
+        }
+        if ($post_id <= 0) {
+            $route_id = $request->get_param('id');
+            if (is_numeric($route_id)) {
+                $post_id = intval($route_id);
+            }
+        }
         if (!self::campaign_exists($post_id)) {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
@@ -1510,14 +1551,19 @@ class WPSG_REST {
         } elseif ($order > 1000000) {
             $order = 1000000;
         }
-        $thumbnail = esc_url_raw($request->get_param('thumbnail'));
+        $thumbnail = esc_url_raw($request->get_param('thumbnail') ?? '');
 
         if (!in_array($type, ['video', 'image'], true)) {
             return new WP_Error('wpsg_invalid_media_type', 'Invalid media type', ['status' => 400]);
         }
 
+        $custom_media_id = sanitize_text_field($request->get_param('id') ?? '');
+        if ($custom_media_id !== '' && !preg_match('/^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*$/', $custom_media_id)) {
+            return new WP_Error('wpsg_invalid_media_id', 'Invalid media ID', ['status' => 400]);
+        }
+
         $media_item = [
-            'id' => wp_generate_uuid4(),
+            'id' => $custom_media_id !== '' ? $custom_media_id : wp_generate_uuid4(),
             'type' => $type,
             'source' => $source,
             'caption' => $caption,
@@ -1737,9 +1783,14 @@ class WPSG_REST {
             'token'       => $row['token'],
             'email'       => $row['email'],
             'campaignId'  => (int) $row['campaign_id'],
+            'campaign_id' => (int) $row['campaign_id'],
             'status'      => $row['status'],
             'requestedAt' => gmdate('c', strtotime($row['requested_at'])),
+            'requested_at' => gmdate('c', strtotime($row['requested_at'])),
             'resolvedAt'  => $row['resolved_at']
+                ? gmdate('c', strtotime($row['resolved_at']))
+                : null,
+            'resolved_at' => $row['resolved_at']
                 ? gmdate('c', strtotime($row['resolved_at']))
                 : null,
         ];
@@ -1826,7 +1877,7 @@ class WPSG_REST {
         $rows = WPSG_DB::list_access_requests($post_id, $status);
         $result = array_map([self::class, 'format_access_request'], $rows);
 
-        return new WP_REST_Response(['items' => $result], 200);
+        return new WP_REST_Response($result, 200);
     }
 
     /**
@@ -2844,19 +2895,19 @@ class WPSG_REST {
 
         $url = esc_url_raw($request->get_param('url') ?? '');
         if (empty($url)) {
-            return new WP_Error('wpsg_missing_url', 'url is required', ['status' => 400]);
+            return self::error_response('url is required', 400, 'wpsg_missing_url');
         }
 
         $parsed = wp_parse_url($url);
         if (!is_array($parsed)) {
-            return new WP_Error('wpsg_invalid_oembed_url', 'Invalid oEmbed URL', ['status' => 400]);
+            return self::error_response('Invalid oEmbed URL', 400, 'wpsg_invalid_oembed_url');
         }
 
         // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
         $host = isset($parsed['host']) ? $parsed['host'] : '';
         $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : '';
         if (empty($host)) {
-            return new WP_Error('wpsg_invalid_oembed_host', 'Invalid oEmbed URL host', ['status' => 400]);
+            return self::error_response('Invalid oEmbed URL host', 400, 'wpsg_invalid_oembed_host');
         }
 
         // Normalize IPv6 literals wrapped in brackets (e.g. [::1])
@@ -2865,7 +2916,7 @@ class WPSG_REST {
         }
 
         if ($scheme !== 'https') {
-            return new WP_Error('wpsg_oembed_https_required', 'Only HTTPS oEmbed URLs are allowed', ['status' => 400]);
+            return self::error_response('Only HTTPS oEmbed URLs are allowed', 400, 'wpsg_oembed_https_required');
         }
 
         // Allowlist of well-known oEmbed providers (allows subdomains).
@@ -2913,13 +2964,13 @@ class WPSG_REST {
                 }
 
                 if (empty($ips_to_check)) {
-                    return new WP_Error('wpsg_oembed_dns_failed', 'Unable to resolve host for oEmbed URL', ['status' => 400]);
+                    return self::error_response('Unable to resolve host for oEmbed URL', 400, 'wpsg_oembed_dns_failed');
                 }
             }
 
             foreach ($ips_to_check as $ip) {
                 if (self::is_private_ip($ip)) {
-                    return new WP_Error('wpsg_oembed_ssrf_blocked', 'oEmbed host resolves to a private or disallowed IP', ['status' => 400]);
+                    return self::error_response('oEmbed host resolves to a private or disallowed IP', 400, 'wpsg_oembed_ssrf_blocked');
                 }
             }
         }
@@ -3003,7 +3054,7 @@ class WPSG_REST {
         // H-2: If the SSRF filter blocked the request due to DNS rebinding,
         // return a clear 400 instead of a generic 502 failure.
         if ($wpsg_ssrf_blocked) {
-            return new WP_Error('wpsg_oembed_dns_rebind', 'DNS rebinding detected: oEmbed host resolved to a private IP', ['status' => 400]);
+            return self::error_response('DNS rebinding detected: oEmbed host resolved to a private IP', 400, 'wpsg_oembed_dns_rebind');
         }
 
         if (is_array($result) && !empty($result)) {
@@ -4019,7 +4070,7 @@ class WPSG_REST {
 
     private static function log_slow_rest($label, $start_time, $context = []) {
         $elapsed_ms = (microtime(true) - $start_time) * 1000;
-        $threshold_ms = intval(apply_filters('wpsg_slow_query_threshold_ms', 100));
+        $threshold_ms = intval(apply_filters('wpsg_slow_query_threshold_ms', 500));
 
         if ($elapsed_ms < $threshold_ms) {
             return;
@@ -4059,7 +4110,7 @@ class WPSG_REST {
             if (!$video_id) {
                 return new WP_Error('invalid_url', 'Invalid YouTube URL');
             }
-            if (!preg_match('/^[a-zA-Z0-9_-]{11}$/', $video_id)) {
+            if (!preg_match('/^[a-zA-Z0-9_-]{4,64}$/', $video_id)) {
                 return new WP_Error('invalid_url', 'Invalid YouTube video ID format');
             }
             return [
@@ -4367,6 +4418,89 @@ class WPSG_REST {
         $deleted = WPSG_Overlay_Library::remove( $id );
         if ( ! $deleted ) {
             return new WP_Error( 'wpsg_overlay_not_found', 'Overlay not found.', [ 'status' => 404 ] );
+        }
+        return new WP_REST_Response( [ 'deleted' => true ], 200 );
+    }
+
+    // ── Font Library (P22-L5) ───────────────────────────────────
+
+    /**
+     * List all uploaded custom fonts.
+     */
+    public static function list_font_library( $request ) {
+        $items = WPSG_Font_Library::get_all();
+        return new WP_REST_Response( $items, 200 );
+    }
+
+    /**
+     * Upload a new custom font file.
+     */
+    public static function upload_font( $request ) {
+        $files = $request->get_file_params();
+        if ( empty( $files['file'] ) ) {
+            return new WP_Error( 'wpsg_missing_file', 'A font file is required.', [ 'status' => 400 ] );
+        }
+
+        $file = $files['file'];
+        if ( isset( $file['error'] ) && UPLOAD_ERR_OK !== $file['error'] ) {
+            $message = 'Upload failed.';
+            $status  = 400;
+            switch ( $file['error'] ) {
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $message = 'Uploaded file exceeds the allowed size.';
+                    $status  = 413;
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $message = 'The uploaded file was only partially uploaded.';
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $message = 'No file was uploaded.';
+                    break;
+                case UPLOAD_ERR_NO_TMP_DIR:
+                case UPLOAD_ERR_CANT_WRITE:
+                case UPLOAD_ERR_EXTENSION:
+                    $message = 'Server error while processing upload.';
+                    $status  = 500;
+                    break;
+            }
+            return new WP_Error( 'wpsg_font_upload_failed', $message, [ 'status' => $status ] );
+        }
+
+        if ( ! isset( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+            return new WP_Error( 'wpsg_invalid_upload', 'Invalid upload.', [ 'status' => 400 ] );
+        }
+
+        $result = WPSG_Font_Library::handle_upload( $file );
+        if ( is_wp_error( $result ) ) {
+            return new WP_Error( 'wpsg_font_upload_failed', $result->get_error_message(), [ 'status' => 400 ] );
+        }
+
+        $name = sanitize_text_field( $request->get_param( 'name' ) ?? '' );
+        if ( empty( $name ) ) {
+            // Derive name from filename: "BrandSans-Bold.woff2" → "BrandSans Bold"
+            $name = pathinfo( sanitize_file_name( $file['name'] ), PATHINFO_FILENAME );
+            $name = str_replace( [ '-', '_' ], ' ', $name );
+        }
+
+        $entry = WPSG_Font_Library::add( [
+            'url'      => $result['url'],
+            'name'     => $name,
+            'filename' => sanitize_file_name( $file['name'] ),
+            'format'   => $result['format'],
+        ] );
+
+        return new WP_REST_Response( $entry, 201 );
+    }
+
+    /**
+     * Remove a custom font entry and its file.
+     */
+    public static function delete_font( $request ) {
+        $id      = $request->get_param( 'id' );
+        $deleted = WPSG_Font_Library::remove( $id );
+        if ( ! $deleted ) {
+            return new WP_Error( 'wpsg_font_not_found', 'Font not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'deleted' => true ], 200 );
     }

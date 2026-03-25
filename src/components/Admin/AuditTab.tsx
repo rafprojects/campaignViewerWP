@@ -1,6 +1,6 @@
 import { Group, ScrollArea, Skeleton, Table, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
-import { CampaignSelector, type CampaignSelectItem } from '@/components/shared/CampaignSelector';
+import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 
 /** P13-C: Skeleton rows displayed while audit entries load. */
 function AuditSkeletonRows() {
@@ -37,7 +37,7 @@ export function AuditTab({
 }: AuditTabProps) {
   return (
     <>
-      <Text size="sm" fw={600} c="gray.2" id="audit-heading" mb="xs">
+      <Text size="sm" fw={600} id="audit-heading" mb="xs">
         Campaign Audit Log
       </Text>
       <Group mb="md">

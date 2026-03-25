@@ -1,14 +1,14 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
-import { CardGallery } from './components/Gallery/CardGallery';
+import { CardGallery } from './components/CampaignGallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
 import { LoginForm } from './components/Auth/LoginForm';
 import { AuthBar } from './components/Auth/AuthBar';
-import { UnifiedCampaignModal } from './components/shared/UnifiedCampaignModal';
+import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal';
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
@@ -25,6 +25,7 @@ import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
+import { CampaignContextProvider } from './contexts/CampaignContext';
 import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
@@ -180,6 +181,11 @@ function AppContent({
   });
 
   return (
+    <CampaignContextProvider
+      onEditCampaign={editModal.openForEdit}
+      onArchiveCampaign={archiveModal.handleArchiveCampaign}
+      onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
+    >
     <div
       className="wp-super-gallery"
       style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
@@ -272,9 +278,6 @@ function AppContent({
           isAdmin={isAdmin}
           isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}
-          onEditCampaign={editModal.openForEdit}
-          onArchiveCampaign={archiveModal.handleArchiveCampaign}
-          onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
           apiClient={apiClient}
         />
       )}
@@ -302,6 +305,7 @@ function AppContent({
         onConfirm={externalMediaModal.confirmAddExternalMedia}
       />
     </div>
+    </CampaignContextProvider>
   );
 }
 

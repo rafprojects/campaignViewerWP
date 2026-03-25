@@ -13,6 +13,7 @@ import {
   Switch,
   NumberInput,
   Modal,
+  NativeScrollArea,
   Tabs,
   Text,
   Divider,
@@ -27,7 +28,9 @@ import {
   IconPhoto,
   IconLayoutGrid,
   IconAdjustments,
+  IconColumns,
   IconTypography,
+  IconEye,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
@@ -45,8 +48,9 @@ import {
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { SettingTooltip } from './SettingTooltip';
-import { TypographyEditor } from '../shared/TypographyEditor';
-import { GradientEditor } from '../shared/GradientEditor';
+import { TypographyEditor, type CustomFontEntry } from '../Common/TypographyEditor';
+import { GradientEditor } from '../Common/GradientEditor';
+import { FontLibraryManager } from './FontLibraryManager';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
@@ -98,6 +102,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const [hasChanges, setHasChanges] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<SettingsData>(seedSettings);
   const [activeTab, setActiveTab] = useState<string | null>('general');
+  const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
   const hasChangesRef = useRef(false);
 
   const loadSettings = useCallback(async () => {
@@ -196,13 +201,18 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       closeOnEscape={!hasChanges}
       transitionProps={{ transition: 'fade', duration: 200 }}
       overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
-      styles={{ content: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' }, header: { backgroundColor: 'rgba(30, 30, 40, 0.97)', color: '#e0e0e6' } }}
+      scrollAreaComponent={NativeScrollArea}
+      styles={{
+        body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
+      }}
     >
       {isLoading ? (
         <Center py="xl">
           <Loader size="lg" />
         </Center>
       ) : (
+        <>
+        <Box style={{ flex: 1, overflowY: 'auto', padding: 'var(--mantine-spacing-md)' }}>
         <Stack gap="md">
           <Tabs value={activeTab} onChange={setActiveTab}>
             <Tabs.List grow>
@@ -213,7 +223,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 Campaign Cards
               </Tabs.Tab>
               <Tabs.Tab value="gallery" leftSection={<IconPhoto size={16} />}>
-                Media Gallery
+                Media Display
+              </Tabs.Tab>
+              <Tabs.Tab value="layout" leftSection={<IconColumns size={16} />}>
+                Gallery Layout
+              </Tabs.Tab>
+              <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
+                Campaign Viewer
               </Tabs.Tab>
               {settings.advancedSettingsEnabled && (
                 <Tabs.Tab value="advanced" leftSection={<IconAdjustments size={16} />}>
@@ -249,7 +265,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
                 <NumberInput
                   label="Items Per Page"
-                  description="Number of items to display per page (1–100)."
+                  description="Number of items to display per page (1-100)."
                   value={settings.itemsPerPage}
                   onChange={(value) => updateSetting('itemsPerPage', typeof value === 'number' ? value : 12)}
                   min={1}
@@ -257,7 +273,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   step={1}
                 />
 
-                <Divider label="Header Visibility" labelPosition="center" />
+                <Divider label="App Container" labelPosition="center" />
 
                 <NumberInput
                   label="App Max Width (px)"
@@ -292,7 +308,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('wpFullBleedDesktop', e.currentTarget.checked)}
                 />
                 <Switch
-                  label="WP Full Bleed — Tablet (768–1023px)"
+                  label="WP Full Bleed — Tablet (768-1023px)"
                   description="Break out of the WordPress page container padding on tablet viewports. Requires page refresh."
                   checked={settings.wpFullBleedTablet}
                   onChange={(e) => updateSetting('wpFullBleedTablet', e.currentTarget.checked)}
@@ -304,7 +320,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   onChange={(e) => updateSetting('wpFullBleedMobile', e.currentTarget.checked)}
                 />
 
-                <Divider label="Header Visibility" labelPosition="center" />
+                <Divider label="Viewer Header Visibility" labelPosition="center" />
 
                 <Switch
                   label="Show Gallery Title"
@@ -343,7 +359,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   label="Background Type"
                   description="Gallery container background style"
                   data={[
-                    { value: 'theme', label: 'Theme (default gradient)' },
+                    { value: 'theme', label: 'Default Theme' },
                     { value: 'transparent', label: 'Transparent' },
                     { value: 'solid', label: 'Solid color' },
                     { value: 'gradient', label: 'Custom gradient' },
@@ -397,95 +413,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     max={64}
                   />
                 )}
-
-                <Divider label="Campaign Viewer" labelPosition="center" />
-
-                <Switch
-                  label="Fullscreen Campaign Modal"
-                  description="Open campaign viewer in fullscreen mode instead of the default modal."
-                  checked={settings.campaignModalFullscreen ?? false}
-                  onChange={(e) => updateSetting('campaignModalFullscreen', e.currentTarget.checked)}
-                />
-                <Select
-                  label="Campaign Open Mode"
-                  description="What to show when a campaign is opened."
-                  data={[
-                    { value: 'full', label: 'Full (cover, about, galleries, stats)' },
-                    { value: 'galleries-only', label: 'Galleries only (skip header/about/stats)' },
-                  ]}
-                  value={settings.campaignOpenMode ?? 'full'}
-                  onChange={(v) => updateSetting('campaignOpenMode', (v ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
-                />
-                <Switch
-                  label="Show Company Name"
-                  description="Show the company badge on the campaign cover image."
-                  checked={settings.showCampaignCompanyName ?? true}
-                  onChange={(e) => updateSetting('showCampaignCompanyName', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Date"
-                  description="Show the creation date under the campaign title."
-                  checked={settings.showCampaignDate ?? true}
-                  onChange={(e) => updateSetting('showCampaignDate', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show About Section"
-                  description='Show the "About this Campaign" heading and description.'
-                  checked={settings.showCampaignAbout ?? true}
-                  onChange={(e) => updateSetting('showCampaignAbout', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Description"
-                  description="Show the campaign description text within the About section."
-                  checked={settings.showCampaignDescription ?? true}
-                  onChange={(e) => updateSetting('showCampaignDescription', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Campaign Stats"
-                  description="Show the statistics block (video count, image count, tags, visibility)."
-                  checked={settings.showCampaignStats ?? true}
-                  onChange={(e) => updateSetting('showCampaignStats', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Stats Admin-Only"
-                  description="When enabled, only admins can see the statistics block."
-                  checked={settings.campaignStatsAdminOnly ?? true}
-                  onChange={(e) => updateSetting('campaignStatsAdminOnly', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Cover Image"
-                  description="Show the campaign cover image at the top of the viewer."
-                  checked={settings.showCampaignCoverImage ?? true}
-                  onChange={(e) => updateSetting('showCampaignCoverImage', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Tags"
-                  description="Show tags section in the campaign viewer."
-                  checked={settings.showCampaignTags ?? true}
-                  onChange={(e) => updateSetting('showCampaignTags', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Admin Actions"
-                  description="Show admin action buttons (edit, archive, etc.) in the campaign viewer."
-                  checked={settings.showCampaignAdminActions ?? true}
-                  onChange={(e) => updateSetting('showCampaignAdminActions', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Gallery Labels"
-                  description="Show 'Images' and 'Videos' heading labels above galleries in the viewer."
-                  checked={settings.showCampaignGalleryLabels ?? true}
-                  onChange={(e) => updateSetting('showCampaignGalleryLabels', e.currentTarget.checked)}
-                />
-                <NumberInput
-                  label="Fullscreen Content Max Width (px)"
-                  description="Limit content width in fullscreen mode. 0 = full responsive width."
-                  value={settings.fullscreenContentMaxWidth ?? 0}
-                  onChange={(value) => updateSetting('fullscreenContentMaxWidth', typeof value === 'number' ? value : 0)}
-                  min={0}
-                  max={3000}
-                  step={50}
-                  placeholder="0 = full width"
-                />
 
                 <Divider label="Security" labelPosition="center" />
 
@@ -659,27 +586,77 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           { value: '2', label: '2 columns' },
                           { value: '3', label: '3 columns' },
                           { value: '4', label: '4 columns' },
+                          { value: '5', label: '5 columns' },
+                          { value: '6', label: '6 columns' },
                         ]}
                         value={String(settings.cardGridColumns)}
                         onChange={(v) => updateSetting('cardGridColumns', parseInt(v ?? '0', 10))}
                       />
                       <NumberInput
-                        label="Card Gap (px)"
-                        description="Spacing between campaign cards"
-                        value={settings.cardGap}
-                        onChange={(v) => updateSetting('cardGap', typeof v === 'number' ? v : 16)}
+                        label="Horizontal Gap (px)"
+                        description="Horizontal spacing between campaign cards"
+                        value={settings.cardGapH}
+                        onChange={(v) => updateSetting('cardGapH', typeof v === 'number' ? v : 16)}
                         min={0}
                         max={48}
                         step={2}
                       />
                       <NumberInput
-                        label="Max Columns (auto mode)"
-                        description="Cap the number of columns when using Auto layout. 0 = unlimited."
-                        value={settings.cardMaxColumns}
-                        onChange={(v) => updateSetting('cardMaxColumns', typeof v === 'number' ? v : 0)}
+                        label="Vertical Gap (px)"
+                        description="Vertical spacing between campaign card rows"
+                        value={settings.cardGapV}
+                        onChange={(v) => updateSetting('cardGapV', typeof v === 'number' ? v : 16)}
                         min={0}
-                        max={8}
+                        max={48}
+                        step={2}
                       />
+                      <NumberInput
+                        label="Card Max Width (px)"
+                        description="Limit individual card width. 0 = no limit (fill column)."
+                        value={settings.cardMaxWidth}
+                        onChange={(v) => updateSetting('cardMaxWidth', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={800}
+                        step={10}
+                        placeholder="0 = unlimited"
+                      />
+                      {settings.cardMaxWidth > 0 && (
+                        <Select
+                          label="Card Max Width Unit"
+                          description="Unit for the card max width value"
+                          data={[
+                            { value: 'px', label: 'Pixels (px)' },
+                            { value: '%', label: 'Percent (%)' },
+                          ]}
+                          value={settings.cardMaxWidthUnit ?? 'px'}
+                          onChange={(v) => updateSetting('cardMaxWidthUnit', (v ?? 'px') as GalleryBehaviorSettings['cardMaxWidthUnit'])}
+                        />
+                      )}
+                      {settings.cardMaxWidth > 0 && (
+                        <Select
+                          label="Card Justification"
+                          description="How cards are distributed in the last (partial) row"
+                          data={[
+                            { value: 'start', label: 'Start' },
+                            { value: 'center', label: 'Center' },
+                            { value: 'end', label: 'End' },
+                            { value: 'space-between', label: 'Space Between' },
+                            { value: 'space-evenly', label: 'Space Evenly' },
+                          ]}
+                          value={settings.cardJustifyContent ?? 'center'}
+                          onChange={(v) => updateSetting('cardJustifyContent', (v ?? 'center') as GalleryBehaviorSettings['cardJustifyContent'])}
+                        />
+                      )}
+                      {settings.cardGridColumns === 0 && (
+                        <NumberInput
+                          label="Max Columns (auto mode)"
+                          description="Cap the number of columns when using Auto layout. 0 = unlimited."
+                          value={settings.cardMaxColumns}
+                          onChange={(v) => updateSetting('cardMaxColumns', typeof v === 'number' ? v : 0)}
+                          min={0}
+                          max={8}
+                        />
+                      )}
                       <Select
                         label="Card Aspect Ratio"
                         description="Lock cards to a fixed aspect ratio"
@@ -750,57 +727,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-
-                {/* ── Campaign Modal ── */}
-                <Accordion.Item value="modal">
-                  <Accordion.Control>Campaign Modal</Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap="md">
-                      <NumberInput
-                        label="Cover Image Height (px)"
-                        description="Height of the cover image in the campaign modal"
-                        value={settings.modalCoverHeight}
-                        onChange={(v) => updateSetting('modalCoverHeight', typeof v === 'number' ? v : 240)}
-                        min={100}
-                        max={400}
-                        step={10}
-                      />
-                      <Select
-                        label="Modal Transition"
-                        description="Animation style when opening the campaign modal"
-                        data={[
-                          { value: 'pop', label: 'Pop (scale up)' },
-                          { value: 'fade', label: 'Fade' },
-                          { value: 'slide-up', label: 'Slide Up' },
-                        ]}
-                        value={settings.modalTransition}
-                        onChange={(v) => updateSetting('modalTransition', v ?? 'pop')}
-                      />
-                      <NumberInput
-                        label="Modal Transition Duration (ms)"
-                        description="Length of the modal open/close animation"
-                        value={settings.modalTransitionDuration}
-                        onChange={(v) => updateSetting('modalTransitionDuration', typeof v === 'number' ? v : 300)}
-                        min={100}
-                        max={1000}
-                        step={50}
-                      />
-                      <NumberInput
-                        label="Modal Max Height (vh%)"
-                        description="Maximum height of the campaign modal as a percentage of viewport"
-                        value={settings.modalMaxHeight}
-                        onChange={(v) => updateSetting('modalMaxHeight', typeof v === 'number' ? v : 90)}
-                        min={50}
-                        max={100}
-                        step={5}
-                      />
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
               </Accordion>}
             </Tabs.Panel>
 
-            {/* ── Media Gallery Tab ────────────────────────────── */}
+            {/* ── Media Display Tab ─────────────────────────── */}
             <Tabs.Panel value="gallery" pt="md">
               {activeTab === 'gallery' && <Accordion variant="separated" defaultValue="viewport">
                 {/* ── Viewport & Layout ── */}
@@ -824,29 +754,27 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
                       <Divider label="Viewport Dimensions" labelPosition="center" />
 
-                      <NumberInput
-                        label="Video Gallery Height (px)"
-                        description="Standard viewport height for video gallery player area."
-                        value={settings.videoViewportHeight}
-                        onChange={(value) =>
-                          updateSetting('videoViewportHeight', typeof value === 'number' ? value : defaultSettings.videoViewportHeight)
-                        }
-                        min={180}
-                        max={900}
-                        step={10}
+                      <Select
+                        label={tt('Height Constraint', 'gallerySizingMode')}
+                        description="Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
+                        data={[
+                          { value: 'auto', label: 'No restraint' },
+                          { value: 'viewport', label: 'Restrain to view' },
+                          { value: 'manual', label: 'Manually control height' },
+                        ]}
+                        value={settings.gallerySizingMode ?? 'auto'}
+                        onChange={(v) => updateSetting('gallerySizingMode', (v ?? 'auto') as GalleryBehaviorSettings['gallerySizingMode'])}
                       />
 
-                      <NumberInput
-                        label="Image Gallery Height (px)"
-                        description="Standard viewport height for image gallery viewer area."
-                        value={settings.imageViewportHeight}
-                        onChange={(value) =>
-                          updateSetting('imageViewportHeight', typeof value === 'number' ? value : defaultSettings.imageViewportHeight)
-                        }
-                        min={180}
-                        max={900}
-                        step={10}
+                      {settings.gallerySizingMode === 'manual' && (<>
+                      <TextInput
+                        label={tt('Manual Gallery Height', 'galleryManualHeight')}
+                        description="Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
+                        value={settings.galleryManualHeight}
+                        onChange={(event) => updateSetting('galleryManualHeight', event.currentTarget.value)}
+                        placeholder="420px"
                       />
+                      </>)}
 
                       <Divider label="Border Radius" labelPosition="center" />
 
@@ -924,411 +852,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           value={settings.videoShadowCustom}
                           onChange={(e) => updateSetting('videoShadowCustom', e.currentTarget.value)}
                         />
-                      )}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-
-                {/* ── Viewport Backgrounds ── */}
-                <Accordion.Item value="backgrounds">
-                  <Accordion.Control>Viewport Backgrounds</Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap="md">
-                      {/* ── Image viewport background ── */}
-                      <Select
-                        label="Image Viewport Background"
-                        description="Background fill rendered behind the image gallery section."
-                        value={settings.imageBgType}
-                        onChange={(value) => updateSetting('imageBgType', (value as ViewportBgType) ?? 'none')}
-                        data={[
-                          { value: 'none', label: 'None' },
-                          { value: 'solid', label: 'Solid Color' },
-                          { value: 'gradient', label: 'Gradient' },
-                          { value: 'image', label: 'Image URL' },
-                        ]}
-                      />
-                      {settings.imageBgType === 'solid' && (
-                        <ColorInput
-                          label="Image Background Color"
-                          value={settings.imageBgColor}
-                          onChange={(value) => updateSetting('imageBgColor', value)}
-                          format="rgba"
-                        />
-                      )}
-                      {settings.imageBgType === 'gradient' && (
-                        <TextInput
-                          label="Image CSS Gradient"
-                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
-                          value={settings.imageBgGradient}
-                          onChange={(e) => updateSetting('imageBgGradient', e.currentTarget.value)}
-                        />
-                      )}
-                      {settings.imageBgType === 'image' && (
-                        <TextInput
-                          label="Image Background URL"
-                          description="Absolute URL of the background image."
-                          value={settings.imageBgImageUrl}
-                          onChange={(e) => updateSetting('imageBgImageUrl', e.currentTarget.value)}
-                        />
-                      )}
-
-                      {/* ── Video viewport background ── */}
-                      <Select
-                        label="Video Viewport Background"
-                        description="Background fill rendered behind the video gallery section."
-                        value={settings.videoBgType}
-                        onChange={(value) => updateSetting('videoBgType', (value as ViewportBgType) ?? 'none')}
-                        data={[
-                          { value: 'none', label: 'None' },
-                          { value: 'solid', label: 'Solid Color' },
-                          { value: 'gradient', label: 'Gradient' },
-                          { value: 'image', label: 'Image URL' },
-                        ]}
-                      />
-                      {settings.videoBgType === 'solid' && (
-                        <ColorInput
-                          label="Video Background Color"
-                          value={settings.videoBgColor}
-                          onChange={(value) => updateSetting('videoBgColor', value)}
-                          format="rgba"
-                        />
-                      )}
-                      {settings.videoBgType === 'gradient' && (
-                        <TextInput
-                          label="Video CSS Gradient"
-                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #0d0d0d, #1a1a2e)')."
-                          value={settings.videoBgGradient}
-                          onChange={(e) => updateSetting('videoBgGradient', e.currentTarget.value)}
-                        />
-                      )}
-                      {settings.videoBgType === 'image' && (
-                        <TextInput
-                          label="Video Background URL"
-                          description="Absolute URL of the background image."
-                          value={settings.videoBgImageUrl}
-                          onChange={(e) => updateSetting('videoBgImageUrl', e.currentTarget.value)}
-                        />
-                      )}
-
-                      {/* ── Unified viewport background ── */}
-                      <Select
-                        label="Unified Viewport Background"
-                        description="Background fill when unified gallery mode is active."
-                        value={settings.unifiedBgType}
-                        onChange={(value) => updateSetting('unifiedBgType', (value as ViewportBgType) ?? 'none')}
-                        data={[
-                          { value: 'none', label: 'None' },
-                          { value: 'solid', label: 'Solid Color' },
-                          { value: 'gradient', label: 'Gradient' },
-                          { value: 'image', label: 'Image URL' },
-                        ]}
-                      />
-                      {settings.unifiedBgType === 'solid' && (
-                        <ColorInput
-                          label="Unified Background Color"
-                          value={settings.unifiedBgColor}
-                          onChange={(value) => updateSetting('unifiedBgColor', value)}
-                          format="rgba"
-                        />
-                      )}
-                      {settings.unifiedBgType === 'gradient' && (
-                        <TextInput
-                          label="Unified CSS Gradient"
-                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
-                          value={settings.unifiedBgGradient}
-                          onChange={(e) => updateSetting('unifiedBgGradient', e.currentTarget.value)}
-                        />
-                      )}
-                      {settings.unifiedBgType === 'image' && (
-                        <TextInput
-                          label="Unified Background URL"
-                          description="Absolute URL of the background image."
-                          value={settings.unifiedBgImageUrl}
-                          onChange={(e) => updateSetting('unifiedBgImageUrl', e.currentTarget.value)}
-                        />
-                      )}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-
-                {/* ── Gallery Adapters ── */}
-                <Accordion.Item value="adapters">
-                  <Accordion.Control>Gallery Adapters</Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap="md">
-                      <Switch
-                        label="Unified Gallery Mode"
-                        description="When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
-                        checked={settings.unifiedGalleryEnabled}
-                        onChange={(e) => updateSetting('unifiedGalleryEnabled', e.currentTarget.checked)}
-                      />
-
-                      {settings.unifiedGalleryEnabled ? (
-                        <Select
-                          label="Unified Gallery Adapter"
-                          description="Layout used when images and videos are displayed together."
-                          value={settings.unifiedGalleryAdapterId}
-                          onChange={(value) => updateSetting('unifiedGalleryAdapterId', value ?? 'compact-grid')}
-                          data={[
-                            { value: 'compact-grid', label: 'Compact Grid' },
-                            { value: 'justified', label: 'Justified Rows (Flickr-style)' },
-                            { value: 'masonry', label: 'Masonry' },
-                            { value: 'hexagonal', label: 'Hexagonal' },
-                            { value: 'circular', label: 'Circular' },
-                            { value: 'diamond', label: 'Diamond' },
-                            { value: 'layout-builder', label: 'Layout Builder' },
-                          ]}
-                        />
-                      ) : (
-                        <>
-                          {/* P15-A: Gallery Selection Mode */}
-                          <Box>
-                            <Text size="sm" fw={500} mb={4}>Gallery Selection Mode</Text>
-                            <Text size="xs" c="dimmed" mb={8}>
-                              Unified: one adapter for all screen sizes. Per-breakpoint: different adapters for desktop, tablet, and mobile.
-                            </Text>
-                            <SegmentedControl
-                              fullWidth
-                              value={settings.gallerySelectionMode}
-                              onChange={(value) => updateSetting('gallerySelectionMode', value as 'unified' | 'per-breakpoint')}
-                              data={[
-                                { value: 'unified', label: 'Unified' },
-                                { value: 'per-breakpoint', label: 'Per Breakpoint' },
-                              ]}
-                            />
-                          </Box>
-
-                          {settings.gallerySelectionMode === 'per-breakpoint' ? (
-                            /* 3×2 per-breakpoint adapter grid */
-                            <Box>
-                              <SimpleGrid cols={3} spacing="xs" mb={4}>
-                                <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
-                                <Text size="xs" fw={600} ta="center">Image</Text>
-                                <Text size="xs" fw={600} ta="center">Video</Text>
-                              </SimpleGrid>
-                              {(['desktop', 'tablet', 'mobile'] as const).map((bp) => {
-                                const isMobile = bp === 'mobile';
-                                const adapterOptions = [
-                                  { value: 'classic', label: 'Classic' },
-                                  { value: 'compact-grid', label: 'Compact Grid' },
-                                  { value: 'justified', label: 'Justified' },
-                                  { value: 'masonry', label: 'Masonry' },
-                                  { value: 'hexagonal', label: 'Hexagonal' },
-                                  { value: 'circular', label: 'Circular' },
-                                  { value: 'diamond', label: 'Diamond' },
-                                  {
-                                    value: 'layout-builder',
-                                    label: isMobile ? 'Layout Builder (desktop/tablet only)' : 'Layout Builder',
-                                    disabled: isMobile,
-                                  },
-                                ];
-                                return (
-                                <SimpleGrid cols={3} spacing="xs" mb="xs" key={bp}>
-                                  <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
-                                    {bp.charAt(0).toUpperCase() + bp.slice(1)}
-                                  </Text>
-                                  <Select
-                                    size="xs"
-                                    value={settings[`${bp}ImageAdapterId` as keyof typeof settings] as string}
-                                    onChange={(value) => updateSetting(`${bp}ImageAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
-                                    data={adapterOptions}
-                                  />
-                                  <Select
-                                    size="xs"
-                                    value={settings[`${bp}VideoAdapterId` as keyof typeof settings] as string}
-                                    onChange={(value) => updateSetting(`${bp}VideoAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
-                                    data={adapterOptions}
-                                  />
-                                </SimpleGrid>
-                                );
-                              })}
-                              <Select
-                                label="Layout Builder Scope"
-                                description="Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
-                                size="xs"
-                                value={settings.layoutBuilderScope}
-                                onChange={(value) => updateSetting('layoutBuilderScope', (value ?? 'full') as 'full' | 'viewport')}
-                                data={[
-                                  { value: 'full', label: 'Full Gallery' },
-                                  { value: 'viewport', label: 'Viewport Only' },
-                                ]}
-                                mt="sm"
-                              />
-                            </Box>
-                          ) : (
-                            /* Unified mode: single pair of dropdowns */
-                            <>
-                              <Select
-                                label="Image Gallery Adapter"
-                                description="Layout for campaigns with images."
-                                value={settings.imageGalleryAdapterId}
-                                onChange={(value) => {
-                                  const v = value ?? 'classic';
-                                  if (v === 'layout-builder') {
-                                    // Auto-switch to per-breakpoint with layout-builder on desktop+tablet
-                                    updateSetting('gallerySelectionMode', 'per-breakpoint');
-                                    updateSetting('desktopImageAdapterId', 'layout-builder');
-                                    updateSetting('tabletImageAdapterId', 'layout-builder');
-                                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                                    // Preserve video settings
-                                    updateSetting('desktopVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                                    updateSetting('tabletVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                                    return;
-                                  }
-                                  updateSetting('imageGalleryAdapterId', v);
-                                }}
-                                data={[
-                                  { value: 'classic', label: 'Classic (Carousel)' },
-                                  { value: 'compact-grid', label: 'Compact Grid' },
-                                  { value: 'justified', label: 'Justified Rows (Flickr-style)' },
-                                  { value: 'masonry', label: 'Masonry' },
-                                  { value: 'hexagonal', label: 'Hexagonal' },
-                                  { value: 'circular', label: 'Circular' },
-                                  { value: 'diamond', label: 'Diamond' },
-                                  { value: 'layout-builder', label: 'Layout Builder ⟶ per-breakpoint' },
-                                ]}
-                              />
-                              <Select
-                                label="Video Gallery Adapter"
-                                description="Layout for campaigns with videos."
-                                value={settings.videoGalleryAdapterId}
-                                onChange={(value) => {
-                                  const v = value ?? 'classic';
-                                  if (v === 'layout-builder') {
-                                    // Auto-switch to per-breakpoint with layout-builder on desktop+tablet
-                                    updateSetting('gallerySelectionMode', 'per-breakpoint');
-                                    updateSetting('desktopVideoAdapterId', 'layout-builder');
-                                    updateSetting('tabletVideoAdapterId', 'layout-builder');
-                                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                                    // Preserve image settings
-                                    updateSetting('desktopImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                                    updateSetting('tabletImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                                    return;
-                                  }
-                                  updateSetting('videoGalleryAdapterId', v);
-                                }}
-                                data={[
-                                  { value: 'classic', label: 'Classic (Carousel)' },
-                                  { value: 'compact-grid', label: 'Compact Grid' },
-                                  { value: 'justified', label: 'Justified Rows (Flickr-style)' },
-                                  { value: 'masonry', label: 'Masonry' },
-                                  { value: 'hexagonal', label: 'Hexagonal' },
-                                  { value: 'circular', label: 'Circular' },
-                                  { value: 'diamond', label: 'Diamond' },
-                                  { value: 'layout-builder', label: 'Layout Builder ⟶ per-breakpoint' },
-                                ]}
-                              />
-                            </>
-                          )}
-                        </>
-                      )}
-
-                      {/* ── Compact-grid dimensions ── */}
-                      {(settings.unifiedGalleryEnabled
-                        ? settings.unifiedGalleryAdapterId === 'compact-grid'
-                        : settings.imageGalleryAdapterId === 'compact-grid' ||
-                          settings.videoGalleryAdapterId === 'compact-grid'
-                      ) && (
-                        <Group grow>
-                          <NumberInput
-                            label="Card Min Width (px)"
-                            description="Minimum width of each grid card. Grid auto-fills based on available space."
-                            value={settings.gridCardWidth}
-                            onChange={(value) =>
-                              updateSetting('gridCardWidth', typeof value === 'number' ? value : defaultSettings.gridCardWidth)
-                            }
-                            min={80} max={400} step={10}
-                          />
-                          <NumberInput
-                            label="Card Height (px)"
-                            description="Fixed height of each grid card."
-                            value={settings.gridCardHeight}
-                            onChange={(value) =>
-                              updateSetting('gridCardHeight', typeof value === 'number' ? value : defaultSettings.gridCardHeight)
-                            }
-                            min={80} max={600} step={10}
-                          />
-                        </Group>
-                      )}
-
-                      {/* ── Justified Rows target height ── */}
-                      {(settings.unifiedGalleryEnabled
-                        ? ['justified', 'mosaic'].includes(settings.unifiedGalleryAdapterId)
-                        : ['justified', 'mosaic'].includes(settings.imageGalleryAdapterId) ||
-                          ['justified', 'mosaic'].includes(settings.videoGalleryAdapterId)
-                      ) && (
-                        <NumberInput
-                          label="Target Row Height (px)"
-                          description="Ideal height for each justified row. Rows scale slightly to fill container width while preserving aspect ratios."
-                          value={settings.mosaicTargetRowHeight}
-                          onChange={(value) =>
-                            updateSetting('mosaicTargetRowHeight', typeof value === 'number' ? value : defaultSettings.mosaicTargetRowHeight)
-                          }
-                          min={60} max={600} step={10}
-                        />
-                      )}
-
-                      {/* ── Masonry columns ── */}
-                      {(settings.unifiedGalleryEnabled
-                        ? settings.unifiedGalleryAdapterId === 'masonry'
-                        : settings.imageGalleryAdapterId === 'masonry' ||
-                          settings.videoGalleryAdapterId === 'masonry'
-                      ) && (
-                        <NumberInput
-                          label="Masonry Columns (0 = auto)"
-                          description="Number of masonry columns. Set 0 to let the layout choose responsively (1–4 based on width)."
-                          value={settings.masonryColumns}
-                          onChange={(value) =>
-                            updateSetting('masonryColumns', typeof value === 'number' ? value : defaultSettings.masonryColumns)
-                          }
-                          min={0} max={8} step={1}
-                        />
-                      )}
-
-                      {/* ── Shape tile size (hex / circle / diamond) ── */}
-                      {(settings.unifiedGalleryEnabled
-                        ? ['hexagonal', 'circular', 'diamond'].includes(settings.unifiedGalleryAdapterId)
-                        : ['hexagonal', 'circular', 'diamond'].includes(settings.imageGalleryAdapterId) ||
-                          ['hexagonal', 'circular', 'diamond'].includes(settings.videoGalleryAdapterId)
-                      ) && (
-                        settings.unifiedGalleryEnabled ? (
-                          <NumberInput
-                            label="Tile Size (px)"
-                            description="Width and height of each shape tile (unified gallery)."
-                            value={settings.tileSize}
-                            onChange={(value) =>
-                              updateSetting('tileSize', typeof value === 'number' ? value : defaultSettings.tileSize)
-                            }
-                            min={60} max={400} step={10}
-                          />
-                        ) : (
-                          <Group grow>
-                            {['hexagonal', 'circular', 'diamond'].includes(settings.imageGalleryAdapterId) && (
-                              <NumberInput
-                                label="Image Tile Size (px)"
-                                description="Shape tile size for the image gallery."
-                                value={settings.imageTileSize}
-                                onChange={(value) =>
-                                  updateSetting('imageTileSize', typeof value === 'number' ? value : defaultSettings.imageTileSize)
-                                }
-                                min={60} max={400} step={10}
-                              />
-                            )}
-                            {['hexagonal', 'circular', 'diamond'].includes(settings.videoGalleryAdapterId) && (
-                              <NumberInput
-                                label="Video Tile Size (px)"
-                                description="Shape tile size for the video gallery."
-                                value={settings.videoTileSize}
-                                onChange={(value) =>
-                                  updateSetting('videoTileSize', typeof value === 'number' ? value : defaultSettings.videoTileSize)
-                                }
-                                min={60} max={400} step={10}
-                              />
-                            )}
-                          </Group>
-                        )
                       )}
                     </Stack>
                   </Accordion.Panel>
@@ -1783,6 +1306,540 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
+              </Accordion>}
+            </Tabs.Panel>
+
+
+            {/* ── Gallery Layout Tab ────────────────────────── */}
+            <Tabs.Panel value="layout" pt="md">
+              {activeTab === 'layout' && <Accordion variant="separated" defaultValue="adapters">
+                {/* ── Gallery Adapters ── */}
+                <Accordion.Item value="adapters">
+                  <Accordion.Control>Gallery Adapters</Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap="md">
+                      <Switch
+                        label="Unified Gallery Mode"
+                        description="When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
+                        checked={settings.unifiedGalleryEnabled}
+                        onChange={(e) => updateSetting('unifiedGalleryEnabled', e.currentTarget.checked)}
+                      />
+
+                      {settings.unifiedGalleryEnabled ? (
+                        <Select
+                          label="Unified Gallery Adapter"
+                          description="Layout used when images and videos are displayed together."
+                          value={settings.unifiedGalleryAdapterId}
+                          onChange={(value) => updateSetting('unifiedGalleryAdapterId', value ?? 'compact-grid')}
+                          data={[
+                            { value: 'classic', label: 'Classic (Carousel)' },
+                            { value: 'compact-grid', label: 'Compact Grid' },
+                            { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                            { value: 'masonry', label: 'Masonry' },
+                            { value: 'hexagonal', label: 'Hexagonal' },
+                            { value: 'circular', label: 'Circular' },
+                            { value: 'diamond', label: 'Diamond' },
+                            { value: 'layout-builder', label: 'Layout Builder' },
+                          ]}
+                        />
+                      ) : (
+                        <>
+                          {/* P15-A: Gallery Selection Mode */}
+                          <Box>
+                            <Text size="sm" fw={500} mb={4}>Gallery Selection Mode</Text>
+                            <Text size="xs" c="dimmed" mb={8}>
+                              Unified: one adapter for all screen sizes. Per-breakpoint: different adapters for desktop, tablet, and mobile.
+                            </Text>
+                            <SegmentedControl
+                              fullWidth
+                              value={settings.gallerySelectionMode}
+                              onChange={(value) => updateSetting('gallerySelectionMode', value as 'unified' | 'per-breakpoint')}
+                              data={[
+                                { value: 'unified', label: 'Unified' },
+                                { value: 'per-breakpoint', label: 'Per Breakpoint' },
+                              ]}
+                            />
+                          </Box>
+
+                          {settings.gallerySelectionMode === 'per-breakpoint' ? (
+                            /* 3×2 per-breakpoint adapter grid */
+                            <Box>
+                              <SimpleGrid cols={3} spacing="xs" mb={4}>
+                                <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
+                                <Text size="xs" fw={600} ta="center">Image</Text>
+                                <Text size="xs" fw={600} ta="center">Video</Text>
+                              </SimpleGrid>
+                              {(['desktop', 'tablet', 'mobile'] as const).map((bp) => {
+                                const isMobile = bp === 'mobile';
+                                const adapterOptions = [
+                                  { value: 'classic', label: 'Classic' },
+                                  { value: 'compact-grid', label: 'Compact Grid' },
+                                  { value: 'justified', label: 'Justified' },
+                                  { value: 'masonry', label: 'Masonry' },
+                                  { value: 'hexagonal', label: 'Hexagonal' },
+                                  { value: 'circular', label: 'Circular' },
+                                  { value: 'diamond', label: 'Diamond' },
+                                  {
+                                    value: 'layout-builder',
+                                    label: isMobile ? 'Layout Builder (desktop/tablet only)' : 'Layout Builder',
+                                    disabled: isMobile,
+                                  },
+                                ];
+                                return (
+                                <SimpleGrid cols={3} spacing="xs" mb="xs" key={bp}>
+                                  <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
+                                    {bp.charAt(0).toUpperCase() + bp.slice(1)}
+                                  </Text>
+                                  <Select
+                                    size="xs"
+                                    value={settings[`${bp}ImageAdapterId` as keyof typeof settings] as string}
+                                    onChange={(value) => updateSetting(`${bp}ImageAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
+                                    data={adapterOptions}
+                                  />
+                                  <Select
+                                    size="xs"
+                                    value={settings[`${bp}VideoAdapterId` as keyof typeof settings] as string}
+                                    onChange={(value) => updateSetting(`${bp}VideoAdapterId` as keyof SettingsData, (value ?? 'classic') as never)}
+                                    data={adapterOptions}
+                                  />
+                                </SimpleGrid>
+                                );
+                              })}
+                              <Select
+                                label="Layout Builder Scope"
+                                description="Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
+                                size="xs"
+                                value={settings.layoutBuilderScope}
+                                onChange={(value) => updateSetting('layoutBuilderScope', (value ?? 'full') as 'full' | 'viewport')}
+                                data={[
+                                  { value: 'full', label: 'Full Gallery' },
+                                  { value: 'viewport', label: 'Viewport Only' },
+                                ]}
+                                mt="sm"
+                              />
+                            </Box>
+                          ) : (
+                            /* Unified mode: single pair of dropdowns */
+                            <>
+                              <Select
+                                label="Image Gallery Adapter"
+                                description="Layout for campaigns with images."
+                                value={settings.imageGalleryAdapterId}
+                                onChange={(value) => {
+                                  const v = value ?? 'classic';
+                                  if (v === 'layout-builder') {
+                                    // Auto-switch to per-breakpoint with layout-builder on desktop+tablet
+                                    updateSetting('gallerySelectionMode', 'per-breakpoint');
+                                    updateSetting('desktopImageAdapterId', 'layout-builder');
+                                    updateSetting('tabletImageAdapterId', 'layout-builder');
+                                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    // Preserve video settings
+                                    updateSetting('desktopVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    updateSetting('tabletVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    return;
+                                  }
+                                  updateSetting('imageGalleryAdapterId', v);
+                                }}
+                                data={[
+                                  { value: 'classic', label: 'Classic (Carousel)' },
+                                  { value: 'compact-grid', label: 'Compact Grid' },
+                                  { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                                  { value: 'masonry', label: 'Masonry' },
+                                  { value: 'hexagonal', label: 'Hexagonal' },
+                                  { value: 'circular', label: 'Circular' },
+                                  { value: 'diamond', label: 'Diamond' },
+                                  { value: 'layout-builder', label: 'Layout Builder ⟶ per-breakpoint' },
+                                ]}
+                              />
+                              <Select
+                                label="Video Gallery Adapter"
+                                description="Layout for campaigns with videos."
+                                value={settings.videoGalleryAdapterId}
+                                onChange={(value) => {
+                                  const v = value ?? 'classic';
+                                  if (v === 'layout-builder') {
+                                    // Auto-switch to per-breakpoint with layout-builder on desktop+tablet
+                                    updateSetting('gallerySelectionMode', 'per-breakpoint');
+                                    updateSetting('desktopVideoAdapterId', 'layout-builder');
+                                    updateSetting('tabletVideoAdapterId', 'layout-builder');
+                                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
+                                    // Preserve image settings
+                                    updateSetting('desktopImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    updateSetting('tabletImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
+                                    return;
+                                  }
+                                  updateSetting('videoGalleryAdapterId', v);
+                                }}
+                                data={[
+                                  { value: 'classic', label: 'Classic (Carousel)' },
+                                  { value: 'compact-grid', label: 'Compact Grid' },
+                                  { value: 'justified', label: 'Justified Rows (Flickr-style)' },
+                                  { value: 'masonry', label: 'Masonry' },
+                                  { value: 'hexagonal', label: 'Hexagonal' },
+                                  { value: 'circular', label: 'Circular' },
+                                  { value: 'diamond', label: 'Diamond' },
+                                  { value: 'layout-builder', label: 'Layout Builder ⟶ per-breakpoint' },
+                                ]}
+                              />
+                            </>
+                          )}
+                        </>
+                      )}
+
+                      {/* ── Compact-grid dimensions ── */}
+                      {(settings.unifiedGalleryEnabled
+                        ? settings.unifiedGalleryAdapterId === 'compact-grid'
+                        : settings.imageGalleryAdapterId === 'compact-grid' ||
+                          settings.videoGalleryAdapterId === 'compact-grid'
+                      ) && (
+                        <Group grow>
+                          <NumberInput
+                            label="Card Min Width (px)"
+                            description="Minimum width of each grid card. Grid auto-fills based on available space."
+                            value={settings.gridCardWidth}
+                            onChange={(value) =>
+                              updateSetting('gridCardWidth', typeof value === 'number' ? value : defaultSettings.gridCardWidth)
+                            }
+                            min={80} max={400} step={10}
+                          />
+                          <NumberInput
+                            label="Card Height (px)"
+                            description="Fixed height of each grid card."
+                            value={settings.gridCardHeight}
+                            onChange={(value) =>
+                              updateSetting('gridCardHeight', typeof value === 'number' ? value : defaultSettings.gridCardHeight)
+                            }
+                            min={80} max={600} step={10}
+                          />
+                        </Group>
+                      )}
+
+                      {/* ── Justified Rows target height ── */}
+                      {(settings.unifiedGalleryEnabled
+                        ? ['justified', 'mosaic'].includes(settings.unifiedGalleryAdapterId)
+                        : ['justified', 'mosaic'].includes(settings.imageGalleryAdapterId) ||
+                          ['justified', 'mosaic'].includes(settings.videoGalleryAdapterId)
+                      ) && (<>
+                        <NumberInput
+                          label="Target Row Height (px)"
+                          description="Ideal height for each justified row. Rows scale slightly to fill container width while preserving aspect ratios."
+                          value={settings.mosaicTargetRowHeight}
+                          onChange={(value) =>
+                            updateSetting('mosaicTargetRowHeight', typeof value === 'number' ? value : defaultSettings.mosaicTargetRowHeight)
+                          }
+                          min={60} max={600} step={10}
+                        />
+                        <NumberInput
+                          label="Photo Normalize Height (px)"
+                          description="Normalization height used to scale image dimensions before layout. Lower values produce smaller tiles."
+                          value={settings.photoNormalizeHeight}
+                          onChange={(value) =>
+                            updateSetting('photoNormalizeHeight', typeof value === 'number' ? value : 300)
+                          }
+                          min={100} max={800} step={10}
+                        />
+                      </>)}
+
+                      {/* ── Masonry columns ── */}
+                      {(settings.unifiedGalleryEnabled
+                        ? settings.unifiedGalleryAdapterId === 'masonry'
+                        : settings.imageGalleryAdapterId === 'masonry' ||
+                          settings.videoGalleryAdapterId === 'masonry'
+                      ) && (
+                        <NumberInput
+                          label="Masonry Columns (0 = auto)"
+                          description="Number of masonry columns. Set 0 to let the layout choose responsively (1–4 based on width)."
+                          value={settings.masonryColumns}
+                          onChange={(value) =>
+                            updateSetting('masonryColumns', typeof value === 'number' ? value : defaultSettings.masonryColumns)
+                          }
+                          min={0} max={8} step={1}
+                        />
+                      )}
+
+                      {/* ── Shape tile size (hex / circle / diamond) ── */}
+                      {(settings.unifiedGalleryEnabled
+                        ? ['hexagonal', 'circular', 'diamond'].includes(settings.unifiedGalleryAdapterId)
+                        : ['hexagonal', 'circular', 'diamond'].includes(settings.imageGalleryAdapterId) ||
+                          ['hexagonal', 'circular', 'diamond'].includes(settings.videoGalleryAdapterId)
+                      ) && (
+                        settings.unifiedGalleryEnabled ? (
+                          <NumberInput
+                            label="Tile Size (px)"
+                            description="Width and height of each shape tile (unified gallery)."
+                            value={settings.tileSize}
+                            onChange={(value) =>
+                              updateSetting('tileSize', typeof value === 'number' ? value : defaultSettings.tileSize)
+                            }
+                            min={60} max={400} step={10}
+                          />
+                        ) : (
+                          <Group grow>
+                            {['hexagonal', 'circular', 'diamond'].includes(settings.imageGalleryAdapterId) && (
+                              <NumberInput
+                                label="Image Tile Size (px)"
+                                description="Shape tile size for the image gallery."
+                                value={settings.imageTileSize}
+                                onChange={(value) =>
+                                  updateSetting('imageTileSize', typeof value === 'number' ? value : defaultSettings.imageTileSize)
+                                }
+                                min={60} max={400} step={10}
+                              />
+                            )}
+                            {['hexagonal', 'circular', 'diamond'].includes(settings.videoGalleryAdapterId) && (
+                              <NumberInput
+                                label="Video Tile Size (px)"
+                                description="Shape tile size for the video gallery."
+                                value={settings.videoTileSize}
+                                onChange={(value) =>
+                                  updateSetting('videoTileSize', typeof value === 'number' ? value : defaultSettings.videoTileSize)
+                                }
+                                min={60} max={400} step={10}
+                              />
+                            )}
+                          </Group>
+                        )
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+
+                {/* ── Carousel Settings ── */}
+                {(settings.unifiedGalleryEnabled
+                  ? settings.unifiedGalleryAdapterId === 'classic'
+                  : settings.gallerySelectionMode === 'per-breakpoint'
+                    ? [
+                        settings.desktopImageAdapterId, settings.tabletImageAdapterId, settings.mobileImageAdapterId,
+                        settings.desktopVideoAdapterId, settings.tabletVideoAdapterId, settings.mobileVideoAdapterId,
+                      ].includes('classic')
+                    : settings.imageGalleryAdapterId === 'classic' ||
+                      settings.videoGalleryAdapterId === 'classic'
+                ) && (
+                  <Accordion.Item value="carousel-settings">
+                    <Accordion.Control>Carousel Settings</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <NumberInput
+                          label="Visible Cards"
+                          description="Number of slides visible at once in the carousel."
+                          value={settings.carouselVisibleCards}
+                          onChange={(value) =>
+                            updateSetting('carouselVisibleCards', typeof value === 'number' ? value : defaultSettings.carouselVisibleCards)
+                          }
+                          min={1} max={10} step={1}
+                        />
+                        <NumberInput
+                          label="Slide Gap (px)"
+                          description="Space between carousel slides."
+                          value={settings.carouselGap}
+                          onChange={(value) =>
+                            updateSetting('carouselGap', typeof value === 'number' ? value : defaultSettings.carouselGap)
+                          }
+                          min={0} max={64} step={4}
+                        />
+                        <Switch
+                          label="Loop"
+                          description="Continuously loop slides when reaching the end."
+                          checked={settings.carouselLoop}
+                          onChange={(e) => updateSetting('carouselLoop', e.currentTarget.checked)}
+                        />
+                        <Switch
+                          label="Drag Enabled"
+                          description="Allow dragging/swiping to navigate slides."
+                          checked={settings.carouselDragEnabled}
+                          onChange={(e) => updateSetting('carouselDragEnabled', e.currentTarget.checked)}
+                        />
+                        <Divider label="Autoplay" labelPosition="center" />
+                        <Switch
+                          label="Autoplay"
+                          description="Automatically advance slides."
+                          checked={settings.carouselAutoplay}
+                          onChange={(e) => updateSetting('carouselAutoplay', e.currentTarget.checked)}
+                        />
+                        {settings.carouselAutoplay && (
+                          <>
+                            <NumberInput
+                              label="Autoplay Speed (ms)"
+                              description="Delay between automatic slide transitions."
+                              value={settings.carouselAutoplaySpeed}
+                              onChange={(value) =>
+                                updateSetting('carouselAutoplaySpeed', typeof value === 'number' ? value : defaultSettings.carouselAutoplaySpeed)
+                              }
+                              min={500} max={15000} step={250}
+                            />
+                            <Switch
+                              label="Pause on Hover"
+                              description="Pause autoplay when the mouse hovers over the carousel."
+                              checked={settings.carouselAutoplayPauseOnHover}
+                              onChange={(e) => updateSetting('carouselAutoplayPauseOnHover', e.currentTarget.checked)}
+                            />
+                            <Select
+                              label="Autoplay Direction"
+                              description="Direction autoplay advances slides."
+                              value={settings.carouselAutoplayDirection}
+                              onChange={(value) =>
+                                updateSetting('carouselAutoplayDirection', (value ?? 'ltr') as 'ltr' | 'rtl')
+                              }
+                              data={[
+                                { value: 'ltr', label: 'Left to Right' },
+                                { value: 'rtl', label: 'Right to Left' },
+                              ]}
+                            />
+                          </>
+                        )}
+                        <Divider label="Visual Effects" labelPosition="center" />
+                        <Switch
+                          label="Darken Unfocused Slides"
+                          description="Apply a dark overlay on slides that are not currently selected."
+                          checked={settings.carouselDarkenUnfocused}
+                          onChange={(e) => updateSetting('carouselDarkenUnfocused', e.currentTarget.checked)}
+                        />
+                        {settings.carouselDarkenUnfocused && (
+                          <NumberInput
+                            label="Darken Opacity"
+                            description="Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
+                            value={settings.carouselDarkenOpacity}
+                            onChange={(value) =>
+                              updateSetting('carouselDarkenOpacity', typeof value === 'number' ? value : defaultSettings.carouselDarkenOpacity)
+                            }
+                            min={0} max={1} step={0.05}
+                            decimalScale={2}
+                          />
+                        )}
+                        <Switch
+                          label="Edge Fade"
+                          description="Fade slides at the edges of the carousel viewport."
+                          checked={settings.carouselEdgeFade}
+                          onChange={(e) => updateSetting('carouselEdgeFade', e.currentTarget.checked)}
+                        />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
+
+                {/* ── Viewport Backgrounds ── */}
+                <Accordion.Item value="backgrounds">
+                  <Accordion.Control>Viewport Backgrounds</Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap="md">
+                      {/* ── Image viewport background ── */}
+                      <Select
+                        label="Image Viewport Background"
+                        description="Background fill rendered behind the image gallery section."
+                        value={settings.imageBgType}
+                        onChange={(value) => updateSetting('imageBgType', (value as ViewportBgType) ?? 'none')}
+                        data={[
+                          { value: 'none', label: 'Transparent' },
+                          { value: 'solid', label: 'Solid Color' },
+                          { value: 'gradient', label: 'Gradient' },
+                          { value: 'image', label: 'Image URL' },
+                        ]}
+                      />
+                      {settings.imageBgType === 'solid' && (
+                        <ColorInput
+                          label="Image Background Color"
+                          value={settings.imageBgColor}
+                          onChange={(value) => updateSetting('imageBgColor', value)}
+                          format="rgba"
+                        />
+                      )}
+                      {settings.imageBgType === 'gradient' && (
+                        <TextInput
+                          label="Image CSS Gradient"
+                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
+                          value={settings.imageBgGradient}
+                          onChange={(e) => updateSetting('imageBgGradient', e.currentTarget.value)}
+                        />
+                      )}
+                      {settings.imageBgType === 'image' && (
+                        <TextInput
+                          label="Image Background URL"
+                          description="Absolute URL of the background image."
+                          value={settings.imageBgImageUrl}
+                          onChange={(e) => updateSetting('imageBgImageUrl', e.currentTarget.value)}
+                        />
+                      )}
+
+                      {/* ── Video viewport background ── */}
+                      <Select
+                        label="Video Viewport Background"
+                        description="Background fill rendered behind the video gallery section."
+                        value={settings.videoBgType}
+                        onChange={(value) => updateSetting('videoBgType', (value as ViewportBgType) ?? 'none')}
+                        data={[
+                          { value: 'none', label: 'Transparent' },
+                          { value: 'solid', label: 'Solid Color' },
+                          { value: 'gradient', label: 'Gradient' },
+                          { value: 'image', label: 'Image URL' },
+                        ]}
+                      />
+                      {settings.videoBgType === 'solid' && (
+                        <ColorInput
+                          label="Video Background Color"
+                          value={settings.videoBgColor}
+                          onChange={(value) => updateSetting('videoBgColor', value)}
+                          format="rgba"
+                        />
+                      )}
+                      {settings.videoBgType === 'gradient' && (
+                        <TextInput
+                          label="Video CSS Gradient"
+                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #0d0d0d, #1a1a2e)')."
+                          value={settings.videoBgGradient}
+                          onChange={(e) => updateSetting('videoBgGradient', e.currentTarget.value)}
+                        />
+                      )}
+                      {settings.videoBgType === 'image' && (
+                        <TextInput
+                          label="Video Background URL"
+                          description="Absolute URL of the background image."
+                          value={settings.videoBgImageUrl}
+                          onChange={(e) => updateSetting('videoBgImageUrl', e.currentTarget.value)}
+                        />
+                      )}
+
+                      {/* ── Unified viewport background ── */}
+                      <Select
+                        label="Unified Viewport Background"
+                        description="Background fill when unified gallery mode is active."
+                        value={settings.unifiedBgType}
+                        onChange={(value) => updateSetting('unifiedBgType', (value as ViewportBgType) ?? 'none')}
+                        data={[
+                          { value: 'none', label: 'Transparent' },
+                          { value: 'solid', label: 'Solid Color' },
+                          { value: 'gradient', label: 'Gradient' },
+                          { value: 'image', label: 'Image URL' },
+                        ]}
+                      />
+                      {settings.unifiedBgType === 'solid' && (
+                        <ColorInput
+                          label="Unified Background Color"
+                          value={settings.unifiedBgColor}
+                          onChange={(value) => updateSetting('unifiedBgColor', value)}
+                          format="rgba"
+                        />
+                      )}
+                      {settings.unifiedBgType === 'gradient' && (
+                        <TextInput
+                          label="Unified CSS Gradient"
+                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
+                          value={settings.unifiedBgGradient}
+                          onChange={(e) => updateSetting('unifiedBgGradient', e.currentTarget.value)}
+                        />
+                      )}
+                      {settings.unifiedBgType === 'image' && (
+                        <TextInput
+                          label="Unified Background URL"
+                          description="Absolute URL of the background image."
+                          value={settings.unifiedBgImageUrl}
+                          onChange={(e) => updateSetting('unifiedBgImageUrl', e.currentTarget.value)}
+                        />
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
 
                 {/* ── Gallery Labels ── */}
                 <Accordion.Item value="gallery-labels">
@@ -1821,8 +1878,430 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
+
+                {/* ── Section Sizing ── */}
+                <Accordion.Item value="section-sizing">
+                  <Accordion.Control>Section Sizing &amp; Spacing</Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap="md">
+                      <NumberInput
+                        label="Gallery Section Max Width (px)"
+                        description="Maximum width for each gallery section. 0 = fill available space."
+                        value={settings.gallerySectionMaxWidth ?? 0}
+                        onChange={(v) => updateSetting('gallerySectionMaxWidth', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={2000}
+                        step={50}
+                      />
+                      <NumberInput
+                        label="Gallery Section Min Width (px)"
+                        description="Minimum width floor for gallery sections."
+                        value={settings.gallerySectionMinWidth ?? 300}
+                        onChange={(v) => updateSetting('gallerySectionMinWidth', typeof v === 'number' ? v : 300)}
+                        min={200}
+                        max={600}
+                        step={50}
+                      />
+                      <Select
+                        label="Section Height Mode"
+                        description="How section height is determined. Auto = content-driven (recommended for masonry/justified)."
+                        data={[
+                          { value: 'auto', label: 'Auto (content-driven)' },
+                          { value: 'manual', label: 'Manual (fixed max height)' },
+                          { value: 'viewport', label: 'Viewport (% of screen)' },
+                        ]}
+                        value={settings.gallerySectionHeightMode ?? 'auto'}
+                        onChange={(v) => updateSetting('gallerySectionHeightMode', (v ?? 'auto') as GalleryBehaviorSettings['gallerySectionHeightMode'])}
+                      />
+                      {settings.gallerySectionHeightMode === 'manual' && (
+                        <NumberInput
+                          label="Gallery Section Max Height (px)"
+                          description="Maximum height for gallery sections in manual mode."
+                          value={settings.gallerySectionMaxHeight ?? 0}
+                          onChange={(v) => updateSetting('gallerySectionMaxHeight', typeof v === 'number' ? v : 0)}
+                          min={0}
+                          max={2000}
+                          step={50}
+                        />
+                      )}
+                      <NumberInput
+                        label="Gallery Section Min Height (px)"
+                        description="Minimum height floor for gallery sections."
+                        value={settings.gallerySectionMinHeight ?? 150}
+                        onChange={(v) => updateSetting('gallerySectionMinHeight', typeof v === 'number' ? v : 150)}
+                        min={100}
+                        max={400}
+                        step={50}
+                      />
+                      <Switch
+                        label="Equal Height Sections (Per-Type)"
+                        description="When using per-type galleries, display image and video sections side-by-side at equal height on tablet+ viewports."
+                        checked={settings.perTypeSectionEqualHeight ?? false}
+                        onChange={(e) => updateSetting('perTypeSectionEqualHeight', e.currentTarget.checked)}
+                      />
+                      <NumberInput
+                        label="Gallery Section Padding (px)"
+                        description="Inner padding within each gallery section wrapper."
+                        value={settings.gallerySectionPadding ?? 16}
+                        onChange={(v) => updateSetting('gallerySectionPadding', typeof v === 'number' ? v : 16)}
+                        min={0}
+                        max={32}
+                        step={4}
+                      />
+                      <NumberInput
+                        label="Adapter Content Padding (px)"
+                        description="Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
+                        value={settings.adapterContentPadding ?? 0}
+                        onChange={(v) => updateSetting('adapterContentPadding', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={24}
+                        step={4}
+                      />
+                      <Select
+                        label="Content Vertical Alignment"
+                        description="Vertical alignment of content within the modal."
+                        data={[
+                          { value: 'top', label: 'Top' },
+                          { value: 'center', label: 'Center' },
+                          { value: 'bottom', label: 'Bottom' },
+                        ]}
+                        value={settings.modalContentVerticalAlign || 'top'}
+                        onChange={(v) => updateSetting('modalContentVerticalAlign', (v || 'top') as 'top' | 'center' | 'bottom')}
+                      />
+                      <Divider label="Gallery Spacing" labelPosition="center" />
+                      <NumberInput
+                        label="Gallery Max Width (px)"
+                        description="Maximum width of the gallery container. 0 = full responsive width."
+                        value={settings.modalGalleryMaxWidth}
+                        onChange={(v) => updateSetting('modalGalleryMaxWidth', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={3000}
+                        step={50}
+                      />
+                      <NumberInput
+                        label="Gallery Section Gap (px)"
+                        description="Vertical gap between gallery sections."
+                        value={settings.modalGalleryGap}
+                        onChange={(v) => updateSetting('modalGalleryGap', typeof v === 'number' ? v : 32)}
+                        min={0}
+                        max={64}
+                        step={8}
+                      />
+                      <NumberInput
+                        label="Gallery Edge Margin (px)"
+                        description="Horizontal margin on gallery edges."
+                        value={settings.modalGalleryMargin}
+                        onChange={(v) => updateSetting('modalGalleryMargin', typeof v === 'number' ? v : 0)}
+                        min={0}
+                        max={120}
+                        step={4}
+                      />
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+
+                {/* ── Adapter Sizing ── */}
+                <Accordion.Item value="adapter-sizing">
+                  <Accordion.Control>Adapter Sizing</Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap="md">
+                      <Select
+                        label="Adapter Sizing Mode"
+                        description="How adapters fill their gallery section. Fill = 100% of section, Manual = custom percentage."
+                        data={[
+                          { value: 'fill', label: 'Fill (100%)' },
+                          { value: 'manual', label: 'Manual (custom %)' },
+                        ]}
+                        value={settings.adapterSizingMode ?? 'fill'}
+                        onChange={(v) => updateSetting('adapterSizingMode', (v ?? 'fill') as GalleryBehaviorSettings['adapterSizingMode'])}
+                      />
+                      {settings.adapterSizingMode === 'manual' && (
+                        <>
+                          <NumberInput
+                            label="Adapter Max Width (%)"
+                            description="Adapter width as percentage of its gallery section."
+                            value={settings.adapterMaxWidthPct ?? 100}
+                            onChange={(v) => updateSetting('adapterMaxWidthPct', typeof v === 'number' ? v : 100)}
+                            min={50}
+                            max={100}
+                            step={5}
+                          />
+                          <NumberInput
+                            label="Adapter Max Height (%)"
+                            description="Adapter height as percentage of its gallery section."
+                            value={settings.adapterMaxHeightPct ?? 100}
+                            onChange={(v) => updateSetting('adapterMaxHeightPct', typeof v === 'number' ? v : 100)}
+                            min={50}
+                            max={100}
+                            step={5}
+                          />
+                        </>
+                      )}
+                      <NumberInput
+                        label="Adapter Item Gap (px)"
+                        description="Spacing between items in grid adapters (Compact Grid). 0 = no gap."
+                        value={settings.adapterItemGap ?? 16}
+                        onChange={(v) => updateSetting('adapterItemGap', typeof v === 'number' ? v : 16)}
+                        min={0}
+                        max={64}
+                        step={4}
+                      />
+                      <Select
+                        label="Adapter Justification"
+                        description="How adapter items distribute within the container (Compact Grid, Circular)."
+                        data={[
+                          { value: 'start', label: 'Start' },
+                          { value: 'center', label: 'Center' },
+                          { value: 'end', label: 'End' },
+                          { value: 'space-between', label: 'Space Between' },
+                          { value: 'space-evenly', label: 'Space Evenly' },
+                          { value: 'stretch', label: 'Stretch' },
+                        ]}
+                        value={settings.adapterJustifyContent ?? 'center'}
+                        onChange={(v) => updateSetting('adapterJustifyContent', (v ?? 'center') as GalleryBehaviorSettings['adapterJustifyContent'])}
+                      />
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
               </Accordion>}
             </Tabs.Panel>
+
+            {/* ── Campaign Viewer Tab ──────────────────────────── */}
+            <Tabs.Panel value="viewer" pt="md">
+              {activeTab === 'viewer' && <Stack gap="md">
+                <Divider label="Open Mode" labelPosition="center" />
+
+                <Switch
+                  label="Fullscreen Campaign Modal"
+                  description="Open campaign viewer in fullscreen mode instead of the default modal."
+                  checked={settings.campaignModalFullscreen ?? false}
+                  onChange={(e) => updateSetting('campaignModalFullscreen', e.currentTarget.checked)}
+                />
+                <Select
+                  label="Campaign Open Mode"
+                  description="What to show when a campaign is opened."
+                  data={[
+                    { value: 'full', label: 'Full (cover, about, galleries, stats)' },
+                    { value: 'galleries-only', label: 'Galleries only (skip header/about/stats)' },
+                  ]}
+                  value={settings.campaignOpenMode ?? 'full'}
+                  onChange={(v) => updateSetting('campaignOpenMode', (v ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
+                />
+                <NumberInput
+                  label="Fullscreen Content Max Width (px)"
+                  description="Limit content width in fullscreen mode. 0 = full responsive width."
+                  value={settings.fullscreenContentMaxWidth ?? 0}
+                  onChange={(value) => updateSetting('fullscreenContentMaxWidth', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={3000}
+                  step={50}
+                  placeholder="0 = full width"
+                  disabled={!settings.campaignModalFullscreen}
+                  style={!settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined}
+                />
+                <Box style={settings.campaignModalFullscreen ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
+                  <Stack gap="md">
+                    <NumberInput
+                      label="Modal Max Width (px)"
+                      description="Maximum width of the campaign modal when not fullscreen (clamped 600–1600)."
+                      value={settings.modalMaxWidth ?? 1200}
+                      onChange={(value) => updateSetting('modalMaxWidth', typeof value === 'number' ? value : 1200)}
+                      min={600}
+                      max={1600}
+                      step={50}
+                      placeholder="1200"
+                      disabled={!!settings.campaignModalFullscreen}
+                    />
+                  </Stack>
+                </Box>
+                <NumberInput
+                  label="Content Max Width (px)"
+                  description="Maximum width of the content area inside the modal. 0 = full width."
+                  value={settings.modalContentMaxWidth ?? 900}
+                  onChange={(value) => updateSetting('modalContentMaxWidth', typeof value === 'number' ? value : 900)}
+                  min={0}
+                  max={2000}
+                  step={50}
+                  placeholder="900"
+                />
+                <NumberInput
+                  label="Modal Inner Padding (px)"
+                  description="Padding inside the modal content area (clamped 0–48)."
+                  value={settings.modalInnerPadding ?? 16}
+                  onChange={(value) => updateSetting('modalInnerPadding', typeof value === 'number' ? value : 16)}
+                  min={0}
+                  max={48}
+                  step={4}
+                />
+
+
+                <Divider label="Modal Appearance" labelPosition="center" />
+
+                <NumberInput
+                  label="Cover Image Height (px)"
+                  description="Height of the cover image in the campaign modal"
+                  value={settings.modalCoverHeight}
+                  onChange={(v) => updateSetting('modalCoverHeight', typeof v === 'number' ? v : 240)}
+                  min={100}
+                  max={400}
+                  step={10}
+                />
+                <Select
+                  label="Modal Transition"
+                  description="Animation style when opening the campaign modal"
+                  data={[
+                    { value: 'pop', label: 'Pop (scale up)' },
+                    { value: 'fade', label: 'Fade' },
+                    { value: 'slide-up', label: 'Slide Up' },
+                  ]}
+                  value={settings.modalTransition}
+                  onChange={(v) => updateSetting('modalTransition', v ?? 'pop')}
+                />
+                <NumberInput
+                  label="Modal Transition Duration (ms)"
+                  description="Length of the modal open/close animation"
+                  value={settings.modalTransitionDuration}
+                  onChange={(v) => updateSetting('modalTransitionDuration', typeof v === 'number' ? v : 300)}
+                  min={100}
+                  max={1000}
+                  step={50}
+                />
+                <NumberInput
+                  label="Modal Max Height (vh%)"
+                  description="Maximum height of the campaign modal as a percentage of viewport (clamped 50–95)."
+                  value={settings.modalMaxHeight}
+                  onChange={(v) => updateSetting('modalMaxHeight', typeof v === 'number' ? v : 90)}
+                  min={50}
+                  max={95}
+                  step={5}
+                  disabled={!!settings.campaignModalFullscreen}
+                  style={settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined}
+                />
+
+                <Divider label="Visibility" labelPosition="center" />
+
+                <Box style={settings.campaignOpenMode === 'galleries-only' ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
+                  <Stack gap="md">
+                <Switch
+                  label="Show Company Name"
+                  description="Show the company badge on the campaign cover image."
+                  checked={settings.showCampaignCompanyName ?? true}
+                  onChange={(e) => updateSetting('showCampaignCompanyName', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Date"
+                  description="Show the creation date under the campaign title."
+                  checked={settings.showCampaignDate ?? true}
+                  onChange={(e) => updateSetting('showCampaignDate', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show About Section"
+                  description='Show the "About this Campaign" heading and description.'
+                  checked={settings.showCampaignAbout ?? true}
+                  onChange={(e) => updateSetting('showCampaignAbout', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Description"
+                  description="Show the campaign description text within the About section."
+                  checked={settings.showCampaignDescription ?? true}
+                  onChange={(e) => updateSetting('showCampaignDescription', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Campaign Stats"
+                  description="Show the statistics block (video count, image count, tags, visibility)."
+                  checked={settings.showCampaignStats ?? true}
+                  onChange={(e) => updateSetting('showCampaignStats', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Stats Admin-Only"
+                  description="When enabled, only admins can see the statistics block."
+                  checked={settings.campaignStatsAdminOnly ?? true}
+                  onChange={(e) => updateSetting('campaignStatsAdminOnly', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Cover Image"
+                  description="Show the campaign cover image at the top of the viewer."
+                  checked={settings.showCampaignCoverImage ?? true}
+                  onChange={(e) => updateSetting('showCampaignCoverImage', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                <Switch
+                  label="Show Tags"
+                  description="Show tags section in the campaign viewer."
+                  checked={settings.showCampaignTags ?? true}
+                  onChange={(e) => updateSetting('showCampaignTags', e.currentTarget.checked)}
+                  disabled={settings.campaignOpenMode === 'galleries-only'}
+                />
+                  </Stack>
+                </Box>
+                <Switch
+                  label="Show Admin Actions"
+                  description="Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+                  checked={settings.showCampaignAdminActions ?? true}
+                  onChange={(e) => updateSetting('showCampaignAdminActions', e.currentTarget.checked)}
+                />
+                <Switch
+                  label="Show Gallery Labels"
+                  description="Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+                  checked={settings.showCampaignGalleryLabels ?? true}
+                  onChange={(e) => updateSetting('showCampaignGalleryLabels', e.currentTarget.checked)}
+                />
+
+                <Divider label="Modal Background (Fullscreen)" labelPosition="center" />
+
+                <Select
+                  label="Background Type"
+                  description="Background style for the fullscreen campaign modal"
+                  data={[
+                    { value: 'theme', label: 'Default Theme' },
+                    { value: 'transparent', label: 'Transparent' },
+                    { value: 'solid', label: 'Solid color' },
+                    { value: 'gradient', label: 'Custom gradient' },
+                  ]}
+                  value={settings.modalBgType ?? 'theme'}
+                  onChange={(v) => updateSetting('modalBgType', (v ?? 'theme') as GalleryBehaviorSettings['modalBgType'])}
+                />
+                {settings.modalBgType === 'solid' && (
+                  <ColorInput
+                    label="Modal Background Color"
+                    description="Solid background color for the fullscreen modal"
+                    value={settings.modalBgColor}
+                    onChange={(v) => updateSetting('modalBgColor', v)}
+                  />
+                )}
+                {settings.modalBgType === 'gradient' && (
+                  <GradientEditor
+                    value={settings.modalBgGradient ?? {}}
+                    onChange={(opts) => updateSetting('modalBgGradient', opts)}
+                  />
+                )}
+
+                <Divider label="Cover Image" labelPosition="center" />
+
+                <Text size="sm" fw={500}>Cover Mobile Ratio</Text>
+                <Slider value={settings.modalCoverMobileRatio} onChange={(v) => updateSetting('modalCoverMobileRatio', v)}
+                  min={0.2} max={1} step={0.05} />
+                <Text size="sm" fw={500}>Cover Tablet Ratio</Text>
+                <Slider value={settings.modalCoverTabletRatio} onChange={(v) => updateSetting('modalCoverTabletRatio', v)}
+                  min={0.2} max={1} step={0.05} />
+
+                <Divider label="Modal Controls" labelPosition="center" />
+
+                <NumberInput label="Close Button Size (px)" value={settings.modalCloseButtonSize}
+                  onChange={(v) => updateSetting('modalCloseButtonSize', typeof v === 'number' ? v : 36)} min={20} max={64} />
+                <Text size="sm" fw={500}>Description Line Height</Text>
+                <Slider value={settings.campaignDescriptionLineHeight}
+                  onChange={(v) => updateSetting('campaignDescriptionLineHeight', v)}
+                  min={1} max={3} step={0.1} />
+              </Stack>}
+            </Tabs.Panel>
+
             {settings.advancedSettingsEnabled && (
               <Tabs.Panel value="advanced" pt="md">
                 {activeTab === 'advanced' && <><Text size="sm" c="dimmed" mb="md">
@@ -1900,24 +2379,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Control>Modal / Viewer</Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap="md">
-                        <Text size="sm" fw={500}>{tt('Cover Mobile Ratio', 'modalCoverMobileRatio')}</Text>
-                        <Slider value={settings.modalCoverMobileRatio} onChange={(v) => updateSetting('modalCoverMobileRatio', v)}
-                          min={0.2} max={1} step={0.05} />
-                        <Text size="sm" fw={500}>{tt('Cover Tablet Ratio', 'modalCoverTabletRatio')}</Text>
-                        <Slider value={settings.modalCoverTabletRatio} onChange={(v) => updateSetting('modalCoverTabletRatio', v)}
-                          min={0.2} max={1} step={0.05} />
-                        <NumberInput label={tt('Close Button Size (px)', 'modalCloseButtonSize')} value={settings.modalCloseButtonSize}
-                          onChange={(v) => updateSetting('modalCloseButtonSize', typeof v === 'number' ? v : 36)} min={20} max={64} />
                         <TextInput label={tt('Close Button Background', 'modalCloseButtonBgColor')} value={settings.modalCloseButtonBgColor}
                           onChange={(e) => updateSetting('modalCloseButtonBgColor', e.currentTarget.value)} />
                         <NumberInput label={tt('Content Max Width (px)', 'modalContentMaxWidth')} value={settings.modalContentMaxWidth}
                           onChange={(v) => updateSetting('modalContentMaxWidth', typeof v === 'number' ? v : 900)} min={400} max={2000} />
-                        <Text size="sm" fw={500}>{tt('Description Line Height', 'campaignDescriptionLineHeight')}</Text>
-                        <Slider value={settings.campaignDescriptionLineHeight}
-                          onChange={(v) => updateSetting('campaignDescriptionLineHeight', v)}
-                          min={1} max={3} step={0.1} />
                         <NumberInput label={tt('Mobile Breakpoint (px)', 'modalMobileBreakpoint')} value={settings.modalMobileBreakpoint}
                           onChange={(v) => updateSetting('modalMobileBreakpoint', typeof v === 'number' ? v : 768)} min={320} max={1280} />
+
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -2002,8 +2470,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                           onChange={(e) => updateSetting('diamondClipPath', e.currentTarget.value)} />
                         <NumberInput label={tt('Default Per Row', 'tileDefaultPerRow')} value={settings.tileDefaultPerRow}
                           onChange={(v) => updateSetting('tileDefaultPerRow', typeof v === 'number' ? v : 5)} min={1} max={12} />
-                        <NumberInput label={tt('Photo Normalize Height (px)', 'photoNormalizeHeight')} value={settings.photoNormalizeHeight}
-                          onChange={(v) => updateSetting('photoNormalizeHeight', typeof v === 'number' ? v : 300)} min={100} max={800} />
                         <TextInput label={tt('Masonry Auto Column Breakpoints', 'masonryAutoColumnBreakpoints')} description="Format: 480:2,768:3,1024:4,1280:5"
                           value={settings.masonryAutoColumnBreakpoints}
                           onChange={(e) => updateSetting('masonryAutoColumnBreakpoints', e.currentTarget.value)} />
@@ -2140,6 +2606,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 <Text size="sm" c="dimmed">
                   Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults.
                 </Text>
+                <FontLibraryManager
+                  apiClient={apiClient}
+                  onFontsChange={(fonts) => setCustomFonts(fonts.map((f) => ({ name: f.name, family: `'${f.name}', sans-serif` })))}
+                />
+
+                <Divider label="Element Overrides" labelPosition="left" />
+
                 <Button
                   variant="subtle"
                   color="red"
@@ -2156,6 +2629,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['viewerTitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('viewerTitle', v)}
                       />
                     </Accordion.Panel>
@@ -2165,6 +2639,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['viewerSubtitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('viewerSubtitle', v)}
                       />
                     </Accordion.Panel>
@@ -2176,6 +2651,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardTitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardTitle', v)}
                       />
                     </Accordion.Panel>
@@ -2185,6 +2661,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardDescription'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardDescription', v)}
                       />
                     </Accordion.Panel>
@@ -2194,6 +2671,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardCompanyName'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardCompanyName', v)}
                       />
                     </Accordion.Panel>
@@ -2203,6 +2681,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['cardMediaCounts'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('cardMediaCounts', v)}
                       />
                     </Accordion.Panel>
@@ -2214,6 +2693,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignTitle'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignTitle', v)}
                       />
                     </Accordion.Panel>
@@ -2223,6 +2703,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignDescription'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignDescription', v)}
                       />
                     </Accordion.Panel>
@@ -2232,6 +2713,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignDate'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignDate', v)}
                       />
                     </Accordion.Panel>
@@ -2241,6 +2723,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignAboutHeading'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignAboutHeading', v)}
                       />
                     </Accordion.Panel>
@@ -2250,6 +2733,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignStatsValue'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignStatsValue', v)}
                       />
                     </Accordion.Panel>
@@ -2259,6 +2743,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['campaignStatsLabel'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('campaignStatsLabel', v)}
                       />
                     </Accordion.Panel>
@@ -2270,6 +2755,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['galleryLabel'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('galleryLabel', v)}
                       />
                     </Accordion.Panel>
@@ -2279,6 +2765,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['mediaCaption'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('mediaCaption', v)}
                       />
                     </Accordion.Panel>
@@ -2290,6 +2777,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['authBarText'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('authBarText', v)}
                       />
                     </Accordion.Panel>
@@ -2299,6 +2787,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                     <Accordion.Panel>
                       <TypographyEditor
                         value={settings.typographyOverrides['accessBadgeText'] ?? {}}
+                        customFonts={customFonts}
                         onChange={(v) => updateTypoOverride('accessBadgeText', v)}
                       />
                     </Accordion.Panel>
@@ -2308,17 +2797,16 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             </Tabs.Panel>
 
           </Tabs>
+        </Stack>
+        </Box>
 
-          {/* ── Footer (sticky) ─────────────────────────────── */}
+          {/* ── Footer (fixed outside scroll area) ───────── */}
           <Box
             style={{
-              position: 'sticky',
-              bottom: 0,
-              zIndex: 10,
-              background: 'var(--mantine-color-body)',
+              flexShrink: 0,
               borderTop: '1px solid var(--mantine-color-default-border)',
-              padding: 'var(--mantine-spacing-sm) 0',
-              marginTop: 'var(--mantine-spacing-md)',
+              boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
+              padding: 'var(--mantine-spacing-sm) var(--mantine-spacing-md)',
             }}
           >
             <Group justify="flex-end" gap="sm">
@@ -2332,7 +2820,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               </Button>
             </Group>
           </Box>
-        </Stack>
+        </>
       )}
     </Modal>
   );

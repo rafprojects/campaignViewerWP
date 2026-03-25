@@ -22,7 +22,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } from '@tabler/icons-react';
-import { CampaignSelector, type CampaignSelectItem } from '@/components/shared/CampaignSelector';
+import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { PendingRequestsPanel } from './PendingRequestsPanel';
 import type { ApiClient } from '@/services/apiClient';
 
@@ -130,7 +130,7 @@ export function AccessTab({
         <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
           <Group align="flex-end" gap="md" wrap="wrap">
             <Box>
-              <Text size="sm" fw={500} mb={4} c="gray.2">View By</Text>
+              <Text size="sm" fw={500} mb={4}>View By</Text>
               <SegmentedControl
                 value={accessViewMode}
                 onChange={(v) => onAccessViewModeChange(v as AccessViewMode)}
@@ -154,7 +154,7 @@ export function AccessTab({
               />
             ) : (
               <Select
-                label={<Text size="sm" fw={500} c="gray.2">Select Company</Text>}
+                label={<Text size="sm" fw={500}>Select Company</Text>}
                 placeholder={companiesLoading ? 'Loading...' : 'Choose a company...'}
                 data={companySelectData}
                 value={selectedCompanyId}
@@ -230,7 +230,7 @@ export function AccessTab({
           {/* Current Access - Show this first and prominently */}
           <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
             <Group justify="space-between" mb="sm" wrap="wrap" gap="sm">
-              <Text fw={600} size="lg" c="gray.1">
+              <Text fw={600} size="lg">
                 {accessViewMode === 'campaign' ? 'Current Access' :
                  accessViewMode === 'company' ? 'Company-Wide Access' :
                  'All Access (Company + Campaigns)'}
@@ -304,7 +304,7 @@ export function AccessTab({
 
           {/* Grant Access Form - Unified and compact */}
           <Card shadow="sm" withBorder p={{ base: 'sm', md: 'md' }}>
-            <Text fw={600} size="lg" mb="sm" c="gray.1">
+            <Text fw={600} size="lg" mb="sm">
               {accessViewMode === 'campaign' ? 'Grant New Access' : 'Grant Company-Wide Access'}
             </Text>
 
@@ -325,7 +325,7 @@ export function AccessTab({
                 >
                   <Combobox.Target>
                     <InputBase
-                      label={<Text size="sm" fw={500} c="gray.2">User</Text>}
+                      label={<Text size="sm" fw={500}>User</Text>}
                       placeholder="Search name, email, or enter ID..."
                       value={selectedUser ? `${selectedUser.displayName} (${selectedUser.email})` : userSearchQuery}
                       onChange={(e) => {
@@ -405,7 +405,7 @@ export function AccessTab({
               {accessViewMode === 'campaign' && (
                 <>
                   <Select
-                    label={<Text size="sm" fw={500} c="gray.2">Scope</Text>}
+                    label={<Text size="sm" fw={500}>Scope</Text>}
                     data={[
                       { value: 'campaign', label: '📋 This Campaign' },
                       { value: 'company', label: '🏢 All Company Campaigns' },
@@ -416,7 +416,7 @@ export function AccessTab({
                   />
 
                   <Select
-                    label={<Text size="sm" fw={500} c="gray.2">Action</Text>}
+                    label={<Text size="sm" fw={500}>Action</Text>}
                     data={[
                       { value: 'grant', label: '✅ Grant Access' },
                       { value: 'deny', label: '❌ Deny Access' },
