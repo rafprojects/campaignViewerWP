@@ -1,6 +1,7 @@
 /** Shared overlay styling constants for gallery adapter hover / badge elements.
  *  Centralised here so contrast adjustments are single-point-of-change.
- *  Background at 0.7 opacity guarantees WCAG AA (≥4.5:1) for white text on any image. */
+ *  Background at 0.7 opacity improves white-text contrast across varied imagery,
+ *  but final WCAG contrast still depends on the underlying pixels. */
 
 export const OVERLAY_BG = 'rgba(0,0,0,0.7)';
 export const OVERLAY_TEXT = '#ffffff';
