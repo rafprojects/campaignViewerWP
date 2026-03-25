@@ -2,6 +2,12 @@ import {
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   type GalleryBehaviorSettings,
 } from '@/types';
+import {
+  buildGalleryConfigFromLegacySettings,
+  cloneGalleryConfig,
+  mergeGalleryConfig,
+  parseGalleryConfig,
+} from './galleryConfig';
 
 /**
  * Merge a partial settings response with the full defaults.
@@ -16,10 +22,15 @@ export function mergeSettingsWithDefaults(
   partial: Partial<GalleryBehaviorSettings> | Record<string, unknown>,
 ): GalleryBehaviorSettings {
   const result = { ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS };
+  const incomingGalleryConfig = parseGalleryConfig((partial as Record<string, unknown>).galleryConfig);
 
   for (const key of Object.keys(DEFAULT_GALLERY_BEHAVIOR_SETTINGS) as Array<
     keyof GalleryBehaviorSettings
   >) {
+    if (key === 'galleryConfig') {
+      continue;
+    }
+
     const incoming = (partial as Record<string, unknown>)[key];
     if (incoming !== undefined && incoming !== null) {
       // P21-I: typography_overrides arrives as a JSON string from the PHP API.
@@ -44,6 +55,11 @@ export function mergeSettingsWithDefaults(
       (result as any)[key] = incoming;
     }
   }
+
+  const legacyGalleryConfig = buildGalleryConfigFromLegacySettings(result);
+  result.galleryConfig = incomingGalleryConfig
+    ? mergeGalleryConfig(legacyGalleryConfig, incomingGalleryConfig)
+    : cloneGalleryConfig(legacyGalleryConfig);
 
   return result;
 }

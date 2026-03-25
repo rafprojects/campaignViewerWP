@@ -1,0 +1,51 @@
+import { describe, expect, it } from 'vitest';
+
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
+import {
+  buildGalleryConfigFromLegacySettings,
+  mergeGalleryConfig,
+  parseGalleryConfig,
+} from './galleryConfig';
+
+describe('galleryConfig helpers', () => {
+  it('builds a nested gallery config from legacy settings', () => {
+    const config = buildGalleryConfigFromLegacySettings({
+      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+      unifiedGalleryEnabled: true,
+      gallerySelectionMode: 'per-breakpoint',
+      desktopImageAdapterId: 'masonry',
+      tabletVideoAdapterId: 'diamond',
+    });
+
+    expect(config.mode).toBe('unified');
+    expect(config.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
+    expect(config.breakpoints?.tablet?.video?.adapterId).toBe('diamond');
+    expect(config.breakpoints?.mobile?.unified?.adapterId).toBe('compact-grid');
+  });
+
+  it('parses nested config from JSON and rejects invalid values', () => {
+    expect(parseGalleryConfig('{"mode":"per-type"}')?.mode).toBe('per-type');
+    expect(parseGalleryConfig('not-json')).toBeUndefined();
+    expect(parseGalleryConfig([])).toBeUndefined();
+  });
+
+  it('merges nested overrides onto a legacy-derived base', () => {
+    const base = buildGalleryConfigFromLegacySettings(DEFAULT_GALLERY_BEHAVIOR_SETTINGS);
+    const merged = mergeGalleryConfig(base, {
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'hexagonal',
+            common: {
+              sectionPadding: 28,
+            },
+          },
+        },
+      },
+    });
+
+    expect(merged.breakpoints?.desktop?.image?.adapterId).toBe('hexagonal');
+    expect(merged.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(28);
+    expect(merged.breakpoints?.mobile?.image?.adapterId).toBe('classic');
+  });
+});

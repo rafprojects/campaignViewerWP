@@ -3,6 +3,7 @@ import {
   DEFAULT_LAYOUT_SLOT,
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   type GalleryBehaviorSettings,
+  type GalleryConfig,
   type LayoutSlot,
 } from '@/types';
 import { mergeSettingsWithDefaults } from './mergeSettingsWithDefaults';
@@ -65,6 +66,12 @@ describe('DEFAULT_GALLERY_BEHAVIOR_SETTINGS – P15 fields', () => {
 
   it('defaults layoutBuilderScope to full', () => {
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.layoutBuilderScope).toBe('full');
+  });
+
+  it('hydrates default nested galleryConfig compatibility data', () => {
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.mode).toBe('per-type');
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.unified?.adapterId).toBe('compact-grid');
   });
 
   it('is a valid GalleryBehaviorSettings (satisfies type contract)', () => {
@@ -175,5 +182,63 @@ describe('mergeSettingsWithDefaults', () => {
     expect(merged.mobileImageAdapterId).toBe('circular');
     expect(merged.mobileVideoAdapterId).toBe('diamond');
     expect(merged.layoutBuilderScope).toBe('viewport');
+  });
+
+  it('derives nested galleryConfig from legacy flat settings', () => {
+    const merged = mergeSettingsWithDefaults({
+      gallerySelectionMode: 'per-breakpoint',
+      desktopImageAdapterId: 'masonry',
+      tabletImageAdapterId: 'justified',
+      mobileImageAdapterId: 'compact-grid',
+      gallerySectionPadding: 24,
+    });
+
+    expect(merged.galleryConfig?.mode).toBe('per-type');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
+    expect(merged.galleryConfig?.breakpoints?.tablet?.image?.adapterId).toBe('justified');
+    expect(merged.galleryConfig?.breakpoints?.mobile?.image?.adapterId).toBe('compact-grid');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(24);
+  });
+
+  it('merges explicit nested galleryConfig over the legacy-derived bridge', () => {
+    const nested: GalleryConfig = {
+      mode: 'unified',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'diamond',
+          },
+        },
+      },
+    };
+
+    const merged = mergeSettingsWithDefaults({
+      gallerySelectionMode: 'per-breakpoint',
+      desktopImageAdapterId: 'masonry',
+      galleryConfig: nested,
+    });
+
+    expect(merged.galleryConfig?.mode).toBe('unified');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('diamond');
+    expect(merged.galleryConfig?.breakpoints?.tablet?.image?.adapterId).toBe('classic');
+  });
+
+  it('parses galleryConfig when it arrives as JSON', () => {
+    const merged = mergeSettingsWithDefaults({
+      galleryConfig: JSON.stringify({
+        mode: 'unified',
+        breakpoints: {
+          mobile: {
+            unified: {
+              adapterId: 'masonry',
+            },
+          },
+        },
+      }),
+    } as Record<string, unknown>);
+
+    expect(merged.galleryConfig?.mode).toBe('unified');
+    expect(merged.galleryConfig?.breakpoints?.mobile?.unified?.adapterId).toBe('masonry');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
   });
 });

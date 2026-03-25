@@ -14,6 +14,7 @@ import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
+import { resolveGalleryMode } from '@/utils/resolveAdapterId';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
 
@@ -63,6 +64,7 @@ export function CampaignViewer({
   // P15-A: Per-breakpoint adapter resolution
   const containerRef = useRef<HTMLDivElement>(null);
   const breakpoint = useBreakpoint(containerRef);
+  const galleryMode = resolveGalleryMode(galleryBehaviorSettings, campaign.galleryOverrides);
   // P21-F: Fullscreen and conditional rendering
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
   const galleriesOnly = s.campaignOpenMode === 'galleries-only';
@@ -262,8 +264,8 @@ export function CampaignViewer({
               </Center>
             }>
             <Stack gap={Math.max(0, Math.min(64, s.modalGalleryGap ?? 32))} style={{ width: '100%' }}>
-              {galleryBehaviorSettings.unifiedGalleryEnabled ? (
-                <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} isAdmin={isAdmin} />
+              {galleryMode === 'unified' ? (
+                <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
               ) : (
                 <PerTypeGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
               )}

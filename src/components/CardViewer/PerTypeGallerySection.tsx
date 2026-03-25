@@ -5,60 +5,16 @@
  * its own GallerySectionWrapper. Supports optional equal-height
  * side-by-side layout via SimpleGrid at tablet+.
  */
-import { lazy, type ComponentType } from 'react';
+import { lazy } from 'react';
 import { SimpleGrid, Stack } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings, ContainerDimensions, MediaItem } from '@/types';
-import type { GalleryAdapterProps } from '@/components/Galleries/Adapters/GalleryAdapter';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
-import { resolveAdapterId } from '@/utils/resolveAdapterId';
+import { normalizeAdapterId, resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
+import { resolveAdapterId, resolveEffectiveGallerySettings } from '@/utils/resolveAdapterId';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
-
-const MediaCarouselAdapter = lazy(() =>
-  import('@/components/Galleries/Adapters/MediaCarouselAdapter').then((m) => ({ default: m.MediaCarouselAdapter })),
-);
-const CompactGridGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/compact-grid/CompactGridGallery').then((m) => ({ default: m.CompactGridGallery })),
-);
-const JustifiedGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/justified/JustifiedGallery').then((m) => ({ default: m.JustifiedGallery })),
-);
-const MasonryGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/masonry/MasonryGallery').then((m) => ({ default: m.MasonryGallery })),
-);
-const HexagonalGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/hexagonal/HexagonalGallery').then((m) => ({ default: m.HexagonalGallery })),
-);
-const CircularGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/circular/CircularGallery').then((m) => ({ default: m.CircularGallery })),
-);
-const DiamondGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/diamond/DiamondGallery').then((m) => ({ default: m.DiamondGallery })),
-);
 const LayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
 );
-
-function resolveAdapterComponent(id: string): ComponentType<GalleryAdapterProps> {
-  switch (id) {
-    case 'carousel':
-    case 'classic':
-      return MediaCarouselAdapter as ComponentType<GalleryAdapterProps>;
-    case 'justified':
-    case 'mosaic':
-      return JustifiedGallery as ComponentType<GalleryAdapterProps>;
-    case 'masonry':
-      return MasonryGallery as ComponentType<GalleryAdapterProps>;
-    case 'hexagonal':
-      return HexagonalGallery as ComponentType<GalleryAdapterProps>;
-    case 'circular':
-      return CircularGallery as ComponentType<GalleryAdapterProps>;
-    case 'diamond':
-      return DiamondGallery as ComponentType<GalleryAdapterProps>;
-    case 'compact-grid':
-    default:
-      return CompactGridGallery as ComponentType<GalleryAdapterProps>;
-  }
-}
 
 function renderAdapterForSection(
   id: string,
@@ -79,7 +35,7 @@ function renderAdapterForSection(
       />
     );
   }
-  const Adapter = resolveAdapterComponent(id);
+  const Adapter = resolveAdapter(id);
   return <Adapter media={media} settings={settings} containerDimensions={containerDimensions} />;
 }
 
@@ -94,20 +50,35 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
   const hasVideos = campaign.videos.length > 0;
   const hasImages = campaign.images.length > 0;
 
-  const videoId = campaign.videoAdapterId || resolveAdapterId(s, 'video', breakpoint);
-  const imageId = campaign.imageAdapterId || resolveAdapterId(s, 'image', breakpoint);
-  const videoSettings = { ...s, tileSize: s.videoTileSize ?? s.tileSize };
-  const imageSettings = { ...s, tileSize: s.imageTileSize ?? s.tileSize };
+  const resolvedVideoSettings = resolveEffectiveGallerySettings(s, breakpoint, 'video', campaign.galleryOverrides);
+  const resolvedImageSettings = resolveEffectiveGallerySettings(s, breakpoint, 'image', campaign.galleryOverrides);
+  const videoId = normalizeAdapterId(resolveAdapterId(s, 'video', breakpoint, {
+    galleryOverrides: campaign.galleryOverrides,
+    legacyOverrideId: campaign.videoAdapterId,
+  }));
+  const imageId = normalizeAdapterId(resolveAdapterId(s, 'image', breakpoint, {
+    galleryOverrides: campaign.galleryOverrides,
+    legacyOverrideId: campaign.imageAdapterId,
+  }));
+  const videoSettings = {
+    ...resolvedVideoSettings,
+    tileSize: resolvedVideoSettings.videoTileSize ?? resolvedVideoSettings.tileSize,
+  };
+  const imageSettings = {
+    ...resolvedImageSettings,
+    tileSize: resolvedImageSettings.imageTileSize ?? resolvedImageSettings.tileSize,
+  };
+  const useEqualHeight = Boolean(videoSettings.perTypeSectionEqualHeight || imageSettings.perTypeSectionEqualHeight);
 
   const videoSection = hasVideos && (
     <GallerySectionWrapper
-      settings={s}
-      bgType={s.videoBgType}
-      bgColor={s.videoBgColor}
-      bgGradient={s.videoBgGradient}
-      bgImageUrl={s.videoBgImageUrl}
-      borderRadius={s.videoBorderRadius}
-      style={s.perTypeSectionEqualHeight ? { minHeight: '100%' } : undefined}
+      settings={videoSettings}
+      bgType={videoSettings.videoBgType}
+      bgColor={videoSettings.videoBgColor}
+      bgGradient={videoSettings.videoBgGradient}
+      bgImageUrl={videoSettings.videoBgImageUrl}
+      borderRadius={videoSettings.videoBorderRadius}
+      style={useEqualHeight ? { minHeight: '100%' } : undefined}
     >
       {(dims: ContainerDimensions) =>
         renderAdapterForSection(videoId, campaign.videos, videoSettings, dims, campaign, isAdmin)
@@ -117,13 +88,13 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
 
   const imageSection = hasImages && (
     <GallerySectionWrapper
-      settings={s}
-      bgType={s.imageBgType}
-      bgColor={s.imageBgColor}
-      bgGradient={s.imageBgGradient}
-      bgImageUrl={s.imageBgImageUrl}
-      borderRadius={s.imageBorderRadius}
-      style={s.perTypeSectionEqualHeight ? { minHeight: '100%' } : undefined}
+      settings={imageSettings}
+      bgType={imageSettings.imageBgType}
+      bgColor={imageSettings.imageBgColor}
+      bgGradient={imageSettings.imageBgGradient}
+      bgImageUrl={imageSettings.imageBgImageUrl}
+      borderRadius={imageSettings.imageBorderRadius}
+      style={useEqualHeight ? { minHeight: '100%' } : undefined}
     >
       {(dims: ContainerDimensions) =>
         renderAdapterForSection(imageId, campaign.images, imageSettings, dims, campaign, isAdmin)
@@ -131,7 +102,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
     </GallerySectionWrapper>
   );
 
-  if (s.perTypeSectionEqualHeight && hasVideos && hasImages) {
+  if (useEqualHeight && hasVideos && hasImages) {
     return (
       <SimpleGrid
         cols={{ base: 1, md: 2 }}

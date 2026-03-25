@@ -5,6 +5,43 @@ export interface Company {
   brandColor: string;
 }
 
+export type GalleryConfigBreakpoint = 'desktop' | 'tablet' | 'mobile';
+
+export type GalleryConfigScope = 'unified' | 'image' | 'video';
+
+export type GalleryConfigMode = 'unified' | 'per-type';
+
+export interface GalleryCommonSettings {
+  sectionMaxWidth?: number;
+  sectionMaxHeight?: number;
+  sectionMinWidth?: number;
+  sectionMinHeight?: number;
+  sectionHeightMode?: 'auto' | 'manual' | 'viewport';
+  sectionPadding?: number;
+  adapterContentPadding?: number;
+  adapterSizingMode?: 'fill' | 'manual';
+  adapterMaxWidthPct?: number;
+  adapterMaxHeightPct?: number;
+  adapterItemGap?: number;
+  adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
+  gallerySizingMode?: 'auto' | 'viewport' | 'manual';
+  galleryManualHeight?: string;
+  perTypeSectionEqualHeight?: boolean;
+}
+
+export interface GalleryScopeConfig {
+  adapterId?: string;
+  common?: GalleryCommonSettings;
+  adapterSettings?: Record<string, unknown>;
+}
+
+export type BreakpointGalleryConfig = Partial<Record<GalleryConfigScope, GalleryScopeConfig>>;
+
+export interface GalleryConfig {
+  mode?: GalleryConfigMode;
+  breakpoints?: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>>;
+}
+
 export interface Campaign {
   id: string;
   companyId: string;
@@ -32,6 +69,8 @@ export interface Campaign {
   imageAdapterId?: string;
   /** Per-campaign video gallery adapter override (empty = use global setting). */
   videoAdapterId?: string;
+  /** Phase 23 nested campaign gallery override surface. */
+  galleryOverrides?: Partial<GalleryConfig>;
   /** P18-H: Category names assigned to this campaign. */
   categories?: string[];
 }
@@ -700,6 +739,8 @@ export interface GalleryBehaviorSettings {
   mobileVideoAdapterId: string;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
+  // P23-D: Nested responsive gallery config compatibility bridge.
+  galleryConfig?: GalleryConfig;
   // P20-E: Uninstall data preservation
   preserveDataOnUninstall: boolean;
   // D-4: Archive purge safeguards
@@ -798,6 +839,54 @@ export interface GalleryBehaviorSettings {
   carouselEdgeFade: boolean;
   carouselLoop: boolean;
   carouselGap: number;
+}
+
+const DEFAULT_GALLERY_COMMON_SETTINGS: GalleryCommonSettings = {
+  sectionMaxWidth: 0,
+  sectionMaxHeight: 0,
+  sectionMinWidth: 300,
+  sectionMinHeight: 150,
+  sectionHeightMode: 'auto',
+  sectionPadding: 16,
+  adapterContentPadding: 0,
+  adapterSizingMode: 'fill',
+  adapterMaxWidthPct: 100,
+  adapterMaxHeightPct: 100,
+  adapterItemGap: 16,
+  adapterJustifyContent: 'center',
+  gallerySizingMode: 'auto',
+  galleryManualHeight: '420px',
+  perTypeSectionEqualHeight: false,
+};
+
+function createDefaultGalleryScopeConfig(adapterId: string): GalleryScopeConfig {
+  return {
+    adapterId,
+    common: { ...DEFAULT_GALLERY_COMMON_SETTINGS },
+  };
+}
+
+function createDefaultGalleryConfig(): GalleryConfig {
+  return {
+    mode: 'per-type',
+    breakpoints: {
+      desktop: {
+        unified: createDefaultGalleryScopeConfig('compact-grid'),
+        image: createDefaultGalleryScopeConfig('classic'),
+        video: createDefaultGalleryScopeConfig('classic'),
+      },
+      tablet: {
+        unified: createDefaultGalleryScopeConfig('compact-grid'),
+        image: createDefaultGalleryScopeConfig('classic'),
+        video: createDefaultGalleryScopeConfig('classic'),
+      },
+      mobile: {
+        unified: createDefaultGalleryScopeConfig('compact-grid'),
+        image: createDefaultGalleryScopeConfig('classic'),
+        video: createDefaultGalleryScopeConfig('classic'),
+      },
+    },
+  };
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -991,6 +1080,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   mobileImageAdapterId: 'classic',
   mobileVideoAdapterId: 'classic',
   layoutBuilderScope: 'full',
+  galleryConfig: createDefaultGalleryConfig(),
   // P20-E: Uninstall data preservation
   preserveDataOnUninstall: false,
   // D-4: Archive purge safeguards

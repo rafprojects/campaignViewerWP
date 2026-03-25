@@ -9,6 +9,7 @@ import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 
 /** Convert ISO date string to datetime-local input value. */
@@ -20,16 +21,7 @@ function toLocalInputValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const ADAPTER_OPTIONS = [
-  { value: 'classic', label: 'Classic Carousel' },
-  { value: 'compact-grid', label: 'Compact Grid' },
-  { value: 'justified', label: 'Justified' },
-  { value: 'masonry', label: 'Masonry' },
-  { value: 'hexagonal', label: 'Hexagonal' },
-  { value: 'circular', label: 'Circular' },
-  { value: 'diamond', label: 'Diamond' },
-  { value: 'layout-builder', label: 'Layout Builder' },
-];
+const ADAPTER_OPTIONS = getAdapterSelectOptions({ context: 'campaign-override' });
 
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;

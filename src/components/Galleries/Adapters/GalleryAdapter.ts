@@ -9,6 +9,18 @@
 import type { ComponentType } from 'react';
 import type { MediaItem, GalleryBehaviorSettings, ContainerDimensions } from '@/types';
 
+export type GalleryAdapterId =
+  | 'classic'
+  | 'carousel'
+  | 'compact-grid'
+  | 'justified'
+  | 'mosaic'
+  | 'masonry'
+  | 'hexagonal'
+  | 'circular'
+  | 'diamond'
+  | 'layout-builder';
+
 /** Declared capabilities a gallery adapter can support. */
 export type AdapterCapability =
   | 'lightbox'
@@ -17,7 +29,22 @@ export type AdapterCapability =
   | 'grid-layout'
   | 'carousel-layout'
   | 'keyboard-nav'
-  | 'touch-swipe';
+  | 'touch-swipe'
+  | 'layout-builder';
+
+export type AdapterSettingGroup =
+  | 'carousel'
+  | 'compact-grid'
+  | 'justified'
+  | 'masonry'
+  | 'shape'
+  | 'layout-builder';
+
+export type AdapterOptionContext =
+  | 'unified-gallery'
+  | 'per-type-gallery'
+  | 'per-breakpoint-gallery'
+  | 'campaign-override';
 
 /** Unified, type-agnostic props every gallery adapter component must accept. */
 export interface GalleryAdapterProps {
@@ -30,8 +57,12 @@ export interface GalleryAdapterProps {
 
 /** Registered metadata for a gallery adapter. */
 export interface AdapterRegistration {
-  id: string;
+  id: GalleryAdapterId;
   label: string;
+  aliases?: GalleryAdapterId[];
+  optionLabels?: Partial<Record<AdapterOptionContext, string>>;
   capabilities: AdapterCapability[];
+  settingGroups: AdapterSettingGroup[];
+  supportsMobile?: boolean;
   component: ComponentType<GalleryAdapterProps>;
 }

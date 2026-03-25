@@ -1,5 +1,158 @@
-import type { GalleryBehaviorSettings } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  GalleryCommonSettings,
+  GalleryConfig,
+  GalleryConfigScope,
+} from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
+import { isAdapterSupportedAtBreakpoint, normalizeAdapterId } from '@/components/Galleries/Adapters/adapterRegistry';
+import { buildGalleryCommonSettingsFromLegacy, buildGalleryConfigFromLegacySettings, mergeGalleryConfig } from './galleryConfig';
+
+type GalleryMode = 'unified' | 'per-type';
+
+interface GalleryResolutionOptions {
+  galleryOverrides?: Partial<GalleryConfig>;
+  legacyOverrideId?: string;
+}
+
+type CommonSettingKey = keyof GalleryCommonSettings;
+
+const COMMON_SETTING_FIELD_MAP: Record<CommonSettingKey, keyof GalleryBehaviorSettings> = {
+  sectionMaxWidth: 'gallerySectionMaxWidth',
+  sectionMaxHeight: 'gallerySectionMaxHeight',
+  sectionMinWidth: 'gallerySectionMinWidth',
+  sectionMinHeight: 'gallerySectionMinHeight',
+  sectionHeightMode: 'gallerySectionHeightMode',
+  sectionPadding: 'gallerySectionPadding',
+  adapterContentPadding: 'adapterContentPadding',
+  adapterSizingMode: 'adapterSizingMode',
+  adapterMaxWidthPct: 'adapterMaxWidthPct',
+  adapterMaxHeightPct: 'adapterMaxHeightPct',
+  adapterItemGap: 'adapterItemGap',
+  adapterJustifyContent: 'adapterJustifyContent',
+  gallerySizingMode: 'gallerySizingMode',
+  galleryManualHeight: 'galleryManualHeight',
+  perTypeSectionEqualHeight: 'perTypeSectionEqualHeight',
+};
+
+function resolveSupportedAdapterChain(ids: Array<string | undefined>, breakpoint: Breakpoint): string {
+  for (const id of ids) {
+    if (!id) {
+      continue;
+    }
+
+    const normalizedId = normalizeAdapterId(id);
+    if (isAdapterSupportedAtBreakpoint(normalizedId, breakpoint)) {
+      return normalizedId;
+    }
+  }
+
+  return 'classic';
+}
+
+function resolveBaseGalleryConfig(s: GalleryBehaviorSettings): GalleryConfig {
+  return s.galleryConfig ?? buildGalleryConfigFromLegacySettings(s);
+}
+
+function resolveEffectiveGalleryConfig(
+  s: GalleryBehaviorSettings,
+  galleryOverrides?: Partial<GalleryConfig>,
+): GalleryConfig {
+  const base = resolveBaseGalleryConfig(s);
+  return galleryOverrides ? mergeGalleryConfig(base, galleryOverrides) : base;
+}
+
+function resolveLegacyPerTypeAdapterId(
+  s: GalleryBehaviorSettings,
+  mediaType: 'image' | 'video',
+  breakpoint: Breakpoint,
+): string {
+  if (s.gallerySelectionMode !== 'per-breakpoint') {
+    return mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
+  }
+
+  const key = `${breakpoint}${mediaType === 'image' ? 'Image' : 'Video'}AdapterId` as keyof GalleryBehaviorSettings;
+  return (s[key] as string) || (mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId);
+}
+
+function resolveScopeConfig(
+  config: GalleryConfig,
+  breakpoint: Breakpoint,
+  scope: GalleryConfigScope,
+) {
+  return config.breakpoints?.[breakpoint]?.[scope];
+}
+
+export function resolveGalleryMode(
+  s: GalleryBehaviorSettings,
+  galleryOverrides?: Partial<GalleryConfig>,
+): GalleryMode {
+  return resolveEffectiveGalleryConfig(s, galleryOverrides).mode ?? (s.unifiedGalleryEnabled ? 'unified' : 'per-type');
+}
+
+export function resolveUnifiedAdapterId(
+  s: GalleryBehaviorSettings,
+  breakpoint: Breakpoint,
+  options: GalleryResolutionOptions = {},
+): string {
+  const globalConfig = resolveBaseGalleryConfig(s);
+  const effectiveConfig = resolveEffectiveGalleryConfig(s, options.galleryOverrides);
+
+  return resolveSupportedAdapterChain(
+    [
+      options.galleryOverrides ? resolveScopeConfig(effectiveConfig, breakpoint, 'unified')?.adapterId : undefined,
+      options.legacyOverrideId,
+      resolveScopeConfig(globalConfig, breakpoint, 'unified')?.adapterId,
+      s.unifiedGalleryAdapterId,
+    ],
+    breakpoint,
+  );
+}
+
+export function resolveGalleryCommonSettings(
+  s: GalleryBehaviorSettings,
+  breakpoint: Breakpoint,
+  scope: GalleryConfigScope,
+  galleryOverrides?: Partial<GalleryConfig>,
+): GalleryCommonSettings {
+  const legacyCommon = buildGalleryCommonSettingsFromLegacy(s);
+  const effectiveConfig = resolveEffectiveGalleryConfig(s, galleryOverrides);
+
+  return {
+    ...legacyCommon,
+    ...(resolveScopeConfig(effectiveConfig, breakpoint, scope)?.common ?? {}),
+  };
+}
+
+export function applyResolvedGalleryCommonSettings(
+  s: GalleryBehaviorSettings,
+  commonSettings: GalleryCommonSettings,
+): GalleryBehaviorSettings {
+  const resolvedSettings = { ...s };
+
+  for (const [commonKey, settingKey] of Object.entries(COMMON_SETTING_FIELD_MAP) as Array<
+    [CommonSettingKey, keyof GalleryBehaviorSettings]
+  >) {
+    const value = commonSettings[commonKey];
+    if (value !== undefined) {
+      (resolvedSettings as Record<string, unknown>)[settingKey] = value;
+    }
+  }
+
+  return resolvedSettings;
+}
+
+export function resolveEffectiveGallerySettings(
+  s: GalleryBehaviorSettings,
+  breakpoint: Breakpoint,
+  scope: GalleryConfigScope,
+  galleryOverrides?: Partial<GalleryConfig>,
+): GalleryBehaviorSettings {
+  return applyResolvedGalleryCommonSettings(
+    s,
+    resolveGalleryCommonSettings(s, breakpoint, scope, galleryOverrides),
+  );
+}
 
 /**
  * Resolve the adapter ID to use for a given media type and breakpoint.
@@ -11,20 +164,19 @@ export function resolveAdapterId(
   s: GalleryBehaviorSettings,
   mediaType: 'image' | 'video',
   breakpoint: Breakpoint,
+  options: GalleryResolutionOptions = {},
 ): string {
-  let id: string;
-  if (s.gallerySelectionMode !== 'per-breakpoint') {
-    id = mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
-  } else {
-    const key = `${breakpoint}${mediaType === 'image' ? 'Image' : 'Video'}AdapterId` as keyof GalleryBehaviorSettings;
-    id = (s[key] as string) || (mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId);
-  }
+  const globalConfig = resolveBaseGalleryConfig(s);
+  const legacyId = resolveLegacyPerTypeAdapterId(s, mediaType, breakpoint);
 
-  // Layout-builder is not supported on mobile — fall back to the unified adapter or classic.
-  if (id === 'layout-builder' && breakpoint === 'mobile') {
-    const fallback = mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
-    return (fallback && fallback !== 'layout-builder') ? fallback : 'classic';
-  }
-
-  return id;
+  return resolveSupportedAdapterChain(
+    [
+      options.galleryOverrides ? resolveScopeConfig(resolveEffectiveGalleryConfig(s, options.galleryOverrides), breakpoint, mediaType)?.adapterId : undefined,
+      options.legacyOverrideId,
+      resolveScopeConfig(globalConfig, breakpoint, mediaType)?.adapterId,
+      legacyId,
+      mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId,
+    ],
+    breakpoint,
+  );
 }
