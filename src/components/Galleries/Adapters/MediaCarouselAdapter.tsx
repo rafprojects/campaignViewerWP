@@ -1,20 +1,19 @@
 /**
- * P22-P3: Unified Media Carousel Adapter
+ * P22-P8d: Unified Media Carousel Adapter (Embla)
  *
- * Replaces ImageCarousel + VideoCarousel with a single adapter-system
- * component that handles both images and videos via shared navigation,
- * transition, and swipe logic.
+ * Replaces the custom useCarousel + useMediaTransition implementation
+ * with embla-carousel-react for proper multi-slide carousels,
+ * autoplay, drag, loop, and more.
  */
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { IconPhoto, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 import type { GalleryAdapterProps } from './GalleryAdapter';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
-import { useCarousel } from '@/hooks/useCarousel';
-import { useMediaTransition } from '@/hooks/useMediaTransition';
 import { useLightbox } from '@/hooks/useLightbox';
-import { useSwipe } from '@/hooks/useSwipe';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { resolveBoxShadow } from '@/utils/shadowPresets';
@@ -100,38 +99,88 @@ export interface MediaCarouselInnerProps {
 
 /** @internal Exported for backward-compat wrappers — prefer MediaCarouselAdapter. */
 export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: MediaCarouselInnerProps) {
-  const { currentIndex, direction, setCurrentIndex, next: nextRaw, prev: prevRaw } = useCarousel(media.length);
-  const { previousItem, enterRef, exitRef, beginTransition, setPreviousForJump, clearPrevious } =
-    useMediaTransition(settings, currentIndex, direction, media);
+  // ── Embla setup ──────────────────────────────────────────────────
 
-  const [isPlaying, setIsPlaying] = useState(false);
+  const visibleCards = Math.max(1, settings.carouselVisibleCards);
+  const gap = settings.carouselGap;
 
-  const currentItem = media[currentIndex];
-  const isVideo = currentItem.type === 'video';
-  const isUploadVideo = isVideo && currentItem.source === 'upload';
+  const autoplayPlugin = useMemo(() => {
+    if (!settings.carouselAutoplay) return [];
+    return [
+      Autoplay({
+        delay: settings.carouselAutoplaySpeed,
+        stopOnInteraction: true,
+        stopOnMouseEnter: settings.carouselAutoplayPauseOnHover,
+      }),
+    ];
+  }, [settings.carouselAutoplay, settings.carouselAutoplaySpeed, settings.carouselAutoplayPauseOnHover]);
 
-  // Reset play state on navigation
-  useEffect(() => setIsPlaying(false), [currentIndex]);
-
-  const navigate = useCallback(
-    (fn: () => void) => {
-      beginTransition(fn);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      loop: settings.carouselLoop,
+      dragFree: false,
+      slidesToScroll: 1,
+      align: visibleCards > 1 ? 'start' : 'center',
+      containScroll: 'trimSnaps',
+      watchDrag: settings.carouselDragEnabled,
+      direction: settings.carouselAutoplayDirection === 'rtl' ? 'rtl' : 'ltr',
     },
-    [beginTransition],
+    autoplayPlugin,
   );
 
-  const nextItem = useCallback(() => navigate(nextRaw), [navigate, nextRaw]);
-  const prevItem = useCallback(() => navigate(prevRaw), [navigate, prevRaw]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [slidesInView, setSlidesInView] = useState<number[]>([]);
+  const [playingSlides, setPlayingSlides] = useState<Set<number>>(new Set());
 
-  // Lightbox: only images use it
+  // Track selected index and visible slides
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setSlidesInView(emblaApi.slidesInView());
+    };
+    const onSlidesInView = () => {
+      setSlidesInView(emblaApi.slidesInView());
+    };
+
+    emblaApi.on('select', onSelect);
+    emblaApi.on('slidesInView', onSlidesInView);
+
+    // Initialize
+    onSelect();
+    onSlidesInView();
+
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('slidesInView', onSlidesInView);
+    };
+  }, [emblaApi]);
+
+  // Pause videos when they scroll out of view
+  useEffect(() => {
+    if (playingSlides.size === 0) return;
+    setPlayingSlides((prev) => {
+      const next = new Set<number>();
+      for (const idx of prev) {
+        if (slidesInView.includes(idx)) next.add(idx);
+      }
+      return next.size === prev.size ? prev : next;
+    });
+  }, [slidesInView, playingSlides.size]);
+
+  const currentItem = media[selectedIndex];
+
+  // Navigation
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollTo = useCallback((index: number) => emblaApi?.scrollTo(index), [emblaApi]);
+
+  // ── Lightbox ─────────────────────────────────────────────────────
+
   const { isOpen: isLightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
-    onPrev: prevItem,
-    onNext: nextItem,
-  });
-
-  const swipeHandlers = useSwipe({
-    onSwipeLeft: nextItem,
-    onSwipeRight: prevItem,
+    onPrev: scrollPrev,
+    onNext: scrollNext,
   });
 
   // ── Media type analysis ──────────────────────────────────────────
@@ -153,7 +202,7 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
       : `${settings.galleryImageLabel || 'Images'} (${images.length})`;
   const LabelIcon = videos.length > 0 && images.length === 0 ? IconPlayerPlay : IconPhoto;
 
-  // ── Height calculation (unified from both carousels) ─────────────
+  // ── Height calculation ───────────────────────────────────────────
 
   const heightMultiplier = breakpoint === 'mobile' ? 0.55 : breakpoint === 'tablet' ? 0.75 : 1.0;
   const heightConstraint = settings.gallerySizingMode ?? 'auto';
@@ -195,146 +244,179 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
 
   const handleDotSelect = useCallback(
     (index: number) => {
-      if (index !== currentIndex) {
-        setPreviousForJump(media[currentIndex]);
-      }
-      setCurrentIndex(index);
-      setIsPlaying(false);
+      scrollTo(index);
     },
-    [currentIndex, media, setPreviousForJump, setCurrentIndex],
+    [scrollTo],
   );
 
-  // ── Render helpers ───────────────────────────────────────────────
+  // ── Slide flex basis ─────────────────────────────────────────────
 
-  const playerTitle = useMemo(
-    () => `Video player: ${currentItem.caption || 'Campaign video'}`,
-    [currentItem.caption],
-  );
+  const slideBasis = useMemo(() => {
+    if (visibleCards <= 1) return '100%';
+    const totalGap = (visibleCards - 1) * gap;
+    return `calc((100% - ${totalGap}px) / ${visibleCards})`;
+  }, [visibleCards, gap]);
 
-  const renderCurrentMedia = () => {
-    if (isVideo) {
-      if (isPlaying) {
-        return isUploadVideo ? (
-          <Box
-            data-testid="video-player-surface"
-            style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
-          >
-            <video
-              src={currentItem.url}
-              controls
-              autoPlay
-              playsInline
-              poster={currentItem.thumbnail}
-              aria-label={playerTitle}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'transparent' }}
-            />
-          </Box>
-        ) : (
-          <Box
-            data-testid="video-player-surface"
-            style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
-          >
-            <iframe
-              src={withAutoplay(currentItem.embedUrl ?? currentItem.url)}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={playerTitle}
-              style={{ width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' }}
-            />
-          </Box>
-        );
-      }
-
-      // Video thumbnail + play button
-      return (
-        <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
-          <Image
-            src={currentItem.thumbnail}
-            alt={currentItem.caption || 'Campaign video'}
-            h="100%"
-            fit="contain"
-            style={{ cursor: 'pointer' }}
-            onClick={() => setIsPlaying(true)}
-          />
-          <ActionIcon
-            pos="absolute"
-            top="50%"
-            left="50%"
-            style={{ transform: 'translate(-50%, -50%)' }}
-            size="xl"
-            radius="xl"
-            onClick={() => setIsPlaying(true)}
-            aria-label="Play video"
-          >
-            <IconPlayerPlay size={32} fill="currentColor" />
-          </ActionIcon>
-        </div>
-      );
-    }
-
-    // Image
-    return (
-      <Image
-        src={currentItem.url}
-        alt={currentItem.caption || 'Campaign image'}
-        fit="contain"
-        h="100%"
-        style={{ cursor: 'zoom-in' }}
-      />
-    );
-  };
-
-  const renderPreviousOverlay = () => {
-    if (!previousItem) return null;
-    const src = previousItem.type === 'video'
-      ? (previousItem.thumbnail || previousItem.url)
-      : previousItem.url;
-    return (
-      <Box
-        ref={exitRef as React.RefObject<HTMLDivElement>}
-        onTransitionEnd={() => clearPrevious()}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          willChange: 'transform, opacity',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-      >
-        <Image src={src} alt="" aria-hidden fit="contain" h="100%" />
-      </Box>
-    );
-  };
-
-  // ── Frame event handlers ─────────────────────────────────────────
-
-  const handleFrameClick = useCallback(() => {
-    if (!isVideo) openLightbox();
-  }, [isVideo, openLightbox]);
+  // ── Keyboard nav ─────────────────────────────────────────────────
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        prevItem();
+        scrollPrev();
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        nextItem();
+        scrollNext();
       } else if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        if (isVideo) setIsPlaying(true);
-        else openLightbox();
+        const item = media[selectedIndex];
+        if (item?.type === 'video') {
+          setPlayingSlides((prev) => new Set(prev).add(selectedIndex));
+        } else {
+          openLightbox();
+        }
       }
     },
-    [isVideo, nextItem, prevItem, openLightbox],
+    [media, selectedIndex, scrollPrev, scrollNext, openLightbox],
   );
+
+  // ── Render slide ─────────────────────────────────────────────────
+
+  const renderSlide = (item: MediaItem, index: number) => {
+    const isSlideVideo = item.type === 'video';
+    const isSlideUploadVideo = isSlideVideo && item.source === 'upload';
+    const isSlidePlaying = playingSlides.has(index);
+    const playerTitle = `Video player: ${item.caption || 'Campaign video'}`;
+    const showDarken = settings.carouselDarkenUnfocused && index !== selectedIndex;
+
+    return (
+      <div
+        key={item.id}
+        role="group"
+        aria-roledescription="slide"
+        aria-label={`Slide ${index + 1} of ${media.length}`}
+        style={{
+          flex: `0 0 ${slideBasis}`,
+          minWidth: 0,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius,
+          height: '100%',
+        }}
+      >
+        {isSlideVideo && isSlidePlaying ? (
+          isSlideUploadVideo ? (
+            <Box
+              data-testid="video-player-surface"
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'transparent',
+              }}
+            >
+              <video
+                src={item.url}
+                controls
+                autoPlay
+                playsInline
+                poster={item.thumbnail}
+                aria-label={playerTitle}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'transparent' }}
+              />
+            </Box>
+          ) : (
+            <Box
+              data-testid="video-player-surface"
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'transparent',
+              }}
+            >
+              <iframe
+                src={withAutoplay(item.embedUrl ?? item.url)}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={playerTitle}
+                style={{ width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' }}
+              />
+            </Box>
+          )
+        ) : isSlideVideo ? (
+          <div
+            style={{ width: '100%', height: '100%', backgroundColor: 'transparent', position: 'relative', cursor: 'pointer' }}
+            onClick={() => setPlayingSlides((prev) => new Set(prev).add(index))}
+          >
+            <Image
+              src={item.thumbnail}
+              alt={item.caption || 'Campaign video'}
+              h="100%"
+              fit="contain"
+            />
+            <ActionIcon
+              pos="absolute"
+              top="50%"
+              left="50%"
+              style={{ transform: 'translate(-50%, -50%)' }}
+              size="xl"
+              radius="xl"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPlayingSlides((prev) => new Set(prev).add(index));
+              }}
+              aria-label="Play video"
+            >
+              <IconPlayerPlay size={32} fill="currentColor" />
+            </ActionIcon>
+          </div>
+        ) : (
+          <div
+            style={{ width: '100%', height: '100%', cursor: 'zoom-in' }}
+            onClick={openLightbox}
+          >
+            <Image
+              src={item.url}
+              alt={item.caption || 'Campaign image'}
+              fit="contain"
+              h="100%"
+            />
+          </div>
+        )}
+
+        {/* Darken overlay for unfocused slides */}
+        {showDarken && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: `rgba(0, 0, 0, ${settings.carouselDarkenOpacity})`,
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
+      </div>
+    );
+  };
 
   // ── Main render ──────────────────────────────────────────────────
 
-  const testId = isVideo ? 'video-player-frame' : 'image-viewer-frame';
-  const ariaLabel = isVideo
-    ? `Video ${currentIndex + 1} of ${media.length}: ${currentItem.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`
-    : `View image ${currentIndex + 1} of ${media.length}`;
+  const isCurrentVideo = currentItem?.type === 'video';
+  const testId = isCurrentVideo ? 'video-player-frame' : 'image-viewer-frame';
+  const ariaLabel = isCurrentVideo
+    ? `Video ${selectedIndex + 1} of ${media.length}: ${currentItem.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`
+    : `View image ${selectedIndex + 1} of ${media.length}`;
+
+  // Edge fade mask
+  const edgeFadeMask = settings.carouselEdgeFade
+    ? 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)'
+    : undefined;
 
   return (
     <Stack gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
@@ -351,11 +433,10 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
       <Box
         pos="relative"
         data-testid={testId}
-        role={isVideo ? 'region' : 'button'}
+        role="region"
         tabIndex={0}
         aria-label={ariaLabel}
-        onClick={handleFrameClick}
-        {...swipeHandlers}
+        aria-roledescription="carousel"
         style={{
           width: '100%',
           maxWidth: frameMaxWidth,
@@ -367,30 +448,36 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
           minHeight: heightConstraint === 'manual' ? manualHeight : undefined,
           aspectRatio: heightConstraint === 'manual' ? undefined : aspectRatio,
           overflow: 'hidden',
-          borderRadius,
           boxShadow,
         }}
         onKeyDown={handleKeyDown}
       >
-        {renderPreviousOverlay()}
-
-        <Box
-          key={`${currentItem.id}-${isVideo && isPlaying ? 'playing' : 'preview'}`}
-          ref={enterRef as React.RefObject<HTMLDivElement>}
+        {/* Embla viewport */}
+        <div
+          ref={emblaRef}
           style={{
-            position: 'absolute',
-            inset: 0,
+            overflow: 'hidden',
             width: '100%',
             height: '100%',
-            willChange: 'transform, opacity',
-            zIndex: 2,
+            borderRadius,
+            WebkitMaskImage: edgeFadeMask,
+            maskImage: edgeFadeMask,
           }}
         >
-          {renderCurrentMedia()}
-        </Box>
+          {/* Embla container */}
+          <div
+            style={{
+              display: 'flex',
+              gap: `${gap}px`,
+              height: '100%',
+            }}
+          >
+            {media.map((item, index) => renderSlide(item, index))}
+          </div>
+        </div>
 
-        {/* Zoom button — images only */}
-        {!isVideo && (
+        {/* Zoom button — images only, single-slide mode */}
+        {!isCurrentVideo && visibleCards <= 1 && (
           <ActionIcon
             pos="absolute"
             bottom={12}
@@ -407,19 +494,19 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
 
         {/* Overlay navigation arrows */}
         <OverlayArrows
-          onPrev={prevItem}
-          onNext={nextItem}
+          onPrev={scrollPrev}
+          onNext={scrollNext}
           total={media.length}
           settings={settings}
-          previousLabel={isVideo ? 'Previous video (overlay)' : 'Previous image (overlay)'}
-          nextLabel={isVideo ? 'Next video (overlay)' : 'Next image (overlay)'}
+          previousLabel={isCurrentVideo ? 'Previous video (overlay)' : 'Previous image (overlay)'}
+          nextLabel={isCurrentVideo ? 'Next video (overlay)' : 'Next image (overlay)'}
         />
 
         {/* Overlay dot navigator (inside viewport) */}
         {settings.dotNavPosition !== 'below' && (
           <DotNavigator
             total={media.length}
-            currentIndex={currentIndex}
+            currentIndex={selectedIndex}
             onSelect={handleDotSelect}
             settings={settings}
           />
@@ -428,14 +515,14 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
 
       {/* Caption */}
       <Text size="sm" c="dimmed">
-        {currentItem.caption || (isVideo ? 'Untitled video' : 'Untitled image')}
+        {currentItem?.caption || (isCurrentVideo ? 'Untitled video' : 'Untitled image')}
       </Text>
 
       {/* Dot navigator (below viewport) */}
       {settings.dotNavPosition === 'below' && (
         <DotNavigator
           total={media.length}
-          currentIndex={currentIndex}
+          currentIndex={selectedIndex}
           onSelect={handleDotSelect}
           settings={settings}
         />
@@ -448,8 +535,8 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
             isOpen={isLightboxOpen}
             media={images}
             currentIndex={Math.max(0, images.indexOf(currentItem))}
-            onPrev={prevItem}
-            onNext={nextItem}
+            onPrev={scrollPrev}
+            onNext={scrollNext}
             onClose={closeLightbox}
           />
         </Suspense>

@@ -673,6 +673,18 @@ export interface SettingsResponse {
   cardJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
   adapterItemGap?: number;
   adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
+  // P22-P8d: Embla carousel settings
+  carouselVisibleCards?: number;
+  carouselAutoplay?: boolean;
+  carouselAutoplaySpeed?: number;
+  carouselAutoplayPauseOnHover?: boolean;
+  carouselAutoplayDirection?: 'ltr' | 'rtl';
+  carouselDragEnabled?: boolean;
+  carouselDarkenUnfocused?: boolean;
+  carouselDarkenOpacity?: number;
+  carouselEdgeFade?: boolean;
+  carouselLoop?: boolean;
+  carouselGap?: number;
 }
 
 /**

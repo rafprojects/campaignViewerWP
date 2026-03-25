@@ -1605,6 +1605,114 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   </Accordion.Panel>
                 </Accordion.Item>
 
+                {/* ── Carousel Settings ── */}
+                {(settings.unifiedGalleryEnabled
+                  ? settings.unifiedGalleryAdapterId === 'classic'
+                  : settings.imageGalleryAdapterId === 'classic' ||
+                    settings.videoGalleryAdapterId === 'classic'
+                ) && (
+                  <Accordion.Item value="carousel-settings">
+                    <Accordion.Control>Carousel Settings</Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap="md">
+                        <NumberInput
+                          label="Visible Cards"
+                          description="Number of slides visible at once in the carousel."
+                          value={settings.carouselVisibleCards}
+                          onChange={(value) =>
+                            updateSetting('carouselVisibleCards', typeof value === 'number' ? value : defaultSettings.carouselVisibleCards)
+                          }
+                          min={1} max={10} step={1}
+                        />
+                        <NumberInput
+                          label="Slide Gap (px)"
+                          description="Space between carousel slides."
+                          value={settings.carouselGap}
+                          onChange={(value) =>
+                            updateSetting('carouselGap', typeof value === 'number' ? value : defaultSettings.carouselGap)
+                          }
+                          min={0} max={64} step={4}
+                        />
+                        <Switch
+                          label="Loop"
+                          description="Continuously loop slides when reaching the end."
+                          checked={settings.carouselLoop}
+                          onChange={(e) => updateSetting('carouselLoop', e.currentTarget.checked)}
+                        />
+                        <Switch
+                          label="Drag Enabled"
+                          description="Allow dragging/swiping to navigate slides."
+                          checked={settings.carouselDragEnabled}
+                          onChange={(e) => updateSetting('carouselDragEnabled', e.currentTarget.checked)}
+                        />
+                        <Divider label="Autoplay" labelPosition="center" />
+                        <Switch
+                          label="Autoplay"
+                          description="Automatically advance slides."
+                          checked={settings.carouselAutoplay}
+                          onChange={(e) => updateSetting('carouselAutoplay', e.currentTarget.checked)}
+                        />
+                        {settings.carouselAutoplay && (
+                          <>
+                            <NumberInput
+                              label="Autoplay Speed (ms)"
+                              description="Delay between automatic slide transitions."
+                              value={settings.carouselAutoplaySpeed}
+                              onChange={(value) =>
+                                updateSetting('carouselAutoplaySpeed', typeof value === 'number' ? value : defaultSettings.carouselAutoplaySpeed)
+                              }
+                              min={500} max={15000} step={250}
+                            />
+                            <Switch
+                              label="Pause on Hover"
+                              description="Pause autoplay when the mouse hovers over the carousel."
+                              checked={settings.carouselAutoplayPauseOnHover}
+                              onChange={(e) => updateSetting('carouselAutoplayPauseOnHover', e.currentTarget.checked)}
+                            />
+                            <Select
+                              label="Autoplay Direction"
+                              description="Direction autoplay advances slides."
+                              value={settings.carouselAutoplayDirection}
+                              onChange={(value) =>
+                                updateSetting('carouselAutoplayDirection', (value ?? 'ltr') as 'ltr' | 'rtl')
+                              }
+                              data={[
+                                { value: 'ltr', label: 'Left to Right' },
+                                { value: 'rtl', label: 'Right to Left' },
+                              ]}
+                            />
+                          </>
+                        )}
+                        <Divider label="Visual Effects" labelPosition="center" />
+                        <Switch
+                          label="Darken Unfocused Slides"
+                          description="Apply a dark overlay on slides that are not currently selected."
+                          checked={settings.carouselDarkenUnfocused}
+                          onChange={(e) => updateSetting('carouselDarkenUnfocused', e.currentTarget.checked)}
+                        />
+                        {settings.carouselDarkenUnfocused && (
+                          <NumberInput
+                            label="Darken Opacity"
+                            description="Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
+                            value={settings.carouselDarkenOpacity}
+                            onChange={(value) =>
+                              updateSetting('carouselDarkenOpacity', typeof value === 'number' ? value : defaultSettings.carouselDarkenOpacity)
+                            }
+                            min={0} max={1} step={0.05}
+                            decimalScale={2}
+                          />
+                        )}
+                        <Switch
+                          label="Edge Fade"
+                          description="Fade slides at the edges of the carousel viewport."
+                          checked={settings.carouselEdgeFade}
+                          onChange={(e) => updateSetting('carouselEdgeFade', e.currentTarget.checked)}
+                        />
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
+
                 {/* ── Viewport Backgrounds ── */}
                 <Accordion.Item value="backgrounds">
                   <Accordion.Control>Viewport Backgrounds</Accordion.Control>

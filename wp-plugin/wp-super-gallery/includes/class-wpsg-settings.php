@@ -337,6 +337,18 @@ class WPSG_Settings {
         'adapter_justify_content'        => 'center',
         // P22-P8: Modal content vertical alignment
         'modal_content_vertical_align'   => 'top',
+        // P22-P8d: Embla carousel settings
+        'carousel_visible_cards'         => 1,
+        'carousel_autoplay'              => false,
+        'carousel_autoplay_speed'        => 3000,
+        'carousel_autoplay_pause_on_hover' => true,
+        'carousel_autoplay_direction'    => 'ltr',
+        'carousel_drag_enabled'          => true,
+        'carousel_darken_unfocused'      => false,
+        'carousel_darken_opacity'        => 0.5,
+        'carousel_edge_fade'             => false,
+        'carousel_loop'                  => true,
+        'carousel_gap'                   => 16,
     ];
 
     /**
@@ -451,6 +463,8 @@ class WPSG_Settings {
         'adapter_justify_content'     => ['start', 'center', 'end', 'space-between', 'space-evenly', 'stretch'],
         // P22-P8: Modal content vertical alignment
         'modal_content_vertical_align' => ['top', 'center', 'bottom'],
+        // P22-P8d: Embla carousel settings
+        'carousel_autoplay_direction'  => ['ltr', 'rtl'],
     ];
 
     /**
@@ -595,6 +609,11 @@ class WPSG_Settings {
         'adapter_max_height_pct'       => [50, 100],
         // P22-P7: Adapter item gap
         'adapter_item_gap'             => [0, 64],
+        // P22-P8d: Embla carousel settings
+        'carousel_visible_cards'       => [1, 10],
+        'carousel_autoplay_speed'      => [500, 15000],
+        'carousel_darken_opacity'      => [0, 1],
+        'carousel_gap'                 => [0, 64],
     ];
 
     /**

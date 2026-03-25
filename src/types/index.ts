@@ -786,6 +786,18 @@ export interface GalleryBehaviorSettings {
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: number;
   adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
+  // P22-P8d: Embla carousel settings
+  carouselVisibleCards: number;
+  carouselAutoplay: boolean;
+  carouselAutoplaySpeed: number;
+  carouselAutoplayPauseOnHover: boolean;
+  carouselAutoplayDirection: 'ltr' | 'rtl';
+  carouselDragEnabled: boolean;
+  carouselDarkenUnfocused: boolean;
+  carouselDarkenOpacity: number;
+  carouselEdgeFade: boolean;
+  carouselLoop: boolean;
+  carouselGap: number;
 }
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
@@ -1083,4 +1095,16 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: 16,
   adapterJustifyContent: 'center',
+  // P22-P8d: Embla carousel settings
+  carouselVisibleCards: 1,
+  carouselAutoplay: false,
+  carouselAutoplaySpeed: 3000,
+  carouselAutoplayPauseOnHover: true,
+  carouselAutoplayDirection: 'ltr',
+  carouselDragEnabled: true,
+  carouselDarkenUnfocused: false,
+  carouselDarkenOpacity: 0.5,
+  carouselEdgeFade: false,
+  carouselLoop: true,
+  carouselGap: 16,
 };
