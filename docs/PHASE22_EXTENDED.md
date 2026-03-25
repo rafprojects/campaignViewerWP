@@ -1066,11 +1066,13 @@ Recommended sequence to minimize conflicts:
 
 ---
 
-## Phase 8: Gallery Item Sizing Modes & Post-Phase-7 QA
+## Phase 8: Post-P7 QA Fixes, Carousel Overhaul & New Adapters
 
-> **Status:** Deferred. To be evaluated after Phase 7 QA.
+> **Status:** Active — implementing after Phase 7 commit.
 
-**Goal:** Address remaining responsive sizing refinements and any issues discovered during Phase 7 QA.
+**Goal:** Fix remaining Phase 7 QA issues, overhaul the carousel adapter with Embla Carousel, and add marquee + filmstrip gallery adapters.
+
+---
 
 ### 8a. Gallery Item Sizing Mode Controls (auto / static / percentage)
 
@@ -1090,6 +1092,147 @@ Recommended sequence to minimize conflicts:
 
 **Files:** `src/types/index.ts`, adapter files, `src/components/Admin/SettingsPanel.tsx`
 
-### 8b. Post-Phase-7 QA Findings
+---
 
-> Placeholder — add items here as they emerge from Phase 7 QA testing.
+### 8b. Compact Grid Justification Fix
+
+**Origin:** Phase 7 QA — `adapterJustifyContent` has no visible effect in CompactGridGallery.
+
+**Root Cause:** The CSS grid column template uses `repeat(auto-fill, minmax(min(…), 1fr))`. The `1fr` track max forces every column to consume all available space, leaving zero leftover space for `justify-content` to act on.
+
+**Fix:** Change the column max from `1fr` to the fixed `cardWidth` value so cards stay at their natural size and `justify-content` controls the positioning of the group:
+```tsx
+// Before:
+gridTemplateColumns: `repeat(auto-fill, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), 1fr))`
+// After:
+gridTemplateColumns: `repeat(auto-fill, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), ${cardWidth}px))`
+```
+
+The `auto-fill` keyword still determines responsive column count; partial rows are positioned by `justify-content`.
+
+**Files:** `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx`
+
+**Status:** ✅ Implemented with Phase 8 commit.
+
+---
+
+### 8c. Wire `showCampaignGalleryLabels` to All Adapters
+
+**Origin:** Phase 7 QA — user requested a toggle to hide the "Gallery (#)" label on gallery sections.
+
+**Finding:** The setting `showCampaignGalleryLabels` and its SettingsPanel toggle already exist but are only checked in `MediaCarouselAdapter`. The other 7 adapters (compact-grid, masonry, justified, hexagonal, circular, diamond, layout-builder) render the `<Title>` block unconditionally.
+
+**Fix:** Wrap the `<Title>` in each of the 7 adapters with the same conditional already used in MediaCarouselAdapter:
+```tsx
+{settings.showCampaignGalleryLabels !== false && (
+  <Title …>…</Title>
+)}
+```
+
+No new settings or UI changes required.
+
+**Files:** All 7 non-carousel adapter files under `src/components/Galleries/Adapters/`
+
+**Status:** ✅ Implemented with Phase 8 commit.
+
+---
+
+### 8d. Carousel Adapter Overhaul (Embla Migration)
+
+**Origin:** Phase 7 QA — request for Elementor-style carousel features: multi-card viewport, autoplay, drag scrolling, unfocused card darkening, and edge fade effects.
+
+**Architecture Decision:** Migrate from the current custom carousel implementation to **Embla Carousel** (`embla-carousel-react` + plugins). Embla is lightweight (~7 KB gzip), provides multi-slide viewport, native drag/touch physics, autoplay, RTL, and responsive breakpoints out of the box. The custom `useCarousel`, `useSwipe`, and manual transform logic will be replaced by Embla's API.
+
+**New Dependencies:**
+- `embla-carousel-react` — React bindings
+- `embla-carousel-autoplay` — autoplay plugin
+- `embla-carousel-auto-scroll` — continuous scroll variant (optional, for marquee-like behavior)
+
+**New Settings** (all added to `GalleryBehaviorSettings`, `SettingsResponse`, PHP `$defaults`):
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `carouselVisibleCards` | `number` | `1` | Number of slides visible simultaneously |
+| `carouselAutoplay` | `boolean` | `false` | Enable auto-advance |
+| `carouselAutoplaySpeed` | `number` | `3000` | Autoplay interval in ms |
+| `carouselAutoplayPauseOnHover` | `boolean` | `true` | Pause autoplay on hover |
+| `carouselAutoplayDirection` | `'ltr' \| 'rtl'` | `'ltr'` | Autoplay scroll direction |
+| `carouselDragEnabled` | `boolean` | `true` | Allow click-drag and touch-drag |
+| `carouselDarkenUnfocused` | `boolean` | `false` | Dim non-center slides |
+| `carouselDarkenOpacity` | `number` | `0.5` | Opacity for darkened slides (0–1) |
+| `carouselEdgeFade` | `boolean` | `false` | Fade effect at carousel viewport edges |
+| `carouselLoop` | `boolean` | `true` | Infinite loop scrolling |
+| `carouselGap` | `number` | `16` | Gap between slides in px |
+
+**SettingsPanel:** Add a **Carousel Settings** accordion inside the Media Display tab, grouping all carousel-specific controls. Show/hide conditionally when the active adapter is `'carousel'`.
+
+**Implementation Plan:**
+1. Install Embla dependencies
+2. Create `useEmblaCarousel` wrapper hook that configures Embla from settings
+3. Rewrite `MediaCarouselAdapter` internals to use Embla viewport/container pattern
+4. Wire autoplay plugin when `carouselAutoplay` is true
+5. Apply darkening overlay on non-selected slides via Embla's `slidesInView` API
+6. Apply edge fade via CSS `mask-image: linear-gradient(…)` on the viewport
+7. Preserve existing Lightbox, video playback, and dot navigator integrations
+8. Add all new settings to TS types, PHP `$defaults`/`$valid_options`/`$field_ranges`, and `SettingsResponse`
+9. Add Carousel Settings accordion to SettingsPanel
+
+**Files:** `MediaCarouselAdapter.tsx`, `src/types/index.ts`, `src/services/apiClient.ts`, `src/components/Admin/SettingsPanel.tsx`, `class-wpsg-settings.php`, `package.json`
+
+---
+
+### 8e. Marquee / Ticker Adapter
+
+**Origin:** Phase 8 brainstorm — continuous auto-scrolling gallery strip.
+
+**Description:** A horizontal (or optionally vertical) continuously scrolling strip of thumbnails. Clicking an item pauses the scroll and opens the lightbox. Great for "featured" or "latest" media strips, and visually distinct from all existing adapters.
+
+**Implementation Approach:**
+- CSS `@keyframes` animation on a duplicated child list (clone items to create seamless loop)
+- `animation: scroll-marquee Xs linear infinite` with duration derived from item count + speed setting
+- Pause on hover via `animation-play-state: paused`
+- Alternatively, use Embla with `embla-carousel-auto-scroll` plugin for physics-based continuous scroll
+
+**New Settings:**
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `marqueeSpeed` | `number` | `30` | Scroll speed (px/s) |
+| `marqueeDirection` | `'left' \| 'right' \| 'up' \| 'down'` | `'left'` | Scroll direction |
+| `marqueePauseOnHover` | `boolean` | `true` | Pause animation on hover |
+| `marqueeItemHeight` | `number` | `120` | Thumbnail height in px |
+| `marqueeItemGap` | `number` | `12` | Gap between items in px |
+
+**Files:** New adapter file `src/components/Galleries/Adapters/marquee/MarqueeGallery.tsx`, adapter registry, types, settings, PHP
+
+---
+
+### 8f. Filmstrip Adapter
+
+**Origin:** Phase 8 brainstorm — horizontal scrollable single-row gallery.
+
+**Description:** A fixed-height horizontal row of thumbnails that scrolls via native CSS `overflow-x: auto` with `scroll-snap-type: x mandatory`. Like a film negative strip. Optionally shows a larger preview pane above the strip that displays the snapped/hovered item.
+
+**Implementation Approach:**
+- Container: `display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch`
+- Items: `scroll-snap-align: start; flex-shrink: 0`
+- Optional preview pane: tracks current snapped item via `IntersectionObserver` or scroll position
+- Lightbox on click
+
+**New Settings:**
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `filmstripHeight` | `number` | `120` | Thumbnail height in px |
+| `filmstripGap` | `number` | `8` | Gap between items in px |
+| `filmstripShowPreview` | `boolean` | `false` | Show large preview pane above strip |
+| `filmstripPreviewHeight` | `number` | `400` | Preview pane height in px |
+| `filmstripSnapAlign` | `'start' \| 'center'` | `'start'` | Scroll snap alignment |
+
+**Files:** New adapter file `src/components/Galleries/Adapters/filmstrip/FilmstripGallery.tsx`, adapter registry, types, settings, PHP
+
+---
+
+### 8g. Post-Phase-7/8 QA Findings
+
+> Placeholder — add items here as they emerge from Phase 8 QA testing.

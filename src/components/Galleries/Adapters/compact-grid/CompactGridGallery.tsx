@@ -52,18 +52,20 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
-      <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-        <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-          {settings.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
-          Gallery ({media.length})
-        </Group>
-      </Title>
+      {settings.showCampaignGalleryLabels !== false && (
+        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
+            {settings.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
+            Gallery ({media.length})
+          </Group>
+        </Title>
+      )}
 
       {/* Responsive auto-fill grid — fills container in 'fill' mode */}
       <Box
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(auto-fill, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), 1fr))`,
+          gridTemplateColumns: `repeat(auto-fill, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), ${cardWidth}px))`,
           gap: `${gap}px`,
           justifyContent: settings.adapterJustifyContent || 'center',
         }}

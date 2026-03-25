@@ -691,3 +691,45 @@ LOE: Low-Medium (2-3 hours) | Impact: Low
 Files: Multiple hooks  
 Standardize error handling across admin hooks. Inconsistent DX, no user impact.  
 LOE: Medium (3-4 hours) | Impact: Low
+
+---
+
+## Deferred Gallery Adapters
+
+> **Origin:** Phase 8 brainstorm (P22). These gallery adapter concepts were identified as valuable additions but deferred from the active Phase 8 scope. They follow the existing `GalleryAdapterProps` contract and register via `registerAdapter` like all current adapters.
+
+### Mosaic / Pinterest Adapter
+Irregular tile sizes (large hero + small surrounding grid) based on aspect ratios or media importance. Similar to Google Photos' auto-layout algorithm. Tiles are assigned sizes dynamically (e.g., 2×2, 1×1, 2×1) to maximize area coverage while respecting aspect ratios.  
+LOE: Medium-High | Impact: Medium
+
+### Coverflow / 3D Adapter
+CSS 3D perspective carousel where side items are rotated and scaled down. Classic Apple-style cover flow effect. Uses `transform: perspective() rotateY()` and z-index layering. Navigation via click, keyboard, or drag.  
+LOE: Medium | Impact: Medium
+
+### Spotlight / Hero Adapter
+Large featured item (hero) with a row/grid of smaller thumbnails below or beside it. Clicking a thumbnail promotes it to the hero position with a crossfade transition. Good for campaign highlights.  
+LOE: Low-Medium | Impact: Medium
+
+### Stacked / Deck Adapter
+Cards stacked on top of each other with slight offset/rotation. Swipe or click to move the top card to the back (Tinder-like). Touch-optimized for mobile previews.  
+LOE: Medium | Impact: Low-Medium
+
+### Waterfall Adapter
+Vertical masonry variant where items drop in sequence with staggered CSS animation (`@keyframes` with incremental `animation-delay`). Content-driven heights. Essentially masonry with entrance animations.  
+LOE: Low (masonry variant) | Impact: Low
+
+### Timeline Adapter
+Chronological layout with items on alternating sides of a vertical center line. Date/caption labels at each node. Good for event-based or campaign-chronology galleries.  
+LOE: Medium | Impact: Low-Medium
+
+### Isotope / Filterable Grid Adapter
+Grid layout with animated filtering, sorting, and category transitions. Items shuffle positions with smooth FLIP animations when filter criteria change. Requires extending the adapter interface to accept filter/sort props.  
+LOE: Medium-High | Impact: Medium
+
+### Grid with Variable Aspect-Ratio Tiles Adapter
+Auto-assigns tile sizes (1×1, 2×1, 1×2, 2×2) based on media metadata (aspect ratio, resolution). Creates a densely packed, visually varied grid without manual configuration. Similar to Google Photos or Flickr's justified grid but with explicit CSS Grid tracks.  
+LOE: Medium-High | Impact: Medium
+
+### Vertical Scroll Snap Adapter
+Mobile-first full-screen vertical carousel using CSS `scroll-snap-type: y mandatory`. Each media item occupies the full viewport height. Swiping vertically snaps to the next item. Ideal for story-style or Instagram-reel-like campaign presentations.  
+LOE: Medium | Impact: Medium

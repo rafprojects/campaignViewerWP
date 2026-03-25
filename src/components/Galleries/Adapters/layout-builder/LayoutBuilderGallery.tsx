@@ -569,12 +569,14 @@ function LayoutBuilderGalleryInner({
       <style>{hoverStylesCss}</style>
 
       {/* Header */}
-      <Text size="sm" fw={500} component="div" ta={settings.galleryLabelJustification || 'left'}>
-        <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          {settings.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
-          Gallery ({mediaCount})
-        </Box>
-      </Text>
+      {settings.showCampaignGalleryLabels !== false && (
+        <Text size="sm" fw={500} component="div" ta={settings.galleryLabelJustification || 'left'}>
+          <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {settings.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
+            Gallery ({mediaCount})
+          </Box>
+        </Text>
+      )}
 
       {/* Mismatch warning */}
       {hasMismatch && (

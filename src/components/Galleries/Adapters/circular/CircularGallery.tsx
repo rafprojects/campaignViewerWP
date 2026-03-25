@@ -49,12 +49,14 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
-      <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-        <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-          {settings.showGalleryLabelIcon && <IconCircles size={18} />}
-          Gallery ({media.length})
-        </Group>
-      </Title>
+      {settings.showCampaignGalleryLabels !== false && (
+        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
+            {settings.showGalleryLabelIcon && <IconCircles size={18} />}
+            Gallery ({media.length})
+          </Group>
+        </Title>
+      )}
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
