@@ -61,11 +61,12 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
         </Title>
       )}
 
-      {/* Responsive auto-fill grid — fills container in 'fill' mode */}
+      {/* auto-fit collapses empty tracks so justify-content can distribute items */}
       <Box
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(auto-fill, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), ${cardWidth}px))`,
+          width: '100%',
+          gridTemplateColumns: `repeat(auto-fit, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), ${cardWidth}px))`,
           gap: `${gap}px`,
           justifyContent: settings.adapterJustifyContent || 'center',
         }}
