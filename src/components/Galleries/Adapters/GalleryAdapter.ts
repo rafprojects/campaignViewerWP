@@ -40,6 +40,39 @@ export type AdapterSettingGroup =
   | 'shape'
   | 'layout-builder';
 
+export interface AdapterNumberSettingField {
+  control: 'number';
+  key: keyof GalleryBehaviorSettings;
+  label: string;
+  description: string;
+  appliesTo?: 'always' | 'unified' | 'image' | 'video';
+  min: number;
+  max: number;
+  step: number;
+  fallback: number;
+}
+
+export interface AdapterSelectSettingField {
+  control: 'select';
+  key: keyof GalleryBehaviorSettings;
+  label: string;
+  description: string;
+  appliesTo?: 'always' | 'unified' | 'image' | 'video';
+  fallback: string;
+  options: Array<{
+    value: string;
+    label: string;
+  }>;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+}
+
+export type AdapterSettingFieldDefinition = AdapterNumberSettingField | AdapterSelectSettingField;
+
+export interface AdapterSettingGroupDefinition {
+  group: AdapterSettingGroup;
+  fields: AdapterSettingFieldDefinition[];
+}
+
 export type AdapterOptionContext =
   | 'unified-gallery'
   | 'per-type-gallery'

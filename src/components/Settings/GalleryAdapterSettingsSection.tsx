@@ -1,6 +1,6 @@
 import { Box, Group, NumberInput, Select, SegmentedControl, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
-import { anyAdapterUsesSettingGroup, getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
+import type { GalleryBehaviorSettings } from '@/types';
+import { anyAdapterUsesSettingGroup, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
   key: K,
@@ -48,6 +48,48 @@ function getActiveAdapterIds(settings: GalleryBehaviorSettings): string[] {
   return [...getImageAdapterIds(settings), ...getVideoAdapterIds(settings)];
 }
 
+function renderSettingFields(
+  group: 'compact-grid' | 'justified' | 'masonry' | 'shape' | 'layout-builder',
+  settings: GalleryBehaviorSettings,
+  updateSetting: UpdateGallerySetting,
+  options?: {
+    includeAppliesTo?: Array<'always' | 'unified' | 'image' | 'video'>;
+  },
+) {
+  const includeAppliesTo = options?.includeAppliesTo ?? ['always'];
+
+  return getSettingGroupFieldDefinitions(group)
+    .filter((field) => includeAppliesTo.includes(field.appliesTo ?? 'always'))
+    .map((field) => {
+      if (field.control === 'number') {
+        return (
+          <NumberInput
+            key={`${group}-${String(field.key)}`}
+            label={field.label}
+            description={field.description}
+            value={settings[field.key] as number | undefined}
+            onChange={(value) => updateSetting(field.key, (typeof value === 'number' ? value : field.fallback) as GalleryBehaviorSettings[typeof field.key])}
+            min={field.min}
+            max={field.max}
+            step={field.step}
+          />
+        );
+      }
+
+      return (
+        <Select
+          key={`${group}-${String(field.key)}`}
+          label={field.label}
+          description={field.description}
+          size={field.size}
+          value={settings[field.key] as string | undefined}
+          onChange={(value) => updateSetting(field.key, (value ?? field.fallback) as GalleryBehaviorSettings[typeof field.key])}
+          data={field.options}
+        />
+      );
+    });
+}
+
 export function GalleryAdapterSettingsSection({ settings, updateSetting }: GalleryAdapterSettingsSectionProps) {
   const imageAdapterIds = getImageAdapterIds(settings);
   const videoAdapterIds = getVideoAdapterIds(settings);
@@ -57,6 +99,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
   const usesJustified = anyAdapterUsesSettingGroup(activeAdapterIds, 'justified');
   const usesMasonry = anyAdapterUsesSettingGroup(activeAdapterIds, 'masonry');
   const usesShape = anyAdapterUsesSettingGroup(activeAdapterIds, 'shape');
+  const usesLayoutBuilder = anyAdapterUsesSettingGroup(activeAdapterIds, 'layout-builder');
   const imageUsesShape = anyAdapterUsesSettingGroup(imageAdapterIds, 'shape');
   const videoUsesShape = anyAdapterUsesSettingGroup(videoAdapterIds, 'shape');
 
@@ -134,18 +177,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
                   </SimpleGrid>
                 );
               })}
-              <Select
-                label="Layout Builder Scope"
-                description="Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
-                size="xs"
-                value={settings.layoutBuilderScope}
-                onChange={(value) => updateSetting('layoutBuilderScope', (value ?? 'full') as GalleryBehaviorSettings['layoutBuilderScope'])}
-                data={[
-                  { value: 'full', label: 'Full Gallery' },
-                  { value: 'viewport', label: 'Viewport Only' },
-                ]}
-                mt="sm"
-              />
+              {usesLayoutBuilder && renderSettingFields('layout-builder', settings, updateSetting)}
             </Box>
           ) : (
             <>
@@ -198,97 +230,27 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
 
       {usesCompactGrid && (
         <Group grow>
-          <NumberInput
-            label="Card Min Width (px)"
-            description="Minimum width of each grid card. Grid auto-fills based on available space."
-            value={settings.gridCardWidth}
-            onChange={(value) => updateSetting('gridCardWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardWidth)}
-            min={80}
-            max={400}
-            step={10}
-          />
-          <NumberInput
-            label="Card Height (px)"
-            description="Fixed height of each grid card."
-            value={settings.gridCardHeight}
-            onChange={(value) => updateSetting('gridCardHeight', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gridCardHeight)}
-            min={80}
-            max={600}
-            step={10}
-          />
+          {renderSettingFields('compact-grid', settings, updateSetting)}
         </Group>
       )}
 
       {usesJustified && (
         <>
-          <NumberInput
-            label="Target Row Height (px)"
-            description="Ideal height for each justified row. Rows scale slightly to fill container width while preserving aspect ratios."
-            value={settings.mosaicTargetRowHeight}
-            onChange={(value) => updateSetting('mosaicTargetRowHeight', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mosaicTargetRowHeight)}
-            min={60}
-            max={600}
-            step={10}
-          />
-          <NumberInput
-            label="Photo Normalize Height (px)"
-            description="Normalization height used to scale image dimensions before layout. Lower values produce smaller tiles."
-            value={settings.photoNormalizeHeight}
-            onChange={(value) => updateSetting('photoNormalizeHeight', typeof value === 'number' ? value : 300)}
-            min={100}
-            max={800}
-            step={10}
-          />
+          {renderSettingFields('justified', settings, updateSetting)}
         </>
       )}
 
       {usesMasonry && (
-        <NumberInput
-          label="Masonry Columns (0 = auto)"
-          description="Number of masonry columns. Set 0 to let the layout choose responsively (1–4 based on width)."
-          value={settings.masonryColumns}
-          onChange={(value) => updateSetting('masonryColumns', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.masonryColumns)}
-          min={0}
-          max={8}
-          step={1}
-        />
+        renderSettingFields('masonry', settings, updateSetting)
       )}
 
       {usesShape && (
         settings.unifiedGalleryEnabled ? (
-          <NumberInput
-            label="Tile Size (px)"
-            description="Width and height of each shape tile (unified gallery)."
-            value={settings.tileSize}
-            onChange={(value) => updateSetting('tileSize', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileSize)}
-            min={60}
-            max={400}
-            step={10}
-          />
+          renderSettingFields('shape', settings, updateSetting, { includeAppliesTo: ['unified'] })
         ) : (
           <Group grow>
-            {imageUsesShape && (
-              <NumberInput
-                label="Image Tile Size (px)"
-                description="Shape tile size for the image gallery."
-                value={settings.imageTileSize}
-                onChange={(value) => updateSetting('imageTileSize', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageTileSize)}
-                min={60}
-                max={400}
-                step={10}
-              />
-            )}
-            {videoUsesShape && (
-              <NumberInput
-                label="Video Tile Size (px)"
-                description="Shape tile size for the video gallery."
-                value={settings.videoTileSize}
-                onChange={(value) => updateSetting('videoTileSize', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoTileSize)}
-                min={60}
-                max={400}
-                step={10}
-              />
-            )}
+            {imageUsesShape && renderSettingFields('shape', settings, updateSetting, { includeAppliesTo: ['image'] })}
+            {videoUsesShape && renderSettingFields('shape', settings, updateSetting, { includeAppliesTo: ['video'] })}
           </Group>
         )
       )}

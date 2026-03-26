@@ -264,6 +264,12 @@ Completed first extraction slice:
 6. validated the new `SettingsPanel` structure with a green production `build:wp` run and the existing focused `SettingsPanel` test suite
 7. extracted viewport background and gallery label accordion items into a dedicated `GalleryPresentationSections` module so the layout tab now delegates most gallery-specific field blocks
 8. revalidated the updated `SettingsPanel` composition with a green production `build:wp` run and the focused `SettingsPanel` test suite after recovering from an intermediate malformed panel edit during extraction
+9. extracted the entire campaign viewer tab body into a dedicated `CampaignViewerSettingsSection` module so `SettingsPanel` now delegates another large, self-contained settings domain instead of holding the viewer-specific control tree inline
+10. revalidated the viewer-tab extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite
+11. extracted the advanced tab into a dedicated `AdvancedSettingsSection` module so the remaining inline `SettingsPanel` surface is more clearly limited to orchestration and typography-specific flows
+12. revalidated the advanced-tab extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite
+13. extracted the typography tab into a dedicated `TypographySettingsSection` module so `SettingsPanel` now delegates more of its self-contained tab bodies and further narrows its responsibility toward state orchestration, save/reset handling, and shared update helpers
+14. revalidated the typography extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite after normalizing uploaded-font entries to the existing typography editor font shape
 
 ### Files to modify
 
@@ -307,6 +313,12 @@ Completed initial schema extraction:
 4. replaced duplicated adapter option lists in SettingsPanel and UnifiedCampaignModal with registry-driven options
 5. switched gallery render paths to resolve runtime adapters through the shared registry instead of local switch statements
 6. added focused tests for registry metadata and resolver compatibility
+7. moved the compact-grid, justified, and masonry adapter field definitions into registry-owned setting-group metadata so `GalleryAdapterSettingsSection` can render part of the adapter-specific UI from schema instead of hardcoded group branches
+8. validated the schema-driven field-definition slice with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
+9. extended the registry-owned field metadata to cover the shape adapter group as well, including unified and per-type tile-size fields, so the remaining adapter-specific sizing controls also render from schema definitions
+10. revalidated the expanded schema-driven adapter field rendering with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
+11. extended the adapter field schema to support select controls and moved the layout-builder scope selector into registry-owned metadata so the adapter settings UI is no longer limited to schema-driven numeric fields
+12. revalidated the select-field schema migration with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 

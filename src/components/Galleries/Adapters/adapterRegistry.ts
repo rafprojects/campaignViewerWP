@@ -10,6 +10,8 @@ import type { Breakpoint } from '@/hooks/useBreakpoint';
 import type {
   AdapterOptionContext,
   AdapterRegistration,
+  AdapterSettingFieldDefinition,
+  AdapterSettingGroupDefinition,
   AdapterSettingGroup,
   GalleryAdapterId,
   GalleryAdapterProps,
@@ -123,6 +125,129 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
   },
 ];
 
+const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> = {
+  'compact-grid': {
+    group: 'compact-grid',
+    fields: [
+      {
+        control: 'number',
+        key: 'gridCardWidth',
+        label: 'Card Min Width (px)',
+        description: 'Minimum width of each grid card. Grid auto-fills based on available space.',
+        min: 80,
+        max: 400,
+        step: 10,
+        fallback: 220,
+      },
+      {
+        control: 'number',
+        key: 'gridCardHeight',
+        label: 'Card Height (px)',
+        description: 'Fixed height of each grid card.',
+        min: 80,
+        max: 600,
+        step: 10,
+        fallback: 180,
+      },
+    ],
+  },
+  justified: {
+    group: 'justified',
+    fields: [
+      {
+        control: 'number',
+        key: 'mosaicTargetRowHeight',
+        label: 'Target Row Height (px)',
+        description: 'Ideal height for each justified row. Rows scale slightly to fill container width while preserving aspect ratios.',
+        min: 60,
+        max: 600,
+        step: 10,
+        fallback: 220,
+      },
+      {
+        control: 'number',
+        key: 'photoNormalizeHeight',
+        label: 'Photo Normalize Height (px)',
+        description: 'Normalization height used to scale image dimensions before layout. Lower values produce smaller tiles.',
+        min: 100,
+        max: 800,
+        step: 10,
+        fallback: 300,
+      },
+    ],
+  },
+  masonry: {
+    group: 'masonry',
+    fields: [
+      {
+        control: 'number',
+        key: 'masonryColumns',
+        label: 'Masonry Columns (0 = auto)',
+        description: 'Number of masonry columns. Set 0 to let the layout choose responsively (1-4 based on width).',
+        min: 0,
+        max: 8,
+        step: 1,
+        fallback: 0,
+      },
+    ],
+  },
+  shape: {
+    group: 'shape',
+    fields: [
+      {
+        control: 'number',
+        key: 'tileSize',
+        label: 'Tile Size (px)',
+        description: 'Width and height of each shape tile (unified gallery).',
+        appliesTo: 'unified',
+        min: 60,
+        max: 400,
+        step: 10,
+        fallback: 150,
+      },
+      {
+        control: 'number',
+        key: 'imageTileSize',
+        label: 'Image Tile Size (px)',
+        description: 'Shape tile size for the image gallery.',
+        appliesTo: 'image',
+        min: 60,
+        max: 400,
+        step: 10,
+        fallback: 150,
+      },
+      {
+        control: 'number',
+        key: 'videoTileSize',
+        label: 'Video Tile Size (px)',
+        description: 'Shape tile size for the video gallery.',
+        appliesTo: 'video',
+        min: 60,
+        max: 400,
+        step: 10,
+        fallback: 150,
+      },
+    ],
+  },
+  'layout-builder': {
+    group: 'layout-builder',
+    fields: [
+      {
+        control: 'select',
+        key: 'layoutBuilderScope',
+        label: 'Layout Builder Scope',
+        description: 'Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area.',
+        fallback: 'full',
+        size: 'xs',
+        options: [
+          { value: 'full', label: 'Full Gallery' },
+          { value: 'viewport', label: 'Viewport Only' },
+        ],
+      },
+    ],
+  },
+};
+
 for (const adapter of BUILTIN_ADAPTERS) {
   registerAdapter(adapter);
 }
@@ -157,6 +282,14 @@ export function adapterUsesSettingGroup(id: string | null | undefined, group: Ad
 
 export function anyAdapterUsesSettingGroup(ids: Array<string | null | undefined>, group: AdapterSettingGroup): boolean {
   return ids.some((id) => adapterUsesSettingGroup(id, group));
+}
+
+export function getSettingGroupDefinition(group: AdapterSettingGroup): AdapterSettingGroupDefinition | undefined {
+  return SETTING_GROUP_DEFINITIONS[group];
+}
+
+export function getSettingGroupFieldDefinitions(group: AdapterSettingGroup): AdapterSettingFieldDefinition[] {
+  return getSettingGroupDefinition(group)?.fields ?? [];
 }
 
 export function isAdapterSupportedAtBreakpoint(id: string | null | undefined, breakpoint: Breakpoint): boolean {

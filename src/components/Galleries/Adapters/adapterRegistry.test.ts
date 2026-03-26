@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   anyAdapterUsesSettingGroup,
   getAdapterSelectOptions,
+  getSettingGroupFieldDefinitions,
   normalizeAdapterId,
   resolveAdapter,
 } from './adapterRegistry';
@@ -36,6 +37,28 @@ describe('adapterRegistry', () => {
     expect(anyAdapterUsesSettingGroup(['mosaic'], 'justified')).toBe(true);
     expect(anyAdapterUsesSettingGroup(['diamond'], 'shape')).toBe(true);
     expect(anyAdapterUsesSettingGroup(['classic'], 'masonry')).toBe(false);
+  });
+
+  it('exposes schema-driven field definitions for adapter setting groups', () => {
+    expect(getSettingGroupFieldDefinitions('compact-grid').map((field) => field.key)).toEqual([
+      'gridCardWidth',
+      'gridCardHeight',
+    ]);
+    expect(getSettingGroupFieldDefinitions('justified').map((field) => field.key)).toEqual([
+      'mosaicTargetRowHeight',
+      'photoNormalizeHeight',
+    ]);
+    expect(getSettingGroupFieldDefinitions('shape').map((field) => field.key)).toEqual([
+      'tileSize',
+      'imageTileSize',
+      'videoTileSize',
+    ]);
+    expect(getSettingGroupFieldDefinitions('layout-builder')).toEqual([
+      expect.objectContaining({
+        control: 'select',
+        key: 'layoutBuilderScope',
+      }),
+    ]);
   });
 
   it('falls back to the classic adapter component for unknown ids', () => {
