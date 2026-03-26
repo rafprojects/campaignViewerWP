@@ -57,7 +57,7 @@ import { TypographySettingsSection } from '../Settings/TypographySettingsSection
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorModal } from '@/components/Common/GalleryConfigEditorModal';
-import { buildGalleryConfigFromLegacySettings } from '@/utils/galleryConfig';
+import { buildGalleryConfigFromLegacySettings, collectGalleryAdapterSettingValues } from '@/utils/galleryConfig';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
@@ -84,22 +84,6 @@ function getRepresentativeGalleryCommonSetting(
 function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   const seed = buildGalleryConfigFromLegacySettings(settings);
 
-  (['desktop', 'tablet', 'mobile'] as const).forEach((breakpoint) => {
-    (['unified', 'image', 'video'] as const).forEach((scope) => {
-      if (seed.breakpoints?.[breakpoint]?.[scope]?.adapterId !== 'masonry') {
-        return;
-      }
-
-      seed.breakpoints![breakpoint]![scope] = {
-        ...(seed.breakpoints?.[breakpoint]?.[scope] ?? {}),
-        adapterSettings: {
-          ...(seed.breakpoints?.[breakpoint]?.[scope]?.adapterSettings ?? {}),
-          masonryColumns: settings.masonryColumns,
-        },
-      };
-    });
-  });
-
   return settings.galleryConfig
     ? {
       ...seed,
@@ -110,32 +94,6 @@ function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
       },
     }
     : seed;
-}
-
-function getRepresentativeAdapterSetting(
-  galleryConfig: GalleryConfig,
-  group: 'masonry',
-  key: 'masonryColumns',
-): number | undefined {
-  const scopes = galleryConfig.mode === 'unified'
-    ? ['unified'] as const
-    : ['image', 'video'] as const;
-
-  for (const breakpoint of ['desktop', 'tablet', 'mobile'] as const) {
-    for (const scope of scopes) {
-      const scopeConfig = galleryConfig.breakpoints?.[breakpoint]?.[scope];
-      if (group === 'masonry' && scopeConfig?.adapterId !== 'masonry') {
-        continue;
-      }
-
-      const value = scopeConfig?.adapterSettings?.[key];
-      if (typeof value === 'number') {
-        return value;
-      }
-    }
-  }
-
-  return undefined;
 }
 
 export interface SettingsData extends GalleryBehaviorSettings {
@@ -277,6 +235,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
   const handleGalleryConfigEditorSave = (galleryConfig: GalleryConfig) => {
     applySettingsUpdate((prev) => {
+      const adapterSettingValues = collectGalleryAdapterSettingValues(galleryConfig);
       const nextUnifiedAdapterId = galleryConfig.breakpoints?.desktop?.unified?.adapterId
         ?? galleryConfig.breakpoints?.tablet?.unified?.adapterId
         ?? galleryConfig.breakpoints?.mobile?.unified?.adapterId
@@ -289,10 +248,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const mobileVideoAdapterId = galleryConfig.breakpoints?.mobile?.video?.adapterId ?? prev.mobileVideoAdapterId;
       const gallerySectionPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionPadding') ?? prev.gallerySectionPadding;
       const adapterContentPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterContentPadding') ?? prev.adapterContentPadding;
-      const masonryColumns = getRepresentativeAdapterSetting(galleryConfig, 'masonry', 'masonryColumns') ?? prev.masonryColumns;
 
       return {
         ...prev,
+        ...(adapterSettingValues as Partial<SettingsData>),
         galleryConfig,
         unifiedGalleryEnabled: galleryConfig.mode === 'unified',
         gallerySelectionMode: galleryConfig.mode === 'unified' ? 'unified' : 'per-breakpoint',
@@ -307,7 +266,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         mobileVideoAdapterId,
         gallerySectionPadding,
         adapterContentPadding,
-        masonryColumns,
       };
     });
 

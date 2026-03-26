@@ -400,4 +400,58 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.gallerySectionPadding).toBe(28);
     expect(resolved.adapterItemGap).toBe(6);
   });
+
+  it('projects nested adapter settings back onto legacy runtime fields', () => {
+    const s = makeSettings({
+      gridCardWidth: 160,
+      galleryConfig: {
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'compact-grid',
+              adapterSettings: {
+                gridCardWidth: 220,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+
+    expect(resolved.gridCardWidth).toBe(220);
+  });
+
+  it('applies campaign nested adapter overrides over global adapter settings', () => {
+    const s = makeSettings({
+      gridCardWidth: 160,
+      galleryConfig: {
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'compact-grid',
+              adapterSettings: {
+                gridCardWidth: 220,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image', {
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterSettings: {
+              gridCardWidth: 260,
+            },
+          },
+        },
+      },
+    });
+
+    expect(resolved.gridCardWidth).toBe(260);
+  });
 });

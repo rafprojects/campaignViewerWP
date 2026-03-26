@@ -373,6 +373,33 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Masonry Columns (0 = auto)')).toBeInTheDocument();
   });
 
+  it('seeds additional registry-driven adapter values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'compact-grid',
+          gridCardWidth: 210,
+          gridCardHeight: 260,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+    expect(await screen.findByDisplayValue('210')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('260')).toBeInTheDocument();
+    expect(screen.getByLabelText('Card Min Width (px)')).toBeInTheDocument();
+  });
+
   it('interacts with Media Display tab controls', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

@@ -36,6 +36,36 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByDisplayValue('3')).toBeInTheDocument();
   });
 
+  it('renders registry-driven compact grid fields for matching adapters', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'compact-grid',
+                adapterSettings: {
+                  gridCardWidth: 180,
+                  gridCardHeight: 240,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByLabelText('Card Min Width (px)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Card Height (px)')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('180')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('240')).toBeInTheDocument();
+  });
+
   it('resets draft changes back to the opened baseline', async () => {
     const onSave = vi.fn();
 

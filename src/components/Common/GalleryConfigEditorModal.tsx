@@ -3,9 +3,14 @@ import { useEffect, useState } from 'react';
 
 import {
   adapterUsesSettingGroup,
+  getActiveSettingGroupDefinitions,
   getAdapterSelectOptions,
-  getSettingGroupFieldDefinitions,
 } from '@/components/Galleries/Adapters/adapterRegistry';
+import type {
+  AdapterSettingFieldDefinition,
+  AdapterSettingGroupDefinition,
+  AdapterSettingGroupScopeMode,
+} from '@/components/Galleries/Adapters/GalleryAdapter';
 import type { GalleryConfig, GalleryConfigBreakpoint, GalleryConfigMode, GalleryConfigScope } from '@/types';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 
@@ -57,19 +62,19 @@ function getRepresentativeCommonValue(
 function getRepresentativeAdapterSettingValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  group: 'masonry',
-  key: 'masonryColumns',
-): number | undefined {
-  const scopes = getEditableScopes(config?.mode ?? 'per-type');
+  group: AdapterSettingGroupDefinition,
+  field: AdapterSettingFieldDefinition,
+): number | string | undefined {
+  const scopes = getApplicableScopes(config?.mode ?? 'per-type', group.scopeMode ?? 'shared', field);
 
   for (const scope of scopes) {
     const scopeConfig = config?.breakpoints?.[breakpoint]?.[scope];
-    if (!adapterUsesSettingGroup(scopeConfig?.adapterId, group)) {
+    if (!adapterUsesSettingGroup(scopeConfig?.adapterId, group.group)) {
       continue;
     }
 
-    const value = scopeConfig?.adapterSettings?.[key];
-    if (typeof value === 'number') {
+    const value = scopeConfig?.adapterSettings?.[field.key];
+    if ((field.control === 'number' && typeof value === 'number') || (field.control === 'select' && typeof value === 'string')) {
       return value;
     }
   }
@@ -171,19 +176,62 @@ function setCommonSettingForEditableScopes(
   });
 }
 
+function getApplicableScopes(
+  mode: GalleryConfigMode,
+  scopeMode: AdapterSettingGroupScopeMode,
+  field: AdapterSettingFieldDefinition,
+): Array<Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>> {
+  const editableScopes = getEditableScopes(mode);
+  const appliesTo = field.appliesTo ?? 'always';
+
+  if (scopeMode === 'contextual' && appliesTo !== 'always') {
+    return editableScopes.filter((scope) => scope === appliesTo);
+  }
+
+  if (appliesTo === 'always') {
+    return editableScopes;
+  }
+
+  return editableScopes.filter((scope) => scope === appliesTo);
+}
+
+function hasVisibleAdapterSettingField(
+  config: GalleryConfig,
+  breakpoint: GalleryConfigBreakpoint,
+  group: AdapterSettingGroupDefinition,
+  field: AdapterSettingFieldDefinition,
+): boolean {
+  return getApplicableScopes(config.mode ?? 'per-type', group.scopeMode ?? 'shared', field).some((scope) =>
+    adapterUsesSettingGroup(config.breakpoints?.[breakpoint]?.[scope]?.adapterId, group.group),
+  );
+}
+
+function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['group']): string {
+  switch (group) {
+    case 'compact-grid':
+      return 'Compact Grid';
+    case 'layout-builder':
+      return 'Layout Builder';
+    case 'shape':
+      return 'Shape Layout';
+    default:
+      return group.charAt(0).toUpperCase() + group.slice(1);
+  }
+}
+
 function setAdapterSettingForMatchingScopes(
   config: GalleryConfig,
   breakpoint: GalleryConfigBreakpoint,
-  group: 'masonry',
-  key: 'masonryColumns',
-  value: number,
+  group: AdapterSettingGroupDefinition,
+  field: AdapterSettingFieldDefinition,
+  value: number | string,
 ): GalleryConfig {
   const next = cloneGalleryConfig(config) ?? { mode: config.mode ?? 'per-type', breakpoints: {} };
   next.breakpoints = next.breakpoints ?? {};
   const breakpointConfig = next.breakpoints[breakpoint] ?? {};
 
-  getEditableScopes(next.mode ?? 'per-type').forEach((scope) => {
-    if (!adapterUsesSettingGroup(breakpointConfig[scope]?.adapterId, group)) {
+  getApplicableScopes(next.mode ?? 'per-type', group.scopeMode ?? 'shared', field).forEach((scope) => {
+    if (!adapterUsesSettingGroup(breakpointConfig[scope]?.adapterId, group.group)) {
       return;
     }
 
@@ -191,7 +239,7 @@ function setAdapterSettingForMatchingScopes(
       ...(breakpointConfig[scope] ?? {}),
       adapterSettings: {
         ...(breakpointConfig[scope]?.adapterSettings ?? {}),
-        [key]: value,
+        [field.key]: value,
       },
     };
   });
@@ -241,10 +289,9 @@ export function GalleryConfigEditorModal({
   const [draft, setDraft] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
   const [baseline, setBaseline] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
   const [activeBreakpoint, setActiveBreakpoint] = useState<GalleryConfigBreakpoint>('desktop');
-  const masonryField = getSettingGroupFieldDefinitions('masonry')[0];
-  const showsMasonryField = getEditableScopes(draft.mode ?? 'per-type').some((scope) =>
-    adapterUsesSettingGroup(draft.breakpoints?.[activeBreakpoint]?.[scope]?.adapterId, 'masonry'),
-  );
+  const activeSettingGroups = getActiveSettingGroupDefinitions(
+    getEditableScopes(draft.mode ?? 'per-type').map((scope) => draft.breakpoints?.[activeBreakpoint]?.[scope]?.adapterId),
+  ).filter((group) => group.fields.some((field) => hasVisibleAdapterSettingField(draft, activeBreakpoint, group, field)));
 
   useEffect(() => {
     if (!opened) {
@@ -376,24 +423,58 @@ export function GalleryConfigEditorModal({
           step={4}
         />
 
-        {masonryField?.control === 'number' && showsMasonryField && (
+        {activeSettingGroups.length > 0 && (
           <>
             <Divider label="Adapter-Specific Settings" labelPosition="center" />
-            <NumberInput
-              label={masonryField.label}
-              description={masonryField.description}
-              value={getRepresentativeAdapterSettingValue(draft, activeBreakpoint, 'masonry', 'masonryColumns') ?? masonryField.fallback}
-              onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
-                current,
-                activeBreakpoint,
-                'masonry',
-                'masonryColumns',
-                typeof value === 'number' ? value : masonryField.fallback,
+            <Stack gap="md">
+              {activeSettingGroups.map((group) => (
+                <Stack key={group.group} gap="sm">
+                  <Text size="sm" fw={600}>{formatSettingGroupLabel(group.group)}</Text>
+                  {group.fields.filter((field) => hasVisibleAdapterSettingField(draft, activeBreakpoint, group, field)).map((field) => {
+                    const representativeValue = getRepresentativeAdapterSettingValue(draft, activeBreakpoint, group, field);
+
+                    if (field.control === 'number') {
+                      return (
+                        <NumberInput
+                          key={String(field.key)}
+                          label={field.label}
+                          description={field.description}
+                          value={typeof representativeValue === 'number' ? representativeValue : field.fallback}
+                          onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                            current,
+                            activeBreakpoint,
+                            group,
+                            field,
+                            typeof value === 'number' ? value : field.fallback,
+                          ))}
+                          min={field.min}
+                          max={field.max}
+                          step={field.step}
+                        />
+                      );
+                    }
+
+                    return (
+                      <Select
+                        key={String(field.key)}
+                        label={field.label}
+                        description={field.description}
+                        data={field.options}
+                        value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
+                        onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                          current,
+                          activeBreakpoint,
+                          group,
+                          field,
+                          value ?? field.fallback,
+                        ))}
+                        allowDeselect={false}
+                      />
+                    );
+                  })}
+                </Stack>
               ))}
-              min={masonryField.min}
-              max={masonryField.max}
-              step={masonryField.step}
-            />
+            </Stack>
           </>
         )}
 

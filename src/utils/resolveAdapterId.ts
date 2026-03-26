@@ -136,10 +136,19 @@ export function resolveEffectiveGallerySettings(
   scope: GalleryConfigScope,
   galleryOverrides?: Partial<GalleryConfig>,
 ): GalleryBehaviorSettings {
-  return applyResolvedGalleryCommonSettings(
-    s,
-    resolveGalleryCommonSettings(s, breakpoint, scope, galleryOverrides),
-  );
+  const resolvedCommonSettings = resolveGalleryCommonSettings(s, breakpoint, scope, galleryOverrides);
+  const resolvedAdapterSettings = resolveEffectiveGalleryConfig(s, galleryOverrides).breakpoints?.[breakpoint]?.[scope]?.adapterSettings ?? {};
+
+  return Object.entries(resolvedAdapterSettings).reduce((resolvedSettings, [key, value]) => {
+    if (value === undefined) {
+      return resolvedSettings;
+    }
+
+    return {
+      ...resolvedSettings,
+      [key]: value,
+    } as GalleryBehaviorSettings;
+  }, applyResolvedGalleryCommonSettings(s, resolvedCommonSettings));
 }
 
 /**
