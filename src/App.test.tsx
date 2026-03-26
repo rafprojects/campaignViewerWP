@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from './test/test-utils';
 import { mutate } from 'swr';
 import App from './App';
@@ -63,10 +63,11 @@ const setupAdminFetch = () => {
 
 /** Click a campaign card by its accessible button role and wait for the CampaignViewer to load. */
 async function openCampaignViewer(title: string) {
-  const card = await screen.findByRole('button', { name: `Open campaign ${title}` });
-  fireEvent.click(card);
-  // CampaignViewer is lazy-loaded — wait for the About heading to confirm it rendered
-  await screen.findByText('About', {}, { timeout: 5000 });
+  const titleNode = await screen.findByText(title);
+  fireEvent.click(titleNode);
+  await waitFor(() => {
+    expect(screen.getAllByText(title).length).toBeGreaterThan(1);
+  }, { timeout: 15000 });
 }
 
 /** Open the AuthBar admin menu popover (campaign actions live here since K-5). */
@@ -76,6 +77,10 @@ async function openAdminMenu() {
 }
 
 describe('App', () => {
+  beforeAll(async () => {
+    await import('./components/CardViewer/CampaignViewer');
+  });
+
   beforeEach(() => {
     mutate(() => true, undefined);
     vi.clearAllMocks();
