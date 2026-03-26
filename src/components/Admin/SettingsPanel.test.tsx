@@ -348,6 +348,31 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
   });
 
+  it('seeds shared editor adapter-specific values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'masonry',
+          masonryColumns: 4,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+    expect(await screen.findByDisplayValue('4')).toBeInTheDocument();
+    expect(screen.getByText('Masonry Columns (0 = auto)')).toBeInTheDocument();
+  });
+
   it('interacts with Media Display tab controls', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

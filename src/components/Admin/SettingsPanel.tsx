@@ -61,6 +61,83 @@ import { buildGalleryConfigFromLegacySettings } from '@/utils/galleryConfig';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
+function getRepresentativeGalleryCommonSetting(
+  galleryConfig: GalleryConfig,
+  key: 'sectionPadding' | 'adapterContentPadding',
+): number | undefined {
+  const scopes = galleryConfig.mode === 'unified'
+    ? ['unified'] as const
+    : ['image', 'video'] as const;
+
+  for (const scope of scopes) {
+    const value = galleryConfig.breakpoints?.desktop?.[scope]?.common?.[key]
+      ?? galleryConfig.breakpoints?.tablet?.[scope]?.common?.[key]
+      ?? galleryConfig.breakpoints?.mobile?.[scope]?.common?.[key];
+    if (typeof value === 'number') {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
+  const seed = buildGalleryConfigFromLegacySettings(settings);
+
+  (['desktop', 'tablet', 'mobile'] as const).forEach((breakpoint) => {
+    (['unified', 'image', 'video'] as const).forEach((scope) => {
+      if (seed.breakpoints?.[breakpoint]?.[scope]?.adapterId !== 'masonry') {
+        return;
+      }
+
+      seed.breakpoints![breakpoint]![scope] = {
+        ...(seed.breakpoints?.[breakpoint]?.[scope] ?? {}),
+        adapterSettings: {
+          ...(seed.breakpoints?.[breakpoint]?.[scope]?.adapterSettings ?? {}),
+          masonryColumns: settings.masonryColumns,
+        },
+      };
+    });
+  });
+
+  return settings.galleryConfig
+    ? {
+      ...seed,
+      ...settings.galleryConfig,
+      breakpoints: {
+        ...seed.breakpoints,
+        ...settings.galleryConfig.breakpoints,
+      },
+    }
+    : seed;
+}
+
+function getRepresentativeAdapterSetting(
+  galleryConfig: GalleryConfig,
+  group: 'masonry',
+  key: 'masonryColumns',
+): number | undefined {
+  const scopes = galleryConfig.mode === 'unified'
+    ? ['unified'] as const
+    : ['image', 'video'] as const;
+
+  for (const breakpoint of ['desktop', 'tablet', 'mobile'] as const) {
+    for (const scope of scopes) {
+      const scopeConfig = galleryConfig.breakpoints?.[breakpoint]?.[scope];
+      if (group === 'masonry' && scopeConfig?.adapterId !== 'masonry') {
+        continue;
+      }
+
+      const value = scopeConfig?.adapterSettings?.[key];
+      if (typeof value === 'number') {
+        return value;
+      }
+    }
+  }
+
+  return undefined;
+}
+
 export interface SettingsData extends GalleryBehaviorSettings {
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
@@ -210,6 +287,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const tabletVideoAdapterId = galleryConfig.breakpoints?.tablet?.video?.adapterId ?? prev.tabletVideoAdapterId;
       const mobileImageAdapterId = galleryConfig.breakpoints?.mobile?.image?.adapterId ?? prev.mobileImageAdapterId;
       const mobileVideoAdapterId = galleryConfig.breakpoints?.mobile?.video?.adapterId ?? prev.mobileVideoAdapterId;
+      const gallerySectionPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionPadding') ?? prev.gallerySectionPadding;
+      const adapterContentPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterContentPadding') ?? prev.adapterContentPadding;
+      const masonryColumns = getRepresentativeAdapterSetting(galleryConfig, 'masonry', 'masonryColumns') ?? prev.masonryColumns;
 
       return {
         ...prev,
@@ -225,6 +305,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         tabletVideoAdapterId,
         mobileImageAdapterId,
         mobileVideoAdapterId,
+        gallerySectionPadding,
+        adapterContentPadding,
+        masonryColumns,
       };
     });
 
@@ -1435,7 +1518,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             opened={galleryConfigEditorOpen}
             onClose={() => setGalleryConfigEditorOpen(false)}
             title="Responsive Gallery Config"
-            value={settings.galleryConfig ?? buildGalleryConfigFromLegacySettings(settings)}
+            value={buildGalleryConfigEditorSeed(settings)}
             onSave={handleGalleryConfigEditorSave}
           />
 

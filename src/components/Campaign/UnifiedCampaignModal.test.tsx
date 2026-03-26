@@ -176,6 +176,16 @@ describe('UnifiedCampaignModal', () => {
     expect(screen.getByDisplayValue('Unified')).toBeInTheDocument();
   });
 
+  it('opens the shared responsive editor from campaign settings', async () => {
+    const modal = makeMockModal({ activeTab: 'settings' });
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+    expect(await screen.findByText('Shared Section Spacing')).toBeInTheDocument();
+    expect(screen.getByText('Adapter Content Padding (px)')).toBeInTheDocument();
+  });
+
   it('renders media grid with items on media tab', () => {
     const mediaItem = {
       id: 'm1',

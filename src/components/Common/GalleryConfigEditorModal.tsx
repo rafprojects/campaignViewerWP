@@ -1,7 +1,11 @@
-import { Button, Group, Modal, Select, Stack, Tabs, Text } from '@mantine/core';
+import { Button, Divider, Group, Modal, NumberInput, Select, Stack, Tabs, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
-import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
+import {
+  adapterUsesSettingGroup,
+  getAdapterSelectOptions,
+  getSettingGroupFieldDefinitions,
+} from '@/components/Galleries/Adapters/adapterRegistry';
 import type { GalleryConfig, GalleryConfigBreakpoint, GalleryConfigMode, GalleryConfigScope } from '@/types';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 
@@ -24,6 +28,50 @@ function getScopeAdapterId(
   scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
 ): string {
   return config?.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? '';
+}
+
+function getEditableScopes(mode: GalleryConfigMode): Array<Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>> {
+  return mode === 'unified' ? ['unified'] : ['image', 'video'];
+}
+
+function getRepresentativeCommonValue(
+  config: Partial<GalleryConfig> | undefined,
+  breakpoint: GalleryConfigBreakpoint,
+  key: 'sectionPadding' | 'adapterContentPadding',
+): number | undefined {
+  const scopes = getEditableScopes(config?.mode ?? 'per-type');
+
+  for (const scope of scopes) {
+    const value = config?.breakpoints?.[breakpoint]?.[scope]?.common?.[key];
+    if (typeof value === 'number') {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function getRepresentativeAdapterSettingValue(
+  config: Partial<GalleryConfig> | undefined,
+  breakpoint: GalleryConfigBreakpoint,
+  group: 'masonry',
+  key: 'masonryColumns',
+): number | undefined {
+  const scopes = getEditableScopes(config?.mode ?? 'per-type');
+
+  for (const scope of scopes) {
+    const scopeConfig = config?.breakpoints?.[breakpoint]?.[scope];
+    if (!adapterUsesSettingGroup(scopeConfig?.adapterId, group)) {
+      continue;
+    }
+
+    const value = scopeConfig?.adapterSettings?.[key];
+    if (typeof value === 'number') {
+      return value;
+    }
+  }
+
+  return undefined;
 }
 
 function pruneConfig(config: GalleryConfig): GalleryConfig {
@@ -90,6 +138,69 @@ function setScopeAdapterId(
   });
 }
 
+function setCommonSettingForEditableScopes(
+  config: GalleryConfig,
+  key: 'sectionPadding' | 'adapterContentPadding',
+  value: number,
+): GalleryConfig {
+  const next = cloneGalleryConfig(config) ?? { mode: config.mode ?? 'per-type', breakpoints: {} };
+  next.breakpoints = next.breakpoints ?? {};
+
+  GALLERY_BREAKPOINTS.forEach((breakpoint) => {
+    const breakpointConfig = next.breakpoints?.[breakpoint] ?? {};
+
+    getEditableScopes(next.mode ?? 'per-type').forEach((scope) => {
+      breakpointConfig[scope] = {
+        ...(breakpointConfig[scope] ?? {}),
+        common: {
+          ...(breakpointConfig[scope]?.common ?? {}),
+          [key]: value,
+        },
+      };
+    });
+
+    next.breakpoints![breakpoint] = breakpointConfig;
+  });
+
+  return pruneConfig({
+    mode: next.mode ?? 'per-type',
+    breakpoints: next.breakpoints,
+  });
+}
+
+function setAdapterSettingForMatchingScopes(
+  config: GalleryConfig,
+  breakpoint: GalleryConfigBreakpoint,
+  group: 'masonry',
+  key: 'masonryColumns',
+  value: number,
+): GalleryConfig {
+  const next = cloneGalleryConfig(config) ?? { mode: config.mode ?? 'per-type', breakpoints: {} };
+  next.breakpoints = next.breakpoints ?? {};
+  const breakpointConfig = next.breakpoints[breakpoint] ?? {};
+
+  getEditableScopes(next.mode ?? 'per-type').forEach((scope) => {
+    if (!adapterUsesSettingGroup(breakpointConfig[scope]?.adapterId, group)) {
+      return;
+    }
+
+    breakpointConfig[scope] = {
+      ...(breakpointConfig[scope] ?? {}),
+      adapterSettings: {
+        ...(breakpointConfig[scope]?.adapterSettings ?? {}),
+        [key]: value,
+      },
+    };
+  });
+
+  next.breakpoints[breakpoint] = breakpointConfig;
+
+  return pruneConfig({
+    mode: next.mode ?? 'per-type',
+    breakpoints: next.breakpoints,
+  });
+}
+
 export function GalleryConfigEditorModal({
   opened,
   title,
@@ -102,6 +213,10 @@ export function GalleryConfigEditorModal({
 }: GalleryConfigEditorModalProps) {
   const [draft, setDraft] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
   const [activeBreakpoint, setActiveBreakpoint] = useState<GalleryConfigBreakpoint>('desktop');
+  const masonryField = getSettingGroupFieldDefinitions('masonry')[0];
+  const showsMasonryField = getEditableScopes(draft.mode ?? 'per-type').some((scope) =>
+    adapterUsesSettingGroup(draft.breakpoints?.[activeBreakpoint]?.[scope]?.adapterId, 'masonry'),
+  );
 
   useEffect(() => {
     if (!opened) {
@@ -201,6 +316,49 @@ export function GalleryConfigEditorModal({
               );
             })}
           </Tabs>
+        )}
+
+        <Divider label="Shared Section Spacing" labelPosition="center" />
+
+        <NumberInput
+          label="Section Padding (px)"
+          description="Applies the same inner section padding across the currently edited gallery mode surface."
+          value={getRepresentativeCommonValue(draft, activeBreakpoint, 'sectionPadding') ?? 16}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'sectionPadding', typeof value === 'number' ? value : 16))}
+          min={0}
+          max={32}
+          step={4}
+        />
+
+        <NumberInput
+          label="Adapter Content Padding (px)"
+          description="Applies the same inner adapter padding across the currently edited gallery mode surface."
+          value={getRepresentativeCommonValue(draft, activeBreakpoint, 'adapterContentPadding') ?? 0}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterContentPadding', typeof value === 'number' ? value : 0))}
+          min={0}
+          max={24}
+          step={4}
+        />
+
+        {masonryField?.control === 'number' && showsMasonryField && (
+          <>
+            <Divider label="Adapter-Specific Settings" labelPosition="center" />
+            <NumberInput
+              label={masonryField.label}
+              description={masonryField.description}
+              value={getRepresentativeAdapterSettingValue(draft, activeBreakpoint, 'masonry', 'masonryColumns') ?? masonryField.fallback}
+              onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                current,
+                activeBreakpoint,
+                'masonry',
+                'masonryColumns',
+                typeof value === 'number' ? value : masonryField.fallback,
+              ))}
+              min={masonryField.min}
+              max={masonryField.max}
+              step={masonryField.step}
+            />
+          </>
         )}
 
         <Group justify="space-between">
