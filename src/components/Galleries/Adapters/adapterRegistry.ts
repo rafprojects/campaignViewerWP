@@ -8,14 +8,18 @@
 import { createElement, lazy, type ComponentType } from 'react';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import type {
+  AdapterMediaScope,
   AdapterOptionContext,
   AdapterRegistration,
+  AdapterSelectionUpdate,
   AdapterSettingFieldDefinition,
   AdapterSettingGroupDefinition,
   AdapterSettingGroup,
   GalleryAdapterId,
   GalleryAdapterProps,
 } from './GalleryAdapter';
+import type { GalleryBehaviorSettings } from '@/types';
+import { getLegacyFlatAdapterId, LEGACY_BREAKPOINT_SCOPE_KEYS, LEGACY_FLAT_SCOPE_KEYS } from '@/utils/galleryAdapterSelection';
 import { MediaCarouselAdapter } from './MediaCarouselAdapter';
 
 export interface AdapterSelectOption {
@@ -301,6 +305,36 @@ export function getSettingGroupFieldDefinitions(group: AdapterSettingGroup): Ada
 
 export function getActiveSettingGroupDefinitions(ids: Array<string | null | undefined>): AdapterSettingGroupDefinition[] {
   return Object.values(SETTING_GROUP_DEFINITIONS).filter((definition) => anyAdapterUsesSettingGroup(ids, definition.group));
+}
+
+export function getPerTypeAdapterSelectionUpdates(
+  settings: GalleryBehaviorSettings,
+  scope: AdapterMediaScope,
+  requestedId: string | null | undefined,
+): AdapterSelectionUpdate[] {
+  const nextId = (requestedId ?? 'classic') as GalleryAdapterId;
+  const flatKey = LEGACY_FLAT_SCOPE_KEYS[scope];
+
+  if (nextId !== 'layout-builder') {
+    return [{
+      key: flatKey,
+      value: nextId,
+    }];
+  }
+
+  const otherScope: AdapterMediaScope = scope === 'image' ? 'video' : 'image';
+  const currentScopeFallback = (getLegacyFlatAdapterId(settings, scope) || 'classic') as GalleryAdapterId;
+  const otherScopeFallback = (getLegacyFlatAdapterId(settings, otherScope) || 'classic') as GalleryAdapterId;
+
+  return [
+    { key: 'gallerySelectionMode', value: 'per-breakpoint' },
+    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[scope].desktop, value: 'layout-builder' },
+    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[scope].tablet, value: 'layout-builder' },
+    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[scope].mobile, value: currentScopeFallback },
+    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[otherScope].desktop, value: otherScopeFallback },
+    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[otherScope].tablet, value: otherScopeFallback },
+    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[otherScope].mobile, value: otherScopeFallback },
+  ];
 }
 
 export function isAdapterSupportedAtBreakpoint(id: string | null | undefined, breakpoint: Breakpoint): boolean {

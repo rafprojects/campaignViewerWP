@@ -321,6 +321,10 @@ Completed initial schema extraction:
 12. revalidated the select-field schema migration with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
 13. added registry-owned setting-group layout, placement, and contextual-scope metadata so the adapter settings UI can derive not just fields, but also which setting groups render inline versus in the shared section area
 14. replaced the remaining hardcoded adapter group branches in `GalleryAdapterSettingsSection` with iteration over active registry setting-group definitions, while preserving the special image/video split behavior for contextual groups like shape adapters
+15. moved the remaining layout-builder per-type selection transition rules into a shared registry helper so the settings UI no longer hardcodes the adapter-specific state changes required to coerce unsupported per-type layout-builder selections into the existing per-breakpoint model
+16. validated the shared adapter-selection helper with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
+17. extracted the legacy image/video breakpoint adapter key and fallback lookup into a shared utility consumed by the registry helper, the nested gallery-config compatibility bridge, and the runtime resolver so editor and runtime paths now share one source of truth for per-type adapter slot resolution
+18. replaced the remaining settings-panel adapter-id list assembly with shared selection helpers so `GalleryAdapterSettingsSection` and `GalleryLayoutDetailSections` no longer manually rebuild unified/per-type/per-breakpoint adapter arrays from legacy fields
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 

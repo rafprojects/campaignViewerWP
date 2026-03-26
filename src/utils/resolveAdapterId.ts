@@ -7,6 +7,7 @@ import type {
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { isAdapterSupportedAtBreakpoint, normalizeAdapterId } from '@/components/Galleries/Adapters/adapterRegistry';
 import { buildGalleryCommonSettingsFromLegacy, buildGalleryConfigFromLegacySettings, mergeGalleryConfig } from './galleryConfig';
+import { getLegacyFlatAdapterId, getLegacyPerTypeAdapterId } from './galleryAdapterSelection';
 
 type GalleryMode = 'unified' | 'per-type';
 
@@ -60,19 +61,6 @@ function resolveEffectiveGalleryConfig(
 ): GalleryConfig {
   const base = resolveBaseGalleryConfig(s);
   return galleryOverrides ? mergeGalleryConfig(base, galleryOverrides) : base;
-}
-
-function resolveLegacyPerTypeAdapterId(
-  s: GalleryBehaviorSettings,
-  mediaType: 'image' | 'video',
-  breakpoint: Breakpoint,
-): string {
-  if (s.gallerySelectionMode !== 'per-breakpoint') {
-    return mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId;
-  }
-
-  const key = `${breakpoint}${mediaType === 'image' ? 'Image' : 'Video'}AdapterId` as keyof GalleryBehaviorSettings;
-  return (s[key] as string) || (mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId);
 }
 
 function resolveScopeConfig(
@@ -167,7 +155,7 @@ export function resolveAdapterId(
   options: GalleryResolutionOptions = {},
 ): string {
   const globalConfig = resolveBaseGalleryConfig(s);
-  const legacyId = resolveLegacyPerTypeAdapterId(s, mediaType, breakpoint);
+  const legacyId = getLegacyPerTypeAdapterId(s, breakpoint, mediaType);
 
   return resolveSupportedAdapterChain(
     [
@@ -175,7 +163,7 @@ export function resolveAdapterId(
       options.legacyOverrideId,
       resolveScopeConfig(globalConfig, breakpoint, mediaType)?.adapterId,
       legacyId,
-      mediaType === 'image' ? s.imageGalleryAdapterId : s.videoGalleryAdapterId,
+      getLegacyFlatAdapterId(s, mediaType),
     ],
     breakpoint,
   );

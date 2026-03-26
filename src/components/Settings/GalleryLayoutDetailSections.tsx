@@ -1,6 +1,7 @@
 import { Accordion, Divider, NumberInput, Select, Stack, Switch } from '@mantine/core';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
 import { anyAdapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
+import { getLegacyActiveAdapterIds } from '@/utils/galleryAdapterSelection';
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
 interface GalleryLayoutDetailSectionsProps {
@@ -9,25 +10,7 @@ interface GalleryLayoutDetailSectionsProps {
 }
 
 function usesCarouselSettings(settings: GalleryBehaviorSettings): boolean {
-  if (settings.unifiedGalleryEnabled) {
-    return anyAdapterUsesSettingGroup([settings.unifiedGalleryAdapterId], 'carousel');
-  }
-
-  if (settings.gallerySelectionMode === 'per-breakpoint') {
-    return anyAdapterUsesSettingGroup([
-      settings.desktopImageAdapterId,
-      settings.tabletImageAdapterId,
-      settings.mobileImageAdapterId,
-      settings.desktopVideoAdapterId,
-      settings.tabletVideoAdapterId,
-      settings.mobileVideoAdapterId,
-    ], 'carousel');
-  }
-
-  return anyAdapterUsesSettingGroup([
-    settings.imageGalleryAdapterId,
-    settings.videoGalleryAdapterId,
-  ], 'carousel');
+  return anyAdapterUsesSettingGroup(getLegacyActiveAdapterIds(settings), 'carousel');
 }
 
 export function GalleryLayoutDetailSections({ settings, updateSetting }: GalleryLayoutDetailSectionsProps) {

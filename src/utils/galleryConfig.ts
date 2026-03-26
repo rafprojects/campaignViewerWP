@@ -7,6 +7,7 @@ import type {
   GalleryConfigScope,
   GalleryScopeConfig,
 } from '@/types';
+import { getLegacyPerTypeAdapterId } from './galleryAdapterSelection';
 
 const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
 const GALLERY_SCOPES: GalleryConfigScope[] = ['unified', 'image', 'video'];
@@ -102,36 +103,6 @@ function buildLegacyScopeConfig(adapterId: string, common: GalleryCommonSettings
     adapterId,
     common: { ...common },
   };
-}
-
-function getLegacyPerTypeAdapterId(
-  settings: Pick<
-    GalleryBehaviorSettings,
-    | 'gallerySelectionMode'
-    | 'imageGalleryAdapterId'
-    | 'videoGalleryAdapterId'
-    | 'desktopImageAdapterId'
-    | 'desktopVideoAdapterId'
-    | 'tabletImageAdapterId'
-    | 'tabletVideoAdapterId'
-    | 'mobileImageAdapterId'
-    | 'mobileVideoAdapterId'
-  >,
-  breakpoint: GalleryConfigBreakpoint,
-  scope: 'image' | 'video',
-): string {
-  if (settings.gallerySelectionMode !== 'per-breakpoint') {
-    return scope === 'image' ? settings.imageGalleryAdapterId : settings.videoGalleryAdapterId;
-  }
-
-  const breakpointKey = `${breakpoint}${scope === 'image' ? 'Image' : 'Video'}AdapterId` as const;
-  const perBreakpointId = settings[breakpointKey];
-
-  if (perBreakpointId) {
-    return perBreakpointId;
-  }
-
-  return scope === 'image' ? settings.imageGalleryAdapterId : settings.videoGalleryAdapterId;
 }
 
 export function buildGalleryConfigFromLegacySettings(

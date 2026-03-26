@@ -4,10 +4,13 @@ import {
   getActiveSettingGroupDefinitions,
   anyAdapterUsesSettingGroup,
   getAdapterSelectOptions,
+  getPerTypeAdapterSelectionUpdates,
   getSettingGroupFieldDefinitions,
   normalizeAdapterId,
   resolveAdapter,
 } from './adapterRegistry';
+
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 
 describe('adapterRegistry', () => {
   it('normalizes legacy aliases to canonical ids', () => {
@@ -76,6 +79,59 @@ describe('adapterRegistry', () => {
         group: 'layout-builder',
         placement: 'inline',
       }),
+    ]);
+  });
+
+  it('returns direct per-type adapter updates for standard adapter changes', () => {
+    expect(getPerTypeAdapterSelectionUpdates(DEFAULT_GALLERY_BEHAVIOR_SETTINGS, 'image', 'masonry')).toEqual([
+      {
+        key: 'imageGalleryAdapterId',
+        value: 'masonry',
+      },
+    ]);
+  });
+
+  it('returns per-breakpoint coercion updates when layout builder is selected for images', () => {
+    expect(
+      getPerTypeAdapterSelectionUpdates(
+        {
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          imageGalleryAdapterId: 'justified',
+          videoGalleryAdapterId: 'compact-grid',
+        },
+        'image',
+        'layout-builder',
+      ),
+    ).toEqual([
+      { key: 'gallerySelectionMode', value: 'per-breakpoint' },
+      { key: 'desktopImageAdapterId', value: 'layout-builder' },
+      { key: 'tabletImageAdapterId', value: 'layout-builder' },
+      { key: 'mobileImageAdapterId', value: 'justified' },
+      { key: 'desktopVideoAdapterId', value: 'compact-grid' },
+      { key: 'tabletVideoAdapterId', value: 'compact-grid' },
+      { key: 'mobileVideoAdapterId', value: 'compact-grid' },
+    ]);
+  });
+
+  it('returns per-breakpoint coercion updates when layout builder is selected for videos', () => {
+    expect(
+      getPerTypeAdapterSelectionUpdates(
+        {
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          imageGalleryAdapterId: 'masonry',
+          videoGalleryAdapterId: 'justified',
+        },
+        'video',
+        'layout-builder',
+      ),
+    ).toEqual([
+      { key: 'gallerySelectionMode', value: 'per-breakpoint' },
+      { key: 'desktopVideoAdapterId', value: 'layout-builder' },
+      { key: 'tabletVideoAdapterId', value: 'layout-builder' },
+      { key: 'mobileVideoAdapterId', value: 'justified' },
+      { key: 'desktopImageAdapterId', value: 'masonry' },
+      { key: 'tabletImageAdapterId', value: 'masonry' },
+      { key: 'mobileImageAdapterId', value: 'masonry' },
     ]);
   });
 

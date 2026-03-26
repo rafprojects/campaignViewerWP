@@ -8,6 +8,7 @@
  */
 import type { ComponentType } from 'react';
 import type { MediaItem, GalleryBehaviorSettings, ContainerDimensions } from '@/types';
+import type { GalleryMediaScope } from '@/utils/galleryAdapterSelection';
 
 export type GalleryAdapterId =
   | 'classic'
@@ -89,6 +90,13 @@ export type AdapterOptionContext =
   | 'per-type-gallery'
   | 'per-breakpoint-gallery'
   | 'campaign-override';
+
+export type AdapterMediaScope = GalleryMediaScope;
+
+export interface AdapterSelectionUpdate {
+  key: keyof GalleryBehaviorSettings;
+  value: GalleryBehaviorSettings[keyof GalleryBehaviorSettings];
+}
 
 /** Unified, type-agnostic props every gallery adapter component must accept. */
 export interface GalleryAdapterProps {

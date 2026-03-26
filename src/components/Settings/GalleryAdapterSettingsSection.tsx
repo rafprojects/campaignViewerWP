@@ -1,7 +1,8 @@
 import { Box, Group, NumberInput, Select, SegmentedControl, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
 import type { GalleryBehaviorSettings } from '@/types';
-import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
-import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
+import type { AdapterSelectionUpdate, AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
+import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getPerTypeAdapterSelectionUpdates, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
+import { getLegacyActiveAdapterIds, getLegacyScopeAdapterIds } from '@/utils/galleryAdapterSelection';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
   key: K,
@@ -11,42 +12,6 @@ export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
 interface GalleryAdapterSettingsSectionProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
-}
-
-function getImageAdapterIds(settings: GalleryBehaviorSettings): string[] {
-  if (settings.unifiedGalleryEnabled) {
-    return [settings.unifiedGalleryAdapterId];
-  }
-
-  if (settings.gallerySelectionMode === 'per-breakpoint') {
-    return [
-      settings.desktopImageAdapterId,
-      settings.tabletImageAdapterId,
-      settings.mobileImageAdapterId,
-    ];
-  }
-
-  return [settings.imageGalleryAdapterId];
-}
-
-function getVideoAdapterIds(settings: GalleryBehaviorSettings): string[] {
-  if (settings.unifiedGalleryEnabled) {
-    return [settings.unifiedGalleryAdapterId];
-  }
-
-  if (settings.gallerySelectionMode === 'per-breakpoint') {
-    return [
-      settings.desktopVideoAdapterId,
-      settings.tabletVideoAdapterId,
-      settings.mobileVideoAdapterId,
-    ];
-  }
-
-  return [settings.videoGalleryAdapterId];
-}
-
-function getActiveAdapterIds(settings: GalleryBehaviorSettings): string[] {
-  return [...getImageAdapterIds(settings), ...getVideoAdapterIds(settings)];
 }
 
 function renderSettingFields(
@@ -133,10 +98,19 @@ function renderSettingGroup(
   return <Box key={groupDefinition.group}>{fields}</Box>;
 }
 
+function applySelectionUpdates(
+  updates: AdapterSelectionUpdate[],
+  updateSetting: UpdateGallerySetting,
+) {
+  updates.forEach((update) => {
+    updateSetting(update.key, update.value as GalleryBehaviorSettings[typeof update.key]);
+  });
+}
+
 export function GalleryAdapterSettingsSection({ settings, updateSetting }: GalleryAdapterSettingsSectionProps) {
-  const imageAdapterIds = getImageAdapterIds(settings);
-  const videoAdapterIds = getVideoAdapterIds(settings);
-  const activeAdapterIds = settings.unifiedGalleryEnabled ? [settings.unifiedGalleryAdapterId] : getActiveAdapterIds(settings);
+  const imageAdapterIds = getLegacyScopeAdapterIds(settings, 'image');
+  const videoAdapterIds = getLegacyScopeAdapterIds(settings, 'video');
+  const activeAdapterIds = getLegacyActiveAdapterIds(settings);
   const activeSettingGroups = getActiveSettingGroupDefinitions(activeAdapterIds);
   const inlineSettingGroups = activeSettingGroups.filter((groupDefinition) => groupDefinition.placement === 'inline');
   const sectionSettingGroups = activeSettingGroups.filter((groupDefinition) => groupDefinition.placement !== 'inline');
@@ -223,42 +197,14 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
                 label="Image Gallery Adapter"
                 description="Layout for campaigns with images."
                 value={settings.imageGalleryAdapterId}
-                onChange={(value) => {
-                  const nextValue = value ?? 'classic';
-                  if (nextValue === 'layout-builder') {
-                    updateSetting('gallerySelectionMode', 'per-breakpoint');
-                    updateSetting('desktopImageAdapterId', 'layout-builder');
-                    updateSetting('tabletImageAdapterId', 'layout-builder');
-                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                    updateSetting('desktopVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                    updateSetting('tabletVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                    return;
-                  }
-
-                  updateSetting('imageGalleryAdapterId', nextValue);
-                }}
+                onChange={(value) => applySelectionUpdates(getPerTypeAdapterSelectionUpdates(settings, 'image', value), updateSetting)}
                 data={getAdapterSelectOptions({ context: 'per-type-gallery' })}
               />
               <Select
                 label="Video Gallery Adapter"
                 description="Layout for campaigns with videos."
                 value={settings.videoGalleryAdapterId}
-                onChange={(value) => {
-                  const nextValue = value ?? 'classic';
-                  if (nextValue === 'layout-builder') {
-                    updateSetting('gallerySelectionMode', 'per-breakpoint');
-                    updateSetting('desktopVideoAdapterId', 'layout-builder');
-                    updateSetting('tabletVideoAdapterId', 'layout-builder');
-                    updateSetting('mobileVideoAdapterId', settings.videoGalleryAdapterId || 'classic');
-                    updateSetting('desktopImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                    updateSetting('tabletImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                    updateSetting('mobileImageAdapterId', settings.imageGalleryAdapterId || 'classic');
-                    return;
-                  }
-
-                  updateSetting('videoGalleryAdapterId', nextValue);
-                }}
+                onChange={(value) => applySelectionUpdates(getPerTypeAdapterSelectionUpdates(settings, 'video', value), updateSetting)}
                 data={getAdapterSelectOptions({ context: 'per-type-gallery' })}
               />
             </>
