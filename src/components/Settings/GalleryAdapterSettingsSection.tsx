@@ -1,6 +1,7 @@
 import { Box, Group, NumberInput, Select, SegmentedControl, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
 import type { GalleryBehaviorSettings } from '@/types';
-import { anyAdapterUsesSettingGroup, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
+import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
+import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
   key: K,
@@ -49,16 +50,17 @@ function getActiveAdapterIds(settings: GalleryBehaviorSettings): string[] {
 }
 
 function renderSettingFields(
-  group: 'compact-grid' | 'justified' | 'masonry' | 'shape' | 'layout-builder',
+  groupDefinition: AdapterSettingGroupDefinition,
   settings: GalleryBehaviorSettings,
   updateSetting: UpdateGallerySetting,
   options?: {
-    includeAppliesTo?: Array<'always' | 'unified' | 'image' | 'video'>;
+    includeAppliesTo?: AdapterSettingFieldAppliesTo[];
   },
 ) {
   const includeAppliesTo = options?.includeAppliesTo ?? ['always'];
+  const group = groupDefinition.group;
 
-  return getSettingGroupFieldDefinitions(group)
+  return getSettingGroupFieldDefinitions(groupDefinition.group)
     .filter((field) => includeAppliesTo.includes(field.appliesTo ?? 'always'))
     .map((field) => {
       if (field.control === 'number') {
@@ -90,18 +92,54 @@ function renderSettingFields(
     });
 }
 
+function renderSettingGroup(
+  groupDefinition: AdapterSettingGroupDefinition,
+  settings: GalleryBehaviorSettings,
+  updateSetting: UpdateGallerySetting,
+  imageAdapterIds: string[],
+  videoAdapterIds: string[],
+) {
+  if (groupDefinition.scopeMode === 'contextual') {
+    if (settings.unifiedGalleryEnabled) {
+      return renderSettingFields(groupDefinition, settings, updateSetting, { includeAppliesTo: ['unified'] });
+    }
+
+    return (
+      <Group key={groupDefinition.group} grow>
+        {anyAdapterUsesSettingGroup(imageAdapterIds, groupDefinition.group)
+          ? renderSettingFields(groupDefinition, settings, updateSetting, { includeAppliesTo: ['image'] })
+          : null}
+        {anyAdapterUsesSettingGroup(videoAdapterIds, groupDefinition.group)
+          ? renderSettingFields(groupDefinition, settings, updateSetting, { includeAppliesTo: ['video'] })
+          : null}
+      </Group>
+    );
+  }
+
+  const fields = renderSettingFields(groupDefinition, settings, updateSetting);
+
+  if (fields.length === 0) {
+    return null;
+  }
+
+  if (groupDefinition.layout === 'group') {
+    return (
+      <Group key={groupDefinition.group} grow>
+        {fields}
+      </Group>
+    );
+  }
+
+  return <Box key={groupDefinition.group}>{fields}</Box>;
+}
+
 export function GalleryAdapterSettingsSection({ settings, updateSetting }: GalleryAdapterSettingsSectionProps) {
   const imageAdapterIds = getImageAdapterIds(settings);
   const videoAdapterIds = getVideoAdapterIds(settings);
   const activeAdapterIds = settings.unifiedGalleryEnabled ? [settings.unifiedGalleryAdapterId] : getActiveAdapterIds(settings);
-
-  const usesCompactGrid = anyAdapterUsesSettingGroup(activeAdapterIds, 'compact-grid');
-  const usesJustified = anyAdapterUsesSettingGroup(activeAdapterIds, 'justified');
-  const usesMasonry = anyAdapterUsesSettingGroup(activeAdapterIds, 'masonry');
-  const usesShape = anyAdapterUsesSettingGroup(activeAdapterIds, 'shape');
-  const usesLayoutBuilder = anyAdapterUsesSettingGroup(activeAdapterIds, 'layout-builder');
-  const imageUsesShape = anyAdapterUsesSettingGroup(imageAdapterIds, 'shape');
-  const videoUsesShape = anyAdapterUsesSettingGroup(videoAdapterIds, 'shape');
+  const activeSettingGroups = getActiveSettingGroupDefinitions(activeAdapterIds);
+  const inlineSettingGroups = activeSettingGroups.filter((groupDefinition) => groupDefinition.placement === 'inline');
+  const sectionSettingGroups = activeSettingGroups.filter((groupDefinition) => groupDefinition.placement !== 'inline');
 
   return (
     <Stack gap="md">
@@ -177,7 +215,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
                   </SimpleGrid>
                 );
               })}
-              {usesLayoutBuilder && renderSettingFields('layout-builder', settings, updateSetting)}
+              {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds))}
             </Box>
           ) : (
             <>
@@ -228,32 +266,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
         </>
       )}
 
-      {usesCompactGrid && (
-        <Group grow>
-          {renderSettingFields('compact-grid', settings, updateSetting)}
-        </Group>
-      )}
-
-      {usesJustified && (
-        <>
-          {renderSettingFields('justified', settings, updateSetting)}
-        </>
-      )}
-
-      {usesMasonry && (
-        renderSettingFields('masonry', settings, updateSetting)
-      )}
-
-      {usesShape && (
-        settings.unifiedGalleryEnabled ? (
-          renderSettingFields('shape', settings, updateSetting, { includeAppliesTo: ['unified'] })
-        ) : (
-          <Group grow>
-            {imageUsesShape && renderSettingFields('shape', settings, updateSetting, { includeAppliesTo: ['image'] })}
-            {videoUsesShape && renderSettingFields('shape', settings, updateSetting, { includeAppliesTo: ['video'] })}
-          </Group>
-        )
-      )}
+      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds))}
     </Stack>
   );
 }

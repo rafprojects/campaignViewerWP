@@ -40,12 +40,20 @@ export type AdapterSettingGroup =
   | 'shape'
   | 'layout-builder';
 
+export type AdapterSettingFieldAppliesTo = 'always' | 'unified' | 'image' | 'video';
+
+export type AdapterSettingGroupLayout = 'group' | 'stack';
+
+export type AdapterSettingGroupPlacement = 'inline' | 'section';
+
+export type AdapterSettingGroupScopeMode = 'shared' | 'contextual';
+
 export interface AdapterNumberSettingField {
   control: 'number';
   key: keyof GalleryBehaviorSettings;
   label: string;
   description: string;
-  appliesTo?: 'always' | 'unified' | 'image' | 'video';
+  appliesTo?: AdapterSettingFieldAppliesTo;
   min: number;
   max: number;
   step: number;
@@ -57,7 +65,7 @@ export interface AdapterSelectSettingField {
   key: keyof GalleryBehaviorSettings;
   label: string;
   description: string;
-  appliesTo?: 'always' | 'unified' | 'image' | 'video';
+  appliesTo?: AdapterSettingFieldAppliesTo;
   fallback: string;
   options: Array<{
     value: string;
@@ -71,6 +79,9 @@ export type AdapterSettingFieldDefinition = AdapterNumberSettingField | AdapterS
 export interface AdapterSettingGroupDefinition {
   group: AdapterSettingGroup;
   fields: AdapterSettingFieldDefinition[];
+  layout?: AdapterSettingGroupLayout;
+  placement?: AdapterSettingGroupPlacement;
+  scopeMode?: AdapterSettingGroupScopeMode;
 }
 
 export type AdapterOptionContext =

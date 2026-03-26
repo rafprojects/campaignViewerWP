@@ -128,6 +128,7 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
 const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> = {
   'compact-grid': {
     group: 'compact-grid',
+    layout: 'group',
     fields: [
       {
         control: 'number',
@@ -153,6 +154,7 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
   },
   justified: {
     group: 'justified',
+    layout: 'stack',
     fields: [
       {
         control: 'number',
@@ -178,6 +180,7 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
   },
   masonry: {
     group: 'masonry',
+    layout: 'stack',
     fields: [
       {
         control: 'number',
@@ -193,6 +196,8 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
   },
   shape: {
     group: 'shape',
+    layout: 'group',
+    scopeMode: 'contextual',
     fields: [
       {
         control: 'number',
@@ -231,6 +236,8 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
   },
   'layout-builder': {
     group: 'layout-builder',
+    layout: 'stack',
+    placement: 'inline',
     fields: [
       {
         control: 'select',
@@ -290,6 +297,10 @@ export function getSettingGroupDefinition(group: AdapterSettingGroup): AdapterSe
 
 export function getSettingGroupFieldDefinitions(group: AdapterSettingGroup): AdapterSettingFieldDefinition[] {
   return getSettingGroupDefinition(group)?.fields ?? [];
+}
+
+export function getActiveSettingGroupDefinitions(ids: Array<string | null | undefined>): AdapterSettingGroupDefinition[] {
+  return Object.values(SETTING_GROUP_DEFINITIONS).filter((definition) => anyAdapterUsesSettingGroup(ids, definition.group));
 }
 
 export function isAdapterSupportedAtBreakpoint(id: string | null | undefined, breakpoint: Breakpoint): boolean {

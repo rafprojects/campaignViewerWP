@@ -319,6 +319,8 @@ Completed initial schema extraction:
 10. revalidated the expanded schema-driven adapter field rendering with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
 11. extended the adapter field schema to support select controls and moved the layout-builder scope selector into registry-owned metadata so the adapter settings UI is no longer limited to schema-driven numeric fields
 12. revalidated the select-field schema migration with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
+13. added registry-owned setting-group layout, placement, and contextual-scope metadata so the adapter settings UI can derive not just fields, but also which setting groups render inline versus in the shared section area
+14. replaced the remaining hardcoded adapter group branches in `GalleryAdapterSettingsSection` with iteration over active registry setting-group definitions, while preserving the special image/video split behavior for contextual groups like shape adapters
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 

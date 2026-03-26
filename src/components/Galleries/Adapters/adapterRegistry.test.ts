@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getActiveSettingGroupDefinitions,
   anyAdapterUsesSettingGroup,
   getAdapterSelectOptions,
   getSettingGroupFieldDefinitions,
@@ -57,6 +58,23 @@ describe('adapterRegistry', () => {
       expect.objectContaining({
         control: 'select',
         key: 'layoutBuilderScope',
+      }),
+    ]);
+  });
+
+  it('returns active setting groups with registry-defined placement and scope metadata', () => {
+    expect(getActiveSettingGroupDefinitions(['compact-grid', 'layout-builder', 'hexagonal'])).toEqual([
+      expect.objectContaining({
+        group: 'compact-grid',
+        layout: 'group',
+      }),
+      expect.objectContaining({
+        group: 'shape',
+        scopeMode: 'contextual',
+      }),
+      expect.objectContaining({
+        group: 'layout-builder',
+        placement: 'inline',
       }),
     ]);
   });
