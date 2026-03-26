@@ -17,7 +17,9 @@ interface GalleryConfigEditorModalProps {
   value?: Partial<GalleryConfig>;
   onClose: () => void;
   onSave: (value: GalleryConfig) => void;
+  onClear?: () => void;
   saveLabel?: string;
+  clearLabel?: string;
   unifiedAdapterEnabled?: boolean;
   unifiedAdapterDescription?: string;
 }
@@ -228,7 +230,9 @@ export function GalleryConfigEditorModal({
   value,
   onClose,
   onSave,
+  onClear,
   saveLabel = 'Apply Gallery Config',
+  clearLabel = 'Clear Overrides',
   unifiedAdapterEnabled = true,
   unifiedAdapterDescription,
 }: GalleryConfigEditorModalProps) {
@@ -399,6 +403,11 @@ export function GalleryConfigEditorModal({
             <Button variant="subtle" color="gray" onClick={() => setDraft(baseline)}>
               Reset All Changes
             </Button>
+            {onClear && (
+              <Button variant="subtle" color="red" onClick={onClear}>
+                {clearLabel}
+              </Button>
+            )}
           </Group>
           <Group gap="sm">
             <Button variant="default" onClick={onClose}>Cancel</Button>

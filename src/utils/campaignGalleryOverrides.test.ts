@@ -4,6 +4,7 @@ import type { Campaign } from '@/types';
 
 import {
   buildCampaignGalleryOverrideEditorValue,
+  clearCampaignGalleryOverrides,
   describeCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
   getUniformCampaignScopeAdapterId,
@@ -142,6 +143,14 @@ describe('campaignGalleryOverrides', () => {
           video: { adapterId: 'diamond' },
         },
       },
+    });
+  });
+
+  it('clears campaign gallery overrides back to inherited defaults', () => {
+    expect(clearCampaignGalleryOverrides()).toEqual({
+      imageAdapterId: '',
+      videoAdapterId: '',
+      galleryOverrides: undefined,
     });
   });
 

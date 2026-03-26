@@ -15,6 +15,12 @@ type CampaignOverrideScope = Extract<GalleryConfigScope, 'image' | 'video'>;
 
 type CampaignGalleryOverrideSource = Pick<Campaign, 'imageAdapterId' | 'videoAdapterId' | 'galleryOverrides'>;
 
+export interface ClearedCampaignGalleryOverrides {
+  imageAdapterId: '';
+  videoAdapterId: '';
+  galleryOverrides: undefined;
+}
+
 function isNonEmptyObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
 }
@@ -119,6 +125,14 @@ export function buildCampaignGalleryOverrideEditorValue(
       },
     },
   });
+}
+
+export function clearCampaignGalleryOverrides(): ClearedCampaignGalleryOverrides {
+  return {
+    imageAdapterId: '',
+    videoAdapterId: '',
+    galleryOverrides: undefined,
+  };
 }
 
 export function syncCampaignScopeAdapterOverride(

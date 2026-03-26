@@ -14,6 +14,7 @@ import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapter
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 import {
   buildCampaignGalleryOverrideEditorValue,
+  clearCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
   syncCampaignGalleryOverrideMode,
   getUniformCampaignScopeAdapterId,
@@ -382,6 +383,13 @@ export function UnifiedCampaignModal({
         onClose={() => setGalleryConfigEditorOpen(false)}
         title="Campaign Responsive Gallery Config"
         value={buildCampaignGalleryOverrideEditorValue(formState)}
+        onClear={() => {
+          updateForm({
+            ...formState,
+            ...clearCampaignGalleryOverrides(),
+          });
+          setGalleryConfigEditorOpen(false);
+        }}
         onSave={(galleryOverrides) => {
           updateForm({
             ...formState,
@@ -392,6 +400,7 @@ export function UnifiedCampaignModal({
           setGalleryConfigEditorOpen(false);
         }}
         saveLabel="Apply Campaign Gallery Config"
+        clearLabel="Clear Campaign Overrides"
         unifiedAdapterEnabled={false}
         unifiedAdapterDescription="Campaigns currently inherit the global unified adapter in this slice."
       />

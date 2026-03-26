@@ -331,6 +331,7 @@ Completed initial schema extraction:
 22. expanded the shared gallery config editor to own the first common-settings slice by editing nested section padding and adapter content padding, while projecting those values back into global flat settings so the existing layout controls stay in sync during the migration
 23. moved the first adapter-specific setting group into the shared gallery config editor by rendering the registry-defined masonry field from schema metadata and seeding/projecting its value through the global flat-settings bridge during the migration
 24. added baseline reset controls to the shared gallery config editor so users can revert either the current per-type breakpoint draft or the full editor draft back to the config state that was opened, giving both global and campaign contexts reversible edits before inheritance-specific reset UX lands
+25. added an explicit campaign-only clear action in the shared gallery config editor so campaign editors can remove stored gallery overrides entirely and fall back to inherited global behavior instead of only resetting the current modal draft
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 

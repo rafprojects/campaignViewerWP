@@ -184,6 +184,7 @@ describe('UnifiedCampaignModal', () => {
 
     expect(await screen.findByText('Shared Section Spacing')).toBeInTheDocument();
     expect(screen.getByText('Adapter Content Padding (px)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
   });
 
   it('renders media grid with items on media tab', () => {

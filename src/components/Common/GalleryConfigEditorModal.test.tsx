@@ -78,4 +78,20 @@ describe('GalleryConfigEditorModal', () => {
       }),
     );
   });
+
+  it('renders the optional clear action when provided', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{ mode: 'per-type' }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        onClear={vi.fn()}
+        clearLabel="Clear Campaign Overrides"
+      />,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
+  });
 });
