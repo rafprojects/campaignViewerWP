@@ -336,6 +336,18 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
+  it('shows the shared responsive gallery editor entry point on the layout tab', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
+  });
+
   it('interacts with Media Display tab controls', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

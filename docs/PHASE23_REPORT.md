@@ -327,6 +327,7 @@ Completed initial schema extraction:
 18. replaced the remaining settings-panel adapter-id list assembly with shared selection helpers so `GalleryAdapterSettingsSection` and `GalleryLayoutDetailSections` no longer manually rebuild unified/per-type/per-breakpoint adapter arrays from legacy fields
 19. added shared campaign gallery-override helpers, wired the campaign modal to preserve and update nested `galleryOverrides`, taught admin campaign rows to recognize nested overrides, and extended campaign REST read/write support so nested campaign gallery overrides now round-trip through the backend instead of existing only as runtime-only data
 20. exposed `galleryOverrides.mode` in the campaign modal through shared override helpers so campaign editors can now opt a campaign into unified or per-type gallery mode without falling back to flat legacy-only fields
+21. introduced a shared responsive gallery config editor modal and wired the first shell into both SettingsPanel and the campaign modal so both contexts now share one nested gallery-selection surface while retaining inline quick selectors for scanability
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 

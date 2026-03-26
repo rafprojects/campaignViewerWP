@@ -91,6 +91,36 @@ export function getCampaignGalleryOverrideMode(
     : '';
 }
 
+export function buildCampaignGalleryOverrideEditorValue(
+  source: CampaignGalleryOverrideSource,
+): Partial<GalleryConfig> | undefined {
+  if (source.galleryOverrides) {
+    return cloneGalleryConfig(source.galleryOverrides as GalleryConfig);
+  }
+
+  if (!source.imageAdapterId && !source.videoAdapterId) {
+    return undefined;
+  }
+
+  return pruneCampaignGalleryOverrides({
+    mode: 'per-type',
+    breakpoints: {
+      desktop: {
+        image: source.imageAdapterId ? { adapterId: source.imageAdapterId } : undefined,
+        video: source.videoAdapterId ? { adapterId: source.videoAdapterId } : undefined,
+      },
+      tablet: {
+        image: source.imageAdapterId ? { adapterId: source.imageAdapterId } : undefined,
+        video: source.videoAdapterId ? { adapterId: source.videoAdapterId } : undefined,
+      },
+      mobile: {
+        image: source.imageAdapterId ? { adapterId: source.imageAdapterId } : undefined,
+        video: source.videoAdapterId ? { adapterId: source.videoAdapterId } : undefined,
+      },
+    },
+  });
+}
+
 export function syncCampaignScopeAdapterOverride(
   overrides: Partial<GalleryConfig> | undefined,
   scope: CampaignOverrideScope,

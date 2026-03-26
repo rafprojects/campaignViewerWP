@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Campaign } from '@/types';
 
 import {
+  buildCampaignGalleryOverrideEditorValue,
   describeCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
   getUniformCampaignScopeAdapterId,
@@ -119,6 +120,29 @@ describe('campaignGalleryOverrides', () => {
     });
 
     expect(syncCampaignGalleryOverrideMode({ mode: 'unified' }, '')).toBeUndefined();
+  });
+
+  it('builds editor state from flat campaign adapter overrides when nested overrides are absent', () => {
+    expect(buildCampaignGalleryOverrideEditorValue(makeCampaign({
+      imageAdapterId: 'masonry',
+      videoAdapterId: 'diamond',
+    }))).toEqual({
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: { adapterId: 'masonry' },
+          video: { adapterId: 'diamond' },
+        },
+        tablet: {
+          image: { adapterId: 'masonry' },
+          video: { adapterId: 'diamond' },
+        },
+        mobile: {
+          image: { adapterId: 'masonry' },
+          video: { adapterId: 'diamond' },
+        },
+      },
+    });
   });
 
   it('reports override presence and describes nested breakpoint-specific overrides', () => {

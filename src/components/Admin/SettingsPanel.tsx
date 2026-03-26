@@ -41,6 +41,7 @@ import {
   type NavArrowPosition,
   type DotNavPosition,
   type DotNavShape,
+  type GalleryConfig,
   type ShadowPreset,
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
@@ -55,6 +56,8 @@ import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
 import { TypographySettingsSection } from '../Settings/TypographySettingsSection';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { GalleryConfigEditorModal } from '@/components/Common/GalleryConfigEditorModal';
+import { buildGalleryConfigFromLegacySettings } from '@/utils/galleryConfig';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
@@ -105,7 +108,18 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const [originalSettings, setOriginalSettings] = useState<SettingsData>(seedSettings);
   const [activeTab, setActiveTab] = useState<string | null>('general');
   const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
+  const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const hasChangesRef = useRef(false);
+
+  const applySettingsUpdate = useCallback((recipe: (prev: SettingsData) => SettingsData) => {
+    setSettings((prev) => {
+      const updated = recipe(prev);
+      const changed = JSON.stringify(updated) !== JSON.stringify(originalSettings);
+      setHasChanges(changed);
+      hasChangesRef.current = changed;
+      return updated;
+    });
+  }, [originalSettings]);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -129,13 +143,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   }, [opened, loadSettings, initialSettings]);
 
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
-    setSettings((prev) => {
-      const updated = { ...prev, [key]: value };
-      const changed = JSON.stringify(updated) !== JSON.stringify(originalSettings);
-      setHasChanges(changed);
-      hasChangesRef.current = changed;
-      return updated;
-    });
+    applySettingsUpdate((prev) => ({ ...prev, [key]: value }));
   };
 
   const updateGallerySetting: UpdateGallerySetting = (key, value) => {
@@ -188,6 +196,39 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       next[elementId] = override;
     }
     updateSetting('typographyOverrides', next);
+  };
+
+  const handleGalleryConfigEditorSave = (galleryConfig: GalleryConfig) => {
+    applySettingsUpdate((prev) => {
+      const nextUnifiedAdapterId = galleryConfig.breakpoints?.desktop?.unified?.adapterId
+        ?? galleryConfig.breakpoints?.tablet?.unified?.adapterId
+        ?? galleryConfig.breakpoints?.mobile?.unified?.adapterId
+        ?? prev.unifiedGalleryAdapterId;
+      const desktopImageAdapterId = galleryConfig.breakpoints?.desktop?.image?.adapterId ?? prev.desktopImageAdapterId;
+      const desktopVideoAdapterId = galleryConfig.breakpoints?.desktop?.video?.adapterId ?? prev.desktopVideoAdapterId;
+      const tabletImageAdapterId = galleryConfig.breakpoints?.tablet?.image?.adapterId ?? prev.tabletImageAdapterId;
+      const tabletVideoAdapterId = galleryConfig.breakpoints?.tablet?.video?.adapterId ?? prev.tabletVideoAdapterId;
+      const mobileImageAdapterId = galleryConfig.breakpoints?.mobile?.image?.adapterId ?? prev.mobileImageAdapterId;
+      const mobileVideoAdapterId = galleryConfig.breakpoints?.mobile?.video?.adapterId ?? prev.mobileVideoAdapterId;
+
+      return {
+        ...prev,
+        galleryConfig,
+        unifiedGalleryEnabled: galleryConfig.mode === 'unified',
+        gallerySelectionMode: galleryConfig.mode === 'unified' ? 'unified' : 'per-breakpoint',
+        unifiedGalleryAdapterId: nextUnifiedAdapterId,
+        imageGalleryAdapterId: desktopImageAdapterId || prev.imageGalleryAdapterId,
+        videoGalleryAdapterId: desktopVideoAdapterId || prev.videoGalleryAdapterId,
+        desktopImageAdapterId,
+        desktopVideoAdapterId,
+        tabletImageAdapterId,
+        tabletVideoAdapterId,
+        mobileImageAdapterId,
+        mobileVideoAdapterId,
+      };
+    });
+
+    setGalleryConfigEditorOpen(false);
   };
 
   return (
@@ -1323,6 +1364,14 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 <Accordion.Item value="adapters">
                   <Accordion.Control>Gallery Adapters</Accordion.Control>
                   <Accordion.Panel>
+                    <Group justify="space-between" align="flex-start" mb="md">
+                      <Text size="sm" c="dimmed" maw={560}>
+                        Quick selectors stay inline here. Use the responsive editor when you need breakpoint-aware nested gallery selection without flattening the layout tab again.
+                      </Text>
+                      <Button variant="light" onClick={() => setGalleryConfigEditorOpen(true)}>
+                        Edit Responsive Config
+                      </Button>
+                    </Group>
                     <GalleryAdapterSettingsSection
                       settings={settings}
                       updateSetting={updateGallerySetting}
@@ -1381,6 +1430,14 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           </Tabs>
         </Stack>
         </Box>
+
+          <GalleryConfigEditorModal
+            opened={galleryConfigEditorOpen}
+            onClose={() => setGalleryConfigEditorOpen(false)}
+            title="Responsive Gallery Config"
+            value={settings.galleryConfig ?? buildGalleryConfigFromLegacySettings(settings)}
+            onSave={handleGalleryConfigEditorSave}
+          />
 
           {/* ── Footer (fixed outside scroll area) ───────── */}
           <Box

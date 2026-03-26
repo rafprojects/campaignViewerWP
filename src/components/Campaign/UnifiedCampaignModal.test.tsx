@@ -146,6 +146,7 @@ describe('UnifiedCampaignModal', () => {
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Visibility')).toBeInTheDocument();
     expect(screen.getByText('Gallery Mode Override')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Categories')).toBeInTheDocument();
   });
