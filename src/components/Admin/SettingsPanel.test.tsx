@@ -435,6 +435,33 @@ describe('SettingsPanel', () => {
     expect(within(dialog).getAllByLabelText('Equal Height Sections (Per-Type)')[0]).toHaveValue('On');
   });
 
+  it('seeds shared adapter sizing values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          adapterSizingMode: 'manual',
+          adapterMaxWidthPct: 85,
+          adapterMaxHeightPct: 90,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' });
+
+    expect(within(dialog).getByDisplayValue('Manual (custom %)')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('85')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('90')).toBeInTheDocument();
+  });
+
   it('interacts with Media Display tab controls', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

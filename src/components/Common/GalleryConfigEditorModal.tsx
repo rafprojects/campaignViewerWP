@@ -40,6 +40,9 @@ type SharedCommonSettingKey = keyof Pick<
   | 'perTypeSectionEqualHeight'
   | 'sectionPadding'
   | 'adapterContentPadding'
+  | 'adapterSizingMode'
+  | 'adapterMaxWidthPct'
+  | 'adapterMaxHeightPct'
   | 'adapterItemGap'
   | 'adapterJustifyContent'
 >;
@@ -76,7 +79,7 @@ function getRepresentativeCommonValue(
 function getRepresentativeNumberCommonValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  key: Extract<SharedCommonSettingKey, 'sectionMaxWidth' | 'sectionMaxHeight' | 'sectionMinWidth' | 'sectionMinHeight' | 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap'>,
+  key: Extract<SharedCommonSettingKey, 'sectionMaxWidth' | 'sectionMaxHeight' | 'sectionMinWidth' | 'sectionMinHeight' | 'sectionPadding' | 'adapterContentPadding' | 'adapterMaxWidthPct' | 'adapterMaxHeightPct' | 'adapterItemGap'>,
 ): number | undefined {
   const value = getRepresentativeCommonValue(config, breakpoint, key);
   return typeof value === 'number' ? value : undefined;
@@ -85,7 +88,7 @@ function getRepresentativeNumberCommonValue(
 function getRepresentativeStringCommonValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  key: Extract<SharedCommonSettingKey, 'sectionHeightMode' | 'adapterJustifyContent'>,
+  key: Extract<SharedCommonSettingKey, 'sectionHeightMode' | 'adapterSizingMode' | 'adapterJustifyContent'>,
 ): string | undefined {
   const value = getRepresentativeCommonValue(config, breakpoint, key);
   return typeof value === 'string' ? value : undefined;
@@ -532,6 +535,44 @@ export function GalleryConfigEditorModal({
           max={24}
           step={4}
         />
+
+        <Divider label="Shared Adapter Sizing" labelPosition="center" />
+
+        <Select
+          label="Adapter Sizing Mode"
+          description="How adapters fill their gallery section. Fill uses the full section; Manual lets you cap width and height percentages."
+          data={[
+            { value: 'fill', label: 'Fill (100%)' },
+            { value: 'manual', label: 'Manual (custom %)' },
+          ]}
+          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'adapterSizingMode') ?? 'fill'}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterSizingMode', value ?? 'fill'))}
+          allowDeselect={false}
+        />
+
+        {getRepresentativeStringCommonValue(draft, activeBreakpoint, 'adapterSizingMode') === 'manual' && (
+          <>
+            <NumberInput
+              label="Adapter Max Width (%)"
+              description="Maximum adapter width as a percentage of its gallery section."
+              value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterMaxWidthPct') ?? 100}
+              onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterMaxWidthPct', typeof value === 'number' ? value : 100))}
+              min={50}
+              max={100}
+              step={5}
+            />
+
+            <NumberInput
+              label="Adapter Max Height (%)"
+              description="Maximum adapter height as a percentage of its gallery section."
+              value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterMaxHeightPct') ?? 100}
+              onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterMaxHeightPct', typeof value === 'number' ? value : 100))}
+              min={50}
+              max={100}
+              step={5}
+            />
+          </>
+        )}
 
         <NumberInput
           label="Adapter Item Gap (px)"

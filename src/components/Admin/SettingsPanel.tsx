@@ -72,6 +72,9 @@ function getRepresentativeGalleryCommonSetting(
     | 'perTypeSectionEqualHeight'
     | 'sectionPadding'
     | 'adapterContentPadding'
+    | 'adapterSizingMode'
+    | 'adapterMaxWidthPct'
+    | 'adapterMaxHeightPct'
     | 'adapterItemGap'
     | 'adapterJustifyContent',
 ): number | string | boolean | undefined {
@@ -257,6 +260,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const perTypeSectionEqualHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'perTypeSectionEqualHeight') ?? prev.perTypeSectionEqualHeight;
       const gallerySectionPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionPadding') ?? prev.gallerySectionPadding;
       const adapterContentPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterContentPadding') ?? prev.adapterContentPadding;
+      const adapterSizingMode = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterSizingMode') ?? prev.adapterSizingMode;
+      const adapterMaxWidthPct = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterMaxWidthPct') ?? prev.adapterMaxWidthPct;
+      const adapterMaxHeightPct = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterMaxHeightPct') ?? prev.adapterMaxHeightPct;
       const adapterItemGap = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterItemGap') ?? prev.adapterItemGap;
       const adapterJustifyContent = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterJustifyContent') ?? prev.adapterJustifyContent;
 
@@ -283,6 +289,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         perTypeSectionEqualHeight: perTypeSectionEqualHeight as SettingsData['perTypeSectionEqualHeight'],
         gallerySectionPadding: gallerySectionPadding as SettingsData['gallerySectionPadding'],
         adapterContentPadding: adapterContentPadding as SettingsData['adapterContentPadding'],
+        adapterSizingMode: adapterSizingMode as SettingsData['adapterSizingMode'],
+        adapterMaxWidthPct: adapterMaxWidthPct as SettingsData['adapterMaxWidthPct'],
+        adapterMaxHeightPct: adapterMaxHeightPct as SettingsData['adapterMaxHeightPct'],
         adapterItemGap: adapterItemGap as SettingsData['adapterItemGap'],
         adapterJustifyContent: adapterJustifyContent as SettingsData['adapterJustifyContent'],
       };
