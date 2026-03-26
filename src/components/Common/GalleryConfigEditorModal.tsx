@@ -201,6 +201,27 @@ function setAdapterSettingForMatchingScopes(
   });
 }
 
+function resetBreakpointToBaseline(
+  draft: GalleryConfig,
+  baseline: GalleryConfig,
+  breakpoint: GalleryConfigBreakpoint,
+): GalleryConfig {
+  const next = cloneGalleryConfig(draft) ?? { mode: draft.mode ?? 'per-type', breakpoints: {} };
+  next.breakpoints = next.breakpoints ?? {};
+
+  const baselineBreakpoint = cloneGalleryConfig(baseline)?.breakpoints?.[breakpoint];
+  if (baselineBreakpoint) {
+    next.breakpoints[breakpoint] = baselineBreakpoint;
+  } else {
+    delete next.breakpoints[breakpoint];
+  }
+
+  return pruneConfig({
+    mode: next.mode ?? 'per-type',
+    breakpoints: next.breakpoints,
+  });
+}
+
 export function GalleryConfigEditorModal({
   opened,
   title,
@@ -212,6 +233,7 @@ export function GalleryConfigEditorModal({
   unifiedAdapterDescription,
 }: GalleryConfigEditorModalProps) {
   const [draft, setDraft] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
+  const [baseline, setBaseline] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
   const [activeBreakpoint, setActiveBreakpoint] = useState<GalleryConfigBreakpoint>('desktop');
   const masonryField = getSettingGroupFieldDefinitions('masonry')[0];
   const showsMasonryField = getEditableScopes(draft.mode ?? 'per-type').some((scope) =>
@@ -223,7 +245,9 @@ export function GalleryConfigEditorModal({
       return;
     }
 
-    setDraft(pruneConfig(cloneGalleryConfig(value as GalleryConfig) ?? { mode: 'per-type', breakpoints: {} }));
+    const nextBaseline = pruneConfig(cloneGalleryConfig(value as GalleryConfig) ?? { mode: 'per-type', breakpoints: {} });
+    setBaseline(nextBaseline);
+    setDraft(nextBaseline);
     setActiveBreakpoint('desktop');
   }, [opened, value]);
 
@@ -361,9 +385,25 @@ export function GalleryConfigEditorModal({
           </>
         )}
 
-        <Group justify="space-between">
-          <Button variant="default" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => onSave(pruneConfig(draft))}>{saveLabel}</Button>
+        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+          <Group gap="sm">
+            {draft.mode === 'per-type' && (
+              <Button
+                variant="subtle"
+                color="gray"
+                onClick={() => setDraft((current) => resetBreakpointToBaseline(current, baseline, activeBreakpoint))}
+              >
+                Reset {activeBreakpoint}
+              </Button>
+            )}
+            <Button variant="subtle" color="gray" onClick={() => setDraft(baseline)}>
+              Reset All Changes
+            </Button>
+          </Group>
+          <Group gap="sm">
+            <Button variant="default" onClick={onClose}>Cancel</Button>
+            <Button onClick={() => onSave(pruneConfig(draft))}>{saveLabel}</Button>
+          </Group>
         </Group>
       </Stack>
     </Modal>
