@@ -1,0 +1,149 @@
+import type { Campaign, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope, GalleryScopeConfig } from '@/types';
+
+import { cloneGalleryConfig } from './galleryConfig';
+
+const CAMPAIGN_OVERRIDE_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
+
+type CampaignOverrideScope = Extract<GalleryConfigScope, 'image' | 'video'>;
+
+type CampaignGalleryOverrideSource = Pick<Campaign, 'imageAdapterId' | 'videoAdapterId' | 'galleryOverrides'>;
+
+function isNonEmptyObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+function isEmptyScopeConfig(scope?: GalleryScopeConfig): boolean {
+  if (!scope) {
+    return true;
+  }
+
+  return !scope.adapterId && !isNonEmptyObject(scope.common) && !isNonEmptyObject(scope.adapterSettings);
+}
+
+function pruneCampaignGalleryOverrides(overrides?: Partial<GalleryConfig>): Partial<GalleryConfig> | undefined {
+  if (!overrides) {
+    return undefined;
+  }
+
+  const next = cloneGalleryConfig(overrides as GalleryConfig) ?? {};
+
+  if (next.breakpoints) {
+    CAMPAIGN_OVERRIDE_BREAKPOINTS.forEach((breakpoint) => {
+      const breakpointConfig = next.breakpoints?.[breakpoint];
+      if (!breakpointConfig) {
+        return;
+      }
+
+      (['image', 'video', 'unified'] as const).forEach((scope) => {
+        if (isEmptyScopeConfig(breakpointConfig[scope])) {
+          delete breakpointConfig[scope];
+        }
+      });
+
+      if (!Object.keys(breakpointConfig).length) {
+        delete next.breakpoints?.[breakpoint];
+      }
+    });
+
+    if (!Object.keys(next.breakpoints).length) {
+      delete next.breakpoints;
+    }
+  }
+
+  return next.mode || next.breakpoints ? next : undefined;
+}
+
+export function hasCampaignScopeOverrides(
+  overrides: Partial<GalleryConfig> | undefined,
+  scope: CampaignOverrideScope,
+): boolean {
+  return CAMPAIGN_OVERRIDE_BREAKPOINTS.some((breakpoint) => {
+    const scopeConfig = overrides?.breakpoints?.[breakpoint]?.[scope];
+    return !!scopeConfig && !isEmptyScopeConfig(scopeConfig);
+  });
+}
+
+export function getUniformCampaignScopeAdapterId(
+  overrides: Partial<GalleryConfig> | undefined,
+  scope: CampaignOverrideScope,
+): string {
+  const adapterIds = CAMPAIGN_OVERRIDE_BREAKPOINTS.map((breakpoint) => overrides?.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? '');
+
+  if (adapterIds.some((adapterId) => !adapterId)) {
+    return '';
+  }
+
+  return adapterIds.every((adapterId) => adapterId === adapterIds[0]) ? adapterIds[0] : '';
+}
+
+export function syncCampaignScopeAdapterOverride(
+  overrides: Partial<GalleryConfig> | undefined,
+  scope: CampaignOverrideScope,
+  adapterId: string,
+): Partial<GalleryConfig> | undefined {
+  const next = cloneGalleryConfig(overrides as GalleryConfig) ?? {};
+
+  if (adapterId) {
+    next.breakpoints = next.breakpoints ?? {};
+
+    CAMPAIGN_OVERRIDE_BREAKPOINTS.forEach((breakpoint) => {
+      const breakpointConfig = next.breakpoints?.[breakpoint] ?? {};
+      const scopeConfig = breakpointConfig[scope] ?? {};
+
+      breakpointConfig[scope] = {
+        ...scopeConfig,
+        adapterId,
+      };
+
+      next.breakpoints![breakpoint] = breakpointConfig;
+    });
+
+    return pruneCampaignGalleryOverrides(next);
+  }
+
+  CAMPAIGN_OVERRIDE_BREAKPOINTS.forEach((breakpoint) => {
+    const breakpointConfig = next.breakpoints?.[breakpoint];
+    if (!breakpointConfig?.[scope]) {
+      return;
+    }
+
+    delete breakpointConfig[scope]?.adapterId;
+  });
+
+  return pruneCampaignGalleryOverrides(next);
+}
+
+export function hasCampaignGalleryOverrides(source: CampaignGalleryOverrideSource): boolean {
+  return !!(
+    source.imageAdapterId
+    || source.videoAdapterId
+    || source.galleryOverrides?.mode
+    || hasCampaignScopeOverrides(source.galleryOverrides, 'image')
+    || hasCampaignScopeOverrides(source.galleryOverrides, 'video')
+    || CAMPAIGN_OVERRIDE_BREAKPOINTS.some((breakpoint) => !isEmptyScopeConfig(source.galleryOverrides?.breakpoints?.[breakpoint]?.unified))
+  );
+}
+
+export function describeCampaignGalleryOverrides(source: CampaignGalleryOverrideSource): string[] {
+  const descriptions: string[] = [];
+  const imageAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'image') || source.imageAdapterId || '';
+  const videoAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'video') || source.videoAdapterId || '';
+
+  if (imageAdapterId) {
+    descriptions.push(`Image: ${imageAdapterId}`);
+  } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'image')) {
+    descriptions.push('Image: breakpoint-specific override');
+  }
+
+  if (videoAdapterId) {
+    descriptions.push(`Video: ${videoAdapterId}`);
+  } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'video')) {
+    descriptions.push('Video: breakpoint-specific override');
+  }
+
+  if (source.galleryOverrides?.mode) {
+    descriptions.push(`Mode: ${source.galleryOverrides.mode}`);
+  }
+
+  return descriptions;
+}

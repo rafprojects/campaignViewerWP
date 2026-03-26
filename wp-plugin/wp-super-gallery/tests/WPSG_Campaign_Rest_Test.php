@@ -129,6 +129,58 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertGreaterThanOrEqual(2, count($data));
     }
 
+    public function test_campaign_gallery_overrides_round_trip() {
+        $this->set_admin_user();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_param('title', 'Campaign Overrides');
+        $create->set_param('status', 'active');
+        $create->set_param('galleryOverrides', [
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'adapterId' => 'masonry',
+                        'common' => [
+                            'sectionPadding' => 24,
+                        ],
+                    ],
+                ],
+                'tablet' => [
+                    'image' => [
+                        'adapterId' => 'masonry',
+                    ],
+                ],
+                'mobile' => [
+                    'image' => [
+                        'adapterId' => 'masonry',
+                    ],
+                ],
+            ],
+        ]);
+
+        $create_response = rest_do_request($create);
+        $this->assertEquals(201, $create_response->get_status());
+
+        $created = $create_response->get_data();
+        $campaign_id = intval($created['id'] ?? 0);
+        $this->assertEquals('masonry', $created['galleryOverrides']['breakpoints']['desktop']['image']['adapterId'] ?? null);
+        $this->assertEquals('per-type', $created['galleryOverrides']['mode'] ?? null);
+
+        $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
+        $this->assertEquals('masonry', $stored['breakpoints']['desktop']['image']['adapterId'] ?? null);
+        $this->assertEquals(24, $stored['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+
+        $update = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $update->set_param('galleryOverrides', []);
+        $update_response = rest_do_request($update);
+
+        $this->assertEquals(200, $update_response->get_status());
+        $updated = $update_response->get_data();
+        $this->assertNull($updated['galleryOverrides'] ?? null);
+        $this->assertEmpty(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true));
+    }
+
     public function test_update_campaign_returns_404_for_unknown_id() {
         $this->set_admin_user();
 

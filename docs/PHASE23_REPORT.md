@@ -325,6 +325,7 @@ Completed initial schema extraction:
 16. validated the shared adapter-selection helper with focused registry tests, the existing `SettingsPanel` suite, and a green production `build:wp` run
 17. extracted the legacy image/video breakpoint adapter key and fallback lookup into a shared utility consumed by the registry helper, the nested gallery-config compatibility bridge, and the runtime resolver so editor and runtime paths now share one source of truth for per-type adapter slot resolution
 18. replaced the remaining settings-panel adapter-id list assembly with shared selection helpers so `GalleryAdapterSettingsSection` and `GalleryLayoutDetailSections` no longer manually rebuild unified/per-type/per-breakpoint adapter arrays from legacy fields
+19. added shared campaign gallery-override helpers, wired the campaign modal to preserve and update nested `galleryOverrides`, taught admin campaign rows to recognize nested overrides, and extended campaign REST read/write support so nested campaign gallery overrides now round-trip through the backend instead of existing only as runtime-only data
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 

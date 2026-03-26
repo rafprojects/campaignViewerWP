@@ -11,6 +11,7 @@ import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
+import { syncCampaignScopeAdapterOverride } from '@/utils/campaignGalleryOverrides';
 
 /** Convert ISO date string to datetime-local input value. */
 function toLocalInputValue(iso: string): string {
@@ -269,7 +270,11 @@ export function UnifiedCampaignModal({
                     clearable
                     data={ADAPTER_OPTIONS}
                     value={formState.imageAdapterId || null}
-                    onChange={(v) => updateForm({ ...formState, imageAdapterId: v ?? '' })}
+                    onChange={(v) => updateForm({
+                      ...formState,
+                      imageAdapterId: v ?? '',
+                      galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'image', v ?? ''),
+                    })}
                   />
                   <Select
                     label="Video Gallery"
@@ -278,7 +283,11 @@ export function UnifiedCampaignModal({
                     clearable
                     data={ADAPTER_OPTIONS}
                     value={formState.videoAdapterId || null}
-                    onChange={(v) => updateForm({ ...formState, videoAdapterId: v ?? '' })}
+                    onChange={(v) => updateForm({
+                      ...formState,
+                      videoAdapterId: v ?? '',
+                      galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'video', v ?? ''),
+                    })}
                   />
                 </Group>
               )}

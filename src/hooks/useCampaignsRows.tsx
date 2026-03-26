@@ -3,6 +3,7 @@ import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox } from '@mant
 import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid } from '@tabler/icons-react';
 import type { AdminCampaign } from '@/hooks/useAdminSWR';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
+import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@/utils/campaignGalleryOverrides';
 
 /** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
 function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string; color: string } | null {
@@ -39,6 +40,7 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
     return visible.map((c) => {
       const cid = String(c.id);
       const isSelected = selectedCampaignIds.has(cid);
+      const galleryOverrideSummary = describeCampaignGalleryOverrides(c);
       return (
         <Table.Tr key={c.id} data-selected={isSelected || undefined}>
           {selectMode && (
@@ -54,8 +56,8 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
             <Box>
               <Group gap={6}>
                 <Text fw={700}>{c.title}</Text>
-                {(c.imageAdapterId || c.videoAdapterId) && (
-                  <Tooltip label={`Custom gallery: ${[c.imageAdapterId && `Image: ${c.imageAdapterId}`, c.videoAdapterId && `Video: ${c.videoAdapterId}`].filter(Boolean).join(', ')}`} withArrow>
+                {hasCampaignGalleryOverrides(c) && (
+                  <Tooltip label={`Custom gallery: ${galleryOverrideSummary.join(', ') || 'Nested campaign gallery overrides'}`} withArrow>
                     <IconLayoutGrid size={14} color="var(--mantine-color-violet-5)" />
                   </Tooltip>
                 )}

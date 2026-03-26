@@ -15,7 +15,10 @@ import type { AdminCampaign } from '@/hooks/useAdminSWR';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { sortByOrder } from '@/utils/sortByOrder';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
+import { cloneGalleryConfig } from '@/utils/galleryConfig';
+import { getUniformCampaignScopeAdapterId } from '@/utils/campaignGalleryOverrides';
 import { useXhrUpload } from './useXhrUpload';
+import type { GalleryConfig } from '@/types';
 
 export interface UnifiedCampaignFormState {
   title: string;
@@ -31,6 +34,7 @@ export interface UnifiedCampaignFormState {
   layoutTemplateId: string;
   imageAdapterId: string;
   videoAdapterId: string;
+  galleryOverrides?: Partial<GalleryConfig>;
   categories: string[];
 }
 
@@ -47,6 +51,7 @@ const emptyForm: UnifiedCampaignFormState = {
   layoutTemplateId: '',
   imageAdapterId: '',
   videoAdapterId: '',
+  galleryOverrides: undefined,
   categories: [],
 };
 
@@ -106,6 +111,7 @@ export function useUnifiedCampaignModal({
     const c = campaign as Campaign & Partial<AdminCampaign>;
     setMode('edit');
     setEditingCampaignId(String(c.id));
+    const galleryOverrides = cloneGalleryConfig(c.galleryOverrides);
     setFormState({
       title: c.title ?? '',
       description: c.description ?? '',
@@ -120,8 +126,9 @@ export function useUnifiedCampaignModal({
       publishAt: c.publishAt ?? '',
       unpublishAt: c.unpublishAt ?? '',
       layoutTemplateId: c.layoutTemplateId ?? '',
-      imageAdapterId: c.imageAdapterId ?? '',
-      videoAdapterId: c.videoAdapterId ?? '',
+      imageAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'image') || (c.imageAdapterId ?? ''),
+      videoAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'video') || (c.videoAdapterId ?? ''),
+      galleryOverrides,
       categories: c.categories ?? [],
       borderColor: (c as Campaign).borderColor,
     });
@@ -227,6 +234,7 @@ export function useUnifiedCampaignModal({
       layoutTemplateId: formState.layoutTemplateId || '',
       imageAdapterId: formState.imageAdapterId || '',
       videoAdapterId: formState.videoAdapterId || '',
+      galleryOverrides: formState.galleryOverrides ?? null,
     };
     if (coverImageChanged) payload.coverImage = formState.coverImage || '';
     if (formState.borderColor !== undefined) payload.borderColor = formState.borderColor;
