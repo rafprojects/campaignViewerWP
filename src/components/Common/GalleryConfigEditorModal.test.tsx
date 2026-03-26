@@ -88,10 +88,12 @@ describe('GalleryConfigEditorModal', () => {
         onClose={vi.fn()}
         onSave={vi.fn()}
         onClear={vi.fn()}
+        contextSummary="This campaign is currently inheriting global gallery settings."
         clearLabel="Clear Campaign Overrides"
       />,
     );
 
     expect(await screen.findByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
+    expect(screen.getByText('This campaign is currently inheriting global gallery settings.')).toBeInTheDocument();
   });
 });

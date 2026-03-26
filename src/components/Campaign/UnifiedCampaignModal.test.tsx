@@ -185,6 +185,36 @@ describe('UnifiedCampaignModal', () => {
     expect(await screen.findByText('Shared Section Spacing')).toBeInTheDocument();
     expect(screen.getByText('Adapter Content Padding (px)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
+    expect(screen.getByText(/currently inheriting global gallery settings/i)).toBeInTheDocument();
+  });
+
+  it('shows overridden-state messaging when campaign gallery overrides exist', async () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: 'masonry',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'per-type',
+        },
+        categories: [],
+      },
+    });
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+    expect(await screen.findByText(/currently stores custom gallery overrides/i)).toBeInTheDocument();
   });
 
   it('renders media grid with items on media tab', () => {

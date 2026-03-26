@@ -18,6 +18,7 @@ interface GalleryConfigEditorModalProps {
   onClose: () => void;
   onSave: (value: GalleryConfig) => void;
   onClear?: () => void;
+  contextSummary?: string;
   saveLabel?: string;
   clearLabel?: string;
   unifiedAdapterEnabled?: boolean;
@@ -231,6 +232,7 @@ export function GalleryConfigEditorModal({
   onClose,
   onSave,
   onClear,
+  contextSummary,
   saveLabel = 'Apply Gallery Config',
   clearLabel = 'Clear Overrides',
   unifiedAdapterEnabled = true,
@@ -261,6 +263,12 @@ export function GalleryConfigEditorModal({
         <Text size="sm" c="dimmed">
           This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.
         </Text>
+
+        {contextSummary && (
+          <Text size="sm" fw={500} c="blue">
+            {contextSummary}
+          </Text>
+        )}
 
         <Select
           label="Gallery Mode"

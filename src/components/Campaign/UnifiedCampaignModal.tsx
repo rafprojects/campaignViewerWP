@@ -16,6 +16,7 @@ import {
   buildCampaignGalleryOverrideEditorValue,
   clearCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
+  hasCampaignGalleryOverrides,
   syncCampaignGalleryOverrideMode,
   getUniformCampaignScopeAdapterId,
   syncCampaignScopeAdapterOverride,
@@ -383,6 +384,9 @@ export function UnifiedCampaignModal({
         onClose={() => setGalleryConfigEditorOpen(false)}
         title="Campaign Responsive Gallery Config"
         value={buildCampaignGalleryOverrideEditorValue(formState)}
+        contextSummary={hasCampaignGalleryOverrides(formState)
+          ? 'This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings.'
+          : 'This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides.'}
         onClear={() => {
           updateForm({
             ...formState,
