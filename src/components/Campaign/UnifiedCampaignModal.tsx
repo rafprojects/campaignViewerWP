@@ -11,7 +11,11 @@ import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
-import { syncCampaignScopeAdapterOverride } from '@/utils/campaignGalleryOverrides';
+import {
+  getCampaignGalleryOverrideMode,
+  syncCampaignGalleryOverrideMode,
+  syncCampaignScopeAdapterOverride,
+} from '@/utils/campaignGalleryOverrides';
 
 /** Convert ISO date string to datetime-local input value. */
 function toLocalInputValue(iso: string): string {
@@ -23,6 +27,10 @@ function toLocalInputValue(iso: string): string {
 }
 
 const ADAPTER_OPTIONS = getAdapterSelectOptions({ context: 'campaign-override' });
+const GALLERY_MODE_OPTIONS = [
+  { value: 'unified', label: 'Unified' },
+  { value: 'per-type', label: 'Per-Type' },
+];
 
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
@@ -263,6 +271,21 @@ export function UnifiedCampaignModal({
               )}
               {isEdit && (
                 <Group grow wrap="wrap" gap="sm">
+                  <Select
+                    label="Gallery Mode Override"
+                    description="Override the global gallery mode for this campaign"
+                    placeholder="Default (from settings)"
+                    clearable
+                    data={GALLERY_MODE_OPTIONS}
+                    value={getCampaignGalleryOverrideMode(formState.galleryOverrides) || null}
+                    onChange={(v) => updateForm({
+                      ...formState,
+                      galleryOverrides: syncCampaignGalleryOverrideMode(
+                        formState.galleryOverrides,
+                        (v as 'unified' | 'per-type' | null) ?? '',
+                      ),
+                    })}
+                  />
                   <Select
                     label="Image Gallery"
                     description="Override the global image gallery type for this campaign"

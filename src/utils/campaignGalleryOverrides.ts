@@ -1,4 +1,11 @@
-import type { Campaign, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope, GalleryScopeConfig } from '@/types';
+import type {
+  Campaign,
+  GalleryConfig,
+  GalleryConfigBreakpoint,
+  GalleryConfigMode,
+  GalleryConfigScope,
+  GalleryScopeConfig,
+} from '@/types';
 
 import { cloneGalleryConfig } from './galleryConfig';
 
@@ -76,6 +83,14 @@ export function getUniformCampaignScopeAdapterId(
   return adapterIds.every((adapterId) => adapterId === adapterIds[0]) ? adapterIds[0] : '';
 }
 
+export function getCampaignGalleryOverrideMode(
+  overrides: Partial<GalleryConfig> | undefined,
+): GalleryConfigMode | '' {
+  return overrides?.mode === 'unified' || overrides?.mode === 'per-type'
+    ? overrides.mode
+    : '';
+}
+
 export function syncCampaignScopeAdapterOverride(
   overrides: Partial<GalleryConfig> | undefined,
   scope: CampaignOverrideScope,
@@ -110,6 +125,21 @@ export function syncCampaignScopeAdapterOverride(
     delete breakpointConfig[scope]?.adapterId;
   });
 
+  return pruneCampaignGalleryOverrides(next);
+}
+
+export function syncCampaignGalleryOverrideMode(
+  overrides: Partial<GalleryConfig> | undefined,
+  mode: GalleryConfigMode | '',
+): Partial<GalleryConfig> | undefined {
+  const next = cloneGalleryConfig(overrides as GalleryConfig) ?? {};
+
+  if (mode) {
+    next.mode = mode;
+    return pruneCampaignGalleryOverrides(next);
+  }
+
+  delete next.mode;
   return pruneCampaignGalleryOverrides(next);
 }
 

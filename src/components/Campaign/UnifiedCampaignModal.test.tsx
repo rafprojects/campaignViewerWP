@@ -145,8 +145,34 @@ describe('UnifiedCampaignModal', () => {
     render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Visibility')).toBeInTheDocument();
+    expect(screen.getByText('Gallery Mode Override')).toBeInTheDocument();
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Categories')).toBeInTheDocument();
+  });
+
+  it('renders the current nested gallery mode override on the settings tab', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: { mode: 'unified' },
+        categories: [],
+      },
+    });
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByDisplayValue('Unified')).toBeInTheDocument();
   });
 
   it('renders media grid with items on media tab', () => {

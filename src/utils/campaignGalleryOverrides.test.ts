@@ -4,9 +4,11 @@ import type { Campaign } from '@/types';
 
 import {
   describeCampaignGalleryOverrides,
+  getCampaignGalleryOverrideMode,
   getUniformCampaignScopeAdapterId,
   hasCampaignGalleryOverrides,
   hasCampaignScopeOverrides,
+  syncCampaignGalleryOverrideMode,
   syncCampaignScopeAdapterOverride,
 } from './campaignGalleryOverrides';
 
@@ -99,6 +101,24 @@ describe('campaignGalleryOverrides', () => {
         },
       },
     });
+  });
+
+  it('reads and syncs the nested campaign gallery mode override', () => {
+    expect(getCampaignGalleryOverrideMode({ mode: 'unified' })).toBe('unified');
+    expect(getCampaignGalleryOverrideMode({})).toBe('');
+
+    expect(syncCampaignGalleryOverrideMode({
+      breakpoints: {
+        desktop: { image: { adapterId: 'masonry' } },
+      },
+    }, 'per-type')).toEqual({
+      mode: 'per-type',
+      breakpoints: {
+        desktop: { image: { adapterId: 'masonry' } },
+      },
+    });
+
+    expect(syncCampaignGalleryOverrideMode({ mode: 'unified' }, '')).toBeUndefined();
   });
 
   it('reports override presence and describes nested breakpoint-specific overrides', () => {

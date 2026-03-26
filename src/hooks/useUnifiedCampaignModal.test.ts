@@ -58,6 +58,7 @@ describe('useUnifiedCampaignModal', () => {
         imageAdapterId: '',
         videoAdapterId: '',
         galleryOverrides: {
+          mode: 'per-type',
           breakpoints: {
             desktop: { image: { adapterId: 'masonry' }, video: { adapterId: 'diamond' } },
             tablet: { image: { adapterId: 'masonry' }, video: { adapterId: 'diamond' } },
@@ -69,6 +70,7 @@ describe('useUnifiedCampaignModal', () => {
 
     expect(result.current.formState.imageAdapterId).toBe('masonry');
     expect(result.current.formState.videoAdapterId).toBe('diamond');
+    expect(result.current.formState.galleryOverrides?.mode).toBe('per-type');
     expect(result.current.formState.galleryOverrides?.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
   });
 
@@ -90,6 +92,7 @@ describe('useUnifiedCampaignModal', () => {
         ...result.current.formState,
         imageAdapterId: 'justified',
         galleryOverrides: {
+          mode: 'unified',
           breakpoints: {
             desktop: { image: { adapterId: 'justified' } },
             tablet: { image: { adapterId: 'justified' } },
@@ -108,6 +111,7 @@ describe('useUnifiedCampaignModal', () => {
       expect.objectContaining({
         imageAdapterId: 'justified',
         galleryOverrides: {
+          mode: 'unified',
           breakpoints: {
             desktop: { image: { adapterId: 'justified' } },
             tablet: { image: { adapterId: 'justified' } },
