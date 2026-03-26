@@ -94,6 +94,42 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByDisplayValue('Space Between')).toBeInTheDocument();
   });
 
+  it('renders shared section sizing controls from nested common settings', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'compact-grid',
+                common: {
+                  sectionMaxWidth: 1200,
+                  sectionMinWidth: 350,
+                  sectionHeightMode: 'manual',
+                  sectionMaxHeight: 640,
+                  sectionMinHeight: 240,
+                  perTypeSectionEqualHeight: true,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByDisplayValue('1200')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('350')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Manual (fixed max height)')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('640')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('240')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('On')).toBeInTheDocument();
+  });
+
   it('resets draft changes back to the opened baseline', async () => {
     const onSave = vi.fn();
 

@@ -57,14 +57,24 @@ import { TypographySettingsSection } from '../Settings/TypographySettingsSection
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorModal } from '@/components/Common/GalleryConfigEditorModal';
-import { buildGalleryConfigFromLegacySettings, collectGalleryAdapterSettingValues } from '@/utils/galleryConfig';
+import { buildGalleryConfigFromLegacySettings, collectGalleryAdapterSettingValues, mergeGalleryConfig } from '@/utils/galleryConfig';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
 function getRepresentativeGalleryCommonSetting(
   galleryConfig: GalleryConfig,
-  key: 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap' | 'adapterJustifyContent',
-): number | string | undefined {
+  key:
+    | 'sectionMaxWidth'
+    | 'sectionMaxHeight'
+    | 'sectionMinWidth'
+    | 'sectionMinHeight'
+    | 'sectionHeightMode'
+    | 'perTypeSectionEqualHeight'
+    | 'sectionPadding'
+    | 'adapterContentPadding'
+    | 'adapterItemGap'
+    | 'adapterJustifyContent',
+): number | string | boolean | undefined {
   const scopes = galleryConfig.mode === 'unified'
     ? ['unified'] as const
     : ['image', 'video'] as const;
@@ -73,7 +83,7 @@ function getRepresentativeGalleryCommonSetting(
     const value = galleryConfig.breakpoints?.desktop?.[scope]?.common?.[key]
       ?? galleryConfig.breakpoints?.tablet?.[scope]?.common?.[key]
       ?? galleryConfig.breakpoints?.mobile?.[scope]?.common?.[key];
-    if (typeof value === 'number' || typeof value === 'string') {
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
       return value;
     }
   }
@@ -85,14 +95,7 @@ function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   const seed = buildGalleryConfigFromLegacySettings(settings);
 
   return settings.galleryConfig
-    ? {
-      ...seed,
-      ...settings.galleryConfig,
-      breakpoints: {
-        ...seed.breakpoints,
-        ...settings.galleryConfig.breakpoints,
-      },
-    }
+    ? mergeGalleryConfig(settings.galleryConfig, seed)
     : seed;
 }
 
@@ -246,6 +249,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const tabletVideoAdapterId = galleryConfig.breakpoints?.tablet?.video?.adapterId ?? prev.tabletVideoAdapterId;
       const mobileImageAdapterId = galleryConfig.breakpoints?.mobile?.image?.adapterId ?? prev.mobileImageAdapterId;
       const mobileVideoAdapterId = galleryConfig.breakpoints?.mobile?.video?.adapterId ?? prev.mobileVideoAdapterId;
+      const gallerySectionMaxWidth = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMaxWidth') ?? prev.gallerySectionMaxWidth;
+      const gallerySectionMaxHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMaxHeight') ?? prev.gallerySectionMaxHeight;
+      const gallerySectionMinWidth = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMinWidth') ?? prev.gallerySectionMinWidth;
+      const gallerySectionMinHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMinHeight') ?? prev.gallerySectionMinHeight;
+      const gallerySectionHeightMode = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionHeightMode') ?? prev.gallerySectionHeightMode;
+      const perTypeSectionEqualHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'perTypeSectionEqualHeight') ?? prev.perTypeSectionEqualHeight;
       const gallerySectionPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionPadding') ?? prev.gallerySectionPadding;
       const adapterContentPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterContentPadding') ?? prev.adapterContentPadding;
       const adapterItemGap = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterItemGap') ?? prev.adapterItemGap;
@@ -266,6 +275,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         tabletVideoAdapterId,
         mobileImageAdapterId,
         mobileVideoAdapterId,
+        gallerySectionMaxWidth: gallerySectionMaxWidth as SettingsData['gallerySectionMaxWidth'],
+        gallerySectionMaxHeight: gallerySectionMaxHeight as SettingsData['gallerySectionMaxHeight'],
+        gallerySectionMinWidth: gallerySectionMinWidth as SettingsData['gallerySectionMinWidth'],
+        gallerySectionMinHeight: gallerySectionMinHeight as SettingsData['gallerySectionMinHeight'],
+        gallerySectionHeightMode: gallerySectionHeightMode as SettingsData['gallerySectionHeightMode'],
+        perTypeSectionEqualHeight: perTypeSectionEqualHeight as SettingsData['perTypeSectionEqualHeight'],
         gallerySectionPadding: gallerySectionPadding as SettingsData['gallerySectionPadding'],
         adapterContentPadding: adapterContentPadding as SettingsData['adapterContentPadding'],
         adapterItemGap: adapterItemGap as SettingsData['adapterItemGap'],

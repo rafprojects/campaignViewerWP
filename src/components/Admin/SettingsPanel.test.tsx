@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@/test/test-utils';
+import { render, screen, waitFor, fireEvent, within } from '@/test/test-utils';
 import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
 
@@ -368,9 +368,10 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
     await screen.findByText('Gallery Adapters');
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' });
 
-    expect(await screen.findByDisplayValue('4')).toBeInTheDocument();
-    expect(screen.getByText('Masonry Columns (0 = auto)')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('4')).toBeInTheDocument();
+    expect(within(dialog).getByText('Masonry Columns (0 = auto)')).toBeInTheDocument();
   });
 
   it('seeds additional registry-driven adapter values from flat settings', async () => {
@@ -394,10 +395,44 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
     await screen.findByText('Gallery Adapters');
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' });
 
-    expect(await screen.findByDisplayValue('210')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('260')).toBeInTheDocument();
-    expect(screen.getByLabelText('Card Min Width (px)')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('210')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('260')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Card Min Width (px)')).toBeInTheDocument();
+  });
+
+  it('seeds shared section sizing values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySectionMaxWidth: 1100,
+          gallerySectionMinWidth: 360,
+          gallerySectionHeightMode: 'manual',
+          gallerySectionMaxHeight: 620,
+          gallerySectionMinHeight: 260,
+          perTypeSectionEqualHeight: true,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' });
+
+    expect(within(dialog).getAllByDisplayValue('1100').length).toBeGreaterThan(0);
+    expect(within(dialog).getByDisplayValue('360')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('Manual (fixed max height)')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('620')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('260')).toBeInTheDocument();
+    expect(within(dialog).getAllByLabelText('Equal Height Sections (Per-Type)')[0]).toHaveValue('On');
   });
 
   it('interacts with Media Display tab controls', async () => {

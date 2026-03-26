@@ -30,6 +30,20 @@ interface GalleryConfigEditorModalProps {
   unifiedAdapterDescription?: string;
 }
 
+type SharedCommonSettingKey = keyof Pick<
+  GalleryCommonSettings,
+  | 'sectionMaxWidth'
+  | 'sectionMaxHeight'
+  | 'sectionMinWidth'
+  | 'sectionMinHeight'
+  | 'sectionHeightMode'
+  | 'perTypeSectionEqualHeight'
+  | 'sectionPadding'
+  | 'adapterContentPadding'
+  | 'adapterItemGap'
+  | 'adapterJustifyContent'
+>;
+
 function getScopeAdapterId(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
@@ -45,18 +59,45 @@ function getEditableScopes(mode: GalleryConfigMode): Array<Extract<GalleryConfig
 function getRepresentativeCommonValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  key: keyof Pick<GalleryCommonSettings, 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap' | 'adapterJustifyContent'>,
-): number | string | undefined {
+  key: SharedCommonSettingKey,
+): number | string | boolean | undefined {
   const scopes = getEditableScopes(config?.mode ?? 'per-type');
 
   for (const scope of scopes) {
     const value = config?.breakpoints?.[breakpoint]?.[scope]?.common?.[key];
-    if (typeof value === 'number' || typeof value === 'string') {
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
       return value;
     }
   }
 
   return undefined;
+}
+
+function getRepresentativeNumberCommonValue(
+  config: Partial<GalleryConfig> | undefined,
+  breakpoint: GalleryConfigBreakpoint,
+  key: Extract<SharedCommonSettingKey, 'sectionMaxWidth' | 'sectionMaxHeight' | 'sectionMinWidth' | 'sectionMinHeight' | 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap'>,
+): number | undefined {
+  const value = getRepresentativeCommonValue(config, breakpoint, key);
+  return typeof value === 'number' ? value : undefined;
+}
+
+function getRepresentativeStringCommonValue(
+  config: Partial<GalleryConfig> | undefined,
+  breakpoint: GalleryConfigBreakpoint,
+  key: Extract<SharedCommonSettingKey, 'sectionHeightMode' | 'adapterJustifyContent'>,
+): string | undefined {
+  const value = getRepresentativeCommonValue(config, breakpoint, key);
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getRepresentativeBooleanCommonValue(
+  config: Partial<GalleryConfig> | undefined,
+  breakpoint: GalleryConfigBreakpoint,
+  key: Extract<SharedCommonSettingKey, 'perTypeSectionEqualHeight'>,
+): boolean | undefined {
+  const value = getRepresentativeCommonValue(config, breakpoint, key);
+  return typeof value === 'boolean' ? value : undefined;
 }
 
 function getRepresentativeAdapterSettingValue(
@@ -148,8 +189,8 @@ function setScopeAdapterId(
 
 function setCommonSettingForEditableScopes(
   config: GalleryConfig,
-  key: keyof Pick<GalleryCommonSettings, 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap' | 'adapterJustifyContent'>,
-  value: number | string,
+  key: SharedCommonSettingKey,
+  value: number | string | boolean,
 ): GalleryConfig {
   const next = cloneGalleryConfig(config) ?? { mode: config.mode ?? 'per-type', breakpoints: {} };
   next.breakpoints = next.breakpoints ?? {};
@@ -401,12 +442,81 @@ export function GalleryConfigEditorModal({
           </Tabs>
         )}
 
+        <Divider label="Shared Section Sizing" labelPosition="center" />
+
+        <NumberInput
+          label="Gallery Section Max Width (px)"
+          description="Maximum width for each gallery section. 0 keeps the section fully responsive."
+          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMaxWidth') ?? 0}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'sectionMaxWidth', typeof value === 'number' ? value : 0))}
+          min={0}
+          max={2000}
+          step={50}
+        />
+
+        <NumberInput
+          label="Gallery Section Min Width (px)"
+          description="Minimum width floor for each gallery section."
+          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMinWidth') ?? 300}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'sectionMinWidth', typeof value === 'number' ? value : 300))}
+          min={200}
+          max={600}
+          step={50}
+        />
+
+        <Select
+          label="Section Height Mode"
+          description="How section height is determined. Auto is content-driven and remains the safest default for masonry and justified layouts."
+          data={[
+            { value: 'auto', label: 'Auto (content-driven)' },
+            { value: 'manual', label: 'Manual (fixed max height)' },
+            { value: 'viewport', label: 'Viewport (% of screen)' },
+          ]}
+          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'sectionHeightMode') ?? 'auto'}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'sectionHeightMode', value ?? 'auto'))}
+          allowDeselect={false}
+        />
+
+        {getRepresentativeStringCommonValue(draft, activeBreakpoint, 'sectionHeightMode') === 'manual' && (
+          <NumberInput
+            label="Gallery Section Max Height (px)"
+            description="Maximum height used when section height mode is manual."
+            value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMaxHeight') ?? 0}
+            onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'sectionMaxHeight', typeof value === 'number' ? value : 0))}
+            min={0}
+            max={2000}
+            step={50}
+          />
+        )}
+
+        <NumberInput
+          label="Gallery Section Min Height (px)"
+          description="Minimum height floor for each gallery section."
+          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMinHeight') ?? 150}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'sectionMinHeight', typeof value === 'number' ? value : 150))}
+          min={100}
+          max={400}
+          step={50}
+        />
+
+        <Select
+          label="Equal Height Sections (Per-Type)"
+          description="Controls whether image and video sections align to equal height in per-type layouts on wider viewports."
+          data={[
+            { value: 'false', label: 'Off' },
+            { value: 'true', label: 'On' },
+          ]}
+          value={String(getRepresentativeBooleanCommonValue(draft, activeBreakpoint, 'perTypeSectionEqualHeight') ?? false)}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'perTypeSectionEqualHeight', value === 'true'))}
+          allowDeselect={false}
+        />
+
         <Divider label="Shared Section Spacing" labelPosition="center" />
 
         <NumberInput
           label="Section Padding (px)"
           description="Applies the same inner section padding across the currently edited gallery mode surface."
-          value={getRepresentativeCommonValue(draft, activeBreakpoint, 'sectionPadding') ?? 16}
+          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionPadding') ?? 16}
           onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'sectionPadding', typeof value === 'number' ? value : 16))}
           min={0}
           max={32}
@@ -416,7 +526,7 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Adapter Content Padding (px)"
           description="Applies the same inner adapter padding across the currently edited gallery mode surface."
-          value={getRepresentativeCommonValue(draft, activeBreakpoint, 'adapterContentPadding') ?? 0}
+          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterContentPadding') ?? 0}
           onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterContentPadding', typeof value === 'number' ? value : 0))}
           min={0}
           max={24}
@@ -426,7 +536,7 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Adapter Item Gap (px)"
           description="Applies shared item spacing across the currently edited gallery mode surface."
-          value={getRepresentativeCommonValue(draft, activeBreakpoint, 'adapterItemGap') ?? 16}
+          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterItemGap') ?? 16}
           onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterItemGap', typeof value === 'number' ? value : 16))}
           min={0}
           max={64}
@@ -444,7 +554,7 @@ export function GalleryConfigEditorModal({
             { value: 'space-evenly', label: 'Space Evenly' },
             { value: 'stretch', label: 'Stretch' },
           ]}
-          value={(getRepresentativeCommonValue(draft, activeBreakpoint, 'adapterJustifyContent') as string | undefined) ?? 'center'}
+          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'adapterJustifyContent') ?? 'center'}
           onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterJustifyContent', value ?? 'center'))}
           allowDeselect={false}
         />

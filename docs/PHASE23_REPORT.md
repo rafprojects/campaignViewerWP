@@ -335,6 +335,7 @@ Completed initial schema extraction:
 26. added campaign inherited-versus-overridden state messaging inside the shared gallery config editor so the reset and clear actions now explain whether the campaign is currently inheriting global gallery settings or storing custom gallery overrides
 27. generalized nested adapter-settings support by seeding registry-defined legacy flat values into the shared editor, rendering active adapter groups from schema instead of a masonry-only branch, and projecting nested adapter settings back through the runtime resolver so campaign overrides now affect real adapter behavior instead of only the global compatibility bridge
 28. expanded the shared common-settings slice to include adapter item gap and adapter justification so both global settings and campaign overrides can now edit those nested spacing/distribution controls from the shared editor while the flat compatibility fields stay synchronized on save
+29. expanded the shared common-settings slice again to cover section sizing controls, including section max/min width, height mode, manual max height, min height, and per-type equal-height behavior, while fixing SettingsPanel seed precedence so flat migration-bridge values stay authoritative when nested defaults disagree
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 
