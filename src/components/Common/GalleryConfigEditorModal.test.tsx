@@ -66,6 +66,34 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByDisplayValue('240')).toBeInTheDocument();
   });
 
+  it('renders shared common adapter spacing controls from nested common settings', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'compact-grid',
+                common: {
+                  adapterItemGap: 20,
+                  adapterJustifyContent: 'space-between',
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByDisplayValue('20')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Space Between')).toBeInTheDocument();
+  });
+
   it('resets draft changes back to the opened baseline', async () => {
     const onSave = vi.fn();
 

@@ -11,7 +11,7 @@ import type {
   AdapterSettingGroupDefinition,
   AdapterSettingGroupScopeMode,
 } from '@/components/Galleries/Adapters/GalleryAdapter';
-import type { GalleryConfig, GalleryConfigBreakpoint, GalleryConfigMode, GalleryConfigScope } from '@/types';
+import type { GalleryCommonSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigMode, GalleryConfigScope } from '@/types';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 
 const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
@@ -45,13 +45,13 @@ function getEditableScopes(mode: GalleryConfigMode): Array<Extract<GalleryConfig
 function getRepresentativeCommonValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  key: 'sectionPadding' | 'adapterContentPadding',
-): number | undefined {
+  key: keyof Pick<GalleryCommonSettings, 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap' | 'adapterJustifyContent'>,
+): number | string | undefined {
   const scopes = getEditableScopes(config?.mode ?? 'per-type');
 
   for (const scope of scopes) {
     const value = config?.breakpoints?.[breakpoint]?.[scope]?.common?.[key];
-    if (typeof value === 'number') {
+    if (typeof value === 'number' || typeof value === 'string') {
       return value;
     }
   }
@@ -148,8 +148,8 @@ function setScopeAdapterId(
 
 function setCommonSettingForEditableScopes(
   config: GalleryConfig,
-  key: 'sectionPadding' | 'adapterContentPadding',
-  value: number,
+  key: keyof Pick<GalleryCommonSettings, 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap' | 'adapterJustifyContent'>,
+  value: number | string,
 ): GalleryConfig {
   const next = cloneGalleryConfig(config) ?? { mode: config.mode ?? 'per-type', breakpoints: {} };
   next.breakpoints = next.breakpoints ?? {};
@@ -421,6 +421,32 @@ export function GalleryConfigEditorModal({
           min={0}
           max={24}
           step={4}
+        />
+
+        <NumberInput
+          label="Adapter Item Gap (px)"
+          description="Applies shared item spacing across the currently edited gallery mode surface."
+          value={getRepresentativeCommonValue(draft, activeBreakpoint, 'adapterItemGap') ?? 16}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterItemGap', typeof value === 'number' ? value : 16))}
+          min={0}
+          max={64}
+          step={4}
+        />
+
+        <Select
+          label="Adapter Justification"
+          description="Controls how adapter items distribute inside the section for adapters that support justification."
+          data={[
+            { value: 'start', label: 'Start' },
+            { value: 'center', label: 'Center' },
+            { value: 'end', label: 'End' },
+            { value: 'space-between', label: 'Space Between' },
+            { value: 'space-evenly', label: 'Space Evenly' },
+            { value: 'stretch', label: 'Stretch' },
+          ]}
+          value={(getRepresentativeCommonValue(draft, activeBreakpoint, 'adapterJustifyContent') as string | undefined) ?? 'center'}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterJustifyContent', value ?? 'center'))}
+          allowDeselect={false}
         />
 
         {activeSettingGroups.length > 0 && (

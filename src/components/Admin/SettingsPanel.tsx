@@ -63,8 +63,8 @@ import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
 function getRepresentativeGalleryCommonSetting(
   galleryConfig: GalleryConfig,
-  key: 'sectionPadding' | 'adapterContentPadding',
-): number | undefined {
+  key: 'sectionPadding' | 'adapterContentPadding' | 'adapterItemGap' | 'adapterJustifyContent',
+): number | string | undefined {
   const scopes = galleryConfig.mode === 'unified'
     ? ['unified'] as const
     : ['image', 'video'] as const;
@@ -73,7 +73,7 @@ function getRepresentativeGalleryCommonSetting(
     const value = galleryConfig.breakpoints?.desktop?.[scope]?.common?.[key]
       ?? galleryConfig.breakpoints?.tablet?.[scope]?.common?.[key]
       ?? galleryConfig.breakpoints?.mobile?.[scope]?.common?.[key];
-    if (typeof value === 'number') {
+    if (typeof value === 'number' || typeof value === 'string') {
       return value;
     }
   }
@@ -248,6 +248,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const mobileVideoAdapterId = galleryConfig.breakpoints?.mobile?.video?.adapterId ?? prev.mobileVideoAdapterId;
       const gallerySectionPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionPadding') ?? prev.gallerySectionPadding;
       const adapterContentPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterContentPadding') ?? prev.adapterContentPadding;
+      const adapterItemGap = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterItemGap') ?? prev.adapterItemGap;
+      const adapterJustifyContent = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterJustifyContent') ?? prev.adapterJustifyContent;
 
       return {
         ...prev,
@@ -264,8 +266,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         tabletVideoAdapterId,
         mobileImageAdapterId,
         mobileVideoAdapterId,
-        gallerySectionPadding,
-        adapterContentPadding,
+        gallerySectionPadding: gallerySectionPadding as SettingsData['gallerySectionPadding'],
+        adapterContentPadding: adapterContentPadding as SettingsData['adapterContentPadding'],
+        adapterItemGap: adapterItemGap as SettingsData['adapterItemGap'],
+        adapterJustifyContent: adapterJustifyContent as SettingsData['adapterJustifyContent'],
       };
     });
 
