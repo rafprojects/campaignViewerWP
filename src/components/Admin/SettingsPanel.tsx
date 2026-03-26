@@ -42,7 +42,6 @@ import {
   type DotNavPosition,
   type DotNavShape,
   type ShadowPreset,
-  type ViewportBgType,
 } from '@/types';
 import { ThemeSelector } from './ThemeSelector';
 import { SettingTooltip } from './SettingTooltip';
@@ -51,6 +50,7 @@ import { GradientEditor } from '../Common/GradientEditor';
 import { FontLibraryManager } from './FontLibraryManager';
 import { GalleryAdapterSettingsSection, type UpdateGallerySetting } from '../Settings/GalleryAdapterSettingsSection';
 import { GalleryLayoutDetailSections } from '../Settings/GalleryLayoutDetailSections';
+import { GalleryPresentationSections } from '../Settings/GalleryPresentationSections';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
@@ -1328,165 +1328,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   </Accordion.Panel>
                 </Accordion.Item>
 
-                {/* ── Viewport Backgrounds ── */}
-                <Accordion.Item value="backgrounds">
-                  <Accordion.Control>Viewport Backgrounds</Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap="md">
-                      {/* ── Image viewport background ── */}
-                      <Select
-                        label="Image Viewport Background"
-                        description="Background fill rendered behind the image gallery section."
-                        value={settings.imageBgType}
-                        onChange={(value) => updateSetting('imageBgType', (value as ViewportBgType) ?? 'none')}
-                        data={[
-                          { value: 'none', label: 'Transparent' },
-                          { value: 'solid', label: 'Solid Color' },
-                          { value: 'gradient', label: 'Gradient' },
-                          { value: 'image', label: 'Image URL' },
-                        ]}
-                      />
-                      {settings.imageBgType === 'solid' && (
-                        <ColorInput
-                          label="Image Background Color"
-                          value={settings.imageBgColor}
-                          onChange={(value) => updateSetting('imageBgColor', value)}
-                          format="rgba"
-                        />
-                      )}
-                      {settings.imageBgType === 'gradient' && (
-                        <TextInput
-                          label="Image CSS Gradient"
-                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
-                          value={settings.imageBgGradient}
-                          onChange={(e) => updateSetting('imageBgGradient', e.currentTarget.value)}
-                        />
-                      )}
-                      {settings.imageBgType === 'image' && (
-                        <TextInput
-                          label="Image Background URL"
-                          description="Absolute URL of the background image."
-                          value={settings.imageBgImageUrl}
-                          onChange={(e) => updateSetting('imageBgImageUrl', e.currentTarget.value)}
-                        />
-                      )}
-
-                      {/* ── Video viewport background ── */}
-                      <Select
-                        label="Video Viewport Background"
-                        description="Background fill rendered behind the video gallery section."
-                        value={settings.videoBgType}
-                        onChange={(value) => updateSetting('videoBgType', (value as ViewportBgType) ?? 'none')}
-                        data={[
-                          { value: 'none', label: 'Transparent' },
-                          { value: 'solid', label: 'Solid Color' },
-                          { value: 'gradient', label: 'Gradient' },
-                          { value: 'image', label: 'Image URL' },
-                        ]}
-                      />
-                      {settings.videoBgType === 'solid' && (
-                        <ColorInput
-                          label="Video Background Color"
-                          value={settings.videoBgColor}
-                          onChange={(value) => updateSetting('videoBgColor', value)}
-                          format="rgba"
-                        />
-                      )}
-                      {settings.videoBgType === 'gradient' && (
-                        <TextInput
-                          label="Video CSS Gradient"
-                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #0d0d0d, #1a1a2e)')."
-                          value={settings.videoBgGradient}
-                          onChange={(e) => updateSetting('videoBgGradient', e.currentTarget.value)}
-                        />
-                      )}
-                      {settings.videoBgType === 'image' && (
-                        <TextInput
-                          label="Video Background URL"
-                          description="Absolute URL of the background image."
-                          value={settings.videoBgImageUrl}
-                          onChange={(e) => updateSetting('videoBgImageUrl', e.currentTarget.value)}
-                        />
-                      )}
-
-                      {/* ── Unified viewport background ── */}
-                      <Select
-                        label="Unified Viewport Background"
-                        description="Background fill when unified gallery mode is active."
-                        value={settings.unifiedBgType}
-                        onChange={(value) => updateSetting('unifiedBgType', (value as ViewportBgType) ?? 'none')}
-                        data={[
-                          { value: 'none', label: 'Transparent' },
-                          { value: 'solid', label: 'Solid Color' },
-                          { value: 'gradient', label: 'Gradient' },
-                          { value: 'image', label: 'Image URL' },
-                        ]}
-                      />
-                      {settings.unifiedBgType === 'solid' && (
-                        <ColorInput
-                          label="Unified Background Color"
-                          value={settings.unifiedBgColor}
-                          onChange={(value) => updateSetting('unifiedBgColor', value)}
-                          format="rgba"
-                        />
-                      )}
-                      {settings.unifiedBgType === 'gradient' && (
-                        <TextInput
-                          label="Unified CSS Gradient"
-                          description="Full CSS gradient (e.g. 'linear-gradient(135deg, #1a1a2e, #0f3460)')."
-                          value={settings.unifiedBgGradient}
-                          onChange={(e) => updateSetting('unifiedBgGradient', e.currentTarget.value)}
-                        />
-                      )}
-                      {settings.unifiedBgType === 'image' && (
-                        <TextInput
-                          label="Unified Background URL"
-                          description="Absolute URL of the background image."
-                          value={settings.unifiedBgImageUrl}
-                          onChange={(e) => updateSetting('unifiedBgImageUrl', e.currentTarget.value)}
-                        />
-                      )}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-
-                {/* ── Gallery Labels ── */}
-                <Accordion.Item value="gallery-labels">
-                  <Accordion.Control>Gallery Labels</Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap="md">
-                      <TextInput
-                        label="Image Gallery Label"
-                        description="Custom label for image gallery sections. Count is appended automatically."
-                        value={settings.galleryImageLabel ?? 'Images'}
-                        onChange={(e) => updateSetting('galleryImageLabel', e.currentTarget.value)}
-                      />
-                      <TextInput
-                        label="Video Gallery Label"
-                        description="Custom label for video gallery sections. Count is appended automatically."
-                        value={settings.galleryVideoLabel ?? 'Videos'}
-                        onChange={(e) => updateSetting('galleryVideoLabel', e.currentTarget.value)}
-                      />
-                      <Select
-                        label="Label Justification"
-                        description="Horizontal alignment for gallery section labels"
-                        data={[
-                          { value: 'left', label: 'Left' },
-                          { value: 'center', label: 'Center' },
-                          { value: 'right', label: 'Right' },
-                        ]}
-                        value={settings.galleryLabelJustification ?? 'left'}
-                        onChange={(v) => updateSetting('galleryLabelJustification', (v ?? 'left') as GalleryBehaviorSettings['galleryLabelJustification'])}
-                      />
-                      <Switch
-                        label="Show Gallery Label Icon"
-                        description="Display an icon prefix before each gallery section label"
-                        checked={settings.showGalleryLabelIcon ?? false}
-                        onChange={(e) => updateSetting('showGalleryLabelIcon', e.currentTarget.checked)}
-                      />
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
+                <GalleryPresentationSections
+                  settings={settings}
+                  updateSetting={updateGallerySetting}
+                />
 
                 <GalleryLayoutDetailSections
                   settings={settings}

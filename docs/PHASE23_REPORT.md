@@ -262,6 +262,8 @@ Completed first extraction slice:
 4. corrected adapter-specific field visibility for per-breakpoint selections so compact-grid, justified, masonry, and shape controls reflect the active breakpoint adapters instead of only the legacy per-type pair
 5. extracted the remaining layout-tab carousel, section sizing, and adapter sizing accordion items into a dedicated `GalleryLayoutDetailSections` module
 6. validated the new `SettingsPanel` structure with a green production `build:wp` run and the existing focused `SettingsPanel` test suite
+7. extracted viewport background and gallery label accordion items into a dedicated `GalleryPresentationSections` module so the layout tab now delegates most gallery-specific field blocks
+8. revalidated the updated `SettingsPanel` composition with a green production `build:wp` run and the focused `SettingsPanel` test suite after recovering from an intermediate malformed panel edit during extraction
 
 ### Files to modify
 
