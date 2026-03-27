@@ -2,7 +2,7 @@
 **Status:** In Progress 🚧
 **Version:** v0.22.0
 **Created:** March 25, 2026
-**Last updated:** March 26, 2026
+**Last updated:** March 27, 2026
 
 ### Tracks
 
@@ -506,6 +506,7 @@ Completed parity slices:
 1. campaign settings already open the same shared responsive gallery config editor used by global settings, with inherited-versus-overridden messaging and clear-all campaign reset behavior
 2. campaign overrides already persist nested `galleryOverrides` alongside the legacy flat bridge fields so the shared editor can round-trip full nested config state
 3. the shared editor now allows campaign-level unified adapter overrides instead of forcing unified mode to inherit the global adapter, closing the most obvious remaining campaign/editor mismatch
+4. the campaign settings tab now mirrors unified-mode quick overrides more accurately by swapping the inline image/video selectors for a unified adapter selector when the campaign override mode is unified, and campaign override summaries now report unified adapter selections instead of only per-type fields
 
 Remaining P23-G work is now concentrated on deeper persistence and render-path parity, not basic shared-editor capability.
 

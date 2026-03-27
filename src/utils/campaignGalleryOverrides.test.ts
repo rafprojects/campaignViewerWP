@@ -56,6 +56,14 @@ describe('campaignGalleryOverrides', () => {
         mobile: { image: { adapterId: 'masonry' } },
       },
     }, 'image')).toBe('');
+
+    expect(getUniformCampaignScopeAdapterId({
+      breakpoints: {
+        desktop: { unified: { adapterId: 'classic' } },
+        tablet: { unified: { adapterId: 'classic' } },
+        mobile: { unified: { adapterId: 'classic' } },
+      },
+    }, 'unified')).toBe('classic');
   });
 
   it('syncs a campaign scope override across all breakpoints while preserving unrelated overrides', () => {
@@ -76,6 +84,25 @@ describe('campaignGalleryOverrides', () => {
         },
         mobile: {
           image: { adapterId: 'masonry' },
+        },
+      },
+    });
+  });
+
+  it('syncs a unified campaign adapter override across all breakpoints', () => {
+    expect(syncCampaignScopeAdapterOverride({
+      mode: 'unified',
+    }, 'unified', 'classic')).toEqual({
+      mode: 'unified',
+      breakpoints: {
+        desktop: {
+          unified: { adapterId: 'classic' },
+        },
+        tablet: {
+          unified: { adapterId: 'classic' },
+        },
+        mobile: {
+          unified: { adapterId: 'classic' },
         },
       },
     });
@@ -172,6 +199,25 @@ describe('campaignGalleryOverrides', () => {
       'Image: breakpoint-specific override',
       'Video: breakpoint-specific override',
       'Mode: per-type',
+    ]);
+  });
+
+  it('describes unified campaign overrides using the unified scope', () => {
+    const campaign = makeCampaign({
+      galleryOverrides: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: { unified: { adapterId: 'classic' } },
+          tablet: { unified: { adapterId: 'classic' } },
+          mobile: { unified: { adapterId: 'classic' } },
+        },
+      },
+    });
+
+    expect(hasCampaignGalleryOverrides(campaign)).toBe(true);
+    expect(describeCampaignGalleryOverrides(campaign)).toEqual([
+      'Unified: classic',
+      'Mode: unified',
     ]);
   });
 });

@@ -11,7 +11,7 @@ import { cloneGalleryConfig } from './galleryConfig';
 
 const CAMPAIGN_OVERRIDE_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
 
-type CampaignOverrideScope = Extract<GalleryConfigScope, 'image' | 'video'>;
+type CampaignOverrideScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
 
 type CampaignGalleryOverrideSource = Pick<Campaign, 'imageAdapterId' | 'videoAdapterId' | 'galleryOverrides'>;
 
@@ -200,23 +200,33 @@ export function hasCampaignGalleryOverrides(source: CampaignGalleryOverrideSourc
 
 export function describeCampaignGalleryOverrides(source: CampaignGalleryOverrideSource): string[] {
   const descriptions: string[] = [];
+  const mode = source.galleryOverrides?.mode;
+  const unifiedAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'unified');
   const imageAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'image') || source.imageAdapterId || '';
   const videoAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'video') || source.videoAdapterId || '';
 
-  if (imageAdapterId) {
-    descriptions.push(`Image: ${imageAdapterId}`);
-  } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'image')) {
-    descriptions.push('Image: breakpoint-specific override');
+  if (mode === 'unified') {
+    if (unifiedAdapterId) {
+      descriptions.push(`Unified: ${unifiedAdapterId}`);
+    } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'unified')) {
+      descriptions.push('Unified: breakpoint-specific override');
+    }
+  } else {
+    if (imageAdapterId) {
+      descriptions.push(`Image: ${imageAdapterId}`);
+    } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'image')) {
+      descriptions.push('Image: breakpoint-specific override');
+    }
+
+    if (videoAdapterId) {
+      descriptions.push(`Video: ${videoAdapterId}`);
+    } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'video')) {
+      descriptions.push('Video: breakpoint-specific override');
+    }
   }
 
-  if (videoAdapterId) {
-    descriptions.push(`Video: ${videoAdapterId}`);
-  } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'video')) {
-    descriptions.push('Video: breakpoint-specific override');
-  }
-
-  if (source.galleryOverrides?.mode) {
-    descriptions.push(`Mode: ${source.galleryOverrides.mode}`);
+  if (mode) {
+    descriptions.push(`Mode: ${mode}`);
   }
 
   return descriptions;

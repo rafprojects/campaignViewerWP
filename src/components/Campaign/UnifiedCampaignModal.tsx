@@ -38,6 +38,7 @@ function toLocalInputValue(iso: string): string {
 }
 
 const ADAPTER_OPTIONS = getAdapterSelectOptions({ context: 'campaign-override' });
+const UNIFIED_ADAPTER_OPTIONS = getAdapterSelectOptions({ context: 'unified-gallery' });
 const GALLERY_MODE_OPTIONS = [
   { value: 'unified', label: 'Unified' },
   { value: 'per-type', label: 'Per-Type' },
@@ -84,6 +85,7 @@ export function UnifiedCampaignModal({
 
   const isExtraSmall = useMediaQuery('(max-width: 575px)');
   const isEdit = mode === 'edit';
+  const campaignGalleryOverrideMode = getCampaignGalleryOverrideMode(formState.galleryOverrides);
 
   return (
     <>
@@ -290,7 +292,7 @@ export function UnifiedCampaignModal({
                       placeholder="Default (from settings)"
                       clearable
                       data={GALLERY_MODE_OPTIONS}
-                      value={getCampaignGalleryOverrideMode(formState.galleryOverrides) || null}
+                      value={campaignGalleryOverrideMode || null}
                       onChange={(v) => updateForm({
                         ...formState,
                         galleryOverrides: syncCampaignGalleryOverrideMode(
@@ -299,32 +301,51 @@ export function UnifiedCampaignModal({
                         ),
                       })}
                     />
-                    <Select
-                      label="Image Gallery"
-                      description="Override the global image gallery type for this campaign"
-                      placeholder="Default (from settings)"
-                      clearable
-                      data={ADAPTER_OPTIONS}
-                      value={formState.imageAdapterId || null}
-                      onChange={(v) => updateForm({
-                        ...formState,
-                        imageAdapterId: v ?? '',
-                        galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'image', v ?? ''),
-                      })}
-                    />
-                    <Select
-                      label="Video Gallery"
-                      description="Override the global video gallery type for this campaign"
-                      placeholder="Default (from settings)"
-                      clearable
-                      data={ADAPTER_OPTIONS}
-                      value={formState.videoAdapterId || null}
-                      onChange={(v) => updateForm({
-                        ...formState,
-                        videoAdapterId: v ?? '',
-                        galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'video', v ?? ''),
-                      })}
-                    />
+                    {campaignGalleryOverrideMode === 'unified' ? (
+                      <Select
+                        label="Unified Gallery"
+                        description="Override the global unified gallery type for this campaign"
+                        placeholder="Default (from settings)"
+                        clearable
+                        data={UNIFIED_ADAPTER_OPTIONS}
+                        value={getUniformCampaignScopeAdapterId(formState.galleryOverrides, 'unified') || null}
+                        onChange={(v) => updateForm({
+                          ...formState,
+                          imageAdapterId: '',
+                          videoAdapterId: '',
+                          galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'unified', v ?? ''),
+                        })}
+                      />
+                    ) : (
+                      <>
+                        <Select
+                          label="Image Gallery"
+                          description="Override the global image gallery type for this campaign"
+                          placeholder="Default (from settings)"
+                          clearable
+                          data={ADAPTER_OPTIONS}
+                          value={formState.imageAdapterId || null}
+                          onChange={(v) => updateForm({
+                            ...formState,
+                            imageAdapterId: v ?? '',
+                            galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'image', v ?? ''),
+                          })}
+                        />
+                        <Select
+                          label="Video Gallery"
+                          description="Override the global video gallery type for this campaign"
+                          placeholder="Default (from settings)"
+                          clearable
+                          data={ADAPTER_OPTIONS}
+                          value={formState.videoAdapterId || null}
+                          onChange={(v) => updateForm({
+                            ...formState,
+                            videoAdapterId: v ?? '',
+                            galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'video', v ?? ''),
+                          })}
+                        />
+                      </>
+                    )}
                   </Group>
                   <Group justify="space-between" align="flex-start" gap="md">
                     <Text size="sm" c="dimmed" maw={560}>

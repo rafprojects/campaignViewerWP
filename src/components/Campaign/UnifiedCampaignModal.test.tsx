@@ -178,6 +178,59 @@ describe('UnifiedCampaignModal', () => {
     render(<UnifiedCampaignModal modal={modal} />);
 
     expect(screen.getByDisplayValue('Unified')).toBeInTheDocument();
+    expect(screen.getByLabelText('Unified Gallery', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Image Gallery')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Video Gallery')).not.toBeInTheDocument();
+  });
+
+  it('updates the quick unified gallery override from the settings tab', () => {
+    const updateForm = vi.fn();
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      updateForm,
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: 'masonry',
+        videoAdapterId: 'diamond',
+        galleryOverrides: { mode: 'unified' },
+        categories: [],
+      },
+    });
+    const unifiedAdapterLabel = getAdapterSelectOptions({ context: 'unified-gallery' })
+      .find((option) => option.value === 'classic')?.label;
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    fireEvent.click(screen.getByLabelText('Unified Gallery', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
+
+    expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
+      imageAdapterId: '',
+      videoAdapterId: '',
+      galleryOverrides: expect.objectContaining({
+        mode: 'unified',
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            unified: expect.objectContaining({ adapterId: 'classic' }),
+          }),
+          tablet: expect.objectContaining({
+            unified: expect.objectContaining({ adapterId: 'classic' }),
+          }),
+          mobile: expect.objectContaining({
+            unified: expect.objectContaining({ adapterId: 'classic' }),
+          }),
+        }),
+      }),
+    }));
   });
 
   it('opens the shared responsive editor from campaign settings', async () => {
