@@ -544,6 +544,7 @@ Completed render-path slices:
 2. `UnifiedGallerySection` already resolves the effective unified adapter id and common/adapter settings through the shared resolver helpers instead of reading flat fields directly
 3. `PerTypeGallerySection` already resolves image/video adapter ids and effective settings through the same shared resolver path, including central adapter normalization and fallback handling
 4. focused viewer coverage now asserts that campaign nested mode overrides can flip the runtime between unified and per-type section rendering even when the global settings mode points the other direction
+5. focused section-level coverage now asserts both layout-builder branching and unsupported mobile fallback behavior for unified and per-type runtime sections, so the renderer path is no longer only indirectly covered through top-level viewer tests
 
 Remaining P23-H work is now focused on explicit render-parity coverage and any last-mile cleanup around the remaining local layout branching, not on introducing the shared resolver to the runtime for the first time.
 
@@ -581,6 +582,8 @@ Completed sanitization/REST slices:
 1. campaign REST handling already reads and writes nested campaign gallery overrides under `_wpsg_gallery_overrides`
 2. campaign nested override payloads already flow through a dedicated sanitizer path before persistence, including breakpoint and scope pruning for invalid or empty values
 3. PHP coverage already includes campaign nested override round-trip verification for create, update, and clear flows
+4. the global settings registry now exposes a first-class `gallery_config` default so the settings REST bridge no longer silently drops the nested gallery model on the PHP side
+5. the global settings sanitizer now preserves and sanitizes nested `gallery_config` payloads structurally instead of falling through the generic scalar sanitizer path
 
 Remaining P23-I work is concentrated on consolidating nested sanitization rules more fully with the global settings path so both contexts share the same schema-driven validation surface instead of parallel logic.
 
@@ -617,8 +620,8 @@ Produce and maintain:
 Completed documentation/testing slices:
 
 1. this phase report has been kept current through the recent P23-F and P23-G checkpoints instead of being left as a static planning artifact
-2. focused frontend coverage now exists for nested merge behavior, resolver precedence, viewer render-path parity, the shared gallery config editor, lazy-loaded global/campaign entry points, and campaign override helper utilities
-3. PHP coverage already exercises campaign override REST round-trip behavior, which gives the parity work a server-side regression harness before the final audit phase
+2. focused frontend coverage now exists for nested merge behavior, resolver precedence, viewer and section render-path parity, the shared gallery config editor, lazy-loaded global/campaign entry points, and campaign override helper utilities
+3. PHP coverage already exercises campaign override REST round-trip behavior, and focused settings tests now also cover global `gallery_config` conversion, sanitization, and REST round-trip expectations even though the WordPress PHPUnit environment was not available locally for execution in this session
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

@@ -423,6 +423,13 @@ class WPSG_Settings_Sanitizer {
             $sanitized['viewer_bg_gradient'] = self::sanitize_viewer_bg_gradient($input['viewer_bg_gradient']);
         }
 
+        if (isset($input['gallery_config'])) {
+            $sanitized['gallery_config'] = self::sanitize_gallery_config(
+                $input['gallery_config'],
+                $defaults['gallery_config'] ?? []
+            );
+        }
+
         foreach ($input as $key => $value) {
             if (isset($sanitized[$key])) {
                 continue;
@@ -464,6 +471,125 @@ class WPSG_Settings_Sanitizer {
         }
 
         return $sanitized;
+    }
+
+    /**
+     * Sanitize nested gallery config scalar or object values.
+     *
+     * @param mixed $value Raw nested value.
+     * @return mixed
+     */
+    private static function sanitize_gallery_config_value($value) {
+        if (is_bool($value) || is_int($value) || is_float($value) || is_null($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return sanitize_text_field($value);
+        }
+
+        if (!is_array($value)) {
+            return null;
+        }
+
+        $sanitized = [];
+        foreach ($value as $key => $item) {
+            $sanitized_key = is_string($key) ? preg_replace('/[^A-Za-z0-9_-]/', '', $key) : $key;
+            if ($sanitized_key === '' || $sanitized_key === null) {
+                continue;
+            }
+
+            $sanitized[$sanitized_key] = self::sanitize_gallery_config_value($item);
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Sanitize a single nested gallery scope config.
+     *
+     * @param mixed $scope_config Raw scope config.
+     * @param array $valid_adapters Allowed adapter ids.
+     * @return array|null
+     */
+    private static function sanitize_gallery_scope($scope_config, $valid_adapters) {
+        if (!is_array($scope_config)) {
+            return null;
+        }
+
+        $sanitized = [];
+
+        if (isset($scope_config['adapterId'])) {
+            $adapter_id = sanitize_text_field($scope_config['adapterId']);
+            if (in_array($adapter_id, $valid_adapters, true)) {
+                $sanitized['adapterId'] = $adapter_id;
+            }
+        }
+
+        if (!empty($scope_config['common']) && is_array($scope_config['common'])) {
+            $sanitized['common'] = self::sanitize_gallery_config_value($scope_config['common']);
+        }
+
+        if (!empty($scope_config['adapterSettings']) && is_array($scope_config['adapterSettings'])) {
+            $sanitized['adapterSettings'] = self::sanitize_gallery_config_value($scope_config['adapterSettings']);
+        }
+
+        return empty($sanitized) ? null : $sanitized;
+    }
+
+    /**
+     * Sanitize nested gallery config payloads for global settings.
+     *
+     * @param mixed $raw Raw gallery config value.
+     * @param array $default Default gallery config fallback.
+     * @return array
+     */
+    private static function sanitize_gallery_config($raw, $default) {
+        $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+        if (!is_array($decoded)) {
+            return is_array($default) ? $default : [];
+        }
+
+        $valid_adapters = class_exists('WPSG_CPT') ? WPSG_CPT::VALID_ADAPTERS
+            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+
+        $sanitized = [];
+
+        if (isset($decoded['mode']) && in_array($decoded['mode'], ['unified', 'per-type'], true)) {
+            $sanitized['mode'] = $decoded['mode'];
+        }
+
+        if (!empty($decoded['breakpoints']) && is_array($decoded['breakpoints'])) {
+            $sanitized_breakpoints = [];
+
+            foreach (['desktop', 'tablet', 'mobile'] as $breakpoint) {
+                if (empty($decoded['breakpoints'][$breakpoint]) || !is_array($decoded['breakpoints'][$breakpoint])) {
+                    continue;
+                }
+
+                $sanitized_scopes = [];
+                foreach (['unified', 'image', 'video'] as $scope) {
+                    $sanitized_scope = self::sanitize_gallery_scope($decoded['breakpoints'][$breakpoint][$scope] ?? null, $valid_adapters);
+                    if (!empty($sanitized_scope)) {
+                        $sanitized_scopes[$scope] = $sanitized_scope;
+                    }
+                }
+
+                if (!empty($sanitized_scopes)) {
+                    $sanitized_breakpoints[$breakpoint] = $sanitized_scopes;
+                }
+            }
+
+            if (!empty($sanitized_breakpoints)) {
+                $sanitized['breakpoints'] = $sanitized_breakpoints;
+            }
+        }
+
+        if (empty($sanitized['mode']) && isset($default['mode'])) {
+            $sanitized['mode'] = $default['mode'];
+        }
+
+        return empty($sanitized) ? (is_array($default) ? $default : []) : $sanitized;
     }
 
     /**

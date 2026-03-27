@@ -533,11 +533,46 @@ class WPSG_Settings_Registry {
         'carousel_gap'                 => [0, 64],
     ];
 
+    private static function create_default_gallery_scope_config($adapter_id) {
+        return [
+            'adapterId' => $adapter_id,
+        ];
+    }
+
+    private static function create_default_gallery_config() {
+        return [
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'unified' => self::create_default_gallery_scope_config('compact-grid'),
+                    'image' => self::create_default_gallery_scope_config('classic'),
+                    'video' => self::create_default_gallery_scope_config('classic'),
+                ],
+                'tablet' => [
+                    'unified' => self::create_default_gallery_scope_config('compact-grid'),
+                    'image' => self::create_default_gallery_scope_config('classic'),
+                    'video' => self::create_default_gallery_scope_config('classic'),
+                ],
+                'mobile' => [
+                    'unified' => self::create_default_gallery_scope_config('compact-grid'),
+                    'image' => self::create_default_gallery_scope_config('classic'),
+                    'video' => self::create_default_gallery_scope_config('classic'),
+                ],
+            ],
+        ];
+    }
+
     /**
      * @return array
      */
     public static function get_defaults() {
-        return self::$defaults;
+        $defaults = self::$defaults;
+
+        if (!array_key_exists('gallery_config', $defaults)) {
+            $defaults['gallery_config'] = self::create_default_gallery_config();
+        }
+
+        return $defaults;
     }
 
     /**

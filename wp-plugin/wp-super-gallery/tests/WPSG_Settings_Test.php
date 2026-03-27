@@ -190,6 +190,37 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Test sanitize_settings preserves nested gallery_config payloads.
+     */
+    public function test_sanitize_settings_handles_nested_gallery_config() {
+        $input = [
+            'gallery_config' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'masonry',
+                            'common' => [
+                                'sectionPadding' => 24,
+                            ],
+                            'adapterSettings' => [
+                                'masonryColumns' => 4,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+
+        $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
+        $this->assertEquals('masonry', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
+        $this->assertEquals(24, $sanitized['gallery_config']['breakpoints']['desktop']['unified']['common']['sectionPadding'] ?? null);
+        $this->assertEquals(4, $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterSettings']['masonryColumns'] ?? null);
+    }
+
+    /**
      * Test filter_auth_provider returns setting value.
      */
     public function test_filter_auth_provider_returns_setting() {
