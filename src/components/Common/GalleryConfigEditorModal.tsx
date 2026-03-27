@@ -127,7 +127,7 @@ function getRepresentativeAdapterSettingValue(
     const value = scopeConfig?.adapterSettings?.[field.key];
     if (
       (field.control === 'number' && typeof value === 'number')
-      || (field.control === 'select' && typeof value === 'string')
+      || ((field.control === 'select' || field.control === 'text') && typeof value === 'string')
       || (field.control === 'boolean' && typeof value === 'boolean')
     ) {
       return value;
@@ -739,6 +739,25 @@ export function GalleryConfigEditorModal({
                             value === 'true',
                           ))}
                           allowDeselect={false}
+                        />
+                      );
+                    }
+
+                    if (field.control === 'text') {
+                      return (
+                        <TextInput
+                          key={String(field.key)}
+                          label={field.label}
+                          description={field.description}
+                          value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
+                          placeholder={field.placeholder}
+                          onChange={(event) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                            current,
+                            activeBreakpoint,
+                            group,
+                            field,
+                            event.currentTarget.value,
+                          ))}
                         />
                       );
                     }

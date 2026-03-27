@@ -344,6 +344,7 @@ Completed initial schema extraction:
 30. expanded the shared common-settings surface to include adapter sizing mode plus manual max width/max height percentages so both global settings and campaign overrides can edit nested adapter fit constraints from the shared editor while the legacy flat fields continue to round-trip through SettingsPanel during the migration
 31. added the first schema-driven `carousel` adapter setting group for the classic adapter, including visible-cards, gap, loop, drag, autoplay, darken, and edge-fade controls, so the shared editor can now expose real classic adapter-specific fields instead of leaving the registry group empty
 32. expanded that schema-driven classic `carousel` group again to cover the first overlay-arrow and dot-navigator behavior controls, so the shared editor can now round-trip classic navigation position, sizing, visibility, and placement behavior from nested adapter settings without relying on the remaining inline legacy-only controls
+33. added a schema-driven freeform text field type and used it to register the remaining live classic navigation color controls, so the shared editor can now round-trip arrow foreground/background colors and active/inactive dot colors instead of leaving those runtime-owned values stranded in the flat legacy surface
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 
@@ -478,6 +479,7 @@ Completed shared editor slices:
 3. expanded the shared editor again to expose the nested classic-gallery height controls already supported by the runtime and compatibility bridge, so `gallerySizingMode` and `galleryManualHeight` can now be edited from the same nested surface as the other shared common settings
 4. extended the shared editor schema support to handle boolean adapter fields and used that to render the first real classic-carousel adapter-specific group from registry metadata instead of leaving the classic adapter on inline-only legacy controls
 5. expanded the shared editor's classic-carousel schema slice to include overlay-arrow and dot-navigator behavior controls that already drive the live runtime, closing another chunk of the classic adapter's nested editor parity without introducing a new freeform text-control type yet
+6. added schema-driven text-input support to the shared editor and used it for the remaining live classic navigation color fields, so nested classic config can now edit arrow and dot color tokens directly from the shared responsive editor
 6. restored the required P23-F lazy-load behavior by loading the shared editor only when users open it from either SettingsPanel or UnifiedCampaignModal
 7. updated the affected integration tests to treat the editor as a lazy-loaded modal entry point instead of a synchronously mounted subtree, while keeping direct editor field/value coverage in the shared editor test file
 
@@ -649,6 +651,7 @@ Completed documentation/testing slices:
 11. focused frontend coverage now also verifies that nested classic-gallery height controls seed into the shared editor and still project back through the global flat-settings bridge, while related carousel runtime tests remain part of the broader frontend validation pass because those adapters consume the resolved height constraint directly
 12. focused registry, shared-editor, settings-panel, resolver, and carousel runtime coverage now also validates the first schema-driven classic-carousel adapter group, so nested `carousel` adapter settings can seed from legacy flat fields, round-trip through the shared editor, and continue driving the live classic runtime without a parallel hand-maintained editor branch
 13. that focused frontend coverage now also exercises the first schema-driven classic navigation behavior controls, confirming overlay-arrow and dot-navigator settings seed from legacy flat fields and project back through nested `carousel` adapter settings without breaking the live classic runtime suites
+14. the same focused frontend coverage now also validates the new schema-driven classic navigation color fields, confirming the shared editor seeds arrow/dot color values from flat settings and still projects them back through nested `carousel` adapter settings after introducing text-field schema support
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

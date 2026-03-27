@@ -508,8 +508,12 @@ describe('SettingsPanel', () => {
           carouselAutoplayDirection: 'rtl',
           navArrowPosition: 'bottom',
           navArrowSize: 42,
+          navArrowColor: '#ff8800',
+          navArrowBgColor: 'rgba(1,2,3,0.5)',
           dotNavEnabled: false,
           dotNavPosition: 'overlay-top',
+          dotNavActiveColor: '#00ffaa',
+          dotNavInactiveColor: 'rgba(4,5,6,0.25)',
         }}
       />
     );
@@ -525,8 +529,12 @@ describe('SettingsPanel', () => {
     expect(within(dialog).getByLabelText('Autoplay Direction', { selector: 'input' })).toHaveValue('Right to Left');
     expect(within(dialog).getByLabelText('Arrow Vertical Position', { selector: 'input' })).toHaveValue('Bottom');
     expect(within(dialog).getByLabelText('Arrow Size (px)')).toHaveValue('42');
+    expect(within(dialog).getByLabelText('Arrow Color')).toHaveValue('#ff8800');
+    expect(within(dialog).getByLabelText('Arrow Background Color')).toHaveValue('rgba(1,2,3,0.5)');
     expect(within(dialog).getByLabelText('Enable Dot Navigator', { selector: 'input' })).toHaveValue('Off');
     expect(within(dialog).getByLabelText('Dot Position', { selector: 'input' })).toHaveValue('Overlay Top');
+    expect(within(dialog).getByLabelText('Active Dot Color')).toHaveValue('#00ffaa');
+    expect(within(dialog).getByLabelText('Inactive Dot Color')).toHaveValue('rgba(4,5,6,0.25)');
   });
 
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
@@ -537,8 +545,12 @@ describe('SettingsPanel', () => {
       carouselAutoplayDirection: 'rtl',
       navArrowPosition: 'bottom',
       navArrowSize: 42,
+      navArrowColor: '#ff8800',
+      navArrowBgColor: 'rgba(1,2,3,0.5)',
       dotNavEnabled: false,
       dotNavPosition: 'overlay-top',
+      dotNavActiveColor: '#00ffaa',
+      dotNavInactiveColor: 'rgba(4,5,6,0.25)',
       galleryConfig: {
         mode: 'per-type',
         breakpoints: {
@@ -551,8 +563,12 @@ describe('SettingsPanel', () => {
                 carouselAutoplayDirection: 'rtl',
                 navArrowPosition: 'bottom',
                 navArrowSize: 42,
+                navArrowColor: '#ff8800',
+                navArrowBgColor: 'rgba(1,2,3,0.5)',
                 dotNavEnabled: false,
                 dotNavPosition: 'overlay-top',
+                dotNavActiveColor: '#00ffaa',
+                dotNavInactiveColor: 'rgba(4,5,6,0.25)',
               },
             },
           },
@@ -580,10 +596,14 @@ describe('SettingsPanel', () => {
     fireEvent.click(within(dialog).getByLabelText('Arrow Vertical Position', { selector: 'input' }));
     fireEvent.click(await screen.findByRole('option', { name: 'Bottom' }));
     fireEvent.change(within(dialog).getByLabelText('Arrow Size (px)'), { target: { value: '42' } });
+    fireEvent.change(within(dialog).getByLabelText('Arrow Color'), { target: { value: '#ff8800' } });
+    fireEvent.change(within(dialog).getByLabelText('Arrow Background Color'), { target: { value: 'rgba(1,2,3,0.5)' } });
     fireEvent.click(within(dialog).getByLabelText('Enable Dot Navigator', { selector: 'input' }));
     fireEvent.click(await screen.findByRole('option', { name: 'Off' }));
     fireEvent.click(within(dialog).getByLabelText('Dot Position', { selector: 'input' }));
     fireEvent.click(await screen.findByRole('option', { name: 'Overlay Top' }));
+    fireEvent.change(within(dialog).getByLabelText('Active Dot Color'), { target: { value: '#00ffaa' } });
+    fireEvent.change(within(dialog).getByLabelText('Inactive Dot Color'), { target: { value: 'rgba(4,5,6,0.25)' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Apply Gallery Config' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -598,8 +618,12 @@ describe('SettingsPanel', () => {
       carouselAutoplayDirection: 'rtl',
       navArrowPosition: 'bottom',
       navArrowSize: 42,
+      navArrowColor: '#ff8800',
+      navArrowBgColor: 'rgba(1,2,3,0.5)',
       dotNavEnabled: false,
       dotNavPosition: 'overlay-top',
+      dotNavActiveColor: '#00ffaa',
+      dotNavInactiveColor: 'rgba(4,5,6,0.25)',
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -610,8 +634,12 @@ describe('SettingsPanel', () => {
                 carouselAutoplayDirection: 'rtl',
                 navArrowPosition: 'bottom',
                 navArrowSize: 42,
+                navArrowColor: '#ff8800',
+                navArrowBgColor: 'rgba(1,2,3,0.5)',
                 dotNavEnabled: false,
                 dotNavPosition: 'overlay-top',
+                dotNavActiveColor: '#00ffaa',
+                dotNavInactiveColor: 'rgba(4,5,6,0.25)',
               }),
             }),
           }),

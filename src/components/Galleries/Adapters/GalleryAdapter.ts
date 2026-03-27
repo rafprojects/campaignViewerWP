@@ -84,7 +84,17 @@ export interface AdapterBooleanSettingField {
   fallback: boolean;
 }
 
-export type AdapterSettingFieldDefinition = AdapterNumberSettingField | AdapterSelectSettingField | AdapterBooleanSettingField;
+export interface AdapterTextSettingField {
+  control: 'text';
+  key: keyof GalleryBehaviorSettings;
+  label: string;
+  description: string;
+  appliesTo?: AdapterSettingFieldAppliesTo;
+  fallback: string;
+  placeholder?: string;
+}
+
+export type AdapterSettingFieldDefinition = AdapterNumberSettingField | AdapterSelectSettingField | AdapterBooleanSettingField | AdapterTextSettingField;
 
 export interface AdapterSettingGroupDefinition {
   group: AdapterSettingGroup;

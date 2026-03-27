@@ -1,4 +1,4 @@
-import { Box, Group, NumberInput, Select, SegmentedControl, SimpleGrid, Stack, Switch, Text } from '@mantine/core';
+import { Box, Group, NumberInput, Select, SegmentedControl, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
 import type { GalleryBehaviorSettings } from '@/types';
 import type { AdapterSelectionUpdate, AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getPerTypeAdapterSelectionUpdates, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
@@ -55,6 +55,19 @@ function renderSettingFields(
               { value: 'true', label: 'On' },
               { value: 'false', label: 'Off' },
             ]}
+          />
+        );
+      }
+
+      if (field.control === 'text') {
+        return (
+          <TextInput
+            key={`${group}-${String(field.key)}`}
+            label={field.label}
+            description={field.description}
+            value={(settings[field.key] as string | undefined) ?? field.fallback}
+            placeholder={field.placeholder}
+            onChange={(event) => updateSetting(field.key, event.currentTarget.value as GalleryBehaviorSettings[typeof field.key])}
           />
         );
       }
