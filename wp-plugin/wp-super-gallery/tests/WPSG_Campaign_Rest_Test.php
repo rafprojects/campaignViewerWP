@@ -200,6 +200,11 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
                                 'adapterMaxWidthPct' => 10,
                                 'adapterJustifyContent' => 'invalid-option',
                                 'galleryManualHeight' => 'calc(100vh)',
+                                'galleryImageLabel' => '<b>Photos</b>',
+                                'galleryVideoLabel' => '<i>Clips</i>',
+                                'galleryLabelJustification' => 'invalid-option',
+                                'showGalleryLabelIcon' => '1',
+                                'showCampaignGalleryLabels' => '0',
                                 'theme' => 'nord',
                                 'headline<script>' => '<b>Unsafe</b>',
                             ],
@@ -240,6 +245,11 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertArrayNotHasKey('galleryManualHeight', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Photos', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['galleryVideoLabel'] ?? null);
+        $this->assertArrayNotHasKey('galleryLabelJustification', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertTrue($created['galleryOverrides']['breakpoints']['desktop']['image']['common']['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($created['galleryOverrides']['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
         $this->assertArrayNotHasKey('theme', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals('classic', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterId'] ?? null);
@@ -260,6 +270,11 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $stored['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $stored['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertArrayNotHasKey('galleryManualHeight', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Photos', $stored['breakpoints']['desktop']['image']['common']['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $stored['breakpoints']['desktop']['image']['common']['galleryVideoLabel'] ?? null);
+        $this->assertArrayNotHasKey('galleryLabelJustification', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertTrue($stored['breakpoints']['desktop']['image']['common']['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($stored['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
         $this->assertArrayNotHasKey('theme', $stored['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $stored['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals(900, $stored['breakpoints']['desktop']['video']['adapterSettings']['imageViewportHeight'] ?? null);

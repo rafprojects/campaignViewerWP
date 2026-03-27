@@ -27,6 +27,11 @@ export interface GalleryCommonSettings {
   gallerySizingMode?: 'auto' | 'viewport' | 'manual';
   galleryManualHeight?: string;
   perTypeSectionEqualHeight?: boolean;
+  galleryImageLabel?: string;
+  galleryVideoLabel?: string;
+  galleryLabelJustification?: 'left' | 'center' | 'right';
+  showGalleryLabelIcon?: boolean;
+  showCampaignGalleryLabels?: boolean;
 }
 
 export interface GalleryScopeConfig {

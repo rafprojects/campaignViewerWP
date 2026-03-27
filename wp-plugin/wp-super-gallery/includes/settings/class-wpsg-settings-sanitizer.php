@@ -35,6 +35,11 @@ class WPSG_Settings_Sanitizer {
         'gallerySizingMode' => 'gallery_sizing_mode',
         'galleryManualHeight' => 'gallery_manual_height',
         'perTypeSectionEqualHeight' => 'per_type_section_equal_height',
+        'galleryImageLabel' => 'gallery_image_label',
+        'galleryVideoLabel' => 'gallery_video_label',
+        'galleryLabelJustification' => 'gallery_label_justification',
+        'showGalleryLabelIcon' => 'show_gallery_label_icon',
+        'showCampaignGalleryLabels' => 'show_campaign_gallery_labels',
     ];
 
     /**

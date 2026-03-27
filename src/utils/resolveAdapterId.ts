@@ -34,6 +34,11 @@ const COMMON_SETTING_FIELD_MAP: Record<CommonSettingKey, keyof GalleryBehaviorSe
   gallerySizingMode: 'gallerySizingMode',
   galleryManualHeight: 'galleryManualHeight',
   perTypeSectionEqualHeight: 'perTypeSectionEqualHeight',
+  galleryImageLabel: 'galleryImageLabel',
+  galleryVideoLabel: 'galleryVideoLabel',
+  galleryLabelJustification: 'galleryLabelJustification',
+  showGalleryLabelIcon: 'showGalleryLabelIcon',
+  showCampaignGalleryLabels: 'showCampaignGalleryLabels',
 };
 
 function resolveSupportedAdapterChain(ids: Array<string | undefined>, breakpoint: Breakpoint): string {

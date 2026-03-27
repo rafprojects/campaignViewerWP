@@ -115,6 +115,11 @@ export function buildGalleryCommonSettingsFromLegacy(
     | 'gallerySizingMode'
     | 'galleryManualHeight'
     | 'perTypeSectionEqualHeight'
+    | 'galleryImageLabel'
+    | 'galleryVideoLabel'
+    | 'galleryLabelJustification'
+    | 'showGalleryLabelIcon'
+    | 'showCampaignGalleryLabels'
   >,
 ): GalleryCommonSettings {
   return {
@@ -133,6 +138,11 @@ export function buildGalleryCommonSettingsFromLegacy(
     gallerySizingMode: settings.gallerySizingMode,
     galleryManualHeight: settings.galleryManualHeight,
     perTypeSectionEqualHeight: settings.perTypeSectionEqualHeight,
+    galleryImageLabel: settings.galleryImageLabel,
+    galleryVideoLabel: settings.galleryVideoLabel,
+    galleryLabelJustification: settings.galleryLabelJustification,
+    showGalleryLabelIcon: settings.showGalleryLabelIcon,
+    showCampaignGalleryLabels: settings.showCampaignGalleryLabels,
   };
 }
 
@@ -178,6 +188,11 @@ export function buildGalleryConfigFromLegacySettings(
     | 'gallerySizingMode'
     | 'galleryManualHeight'
     | 'perTypeSectionEqualHeight'
+    | 'galleryImageLabel'
+    | 'galleryVideoLabel'
+    | 'galleryLabelJustification'
+    | 'showGalleryLabelIcon'
+    | 'showCampaignGalleryLabels'
   >,
 ): GalleryConfig {
   const common = buildGalleryCommonSettingsFromLegacy(settings);

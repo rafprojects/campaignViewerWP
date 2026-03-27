@@ -237,6 +237,11 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'adapterJustifyContent' => 'invalid-option',
                             'galleryManualHeight' => 'calc(100vh)',
                             'perTypeSectionEqualHeight' => '1',
+                            'galleryImageLabel' => '<b>Photos</b>',
+                            'galleryVideoLabel' => '<i>Clips</i>',
+                            'galleryLabelJustification' => 'invalid-option',
+                            'showGalleryLabelIcon' => '1',
+                            'showCampaignGalleryLabels' => '0',
                             'theme' => 'nord',
                             'headline<script>' => '<b>Allowed</b>',
                         ],
@@ -272,6 +277,11 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals('center', $common['adapterJustifyContent'] ?? null);
         $this->assertEquals('420px', $common['galleryManualHeight'] ?? null);
         $this->assertTrue($common['perTypeSectionEqualHeight'] ?? false);
+        $this->assertEquals('Photos', $common['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $common['galleryVideoLabel'] ?? null);
+        $this->assertEquals('left', $common['galleryLabelJustification'] ?? null);
+        $this->assertTrue($common['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($common['showCampaignGalleryLabels'] ?? true);
         $this->assertArrayNotHasKey('theme', $common);
         $this->assertEquals('Allowed', $common['headlinescript'] ?? null);
         $this->assertEquals(8, $adapter_settings['masonryColumns'] ?? null);
@@ -307,6 +317,11 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'adapterMaxWidthPct' => 10,
                             'adapterJustifyContent' => 'invalid-option',
                             'galleryManualHeight' => 'calc(100vh)',
+                            'galleryImageLabel' => '<b>Photos</b>',
+                            'galleryVideoLabel' => '<i>Clips</i>',
+                            'galleryLabelJustification' => 'invalid-option',
+                            'showGalleryLabelIcon' => '1',
+                            'showCampaignGalleryLabels' => '0',
                             'theme' => 'nord',
                             'headline<script>' => '<b>Unsafe</b>',
                         ],
@@ -336,6 +351,11 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $sanitized['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertArrayNotHasKey('galleryManualHeight', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Photos', $sanitized['breakpoints']['desktop']['image']['common']['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $sanitized['breakpoints']['desktop']['image']['common']['galleryVideoLabel'] ?? null);
+        $this->assertArrayNotHasKey('galleryLabelJustification', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertTrue($sanitized['breakpoints']['desktop']['image']['common']['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($sanitized['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
         $this->assertArrayNotHasKey('theme', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $sanitized['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals(900, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['imageViewportHeight'] ?? null);

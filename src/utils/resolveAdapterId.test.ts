@@ -324,6 +324,9 @@ describe('resolveGalleryCommonSettings', () => {
     const s = makeSettings({
       gallerySectionPadding: 16,
       adapterItemGap: 12,
+      galleryImageLabel: 'Images',
+      galleryLabelJustification: 'left',
+      showGalleryLabelIcon: false,
       galleryConfig: {
         breakpoints: {
           desktop: {
@@ -331,6 +334,9 @@ describe('resolveGalleryCommonSettings', () => {
               common: {
                 sectionPadding: 24,
                 adapterItemGap: 20,
+                galleryImageLabel: 'Photos',
+                galleryLabelJustification: 'center',
+                showGalleryLabelIcon: true,
               },
             },
           },
@@ -341,6 +347,9 @@ describe('resolveGalleryCommonSettings', () => {
     expect(resolveGalleryCommonSettings(s, 'desktop', 'image')).toMatchObject({
       sectionPadding: 24,
       adapterItemGap: 20,
+      galleryImageLabel: 'Photos',
+      galleryLabelJustification: 'center',
+      showGalleryLabelIcon: true,
     });
   });
 
@@ -381,6 +390,9 @@ describe('resolveEffectiveGallerySettings', () => {
     const s = makeSettings({
       gallerySectionPadding: 16,
       adapterItemGap: 12,
+      galleryVideoLabel: 'Videos',
+      galleryLabelJustification: 'left',
+      showCampaignGalleryLabels: true,
       galleryConfig: {
         breakpoints: {
           tablet: {
@@ -388,6 +400,9 @@ describe('resolveEffectiveGallerySettings', () => {
               common: {
                 sectionPadding: 28,
                 adapterItemGap: 6,
+                galleryVideoLabel: 'Clips',
+                galleryLabelJustification: 'right',
+                showCampaignGalleryLabels: false,
               },
             },
           },
@@ -399,6 +414,9 @@ describe('resolveEffectiveGallerySettings', () => {
 
     expect(resolved.gallerySectionPadding).toBe(28);
     expect(resolved.adapterItemGap).toBe(6);
+    expect(resolved.galleryVideoLabel).toBe('Clips');
+    expect(resolved.galleryLabelJustification).toBe('right');
+    expect(resolved.showCampaignGalleryLabels).toBe(false);
   });
 
   it('projects nested adapter settings back onto legacy runtime fields', () => {
