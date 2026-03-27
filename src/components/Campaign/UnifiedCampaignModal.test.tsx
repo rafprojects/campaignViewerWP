@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 // Static import to warm module cache for the lazy-loaded responsive editor.
 import '@/components/Common/GalleryConfigEditorModal';
@@ -218,6 +219,48 @@ describe('UnifiedCampaignModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
 
     expect(await screen.findByText(/currently stores custom gallery overrides/i, {}, { timeout: 10000 })).toBeInTheDocument();
+  });
+
+  it('saves unified adapter overrides from the shared responsive editor', async () => {
+    const updateForm = vi.fn();
+    const modal = makeMockModal({ activeTab: 'settings', updateForm });
+    const unifiedAdapterLabel = getAdapterSelectOptions({ context: 'unified-gallery' })
+      .find((option) => option.value === 'classic')?.label;
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+    const galleryModeInput = await screen.findByLabelText('Gallery Mode', { selector: 'input' }, { timeout: 10000 });
+    fireEvent.click(galleryModeInput);
+    fireEvent.click(await screen.findByRole('option', { name: 'Unified' }));
+
+    expect(await screen.findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Unified Gallery Adapter', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Campaign Gallery Config' }));
+
+    await waitFor(() => {
+      expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: expect.objectContaining({
+          mode: 'unified',
+          breakpoints: expect.objectContaining({
+            desktop: expect.objectContaining({
+              unified: expect.objectContaining({ adapterId: 'classic' }),
+            }),
+            tablet: expect.objectContaining({
+              unified: expect.objectContaining({ adapterId: 'classic' }),
+            }),
+            mobile: expect.objectContaining({
+              unified: expect.objectContaining({ adapterId: 'classic' }),
+            }),
+          }),
+        }),
+      }));
+    });
   });
 
   it('renders media grid with items on media tab', () => {

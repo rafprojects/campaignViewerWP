@@ -13,8 +13,8 @@
 | P23-C | Authoritative adapter schema | In Progress 🚧 | Medium (1 day) |
 | P23-D | Nested responsive gallery config model | In Progress 🚧 | Large (1-2 days) |
 | P23-E | Shared resolver and inheritance layer | In Progress 🚧 | Medium-Large (1 day) |
-| P23-F | Shared Gallery Config editor UX | Planned 📋 | Large (1-2 days) |
-| P23-G | Campaign full gallery config parity | Planned 📋 | Large (1-2 days) |
+| P23-F | Shared Gallery Config editor UX | In Progress 🚧 | Large (1-2 days) |
+| P23-G | Campaign full gallery config parity | In Progress 🚧 | Large (1-2 days) |
 | P23-H | Render-path consolidation | Planned 📋 | Medium (1 day) |
 | P23-I | Shared sanitization and REST support | Planned 📋 | Medium-Large (1 day) |
 | P23-J | Documentation, testing, and rollout verification | Planned 📋 | Medium (1 day) |
@@ -498,6 +498,16 @@ Campaign editing currently offers only shallow gallery overrides. That is insuff
 Allow campaigns to override the same gallery configuration surface supported globally by the shared editor. Campaigns should still default to inherited global values and store only what they override.
 
 Campaign nested gallery overrides should be stored under a dedicated post-meta key: `_wpsg_gallery_overrides`.
+
+### Progress so far
+
+Completed parity slices:
+
+1. campaign settings already open the same shared responsive gallery config editor used by global settings, with inherited-versus-overridden messaging and clear-all campaign reset behavior
+2. campaign overrides already persist nested `galleryOverrides` alongside the legacy flat bridge fields so the shared editor can round-trip full nested config state
+3. the shared editor now allows campaign-level unified adapter overrides instead of forcing unified mode to inherit the global adapter, closing the most obvious remaining campaign/editor mismatch
+
+Remaining P23-G work is now concentrated on deeper persistence and render-path parity, not basic shared-editor capability.
 
 ### Files to modify
 

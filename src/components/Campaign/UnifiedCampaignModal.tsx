@@ -412,8 +412,7 @@ export function UnifiedCampaignModal({
             }}
             saveLabel="Apply Campaign Gallery Config"
             clearLabel="Clear Campaign Overrides"
-            unifiedAdapterEnabled={false}
-            unifiedAdapterDescription="Campaigns currently inherit the global unified adapter in this slice."
+            unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
           />
         </Suspense>
       )}
