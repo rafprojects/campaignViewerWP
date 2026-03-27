@@ -124,10 +124,12 @@ describe('GalleryConfigEditorModal', () => {
 
     expect(await screen.findByDisplayValue('1200')).toBeInTheDocument();
     expect(screen.getByDisplayValue('350')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Manual (fixed max height)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Section Height Mode', { selector: 'input' })).toHaveValue(
+      'Manual (fixed max height)',
+    );
     expect(screen.getByDisplayValue('640')).toBeInTheDocument();
     expect(screen.getByDisplayValue('240')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('On')).toBeInTheDocument();
+    expect(screen.getByLabelText('Equal Height Sections (Per-Type)', { selector: 'input' })).toHaveValue('On');
   });
 
   it('renders shared adapter sizing controls from nested common settings', async () => {
@@ -158,6 +160,40 @@ describe('GalleryConfigEditorModal', () => {
     expect(await screen.findByDisplayValue('Manual (custom %)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('85')).toBeInTheDocument();
     expect(screen.getByDisplayValue('90')).toBeInTheDocument();
+  });
+
+  it('renders shared gallery presentation controls from nested common settings', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'compact-grid',
+                common: {
+                  galleryImageLabel: 'Photos',
+                  galleryVideoLabel: 'Clips',
+                  galleryLabelJustification: 'center',
+                  showGalleryLabelIcon: true,
+                  showCampaignGalleryLabels: false,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByDisplayValue('Photos')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Clips')).toBeInTheDocument();
+    expect(screen.getByLabelText('Gallery Label Justification', { selector: 'input' })).toHaveValue('Center');
+    expect(screen.getByLabelText('Show Gallery Label Icons', { selector: 'input' })).toHaveValue('On');
+    expect(screen.getByLabelText('Show Gallery Section Labels', { selector: 'input' })).toHaveValue('Off');
   });
 
   it('resets draft changes back to the opened baseline', async () => {

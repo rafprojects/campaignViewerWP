@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@/test/test-utils';
+import { render, screen, waitFor, fireEvent, within } from '@/test/test-utils';
 import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
 
@@ -229,6 +229,86 @@ describe('SettingsPanel', () => {
     expect(saveButton).toBeDisabled();
   });
 
+  it('projects shared editor gallery presentation fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      galleryImageLabel: 'Photo Reel',
+      galleryVideoLabel: 'Video Reel',
+      galleryLabelJustification: 'right',
+      showGalleryLabelIcon: true,
+      showCampaignGalleryLabels: false,
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                galleryImageLabel: 'Photo Reel',
+                galleryVideoLabel: 'Video Reel',
+                galleryLabelJustification: 'right',
+                showGalleryLabelIcon: true,
+                showCampaignGalleryLabels: false,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    await screen.findByRole('button', { name: 'Edit Responsive Config' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
+    const imageLabelInput = within(dialog).getByLabelText('Image Gallery Label');
+    fireEvent.change(imageLabelInput, { target: { value: 'Photo Reel' } });
+    fireEvent.change(within(dialog).getByLabelText('Video Gallery Label'), { target: { value: 'Video Reel' } });
+    fireEvent.click(within(dialog).getByLabelText('Gallery Label Justification', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Right' }));
+    fireEvent.click(within(dialog).getByLabelText('Show Gallery Label Icons', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'On' }));
+    fireEvent.click(within(dialog).getByLabelText('Show Gallery Section Labels', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Off' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Apply Gallery Config' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      galleryImageLabel: 'Photo Reel',
+      galleryVideoLabel: 'Video Reel',
+      galleryLabelJustification: 'right',
+      showGalleryLabelIcon: true,
+      showCampaignGalleryLabels: false,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                galleryImageLabel: 'Photo Reel',
+                galleryVideoLabel: 'Video Reel',
+                galleryLabelJustification: 'right',
+                showGalleryLabelIcon: true,
+                showCampaignGalleryLabels: false,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
   it('shows error notification when save fails', async () => {
     apiClient = createMockApiClient({
       updateSettings: vi.fn().mockRejectedValue(new Error('Save failed')),
@@ -371,10 +451,10 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
     await screen.findByText('Gallery Adapters');
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
-    await screen.findByText('Masonry Columns (0 = auto)', {}, { timeout: 10000 });
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
 
-    expect(screen.getByDisplayValue('4')).toBeInTheDocument();
-    expect(screen.getByText('Masonry Columns (0 = auto)')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('4')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Masonry Columns (0 = auto)')).toBeInTheDocument();
   });
 
   it('seeds additional registry-driven adapter values from flat settings', async () => {
@@ -398,11 +478,11 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
     await screen.findByText('Gallery Adapters');
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
-    await screen.findAllByLabelText('Card Min Width (px)', {}, { timeout: 10000 });
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
 
-    expect(screen.getAllByDisplayValue('210').length).toBeGreaterThan(0);
-    expect(screen.getAllByDisplayValue('260').length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText('Card Min Width (px)').length).toBeGreaterThan(0);
+    expect(within(dialog).getByDisplayValue('210')).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('260')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Card Min Width (px)')).toBeInTheDocument();
   });
 
   it('shows shared section sizing controls for flat section sizing settings', async () => {
@@ -428,11 +508,11 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
     await screen.findByText('Gallery Adapters');
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
-    await screen.findByText('Shared Section Sizing', {}, { timeout: 10000 });
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
 
-    expect(screen.getByText('Shared Section Sizing')).toBeInTheDocument();
-    expect(screen.getAllByLabelText('Section Height Mode').length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText('Equal Height Sections (Per-Type)').length).toBeGreaterThan(0);
+    expect(within(dialog).getByText('Shared Section Sizing')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Section Height Mode', { selector: 'input' })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Equal Height Sections (Per-Type)', { selector: 'input' })).toBeInTheDocument();
   });
 
   it('shows shared adapter sizing controls for flat adapter sizing settings', async () => {
@@ -455,10 +535,10 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
     await screen.findByText('Gallery Adapters');
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
-    await screen.findByText('Shared Adapter Sizing', {}, { timeout: 10000 });
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
 
-    expect(screen.getAllByLabelText('Adapter Sizing Mode').length).toBeGreaterThan(0);
-    expect(screen.getByText('Shared Adapter Sizing')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Adapter Sizing Mode', { selector: 'input' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Shared Adapter Sizing')).toBeInTheDocument();
   });
 
   it('interacts with Media Display tab controls', async () => {

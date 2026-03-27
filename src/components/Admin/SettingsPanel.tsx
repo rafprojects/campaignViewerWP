@@ -81,7 +81,12 @@ function getRepresentativeGalleryCommonSetting(
     | 'adapterMaxWidthPct'
     | 'adapterMaxHeightPct'
     | 'adapterItemGap'
-    | 'adapterJustifyContent',
+    | 'adapterJustifyContent'
+    | 'galleryImageLabel'
+    | 'galleryVideoLabel'
+    | 'galleryLabelJustification'
+    | 'showGalleryLabelIcon'
+    | 'showCampaignGalleryLabels',
 ): number | string | boolean | undefined {
   const scopes = galleryConfig.mode === 'unified'
     ? ['unified'] as const
@@ -270,6 +275,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const adapterMaxHeightPct = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterMaxHeightPct') ?? prev.adapterMaxHeightPct;
       const adapterItemGap = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterItemGap') ?? prev.adapterItemGap;
       const adapterJustifyContent = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterJustifyContent') ?? prev.adapterJustifyContent;
+      const galleryImageLabel = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryImageLabel') ?? prev.galleryImageLabel;
+      const galleryVideoLabel = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryVideoLabel') ?? prev.galleryVideoLabel;
+      const galleryLabelJustification = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryLabelJustification') ?? prev.galleryLabelJustification;
+      const showGalleryLabelIcon = getRepresentativeGalleryCommonSetting(galleryConfig, 'showGalleryLabelIcon') ?? prev.showGalleryLabelIcon;
+      const showCampaignGalleryLabels = getRepresentativeGalleryCommonSetting(galleryConfig, 'showCampaignGalleryLabels') ?? prev.showCampaignGalleryLabels;
 
       return {
         ...prev,
@@ -299,6 +309,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         adapterMaxHeightPct: adapterMaxHeightPct as SettingsData['adapterMaxHeightPct'],
         adapterItemGap: adapterItemGap as SettingsData['adapterItemGap'],
         adapterJustifyContent: adapterJustifyContent as SettingsData['adapterJustifyContent'],
+        galleryImageLabel: galleryImageLabel as SettingsData['galleryImageLabel'],
+        galleryVideoLabel: galleryVideoLabel as SettingsData['galleryVideoLabel'],
+        galleryLabelJustification: galleryLabelJustification as SettingsData['galleryLabelJustification'],
+        showGalleryLabelIcon: showGalleryLabelIcon as SettingsData['showGalleryLabelIcon'],
+        showCampaignGalleryLabels: showCampaignGalleryLabels as SettingsData['showCampaignGalleryLabels'],
       };
     });
 

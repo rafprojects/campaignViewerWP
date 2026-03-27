@@ -640,6 +640,7 @@ Completed documentation/testing slices:
 7. the focused `wp-env` suite remains green after adding rejection coverage for misplaced known top-level settings inside nested payloads, so the live REST path now distinguishes between disallowed known keys and forward-compatible unknown keys
 8. the focused `wp-env` suite now also covers nested classic-carousel runtime fields through both helper-level and live JSON-body campaign tests, keeping the shared sanitizer aligned with the fields the current carousel renderer and navigation helpers actually use
 9. focused resolver tests and the same `wp-env` PHP suite now also cover nested gallery label and visibility controls, so both frontend runtime projection and backend REST sanitization stay aligned for those common presentation fields
+10. the shared responsive gallery editor now exposes those nested gallery presentation fields directly, and focused `GalleryConfigEditorModal` plus `SettingsPanel` coverage confirms the global save bridge still projects nested label, justification, and visibility values back into the legacy flat settings contract during the migration
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

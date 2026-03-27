@@ -1,4 +1,4 @@
-import { Button, Divider, Group, Modal, NumberInput, Select, Stack, Tabs, Text } from '@mantine/core';
+import { Button, Divider, Group, Modal, NumberInput, Select, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
 import {
@@ -45,6 +45,11 @@ type SharedCommonSettingKey = keyof Pick<
   | 'adapterMaxHeightPct'
   | 'adapterItemGap'
   | 'adapterJustifyContent'
+  | 'galleryImageLabel'
+  | 'galleryVideoLabel'
+  | 'galleryLabelJustification'
+  | 'showGalleryLabelIcon'
+  | 'showCampaignGalleryLabels'
 >;
 
 function getScopeAdapterId(
@@ -88,7 +93,7 @@ function getRepresentativeNumberCommonValue(
 function getRepresentativeStringCommonValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  key: Extract<SharedCommonSettingKey, 'sectionHeightMode' | 'adapterSizingMode' | 'adapterJustifyContent'>,
+  key: Extract<SharedCommonSettingKey, 'sectionHeightMode' | 'adapterSizingMode' | 'adapterJustifyContent' | 'galleryImageLabel' | 'galleryVideoLabel' | 'galleryLabelJustification'>,
 ): string | undefined {
   const value = getRepresentativeCommonValue(config, breakpoint, key);
   return typeof value === 'string' ? value : undefined;
@@ -97,7 +102,7 @@ function getRepresentativeStringCommonValue(
 function getRepresentativeBooleanCommonValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  key: Extract<SharedCommonSettingKey, 'perTypeSectionEqualHeight'>,
+  key: Extract<SharedCommonSettingKey, 'perTypeSectionEqualHeight' | 'showGalleryLabelIcon' | 'showCampaignGalleryLabels'>,
 ): boolean | undefined {
   const value = getRepresentativeCommonValue(config, breakpoint, key);
   return typeof value === 'boolean' ? value : undefined;
@@ -597,6 +602,59 @@ export function GalleryConfigEditorModal({
           ]}
           value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'adapterJustifyContent') ?? 'center'}
           onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterJustifyContent', value ?? 'center'))}
+          allowDeselect={false}
+        />
+
+        <Divider label="Shared Gallery Presentation" labelPosition="center" />
+
+        <TextInput
+          label="Image Gallery Label"
+          description="Shared heading text for image gallery sections when labels are enabled."
+          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryImageLabel') ?? 'Images'}
+          onChange={(event) => setDraft((current) => setCommonSettingForEditableScopes(current, 'galleryImageLabel', event.currentTarget.value))}
+        />
+
+        <TextInput
+          label="Video Gallery Label"
+          description="Shared heading text for video gallery sections when labels are enabled."
+          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryVideoLabel') ?? 'Videos'}
+          onChange={(event) => setDraft((current) => setCommonSettingForEditableScopes(current, 'galleryVideoLabel', event.currentTarget.value))}
+        />
+
+        <Select
+          label="Gallery Label Justification"
+          description="Controls how gallery section titles align across the currently edited gallery mode surface."
+          data={[
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' },
+          ]}
+          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryLabelJustification') ?? 'left'}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'galleryLabelJustification', value ?? 'left'))}
+          allowDeselect={false}
+        />
+
+        <Select
+          label="Show Gallery Label Icons"
+          description="Displays the adapter icon beside gallery section titles."
+          data={[
+            { value: 'true', label: 'On' },
+            { value: 'false', label: 'Off' },
+          ]}
+          value={String(getRepresentativeBooleanCommonValue(draft, activeBreakpoint, 'showGalleryLabelIcon') ?? false)}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'showGalleryLabelIcon', value === 'true'))}
+          allowDeselect={false}
+        />
+
+        <Select
+          label="Show Gallery Section Labels"
+          description="Controls whether gallery section headings render at all for the currently edited gallery mode surface."
+          data={[
+            { value: 'true', label: 'On' },
+            { value: 'false', label: 'Off' },
+          ]}
+          value={String(getRepresentativeBooleanCommonValue(draft, activeBreakpoint, 'showCampaignGalleryLabels') ?? true)}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'showCampaignGalleryLabels', value === 'true'))}
           allowDeselect={false}
         />
 
