@@ -7,6 +7,10 @@ vi.mock('@mantine/notifications', () => ({
   showNotification: vi.fn(),
 }));
 
+function suppressConsoleError() {
+  return vi.spyOn(console, 'error').mockImplementation(() => {});
+}
+
 describe('MediaTab', () => {
   const apiClient = {
     get: vi.fn(),
@@ -208,6 +212,7 @@ describe('MediaTab', () => {
   });
 
   it('shows error when preview fetch fails', async () => {
+    const consoleSpy = suppressConsoleError();
     apiClient.get
       .mockResolvedValueOnce([])
       .mockRejectedValueOnce(new Error('Preview failed'));
@@ -225,9 +230,12 @@ describe('MediaTab', () => {
         expect.objectContaining({ title: 'Preview failed' }),
       );
     });
+
+    consoleSpy.mockRestore();
   });
 
   it('shows error when add external fails', async () => {
+    const consoleSpy = suppressConsoleError();
     apiClient.get.mockResolvedValueOnce([]);
     apiClient.post.mockRejectedValueOnce(new Error('Add failed'));
 
@@ -243,9 +251,12 @@ describe('MediaTab', () => {
         expect.objectContaining({ title: 'Add failed' }),
       );
     });
+
+    consoleSpy.mockRestore();
   });
 
   it('shows save error when edit fails', async () => {
+    const consoleSpy = suppressConsoleError();
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -277,6 +288,8 @@ describe('MediaTab', () => {
         expect.objectContaining({ title: 'Save failed' }),
       );
     });
+
+    consoleSpy.mockRestore();
   });
 
   it('saves edits successfully', async () => {
@@ -412,7 +425,7 @@ describe('MediaTab', () => {
   });
 
   it('shows delete error when delete fails', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = suppressConsoleError();
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -472,6 +485,7 @@ describe('MediaTab', () => {
   });
 
   it('shows error when reorder fails', async () => {
+    const consoleSpy = suppressConsoleError();
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -509,6 +523,8 @@ describe('MediaTab', () => {
         expect.objectContaining({ title: 'Reorder failed' }),
       );
     }, { timeout: 3000 });
+
+    consoleSpy.mockRestore();
   });
 
   it('opens lightbox when image card is clicked and navigates prev/next', async () => {
@@ -589,6 +605,7 @@ describe('MediaTab', () => {
   });
 
   it('handles rescan types failure', async () => {
+    const consoleSpy = suppressConsoleError();
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm1',
@@ -612,6 +629,8 @@ describe('MediaTab', () => {
         expect.objectContaining({ title: 'Rescan failed' }),
       );
     });
+
+    consoleSpy.mockRestore();
   });
 
   it('switches to list view and opens lightbox from image row', async () => {

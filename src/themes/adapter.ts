@@ -15,6 +15,10 @@ import { colorsTuple } from '@mantine/core';
 import type { ThemeDefinition, ResolvedColors } from './types';
 import { resolveColors, withAlpha } from './colorGen';
 
+const TABS_TAB_CLASS = 'wpsg-mantine-tabs-tab';
+const SEGMENTED_CONTROL_LABEL_CLASS = 'wpsg-mantine-segmented-control-label';
+const SELECT_OPTION_CLASS = 'wpsg-mantine-select-option';
+
 // ---------------------------------------------------------------------------
 // Component override generator
 // ---------------------------------------------------------------------------
@@ -151,15 +155,14 @@ function generateComponentOverrides(
     },
 
     Tabs: {
+      classNames: {
+        tab: TABS_TAB_CLASS,
+      },
       styles: () => ({
         root: { borderColor: rc.border },
         tab: {
           color: rc.textMuted,
           fontWeight: 500,
-          '&[data-active]': {
-            color: rc.text,
-            borderColor: rc.primary[5],
-          },
           '&:hover': {
             backgroundColor: withAlpha(rc.surface2, 0.5),
           },
@@ -188,6 +191,9 @@ function generateComponentOverrides(
     },
 
     SegmentedControl: {
+      classNames: {
+        label: SEGMENTED_CONTROL_LABEL_CLASS,
+      },
       styles: () => ({
         root: {
           backgroundColor: rc.surface,
@@ -198,7 +204,6 @@ function generateComponentOverrides(
         },
         label: {
           color: rc.textMuted,
-          '&[data-active]': { color: rc.text },
         },
       }),
     },
@@ -250,6 +255,9 @@ function generateComponentOverrides(
     },
 
     Select: {
+      classNames: {
+        option: SELECT_OPTION_CLASS,
+      },
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
@@ -262,10 +270,6 @@ function generateComponentOverrides(
         },
         option: {
           color: rc.text,
-          '&[data-selected]': {
-            backgroundColor: rc.primary[5],
-            color: '#ffffff',
-          },
           '&:hover': { backgroundColor: rc.surface2 },
         },
       }),
@@ -550,3 +554,9 @@ export function adaptTheme(def: ThemeDefinition): MantineThemeOverride {
 
   return theme;
 }
+
+export const themeStateClasses = {
+  tabsTab: TABS_TAB_CLASS,
+  segmentedControlLabel: SEGMENTED_CONTROL_LABEL_CLASS,
+  selectOption: SELECT_OPTION_CLASS,
+} as const;

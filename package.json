@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:to-file": "vitest run --reporter=verbose --outputFile=vitest-results.txt",
     "test:triage": "vitest run --reporter=verbose --reporter=hanging-process --no-file-parallelism --silent",
+    "test:quieter-triage": "vitest run --reporter=hanging-process --no-file-parallelism --silent",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "prepare": "husky"
