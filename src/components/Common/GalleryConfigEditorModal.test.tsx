@@ -66,6 +66,37 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByDisplayValue('240')).toBeInTheDocument();
   });
 
+  it('renders schema-driven carousel adapter fields for classic selections', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'classic',
+                adapterSettings: {
+                  carouselVisibleCards: 3,
+                  carouselLoop: false,
+                  carouselAutoplayDirection: 'rtl',
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByLabelText('Visible Cards')).toHaveValue('3');
+    expect(screen.getByLabelText('Loop', { selector: 'input' })).toHaveValue('Off');
+    expect(screen.getByLabelText('Autoplay Direction', { selector: 'input' })).toHaveValue('Right to Left');
+  });
+
   it('renders shared common adapter spacing controls from nested common settings', async () => {
     render(
       <GalleryConfigEditorModal

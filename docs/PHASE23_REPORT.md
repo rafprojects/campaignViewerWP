@@ -342,6 +342,7 @@ Completed initial schema extraction:
 28. expanded the shared common-settings slice to include adapter item gap and adapter justification so both global settings and campaign overrides can now edit those nested spacing/distribution controls from the shared editor while the flat compatibility fields stay synchronized on save
 29. expanded the shared common-settings slice again to cover section sizing controls, including section max/min width, height mode, manual max height, min height, and per-type equal-height behavior, while fixing SettingsPanel seed precedence so flat migration-bridge values stay authoritative when nested defaults disagree
 30. expanded the shared common-settings surface to include adapter sizing mode plus manual max width/max height percentages so both global settings and campaign overrides can edit nested adapter fit constraints from the shared editor while the legacy flat fields continue to round-trip through SettingsPanel during the migration
+31. added the first schema-driven `carousel` adapter setting group for the classic adapter, including visible-cards, gap, loop, drag, autoplay, darken, and edge-fade controls, so the shared editor can now expose real classic adapter-specific fields instead of leaving the registry group empty
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 
@@ -474,8 +475,9 @@ Completed shared editor slices:
 1. introduced a shared responsive gallery config editor that both SettingsPanel and UnifiedCampaignModal can open for the nested gallery model while retaining inline quick selectors for scanability
 2. expanded the editor to cover shared section spacing, shared section sizing, shared adapter sizing, baseline reset actions, campaign clear actions, inherited-versus-overridden campaign messaging, and registry-driven adapter-specific groups
 3. expanded the shared editor again to expose the nested classic-gallery height controls already supported by the runtime and compatibility bridge, so `gallerySizingMode` and `galleryManualHeight` can now be edited from the same nested surface as the other shared common settings
-4. restored the required P23-F lazy-load behavior by loading the shared editor only when users open it from either SettingsPanel or UnifiedCampaignModal
-5. updated the affected integration tests to treat the editor as a lazy-loaded modal entry point instead of a synchronously mounted subtree, while keeping direct editor field/value coverage in the shared editor test file
+4. extended the shared editor schema support to handle boolean adapter fields and used that to render the first real classic-carousel adapter-specific group from registry metadata instead of leaving the classic adapter on inline-only legacy controls
+5. restored the required P23-F lazy-load behavior by loading the shared editor only when users open it from either SettingsPanel or UnifiedCampaignModal
+6. updated the affected integration tests to treat the editor as a lazy-loaded modal entry point instead of a synchronously mounted subtree, while keeping direct editor field/value coverage in the shared editor test file
 
 Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
 
@@ -643,6 +645,7 @@ Completed documentation/testing slices:
 9. focused resolver tests and the same `wp-env` PHP suite now also cover nested gallery label and visibility controls, so both frontend runtime projection and backend REST sanitization stay aligned for those common presentation fields
 10. the shared responsive gallery editor now exposes those nested gallery presentation fields directly, and focused `GalleryConfigEditorModal` plus `SettingsPanel` coverage confirms the global save bridge still projects nested label, justification, and visibility values back into the legacy flat settings contract during the migration
 11. focused frontend coverage now also verifies that nested classic-gallery height controls seed into the shared editor and still project back through the global flat-settings bridge, while related carousel runtime tests remain part of the broader frontend validation pass because those adapters consume the resolved height constraint directly
+12. focused registry, shared-editor, settings-panel, resolver, and carousel runtime coverage now also validates the first schema-driven classic-carousel adapter group, so nested `carousel` adapter settings can seed from legacy flat fields, round-trip through the shared editor, and continue driving the live classic runtime without a parallel hand-maintained editor branch
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

@@ -43,6 +43,22 @@ function renderSettingFields(
         );
       }
 
+      if (field.control === 'boolean') {
+        return (
+          <Select
+            key={`${group}-${String(field.key)}`}
+            label={field.label}
+            description={field.description}
+            value={String(settings[field.key] as boolean | undefined ?? field.fallback)}
+            onChange={(value) => updateSetting(field.key, ((value ?? String(field.fallback)) === 'true') as GalleryBehaviorSettings[typeof field.key])}
+            data={[
+              { value: 'true', label: 'On' },
+              { value: 'false', label: 'Off' },
+            ]}
+          />
+        );
+      }
+
       return (
         <Select
           key={`${group}-${String(field.key)}`}

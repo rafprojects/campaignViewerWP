@@ -44,6 +44,19 @@ describe('adapterRegistry', () => {
   });
 
   it('exposes schema-driven field definitions for adapter setting groups', () => {
+    expect(getSettingGroupFieldDefinitions('carousel').map((field) => field.key)).toEqual([
+      'carouselVisibleCards',
+      'carouselGap',
+      'carouselLoop',
+      'carouselDragEnabled',
+      'carouselAutoplay',
+      'carouselAutoplaySpeed',
+      'carouselAutoplayPauseOnHover',
+      'carouselAutoplayDirection',
+      'carouselDarkenUnfocused',
+      'carouselDarkenOpacity',
+      'carouselEdgeFade',
+    ]);
     expect(getSettingGroupFieldDefinitions('compact-grid').map((field) => field.key)).toEqual([
       'gridCardWidth',
       'gridCardHeight',
@@ -66,7 +79,11 @@ describe('adapterRegistry', () => {
   });
 
   it('returns active setting groups with registry-defined placement and scope metadata', () => {
-    expect(getActiveSettingGroupDefinitions(['compact-grid', 'layout-builder', 'hexagonal'])).toEqual([
+    expect(getActiveSettingGroupDefinitions(['classic', 'compact-grid', 'layout-builder', 'hexagonal'])).toEqual([
+      expect.objectContaining({
+        group: 'carousel',
+        layout: 'stack',
+      }),
       expect.objectContaining({
         group: 'compact-grid',
         layout: 'group',

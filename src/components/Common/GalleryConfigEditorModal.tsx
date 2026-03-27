@@ -115,7 +115,7 @@ function getRepresentativeAdapterSettingValue(
   breakpoint: GalleryConfigBreakpoint,
   group: AdapterSettingGroupDefinition,
   field: AdapterSettingFieldDefinition,
-): number | string | undefined {
+): number | string | boolean | undefined {
   const scopes = getApplicableScopes(config?.mode ?? 'per-type', group.scopeMode ?? 'shared', field);
 
   for (const scope of scopes) {
@@ -125,7 +125,11 @@ function getRepresentativeAdapterSettingValue(
     }
 
     const value = scopeConfig?.adapterSettings?.[field.key];
-    if ((field.control === 'number' && typeof value === 'number') || (field.control === 'select' && typeof value === 'string')) {
+    if (
+      (field.control === 'number' && typeof value === 'number')
+      || (field.control === 'select' && typeof value === 'string')
+      || (field.control === 'boolean' && typeof value === 'boolean')
+    ) {
       return value;
     }
   }
@@ -275,7 +279,7 @@ function setAdapterSettingForMatchingScopes(
   breakpoint: GalleryConfigBreakpoint,
   group: AdapterSettingGroupDefinition,
   field: AdapterSettingFieldDefinition,
-  value: number | string,
+  value: number | string | boolean,
 ): GalleryConfig {
   const next = cloneGalleryConfig(config) ?? { mode: config.mode ?? 'per-type', breakpoints: {} };
   next.breakpoints = next.breakpoints ?? {};
@@ -712,6 +716,29 @@ export function GalleryConfigEditorModal({
                           min={field.min}
                           max={field.max}
                           step={field.step}
+                        />
+                      );
+                    }
+
+                    if (field.control === 'boolean') {
+                      return (
+                        <Select
+                          key={String(field.key)}
+                          label={field.label}
+                          description={field.description}
+                          data={[
+                            { value: 'true', label: 'On' },
+                            { value: 'false', label: 'Off' },
+                          ]}
+                          value={String(typeof representativeValue === 'boolean' ? representativeValue : field.fallback)}
+                          onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                            current,
+                            activeBreakpoint,
+                            group,
+                            field,
+                            value === 'true',
+                          ))}
+                          allowDeselect={false}
                         />
                       );
                     }

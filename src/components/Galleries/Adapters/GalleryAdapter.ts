@@ -75,7 +75,16 @@ export interface AdapterSelectSettingField {
   size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
-export type AdapterSettingFieldDefinition = AdapterNumberSettingField | AdapterSelectSettingField;
+export interface AdapterBooleanSettingField {
+  control: 'boolean';
+  key: keyof GalleryBehaviorSettings;
+  label: string;
+  description: string;
+  appliesTo?: AdapterSettingFieldAppliesTo;
+  fallback: boolean;
+}
+
+export type AdapterSettingFieldDefinition = AdapterNumberSettingField | AdapterSelectSettingField | AdapterBooleanSettingField;
 
 export interface AdapterSettingGroupDefinition {
   group: AdapterSettingGroup;

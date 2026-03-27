@@ -494,6 +494,101 @@ describe('SettingsPanel', () => {
     expect(within(dialog).getByLabelText('Masonry Columns (0 = auto)')).toBeInTheDocument();
   });
 
+  it('seeds shared editor classic carousel values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          carouselVisibleCards: 3,
+          carouselLoop: false,
+          carouselAutoplayDirection: 'rtl',
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
+
+    expect(within(dialog).getByLabelText('Visible Cards')).toHaveValue('3');
+    expect(within(dialog).getByLabelText('Loop', { selector: 'input' })).toHaveValue('Off');
+    expect(within(dialog).getByLabelText('Autoplay Direction', { selector: 'input' })).toHaveValue('Right to Left');
+  });
+
+  it('projects shared editor carousel adapter fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      carouselVisibleCards: 3,
+      carouselLoop: false,
+      carouselAutoplayDirection: 'rtl',
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'classic',
+              adapterSettings: {
+                carouselVisibleCards: 3,
+                carouselLoop: false,
+                carouselAutoplayDirection: 'rtl',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
+    fireEvent.change(within(dialog).getByLabelText('Visible Cards'), { target: { value: '3' } });
+    fireEvent.click(within(dialog).getByLabelText('Loop', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Off' }));
+    fireEvent.click(within(dialog).getByLabelText('Autoplay Direction', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Right to Left' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Apply Gallery Config' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      carouselVisibleCards: 3,
+      carouselLoop: false,
+      carouselAutoplayDirection: 'rtl',
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                carouselVisibleCards: 3,
+                carouselLoop: false,
+                carouselAutoplayDirection: 'rtl',
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
   it('seeds additional registry-driven adapter values from flat settings', async () => {
     render(
       <SettingsPanel
