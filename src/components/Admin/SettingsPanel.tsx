@@ -82,6 +82,8 @@ function getRepresentativeGalleryCommonSetting(
     | 'adapterMaxHeightPct'
     | 'adapterItemGap'
     | 'adapterJustifyContent'
+    | 'gallerySizingMode'
+    | 'galleryManualHeight'
     | 'galleryImageLabel'
     | 'galleryVideoLabel'
     | 'galleryLabelJustification'
@@ -275,6 +277,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const adapterMaxHeightPct = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterMaxHeightPct') ?? prev.adapterMaxHeightPct;
       const adapterItemGap = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterItemGap') ?? prev.adapterItemGap;
       const adapterJustifyContent = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterJustifyContent') ?? prev.adapterJustifyContent;
+      const gallerySizingMode = getRepresentativeGalleryCommonSetting(galleryConfig, 'gallerySizingMode') ?? prev.gallerySizingMode;
+      const galleryManualHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryManualHeight') ?? prev.galleryManualHeight;
       const galleryImageLabel = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryImageLabel') ?? prev.galleryImageLabel;
       const galleryVideoLabel = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryVideoLabel') ?? prev.galleryVideoLabel;
       const galleryLabelJustification = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryLabelJustification') ?? prev.galleryLabelJustification;
@@ -309,6 +313,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         adapterMaxHeightPct: adapterMaxHeightPct as SettingsData['adapterMaxHeightPct'],
         adapterItemGap: adapterItemGap as SettingsData['adapterItemGap'],
         adapterJustifyContent: adapterJustifyContent as SettingsData['adapterJustifyContent'],
+        gallerySizingMode: gallerySizingMode as SettingsData['gallerySizingMode'],
+        galleryManualHeight: galleryManualHeight as SettingsData['galleryManualHeight'],
         galleryImageLabel: galleryImageLabel as SettingsData['galleryImageLabel'],
         galleryVideoLabel: galleryVideoLabel as SettingsData['galleryVideoLabel'],
         galleryLabelJustification: galleryLabelJustification as SettingsData['galleryLabelJustification'],

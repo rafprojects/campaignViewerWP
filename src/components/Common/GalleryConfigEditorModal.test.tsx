@@ -162,6 +162,35 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByDisplayValue('90')).toBeInTheDocument();
   });
 
+  it('renders shared gallery height controls from nested common settings', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'classic',
+                common: {
+                  gallerySizingMode: 'manual',
+                  galleryManualHeight: '75vh',
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Shared Gallery Height')).toBeInTheDocument();
+    expect(screen.getByLabelText('Height Constraint', { selector: 'input' })).toHaveValue('Manually control height');
+    expect(screen.getByLabelText('Manual Gallery Height')).toHaveValue('75vh');
+  });
+
   it('renders shared gallery presentation controls from nested common settings', async () => {
     render(
       <GalleryConfigEditorModal

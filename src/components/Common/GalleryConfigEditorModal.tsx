@@ -45,6 +45,8 @@ type SharedCommonSettingKey = keyof Pick<
   | 'adapterMaxHeightPct'
   | 'adapterItemGap'
   | 'adapterJustifyContent'
+  | 'gallerySizingMode'
+  | 'galleryManualHeight'
   | 'galleryImageLabel'
   | 'galleryVideoLabel'
   | 'galleryLabelJustification'
@@ -93,7 +95,7 @@ function getRepresentativeNumberCommonValue(
 function getRepresentativeStringCommonValue(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  key: Extract<SharedCommonSettingKey, 'sectionHeightMode' | 'adapterSizingMode' | 'adapterJustifyContent' | 'galleryImageLabel' | 'galleryVideoLabel' | 'galleryLabelJustification'>,
+  key: Extract<SharedCommonSettingKey, 'sectionHeightMode' | 'adapterSizingMode' | 'adapterJustifyContent' | 'gallerySizingMode' | 'galleryManualHeight' | 'galleryImageLabel' | 'galleryVideoLabel' | 'galleryLabelJustification'>,
 ): string | undefined {
   const value = getRepresentativeCommonValue(config, breakpoint, key);
   return typeof value === 'string' ? value : undefined;
@@ -604,6 +606,31 @@ export function GalleryConfigEditorModal({
           onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'adapterJustifyContent', value ?? 'center'))}
           allowDeselect={false}
         />
+
+        <Divider label="Shared Gallery Height" labelPosition="center" />
+
+        <Select
+          label="Height Constraint"
+          description="Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
+          data={[
+            { value: 'auto', label: 'No restraint' },
+            { value: 'viewport', label: 'Restrain to view' },
+            { value: 'manual', label: 'Manually control height' },
+          ]}
+          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'gallerySizingMode') ?? 'auto'}
+          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'gallerySizingMode', value ?? 'auto'))}
+          allowDeselect={false}
+        />
+
+        {getRepresentativeStringCommonValue(draft, activeBreakpoint, 'gallerySizingMode') === 'manual' && (
+          <TextInput
+            label="Manual Gallery Height"
+            description="Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
+            value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryManualHeight') ?? '420px'}
+            onChange={(event) => setDraft((current) => setCommonSettingForEditableScopes(current, 'galleryManualHeight', event.currentTarget.value))}
+            placeholder="420px"
+          />
+        )}
 
         <Divider label="Shared Gallery Presentation" labelPosition="center" />
 

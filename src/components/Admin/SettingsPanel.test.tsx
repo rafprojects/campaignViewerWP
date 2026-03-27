@@ -232,6 +232,8 @@ describe('SettingsPanel', () => {
   it('projects shared editor gallery presentation fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
+      gallerySizingMode: 'manual',
+      galleryManualHeight: '75vh',
       galleryImageLabel: 'Photo Reel',
       galleryVideoLabel: 'Video Reel',
       galleryLabelJustification: 'right',
@@ -243,6 +245,8 @@ describe('SettingsPanel', () => {
           desktop: {
             image: {
               common: {
+                gallerySizingMode: 'manual',
+                galleryManualHeight: '75vh',
                 galleryImageLabel: 'Photo Reel',
                 galleryVideoLabel: 'Video Reel',
                 galleryLabelJustification: 'right',
@@ -268,6 +272,9 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
+    fireEvent.click(within(dialog).getByLabelText('Height Constraint', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Manually control height' }));
+    fireEvent.change(within(dialog).getByLabelText('Manual Gallery Height'), { target: { value: '75vh' } });
     const imageLabelInput = within(dialog).getByLabelText('Image Gallery Label');
     fireEvent.change(imageLabelInput, { target: { value: 'Photo Reel' } });
     fireEvent.change(within(dialog).getByLabelText('Video Gallery Label'), { target: { value: 'Video Reel' } });
@@ -286,6 +293,8 @@ describe('SettingsPanel', () => {
     });
 
     expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gallerySizingMode: 'manual',
+      galleryManualHeight: '75vh',
       galleryImageLabel: 'Photo Reel',
       galleryVideoLabel: 'Video Reel',
       galleryLabelJustification: 'right',
@@ -296,6 +305,8 @@ describe('SettingsPanel', () => {
           desktop: expect.objectContaining({
             image: expect.objectContaining({
               common: expect.objectContaining({
+                gallerySizingMode: 'manual',
+                galleryManualHeight: '75vh',
                 galleryImageLabel: 'Photo Reel',
                 galleryVideoLabel: 'Video Reel',
                 galleryLabelJustification: 'right',
@@ -307,6 +318,32 @@ describe('SettingsPanel', () => {
         }),
       }),
     }));
+  });
+
+  it('shows shared gallery height controls for flat gallery sizing settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySizingMode: 'manual',
+          galleryManualHeight: '75vh',
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Responsive Gallery Config' }, { timeout: 10000 });
+
+    expect(within(dialog).getByText('Shared Gallery Height')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Height Constraint', { selector: 'input' })).toHaveValue('Manually control height');
+    expect(within(dialog).getByLabelText('Manual Gallery Height')).toHaveValue('75vh');
   });
 
   it('shows error notification when save fails', async () => {
