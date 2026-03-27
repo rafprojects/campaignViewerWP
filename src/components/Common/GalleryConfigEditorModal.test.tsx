@@ -81,6 +81,10 @@ describe('GalleryConfigEditorModal', () => {
                   carouselVisibleCards: 3,
                   carouselLoop: false,
                   carouselAutoplayDirection: 'rtl',
+                  navArrowPosition: 'bottom',
+                  navArrowSize: 42,
+                  dotNavEnabled: false,
+                  dotNavPosition: 'overlay-top',
                 },
               },
             },
@@ -95,6 +99,10 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Visible Cards')).toHaveValue('3');
     expect(screen.getByLabelText('Loop', { selector: 'input' })).toHaveValue('Off');
     expect(screen.getByLabelText('Autoplay Direction', { selector: 'input' })).toHaveValue('Right to Left');
+    expect(screen.getByLabelText('Arrow Vertical Position', { selector: 'input' })).toHaveValue('Bottom');
+    expect(screen.getByLabelText('Arrow Size (px)')).toHaveValue('42');
+    expect(screen.getByLabelText('Enable Dot Navigator', { selector: 'input' })).toHaveValue('Off');
+    expect(screen.getByLabelText('Dot Position', { selector: 'input' })).toHaveValue('Overlay Top');
   });
 
   it('renders shared common adapter spacing controls from nested common settings', async () => {

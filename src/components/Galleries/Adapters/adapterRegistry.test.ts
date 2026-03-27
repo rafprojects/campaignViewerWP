@@ -56,6 +56,17 @@ describe('adapterRegistry', () => {
       'carouselDarkenUnfocused',
       'carouselDarkenOpacity',
       'carouselEdgeFade',
+      'navArrowPosition',
+      'navArrowSize',
+      'navArrowBorderWidth',
+      'navArrowHoverScale',
+      'navArrowAutoHideMs',
+      'dotNavEnabled',
+      'dotNavPosition',
+      'dotNavSize',
+      'dotNavShape',
+      'dotNavSpacing',
+      'dotNavActiveScale',
     ]);
     expect(getSettingGroupFieldDefinitions('compact-grid').map((field) => field.key)).toEqual([
       'gridCardWidth',

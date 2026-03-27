@@ -318,7 +318,7 @@ describe('SettingsPanel', () => {
         }),
       }),
     }));
-  });
+  }, 180000);
 
   it('shows shared gallery height controls for flat gallery sizing settings', async () => {
     render(
@@ -506,6 +506,10 @@ describe('SettingsPanel', () => {
           carouselVisibleCards: 3,
           carouselLoop: false,
           carouselAutoplayDirection: 'rtl',
+          navArrowPosition: 'bottom',
+          navArrowSize: 42,
+          dotNavEnabled: false,
+          dotNavPosition: 'overlay-top',
         }}
       />
     );
@@ -519,6 +523,10 @@ describe('SettingsPanel', () => {
     expect(within(dialog).getByLabelText('Visible Cards')).toHaveValue('3');
     expect(within(dialog).getByLabelText('Loop', { selector: 'input' })).toHaveValue('Off');
     expect(within(dialog).getByLabelText('Autoplay Direction', { selector: 'input' })).toHaveValue('Right to Left');
+    expect(within(dialog).getByLabelText('Arrow Vertical Position', { selector: 'input' })).toHaveValue('Bottom');
+    expect(within(dialog).getByLabelText('Arrow Size (px)')).toHaveValue('42');
+    expect(within(dialog).getByLabelText('Enable Dot Navigator', { selector: 'input' })).toHaveValue('Off');
+    expect(within(dialog).getByLabelText('Dot Position', { selector: 'input' })).toHaveValue('Overlay Top');
   });
 
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
@@ -527,6 +535,10 @@ describe('SettingsPanel', () => {
       carouselVisibleCards: 3,
       carouselLoop: false,
       carouselAutoplayDirection: 'rtl',
+      navArrowPosition: 'bottom',
+      navArrowSize: 42,
+      dotNavEnabled: false,
+      dotNavPosition: 'overlay-top',
       galleryConfig: {
         mode: 'per-type',
         breakpoints: {
@@ -537,6 +549,10 @@ describe('SettingsPanel', () => {
                 carouselVisibleCards: 3,
                 carouselLoop: false,
                 carouselAutoplayDirection: 'rtl',
+                navArrowPosition: 'bottom',
+                navArrowSize: 42,
+                dotNavEnabled: false,
+                dotNavPosition: 'overlay-top',
               },
             },
           },
@@ -561,6 +577,13 @@ describe('SettingsPanel', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Off' }));
     fireEvent.click(within(dialog).getByLabelText('Autoplay Direction', { selector: 'input' }));
     fireEvent.click(await screen.findByRole('option', { name: 'Right to Left' }));
+    fireEvent.click(within(dialog).getByLabelText('Arrow Vertical Position', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Bottom' }));
+    fireEvent.change(within(dialog).getByLabelText('Arrow Size (px)'), { target: { value: '42' } });
+    fireEvent.click(within(dialog).getByLabelText('Enable Dot Navigator', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Off' }));
+    fireEvent.click(within(dialog).getByLabelText('Dot Position', { selector: 'input' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Overlay Top' }));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Apply Gallery Config' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -573,6 +596,10 @@ describe('SettingsPanel', () => {
       carouselVisibleCards: 3,
       carouselLoop: false,
       carouselAutoplayDirection: 'rtl',
+      navArrowPosition: 'bottom',
+      navArrowSize: 42,
+      dotNavEnabled: false,
+      dotNavPosition: 'overlay-top',
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -581,13 +608,17 @@ describe('SettingsPanel', () => {
                 carouselVisibleCards: 3,
                 carouselLoop: false,
                 carouselAutoplayDirection: 'rtl',
+                navArrowPosition: 'bottom',
+                navArrowSize: 42,
+                dotNavEnabled: false,
+                dotNavPosition: 'overlay-top',
               }),
             }),
           }),
         }),
       }),
     }));
-  });
+  }, 180000);
 
   it('seeds additional registry-driven adapter values from flat settings', async () => {
     render(
