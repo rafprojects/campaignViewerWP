@@ -13,11 +13,11 @@
 | P23-C | Authoritative adapter schema | In Progress 🚧 | Medium (1 day) |
 | P23-D | Nested responsive gallery config model | In Progress 🚧 | Large (1-2 days) |
 | P23-E | Shared resolver and inheritance layer | In Progress 🚧 | Medium-Large (1 day) |
-| P23-F | Shared Gallery Config editor UX | In Progress 🚧 | Large (1-2 days) |
+| P23-F | Shared Gallery Config editor UX | Completed ✅ | Large (1-2 days) |
 | P23-G | Campaign full gallery config parity | In Progress 🚧 | Large (1-2 days) |
-| P23-H | Render-path consolidation | Planned 📋 | Medium (1 day) |
-| P23-I | Shared sanitization and REST support | Planned 📋 | Medium-Large (1 day) |
-| P23-J | Documentation, testing, and rollout verification | Planned 📋 | Medium (1 day) |
+| P23-H | Render-path consolidation | In Progress 🚧 | Medium (1 day) |
+| P23-I | Shared sanitization and REST support | In Progress 🚧 | Medium-Large (1 day) |
+| P23-J | Documentation, testing, and rollout verification | In Progress 🚧 | Medium (1 day) |
 | P23-J1 | PHP test audit and coverage expansion | Planned 📋 | Medium (0.5-1 day) |
 
 ---
@@ -536,6 +536,17 @@ Unified and per-type gallery rendering still rely on local component switching a
 
 Route render-time gallery selection through the shared resolver and adapter schema instead of scattered local switch statements.
 
+### Progress so far
+
+Completed render-path slices:
+
+1. `CampaignViewer` already resolves unified versus per-type mode through the shared gallery resolver using campaign nested overrides
+2. `UnifiedGallerySection` already resolves the effective unified adapter id and common/adapter settings through the shared resolver helpers instead of reading flat fields directly
+3. `PerTypeGallerySection` already resolves image/video adapter ids and effective settings through the same shared resolver path, including central adapter normalization and fallback handling
+4. focused viewer coverage now asserts that campaign nested mode overrides can flip the runtime between unified and per-type section rendering even when the global settings mode points the other direction
+
+Remaining P23-H work is now focused on explicit render-parity coverage and any last-mile cleanup around the remaining local layout branching, not on introducing the shared resolver to the runtime for the first time.
+
 ### Files to modify
 
 - `src/components/CardViewer/UnifiedGallerySection.tsx`
@@ -562,6 +573,16 @@ Adopt schema-driven sanitization rules for nested gallery config and use them in
 
 1. global settings update flow
 2. campaign gallery override update flow
+
+### Progress so far
+
+Completed sanitization/REST slices:
+
+1. campaign REST handling already reads and writes nested campaign gallery overrides under `_wpsg_gallery_overrides`
+2. campaign nested override payloads already flow through a dedicated sanitizer path before persistence, including breakpoint and scope pruning for invalid or empty values
+3. PHP coverage already includes campaign nested override round-trip verification for create, update, and clear flows
+
+Remaining P23-I work is concentrated on consolidating nested sanitization rules more fully with the global settings path so both contexts share the same schema-driven validation surface instead of parallel logic.
 
 ### Files to modify
 
@@ -590,6 +611,16 @@ Produce and maintain:
 2. a gallery data model document
 3. a gallery configuration UI flow document
 4. tests for merge behavior, resolution, visibility rules, inheritance, and render parity
+
+### Progress so far
+
+Completed documentation/testing slices:
+
+1. this phase report has been kept current through the recent P23-F and P23-G checkpoints instead of being left as a static planning artifact
+2. focused frontend coverage now exists for nested merge behavior, resolver precedence, viewer render-path parity, the shared gallery config editor, lazy-loaded global/campaign entry points, and campaign override helper utilities
+3. PHP coverage already exercises campaign override REST round-trip behavior, which gives the parity work a server-side regression harness before the final audit phase
+
+Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 
 ### Files to modify
 
