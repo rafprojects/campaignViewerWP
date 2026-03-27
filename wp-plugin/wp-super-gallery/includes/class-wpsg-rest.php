@@ -3818,101 +3818,6 @@ class WPSG_REST {
         return is_array($decoded) ? $decoded : null;
     }
 
-    private static function sanitize_campaign_gallery_override_values($value) {
-        if (is_bool($value) || is_int($value) || is_float($value) || is_null($value)) {
-            return $value;
-        }
-
-        if (is_string($value)) {
-            return sanitize_text_field($value);
-        }
-
-        if (!is_array($value)) {
-            return null;
-        }
-
-        $sanitized = [];
-        foreach ($value as $key => $item) {
-            $sanitized_key = is_string($key) ? preg_replace('/[^A-Za-z0-9_-]/', '', $key) : $key;
-            if ($sanitized_key === '' || $sanitized_key === null) {
-                continue;
-            }
-            $sanitized[$sanitized_key] = self::sanitize_campaign_gallery_override_values($item);
-        }
-
-        return $sanitized;
-    }
-
-    private static function sanitize_campaign_gallery_scope($scope_config, $valid_adapters) {
-        if (!is_array($scope_config)) {
-            return null;
-        }
-
-        $sanitized = [];
-
-        if (isset($scope_config['adapterId'])) {
-            $adapter_id = sanitize_text_field($scope_config['adapterId']);
-            if (in_array($adapter_id, $valid_adapters, true)) {
-                $sanitized['adapterId'] = $adapter_id;
-            }
-        }
-
-        if (!empty($scope_config['common']) && is_array($scope_config['common'])) {
-            $sanitized['common'] = self::sanitize_campaign_gallery_override_values($scope_config['common']);
-        }
-
-        if (!empty($scope_config['adapterSettings']) && is_array($scope_config['adapterSettings'])) {
-            $sanitized['adapterSettings'] = self::sanitize_campaign_gallery_override_values($scope_config['adapterSettings']);
-        }
-
-        return empty($sanitized) ? null : $sanitized;
-    }
-
-    private static function sanitize_campaign_gallery_overrides($value) {
-        if (is_string($value) && $value !== '') {
-            $decoded = json_decode($value, true);
-            $value = is_array($decoded) ? $decoded : null;
-        }
-
-        if (!is_array($value)) {
-            return null;
-        }
-
-        $valid_adapters = WPSG_CPT::VALID_ADAPTERS;
-        $sanitized = [];
-
-        if (isset($value['mode']) && in_array($value['mode'], ['unified', 'per-type'], true)) {
-            $sanitized['mode'] = $value['mode'];
-        }
-
-        if (!empty($value['breakpoints']) && is_array($value['breakpoints'])) {
-            $sanitized_breakpoints = [];
-            foreach (['desktop', 'tablet', 'mobile'] as $breakpoint) {
-                if (empty($value['breakpoints'][$breakpoint]) || !is_array($value['breakpoints'][$breakpoint])) {
-                    continue;
-                }
-
-                $sanitized_scopes = [];
-                foreach (['unified', 'image', 'video'] as $scope) {
-                    $sanitized_scope = self::sanitize_campaign_gallery_scope($value['breakpoints'][$breakpoint][$scope] ?? null, $valid_adapters);
-                    if (!empty($sanitized_scope)) {
-                        $sanitized_scopes[$scope] = $sanitized_scope;
-                    }
-                }
-
-                if (!empty($sanitized_scopes)) {
-                    $sanitized_breakpoints[$breakpoint] = $sanitized_scopes;
-                }
-            }
-
-            if (!empty($sanitized_breakpoints)) {
-                $sanitized['breakpoints'] = $sanitized_breakpoints;
-            }
-        }
-
-        return empty($sanitized) ? null : $sanitized;
-    }
-
     private static function apply_campaign_meta($post_id, $request) {
         $visibility = sanitize_text_field($request->get_param('visibility'));
         $status = sanitize_text_field($request->get_param('status'));
@@ -4018,7 +3923,7 @@ class WPSG_REST {
             }
         }
         if ($request->has_param('galleryOverrides')) {
-            $gallery_overrides = self::sanitize_campaign_gallery_overrides($request->get_param('galleryOverrides'));
+            $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($request->get_param('galleryOverrides'));
             if (empty($gallery_overrides)) {
                 delete_post_meta($post_id, '_wpsg_gallery_overrides');
             } else {

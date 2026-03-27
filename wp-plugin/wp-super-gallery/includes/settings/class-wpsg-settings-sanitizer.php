@@ -15,6 +15,29 @@ if (!defined('ABSPATH')) {
 class WPSG_Settings_Sanitizer {
 
     /**
+     * Nested common-setting keys mapped to existing flat settings metadata.
+     *
+     * @var array<string, string>
+     */
+    private static $nested_common_field_map = [
+        'sectionMaxWidth' => 'gallery_section_max_width',
+        'sectionMaxHeight' => 'gallery_section_max_height',
+        'sectionMinWidth' => 'gallery_section_min_width',
+        'sectionMinHeight' => 'gallery_section_min_height',
+        'sectionHeightMode' => 'gallery_section_height_mode',
+        'sectionPadding' => 'gallery_section_padding',
+        'adapterContentPadding' => 'adapter_content_padding',
+        'adapterSizingMode' => 'adapter_sizing_mode',
+        'adapterMaxWidthPct' => 'adapter_max_width_pct',
+        'adapterMaxHeightPct' => 'adapter_max_height_pct',
+        'adapterItemGap' => 'adapter_item_gap',
+        'adapterJustifyContent' => 'adapter_justify_content',
+        'gallerySizingMode' => 'gallery_sizing_mode',
+        'galleryManualHeight' => 'gallery_manual_height',
+        'perTypeSectionEqualHeight' => 'per_type_section_equal_height',
+    ];
+
+    /**
      * Sanitize settings before saving.
      *
      * @param array $input Raw input array.
@@ -424,7 +447,7 @@ class WPSG_Settings_Sanitizer {
         }
 
         if (isset($input['gallery_config'])) {
-            $sanitized['gallery_config'] = self::sanitize_gallery_config(
+            $sanitized['gallery_config'] = self::sanitize_gallery_config_payload(
                 $input['gallery_config'],
                 $defaults['gallery_config'] ?? []
             );
@@ -474,6 +497,36 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
+     * Sanitize nested gallery config payloads for global settings.
+     *
+     * @param mixed $raw Raw gallery config value.
+     * @param array $default Default gallery config fallback.
+     * @return array
+     */
+    public static function sanitize_gallery_config_payload($raw, $default = []) {
+        $fallback_mode = is_array($default) && isset($default['mode']) && is_string($default['mode'])
+            ? $default['mode']
+            : null;
+
+        return self::sanitize_nested_gallery_payload(
+            $raw,
+            is_array($default) ? $default : [],
+            $fallback_mode,
+            false
+        );
+    }
+
+    /**
+     * Sanitize nested gallery override payloads for campaign REST updates.
+     *
+     * @param mixed $raw Raw gallery override value.
+     * @return array|null
+     */
+    public static function sanitize_gallery_overrides($raw) {
+        return self::sanitize_nested_gallery_payload($raw, null, null, true);
+    }
+
+    /**
      * Sanitize nested gallery config scalar or object values.
      *
      * @param mixed $value Raw nested value.
@@ -512,7 +565,7 @@ class WPSG_Settings_Sanitizer {
      * @param array $valid_adapters Allowed adapter ids.
      * @return array|null
      */
-    private static function sanitize_gallery_scope($scope_config, $valid_adapters) {
+    private static function sanitize_gallery_scope($scope_config, $valid_adapters, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
         if (!is_array($scope_config)) {
             return null;
         }
@@ -527,32 +580,269 @@ class WPSG_Settings_Sanitizer {
         }
 
         if (!empty($scope_config['common']) && is_array($scope_config['common'])) {
-            $sanitized['common'] = self::sanitize_gallery_config_value($scope_config['common']);
+            $sanitized_common = self::sanitize_gallery_common_settings(
+                $scope_config['common'],
+                $defaults,
+                $valid_options,
+                $field_ranges,
+                $use_default_fallbacks
+            );
+            if (!empty($sanitized_common)) {
+                $sanitized['common'] = $sanitized_common;
+            }
         }
 
         if (!empty($scope_config['adapterSettings']) && is_array($scope_config['adapterSettings'])) {
-            $sanitized['adapterSettings'] = self::sanitize_gallery_config_value($scope_config['adapterSettings']);
+            $sanitized_adapter_settings = self::sanitize_gallery_adapter_settings(
+                $scope_config['adapterSettings'],
+                $defaults,
+                $valid_options,
+                $field_ranges,
+                $use_default_fallbacks
+            );
+            if (!empty($sanitized_adapter_settings)) {
+                $sanitized['adapterSettings'] = $sanitized_adapter_settings;
+            }
         }
 
         return empty($sanitized) ? null : $sanitized;
     }
 
     /**
-     * Sanitize nested gallery config payloads for global settings.
+     * Convert a camelCase nested key to snake_case.
      *
-     * @param mixed $raw Raw gallery config value.
-     * @param array $default Default gallery config fallback.
-     * @return array
+     * @param string $key Camel-case key.
+     * @return string
      */
-    private static function sanitize_gallery_config($raw, $default) {
-        $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
-        if (!is_array($decoded)) {
-            return is_array($default) ? $default : [];
+    private static function camel_to_snake($key) {
+        $normalized = preg_replace('/[^A-Za-z0-9]/', '', (string) $key);
+        if ($normalized === null || $normalized === '') {
+            return '';
         }
 
-        $valid_adapters = class_exists('WPSG_CPT') ? WPSG_CPT::VALID_ADAPTERS
-            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+        return strtolower((string) preg_replace('/(?<!^)[A-Z]/', '_$0', $normalized));
+    }
 
+    /**
+     * Sanitize a known nested setting using existing flat settings metadata.
+     *
+     * @param string $flat_key Flat settings key.
+     * @param mixed $value Raw nested value.
+     * @param array $defaults Registered defaults.
+     * @param array $valid_options Registered valid options.
+     * @param array $field_ranges Registered numeric ranges.
+     * @param bool $use_default_fallbacks Whether invalid enum/string values should fall back to defaults.
+     * @return array{accepted: bool, value: mixed}
+     */
+    private static function sanitize_nested_gallery_setting($flat_key, $value, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
+        if (!array_key_exists($flat_key, $defaults)) {
+            return [
+                'accepted' => false,
+                'value' => null,
+            ];
+        }
+
+        if ($flat_key === 'gallery_manual_height') {
+            $height = sanitize_text_field((string) $value);
+            $height = trim($height);
+            if (preg_match('/^\d+(?:\.\d+)?\s*(px|em|rem|vh|dvh|svh|lvh|vw|%)$/i', $height)) {
+                return [
+                    'accepted' => true,
+                    'value' => $height,
+                ];
+            }
+
+            return [
+                'accepted' => $use_default_fallbacks,
+                'value' => $use_default_fallbacks ? $defaults[$flat_key] : null,
+            ];
+        }
+
+        if (isset($valid_options[$flat_key])) {
+            if (in_array($value, $valid_options[$flat_key], true)) {
+                return [
+                    'accepted' => true,
+                    'value' => $value,
+                ];
+            }
+
+            return [
+                'accepted' => $use_default_fallbacks,
+                'value' => $use_default_fallbacks ? $defaults[$flat_key] : null,
+            ];
+        }
+
+        $default = $defaults[$flat_key];
+
+        if (is_bool($default)) {
+            return [
+                'accepted' => true,
+                'value' => (bool) $value,
+            ];
+        }
+
+        if (is_int($default)) {
+            $sanitized_value = intval($value);
+            if (isset($field_ranges[$flat_key])) {
+                $sanitized_value = max((int) $field_ranges[$flat_key][0], min((int) $field_ranges[$flat_key][1], $sanitized_value));
+            }
+
+            return [
+                'accepted' => true,
+                'value' => $sanitized_value,
+            ];
+        }
+
+        if (is_float($default)) {
+            $sanitized_value = floatval($value);
+            if (isset($field_ranges[$flat_key])) {
+                $sanitized_value = max((float) $field_ranges[$flat_key][0], min((float) $field_ranges[$flat_key][1], $sanitized_value));
+            }
+
+            return [
+                'accepted' => true,
+                'value' => $sanitized_value,
+            ];
+        }
+
+        if (str_ends_with($flat_key, '_url') || str_ends_with($flat_key, '_image_url')) {
+            return [
+                'accepted' => true,
+                'value' => esc_url_raw((string) $value),
+            ];
+        }
+
+        return [
+            'accepted' => true,
+            'value' => sanitize_text_field((string) $value),
+        ];
+    }
+
+    /**
+     * Sanitize nested common settings using known field metadata where available.
+     *
+     * @param array $settings Raw nested common settings.
+     * @param array $defaults Registered defaults.
+     * @param array $valid_options Registered valid options.
+     * @param array $field_ranges Registered numeric ranges.
+     * @param bool $use_default_fallbacks Whether invalid enum/string values should fall back to defaults.
+     * @return array
+     */
+    private static function sanitize_gallery_common_settings($settings, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
+        $sanitized = [];
+
+        foreach ($settings as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $sanitized_key = preg_replace('/[^A-Za-z0-9_-]/', '', $key);
+            if ($sanitized_key === '' || $sanitized_key === null) {
+                continue;
+            }
+
+            $flat_key = self::$nested_common_field_map[$key] ?? null;
+            if (is_string($flat_key)) {
+                $result = self::sanitize_nested_gallery_setting(
+                    $flat_key,
+                    $value,
+                    $defaults,
+                    $valid_options,
+                    $field_ranges,
+                    $use_default_fallbacks
+                );
+                if ($result['accepted']) {
+                    $sanitized[$sanitized_key] = $result['value'];
+                }
+                continue;
+            }
+
+            $generic_value = self::sanitize_gallery_config_value($value);
+            if ($generic_value !== null) {
+                $sanitized[$sanitized_key] = $generic_value;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Sanitize nested adapter settings using known flat metadata where available.
+     *
+     * @param array $settings Raw nested adapter settings.
+     * @param array $defaults Registered defaults.
+     * @param array $valid_options Registered valid options.
+     * @param array $field_ranges Registered numeric ranges.
+     * @param bool $use_default_fallbacks Whether invalid enum/string values should fall back to defaults.
+     * @return array
+     */
+    private static function sanitize_gallery_adapter_settings($settings, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
+        $sanitized = [];
+
+        foreach ($settings as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $sanitized_key = preg_replace('/[^A-Za-z0-9_-]/', '', $key);
+            if ($sanitized_key === '' || $sanitized_key === null) {
+                continue;
+            }
+
+            $flat_key = self::camel_to_snake($key);
+            if ($flat_key !== '' && array_key_exists($flat_key, $defaults)) {
+                $result = self::sanitize_nested_gallery_setting(
+                    $flat_key,
+                    $value,
+                    $defaults,
+                    $valid_options,
+                    $field_ranges,
+                    $use_default_fallbacks
+                );
+                if ($result['accepted']) {
+                    $sanitized[$sanitized_key] = $result['value'];
+                }
+                continue;
+            }
+
+            $generic_value = self::sanitize_gallery_config_value($value);
+            if ($generic_value !== null) {
+                $sanitized[$sanitized_key] = $generic_value;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Resolve the allowed gallery adapter ids.
+     *
+     * @return array
+     */
+    private static function get_valid_gallery_adapters() {
+        return class_exists('WPSG_CPT') ? WPSG_CPT::VALID_ADAPTERS
+            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+    }
+
+    /**
+     * Sanitize a nested gallery config payload for either global settings or campaign overrides.
+     *
+     * @param mixed $raw Raw gallery config value.
+     * @param array|null $default Default payload fallback.
+     * @param string|null $fallback_mode Default mode fallback.
+     * @param bool $allow_empty_result Whether an empty sanitized payload should become null.
+     * @return array|null
+     */
+    private static function sanitize_nested_gallery_payload($raw, $default, $fallback_mode, $allow_empty_result) {
+        $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+        if (!is_array($decoded)) {
+            return $allow_empty_result ? null : (is_array($default) ? $default : []);
+        }
+
+        $valid_adapters = self::get_valid_gallery_adapters();
+        $defaults = WPSG_Settings_Registry::get_defaults();
+        $valid_options = WPSG_Settings_Registry::get_valid_options();
+        $field_ranges = WPSG_Settings_Registry::get_field_ranges();
         $sanitized = [];
 
         if (isset($decoded['mode']) && in_array($decoded['mode'], ['unified', 'per-type'], true)) {
@@ -569,7 +859,14 @@ class WPSG_Settings_Sanitizer {
 
                 $sanitized_scopes = [];
                 foreach (['unified', 'image', 'video'] as $scope) {
-                    $sanitized_scope = self::sanitize_gallery_scope($decoded['breakpoints'][$breakpoint][$scope] ?? null, $valid_adapters);
+                    $sanitized_scope = self::sanitize_gallery_scope(
+                        $decoded['breakpoints'][$breakpoint][$scope] ?? null,
+                        $valid_adapters,
+                        $defaults,
+                        $valid_options,
+                        $field_ranges,
+                        !$allow_empty_result
+                    );
                     if (!empty($sanitized_scope)) {
                         $sanitized_scopes[$scope] = $sanitized_scope;
                     }
@@ -585,11 +882,15 @@ class WPSG_Settings_Sanitizer {
             }
         }
 
-        if (empty($sanitized['mode']) && isset($default['mode'])) {
-            $sanitized['mode'] = $default['mode'];
+        if (empty($sanitized['mode']) && is_string($fallback_mode) && $fallback_mode !== '') {
+            $sanitized['mode'] = $fallback_mode;
         }
 
-        return empty($sanitized) ? (is_array($default) ? $default : []) : $sanitized;
+        if (!empty($sanitized)) {
+            return $sanitized;
+        }
+
+        return $allow_empty_result ? null : (is_array($default) ? $default : []);
     }
 
     /**

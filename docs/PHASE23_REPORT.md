@@ -67,26 +67,31 @@
   - [Track P23-F - Shared Gallery Config Editor UX](#track-p23-f---shared-gallery-config-editor-ux)
     - [Problem](#problem-5)
     - [Fix](#fix-5)
+    - [Progress so far](#progress-so-far-5)
     - [Files to modify](#files-to-modify-5)
     - [Acceptance criteria](#acceptance-criteria-5)
   - [Track P23-G - Campaign Full Gallery Config Parity](#track-p23-g---campaign-full-gallery-config-parity)
     - [Problem](#problem-6)
     - [Fix](#fix-6)
+    - [Progress so far](#progress-so-far-6)
     - [Files to modify](#files-to-modify-6)
     - [Acceptance criteria](#acceptance-criteria-6)
   - [Track P23-H - Render-Path Consolidation](#track-p23-h---render-path-consolidation)
     - [Problem](#problem-7)
     - [Fix](#fix-7)
+    - [Progress so far](#progress-so-far-7)
     - [Files to modify](#files-to-modify-7)
     - [Acceptance criteria](#acceptance-criteria-7)
   - [Track P23-I - Shared Sanitization and REST Support](#track-p23-i---shared-sanitization-and-rest-support)
     - [Problem](#problem-8)
     - [Fix](#fix-8)
+    - [Progress so far](#progress-so-far-8)
     - [Files to modify](#files-to-modify-8)
     - [Acceptance criteria](#acceptance-criteria-8)
   - [Track P23-J - Documentation, Testing, and Rollout Verification](#track-p23-j---documentation-testing-and-rollout-verification)
     - [Problem](#problem-9)
     - [Fix](#fix-9)
+    - [Progress so far](#progress-so-far-9)
     - [Files to modify](#files-to-modify-9)
     - [Acceptance criteria](#acceptance-criteria-9)
   - [Track P23-J1 - PHP Test Audit and Coverage Expansion](#track-p23-j1---php-test-audit-and-coverage-expansion)
@@ -584,8 +589,10 @@ Completed sanitization/REST slices:
 3. PHP coverage already includes campaign nested override round-trip verification for create, update, and clear flows
 4. the global settings registry now exposes a first-class `gallery_config` default so the settings REST bridge no longer silently drops the nested gallery model on the PHP side
 5. the global settings sanitizer now preserves and sanitizes nested `gallery_config` payloads structurally instead of falling through the generic scalar sanitizer path
+6. campaign override persistence now reuses the shared settings-side nested gallery sanitizer instead of keeping a second near-duplicate REST-local implementation, reducing drift between global and campaign validation behavior
+7. known nested `common` and `adapterSettings` fields now reuse backend defaults, valid-option lists, and numeric ranges for field-level validation in both global settings and campaign override payloads, while unknown nested keys still fall back to compatibility-safe generic sanitization
 
-Remaining P23-I work is concentrated on consolidating nested sanitization rules more fully with the global settings path so both contexts share the same schema-driven validation surface instead of parallel logic.
+Remaining P23-I work is concentrated on widening the shared nested schema further so the remaining unknown nested keys can move out of generic recursive sanitization and into the same authoritative validation surface for both contexts.
 
 ### Files to modify
 
@@ -622,6 +629,8 @@ Completed documentation/testing slices:
 1. this phase report has been kept current through the recent P23-F and P23-G checkpoints instead of being left as a static planning artifact
 2. focused frontend coverage now exists for nested merge behavior, resolver precedence, viewer and section render-path parity, the shared gallery config editor, lazy-loaded global/campaign entry points, and campaign override helper utilities
 3. PHP coverage already exercises campaign override REST round-trip behavior, and focused settings tests now also cover global `gallery_config` conversion, sanitization, and REST round-trip expectations even though the WordPress PHPUnit environment was not available locally for execution in this session
+4. focused PHP sanitizer coverage now also exercises the shared nested campaign override helper directly so global and campaign nested payload rules no longer rely only on route-level tests for parity
+5. the repo-documented `wp-env` PHPUnit path is now validated locally again for the affected settings and campaign REST suites, including a real JSON-body campaign override case that exercises mixed valid and invalid nested values through the live route path
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

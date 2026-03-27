@@ -181,6 +181,73 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEmpty(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true));
     }
 
+    public function test_campaign_gallery_overrides_round_trip_from_json_body() {
+        $this->set_admin_user();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_header('Content-Type', 'application/json');
+        $create->set_body(wp_json_encode([
+            'title' => 'Campaign Overrides JSON',
+            'status' => 'active',
+            'galleryOverrides' => [
+                'mode' => 'per-type',
+                'breakpoints' => [
+                    'desktop' => [
+                        'image' => [
+                            'adapterId' => 'not-a-real-adapter',
+                            'common' => [
+                                'sectionPadding' => 240,
+                                'adapterMaxWidthPct' => 10,
+                                'adapterJustifyContent' => 'invalid-option',
+                                'galleryManualHeight' => 'calc(100vh)',
+                                'headline<script>' => '<b>Unsafe</b>',
+                            ],
+                        ],
+                        'video' => [
+                            'adapterId' => 'masonry',
+                            'adapterSettings' => [
+                                'masonryColumns' => 99,
+                                'layoutBuilderScope' => 'invalid-option',
+                            ],
+                        ],
+                    ],
+                    'watch' => [
+                        'image' => [
+                            'adapterId' => 'classic',
+                        ],
+                    ],
+                ],
+            ],
+        ]));
+
+        $response = rest_do_request($create);
+        $this->assertEquals(201, $response->get_status());
+
+        $created = $response->get_data();
+        $campaign_id = intval($created['id'] ?? 0);
+        $this->assertEquals('per-type', $created['galleryOverrides']['mode'] ?? null);
+        $this->assertArrayNotHasKey('adapterId', $created['galleryOverrides']['breakpoints']['desktop']['image'] ?? []);
+        $this->assertEquals(60, $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+        $this->assertEquals(50, $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
+        $this->assertArrayNotHasKey('adapterJustifyContent', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('galleryManualHeight', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Unsafe', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals('masonry', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterId'] ?? null);
+        $this->assertEquals(8, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['masonryColumns'] ?? null);
+        $this->assertArrayNotHasKey('layoutBuilderScope', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertArrayNotHasKey('watch', $created['galleryOverrides']['breakpoints'] ?? []);
+
+        $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
+        $this->assertEquals(60, $stored['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+        $this->assertEquals(50, $stored['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
+        $this->assertArrayNotHasKey('adapterJustifyContent', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('galleryManualHeight', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Unsafe', $stored['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals(8, $stored['breakpoints']['desktop']['video']['adapterSettings']['masonryColumns'] ?? null);
+        $this->assertArrayNotHasKey('layoutBuilderScope', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertArrayNotHasKey('watch', $stored['breakpoints'] ?? []);
+    }
+
     public function test_update_campaign_returns_404_for_unknown_id() {
         $this->set_admin_user();
 

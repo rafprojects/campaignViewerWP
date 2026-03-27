@@ -221,6 +221,93 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Test shared global nested gallery sanitization applies field-level metadata rules.
+     */
+    public function test_sanitize_gallery_config_payload_applies_field_level_rules() {
+        $defaults = WPSG_Settings::get_defaults();
+
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_config_payload([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'common' => [
+                            'sectionPadding' => 999,
+                            'adapterMaxWidthPct' => 10,
+                            'adapterJustifyContent' => 'invalid-option',
+                            'galleryManualHeight' => 'calc(100vh)',
+                            'perTypeSectionEqualHeight' => '1',
+                            'headline<script>' => '<b>Allowed</b>',
+                        ],
+                        'adapterSettings' => [
+                            'masonryColumns' => 99,
+                            'layoutBuilderScope' => 'invalid-option',
+                            'tileSize' => 10,
+                            'customMarkup' => '<b>Keep</b>',
+                        ],
+                    ],
+                ],
+            ],
+        ], $defaults['gallery_config']);
+
+        $common = $sanitized['breakpoints']['desktop']['image']['common'] ?? [];
+        $adapter_settings = $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+
+        $this->assertEquals('per-type', $sanitized['mode'] ?? null);
+        $this->assertEquals(60, $common['sectionPadding'] ?? null);
+        $this->assertEquals(50, $common['adapterMaxWidthPct'] ?? null);
+        $this->assertEquals('center', $common['adapterJustifyContent'] ?? null);
+        $this->assertEquals('420px', $common['galleryManualHeight'] ?? null);
+        $this->assertTrue($common['perTypeSectionEqualHeight'] ?? false);
+        $this->assertEquals('Allowed', $common['headlinescript'] ?? null);
+        $this->assertEquals(8, $adapter_settings['masonryColumns'] ?? null);
+        $this->assertEquals('full', $adapter_settings['layoutBuilderScope'] ?? null);
+        $this->assertEquals(60, $adapter_settings['tileSize'] ?? null);
+        $this->assertEquals('Keep', $adapter_settings['customMarkup'] ?? null);
+    }
+
+    /**
+     * Test shared campaign gallery override sanitization reuses the nested gallery payload rules.
+     */
+    public function test_sanitize_gallery_overrides_handles_campaign_payloads() {
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_overrides(wp_json_encode([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'adapterId' => 'not-a-real-adapter',
+                        'common' => [
+                            'sectionPadding' => 999,
+                            'adapterMaxWidthPct' => 10,
+                            'adapterJustifyContent' => 'invalid-option',
+                            'galleryManualHeight' => 'calc(100vh)',
+                            'headline<script>' => '<b>Unsafe</b>',
+                        ],
+                        'adapterSettings' => [
+                            'masonryColumns' => 99,
+                            'layoutBuilderScope' => 'invalid-option',
+                        ],
+                    ],
+                    'video' => [
+                        'adapterId' => 'masonry',
+                    ],
+                ],
+            ],
+        ]));
+
+        $this->assertEquals('per-type', $sanitized['mode'] ?? null);
+        $this->assertArrayNotHasKey('adapterId', $sanitized['breakpoints']['desktop']['image'] ?? []);
+        $this->assertEquals(60, $sanitized['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+        $this->assertEquals(50, $sanitized['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
+        $this->assertArrayNotHasKey('adapterJustifyContent', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('galleryManualHeight', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Unsafe', $sanitized['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals(8, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['masonryColumns'] ?? null);
+        $this->assertArrayNotHasKey('layoutBuilderScope', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
+        $this->assertEquals('masonry', $sanitized['breakpoints']['desktop']['video']['adapterId'] ?? null);
+    }
+
+    /**
      * Test filter_auth_provider returns setting value.
      */
     public function test_filter_auth_provider_returns_setting() {
