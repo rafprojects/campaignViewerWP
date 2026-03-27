@@ -200,6 +200,7 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
                                 'adapterMaxWidthPct' => 10,
                                 'adapterJustifyContent' => 'invalid-option',
                                 'galleryManualHeight' => 'calc(100vh)',
+                                'theme' => 'nord',
                                 'headline<script>' => '<b>Unsafe</b>',
                             ],
                         ],
@@ -234,13 +235,14 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertArrayNotHasKey('galleryManualHeight', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('theme', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals('masonry', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterId'] ?? null);
         $this->assertEquals(8, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['masonryColumns'] ?? null);
         $this->assertArrayNotHasKey('layoutBuilderScope', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
         $this->assertEquals(60, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['tileGlowSpread'] ?? null);
         $this->assertArrayNotHasKey('carouselAutoplayDirection', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
-        $this->assertEquals('not-a-real-transition', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['modalTransition'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
         $this->assertArrayNotHasKey('watch', $created['galleryOverrides']['breakpoints'] ?? []);
 
         $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
@@ -248,12 +250,13 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $stored['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $stored['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertArrayNotHasKey('galleryManualHeight', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('theme', $stored['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $stored['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals(8, $stored['breakpoints']['desktop']['video']['adapterSettings']['masonryColumns'] ?? null);
         $this->assertArrayNotHasKey('layoutBuilderScope', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
         $this->assertEquals(60, $stored['breakpoints']['desktop']['video']['adapterSettings']['tileGlowSpread'] ?? null);
         $this->assertArrayNotHasKey('carouselAutoplayDirection', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
-        $this->assertEquals('not-a-real-transition', $stored['breakpoints']['desktop']['video']['adapterSettings']['modalTransition'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
         $this->assertArrayNotHasKey('watch', $stored['breakpoints'] ?? []);
     }
 

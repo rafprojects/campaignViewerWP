@@ -74,6 +74,21 @@ class WPSG_Settings_Sanitizer {
     ];
 
     /**
+     * Convert a camelCase-style nested key to snake_case for registry matching.
+     *
+     * @param string $key Nested key.
+     * @return string
+     */
+    private static function camel_to_snake($key) {
+        $normalized = preg_replace('/[^A-Za-z0-9]/', '', (string) $key);
+        if ($normalized === null || $normalized === '') {
+            return '';
+        }
+
+        return strtolower((string) preg_replace('/(?<!^)[A-Z]/', '_$0', $normalized));
+    }
+
+    /**
      * Sanitize settings before saving.
      *
      * @param array $input Raw input array.
@@ -751,6 +766,7 @@ class WPSG_Settings_Sanitizer {
      */
     private static function sanitize_gallery_common_settings($settings, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
         $sanitized = [];
+        $allowed_flat_keys = array_values(self::$nested_common_field_map);
 
         foreach ($settings as $key => $value) {
             if (!is_string($key)) {
@@ -778,6 +794,11 @@ class WPSG_Settings_Sanitizer {
                 continue;
             }
 
+            $candidate_flat_key = self::camel_to_snake($key);
+            if ($candidate_flat_key !== '' && array_key_exists($candidate_flat_key, $defaults) && !in_array($candidate_flat_key, $allowed_flat_keys, true)) {
+                continue;
+            }
+
             $generic_value = self::sanitize_gallery_config_value($value);
             if ($generic_value !== null) {
                 $sanitized[$sanitized_key] = $generic_value;
@@ -799,6 +820,7 @@ class WPSG_Settings_Sanitizer {
      */
     private static function sanitize_gallery_adapter_settings($settings, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
         $sanitized = [];
+        $allowed_flat_keys = array_values(self::$nested_adapter_field_map);
 
         foreach ($settings as $key => $value) {
             if (!is_string($key)) {
@@ -823,6 +845,11 @@ class WPSG_Settings_Sanitizer {
                 if ($result['accepted']) {
                     $sanitized[$sanitized_key] = $result['value'];
                 }
+                continue;
+            }
+
+            $candidate_flat_key = self::camel_to_snake($key);
+            if ($candidate_flat_key !== '' && array_key_exists($candidate_flat_key, $defaults) && !in_array($candidate_flat_key, $allowed_flat_keys, true)) {
                 continue;
             }
 

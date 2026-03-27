@@ -237,6 +237,7 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'adapterJustifyContent' => 'invalid-option',
                             'galleryManualHeight' => 'calc(100vh)',
                             'perTypeSectionEqualHeight' => '1',
+                            'theme' => 'nord',
                             'headline<script>' => '<b>Allowed</b>',
                         ],
                         'adapterSettings' => [
@@ -262,13 +263,14 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals('center', $common['adapterJustifyContent'] ?? null);
         $this->assertEquals('420px', $common['galleryManualHeight'] ?? null);
         $this->assertTrue($common['perTypeSectionEqualHeight'] ?? false);
+        $this->assertArrayNotHasKey('theme', $common);
         $this->assertEquals('Allowed', $common['headlinescript'] ?? null);
         $this->assertEquals(8, $adapter_settings['masonryColumns'] ?? null);
         $this->assertEquals('full', $adapter_settings['layoutBuilderScope'] ?? null);
         $this->assertEquals(60, $adapter_settings['tileSize'] ?? null);
         $this->assertEquals(60, $adapter_settings['tileGlowSpread'] ?? null);
         $this->assertEquals('ltr', $adapter_settings['carouselAutoplayDirection'] ?? null);
-        $this->assertEquals('not-a-real-transition', $adapter_settings['modalTransition'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $adapter_settings);
         $this->assertEquals('Keep', $adapter_settings['customMarkup'] ?? null);
     }
 
@@ -287,6 +289,7 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'adapterMaxWidthPct' => 10,
                             'adapterJustifyContent' => 'invalid-option',
                             'galleryManualHeight' => 'calc(100vh)',
+                            'theme' => 'nord',
                             'headline<script>' => '<b>Unsafe</b>',
                         ],
                         'adapterSettings' => [
@@ -310,12 +313,13 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $sanitized['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertArrayNotHasKey('galleryManualHeight', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('theme', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $sanitized['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals(8, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['masonryColumns'] ?? null);
         $this->assertArrayNotHasKey('layoutBuilderScope', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
         $this->assertEquals(60, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['tileGlowSpread'] ?? null);
         $this->assertArrayNotHasKey('carouselAutoplayDirection', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
-        $this->assertEquals('not-a-real-transition', $sanitized['breakpoints']['desktop']['image']['adapterSettings']['modalTransition'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
         $this->assertEquals('masonry', $sanitized['breakpoints']['desktop']['video']['adapterId'] ?? null);
     }
 
