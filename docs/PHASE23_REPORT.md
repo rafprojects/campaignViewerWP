@@ -2,7 +2,7 @@
 **Status:** In Progress 🚧
 **Version:** v0.22.0
 **Created:** March 25, 2026
-**Last updated:** March 25, 2026
+**Last updated:** March 26, 2026
 
 ### Tracks
 
@@ -460,6 +460,17 @@ Create a shared Gallery Config editor with hybrid UX:
 4. reset and inheritance affordances are explicit
 
 The editor itself should be lazy-loaded so SettingsPanel and UnifiedCampaignModal do not pay its bundle cost until users open it.
+
+### Progress so far
+
+Completed shared editor slices:
+
+1. introduced a shared responsive gallery config editor that both SettingsPanel and UnifiedCampaignModal can open for the nested gallery model while retaining inline quick selectors for scanability
+2. expanded the editor to cover shared section spacing, shared section sizing, shared adapter sizing, baseline reset actions, campaign clear actions, inherited-versus-overridden campaign messaging, and registry-driven adapter-specific groups
+3. restored the required P23-F lazy-load behavior by loading the shared editor only when users open it from either SettingsPanel or UnifiedCampaignModal
+4. updated the affected integration tests to treat the editor as a lazy-loaded modal entry point instead of a synchronously mounted subtree, while keeping direct editor field/value coverage in the shared editor test file
+
+Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
 
 ### Files to modify
 

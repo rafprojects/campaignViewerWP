@@ -3,6 +3,9 @@ import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 
+// Static import to warm module cache for the lazy-loaded responsive editor.
+import '@/components/Common/GalleryConfigEditorModal';
+
 // Stub MediaLibraryPicker to avoid its heavy data fetching
 vi.mock('@/components/Campaign/MediaLibraryPicker', () => ({
   MediaLibraryPicker: () => <div data-testid="media-library-picker" />,
@@ -182,7 +185,7 @@ describe('UnifiedCampaignModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
 
-    expect(await screen.findByText('Shared Section Spacing')).toBeInTheDocument();
+    expect(await screen.findByText('Shared Section Spacing', {}, { timeout: 10000 })).toBeInTheDocument();
     expect(screen.getByText('Adapter Content Padding (px)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
     expect(screen.getByText(/currently inheriting global gallery settings/i)).toBeInTheDocument();
@@ -214,7 +217,7 @@ describe('UnifiedCampaignModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
 
-    expect(await screen.findByText(/currently stores custom gallery overrides/i)).toBeInTheDocument();
+    expect(await screen.findByText(/currently stores custom gallery overrides/i, {}, { timeout: 10000 })).toBeInTheDocument();
   });
 
   it('renders media grid with items on media tab', () => {

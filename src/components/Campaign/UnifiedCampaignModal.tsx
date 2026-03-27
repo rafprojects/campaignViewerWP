@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import {
   ActionIcon, Badge, Button, Card, Center, ColorInput, FileButton, Group, Image, Loader,
   Modal, Progress, Select, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
@@ -21,7 +21,12 @@ import {
   getUniformCampaignScopeAdapterId,
   syncCampaignScopeAdapterOverride,
 } from '@/utils/campaignGalleryOverrides';
-import { GalleryConfigEditorModal } from '@/components/Common/GalleryConfigEditorModal';
+
+const LazyGalleryConfigEditorModal = lazy(() =>
+  import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
+    default: module.GalleryConfigEditorModal,
+  })),
+);
 
 /** Convert ISO date string to datetime-local input value. */
 function toLocalInputValue(iso: string): string {
@@ -379,35 +384,39 @@ export function UnifiedCampaignModal({
         confirmColor="red"
       />
 
-      <GalleryConfigEditorModal
-        opened={galleryConfigEditorOpen}
-        onClose={() => setGalleryConfigEditorOpen(false)}
-        title="Campaign Responsive Gallery Config"
-        value={buildCampaignGalleryOverrideEditorValue(formState)}
-        contextSummary={hasCampaignGalleryOverrides(formState)
-          ? 'This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings.'
-          : 'This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides.'}
-        onClear={() => {
-          updateForm({
-            ...formState,
-            ...clearCampaignGalleryOverrides(),
-          });
-          setGalleryConfigEditorOpen(false);
-        }}
-        onSave={(galleryOverrides) => {
-          updateForm({
-            ...formState,
-            galleryOverrides,
-            imageAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'image') || '',
-            videoAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'video') || '',
-          });
-          setGalleryConfigEditorOpen(false);
-        }}
-        saveLabel="Apply Campaign Gallery Config"
-        clearLabel="Clear Campaign Overrides"
-        unifiedAdapterEnabled={false}
-        unifiedAdapterDescription="Campaigns currently inherit the global unified adapter in this slice."
-      />
+      {galleryConfigEditorOpen && (
+        <Suspense fallback={null}>
+          <LazyGalleryConfigEditorModal
+            opened={galleryConfigEditorOpen}
+            onClose={() => setGalleryConfigEditorOpen(false)}
+            title="Campaign Responsive Gallery Config"
+            value={buildCampaignGalleryOverrideEditorValue(formState)}
+            contextSummary={hasCampaignGalleryOverrides(formState)
+              ? 'This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings.'
+              : 'This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides.'}
+            onClear={() => {
+              updateForm({
+                ...formState,
+                ...clearCampaignGalleryOverrides(),
+              });
+              setGalleryConfigEditorOpen(false);
+            }}
+            onSave={(galleryOverrides) => {
+              updateForm({
+                ...formState,
+                galleryOverrides,
+                imageAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'image') || '',
+                videoAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'video') || '',
+              });
+              setGalleryConfigEditorOpen(false);
+            }}
+            saveLabel="Apply Campaign Gallery Config"
+            clearLabel="Clear Campaign Overrides"
+            unifiedAdapterEnabled={false}
+            unifiedAdapterDescription="Campaigns currently inherit the global unified adapter in this slice."
+          />
+        </Suspense>
+      )}
     </>
   );
 }

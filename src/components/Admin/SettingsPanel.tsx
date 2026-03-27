@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import {
   Accordion,
@@ -56,10 +56,15 @@ import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
 import { TypographySettingsSection } from '../Settings/TypographySettingsSection';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { GalleryConfigEditorModal } from '@/components/Common/GalleryConfigEditorModal';
 import { buildGalleryConfigFromLegacySettings, collectGalleryAdapterSettingValues, mergeGalleryConfig } from '@/utils/galleryConfig';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
+
+const LazyGalleryConfigEditorModal = lazy(() =>
+  import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
+    default: module.GalleryConfigEditorModal,
+  })),
+);
 
 function getRepresentativeGalleryCommonSetting(
   galleryConfig: GalleryConfig,
@@ -1500,13 +1505,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         </Stack>
         </Box>
 
-          <GalleryConfigEditorModal
-            opened={galleryConfigEditorOpen}
-            onClose={() => setGalleryConfigEditorOpen(false)}
-            title="Responsive Gallery Config"
-            value={buildGalleryConfigEditorSeed(settings)}
-            onSave={handleGalleryConfigEditorSave}
-          />
+          {galleryConfigEditorOpen && (
+            <Suspense fallback={null}>
+              <LazyGalleryConfigEditorModal
+                opened={galleryConfigEditorOpen}
+                onClose={() => setGalleryConfigEditorOpen(false)}
+                title="Responsive Gallery Config"
+                value={buildGalleryConfigEditorSeed(settings)}
+                onSave={handleGalleryConfigEditorSave}
+              />
+            </Suspense>
+          )}
 
           {/* ── Footer (fixed outside scroll area) ───────── */}
           <Box
