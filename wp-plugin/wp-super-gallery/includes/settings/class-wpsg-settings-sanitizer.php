@@ -38,6 +38,42 @@ class WPSG_Settings_Sanitizer {
     ];
 
     /**
+     * Nested adapter-setting keys mapped to existing flat settings metadata.
+     *
+     * @var array<string, string>
+     */
+    private static $nested_adapter_field_map = [
+        'gridCardWidth' => 'grid_card_width',
+        'gridCardHeight' => 'grid_card_height',
+        'mosaicTargetRowHeight' => 'mosaic_target_row_height',
+        'photoNormalizeHeight' => 'photo_normalize_height',
+        'masonryColumns' => 'masonry_columns',
+        'tileSize' => 'tile_size',
+        'imageTileSize' => 'image_tile_size',
+        'videoTileSize' => 'video_tile_size',
+        'layoutBuilderScope' => 'layout_builder_scope',
+        'tileGapX' => 'tile_gap_x',
+        'tileGapY' => 'tile_gap_y',
+        'tileBorderWidth' => 'tile_border_width',
+        'tileBorderColor' => 'tile_border_color',
+        'tileGlowEnabled' => 'tile_glow_enabled',
+        'tileGlowColor' => 'tile_glow_color',
+        'tileGlowSpread' => 'tile_glow_spread',
+        'tileHoverBounce' => 'tile_hover_bounce',
+        'carouselVisibleCards' => 'carousel_visible_cards',
+        'carouselAutoplay' => 'carousel_autoplay',
+        'carouselAutoplaySpeed' => 'carousel_autoplay_speed',
+        'carouselAutoplayPauseOnHover' => 'carousel_autoplay_pause_on_hover',
+        'carouselAutoplayDirection' => 'carousel_autoplay_direction',
+        'carouselDragEnabled' => 'carousel_drag_enabled',
+        'carouselDarkenUnfocused' => 'carousel_darken_unfocused',
+        'carouselDarkenOpacity' => 'carousel_darken_opacity',
+        'carouselEdgeFade' => 'carousel_edge_fade',
+        'carouselLoop' => 'carousel_loop',
+        'carouselGap' => 'carousel_gap',
+    ];
+
+    /**
      * Sanitize settings before saving.
      *
      * @param array $input Raw input array.
@@ -609,21 +645,6 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
-     * Convert a camelCase nested key to snake_case.
-     *
-     * @param string $key Camel-case key.
-     * @return string
-     */
-    private static function camel_to_snake($key) {
-        $normalized = preg_replace('/[^A-Za-z0-9]/', '', (string) $key);
-        if ($normalized === null || $normalized === '') {
-            return '';
-        }
-
-        return strtolower((string) preg_replace('/(?<!^)[A-Z]/', '_$0', $normalized));
-    }
-
-    /**
      * Sanitize a known nested setting using existing flat settings metadata.
      *
      * @param string $flat_key Flat settings key.
@@ -789,8 +810,8 @@ class WPSG_Settings_Sanitizer {
                 continue;
             }
 
-            $flat_key = self::camel_to_snake($key);
-            if ($flat_key !== '' && array_key_exists($flat_key, $defaults)) {
+            $flat_key = self::$nested_adapter_field_map[$key] ?? null;
+            if (is_string($flat_key)) {
                 $result = self::sanitize_nested_gallery_setting(
                     $flat_key,
                     $value,

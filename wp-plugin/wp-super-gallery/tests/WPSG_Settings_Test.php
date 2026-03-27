@@ -243,6 +243,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'masonryColumns' => 99,
                             'layoutBuilderScope' => 'invalid-option',
                             'tileSize' => 10,
+                            'tileGlowSpread' => 999,
+                            'carouselAutoplayDirection' => 'invalid-option',
+                            'modalTransition' => 'not-a-real-transition',
                             'customMarkup' => '<b>Keep</b>',
                         ],
                     ],
@@ -263,6 +266,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals(8, $adapter_settings['masonryColumns'] ?? null);
         $this->assertEquals('full', $adapter_settings['layoutBuilderScope'] ?? null);
         $this->assertEquals(60, $adapter_settings['tileSize'] ?? null);
+        $this->assertEquals(60, $adapter_settings['tileGlowSpread'] ?? null);
+        $this->assertEquals('ltr', $adapter_settings['carouselAutoplayDirection'] ?? null);
+        $this->assertEquals('not-a-real-transition', $adapter_settings['modalTransition'] ?? null);
         $this->assertEquals('Keep', $adapter_settings['customMarkup'] ?? null);
     }
 
@@ -286,6 +292,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                         'adapterSettings' => [
                             'masonryColumns' => 99,
                             'layoutBuilderScope' => 'invalid-option',
+                            'tileGlowSpread' => 999,
+                            'carouselAutoplayDirection' => 'invalid-option',
+                            'modalTransition' => 'not-a-real-transition',
                         ],
                     ],
                     'video' => [
@@ -304,6 +313,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals('Unsafe', $sanitized['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals(8, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['masonryColumns'] ?? null);
         $this->assertArrayNotHasKey('layoutBuilderScope', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
+        $this->assertEquals(60, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['tileGlowSpread'] ?? null);
+        $this->assertArrayNotHasKey('carouselAutoplayDirection', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
+        $this->assertEquals('not-a-real-transition', $sanitized['breakpoints']['desktop']['image']['adapterSettings']['modalTransition'] ?? null);
         $this->assertEquals('masonry', $sanitized['breakpoints']['desktop']['video']['adapterId'] ?? null);
     }
 

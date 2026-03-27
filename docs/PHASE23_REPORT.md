@@ -591,8 +591,9 @@ Completed sanitization/REST slices:
 5. the global settings sanitizer now preserves and sanitizes nested `gallery_config` payloads structurally instead of falling through the generic scalar sanitizer path
 6. campaign override persistence now reuses the shared settings-side nested gallery sanitizer instead of keeping a second near-duplicate REST-local implementation, reducing drift between global and campaign validation behavior
 7. known nested `common` and `adapterSettings` fields now reuse backend defaults, valid-option lists, and numeric ranges for field-level validation in both global settings and campaign override payloads, while unknown nested keys still fall back to compatibility-safe generic sanitization
+8. nested `adapterSettings` validation is now limited to an explicit adapter-related key map instead of broad matching against any flat default key, so unrelated nested keys no longer get accidentally treated as schema-known fields
 
-Remaining P23-I work is concentrated on widening the shared nested schema further so the remaining unknown nested keys can move out of generic recursive sanitization and into the same authoritative validation surface for both contexts.
+Remaining P23-I work is concentrated on widening the shared nested schema further so the remaining unknown nested keys can either move into explicit validation maps or be rejected intentionally once forward-compatibility requirements are clearer.
 
 ### Files to modify
 
@@ -631,6 +632,7 @@ Completed documentation/testing slices:
 3. PHP coverage already exercises campaign override REST round-trip behavior, and focused settings tests now also cover global `gallery_config` conversion, sanitization, and REST round-trip expectations even though the WordPress PHPUnit environment was not available locally for execution in this session
 4. focused PHP sanitizer coverage now also exercises the shared nested campaign override helper directly so global and campaign nested payload rules no longer rely only on route-level tests for parity
 5. the repo-documented `wp-env` PHPUnit path is now validated locally again for the affected settings and campaign REST suites, including a real JSON-body campaign override case that exercises mixed valid and invalid nested values through the live route path
+6. the focused `wp-env` suite remains green after tightening nested `adapterSettings` to an explicit allowlist of adapter-related keys, and now covers the distinction between schema-known adapter fields and compatibility-preserved unknown nested keys
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

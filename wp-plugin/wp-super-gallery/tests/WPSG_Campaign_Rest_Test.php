@@ -208,6 +208,9 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
                             'adapterSettings' => [
                                 'masonryColumns' => 99,
                                 'layoutBuilderScope' => 'invalid-option',
+                                'tileGlowSpread' => 999,
+                                'carouselAutoplayDirection' => 'invalid-option',
+                                'modalTransition' => 'not-a-real-transition',
                             ],
                         ],
                     ],
@@ -235,6 +238,9 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('masonry', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterId'] ?? null);
         $this->assertEquals(8, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['masonryColumns'] ?? null);
         $this->assertArrayNotHasKey('layoutBuilderScope', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertEquals(60, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['tileGlowSpread'] ?? null);
+        $this->assertArrayNotHasKey('carouselAutoplayDirection', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertEquals('not-a-real-transition', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['modalTransition'] ?? null);
         $this->assertArrayNotHasKey('watch', $created['galleryOverrides']['breakpoints'] ?? []);
 
         $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
@@ -245,6 +251,9 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('Unsafe', $stored['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
         $this->assertEquals(8, $stored['breakpoints']['desktop']['video']['adapterSettings']['masonryColumns'] ?? null);
         $this->assertArrayNotHasKey('layoutBuilderScope', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertEquals(60, $stored['breakpoints']['desktop']['video']['adapterSettings']['tileGlowSpread'] ?? null);
+        $this->assertArrayNotHasKey('carouselAutoplayDirection', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertEquals('not-a-real-transition', $stored['breakpoints']['desktop']['video']['adapterSettings']['modalTransition'] ?? null);
         $this->assertArrayNotHasKey('watch', $stored['breakpoints'] ?? []);
     }
 
