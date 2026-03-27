@@ -593,8 +593,9 @@ Completed sanitization/REST slices:
 7. known nested `common` and `adapterSettings` fields now reuse backend defaults, valid-option lists, and numeric ranges for field-level validation in both global settings and campaign override payloads, while unknown nested keys still fall back to compatibility-safe generic sanitization
 8. nested `adapterSettings` validation is now limited to an explicit adapter-related key map instead of broad matching against any flat default key, so unrelated nested keys no longer get accidentally treated as schema-known fields
 9. nested payload sanitization now rejects misplaced keys that map to known top-level settings but are not allowed in nested `common` or `adapterSettings`, while still preserving genuinely unknown nested keys for forward compatibility
+10. nested `adapterSettings` now also explicitly own the live classic carousel runtime fields that `MediaCarouselAdapter`, `OverlayArrows`, and `DotNavigator` consume, so nested payloads can reuse backend ranges and enums for viewport height, border radius, thumbnail gap, arrow controls, dot-nav controls, and shadow presets instead of rejecting them as misplaced flat settings
 
-Remaining P23-I work is concentrated on widening the shared nested schema further so the remaining compatibility-preserved unknown keys can either move into explicit validation maps or be intentionally rejected once their intended ownership is settled.
+Remaining P23-I work is concentrated on the smaller set of legacy settings that are still outside the shared editor's current schema surface, so the remaining compatibility-preserved unknown keys can either move into explicit validation maps or be intentionally rejected once their intended ownership is settled.
 
 ### Files to modify
 
@@ -635,6 +636,7 @@ Completed documentation/testing slices:
 5. the repo-documented `wp-env` PHPUnit path is now validated locally again for the affected settings and campaign REST suites, including a real JSON-body campaign override case that exercises mixed valid and invalid nested values through the live route path
 6. the focused `wp-env` suite remains green after tightening nested `adapterSettings` to an explicit allowlist of adapter-related keys, and now covers the distinction between schema-known adapter fields and compatibility-preserved unknown nested keys
 7. the focused `wp-env` suite remains green after adding rejection coverage for misplaced known top-level settings inside nested payloads, so the live REST path now distinguishes between disallowed known keys and forward-compatible unknown keys
+8. the focused `wp-env` suite now also covers nested classic-carousel runtime fields through both helper-level and live JSON-body campaign tests, keeping the shared sanitizer aligned with the fields the current carousel renderer and navigation helpers actually use
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 
