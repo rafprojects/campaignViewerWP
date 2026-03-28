@@ -453,6 +453,28 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.gridCardWidth).toBe(220);
   });
 
+  it('projects shared photo-grid adapter settings back onto legacy runtime fields', () => {
+    const s = makeSettings({
+      thumbnailGap: 6,
+      galleryConfig: {
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'justified',
+              adapterSettings: {
+                thumbnailGap: 14,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+
+    expect(resolved.thumbnailGap).toBe(14);
+  });
+
   it('projects unified classic runtime fields from nested adapter settings', () => {
     const s = makeSettings({
       imageBorderRadius: 8,

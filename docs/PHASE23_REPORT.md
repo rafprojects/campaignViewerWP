@@ -348,8 +348,9 @@ Completed initial schema extraction:
 34. extended the schema-driven classic `carousel` group to include `imageViewportHeight` and `videoViewportHeight`, while adding scope-aware field applicability so unified classic galleries can still expose both base media heights without incorrectly treating them as shared common settings
 35. extended that same schema-driven classic `carousel` group again to include image/video shadow presets plus custom shadow values, so nested config can now round-trip the remaining classic depth controls through adapter settings instead of leaving them stranded on the inline flat legacy path
 36. added a shared `media-frame` adapter group for `imageBorderRadius` and `videoBorderRadius`, attaching it to classic plus the rectangular grid adapters so mixed-media rounded-surface controls can live in nested adapter settings without pretending they are generic common settings
+37. added a shared `photo-grid` adapter group for `thumbnailGap`, attaching it to justified and masonry so the remaining photo-album spacing field can round-trip through nested adapter settings without collapsing into the broader `common.adapterItemGap` surface
 
-Remaining work in P23-C is now concentrated on the smaller adapter families and appearance slices that still live only on the flat legacy surface, such as justified/masonry gap controls and broader tile styling.
+Remaining work in P23-C is now concentrated on the broader tile-style and non-gallery appearance slices that still live only on the flat legacy surface.
 
 ### Files to modify
 
@@ -490,6 +491,7 @@ Completed shared editor slices:
 9. expanded the shared editor's classic-carousel adapter slice to expose `imageViewportHeight` and `videoViewportHeight` through schema-driven adapter settings, keeping shared height mode/manual height in common settings while leaving the per-media base heights adapter-owned
 10. expanded the shared editor's classic-carousel adapter slice again to expose image/video shadow presets and custom shadow strings, including conditional custom-field visibility when the matching preset is set to `custom`
 11. expanded the shared editor again to expose a shared `Media Frame` adapter group for `imageBorderRadius` and `videoBorderRadius`, so classic and rectangular grid adapters can edit nested rounded-corner settings from the same responsive surface while mixed-media runtime consumers stay aligned
+12. expanded the shared editor again to expose a shared `Photo Grid` adapter group for `thumbnailGap`, so justified and masonry can edit their remaining dense-grid spacing field from the same responsive surface without pushing that legacy-specific value into shared common settings
 
 Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
 
@@ -665,6 +667,7 @@ Completed documentation/testing slices:
 16. focused frontend coverage now also validates classic viewport height adapter settings, confirming schema-driven seeding, shared-editor rendering, global save projection, and unified runtime resolution all stay aligned without moving those base heights into nested common settings
 17. focused frontend coverage now also validates classic shadow adapter settings, confirming schema-driven seeding, conditional custom-shadow editor rendering, global save projection, and unified runtime resolution stay aligned for the remaining classic depth controls
 18. focused frontend coverage now also validates shared `media-frame` border-radius settings, confirming schema-driven seeding, shared-editor rendering, flat save projection, unified wrapper resolution, and mixed-media tile runtime behavior stay aligned across classic, compact-grid, justified, and masonry
+19. focused frontend coverage now also validates shared `photo-grid` thumbnail-gap settings, confirming schema-driven seeding, shared-editor rendering, flat save projection, and resolver/runtime projection stay aligned for justified and masonry without rerouting the field through common spacing controls
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

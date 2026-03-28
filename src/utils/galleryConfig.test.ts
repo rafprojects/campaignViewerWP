@@ -30,6 +30,7 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom);
     expect(config.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius);
     expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius);
+    expect(config.breakpoints?.desktop?.image?.adapterSettings?.thumbnailGap).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap);
   });
 
   it('seeds unified classic adapter settings with both viewport heights', () => {

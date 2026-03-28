@@ -130,6 +130,36 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Inactive Dot Color')).toHaveValue('rgba(4,5,6,0.25)');
   });
 
+  it('renders shared photo-grid adapter fields for justified selections', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'justified',
+                adapterSettings: {
+                  thumbnailGap: 12,
+                  mosaicTargetRowHeight: 240,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByText('Photo Grid')).toBeInTheDocument();
+    expect(screen.getByLabelText('Thumbnail Gap (px)')).toHaveValue('12');
+    expect(screen.getByLabelText('Target Row Height (px)')).toHaveValue('240');
+  });
+
   it('renders shared common adapter spacing controls from nested common settings', async () => {
     render(
       <GalleryConfigEditorModal

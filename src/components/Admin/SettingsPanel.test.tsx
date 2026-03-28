@@ -705,6 +705,32 @@ describe('SettingsPanel', () => {
     expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
   });
 
+  it('seeds shared editor photo-grid values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'justified',
+          thumbnailGap: 12,
+          mosaicTargetRowHeight: 240,
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('justified');
+    expect(desktopImage?.adapterSettings?.thumbnailGap).toBe(12);
+    expect(desktopImage?.adapterSettings?.mosaicTargetRowHeight).toBe(240);
+  });
+
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
@@ -802,6 +828,63 @@ describe('SettingsPanel', () => {
                 videoBorderRadius: 18,
                 videoShadowPreset: 'strong',
                 videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('projects shared editor photo-grid fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      thumbnailGap: 14,
+      masonryColumns: 3,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'masonry',
+            adapterSettings: {
+              thumbnailGap: 14,
+              masonryColumns: 3,
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      thumbnailGap: 14,
+      masonryColumns: 3,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                thumbnailGap: 14,
+                masonryColumns: 3,
               }),
             }),
           }),

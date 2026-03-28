@@ -35,6 +35,7 @@ export type AdapterCapability =
 
 export type AdapterSettingGroup =
   | 'media-frame'
+  | 'photo-grid'
   | 'carousel'
   | 'compact-grid'
   | 'justified'

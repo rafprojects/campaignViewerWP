@@ -458,3 +458,57 @@ START HERE NEXT
 - Take thumbnail-gap ownership/parity as the next dedicated slice.
 - Keep tile border/glow and broader card styling out of that change.
 ```
+
+## Entry - 2026-03-28 22:42:08 UTC
+
+### Snapshot
+
+- `thumbnailGap` parity is now implemented through a shared schema-driven adapter group for justified and masonry.
+- The field stays adapter-owned instead of being folded into nested `common.adapterItemGap`, preserving the narrower justified/masonry spacing contract.
+- Shared-editor seeding, rendering, save projection, and resolver/runtime projection are now aligned for the remaining justified/masonry gap field.
+
+### Work Done
+
+- Added a new shared `photo-grid` adapter setting group to the registry and attached it to the justified and masonry adapters.
+- Exposed `thumbnailGap` through the shared gallery config editor under a dedicated `Photo Grid` group instead of leaving it as an inline flat-only setting.
+- Verified the existing legacy-to-nested compatibility builder now seeds `thumbnailGap` into nested adapter settings automatically for justified/masonry selections once the shared group is registered.
+- Verified the existing SettingsPanel save bridge still projects nested `thumbnailGap` values back into the flat compatibility field on save.
+- Added focused resolver coverage to confirm nested justified adapter settings still project `thumbnailGap` back onto the legacy runtime field consumed by the live adapters.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 4 files passed, 73 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- `thumbnailGap` now has explicit nested ownership as a shared justified/masonry adapter setting, not a generic common spacing field.
+- No backend changes were required for this slice because nested adapter-setting sanitization already recognized the field.
+- The next remaining gallery appearance gap is broader tile styling: tile border and glow controls are still flat-only while multiple gallery adapters consume them through the shared tile-style helpers.
+
+### Recommended Next Slice
+
+1. Resolve tile border/glow ownership/parity.
+   - Audit `tileBorderWidth`, `tileBorderColor`, `tileGlowEnabled`, `tileGlowColor`, and `tileGlowSpread` across the shape adapters plus justified/masonry.
+   - Move them into a shared adapter-owned appearance group only if the affected adapter families align cleanly enough to share one schema surface.
+
+2. Keep campaign card border styling separate.
+   - `cardBorderWidth` and `cardBorderColor` belong to broader non-gallery UI and should not be bundled into the next gallery adapter parity slice.
+
+### Handoff
+
+```text
+STATUS
+- Thumbnail-gap parity is complete through the shared schema/editor path.
+- The branch is green on the focused frontend contract and build:wp.
+
+START HERE NEXT
+- Take tile border/glow ownership-parity as the next dedicated slice.
+- Keep campaign card border styling out of that change.
+```

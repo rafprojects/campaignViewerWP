@@ -374,6 +374,8 @@ function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['group']):
   switch (group) {
     case 'media-frame':
       return 'Media Frame';
+    case 'photo-grid':
+      return 'Photo Grid';
     case 'compact-grid':
       return 'Compact Grid';
     case 'layout-builder':

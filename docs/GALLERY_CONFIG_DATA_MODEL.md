@@ -301,6 +301,12 @@ Examples of adapter-specific settings the new model should absorb:
 1. `masonryColumns`
 2. future masonry-specific responsive options if added
 
+### Photo grid
+
+1. `thumbnailGap`
+
+`thumbnailGap` stays adapter-owned because only justified and masonry consume that denser photo-album spacing contract. It should live in a shared multi-adapter setting group for those adapters rather than being merged into nested `common.adapterItemGap`.
+
 ### Shape adapters
 
 1. `tileSize`
