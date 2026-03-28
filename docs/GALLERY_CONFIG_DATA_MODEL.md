@@ -78,6 +78,10 @@ export interface GalleryCommonSettings {
   adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
   gallerySizingMode?: 'auto' | 'viewport' | 'manual';
   galleryManualHeight?: string;
+  viewportBgType?: 'none' | 'solid' | 'gradient' | 'image';
+  viewportBgColor?: string;
+  viewportBgGradient?: string;
+  viewportBgImageUrl?: string;
   perTypeSectionEqualHeight?: boolean;
 }
 
@@ -267,7 +271,8 @@ Phase 23 does not need to move every user-facing setting into the nested respons
 8. adapter justification
 9. gallery sizing mode
 10. gallery manual height
-11. equal-height behavior for per-type sections
+11. viewport background type/color/gradient/image URL
+12. equal-height behavior for per-type sections
 
 ### Deferred for later phases unless needed by implementation
 

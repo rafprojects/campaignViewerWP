@@ -324,6 +324,8 @@ describe('resolveGalleryCommonSettings', () => {
     const s = makeSettings({
       gallerySectionPadding: 16,
       adapterItemGap: 12,
+      imageBgType: 'none',
+      imageBgColor: '#111111',
       galleryImageLabel: 'Images',
       galleryLabelJustification: 'left',
       showGalleryLabelIcon: false,
@@ -334,6 +336,8 @@ describe('resolveGalleryCommonSettings', () => {
               common: {
                 sectionPadding: 24,
                 adapterItemGap: 20,
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
                 galleryImageLabel: 'Photos',
                 galleryLabelJustification: 'center',
                 showGalleryLabelIcon: true,
@@ -347,6 +351,8 @@ describe('resolveGalleryCommonSettings', () => {
     expect(resolveGalleryCommonSettings(s, 'desktop', 'image')).toMatchObject({
       sectionPadding: 24,
       adapterItemGap: 20,
+      viewportBgType: 'solid',
+      viewportBgColor: '#112233',
       galleryImageLabel: 'Photos',
       galleryLabelJustification: 'center',
       showGalleryLabelIcon: true,
@@ -390,6 +396,8 @@ describe('resolveEffectiveGallerySettings', () => {
     const s = makeSettings({
       gallerySectionPadding: 16,
       adapterItemGap: 12,
+      videoBgType: 'none',
+      videoBgGradient: 'linear-gradient(90deg, #000000 0%, #111111 100%)',
       galleryVideoLabel: 'Videos',
       galleryLabelJustification: 'left',
       showCampaignGalleryLabels: true,
@@ -400,6 +408,8 @@ describe('resolveEffectiveGallerySettings', () => {
               common: {
                 sectionPadding: 28,
                 adapterItemGap: 6,
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #112233 0%, #334455 100%)',
                 galleryVideoLabel: 'Clips',
                 galleryLabelJustification: 'right',
                 showCampaignGalleryLabels: false,
@@ -414,6 +424,8 @@ describe('resolveEffectiveGallerySettings', () => {
 
     expect(resolved.gallerySectionPadding).toBe(28);
     expect(resolved.adapterItemGap).toBe(6);
+    expect(resolved.videoBgType).toBe('gradient');
+    expect(resolved.videoBgGradient).toBe('linear-gradient(135deg, #112233 0%, #334455 100%)');
     expect(resolved.galleryVideoLabel).toBe('Clips');
     expect(resolved.galleryLabelJustification).toBe('right');
     expect(resolved.showCampaignGalleryLabels).toBe(false);

@@ -21,6 +21,9 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
     expect(config.breakpoints?.tablet?.video?.adapterId).toBe('diamond');
     expect(config.breakpoints?.mobile?.unified?.adapterId).toBe('compact-grid');
+    expect(config.breakpoints?.desktop?.image?.common?.viewportBgType).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType);
+    expect(config.breakpoints?.desktop?.video?.common?.viewportBgColor).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor);
+    expect(config.breakpoints?.desktop?.unified?.common?.viewportBgGradient).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient);
   });
 
   it('parses nested config from JSON and rejects invalid values', () => {

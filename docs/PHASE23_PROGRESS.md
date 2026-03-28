@@ -123,3 +123,164 @@ TESTING APPROACH FOR NEXT SLICES
 2. Take the next smallest parity slice: viewport background settings into the shared editor and bridge path.
 3. Update `docs/PHASE23_REPORT.md` after that slice lands so the high-level report stays aligned with the finer-grained journal.
 4. Only after the next parity slice, reassess whether viewport height controls are still the next best target or whether campaign/render-path evidence changes the priority.
+
+## Entry - 2026-03-28 14:56:49 UTC
+
+### Snapshot
+
+- Purpose of this checkpoint: validate the codebase against `PHASE23_REPORT.md`, `GALLERY_CONFIG_DATA_MODEL.md`, and `GALLERY_CONFIG_UI_FLOW.md` before resuming implementation.
+- Overall read: `P23-B` through `P23-I` are materially real in code, not just report-level claims. Shared editor, nested config, resolver/runtime wiring, and backend sanitization/REST round-trips all validated on the focused contract surface.
+- Most defensible continuation point: viewport background settings parity. This remains the clearest shared-editor/common-setting gap still stranded on the flat compatibility path.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/components/Galleries/Adapters/adapterRegistry.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+  - `src/components/CardViewer/GallerySections.test.tsx`
+  - result: 6 files passed, 91 tests passed
+- Production build passed:
+  - `npm run build:wp`
+- Focused backend `wp-env` suite passed after starting the local test environment:
+  - `tests/WPSG_Settings_Test.php`
+  - `tests/WPSG_Settings_Rest_Test.php`
+  - `tests/WPSG_Settings_Extended_Test.php`
+  - `tests/WPSG_Campaign_Rest_Test.php`
+  - result: 15 tests passed, 93 assertions
+
+### Confirmed Matches
+
+- `P23-B` settings-panel decomposition is real. The extracted settings modules exist and `SettingsPanel` now acts mainly as orchestration plus compatibility bridge.
+- `P23-C` adapter schema expansion is real. The registry owns the active schema-driven classic carousel/navigation fields and the shared editor consumes those definitions.
+- `P23-D` and `P23-E` nested config plus resolver layers are real. `galleryConfig`, campaign `galleryOverrides`, merge precedence, and runtime common-setting projection all exist and are covered by focused tests.
+- `P23-F` and `P23-G` shared editor plus campaign parity are materially in place. The modal is lazy-loaded from both entry points and campaign nested overrides round-trip through REST/meta.
+- `P23-H` and `P23-I` shared runtime and sanitization paths are real. Viewer sections use the shared resolver path, and backend sanitizer/tests cover nested settings plus campaign overrides.
+
+### Findings
+
+1. Viewport background settings are still outside the nested shared editor/common-setting model.
+   - Current keys still live on the flat settings path: `imageBgType`, `imageBgColor`, `imageBgGradient`, `imageBgImageUrl`, `videoBgType`, `videoBgColor`, `videoBgGradient`, `videoBgImageUrl`, `unifiedBgType`, `unifiedBgColor`, `unifiedBgGradient`, `unifiedBgImageUrl`.
+   - Evidence from code:
+     - `GalleryPresentationSections` still edits them directly as flat settings.
+     - `GalleryCommonSettings` does not define them.
+     - `buildGalleryCommonSettingsFromLegacy()` and `COMMON_SETTING_FIELD_MAP` do not seed/project them.
+     - runtime sections still pass them through directly from the resolved flat settings contract.
+   - Practical implication: campaign/gallery nested parity is not yet complete for viewport presentation, even though gallery labels/visibility are already nested.
+
+2. Viewport height controls are still ownership-ambiguous and remain outside shared common-setting parity.
+   - `imageViewportHeight` and `videoViewportHeight` are sanitized on the backend and consumed by the classic runtime, but they are not part of `GalleryCommonSettings`, not exposed in the shared editor, and not projected through the shared common-setting map.
+   - This is the next-most-obvious parity gap after backgrounds, but it should follow only after deciding whether these remain adapter-specific classic runtime settings or move into shared responsive ownership.
+
+3. Current `shared presentation` wording needs to be read narrowly.
+   - The nested/shared-editor presentation slice currently covers gallery labels and label visibility/justification.
+   - It does not yet cover full viewport presentation parity.
+
+### Assessment
+
+- No new regression surfaced in the currently claimed Phase 23 validation surface.
+- The broad report direction still holds.
+- The remaining gap is not architectural uncertainty anymore; it is a bounded parity follow-through problem on a still-flat legacy-owned setting slice.
+
+### Recommended Next Slice
+
+1. Implement viewport background settings parity first.
+   - Why first:
+     - ownership is clearer than tile/border/shadow styling
+     - the runtime consumers already exist
+     - it closes the most obvious mismatch between the documented shared-editor architecture and the actual code
+   - Minimum implementation expectation:
+     - extend nested gallery common-setting ownership or explicitly define per-scope presentation ownership
+     - seed from legacy flat settings
+     - expose in `GalleryConfigEditorModal`
+     - project back through the global save bridge
+     - resolve/project through runtime consumers
+     - add focused editor, settings bridge, resolver/runtime, and campaign tests
+
+2. Reassess viewport height controls only after the background slice lands.
+   - If heights stay classic-only, treat them as adapter/runtime-owned schema work.
+   - If heights become shared responsive presentation, move them intentionally rather than as a side effect.
+
+### Handoff
+
+```text
+READYNESS
+- Yes: the branch is in a stable continuation state.
+- Focused frontend validation, production build, and targeted wp-env backend validation are all green.
+
+START HERE
+- Take viewport background settings parity as the next implementation slice.
+- Avoid combining that work with viewport height ownership cleanup in the same change.
+
+WHY THIS IS THE RIGHT START
+- It is the clearest remaining gap between the documented shared-editor architecture and the actual code.
+- It has existing runtime consumers, so the slice is high-value without being architecture-heavy.
+```
+
+## Entry - 2026-03-28 15:20:01 UTC
+
+### Snapshot
+
+- Viewport background settings parity is now implemented through the nested shared-editor/common-setting path.
+- The slice landed end-to-end across frontend types, legacy seeding, resolver/runtime projection, global save bridge, shared editor UI, backend sanitization, and focused tests.
+- Next most sensible continuation point is now viewport height ownership/parity, not backgrounds.
+
+### Work Done
+
+- Added nested scope-aware viewport background common-setting fields to the Phase 23 gallery config model:
+  - `viewportBgType`
+  - `viewportBgColor`
+  - `viewportBgGradient`
+  - `viewportBgImageUrl`
+- Updated the legacy-to-nested compatibility bridge so image/video/unified flat background settings now seed into the matching nested scope common config.
+- Updated the shared resolver/runtime projection so nested viewport background settings now flow back onto the existing flat runtime contract used by `UnifiedGallerySection`, `PerTypeGallerySection`, and `GallerySectionWrapper`.
+- Updated the global settings save bridge so shared-editor viewport background changes now project back into the flat settings surface during the migration.
+- Expanded `GalleryConfigEditorModal` to edit viewport background settings directly for the active gallery scopes.
+- Updated backend nested common-setting sanitization to treat scope-aware viewport background fields as first-class known nested fields instead of compatibility-only unknown keys.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - `src/components/CardViewer/GallerySections.test.tsx`
+  - `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+  - result: 6 files passed, 88 tests passed
+- Focused backend `wp-env` suite passed:
+  - `tests/WPSG_Settings_Test.php`
+  - `tests/WPSG_Settings_Rest_Test.php`
+  - `tests/WPSG_Campaign_Rest_Test.php`
+  - result: 15 tests passed, 103 assertions
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- The previously identified background parity gap is closed.
+- Shared-editor/common-setting ownership now includes both gallery labels/visibility and viewport background presentation.
+- The highest-value remaining parity question is now whether `imageViewportHeight` and `videoViewportHeight` should remain adapter/runtime-owned classic settings or move into explicit shared responsive ownership.
+
+### Recommended Next Slice
+
+1. Resolve viewport height ownership and parity.
+   - Confirm whether `imageViewportHeight` and `videoViewportHeight` remain classic runtime fields or become nested shared/common settings.
+   - Once ownership is settled, thread them through the same end-to-end path now used by viewport backgrounds.
+
+2. Keep tile/border/shadow work deferred until after height ownership is clear.
+   - That slice still has more semantic ambiguity than viewport heights.
+
+### Handoff
+
+```text
+STATUS
+- Viewport background settings parity is complete.
+- The branch remains green on focused frontend validation, focused wp-env PHP validation, and build:wp.
+
+START HERE NEXT
+- Take viewport height ownership/parity as the next implementation slice.
+- Avoid mixing it with tile/border/shadow semantics in the same change.
+```

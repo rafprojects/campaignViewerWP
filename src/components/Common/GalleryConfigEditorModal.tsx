@@ -1,4 +1,4 @@
-import { Button, Divider, Group, Modal, NumberInput, Select, Stack, Tabs, Text, TextInput } from '@mantine/core';
+import { Button, ColorInput, Divider, Group, Modal, NumberInput, Select, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
 import {
@@ -11,10 +11,18 @@ import type {
   AdapterSettingGroupDefinition,
   AdapterSettingGroupScopeMode,
 } from '@/components/Galleries/Adapters/GalleryAdapter';
-import type { GalleryCommonSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigMode, GalleryConfigScope } from '@/types';
-import { cloneGalleryConfig } from '@/utils/galleryConfig';
+import {
+  DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+  type GalleryCommonSettings,
+  type GalleryConfig,
+  type GalleryConfigBreakpoint,
+  type GalleryConfigMode,
+  type GalleryConfigScope,
+} from '@/types';
+import { cloneGalleryConfig, getLegacyViewportBackgroundFieldMap } from '@/utils/galleryConfig';
 
 const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
+type EditableGalleryScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
 
 interface GalleryConfigEditorModalProps {
   opened: boolean;
@@ -54,16 +62,43 @@ type SharedCommonSettingKey = keyof Pick<
   | 'showCampaignGalleryLabels'
 >;
 
+type ScopeSpecificCommonSettingKey = keyof Pick<
+  GalleryCommonSettings,
+  'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl'
+>;
+
 function getScopeAdapterId(
   config: Partial<GalleryConfig> | undefined,
   breakpoint: GalleryConfigBreakpoint,
-  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+  scope: EditableGalleryScope,
 ): string {
   return config?.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? '';
 }
 
-function getEditableScopes(mode: GalleryConfigMode): Array<Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>> {
+function getEditableScopes(mode: GalleryConfigMode): Array<EditableGalleryScope> {
   return mode === 'unified' ? ['unified'] : ['image', 'video'];
+}
+
+function formatScopeLabel(scope: EditableGalleryScope): string {
+  switch (scope) {
+    case 'unified':
+      return 'Unified Gallery';
+    case 'image':
+      return 'Image Gallery';
+    case 'video':
+      return 'Video Gallery';
+  }
+}
+
+function getScopeViewportBackgroundFallbacks(scope: EditableGalleryScope) {
+  const fieldMap = getLegacyViewportBackgroundFieldMap(scope);
+
+  return {
+    viewportBgType: DEFAULT_GALLERY_BEHAVIOR_SETTINGS[fieldMap.viewportBgType],
+    viewportBgColor: DEFAULT_GALLERY_BEHAVIOR_SETTINGS[fieldMap.viewportBgColor],
+    viewportBgGradient: DEFAULT_GALLERY_BEHAVIOR_SETTINGS[fieldMap.viewportBgGradient],
+    viewportBgImageUrl: DEFAULT_GALLERY_BEHAVIOR_SETTINGS[fieldMap.viewportBgImageUrl],
+  };
 }
 
 function getRepresentativeCommonValue(
@@ -130,6 +165,21 @@ function getRepresentativeAdapterSettingValue(
       || ((field.control === 'select' || field.control === 'text') && typeof value === 'string')
       || (field.control === 'boolean' && typeof value === 'boolean')
     ) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function getScopeCommonValue(
+  config: Partial<GalleryConfig> | undefined,
+  scope: EditableGalleryScope,
+  key: ScopeSpecificCommonSettingKey,
+): string | undefined {
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    const value = config?.breakpoints?.[breakpoint]?.[scope]?.common?.[key];
+    if (typeof value === 'string') {
       return value;
     }
   }
@@ -231,11 +281,40 @@ function setCommonSettingForEditableScopes(
   });
 }
 
+function setCommonSettingForScope(
+  config: GalleryConfig,
+  scope: EditableGalleryScope,
+  key: ScopeSpecificCommonSettingKey,
+  value: string,
+): GalleryConfig {
+  const next = cloneGalleryConfig(config) ?? { mode: config.mode ?? 'per-type', breakpoints: {} };
+  next.breakpoints = next.breakpoints ?? {};
+
+  GALLERY_BREAKPOINTS.forEach((breakpoint) => {
+    const breakpointConfig = next.breakpoints?.[breakpoint] ?? {};
+
+    breakpointConfig[scope] = {
+      ...(breakpointConfig[scope] ?? {}),
+      common: {
+        ...(breakpointConfig[scope]?.common ?? {}),
+        [key]: value,
+      },
+    };
+
+    next.breakpoints![breakpoint] = breakpointConfig;
+  });
+
+  return pruneConfig({
+    mode: next.mode ?? 'per-type',
+    breakpoints: next.breakpoints,
+  });
+}
+
 function getApplicableScopes(
   mode: GalleryConfigMode,
   scopeMode: AdapterSettingGroupScopeMode,
   field: AdapterSettingFieldDefinition,
-): Array<Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>> {
+): Array<EditableGalleryScope> {
   const editableScopes = getEditableScopes(mode);
   const appliesTo = field.appliesTo ?? 'always';
 
@@ -688,6 +767,74 @@ export function GalleryConfigEditorModal({
           onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, 'showCampaignGalleryLabels', value === 'true'))}
           allowDeselect={false}
         />
+
+        <Divider label="Viewport Backgrounds" labelPosition="center" />
+
+        {getEditableScopes(draft.mode ?? 'per-type').map((scope) => {
+          const scopeLabel = formatScopeLabel(scope);
+          const defaults = getScopeViewportBackgroundFallbacks(scope);
+          const bgType = getScopeCommonValue(draft, scope, 'viewportBgType') ?? defaults.viewportBgType;
+          const bgColor = getScopeCommonValue(draft, scope, 'viewportBgColor') ?? defaults.viewportBgColor;
+          const bgGradient = getScopeCommonValue(draft, scope, 'viewportBgGradient') ?? defaults.viewportBgGradient;
+          const bgImageUrl = getScopeCommonValue(draft, scope, 'viewportBgImageUrl') ?? defaults.viewportBgImageUrl;
+
+          return (
+            <Stack key={scope} gap="sm">
+              <Text size="sm" fw={600}>{scopeLabel}</Text>
+
+              <Select
+                label={`${scopeLabel} Background`}
+                description={`Background applied behind the ${scopeLabel.toLowerCase()} viewport.`}
+                data={[
+                  { value: 'none', label: 'None' },
+                  { value: 'solid', label: 'Solid Color' },
+                  { value: 'gradient', label: 'Gradient' },
+                  { value: 'image', label: 'Background Image' },
+                ]}
+                value={bgType}
+                onChange={(value) => setDraft((current) => setCommonSettingForScope(current, scope, 'viewportBgType', value ?? 'none'))}
+                allowDeselect={false}
+              />
+
+              {bgType === 'solid' && (
+                <ColorInput
+                  label={`${scopeLabel} Background Color`}
+                  description="Solid background color behind the viewport."
+                  value={bgColor}
+                  onChange={(value) => setDraft((current) => setCommonSettingForScope(current, scope, 'viewportBgColor', value))}
+                />
+              )}
+
+              {bgType === 'gradient' && (
+                <TextInput
+                  label={`${scopeLabel} Background Gradient`}
+                  description="CSS gradient string used behind the viewport."
+                  value={bgGradient}
+                  onChange={(event) => setDraft((current) => setCommonSettingForScope(
+                    current,
+                    scope,
+                    'viewportBgGradient',
+                    event.currentTarget.value,
+                  ))}
+                />
+              )}
+
+              {bgType === 'image' && (
+                <TextInput
+                  label={`${scopeLabel} Background Image URL`}
+                  description="Image shown behind the viewport."
+                  value={bgImageUrl}
+                  onChange={(event) => setDraft((current) => setCommonSettingForScope(
+                    current,
+                    scope,
+                    'viewportBgImageUrl',
+                    event.currentTarget.value,
+                  ))}
+                />
+              )}
+            </Stack>
+          );
+        })}
 
         {activeSettingGroups.length > 0 && (
           <>

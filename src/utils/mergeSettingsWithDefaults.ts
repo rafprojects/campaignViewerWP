@@ -36,6 +36,23 @@ const LEGACY_GALLERY_BRIDGE_KEYS: Array<keyof GalleryBehaviorSettings> = [
   'gallerySizingMode',
   'galleryManualHeight',
   'perTypeSectionEqualHeight',
+  'imageBgType',
+  'imageBgColor',
+  'imageBgGradient',
+  'imageBgImageUrl',
+  'videoBgType',
+  'videoBgColor',
+  'videoBgGradient',
+  'videoBgImageUrl',
+  'unifiedBgType',
+  'unifiedBgColor',
+  'unifiedBgGradient',
+  'unifiedBgImageUrl',
+  'galleryImageLabel',
+  'galleryVideoLabel',
+  'galleryLabelJustification',
+  'showGalleryLabelIcon',
+  'showCampaignGalleryLabels',
 ];
 
 /**

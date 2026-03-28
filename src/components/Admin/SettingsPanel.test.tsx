@@ -347,6 +347,126 @@ describe('SettingsPanel', () => {
     }));
   });
 
+  it('seeds shared editor viewport background fields from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          imageBgType: 'solid',
+          imageBgColor: '#112233',
+          videoBgType: 'gradient',
+          videoBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+          unifiedBgType: 'image',
+          unifiedBgImageUrl: 'https://example.com/unified-bg.jpg',
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgType).toBe('solid');
+    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgColor).toBe('#112233');
+    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgType).toBe('gradient');
+    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgGradient).toBe(
+      'linear-gradient(135deg, #123456 0%, #654321 100%)',
+    );
+    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgType).toBe('image');
+    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgImageUrl).toBe('https://example.com/unified-bg.jpg');
+  });
+
+  it('projects shared editor viewport background fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      imageBgType: 'solid',
+      imageBgColor: '#112233',
+      videoBgType: 'gradient',
+      videoBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+      unifiedBgType: 'image',
+      unifiedBgImageUrl: 'https://example.com/unified-bg.jpg',
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    act(() => {
+      onSave({
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
+              },
+            },
+            video: {
+              common: {
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+              },
+            },
+            unified: {
+              common: {
+                viewportBgType: 'image',
+                viewportBgImageUrl: 'https://example.com/unified-bg.jpg',
+              },
+            },
+          },
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      imageBgType: 'solid',
+      imageBgColor: '#112233',
+      videoBgType: 'gradient',
+      videoBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+      unifiedBgType: 'image',
+      unifiedBgImageUrl: 'https://example.com/unified-bg.jpg',
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
+              }),
+            }),
+            video: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+              }),
+            }),
+            unified: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'image',
+                viewportBgImageUrl: 'https://example.com/unified-bg.jpg',
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
   it('shows shared gallery height controls for flat gallery sizing settings', async () => {
     render(
       <SettingsPanel

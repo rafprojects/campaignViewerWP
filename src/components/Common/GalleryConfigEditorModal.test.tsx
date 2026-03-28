@@ -272,6 +272,46 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Show Gallery Section Labels', { selector: 'input' })).toHaveValue('Off');
   });
 
+  it('renders scope-specific viewport background controls from nested common settings', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'compact-grid',
+                common: {
+                  viewportBgType: 'solid',
+                  viewportBgColor: '#112233',
+                },
+              },
+              video: {
+                adapterId: 'classic',
+                common: {
+                  viewportBgType: 'gradient',
+                  viewportBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Viewport Backgrounds')).toBeInTheDocument();
+    expect(screen.getByLabelText('Image Gallery Background', { selector: 'input' })).toHaveValue('Solid Color');
+    expect(screen.getByLabelText('Image Gallery Background Color')).toHaveValue('#112233');
+    expect(screen.getByLabelText('Video Gallery Background', { selector: 'input' })).toHaveValue('Gradient');
+    expect(screen.getByLabelText('Video Gallery Background Gradient')).toHaveValue(
+      'linear-gradient(135deg, #123456 0%, #654321 100%)',
+    );
+  });
+
   it('resets draft changes back to the opened baseline', async () => {
     const onSave = vi.fn();
 

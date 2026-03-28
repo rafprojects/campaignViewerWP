@@ -14,6 +14,40 @@ import { getLegacyPerTypeAdapterId } from './galleryAdapterSelection';
 export const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
 const GALLERY_SCOPES: GalleryConfigScope[] = ['unified', 'image', 'video'];
 
+type LegacyViewportBackgroundFieldMap = {
+  viewportBgType: 'imageBgType' | 'videoBgType' | 'unifiedBgType';
+  viewportBgColor: 'imageBgColor' | 'videoBgColor' | 'unifiedBgColor';
+  viewportBgGradient: 'imageBgGradient' | 'videoBgGradient' | 'unifiedBgGradient';
+  viewportBgImageUrl: 'imageBgImageUrl' | 'videoBgImageUrl' | 'unifiedBgImageUrl';
+};
+
+const LEGACY_VIEWPORT_BACKGROUND_FIELD_MAP: Record<GalleryConfigScope, LegacyViewportBackgroundFieldMap> = {
+  unified: {
+    viewportBgType: 'unifiedBgType',
+    viewportBgColor: 'unifiedBgColor',
+    viewportBgGradient: 'unifiedBgGradient',
+    viewportBgImageUrl: 'unifiedBgImageUrl',
+  },
+  image: {
+    viewportBgType: 'imageBgType',
+    viewportBgColor: 'imageBgColor',
+    viewportBgGradient: 'imageBgGradient',
+    viewportBgImageUrl: 'imageBgImageUrl',
+  },
+  video: {
+    viewportBgType: 'videoBgType',
+    viewportBgColor: 'videoBgColor',
+    viewportBgGradient: 'videoBgGradient',
+    viewportBgImageUrl: 'videoBgImageUrl',
+  },
+};
+
+export function getLegacyViewportBackgroundFieldMap(
+  scope: GalleryConfigScope,
+): LegacyViewportBackgroundFieldMap {
+  return LEGACY_VIEWPORT_BACKGROUND_FIELD_MAP[scope];
+}
+
 function isAdapterSettingFieldApplicableToScope(
   field: AdapterSettingFieldDefinition,
   scope: GalleryConfigScope,
@@ -114,6 +148,18 @@ export function buildGalleryCommonSettingsFromLegacy(
     | 'adapterJustifyContent'
     | 'gallerySizingMode'
     | 'galleryManualHeight'
+    | 'imageBgType'
+    | 'imageBgColor'
+    | 'imageBgGradient'
+    | 'imageBgImageUrl'
+    | 'videoBgType'
+    | 'videoBgColor'
+    | 'videoBgGradient'
+    | 'videoBgImageUrl'
+    | 'unifiedBgType'
+    | 'unifiedBgColor'
+    | 'unifiedBgGradient'
+    | 'unifiedBgImageUrl'
     | 'perTypeSectionEqualHeight'
     | 'galleryImageLabel'
     | 'galleryVideoLabel'
@@ -121,7 +167,10 @@ export function buildGalleryCommonSettingsFromLegacy(
     | 'showGalleryLabelIcon'
     | 'showCampaignGalleryLabels'
   >,
+  scope?: GalleryConfigScope,
 ): GalleryCommonSettings {
+  const viewportBackgroundFields = scope ? getLegacyViewportBackgroundFieldMap(scope) : null;
+
   return {
     sectionMaxWidth: settings.gallerySectionMaxWidth,
     sectionMaxHeight: settings.gallerySectionMaxHeight,
@@ -137,6 +186,12 @@ export function buildGalleryCommonSettingsFromLegacy(
     adapterJustifyContent: settings.adapterJustifyContent,
     gallerySizingMode: settings.gallerySizingMode,
     galleryManualHeight: settings.galleryManualHeight,
+    ...(viewportBackgroundFields ? {
+      viewportBgType: settings[viewportBackgroundFields.viewportBgType],
+      viewportBgColor: settings[viewportBackgroundFields.viewportBgColor],
+      viewportBgGradient: settings[viewportBackgroundFields.viewportBgGradient],
+      viewportBgImageUrl: settings[viewportBackgroundFields.viewportBgImageUrl],
+    } : {}),
     perTypeSectionEqualHeight: settings.perTypeSectionEqualHeight,
     galleryImageLabel: settings.galleryImageLabel,
     galleryVideoLabel: settings.galleryVideoLabel,
@@ -150,11 +205,10 @@ function buildLegacyScopeConfig(
   settings: Partial<GalleryBehaviorSettings>,
   adapterId: string,
   scope: GalleryConfigScope,
-  common: GalleryCommonSettings,
 ): GalleryScopeConfig {
   return {
     adapterId,
-    common: { ...common },
+    common: buildGalleryCommonSettingsFromLegacy(settings as GalleryBehaviorSettings, scope),
     adapterSettings: buildLegacyAdapterSettingsForScope(settings, adapterId, scope),
   };
 }
@@ -187,6 +241,18 @@ export function buildGalleryConfigFromLegacySettings(
     | 'adapterJustifyContent'
     | 'gallerySizingMode'
     | 'galleryManualHeight'
+    | 'imageBgType'
+    | 'imageBgColor'
+    | 'imageBgGradient'
+    | 'imageBgImageUrl'
+    | 'videoBgType'
+    | 'videoBgColor'
+    | 'videoBgGradient'
+    | 'videoBgImageUrl'
+    | 'unifiedBgType'
+    | 'unifiedBgColor'
+    | 'unifiedBgGradient'
+    | 'unifiedBgImageUrl'
     | 'perTypeSectionEqualHeight'
     | 'galleryImageLabel'
     | 'galleryVideoLabel'
@@ -195,25 +261,23 @@ export function buildGalleryConfigFromLegacySettings(
     | 'showCampaignGalleryLabels'
   >,
 ): GalleryConfig {
-  const common = buildGalleryCommonSettingsFromLegacy(settings);
-
   return {
     mode: settings.unifiedGalleryEnabled ? 'unified' : 'per-type',
     breakpoints: {
       desktop: {
-        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified', common),
-        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'desktop', 'image'), 'image', common),
-        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'desktop', 'video'), 'video', common),
+        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified'),
+        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'desktop', 'image'), 'image'),
+        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'desktop', 'video'), 'video'),
       },
       tablet: {
-        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified', common),
-        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'tablet', 'image'), 'image', common),
-        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'tablet', 'video'), 'video', common),
+        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified'),
+        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'tablet', 'image'), 'image'),
+        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'tablet', 'video'), 'video'),
       },
       mobile: {
-        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified', common),
-        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'mobile', 'image'), 'image', common),
-        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'mobile', 'video'), 'video', common),
+        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified'),
+        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'mobile', 'image'), 'image'),
+        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'mobile', 'video'), 'video'),
       },
     },
   };

@@ -79,6 +79,8 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
                             'adapterId' => 'masonry',
                             'common' => [
                                 'sectionPadding' => 24,
+                                'viewportBgType' => 'solid',
+                                'viewportBgColor' => '#112233',
                             ],
                         ],
                     ],
@@ -92,9 +94,13 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('unified', $data['galleryConfig']['mode'] ?? null);
         $this->assertEquals('masonry', $data['galleryConfig']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
         $this->assertEquals(24, $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['sectionPadding'] ?? null);
+        $this->assertEquals('solid', $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['viewportBgColor'] ?? null);
 
         $stored = get_option(WPSG_Settings::OPTION_NAME, []);
         $this->assertEquals('unified', $stored['gallery_config']['mode'] ?? null);
         $this->assertEquals('masonry', $stored['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
+        $this->assertEquals('solid', $stored['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $stored['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgColor'] ?? null);
     }
 }

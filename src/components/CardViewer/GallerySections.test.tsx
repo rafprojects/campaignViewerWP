@@ -3,8 +3,28 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '../../test/test-utils';
 
 vi.mock('./GallerySectionWrapper', () => ({
-  GallerySectionWrapper: ({ children }: { children: (dimensions: { width: number; height: number }) => React.ReactNode }) => (
-    <div data-testid="gallery-section-wrapper">{children({ width: 800, height: 600 })}</div>
+  GallerySectionWrapper: ({
+    bgType,
+    bgColor,
+    bgGradient,
+    bgImageUrl,
+    children,
+  }: {
+    bgType: string;
+    bgColor: string;
+    bgGradient: string;
+    bgImageUrl: string;
+    children: (dimensions: { width: number; height: number }) => React.ReactNode;
+  }) => (
+    <div
+      data-testid="gallery-section-wrapper"
+      data-bg-type={bgType}
+      data-bg-color={bgColor}
+      data-bg-gradient={bgGradient}
+      data-bg-image-url={bgImageUrl}
+    >
+      {children({ width: 800, height: 600 })}
+    </div>
   ),
 }));
 
@@ -144,6 +164,39 @@ describe('UnifiedGallerySection', () => {
 
     expect(screen.getByTestId('adapter-classic')).toHaveTextContent('video-1,image-1');
     expect(screen.queryByTestId('layout-builder-gallery')).not.toBeInTheDocument();
+  });
+
+  it('projects nested unified viewport background settings onto the wrapper props', () => {
+    const settings = makeSettings({
+      unifiedBgType: 'none',
+      unifiedBgColor: '#000000',
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: {
+            unified: {
+              adapterId: 'classic',
+              common: {
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    renderWithSuspense(
+      <UnifiedGallerySection
+        campaign={makeCampaign()}
+        settings={settings}
+        breakpoint="desktop"
+        isAdmin={false}
+      />,
+    );
+
+    expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-bg-type', 'solid');
+    expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-bg-color', '#112233');
   });
 });
 

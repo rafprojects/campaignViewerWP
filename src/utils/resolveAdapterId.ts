@@ -6,7 +6,12 @@ import type {
 } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { isAdapterSupportedAtBreakpoint, normalizeAdapterId } from '@/components/Galleries/Adapters/adapterRegistry';
-import { buildGalleryCommonSettingsFromLegacy, buildGalleryConfigFromLegacySettings, mergeGalleryConfig } from './galleryConfig';
+import {
+  buildGalleryCommonSettingsFromLegacy,
+  buildGalleryConfigFromLegacySettings,
+  getLegacyViewportBackgroundFieldMap,
+  mergeGalleryConfig,
+} from './galleryConfig';
 import { getLegacyFlatAdapterId, getLegacyPerTypeAdapterId } from './galleryAdapterSelection';
 
 type GalleryMode = 'unified' | 'per-type';
@@ -17,8 +22,13 @@ interface GalleryResolutionOptions {
 }
 
 type CommonSettingKey = keyof GalleryCommonSettings;
+type ScopeSpecificCommonSettingKey = Extract<
+  CommonSettingKey,
+  'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl'
+>;
+type SharedCommonSettingKey = Exclude<CommonSettingKey, ScopeSpecificCommonSettingKey>;
 
-const COMMON_SETTING_FIELD_MAP: Record<CommonSettingKey, keyof GalleryBehaviorSettings> = {
+const COMMON_SETTING_FIELD_MAP: Record<SharedCommonSettingKey, keyof GalleryBehaviorSettings> = {
   sectionMaxWidth: 'gallerySectionMaxWidth',
   sectionMaxHeight: 'gallerySectionMaxHeight',
   sectionMinWidth: 'gallerySectionMinWidth',
@@ -108,7 +118,7 @@ export function resolveGalleryCommonSettings(
   scope: GalleryConfigScope,
   galleryOverrides?: Partial<GalleryConfig>,
 ): GalleryCommonSettings {
-  const legacyCommon = buildGalleryCommonSettingsFromLegacy(s);
+  const legacyCommon = buildGalleryCommonSettingsFromLegacy(s, scope);
   const effectiveConfig = resolveEffectiveGalleryConfig(s, galleryOverrides);
 
   return {
@@ -120,11 +130,22 @@ export function resolveGalleryCommonSettings(
 export function applyResolvedGalleryCommonSettings(
   s: GalleryBehaviorSettings,
   commonSettings: GalleryCommonSettings,
+  scope: GalleryConfigScope,
 ): GalleryBehaviorSettings {
   const resolvedSettings = { ...s };
 
   for (const [commonKey, settingKey] of Object.entries(COMMON_SETTING_FIELD_MAP) as Array<
-    [CommonSettingKey, keyof GalleryBehaviorSettings]
+    [SharedCommonSettingKey, keyof GalleryBehaviorSettings]
+  >) {
+    const value = commonSettings[commonKey];
+    if (value !== undefined) {
+      (resolvedSettings as Record<string, unknown>)[settingKey] = value;
+    }
+  }
+
+  const viewportFieldMap = getLegacyViewportBackgroundFieldMap(scope);
+  for (const [commonKey, settingKey] of Object.entries(viewportFieldMap) as Array<
+    [ScopeSpecificCommonSettingKey, keyof GalleryBehaviorSettings]
   >) {
     const value = commonSettings[commonKey];
     if (value !== undefined) {
@@ -153,7 +174,7 @@ export function resolveEffectiveGallerySettings(
       ...resolvedSettings,
       [key]: value,
     } as GalleryBehaviorSettings;
-  }, applyResolvedGalleryCommonSettings(s, resolvedCommonSettings));
+  }, applyResolvedGalleryCommonSettings(s, resolvedCommonSettings, scope));
 }
 
 /**

@@ -43,6 +43,35 @@ class WPSG_Settings_Sanitizer {
     ];
 
     /**
+     * Scope-aware nested common-setting keys mapped to existing flat settings metadata.
+     *
+     * @param string $scope Gallery scope.
+     * @return array<string, string>
+     */
+    private static function get_nested_common_field_map_for_scope($scope) {
+        $map = self::$nested_common_field_map;
+
+        if ($scope === 'unified') {
+            $map['viewportBgType'] = 'unified_bg_type';
+            $map['viewportBgColor'] = 'unified_bg_color';
+            $map['viewportBgGradient'] = 'unified_bg_gradient';
+            $map['viewportBgImageUrl'] = 'unified_bg_image_url';
+        } elseif ($scope === 'image') {
+            $map['viewportBgType'] = 'image_bg_type';
+            $map['viewportBgColor'] = 'image_bg_color';
+            $map['viewportBgGradient'] = 'image_bg_gradient';
+            $map['viewportBgImageUrl'] = 'image_bg_image_url';
+        } elseif ($scope === 'video') {
+            $map['viewportBgType'] = 'video_bg_type';
+            $map['viewportBgColor'] = 'video_bg_color';
+            $map['viewportBgGradient'] = 'video_bg_gradient';
+            $map['viewportBgImageUrl'] = 'video_bg_image_url';
+        }
+
+        return $map;
+    }
+
+    /**
      * Nested adapter-setting keys mapped to existing flat settings metadata.
      *
      * @var array<string, string>
@@ -645,7 +674,7 @@ class WPSG_Settings_Sanitizer {
      * @param array $valid_adapters Allowed adapter ids.
      * @return array|null
      */
-    private static function sanitize_gallery_scope($scope_config, $valid_adapters, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
+    private static function sanitize_gallery_scope($scope_config, $scope, $valid_adapters, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
         if (!is_array($scope_config)) {
             return null;
         }
@@ -662,6 +691,7 @@ class WPSG_Settings_Sanitizer {
         if (!empty($scope_config['common']) && is_array($scope_config['common'])) {
             $sanitized_common = self::sanitize_gallery_common_settings(
                 $scope_config['common'],
+                $scope,
                 $defaults,
                 $valid_options,
                 $field_ranges,
@@ -793,9 +823,10 @@ class WPSG_Settings_Sanitizer {
      * @param bool $use_default_fallbacks Whether invalid enum/string values should fall back to defaults.
      * @return array
      */
-    private static function sanitize_gallery_common_settings($settings, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
+    private static function sanitize_gallery_common_settings($settings, $scope, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
         $sanitized = [];
-        $allowed_flat_keys = array_values(self::$nested_common_field_map);
+        $field_map = self::get_nested_common_field_map_for_scope($scope);
+        $allowed_flat_keys = array_values($field_map);
 
         foreach ($settings as $key => $value) {
             if (!is_string($key)) {
@@ -807,7 +838,7 @@ class WPSG_Settings_Sanitizer {
                 continue;
             }
 
-            $flat_key = self::$nested_common_field_map[$key] ?? null;
+            $flat_key = $field_map[$key] ?? null;
             if (is_string($flat_key)) {
                 $result = self::sanitize_nested_gallery_setting(
                     $flat_key,
@@ -938,6 +969,7 @@ class WPSG_Settings_Sanitizer {
                 foreach (['unified', 'image', 'video'] as $scope) {
                     $sanitized_scope = self::sanitize_gallery_scope(
                         $decoded['breakpoints'][$breakpoint][$scope] ?? null,
+                        $scope,
                         $valid_adapters,
                         $defaults,
                         $valid_options,

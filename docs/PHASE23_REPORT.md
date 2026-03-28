@@ -2,7 +2,7 @@
 **Status:** In Progress 🚧
 **Version:** v0.22.0
 **Created:** March 25, 2026
-**Last updated:** March 27, 2026
+**Last updated:** March 28, 2026
 
 ### Tracks
 
@@ -436,6 +436,7 @@ Completed initial resolver migration:
 8. added campaign nested override awareness to resolver precedence so runtime behavior can honor future gallery parity work without re-branching
 9. added focused tests covering nested precedence, common-setting projection, and the updated viewer path
 10. nested common-setting resolution now also projects gallery label and visibility controls back onto the legacy runtime settings contract, so nested config can affect live adapter title rendering without requiring local per-adapter fallback logic
+11. nested common-setting resolution now also projects scope-aware viewport background controls back onto the legacy runtime settings contract, so nested image/video/unified background presentation can flow through the shared resolver instead of remaining stranded on the flat settings path
 
 Remaining work in P23-E is to extend the resolver beyond adapter ids and mode selection so common settings, campaign overrides, and inheritance/reset semantics all flow through the same effective-config path.
 
@@ -482,6 +483,7 @@ Completed shared editor slices:
 6. added schema-driven text-input support to the shared editor and used it for the remaining live classic navigation color fields, so nested classic config can now edit arrow and dot color tokens directly from the shared responsive editor
 6. restored the required P23-F lazy-load behavior by loading the shared editor only when users open it from either SettingsPanel or UnifiedCampaignModal
 7. updated the affected integration tests to treat the editor as a lazy-loaded modal entry point instead of a synchronously mounted subtree, while keeping direct editor field/value coverage in the shared editor test file
+8. expanded the shared editor's common-settings surface again to include scope-aware viewport background controls, so nested image/video/unified background presentation can now be edited from the same responsive editor and projected back through the compatibility bridge
 
 Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
 
@@ -603,6 +605,7 @@ Completed sanitization/REST slices:
 9. nested payload sanitization now rejects misplaced keys that map to known top-level settings but are not allowed in nested `common` or `adapterSettings`, while still preserving genuinely unknown nested keys for forward compatibility
 10. nested `adapterSettings` now also explicitly own the live classic carousel runtime fields that `MediaCarouselAdapter`, `OverlayArrows`, and `DotNavigator` consume, so nested payloads can reuse backend ranges and enums for viewport height, border radius, thumbnail gap, arrow controls, dot-nav controls, and shadow presets instead of rejecting them as misplaced flat settings
 11. nested `common` settings now also explicitly own the live gallery label and visibility controls used across adapter renderers, so nested payloads can sanitize and project label text, justification, icon visibility, and section-label visibility through the shared backend and resolver pipeline instead of treating them as stray top-level fields
+12. nested `common` settings now also explicitly own the scope-aware viewport background controls used by gallery section wrappers, so global settings and campaign override payloads can sanitize background type/color/gradient/image values through the same shared backend path
 
 Remaining P23-I work is concentrated on the smaller set of legacy settings that are still outside the shared editor's current schema surface, so the remaining compatibility-preserved unknown keys can either move into explicit validation maps or be intentionally rejected once their intended ownership is settled.
 
@@ -652,6 +655,7 @@ Completed documentation/testing slices:
 12. focused registry, shared-editor, settings-panel, resolver, and carousel runtime coverage now also validates the first schema-driven classic-carousel adapter group, so nested `carousel` adapter settings can seed from legacy flat fields, round-trip through the shared editor, and continue driving the live classic runtime without a parallel hand-maintained editor branch
 13. that focused frontend coverage now also exercises the first schema-driven classic navigation behavior controls, confirming overlay-arrow and dot-navigator settings seed from legacy flat fields and project back through nested `carousel` adapter settings without breaking the live classic runtime suites
 14. the same focused frontend coverage now also validates the new schema-driven classic navigation color fields, confirming the shared editor seeds arrow/dot color values from flat settings and still projects them back through nested `carousel` adapter settings after introducing text-field schema support
+15. focused shared-editor, settings-panel, resolver/runtime, and `wp-env` settings/campaign REST coverage now also validates scope-aware viewport background common settings, confirming legacy seeding, global save projection, runtime background rendering, and backend sanitization stay aligned for the newly migrated presentation slice
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

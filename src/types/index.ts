@@ -26,6 +26,10 @@ export interface GalleryCommonSettings {
   adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
   gallerySizingMode?: 'auto' | 'viewport' | 'manual';
   galleryManualHeight?: string;
+  viewportBgType?: ViewportBgType;
+  viewportBgColor?: string;
+  viewportBgGradient?: string;
+  viewportBgImageUrl?: string;
   perTypeSectionEqualHeight?: boolean;
   galleryImageLabel?: string;
   galleryVideoLabel?: string;

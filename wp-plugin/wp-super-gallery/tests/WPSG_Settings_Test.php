@@ -202,6 +202,8 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'adapterId' => 'masonry',
                             'common' => [
                                 'sectionPadding' => 24,
+                                'viewportBgType' => 'solid',
+                                'viewportBgColor' => '#112233',
                             ],
                             'adapterSettings' => [
                                 'masonryColumns' => 4,
@@ -217,6 +219,8 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
         $this->assertEquals('masonry', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
         $this->assertEquals(24, $sanitized['gallery_config']['breakpoints']['desktop']['unified']['common']['sectionPadding'] ?? null);
+        $this->assertEquals('solid', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgColor'] ?? null);
         $this->assertEquals(4, $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterSettings']['masonryColumns'] ?? null);
     }
 
@@ -236,6 +240,10 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'adapterMaxWidthPct' => 10,
                             'adapterJustifyContent' => 'invalid-option',
                             'galleryManualHeight' => 'calc(100vh)',
+                            'viewportBgType' => 'solid',
+                            'viewportBgColor' => '<b>#112233</b>',
+                            'viewportBgGradient' => '<b>linear-gradient(135deg, #111111 0%, #222222 100%)</b>',
+                            'viewportBgImageUrl' => 'https://example.com/image-bg.jpg',
                             'perTypeSectionEqualHeight' => '1',
                             'galleryImageLabel' => '<b>Photos</b>',
                             'galleryVideoLabel' => '<i>Clips</i>',
@@ -276,6 +284,10 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $common['adapterMaxWidthPct'] ?? null);
         $this->assertEquals('center', $common['adapterJustifyContent'] ?? null);
         $this->assertEquals('420px', $common['galleryManualHeight'] ?? null);
+        $this->assertEquals('solid', $common['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $common['viewportBgColor'] ?? null);
+        $this->assertEquals('linear-gradient(135deg, #111111 0%, #222222 100%)', $common['viewportBgGradient'] ?? null);
+        $this->assertEquals('https://example.com/image-bg.jpg', $common['viewportBgImageUrl'] ?? null);
         $this->assertTrue($common['perTypeSectionEqualHeight'] ?? false);
         $this->assertEquals('Photos', $common['galleryImageLabel'] ?? null);
         $this->assertEquals('Clips', $common['galleryVideoLabel'] ?? null);
@@ -317,6 +329,10 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'adapterMaxWidthPct' => 10,
                             'adapterJustifyContent' => 'invalid-option',
                             'galleryManualHeight' => 'calc(100vh)',
+                            'viewportBgType' => 'solid',
+                            'viewportBgColor' => '<b>#112233</b>',
+                            'viewportBgGradient' => '<b>linear-gradient(135deg, #111111 0%, #222222 100%)</b>',
+                            'viewportBgImageUrl' => 'https://example.com/image-bg.jpg',
                             'galleryImageLabel' => '<b>Photos</b>',
                             'galleryVideoLabel' => '<i>Clips</i>',
                             'galleryLabelJustification' => 'invalid-option',
@@ -351,6 +367,10 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals(50, $sanitized['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertArrayNotHasKey('galleryManualHeight', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('solid', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgColor'] ?? null);
+        $this->assertEquals('linear-gradient(135deg, #111111 0%, #222222 100%)', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgGradient'] ?? null);
+        $this->assertEquals('https://example.com/image-bg.jpg', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgImageUrl'] ?? null);
         $this->assertEquals('Photos', $sanitized['breakpoints']['desktop']['image']['common']['galleryImageLabel'] ?? null);
         $this->assertEquals('Clips', $sanitized['breakpoints']['desktop']['image']['common']['galleryVideoLabel'] ?? null);
         $this->assertArrayNotHasKey('galleryLabelJustification', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);

@@ -106,6 +106,18 @@ function getRepresentativeGalleryCommonSetting(
   return undefined;
 }
 
+function getScopeGalleryCommonSetting(
+  galleryConfig: GalleryConfig,
+  scope: 'unified' | 'image' | 'video',
+  key: 'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl',
+): string | undefined {
+  const value = galleryConfig.breakpoints?.desktop?.[scope]?.common?.[key]
+    ?? galleryConfig.breakpoints?.tablet?.[scope]?.common?.[key]
+    ?? galleryConfig.breakpoints?.mobile?.[scope]?.common?.[key];
+
+  return typeof value === 'string' ? value : undefined;
+}
+
 function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   const seed = buildGalleryConfigFromLegacySettings(settings);
 
@@ -284,6 +296,18 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const galleryLabelJustification = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryLabelJustification') ?? prev.galleryLabelJustification;
       const showGalleryLabelIcon = getRepresentativeGalleryCommonSetting(galleryConfig, 'showGalleryLabelIcon') ?? prev.showGalleryLabelIcon;
       const showCampaignGalleryLabels = getRepresentativeGalleryCommonSetting(galleryConfig, 'showCampaignGalleryLabels') ?? prev.showCampaignGalleryLabels;
+      const imageBgType = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgType') ?? prev.imageBgType;
+      const imageBgColor = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgColor') ?? prev.imageBgColor;
+      const imageBgGradient = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgGradient') ?? prev.imageBgGradient;
+      const imageBgImageUrl = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgImageUrl') ?? prev.imageBgImageUrl;
+      const videoBgType = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgType') ?? prev.videoBgType;
+      const videoBgColor = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgColor') ?? prev.videoBgColor;
+      const videoBgGradient = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgGradient') ?? prev.videoBgGradient;
+      const videoBgImageUrl = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgImageUrl') ?? prev.videoBgImageUrl;
+      const unifiedBgType = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgType') ?? prev.unifiedBgType;
+      const unifiedBgColor = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgColor') ?? prev.unifiedBgColor;
+      const unifiedBgGradient = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgGradient') ?? prev.unifiedBgGradient;
+      const unifiedBgImageUrl = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgImageUrl') ?? prev.unifiedBgImageUrl;
 
       return {
         ...prev,
@@ -320,6 +344,18 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         galleryLabelJustification: galleryLabelJustification as SettingsData['galleryLabelJustification'],
         showGalleryLabelIcon: showGalleryLabelIcon as SettingsData['showGalleryLabelIcon'],
         showCampaignGalleryLabels: showCampaignGalleryLabels as SettingsData['showCampaignGalleryLabels'],
+        imageBgType: imageBgType as SettingsData['imageBgType'],
+        imageBgColor: imageBgColor as SettingsData['imageBgColor'],
+        imageBgGradient: imageBgGradient as SettingsData['imageBgGradient'],
+        imageBgImageUrl: imageBgImageUrl as SettingsData['imageBgImageUrl'],
+        videoBgType: videoBgType as SettingsData['videoBgType'],
+        videoBgColor: videoBgColor as SettingsData['videoBgColor'],
+        videoBgGradient: videoBgGradient as SettingsData['videoBgGradient'],
+        videoBgImageUrl: videoBgImageUrl as SettingsData['videoBgImageUrl'],
+        unifiedBgType: unifiedBgType as SettingsData['unifiedBgType'],
+        unifiedBgColor: unifiedBgColor as SettingsData['unifiedBgColor'],
+        unifiedBgGradient: unifiedBgGradient as SettingsData['unifiedBgGradient'],
+        unifiedBgImageUrl: unifiedBgImageUrl as SettingsData['unifiedBgImageUrl'],
       };
     });
 

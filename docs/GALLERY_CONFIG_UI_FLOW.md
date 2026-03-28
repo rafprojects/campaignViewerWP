@@ -161,6 +161,8 @@ Should contain at minimum:
 1. Common settings section
 2. Adapter settings section
 
+The common settings section should cover the active shared gallery presentation slice, including section sizing/spacing, gallery height behavior, labels, and scope-aware viewport background controls.
+
 Common settings should be limited to the first-pass field list defined in the data model document. Additional common fields should only be added in later phases after schema review.
 
 Optional:
