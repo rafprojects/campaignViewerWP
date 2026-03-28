@@ -312,15 +312,21 @@ Examples of adapter-specific settings the new model should absorb:
 
 1. image viewport height
 2. video viewport height
-3. visible cards
-4. autoplay
-5. autoplay direction
-6. loop
-7. gap
-8. darken unfocused
-9. other carousel-only behavior
+3. image shadow preset
+4. image custom shadow
+5. video shadow preset
+6. video custom shadow
+7. visible cards
+8. autoplay
+9. autoplay direction
+10. loop
+11. gap
+12. darken unfocused
+13. other carousel-only behavior
 
 Shared height constraint mode (`gallerySizingMode`) and manual CSS height (`galleryManualHeight`) belong in `common`; the classic adapter's per-media base viewport heights remain adapter-specific because the runtime consumes them alongside the rest of the carousel behavior contract.
+
+Classic image/video shadow depth settings follow that same adapter-specific ownership path. Border radius still needs a separate ownership decision because it is consumed more broadly than the classic carousel runtime.
 
 ### Layout builder
 

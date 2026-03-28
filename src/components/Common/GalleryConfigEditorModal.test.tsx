@@ -80,6 +80,10 @@ describe('GalleryConfigEditorModal', () => {
                 adapterSettings: {
                   imageViewportHeight: 560,
                   videoViewportHeight: 500,
+                  imageShadowPreset: 'custom',
+                  imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+                  videoShadowPreset: 'strong',
+                  videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
                   carouselVisibleCards: 3,
                   carouselLoop: false,
                   carouselAutoplayDirection: 'rtl',
@@ -104,6 +108,10 @@ describe('GalleryConfigEditorModal', () => {
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
     expect(screen.getByLabelText('Image Viewport Height (px)')).toHaveValue('560');
     expect(screen.getByLabelText('Video Viewport Height (px)')).toHaveValue('500');
+    expect(screen.getByLabelText('Image Shadow Preset', { selector: 'input' })).toHaveValue('Custom');
+    expect(screen.getByLabelText('Image Custom Shadow')).toHaveValue('0 8px 24px rgba(0,0,0,0.35)');
+    expect(screen.getByLabelText('Video Shadow Preset', { selector: 'input' })).toHaveValue('Strong');
+    expect(screen.queryByLabelText('Video Custom Shadow')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Visible Cards')).toHaveValue('3');
     expect(screen.getByLabelText('Loop', { selector: 'input' })).toHaveValue('Off');
     expect(screen.getByLabelText('Autoplay Direction', { selector: 'input' })).toHaveValue('Right to Left');

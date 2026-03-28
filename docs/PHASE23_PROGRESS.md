@@ -344,3 +344,61 @@ START HERE NEXT
 - Extend the shared schema/editor surface for the next adapter-owned classic appearance controls.
 - Preserve the ownership split: common for shared gallery behavior, adapterSettings for classic-only runtime details.
 ```
+
+## Entry - 2026-03-28 21:27:01 UTC
+
+### Snapshot
+
+- Classic shadow parity is now implemented through the schema-driven shared editor path.
+- `imageShadowPreset`, `imageShadowCustom`, `videoShadowPreset`, and `videoShadowCustom` are now exposed from nested classic `adapterSettings` instead of remaining inline flat-only controls.
+- Border radius is now the clearer remaining appearance ownership question because it is consumed outside the classic runtime as well.
+
+### Work Done
+
+- Extended the classic `carousel` adapter schema group to include:
+  - `imageShadowPreset`
+  - `imageShadowCustom`
+  - `videoShadowPreset`
+  - `videoShadowCustom`
+- Reused the existing scope-array applicability support so unified classic galleries still expose both image and video shadow controls while per-type mode only shows the matching scope fields.
+- Added shared-editor conditional rendering for the custom shadow text inputs so they only appear when the corresponding shadow preset is set to `custom`.
+- Verified the existing legacy-to-nested compatibility builder now seeds classic shadow settings into nested adapter settings automatically through the schema path.
+- Verified the existing SettingsPanel adapter-setting collector still projects those nested shadow settings back into the flat compatibility fields on save.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 4 files passed, 69 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- The remaining classic depth-control gap is closed.
+- No backend changes were required for this slice because nested adapter-setting sanitization already owned the shadow fields.
+- The next unresolved appearance slice is broader than classic-only behavior: `imageBorderRadius` / `videoBorderRadius` are consumed by wrappers and non-classic adapters as well, so they need an explicit ownership decision before moving further.
+
+### Recommended Next Slice
+
+1. Resolve border-radius ownership/parity.
+   - Determine whether `imageBorderRadius` and `videoBorderRadius` should remain adapter-owned, become scope-specific common settings, or move into a new multi-adapter appearance group.
+   - Validate that decision against `GallerySectionWrapper`, classic runtime, and the non-classic adapters that already read those flat fields.
+
+2. Keep thumbnail-gap and broader tile appearance out of the same change.
+   - Those fields cross different adapter families and will be easier to reason about after border-radius ownership is settled.
+
+### Handoff
+
+```text
+STATUS
+- Classic shadow preset/custom parity is complete through the shared schema/editor path.
+- The branch is green on the focused frontend contract and build:wp.
+
+START HERE NEXT
+- Take border-radius ownership/parity as the next dedicated slice.
+- Avoid mixing it with thumbnail-gap or shape-tile appearance in the same change.
+```

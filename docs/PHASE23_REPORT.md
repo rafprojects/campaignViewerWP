@@ -346,6 +346,7 @@ Completed initial schema extraction:
 32. expanded that schema-driven classic `carousel` group again to cover the first overlay-arrow and dot-navigator behavior controls, so the shared editor can now round-trip classic navigation position, sizing, visibility, and placement behavior from nested adapter settings without relying on the remaining inline legacy-only controls
 33. added a schema-driven freeform text field type and used it to register the remaining live classic navigation color controls, so the shared editor can now round-trip arrow foreground/background colors and active/inactive dot colors instead of leaving those runtime-owned values stranded in the flat legacy surface
 34. extended the schema-driven classic `carousel` group to include `imageViewportHeight` and `videoViewportHeight`, while adding scope-aware field applicability so unified classic galleries can still expose both base media heights without incorrectly treating them as shared common settings
+35. extended that same schema-driven classic `carousel` group again to include image/video shadow presets plus custom shadow values, so nested config can now round-trip the remaining classic depth controls through adapter settings instead of leaving them stranded on the inline flat legacy path
 
 Remaining work in P23-C is to extend the schema beyond labels and breakpoint restrictions so it can own adapter-specific field groups and become the authoritative input for the future shared gallery config editor.
 
@@ -486,6 +487,7 @@ Completed shared editor slices:
 7. updated the affected integration tests to treat the editor as a lazy-loaded modal entry point instead of a synchronously mounted subtree, while keeping direct editor field/value coverage in the shared editor test file
 8. expanded the shared editor's common-settings surface again to include scope-aware viewport background controls, so nested image/video/unified background presentation can now be edited from the same responsive editor and projected back through the compatibility bridge
 9. expanded the shared editor's classic-carousel adapter slice to expose `imageViewportHeight` and `videoViewportHeight` through schema-driven adapter settings, keeping shared height mode/manual height in common settings while leaving the per-media base heights adapter-owned
+10. expanded the shared editor's classic-carousel adapter slice again to expose image/video shadow presets and custom shadow strings, including conditional custom-field visibility when the matching preset is set to `custom`
 
 Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
 
@@ -659,6 +661,7 @@ Completed documentation/testing slices:
 14. the same focused frontend coverage now also validates the new schema-driven classic navigation color fields, confirming the shared editor seeds arrow/dot color values from flat settings and still projects them back through nested `carousel` adapter settings after introducing text-field schema support
 15. focused shared-editor, settings-panel, resolver/runtime, and `wp-env` settings/campaign REST coverage now also validates scope-aware viewport background common settings, confirming legacy seeding, global save projection, runtime background rendering, and backend sanitization stay aligned for the newly migrated presentation slice
 16. focused frontend coverage now also validates classic viewport height adapter settings, confirming schema-driven seeding, shared-editor rendering, global save projection, and unified runtime resolution all stay aligned without moving those base heights into nested common settings
+17. focused frontend coverage now also validates classic shadow adapter settings, confirming schema-driven seeding, conditional custom-shadow editor rendering, global save projection, and unified runtime resolution stay aligned for the remaining classic depth controls
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

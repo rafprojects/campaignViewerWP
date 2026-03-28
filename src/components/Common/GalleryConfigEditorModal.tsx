@@ -342,6 +342,34 @@ function hasVisibleAdapterSettingField(
   );
 }
 
+const CONDITIONAL_ADAPTER_FIELD_PRESET_KEYS = {
+  imageShadowCustom: 'imageShadowPreset',
+  videoShadowCustom: 'videoShadowPreset',
+} as const;
+
+function shouldRenderAdapterSettingField(
+  config: GalleryConfig,
+  breakpoint: GalleryConfigBreakpoint,
+  group: AdapterSettingGroupDefinition,
+  field: AdapterSettingFieldDefinition,
+): boolean {
+  if (!hasVisibleAdapterSettingField(config, breakpoint, group, field)) {
+    return false;
+  }
+
+  const presetKey = CONDITIONAL_ADAPTER_FIELD_PRESET_KEYS[field.key as keyof typeof CONDITIONAL_ADAPTER_FIELD_PRESET_KEYS];
+  if (!presetKey) {
+    return true;
+  }
+
+  const presetField = group.fields.find((candidate) => candidate.key === presetKey);
+  if (!presetField) {
+    return false;
+  }
+
+  return getRepresentativeAdapterSettingValue(config, breakpoint, group, presetField) === 'custom';
+}
+
 function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['group']): string {
   switch (group) {
     case 'compact-grid':
@@ -427,7 +455,7 @@ export function GalleryConfigEditorModal({
   const [activeBreakpoint, setActiveBreakpoint] = useState<GalleryConfigBreakpoint>('desktop');
   const activeSettingGroups = getActiveSettingGroupDefinitions(
     getEditableScopes(draft.mode ?? 'per-type').map((scope) => draft.breakpoints?.[activeBreakpoint]?.[scope]?.adapterId),
-  ).filter((group) => group.fields.some((field) => hasVisibleAdapterSettingField(draft, activeBreakpoint, group, field)));
+  ).filter((group) => group.fields.some((field) => shouldRenderAdapterSettingField(draft, activeBreakpoint, group, field)));
 
   useEffect(() => {
     if (!opened) {
@@ -845,7 +873,7 @@ export function GalleryConfigEditorModal({
               {activeSettingGroups.map((group) => (
                 <Stack key={group.group} gap="sm">
                   <Text size="sm" fw={600}>{formatSettingGroupLabel(group.group)}</Text>
-                  {group.fields.filter((field) => hasVisibleAdapterSettingField(draft, activeBreakpoint, group, field)).map((field) => {
+                  {group.fields.filter((field) => shouldRenderAdapterSettingField(draft, activeBreakpoint, group, field)).map((field) => {
                     const representativeValue = getRepresentativeAdapterSettingValue(draft, activeBreakpoint, group, field);
 
                     if (field.control === 'number') {

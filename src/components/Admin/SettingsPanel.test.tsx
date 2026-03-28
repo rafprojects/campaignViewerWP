@@ -652,6 +652,10 @@ describe('SettingsPanel', () => {
           ...seedSettings,
           imageViewportHeight: 560,
           videoViewportHeight: 500,
+          imageShadowPreset: 'custom',
+          imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+          videoShadowPreset: 'strong',
+          videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
           carouselVisibleCards: 3,
           carouselLoop: false,
           carouselAutoplayDirection: 'rtl',
@@ -691,6 +695,10 @@ describe('SettingsPanel', () => {
     expect(adapterSettings?.dotNavInactiveColor).toBe('rgba(4,5,6,0.25)');
     expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageViewportHeight).toBe(560);
     expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(500);
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageShadowPreset).toBe('custom');
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageShadowCustom).toBe('0 8px 24px rgba(0,0,0,0.35)');
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoShadowPreset).toBe('strong');
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
   });
 
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
@@ -698,6 +706,10 @@ describe('SettingsPanel', () => {
       ...seedSettings,
       imageViewportHeight: 600,
       videoViewportHeight: 480,
+      imageShadowPreset: 'custom',
+      imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+      videoShadowPreset: 'strong',
+      videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
       carouselVisibleCards: 3,
       navArrowPosition: 'bottom',
       navArrowColor: '#ff8800',
@@ -722,6 +734,8 @@ describe('SettingsPanel', () => {
             adapterId: 'classic',
             adapterSettings: {
               imageViewportHeight: 600,
+              imageShadowPreset: 'custom',
+              imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
               carouselVisibleCards: 3,
               navArrowPosition: 'bottom',
               navArrowColor: '#ff8800',
@@ -732,6 +746,8 @@ describe('SettingsPanel', () => {
             adapterId: 'classic',
             adapterSettings: {
               videoViewportHeight: 480,
+              videoShadowPreset: 'strong',
+              videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
             },
           },
         },
@@ -749,6 +765,10 @@ describe('SettingsPanel', () => {
     expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
       imageViewportHeight: 600,
       videoViewportHeight: 480,
+      imageShadowPreset: 'custom',
+      imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+      videoShadowPreset: 'strong',
+      videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
       carouselVisibleCards: 3,
       navArrowPosition: 'bottom',
       navArrowColor: '#ff8800',
@@ -759,9 +779,17 @@ describe('SettingsPanel', () => {
             image: expect.objectContaining({
               adapterSettings: expect.objectContaining({
                 carouselVisibleCards: 3,
+                imageShadowPreset: 'custom',
+                imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
                 navArrowPosition: 'bottom',
                 navArrowColor: '#ff8800',
                 dotNavEnabled: false,
+              }),
+            }),
+            video: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                videoShadowPreset: 'strong',
+                videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
               }),
             }),
           }),

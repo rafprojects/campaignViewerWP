@@ -453,10 +453,14 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.gridCardWidth).toBe(220);
   });
 
-  it('projects unified classic viewport heights from nested adapter settings', () => {
+  it('projects unified classic runtime fields from nested adapter settings', () => {
     const s = makeSettings({
       imageViewportHeight: 420,
       videoViewportHeight: 420,
+      imageShadowPreset: 'subtle',
+      imageShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
+      videoShadowPreset: 'subtle',
+      videoShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
       unifiedGalleryEnabled: true,
       unifiedGalleryAdapterId: 'classic',
       galleryConfig: {
@@ -468,6 +472,10 @@ describe('resolveEffectiveGallerySettings', () => {
               adapterSettings: {
                 imageViewportHeight: 560,
                 videoViewportHeight: 500,
+                imageShadowPreset: 'custom',
+                imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+                videoShadowPreset: 'strong',
+                videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
               },
             },
           },
@@ -479,6 +487,10 @@ describe('resolveEffectiveGallerySettings', () => {
 
     expect(resolved.imageViewportHeight).toBe(560);
     expect(resolved.videoViewportHeight).toBe(500);
+    expect(resolved.imageShadowPreset).toBe('custom');
+    expect(resolved.imageShadowCustom).toBe('0 8px 24px rgba(0,0,0,0.35)');
+    expect(resolved.videoShadowPreset).toBe('strong');
+    expect(resolved.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
   });
 
   it('applies campaign nested adapter overrides over global adapter settings', () => {

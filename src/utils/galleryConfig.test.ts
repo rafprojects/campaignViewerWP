@@ -26,6 +26,8 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.desktop?.unified?.common?.viewportBgGradient).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient);
     expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight);
     expect(config.breakpoints?.mobile?.image?.adapterSettings?.imageViewportHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight);
+    expect(config.breakpoints?.mobile?.image?.adapterSettings?.imageShadowPreset).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset);
+    expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom);
   });
 
   it('seeds unified classic adapter settings with both viewport heights', () => {
@@ -35,11 +37,19 @@ describe('galleryConfig helpers', () => {
       unifiedGalleryAdapterId: 'classic',
       imageViewportHeight: 560,
       videoViewportHeight: 500,
+      imageShadowPreset: 'custom',
+      imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+      videoShadowPreset: 'strong',
+      videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
     });
 
     expect(config.breakpoints?.desktop?.unified?.adapterId).toBe('classic');
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageViewportHeight).toBe(560);
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoViewportHeight).toBe(500);
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageShadowPreset).toBe('custom');
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageShadowCustom).toBe('0 8px 24px rgba(0,0,0,0.35)');
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoShadowPreset).toBe('strong');
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
   });
 
   it('parses nested config from JSON and rejects invalid values', () => {

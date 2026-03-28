@@ -167,6 +167,8 @@ Common settings should be limited to the first-pass field list defined in the da
 
 The adapter settings section should expose adapter-owned controls such as classic carousel viewport heights under the relevant adapter group, rather than promoting those per-media base heights into shared common settings.
 
+That same adapter settings area should now also expose classic image/video shadow depth controls, with custom shadow text inputs appearing only when the matching preset is switched to `custom`.
+
 Optional:
 
 3. advanced summary or raw effective view if debugging visibility is useful
