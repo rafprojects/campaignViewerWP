@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
+import { render, screen, fireEvent, waitFor, within } from '../../test/test-utils';
 import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
@@ -65,6 +65,20 @@ function makeMockModal(overrides: Partial<UnifiedCampaignModalHandle> = {}): Uni
     save: vi.fn(),
     ...overrides,
   };
+}
+
+async function openCampaignResponsiveConfigDialog() {
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+  await screen.findByText('Campaign Responsive Gallery Config', {}, { timeout: 10000 });
+
+  return await waitFor(() => {
+    const dialogs = screen.getAllByRole('dialog');
+    expect(dialogs.length).toBeGreaterThan(1);
+    const dialog = dialogs[dialogs.length - 1];
+    expect(within(dialog).getByText('Campaign Responsive Gallery Config')).toBeInTheDocument();
+    return dialog as HTMLElement;
+  });
 }
 
 describe('UnifiedCampaignModal', () => {
@@ -237,12 +251,12 @@ describe('UnifiedCampaignModal', () => {
     const modal = makeMockModal({ activeTab: 'settings' });
     render(<UnifiedCampaignModal modal={modal} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await openCampaignResponsiveConfigDialog();
 
-    expect(await screen.findByText('Shared Section Spacing', {}, { timeout: 10000 })).toBeInTheDocument();
-    expect(screen.getByText('Adapter Content Padding (px)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
-    expect(screen.getByText(/currently inheriting global gallery settings/i)).toBeInTheDocument();
+    expect(within(dialog).getByText('Shared Section Spacing')).toBeInTheDocument();
+    expect(within(dialog).getByText('Adapter Content Padding (px)')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
+    expect(within(dialog).getByText(/currently inheriting global gallery settings/i)).toBeInTheDocument();
   });
 
   it('shows overridden-state messaging when campaign gallery overrides exist', async () => {
@@ -269,9 +283,9 @@ describe('UnifiedCampaignModal', () => {
     });
     render(<UnifiedCampaignModal modal={modal} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await openCampaignResponsiveConfigDialog();
 
-    expect(await screen.findByText(/currently stores custom gallery overrides/i, {}, { timeout: 10000 })).toBeInTheDocument();
+    expect(within(dialog).getByText(/currently stores custom gallery overrides/i)).toBeInTheDocument();
   });
 
   it('saves unified adapter overrides from the shared responsive editor', async () => {
@@ -282,17 +296,17 @@ describe('UnifiedCampaignModal', () => {
 
     render(<UnifiedCampaignModal modal={modal} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+    const dialog = await openCampaignResponsiveConfigDialog();
 
-    const galleryModeInput = await screen.findByLabelText('Gallery Mode', { selector: 'input' }, { timeout: 10000 });
+    const galleryModeInput = await within(dialog).findByLabelText('Gallery Mode', { selector: 'input' }, { timeout: 10000 });
     fireEvent.click(galleryModeInput);
     fireEvent.click(await screen.findByRole('option', { name: 'Unified' }));
 
-    expect(await screen.findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+    expect(await within(dialog).findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText('Unified Gallery Adapter', { selector: 'input' }));
+    fireEvent.click(within(dialog).getByLabelText('Unified Gallery Adapter', { selector: 'input' }));
     fireEvent.click(await screen.findByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Apply Campaign Gallery Config' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Apply Campaign Gallery Config' }));
 
     await waitFor(() => {
       expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
