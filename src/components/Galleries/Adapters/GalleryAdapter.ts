@@ -34,6 +34,7 @@ export type AdapterCapability =
   | 'layout-builder';
 
 export type AdapterSettingGroup =
+  | 'media-frame'
   | 'carousel'
   | 'compact-grid'
   | 'justified'

@@ -308,6 +308,13 @@ Examples of adapter-specific settings the new model should absorb:
 3. `videoTileSize`
 4. related overlap or clip-path controls where appropriate
 
+### Media frame
+
+1. image border radius
+2. video border radius
+
+These rounded-corner controls are broader than classic-only behavior but still adapter-owned because they only apply to the adapters that render rectangular media surfaces. They should live in a shared multi-adapter setting group rather than being promoted into nested `common` settings.
+
 ### Carousel
 
 1. image viewport height
@@ -326,7 +333,7 @@ Examples of adapter-specific settings the new model should absorb:
 
 Shared height constraint mode (`gallerySizingMode`) and manual CSS height (`galleryManualHeight`) belong in `common`; the classic adapter's per-media base viewport heights remain adapter-specific because the runtime consumes them alongside the rest of the carousel behavior contract.
 
-Classic image/video shadow depth settings follow that same adapter-specific ownership path. Border radius still needs a separate ownership decision because it is consumed more broadly than the classic carousel runtime.
+Classic image/video shadow depth settings follow that same adapter-specific ownership path. Border radius is now covered by the shared adapter-owned `media-frame` group instead of remaining a flat-only appearance field.
 
 ### Layout builder
 

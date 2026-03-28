@@ -650,6 +650,8 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
+          imageBorderRadius: 14,
+          videoBorderRadius: 18,
           imageViewportHeight: 560,
           videoViewportHeight: 500,
           imageShadowPreset: 'custom',
@@ -693,6 +695,8 @@ describe('SettingsPanel', () => {
     expect(adapterSettings?.dotNavPosition).toBe('overlay-top');
     expect(adapterSettings?.dotNavActiveColor).toBe('#00ffaa');
     expect(adapterSettings?.dotNavInactiveColor).toBe('rgba(4,5,6,0.25)');
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(14);
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(18);
     expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageViewportHeight).toBe(560);
     expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(500);
     expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageShadowPreset).toBe('custom');
@@ -704,6 +708,8 @@ describe('SettingsPanel', () => {
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
       imageViewportHeight: 600,
       videoViewportHeight: 480,
       imageShadowPreset: 'custom',
@@ -733,6 +739,7 @@ describe('SettingsPanel', () => {
           image: {
             adapterId: 'classic',
             adapterSettings: {
+              imageBorderRadius: 14,
               imageViewportHeight: 600,
               imageShadowPreset: 'custom',
               imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
@@ -745,6 +752,7 @@ describe('SettingsPanel', () => {
           video: {
             adapterId: 'classic',
             adapterSettings: {
+              videoBorderRadius: 18,
               videoViewportHeight: 480,
               videoShadowPreset: 'strong',
               videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
@@ -763,6 +771,8 @@ describe('SettingsPanel', () => {
     });
 
     expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
       imageViewportHeight: 600,
       videoViewportHeight: 480,
       imageShadowPreset: 'custom',
@@ -778,6 +788,7 @@ describe('SettingsPanel', () => {
           desktop: expect.objectContaining({
             image: expect.objectContaining({
               adapterSettings: expect.objectContaining({
+                imageBorderRadius: 14,
                 carouselVisibleCards: 3,
                 imageShadowPreset: 'custom',
                 imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
@@ -788,6 +799,7 @@ describe('SettingsPanel', () => {
             }),
             video: expect.objectContaining({
               adapterSettings: expect.objectContaining({
+                videoBorderRadius: 18,
                 videoShadowPreset: 'strong',
                 videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
               }),

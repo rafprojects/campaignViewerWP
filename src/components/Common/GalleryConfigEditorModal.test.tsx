@@ -78,6 +78,8 @@ describe('GalleryConfigEditorModal', () => {
               unified: {
                 adapterId: 'classic',
                 adapterSettings: {
+                  imageBorderRadius: 14,
+                  videoBorderRadius: 18,
                   imageViewportHeight: 560,
                   videoViewportHeight: 500,
                   imageShadowPreset: 'custom',
@@ -106,6 +108,9 @@ describe('GalleryConfigEditorModal', () => {
     );
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByText('Media Frame')).toBeInTheDocument();
+    expect(screen.getByLabelText('Image Border Radius (px)')).toHaveValue('14');
+    expect(screen.getByLabelText('Video Border Radius (px)')).toHaveValue('18');
     expect(screen.getByLabelText('Image Viewport Height (px)')).toHaveValue('560');
     expect(screen.getByLabelText('Video Viewport Height (px)')).toHaveValue('500');
     expect(screen.getByLabelText('Image Shadow Preset', { selector: 'input' })).toHaveValue('Custom');

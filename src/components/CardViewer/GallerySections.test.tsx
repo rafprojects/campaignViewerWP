@@ -8,12 +8,14 @@ vi.mock('./GallerySectionWrapper', () => ({
     bgColor,
     bgGradient,
     bgImageUrl,
+    borderRadius,
     children,
   }: {
     bgType: string;
     bgColor: string;
     bgGradient: string;
     bgImageUrl: string;
+    borderRadius?: number;
     children: (dimensions: { width: number; height: number }) => React.ReactNode;
   }) => (
     <div
@@ -22,6 +24,7 @@ vi.mock('./GallerySectionWrapper', () => ({
       data-bg-color={bgColor}
       data-bg-gradient={bgGradient}
       data-bg-image-url={bgImageUrl}
+      data-border-radius={borderRadius}
     >
       {children({ width: 800, height: 600 })}
     </div>
@@ -197,6 +200,38 @@ describe('UnifiedGallerySection', () => {
 
     expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-bg-type', 'solid');
     expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-bg-color', '#112233');
+  });
+
+  it('uses the max unified media border radius on the wrapper props', () => {
+    const settings = makeSettings({
+      imageBorderRadius: 8,
+      videoBorderRadius: 8,
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: {
+            unified: {
+              adapterId: 'classic',
+              adapterSettings: {
+                imageBorderRadius: 14,
+                videoBorderRadius: 18,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    renderWithSuspense(
+      <UnifiedGallerySection
+        campaign={makeCampaign()}
+        settings={settings}
+        breakpoint="desktop"
+        isAdmin={false}
+      />,
+    );
+
+    expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-border-radius', '18');
   });
 });
 

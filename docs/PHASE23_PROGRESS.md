@@ -402,3 +402,59 @@ START HERE NEXT
 - Take border-radius ownership/parity as the next dedicated slice.
 - Avoid mixing it with thumbnail-gap or shape-tile appearance in the same change.
 ```
+
+## Entry - 2026-03-28 22:27:24 UTC
+
+### Snapshot
+
+- Border-radius parity is now implemented through a shared schema-driven adapter group rather than being left as a flat-only appearance control.
+- `imageBorderRadius` and `videoBorderRadius` now round-trip through nested `adapterSettings` for classic, compact-grid, justified, and masonry.
+- Mixed-media runtime parity is now explicit: non-classic rectangular adapters use the matching image/video radius per tile, and unified wrappers use the larger of the two resolved radii.
+
+### Work Done
+
+- Added a new shared `media-frame` adapter setting group to the registry and attached it to the classic, compact-grid, justified, and masonry adapters.
+- Exposed `imageBorderRadius` / `videoBorderRadius` through the shared gallery config editor under a dedicated `Media Frame` group instead of treating them as shared `common` settings.
+- Verified the existing legacy-to-nested compatibility builder and SettingsPanel save bridge already seed/project those values correctly once the schema group is registered.
+- Updated compact-grid, justified, and masonry runtime rendering so mixed-media galleries now apply `imageBorderRadius` to image tiles and `videoBorderRadius` to video tiles instead of always using the image radius.
+- Updated unified section wrapper resolution so nested unified configs use the larger resolved media radius for the outer wrapper instead of under-rounding mixed-media galleries.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - `src/components/CardViewer/GallerySections.test.tsx`
+  - `src/components/Galleries/Adapters/__tests__/adapters.test.tsx`
+  - result: 6 files passed, 147 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- Border radius now has an explicit ownership model: adapter-owned through a shared multi-adapter `media-frame` group, not promoted into nested `common` settings and not limited to classic-only behavior.
+- No backend changes were required for this slice because nested adapter-setting sanitization already recognized the border-radius fields.
+- The next clean parity gap is smaller and more local: `thumbnailGap` is still flat-only while justified and masonry continue to consume it directly at runtime.
+
+### Recommended Next Slice
+
+1. Resolve `thumbnailGap` ownership/parity for justified and masonry.
+   - Decide whether it belongs in a shared grid-spacing adapter group or another narrow adapter-owned schema surface.
+   - Validate shared-editor seeding/projection plus justified/masonry runtime consumption without pulling broader tile appearance into the same change.
+
+2. Keep tile border/glow and card-border styling separate.
+   - Those controls span different adapter families and non-gallery UI, so they remain a worse bundling target than the justified/masonry gap field.
+
+### Handoff
+
+```text
+STATUS
+- Border-radius parity is complete through the shared schema/editor path.
+- The branch is green on the focused frontend contract and build:wp.
+
+START HERE NEXT
+- Take thumbnail-gap ownership/parity as the next dedicated slice.
+- Keep tile border/glow and broader card styling out of that change.
+```

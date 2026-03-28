@@ -76,6 +76,11 @@ vi.mock('react-photo-album', () => {
                 'aria-label': p.alt ?? p.key,
                 onClick: handleClick,
                 children: defaultContent,
+              }, {
+                photo: p,
+                index: idx,
+                width: p.width ?? 800,
+                height: p.height ?? 600,
               })}
             </div>
           );
@@ -297,6 +302,20 @@ describe('JustifiedGallery — specific', () => {
     );
     expect(container.firstChild).not.toBeNull();
   });
+
+  it('uses media-type-specific border radii for mixed media tiles', () => {
+    const mixedRadiusSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
+    };
+    const { container } = render(
+      <JustifiedGallery media={MIXED_MEDIA} settings={mixedRadiusSettings} />,
+    );
+    const buttons = Array.from(container.querySelectorAll('button')).map((button) => (button as HTMLButtonElement).style.borderRadius);
+    expect(buttons).toContain('14px');
+    expect(buttons).toContain('18px');
+  });
 });
 
 describe('MasonryGallery — specific', () => {
@@ -315,6 +334,20 @@ describe('MasonryGallery — specific', () => {
     );
     expect(container.firstChild).not.toBeNull();
   });
+
+  it('uses media-type-specific border radii for mixed media tiles', () => {
+    const mixedRadiusSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
+    };
+    const { container } = render(
+      <MasonryGallery media={MIXED_MEDIA} settings={mixedRadiusSettings} />,
+    );
+    const buttons = Array.from(container.querySelectorAll('button')).map((button) => (button as HTMLButtonElement).style.borderRadius);
+    expect(buttons).toContain('14px');
+    expect(buttons).toContain('18px');
+  });
 });
 
 describe('CompactGridGallery — specific', () => {
@@ -328,5 +361,19 @@ describe('CompactGridGallery — specific', () => {
       <CompactGridGallery media={THREE_IMAGES} settings={customSettings} />,
     );
     expect(container.firstChild).not.toBeNull();
+  });
+
+  it('uses media-type-specific border radii for mixed media tiles', () => {
+    const mixedRadiusSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
+    };
+    const { container } = render(
+      <CompactGridGallery media={MIXED_MEDIA} settings={mixedRadiusSettings} />,
+    );
+    const buttons = Array.from(container.querySelectorAll('button')).map((button) => (button as HTMLButtonElement).style.borderRadius);
+    expect(buttons).toContain('14px');
+    expect(buttons).toContain('18px');
   });
 });

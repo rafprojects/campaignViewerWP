@@ -28,6 +28,8 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.mobile?.image?.adapterSettings?.imageViewportHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight);
     expect(config.breakpoints?.mobile?.image?.adapterSettings?.imageShadowPreset).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset);
     expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom);
+    expect(config.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius);
+    expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius);
   });
 
   it('seeds unified classic adapter settings with both viewport heights', () => {
@@ -37,6 +39,8 @@ describe('galleryConfig helpers', () => {
       unifiedGalleryAdapterId: 'classic',
       imageViewportHeight: 560,
       videoViewportHeight: 500,
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
       imageShadowPreset: 'custom',
       imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
       videoShadowPreset: 'strong',
@@ -46,6 +50,8 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.desktop?.unified?.adapterId).toBe('classic');
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageViewportHeight).toBe(560);
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoViewportHeight).toBe(500);
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageBorderRadius).toBe(14);
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoBorderRadius).toBe(18);
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageShadowPreset).toBe('custom');
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageShadowCustom).toBe('0 8px 24px rgba(0,0,0,0.35)');
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoShadowPreset).toBe('strong');

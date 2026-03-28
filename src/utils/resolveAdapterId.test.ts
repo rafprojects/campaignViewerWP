@@ -455,6 +455,8 @@ describe('resolveEffectiveGallerySettings', () => {
 
   it('projects unified classic runtime fields from nested adapter settings', () => {
     const s = makeSettings({
+      imageBorderRadius: 8,
+      videoBorderRadius: 8,
       imageViewportHeight: 420,
       videoViewportHeight: 420,
       imageShadowPreset: 'subtle',
@@ -470,6 +472,8 @@ describe('resolveEffectiveGallerySettings', () => {
             unified: {
               adapterId: 'classic',
               adapterSettings: {
+                imageBorderRadius: 14,
+                videoBorderRadius: 18,
                 imageViewportHeight: 560,
                 videoViewportHeight: 500,
                 imageShadowPreset: 'custom',
@@ -485,6 +489,8 @@ describe('resolveEffectiveGallerySettings', () => {
 
     const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'unified');
 
+    expect(resolved.imageBorderRadius).toBe(14);
+    expect(resolved.videoBorderRadius).toBe(18);
     expect(resolved.imageViewportHeight).toBe(560);
     expect(resolved.videoViewportHeight).toBe(500);
     expect(resolved.imageShadowPreset).toBe('custom');

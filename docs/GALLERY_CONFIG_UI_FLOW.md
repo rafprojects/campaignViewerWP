@@ -169,6 +169,8 @@ The adapter settings section should expose adapter-owned controls such as classi
 
 That same adapter settings area should now also expose classic image/video shadow depth controls, with custom shadow text inputs appearing only when the matching preset is switched to `custom`.
 
+That adapter settings area should also expose a shared `Media Frame` group for `imageBorderRadius` and `videoBorderRadius` on classic and the rectangular grid adapters, so mixed-media rounded-corner controls stay adapter-owned instead of expanding the common-settings surface.
+
 Optional:
 
 3. advanced summary or raw effective view if debugging visibility is useful

@@ -65,14 +65,14 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
       'campaign-override': 'Classic Carousel',
     },
     capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe'],
-    settingGroups: ['carousel'],
+    settingGroups: ['media-frame', 'carousel'],
     component: MediaCarouselAdapter,
   },
   {
     id: 'compact-grid',
     label: 'Compact Grid',
     capabilities: ['grid-layout', 'lightbox'],
-    settingGroups: ['compact-grid'],
+    settingGroups: ['media-frame', 'compact-grid'],
     component: CompactGridGallery as ComponentType<GalleryAdapterProps>,
   },
   {
@@ -85,14 +85,14 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
       'campaign-override': 'Justified',
     },
     capabilities: ['grid-layout', 'lightbox'],
-    settingGroups: ['justified'],
+    settingGroups: ['media-frame', 'justified'],
     component: JustifiedGallery as ComponentType<GalleryAdapterProps>,
   },
   {
     id: 'masonry',
     label: 'Masonry',
     capabilities: ['grid-layout', 'lightbox'],
-    settingGroups: ['masonry'],
+    settingGroups: ['media-frame', 'masonry'],
     component: MasonryGallery as ComponentType<GalleryAdapterProps>,
   },
   {
@@ -130,6 +130,34 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
 ];
 
 const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> = {
+  'media-frame': {
+    group: 'media-frame',
+    layout: 'stack',
+    fields: [
+      {
+        control: 'number',
+        key: 'imageBorderRadius',
+        label: 'Image Border Radius (px)',
+        description: 'Rounded-corner radius for image media surfaces in supported adapters.',
+        appliesTo: ['unified', 'image'],
+        min: 0,
+        max: 48,
+        step: 1,
+        fallback: 8,
+      },
+      {
+        control: 'number',
+        key: 'videoBorderRadius',
+        label: 'Video Border Radius (px)',
+        description: 'Rounded-corner radius for video media surfaces in supported adapters.',
+        appliesTo: ['unified', 'video'],
+        min: 0,
+        max: 48,
+        step: 1,
+        fallback: 8,
+      },
+    ],
+  },
   carousel: {
     group: 'carousel',
     layout: 'stack',

@@ -32,6 +32,7 @@ export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdm
       legacyOverrideId: campaign.imageAdapterId,
     }),
   );
+  const wrapperBorderRadius = Math.max(resolvedSettings.imageBorderRadius ?? 0, resolvedSettings.videoBorderRadius ?? 0);
 
   return (
     <GallerySectionWrapper
@@ -40,7 +41,7 @@ export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdm
       bgColor={resolvedSettings.unifiedBgColor}
       bgGradient={resolvedSettings.unifiedBgGradient}
       bgImageUrl={resolvedSettings.unifiedBgImageUrl}
-      borderRadius={resolvedSettings.imageBorderRadius}
+      borderRadius={wrapperBorderRadius}
     >
       {(containerDimensions: ContainerDimensions) => {
         if (effectiveId === 'layout-builder' && campaign.layoutTemplateId) {

@@ -372,6 +372,8 @@ function shouldRenderAdapterSettingField(
 
 function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['group']): string {
   switch (group) {
+    case 'media-frame':
+      return 'Media Frame';
     case 'compact-grid':
       return 'Compact Grid';
     case 'layout-builder':
