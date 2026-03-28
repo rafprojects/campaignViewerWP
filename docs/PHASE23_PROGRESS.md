@@ -284,3 +284,63 @@ START HERE NEXT
 - Take viewport height ownership/parity as the next implementation slice.
 - Avoid mixing it with tile/border/shadow semantics in the same change.
 ```
+
+## Entry - 2026-03-28 15:53:48 UTC
+
+### Snapshot
+
+- Viewport height ownership is now resolved: `imageViewportHeight` and `videoViewportHeight` remain classic adapter-owned settings, not nested common settings.
+- The shared editor now exposes those base heights through the schema-driven classic `carousel` adapter group, including unified classic galleries where both media-type heights still matter at runtime.
+- This closes the previously identified height parity gap without broadening the common-setting surface beyond `gallerySizingMode` and `galleryManualHeight`.
+
+### Work Done
+
+- Added scope-array applicability support to the adapter schema helpers so a single adapter field can apply to `image + unified` or `video + unified` contexts without showing in irrelevant scopes.
+- Extended the classic `carousel` adapter setting group to include:
+  - `imageViewportHeight`
+  - `videoViewportHeight`
+- Kept shared height behavior ownership unchanged:
+  - `gallerySizingMode`
+  - `galleryManualHeight`
+  remain nested common settings.
+- Verified the legacy-to-nested seed path now carries the classic viewport height fields into nested adapter settings for matching classic scopes, with unified classic config retaining both media-type base heights.
+- Verified the existing SettingsPanel adapter-setting collector continues projecting those nested adapter settings back into flat fields on save, so the compatibility bridge remains intact.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 4 files passed, 69 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- The viewport height parity gap is closed on the frontend path.
+- Ownership is now clearer and more defensible:
+  - shared/common settings own gallery-wide height mode/manual-height behavior
+  - classic adapter settings own per-media base viewport heights
+- This avoids turning an adapter-specific runtime detail into a misleading common setting.
+
+### Recommended Next Slice
+
+1. Take the next adapter-owned classic appearance slice.
+   - Best candidates: `imageBorderRadius`, `videoBorderRadius`, `imageShadowPreset`, `videoShadowPreset`, and related classic-only appearance controls still outside the shared editor schema surface.
+
+2. Keep tile/border/shadow work scoped carefully.
+   - Do not mix shape-adapter tile styling and classic-carousel viewport styling into one wide refactor.
+
+### Handoff
+
+```text
+STATUS
+- Viewport height ownership/parity is now implemented through classic adapter settings.
+- The shared editor no longer needs a common-setting expansion for this slice.
+
+START HERE NEXT
+- Extend the shared schema/editor surface for the next adapter-owned classic appearance controls.
+- Preserve the ownership split: common for shared gallery behavior, adapterSettings for classic-only runtime details.
+```

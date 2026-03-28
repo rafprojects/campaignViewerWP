@@ -41,7 +41,9 @@ export type AdapterSettingGroup =
   | 'shape'
   | 'layout-builder';
 
-export type AdapterSettingFieldAppliesTo = 'always' | 'unified' | 'image' | 'video';
+export type AdapterSettingFieldScope = 'unified' | 'image' | 'video';
+
+export type AdapterSettingFieldAppliesTo = 'always' | AdapterSettingFieldScope | readonly AdapterSettingFieldScope[];
 
 export type AdapterSettingGroupLayout = 'group' | 'stack';
 

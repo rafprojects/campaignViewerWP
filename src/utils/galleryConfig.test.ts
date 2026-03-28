@@ -24,6 +24,22 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.desktop?.image?.common?.viewportBgType).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType);
     expect(config.breakpoints?.desktop?.video?.common?.viewportBgColor).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor);
     expect(config.breakpoints?.desktop?.unified?.common?.viewportBgGradient).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient);
+    expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight);
+    expect(config.breakpoints?.mobile?.image?.adapterSettings?.imageViewportHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight);
+  });
+
+  it('seeds unified classic adapter settings with both viewport heights', () => {
+    const config = buildGalleryConfigFromLegacySettings({
+      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+      unifiedGalleryEnabled: true,
+      unifiedGalleryAdapterId: 'classic',
+      imageViewportHeight: 560,
+      videoViewportHeight: 500,
+    });
+
+    expect(config.breakpoints?.desktop?.unified?.adapterId).toBe('classic');
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageViewportHeight).toBe(560);
+    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoViewportHeight).toBe(500);
   });
 
   it('parses nested config from JSON and rejects invalid values', () => {

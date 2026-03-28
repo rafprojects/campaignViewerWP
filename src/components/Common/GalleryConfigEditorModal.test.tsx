@@ -72,12 +72,14 @@ describe('GalleryConfigEditorModal', () => {
         opened={true}
         title="Responsive Gallery Config"
         value={{
-          mode: 'per-type',
+          mode: 'unified',
           breakpoints: {
             desktop: {
-              image: {
+              unified: {
                 adapterId: 'classic',
                 adapterSettings: {
+                  imageViewportHeight: 560,
+                  videoViewportHeight: 500,
                   carouselVisibleCards: 3,
                   carouselLoop: false,
                   carouselAutoplayDirection: 'rtl',
@@ -100,6 +102,8 @@ describe('GalleryConfigEditorModal', () => {
     );
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByLabelText('Image Viewport Height (px)')).toHaveValue('560');
+    expect(screen.getByLabelText('Video Viewport Height (px)')).toHaveValue('500');
     expect(screen.getByLabelText('Visible Cards')).toHaveValue('3');
     expect(screen.getByLabelText('Loop', { selector: 'input' })).toHaveValue('Off');
     expect(screen.getByLabelText('Autoplay Direction', { selector: 'input' })).toHaveValue('Right to Left');

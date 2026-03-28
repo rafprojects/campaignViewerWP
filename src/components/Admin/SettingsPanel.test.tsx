@@ -650,6 +650,8 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
+          imageViewportHeight: 560,
+          videoViewportHeight: 500,
           carouselVisibleCards: 3,
           carouselLoop: false,
           carouselAutoplayDirection: 'rtl',
@@ -687,11 +689,15 @@ describe('SettingsPanel', () => {
     expect(adapterSettings?.dotNavPosition).toBe('overlay-top');
     expect(adapterSettings?.dotNavActiveColor).toBe('#00ffaa');
     expect(adapterSettings?.dotNavInactiveColor).toBe('rgba(4,5,6,0.25)');
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageViewportHeight).toBe(560);
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(500);
   });
 
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
+      imageViewportHeight: 600,
+      videoViewportHeight: 480,
       carouselVisibleCards: 3,
       navArrowPosition: 'bottom',
       navArrowColor: '#ff8800',
@@ -715,10 +721,17 @@ describe('SettingsPanel', () => {
           image: {
             adapterId: 'classic',
             adapterSettings: {
+              imageViewportHeight: 600,
               carouselVisibleCards: 3,
               navArrowPosition: 'bottom',
               navArrowColor: '#ff8800',
               dotNavEnabled: false,
+            },
+          },
+          video: {
+            adapterId: 'classic',
+            adapterSettings: {
+              videoViewportHeight: 480,
             },
           },
         },
@@ -734,6 +747,8 @@ describe('SettingsPanel', () => {
     });
 
     expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      imageViewportHeight: 600,
+      videoViewportHeight: 480,
       carouselVisibleCards: 3,
       navArrowPosition: 'bottom',
       navArrowColor: '#ff8800',

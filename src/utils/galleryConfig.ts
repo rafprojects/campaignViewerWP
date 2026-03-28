@@ -52,7 +52,15 @@ function isAdapterSettingFieldApplicableToScope(
   field: AdapterSettingFieldDefinition,
   scope: GalleryConfigScope,
 ): boolean {
-  return field.appliesTo === undefined || field.appliesTo === 'always' || field.appliesTo === scope;
+  if (field.appliesTo === undefined || field.appliesTo === 'always') {
+    return true;
+  }
+
+  if (Array.isArray(field.appliesTo)) {
+    return field.appliesTo.includes(scope);
+  }
+
+  return field.appliesTo === scope;
 }
 
 function buildLegacyAdapterSettingsForScope(

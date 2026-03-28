@@ -453,6 +453,34 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.gridCardWidth).toBe(220);
   });
 
+  it('projects unified classic viewport heights from nested adapter settings', () => {
+    const s = makeSettings({
+      imageViewportHeight: 420,
+      videoViewportHeight: 420,
+      unifiedGalleryEnabled: true,
+      unifiedGalleryAdapterId: 'classic',
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: {
+            unified: {
+              adapterId: 'classic',
+              adapterSettings: {
+                imageViewportHeight: 560,
+                videoViewportHeight: 500,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'unified');
+
+    expect(resolved.imageViewportHeight).toBe(560);
+    expect(resolved.videoViewportHeight).toBe(500);
+  });
+
   it('applies campaign nested adapter overrides over global adapter settings', () => {
     const s = makeSettings({
       gridCardWidth: 160,

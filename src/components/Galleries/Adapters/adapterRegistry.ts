@@ -136,6 +136,28 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
     fields: [
       {
         control: 'number',
+        key: 'imageViewportHeight',
+        label: 'Image Viewport Height (px)',
+        description: 'Base height used for image-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual.',
+        appliesTo: ['unified', 'image'],
+        min: 180,
+        max: 900,
+        step: 10,
+        fallback: 420,
+      },
+      {
+        control: 'number',
+        key: 'videoViewportHeight',
+        label: 'Video Viewport Height (px)',
+        description: 'Base height used for video-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual.',
+        appliesTo: ['unified', 'video'],
+        min: 180,
+        max: 900,
+        step: 10,
+        fallback: 420,
+      },
+      {
+        control: 'number',
         key: 'carouselVisibleCards',
         label: 'Visible Cards',
         description: 'Number of slides visible at once in the carousel.',

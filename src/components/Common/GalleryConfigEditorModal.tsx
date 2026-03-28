@@ -318,15 +318,17 @@ function getApplicableScopes(
   const editableScopes = getEditableScopes(mode);
   const appliesTo = field.appliesTo ?? 'always';
 
-  if (scopeMode === 'contextual' && appliesTo !== 'always') {
-    return editableScopes.filter((scope) => scope === appliesTo);
-  }
-
   if (appliesTo === 'always') {
     return editableScopes;
   }
 
-  return editableScopes.filter((scope) => scope === appliesTo);
+  const allowedScopes = Array.isArray(appliesTo) ? appliesTo : [appliesTo];
+
+  if (scopeMode === 'contextual') {
+    return editableScopes.filter((scope) => allowedScopes.includes(scope));
+  }
+
+  return editableScopes.filter((scope) => allowedScopes.includes(scope));
 }
 
 function hasVisibleAdapterSettingField(

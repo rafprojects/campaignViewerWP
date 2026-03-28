@@ -310,13 +310,17 @@ Examples of adapter-specific settings the new model should absorb:
 
 ### Carousel
 
-1. visible cards
-2. autoplay
-3. autoplay direction
-4. loop
-5. gap
-6. darken unfocused
-7. other carousel-only behavior
+1. image viewport height
+2. video viewport height
+3. visible cards
+4. autoplay
+5. autoplay direction
+6. loop
+7. gap
+8. darken unfocused
+9. other carousel-only behavior
+
+Shared height constraint mode (`gallerySizingMode`) and manual CSS height (`galleryManualHeight`) belong in `common`; the classic adapter's per-media base viewport heights remain adapter-specific because the runtime consumes them alongside the rest of the carousel behavior contract.
 
 ### Layout builder
 

@@ -165,6 +165,8 @@ The common settings section should cover the active shared gallery presentation 
 
 Common settings should be limited to the first-pass field list defined in the data model document. Additional common fields should only be added in later phases after schema review.
 
+The adapter settings section should expose adapter-owned controls such as classic carousel viewport heights under the relevant adapter group, rather than promoting those per-media base heights into shared common settings.
+
 Optional:
 
 3. advanced summary or raw effective view if debugging visibility is useful
