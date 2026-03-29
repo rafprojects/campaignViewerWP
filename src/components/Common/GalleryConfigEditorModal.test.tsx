@@ -160,7 +160,7 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Target Row Height (px)')).toHaveValue('240');
   });
 
-  it('renders shared tile-appearance fields for shape selections with conditional detail fields', async () => {
+  it('renders shape layout and shared tile-appearance fields for shape selections', async () => {
     render(
       <GalleryConfigEditorModal
         opened={true}
@@ -178,6 +178,8 @@ describe('GalleryConfigEditorModal', () => {
                   tileGlowEnabled: true,
                   tileGlowColor: '#00ffaa',
                   tileGlowSpread: 18,
+                  tileGapX: 12,
+                  tileGapY: 10,
                   imageTileSize: 180,
                 },
               },
@@ -190,6 +192,10 @@ describe('GalleryConfigEditorModal', () => {
     );
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+  expect(screen.getByText('Shape Layout')).toBeInTheDocument();
+  expect(screen.getByLabelText('Image Tile Size (px)')).toHaveValue('180');
+  expect(screen.getByLabelText('Gap X (px)')).toHaveValue('12');
+  expect(screen.getByLabelText('Gap Y (px)')).toHaveValue('10');
     expect(screen.getByText('Tile Appearance')).toBeInTheDocument();
     expect(screen.getByLabelText('Border Width (px)')).toHaveValue('2');
     expect(screen.getByLabelText('Border Color')).toHaveValue('#ff0000');

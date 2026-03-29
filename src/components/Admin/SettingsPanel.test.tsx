@@ -731,7 +731,7 @@ describe('SettingsPanel', () => {
     expect(desktopImage?.adapterSettings?.mosaicTargetRowHeight).toBe(240);
   });
 
-  it('seeds shared editor tile-appearance values from flat settings', async () => {
+  it('seeds shared editor shape-specific values from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -748,6 +748,8 @@ describe('SettingsPanel', () => {
           tileGlowEnabled: true,
           tileGlowColor: '#00ffaa',
           tileGlowSpread: 18,
+          tileGapX: 12,
+          tileGapY: 10,
         }}
       />,
     );
@@ -763,6 +765,8 @@ describe('SettingsPanel', () => {
     expect(desktopImage?.adapterSettings?.tileGlowEnabled).toBe(true);
     expect(desktopImage?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
     expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
+    expect(desktopImage?.adapterSettings?.tileGapX).toBe(12);
+    expect(desktopImage?.adapterSettings?.tileGapY).toBe(10);
   });
 
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
@@ -927,7 +931,7 @@ describe('SettingsPanel', () => {
     }));
   });
 
-  it('projects shared editor tile-appearance fields back into flat settings', async () => {
+  it('projects shared editor shape-specific fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       tileBorderWidth: 2,
@@ -936,6 +940,8 @@ describe('SettingsPanel', () => {
       tileGlowEnabled: true,
       tileGlowColor: '#00ffaa',
       tileGlowSpread: 18,
+      tileGapX: 12,
+      tileGapY: 10,
     });
 
     apiClient = createMockApiClient({ updateSettings });
@@ -960,6 +966,8 @@ describe('SettingsPanel', () => {
               tileGlowEnabled: true,
               tileGlowColor: '#00ffaa',
               tileGlowSpread: 18,
+              tileGapX: 12,
+              tileGapY: 10,
             },
           },
         },
@@ -981,6 +989,8 @@ describe('SettingsPanel', () => {
       tileGlowEnabled: true,
       tileGlowColor: '#00ffaa',
       tileGlowSpread: 18,
+      tileGapX: 12,
+      tileGapY: 10,
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -992,6 +1002,8 @@ describe('SettingsPanel', () => {
                 tileGlowEnabled: true,
                 tileGlowColor: '#00ffaa',
                 tileGlowSpread: 18,
+                tileGapX: 12,
+                tileGapY: 10,
               }),
             }),
           }),

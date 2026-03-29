@@ -566,3 +566,55 @@ START HERE NEXT
 - Take shape tile-gap parity as the next dedicated slice.
 - Keep layout-builder slot-effect defaults separate from that change.
 ```
+
+## Entry - 2026-03-29 01:33:15 UTC
+
+### Snapshot
+
+- Shape tile-gap parity is now implemented through the existing shared `shape` adapter group instead of remaining on the inline flat-only settings path.
+- `tileGapX` and `tileGapY` now round-trip through nested `adapterSettings` for the hexagonal, circular, and diamond adapters.
+- The shared editor now exposes those shape-only spacing controls under `Shape Layout`, keeping them aligned with the existing shape tile-size schema surface.
+
+### Work Done
+
+- Extended the shared `shape` adapter setting group to include `tileGapX` and `tileGapY` for the shape adapters.
+- Exposed those fields through the shared gallery config editor under `Shape Layout` instead of leaving them as inline flat-only controls.
+- Verified the existing legacy-to-nested compatibility builder now seeds shape tile-gap values into nested adapter settings automatically for shape selections.
+- Verified the existing SettingsPanel save bridge and shared resolver still project those nested shape settings back onto the legacy flat runtime contract consumed by the live adapters.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 4 files passed, 77 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- Shape-specific spacing now has explicit nested adapter ownership instead of remaining on the flat compatibility path.
+- No backend changes were required for this slice because nested adapter-setting sanitization already recognized `tileGapX` and `tileGapY`.
+- The remaining gallery-specific parity work is now narrower: layout-builder-specific appearance defaults still need their own ownership audit because they do not map cleanly onto the shared tile-appearance contract.
+
+### Recommended Next Slice
+
+1. Audit layout-builder-specific appearance defaults.
+   - Keep the change limited to slot-effect fallback settings that are genuinely layout-builder-owned.
+
+2. Keep broader non-gallery appearance work separate.
+   - Campaign card styling and other non-gallery appearance fields should not be bundled into the next adapter parity slice.
+
+### Handoff
+
+```text
+STATUS
+- Shape tile-gap parity is complete through the shared schema/editor path.
+- The branch is green on the focused frontend contract and build:wp.
+
+START HERE NEXT
+- Audit layout-builder-specific appearance defaults as the next dedicated slice.
+- Keep broader non-gallery appearance work out of that change.
+```

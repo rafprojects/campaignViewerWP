@@ -327,6 +327,8 @@ These tile-style fields stay adapter-owned because only the shape adapters plus 
 5. `tileGapY`
 6. related overlap or clip-path controls where appropriate
 
+`tileGapX` and `tileGapY` stay adapter-owned because only the shape adapters consume that spacing contract. They belong in the shared `shape` setting group rather than being merged into broader nested `common` spacing controls.
+
 ### Media frame
 
 1. image border radius

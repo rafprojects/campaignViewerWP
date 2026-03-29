@@ -175,6 +175,8 @@ That adapter settings area should also expose a shared `Photo Grid` group for `t
 
 That adapter settings area should also expose a shared `Tile Appearance` group for tile border, hover-bounce, and glow fields on the shape adapters plus justified and masonry, with border color and glow detail fields appearing only when their controlling border-width or glow toggle is active.
 
+That adapter settings area should also expose a shared `Shape Layout` group for `tileGapX` and `tileGapY` on the shape adapters, so shape-only spacing stays with the adapters that consume it instead of being folded into broader common spacing controls.
+
 Optional:
 
 3. advanced summary or raw effective view if debugging visibility is useful

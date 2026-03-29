@@ -2,7 +2,7 @@
 **Status:** In Progress 🚧
 **Version:** v0.22.0
 **Created:** March 25, 2026
-**Last updated:** March 28, 2026
+**Last updated:** March 29, 2026
 
 ### Tracks
 
@@ -350,8 +350,9 @@ Completed initial schema extraction:
 36. added a shared `media-frame` adapter group for `imageBorderRadius` and `videoBorderRadius`, attaching it to classic plus the rectangular grid adapters so mixed-media rounded-surface controls can live in nested adapter settings without pretending they are generic common settings
 37. added a shared `photo-grid` adapter group for `thumbnailGap`, attaching it to justified and masonry so the remaining photo-album spacing field can round-trip through nested adapter settings without collapsing into the broader `common.adapterItemGap` surface
 38. added a shared `tile-appearance` adapter group for tile border, hover-bounce, and glow fields, attaching it to the shape adapters plus justified and masonry so the shared tile-style contract can round-trip through nested adapter settings with the same conditional visibility rules as the legacy inline UI
+39. extended the shared `shape` adapter group to include `tileGapX` and `tileGapY`, so the remaining shape-only spacing fields can round-trip through nested adapter settings instead of staying stranded on the flat legacy path
 
-Remaining work in P23-C is now concentrated on the remaining shape-only spacing fields, layout-builder-specific appearance defaults that do not map cleanly onto the shared tile-style contract, and broader non-gallery appearance slices.
+Remaining work in P23-C is now concentrated on layout-builder-specific appearance defaults that do not map cleanly onto the shared tile-style contract and broader non-gallery appearance slices.
 
 ### Files to modify
 
@@ -494,6 +495,7 @@ Completed shared editor slices:
 11. expanded the shared editor again to expose a shared `Media Frame` adapter group for `imageBorderRadius` and `videoBorderRadius`, so classic and rectangular grid adapters can edit nested rounded-corner settings from the same responsive surface while mixed-media runtime consumers stay aligned
 12. expanded the shared editor again to expose a shared `Photo Grid` adapter group for `thumbnailGap`, so justified and masonry can edit their remaining dense-grid spacing field from the same responsive surface without pushing that legacy-specific value into shared common settings
 13. expanded the shared editor again to expose a shared `Tile Appearance` adapter group for tile border, hover-bounce, and glow fields, including conditional detail-field visibility for border color and glow settings so the nested editor preserves the same progressive disclosure as the inline legacy tile-appearance UI
+14. expanded the shared editor again to expose the remaining shape-only spacing controls under the shared `Shape Layout` group, so `tileGapX` and `tileGapY` now edit through the same responsive adapter-settings surface as the existing shape tile-size controls
 
 Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
 
@@ -671,6 +673,7 @@ Completed documentation/testing slices:
 18. focused frontend coverage now also validates shared `media-frame` border-radius settings, confirming schema-driven seeding, shared-editor rendering, flat save projection, unified wrapper resolution, and mixed-media tile runtime behavior stay aligned across classic, compact-grid, justified, and masonry
 19. focused frontend coverage now also validates shared `photo-grid` thumbnail-gap settings, confirming schema-driven seeding, shared-editor rendering, flat save projection, and resolver/runtime projection stay aligned for justified and masonry without rerouting the field through common spacing controls
 20. focused frontend coverage now also validates shared `tile-appearance` settings, confirming schema-driven seeding, conditional shared-editor rendering, flat save projection, and resolver projection stay aligned for the shape adapters plus justified and masonry
+21. focused frontend coverage now also validates shared shape-layout gap settings, confirming schema-driven seeding, shared-editor rendering, flat save projection, and resolver projection stay aligned for `tileGapX` and `tileGapY` on the shape adapters
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

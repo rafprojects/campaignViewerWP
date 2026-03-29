@@ -483,6 +483,8 @@ describe('resolveEffectiveGallerySettings', () => {
       tileGlowEnabled: false,
       tileGlowColor: '#7c9ef8',
       tileGlowSpread: 12,
+      tileGapX: 8,
+      tileGapY: 8,
       galleryConfig: {
         breakpoints: {
           desktop: {
@@ -495,6 +497,8 @@ describe('resolveEffectiveGallerySettings', () => {
                 tileGlowEnabled: true,
                 tileGlowColor: '#00ffaa',
                 tileGlowSpread: 18,
+                tileGapX: 12,
+                tileGapY: 10,
               },
             },
           },
@@ -510,6 +514,8 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.tileGlowEnabled).toBe(true);
     expect(resolved.tileGlowColor).toBe('#00ffaa');
     expect(resolved.tileGlowSpread).toBe(18);
+    expect(resolved.tileGapX).toBe(12);
+    expect(resolved.tileGapY).toBe(10);
   });
 
   it('projects unified classic runtime fields from nested adapter settings', () => {
