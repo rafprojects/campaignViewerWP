@@ -550,6 +550,7 @@ Completed parity slices:
 6. campaign override summaries now distinguish adapter-selection overrides from deeper responsive-setting customizations, so admin and editing surfaces no longer misreport non-adapter nested overrides as if they were only adapter-choice changes
 7. campaign save payloads now normalize the legacy flat `imageAdapterId` and `videoAdapterId` bridge fields from the active nested `galleryOverrides` state, so REST/meta compatibility no longer persists stale hidden adapter ids when unified or per-breakpoint nested overrides are authoritative
 8. campaign edit hydration and shared-editor apply now reuse that same legacy adapter normalization path, so the modal's inline quick selectors and the final save payload stay aligned instead of deriving bridge-field state through separate rules
+9. campaign duplicate and import flows in both REST and CLI now preserve nested `_wpsg_gallery_overrides` data instead of only copying the legacy flat adapter bridge fields, so campaign gallery parity survives non-edit lifecycle operations as well as direct modal saves
 
 Remaining P23-G work is now concentrated on any last scope-specific reset ergonomics and broader end-to-end verification, not on basic shared-editor capability, inherited-state visibility, or legacy save-payload compatibility.
 
@@ -637,6 +638,7 @@ Completed sanitization/REST slices:
 10. nested `adapterSettings` now also explicitly own the live classic carousel runtime fields that `MediaCarouselAdapter`, `OverlayArrows`, and `DotNavigator` consume, so nested payloads can reuse backend ranges and enums for viewport height, border radius, thumbnail gap, arrow controls, dot-nav controls, and shadow presets instead of rejecting them as misplaced flat settings
 11. nested `common` settings now also explicitly own the live gallery label and visibility controls used across adapter renderers, so nested payloads can sanitize and project label text, justification, icon visibility, and section-label visibility through the shared backend and resolver pipeline instead of treating them as stray top-level fields
 12. nested `common` settings now also explicitly own the scope-aware viewport background controls used by gallery section wrappers, so global settings and campaign override payloads can sanitize background type/color/gradient/image values through the same shared backend path
+13. campaign import flows now also route nested `galleryOverrides` through the shared gallery-override sanitizer before persistence, and duplicate flows preserve `_wpsg_gallery_overrides` directly, so non-editor lifecycle operations no longer punch a hole through the nested parity contract
 
 Remaining P23-I work is concentrated on the smaller set of legacy settings that are still outside the shared editor's current schema surface, so the remaining compatibility-preserved unknown keys can either move into explicit validation maps or be intentionally rejected once their intended ownership is settled.
 
@@ -701,6 +703,7 @@ Completed documentation/testing slices:
 27. focused frontend coverage now also validates the shared campaign render-plan helpers plus the inline campaign override summary/reset UX, keeping campaign parity messaging and viewer section planning green through the latest P23-G/P23-H consolidation slice
 28. focused frontend coverage now also validates legacy campaign adapter-id normalization from nested overrides plus the shared viewer-shell layout helper, keeping campaign save compatibility and outer gallery spacing behavior aligned through the latest combined P23-G/P23-H cleanup slice
 29. focused campaign modal and hook coverage now also validates that unified nested overrides normalize the legacy adapter bridge fields consistently during edit hydration and shared-editor apply flows, so form-state parity stays aligned with the final save path
+30. focused `wp-env` backend coverage now also validates that REST and CLI duplicate/import flows preserve nested campaign gallery overrides, so campaign parity no longer depends on only the direct create/update editor path staying correct
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

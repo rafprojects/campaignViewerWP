@@ -1026,3 +1026,50 @@ START HERE NEXT
 - Probe broader campaign/admin flows for any remaining parity or reset UX mismatches.
 - Prefer bug-sized fixes over more structural churn unless verification exposes a real split.
 ```
+
+## Entry - 2026-03-29 11:46:13 UTC
+
+### Snapshot
+
+- Campaign duplicate/import parity had one remaining backend hole: the lifecycle paths outside direct edit/save still copied legacy adapter meta but dropped nested `_wpsg_gallery_overrides`.
+- REST and CLI duplicate/import now preserve nested campaign gallery overrides, and import routes them through the shared override sanitizer before persistence.
+- The focused `wp-env` PHPUnit slice for REST and CLI passed after the change.
+
+### Work Done
+
+- Added `_wpsg_gallery_overrides` to the campaign meta copied by REST and CLI duplicate handlers.
+- Updated REST and CLI import handlers to persist `campaign.galleryOverrides` through `WPSG_Settings_Sanitizer::sanitize_gallery_overrides(...)` instead of silently dropping nested override data.
+- Extended `WPSG_REST_Extended_Test` and `WPSG_CLI_Test` to assert duplicate/import round-trips keep the nested campaign override payload.
+
+### Validation Run
+
+- Focused `wp-env` PHPUnit suite passed:
+  - `tests/WPSG_REST_Extended_Test.php`
+  - `tests/WPSG_CLI_Test.php`
+  - result: 57 tests passed, 117 assertions
+
+### Assessment
+
+- P23-G parity now survives duplicate/import flows instead of being limited to the direct editor save path.
+- P23-I no longer has a duplicate/import escape hatch that bypasses nested campaign override persistence and sanitization.
+- The remaining Phase 23 endgame is getting narrower: broader verification and any final lifecycle-edge cleanup, not another large architecture slice.
+
+### Recommended Next Slice
+
+1. Audit the remaining non-edit campaign lifecycle paths.
+  - Duplicate/import was the most obvious hole; the next likely issues, if any remain, are in adjacent admin workflows rather than the core editor/runtime path.
+
+2. Push the branch once this backend slice is committed if remote parity matters for review.
+  - The branch is now three commits ahead of origin with the latest campaign parity fixes only local.
+
+### Handoff
+
+```text
+STATUS
+- REST and CLI duplicate/import now preserve nested campaign gallery overrides.
+- Focused wp-env backend coverage is green for the affected lifecycle paths.
+
+START HERE NEXT
+- Look for any remaining lifecycle operations that still treat campaign gallery parity as editor-only.
+- Prefer bounded lifecycle bug fixes and verification over new structural refactors.
+```

@@ -196,6 +196,16 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
     public function test_campaign_duplicate_creates_new_post(): void {
         $id = $this->create_campaign( 'Original' );
         update_post_meta( $id, 'visibility', 'private' );
+        update_post_meta( $id, '_wpsg_gallery_overrides', wp_json_encode( [
+            'mode'        => 'unified',
+            'breakpoints' => [
+                'desktop' => [
+                    'unified' => [
+                        'adapterId' => 'classic',
+                    ],
+                ],
+            ],
+        ] ) );
 
         $this->cli->campaign_duplicate( [ (string) $id ], [] );
         $success = $this->last_success();
@@ -207,6 +217,10 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $this->assertGreaterThan( 0, $new_id );
         $this->assertEquals( 'draft', get_post_meta( $new_id, 'status', true ) );
         $this->assertEquals( 'private', get_post_meta( $new_id, 'visibility', true ) );
+        $this->assertEquals(
+            'classic',
+            json_decode( get_post_meta( $new_id, '_wpsg_gallery_overrides', true ), true )['breakpoints']['desktop']['unified']['adapterId'] ?? null
+        );
     }
 
     public function test_campaign_duplicate_respects_custom_name(): void {
@@ -290,6 +304,15 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
                 'description' => 'Hello',
                 'visibility'  => 'public',
                 'tags'        => [ 'tagA', 'tagB' ],
+                'galleryOverrides' => [
+                    'mode'        => 'per-type',
+                    'breakpoints' => [
+                        'desktop' => [
+                            'image' => [ 'adapterId' => 'masonry' ],
+                            'video' => [ 'adapterId' => 'diamond' ],
+                        ],
+                    ],
+                ],
             ],
             'layout_template'  => null,
             'media_references' => [],
@@ -311,6 +334,10 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $post = get_post( $new_id );
         $this->assertEquals( 'Imported From CLI', $post->post_title );
         $this->assertEquals( 'draft', get_post_meta( $new_id, 'status', true ) );
+        $stored_overrides = json_decode( get_post_meta( $new_id, '_wpsg_gallery_overrides', true ), true );
+        $this->assertEquals( 'per-type', $stored_overrides['mode'] ?? null );
+        $this->assertEquals( 'masonry', $stored_overrides['breakpoints']['desktop']['image']['adapterId'] ?? null );
+        $this->assertEquals( 'diamond', $stored_overrides['breakpoints']['desktop']['video']['adapterId'] ?? null );
     }
 
     public function test_campaign_import_missing_file_throws(): void {

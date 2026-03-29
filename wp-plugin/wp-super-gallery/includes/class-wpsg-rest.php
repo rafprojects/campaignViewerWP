@@ -1059,6 +1059,7 @@ class WPSG_REST {
             'cover_image',
             '_wpsg_image_adapter_id',
             '_wpsg_video_adapter_id',
+            '_wpsg_gallery_overrides',
             '_wpsg_layout_binding_template_id',
             '_wpsg_layout_binding',
         ];
@@ -1213,6 +1214,13 @@ class WPSG_REST {
                 } else {
                     update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
                 }
+            }
+        }
+
+        if (array_key_exists('galleryOverrides', $src)) {
+            $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($src['galleryOverrides']);
+            if (!empty($gallery_overrides)) {
+                update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
             }
         }
 
