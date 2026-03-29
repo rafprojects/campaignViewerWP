@@ -672,3 +672,52 @@ START HERE NEXT
 - Move to the remaining non-gallery appearance ownership audit.
 - Keep future adapter control-type additions synchronized across both schema-driven renderers.
 ```
+
+## Entry - 2026-03-29 02:49:41 UTC
+
+### Snapshot
+
+- The next non-gallery slice is now underway as a frontend decomposition task rather than a forced `galleryConfig` expansion.
+- The entire Campaign Cards tab has been extracted out of `SettingsPanel` into a dedicated `CampaignCardSettingsSection` module.
+- Card appearance, card grid, and card pagination controls still behave the same, but the settings shell now delegates another large non-gallery settings domain.
+
+### Work Done
+
+- Added a dedicated `CampaignCardSettingsSection` component under `src/components/Settings/`.
+- Moved the inline card appearance controls into that module, including border mode/color, shadow preset, thumbnail sizing, and card element visibility toggles.
+- Moved the inline card grid and pagination controls into the same module, including responsive column selection, gap/max-width controls, aspect ratio/min-height, and paginated card navigation settings.
+- Replaced the inline Campaign Cards tab body in `SettingsPanel` with the extracted section component so the panel continues trending toward orchestration rather than owning each settings subtree directly.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 2 suites passed, 33 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- This keeps the non-gallery appearance work separate from the adapter schema and nested gallery-config ownership path, which matches the earlier audit conclusion.
+- `SettingsPanel` is now thinner on another large tab without changing runtime ownership or introducing a new settings model for campaign-card behavior.
+- The most obvious remaining inline surface is now the General tab, especially the viewer background, auth bar, security, and developer groups that still sit directly inside `SettingsPanel`.
+
+### Recommended Next Slice
+
+1. Extract the remaining General tab body into a dedicated settings module.
+   - Keep viewer background, auth bar, security, and developer controls out of `galleryConfig` and treat them as separate panel domains.
+
+2. Continue the non-gallery ownership audit only where a clearer shared model actually exists.
+   - Avoid forcing campaign-card or viewer-wrapper settings into the gallery adapter contract just because they are appearance-related.
+
+### Handoff
+
+```text
+STATUS
+- Campaign Cards settings now live in a dedicated section component.
+- The branch is green on the focused SettingsPanel suite and build:wp.
+
+START HERE NEXT
+- Extract the remaining General tab body into its own settings module.
+- Keep non-gallery appearance work separate from galleryConfig ownership.
+```

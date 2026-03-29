@@ -275,6 +275,8 @@ Completed first extraction slice:
 12. revalidated the advanced-tab extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite
 13. extracted the typography tab into a dedicated `TypographySettingsSection` module so `SettingsPanel` now delegates more of its self-contained tab bodies and further narrows its responsibility toward state orchestration, save/reset handling, and shared update helpers
 14. revalidated the typography extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite after normalizing uploaded-font entries to the existing typography editor font shape
+15. extracted the entire campaign-cards tab into a dedicated `CampaignCardSettingsSection` module so `SettingsPanel` now delegates card appearance, grid, and pagination controls instead of holding that non-gallery settings tree inline
+16. revalidated the campaign-cards extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite
 
 ### Files to modify
 
@@ -677,6 +679,7 @@ Completed documentation/testing slices:
 20. focused frontend coverage now also validates shared `tile-appearance` settings, confirming schema-driven seeding, conditional shared-editor rendering, flat save projection, and resolver projection stay aligned for the shape adapters plus justified and masonry
 21. focused frontend coverage now also validates shared shape-layout gap settings, confirming schema-driven seeding, shared-editor rendering, flat save projection, and resolver projection stay aligned for `tileGapX` and `tileGapY` on the shape adapters
 22. focused frontend coverage now also validates layout-builder default glow settings, confirming registry-defined layout-builder fields, shared-editor rendering, flat save projection, and resolver projection stay aligned for `tileGlowColor` and `tileGlowSpread` without reusing the full tile-appearance ownership model
+23. focused frontend coverage remains green after extracting the inline campaign-cards tab into `CampaignCardSettingsSection`, preserving the existing card-tab interaction coverage while reducing the remaining `SettingsPanel` monolith surface
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 
