@@ -819,3 +819,52 @@ START HERE NEXT
 - Decide whether to do one final low-yield SettingsPanel shell extraction or shift back to the remaining Phase 23 parity/consolidation tracks.
 - Keep extracted section prop types aligned with the panel updater contract.
 ```
+
+## Entry - 2026-03-29 10:09:21 UTC
+
+### Snapshot
+
+- The remaining Gallery Layout tab shell has now been extracted out of `SettingsPanel` into a dedicated `GalleryLayoutSettingsSection` module.
+- `SettingsPanel` now owns shell/orchestration concerns, the lazy shared-editor bridge, save/reset footer actions, and the legacy compatibility projection path rather than another inline tab subtree.
+- The build surfaced the only follow-up issue: stale imports left behind after the extraction.
+
+### Work Done
+
+- Added a dedicated `GalleryLayoutSettingsSection` component under `src/components/Settings/`.
+- Moved the inline Gallery Adapters wrapper, the shared responsive-editor entry button, and delegation to `GalleryPresentationSections` plus `GalleryLayoutDetailSections` into that new module.
+- Replaced the inline layout-tab body in `SettingsPanel` with the extracted section component while preserving the existing callback that opens the lazy shared editor.
+- Removed the stale `Text` and `GalleryAdapterSettingsSection` imports from `SettingsPanel` after the production build surfaced them as dead code.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 2 suites passed, 33 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- P23-B frontend settings decomposition is now complete.
+- `SettingsPanel` has reached the intended end state for this phase: a shell/coordinator with shared update helpers, modal/editor wiring, save/reset handling, and compatibility-bridge projection rather than a monolithic collection of inline tab trees.
+- Further decomposition inside `SettingsPanel` would now be churn, not leverage; the higher-yield work has shifted back to the remaining Phase 23 parity and consolidation tracks.
+
+### Recommended Next Slice
+
+1. Shift back to the remaining non-decomposition Phase 23 tracks.
+   - Campaign parity, render-path cleanup, and the remaining shared sanitization/ownership slices are higher-yield than more shell extraction.
+
+2. Keep build validation on every shell or extraction change.
+   - The build is still catching stale imports and updater-contract drift that focused tests do not necessarily surface.
+
+### Handoff
+
+```text
+STATUS
+- Frontend decomposition is wrapped: the last layout-tab shell now lives in a dedicated section component.
+- The branch is green on the focused SettingsPanel suite and build:wp.
+
+START HERE NEXT
+- Move back to the remaining Phase 23 parity/consolidation tracks.
+- Treat further SettingsPanel decomposition as out-of-scope unless a genuinely new inline subtree appears.
+```

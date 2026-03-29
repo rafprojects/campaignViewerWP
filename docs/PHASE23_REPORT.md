@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P23-A | Backend settings decomposition | In Progress 🚧 | Medium-Large (1-2 days) |
-| P23-B | Frontend settings decomposition | In Progress 🚧 | Medium-Large (1-2 days) |
+| P23-B | Frontend settings decomposition | Completed ✅ | Medium-Large (1-2 days) |
 | P23-C | Authoritative adapter schema | In Progress 🚧 | Medium (1 day) |
 | P23-D | Nested responsive gallery config model | In Progress 🚧 | Large (1-2 days) |
 | P23-E | Shared resolver and inheritance layer | In Progress 🚧 | Medium-Large (1 day) |
@@ -259,7 +259,7 @@ Split the settings panel into:
 
 ### Progress so far
 
-Completed first extraction slice:
+Completed decomposition slices:
 
 1. moved the gallery adapter selection block into a dedicated `GalleryAdapterSettingsSection` module
 2. introduced a narrower gallery-focused update callback so gallery settings logic no longer depends directly on the full `SettingsPanel` implementation details
@@ -281,6 +281,10 @@ Completed first extraction slice:
 18. revalidated the general-tab extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite after fixing the resulting stale import and prop-type mismatch surfaced by the build
 19. extracted the entire media-display tab body into a dedicated `MediaDisplaySettingsSection` module so `SettingsPanel` now delegates the remaining legacy gallery viewport, tile, thumbnail-strip, transition, and navigation controls instead of holding that large accordion inline
 20. revalidated the media-display extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite after fixing the matching updater-prop type mismatch surfaced by the build
+21. extracted the remaining gallery-layout tab shell into a dedicated `GalleryLayoutSettingsSection` module so `SettingsPanel` now delegates the last inline layout-tab composition instead of holding the adapter/editor entry wiring directly
+22. revalidated the layout-shell extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite after removing the stale imports surfaced by the build
+
+P23-B is now complete: `SettingsPanel` has been reduced to shell/orchestration responsibilities, the gallery-layout composition lives in dedicated section modules, and the shared responsive gallery editor remains reusable outside the main settings panel.
 
 ### Files to modify
 
@@ -686,6 +690,7 @@ Completed documentation/testing slices:
 23. focused frontend coverage remains green after extracting the inline campaign-cards tab into `CampaignCardSettingsSection`, preserving the existing card-tab interaction coverage while reducing the remaining `SettingsPanel` monolith surface
 24. focused frontend coverage remains green after extracting the inline general tab into `GeneralSettingsSection`, preserving the existing general-tab interaction and theme-selector coverage while reducing the remaining `SettingsPanel` monolith surface again
 25. focused frontend coverage remains green after extracting the inline media-display tab into `MediaDisplaySettingsSection`, preserving the existing gallery-tab interaction coverage while removing the last large legacy accordion body from `SettingsPanel`
+26. focused frontend coverage remains green after extracting the remaining gallery-layout tab shell into `GalleryLayoutSettingsSection`, preserving the shared responsive-editor entry-point coverage while leaving `SettingsPanel` as a shell/coordinator
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

@@ -12,7 +12,6 @@ import {
   Modal,
   NativeScrollArea,
   Tabs,
-  Text,
 } from '@mantine/core';
 import {
   IconSettings,
@@ -32,11 +31,10 @@ import {
 } from '@/types';
 import { SettingTooltip } from './SettingTooltip';
 import type { CustomFontEntry } from '../Common/TypographyEditor';
-import { GalleryAdapterSettingsSection, type UpdateGallerySetting } from '../Settings/GalleryAdapterSettingsSection';
+import type { UpdateGallerySetting } from '../Settings/GalleryAdapterSettingsSection';
 import { GeneralSettingsSection } from '../Settings/GeneralSettingsSection';
 import { MediaDisplaySettingsSection } from '../Settings/MediaDisplaySettingsSection';
-import { GalleryLayoutDetailSections } from '../Settings/GalleryLayoutDetailSections';
-import { GalleryPresentationSections } from '../Settings/GalleryPresentationSections';
+import { GalleryLayoutSettingsSection } from '../Settings/GalleryLayoutSettingsSection';
 import { CampaignViewerSettingsSection } from '../Settings/CampaignViewerSettingsSection';
 import { CampaignCardSettingsSection } from '../Settings/CampaignCardSettingsSection';
 import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
@@ -443,36 +441,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
             {/* ── Gallery Layout Tab ────────────────────────── */}
             <Tabs.Panel value="layout" pt="md">
-              {activeTab === 'layout' && <Accordion variant="separated" defaultValue="adapters">
-                {/* ── Gallery Adapters ── */}
-                <Accordion.Item value="adapters">
-                  <Accordion.Control>Gallery Adapters</Accordion.Control>
-                  <Accordion.Panel>
-                    <Group justify="space-between" align="flex-start" mb="md">
-                      <Text size="sm" c="dimmed" maw={560}>
-                        Quick selectors stay inline here. Use the responsive editor when you need breakpoint-aware nested gallery selection without flattening the layout tab again.
-                      </Text>
-                      <Button variant="light" onClick={() => setGalleryConfigEditorOpen(true)}>
-                        Edit Responsive Config
-                      </Button>
-                    </Group>
-                    <GalleryAdapterSettingsSection
-                      settings={settings}
-                      updateSetting={updateGallerySetting}
-                    />
-                  </Accordion.Panel>
-                </Accordion.Item>
-
-                <GalleryPresentationSections
+              {activeTab === 'layout' && (
+                <GalleryLayoutSettingsSection
                   settings={settings}
                   updateSetting={updateGallerySetting}
+                  onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
                 />
-
-                <GalleryLayoutDetailSections
-                  settings={settings}
-                  updateSetting={updateGallerySetting}
-                />
-              </Accordion>}
+              )}
             </Tabs.Panel>
 
             {/* ── Campaign Viewer Tab ──────────────────────────── */}
