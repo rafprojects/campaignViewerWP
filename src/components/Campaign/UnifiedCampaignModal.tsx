@@ -15,6 +15,7 @@ import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal
 import {
   buildCampaignGalleryOverrideEditorValue,
   clearCampaignGalleryOverrides,
+  describeCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
   hasCampaignGalleryOverrides,
   syncCampaignGalleryOverrideMode,
@@ -86,6 +87,8 @@ export function UnifiedCampaignModal({
   const isExtraSmall = useMediaQuery('(max-width: 575px)');
   const isEdit = mode === 'edit';
   const campaignGalleryOverrideMode = getCampaignGalleryOverrideMode(formState.galleryOverrides);
+  const hasCustomGalleryOverrides = hasCampaignGalleryOverrides(formState);
+  const galleryOverrideSummary = describeCampaignGalleryOverrides(formState);
 
   return (
     <>
@@ -355,6 +358,36 @@ export function UnifiedCampaignModal({
                       Edit Responsive Config
                     </Button>
                   </Group>
+                  <Stack gap={6}>
+                    <Group gap="xs" wrap="wrap">
+                      <Badge color={hasCustomGalleryOverrides ? 'grape' : 'gray'} variant={hasCustomGalleryOverrides ? 'light' : 'outline'}>
+                        {hasCustomGalleryOverrides ? 'Custom gallery overrides' : 'Inheriting global gallery settings'}
+                      </Badge>
+                      {galleryOverrideSummary.map((summary) => (
+                        <Badge key={summary} color="violet" variant="light">
+                          {summary}
+                        </Badge>
+                      ))}
+                    </Group>
+                    {hasCustomGalleryOverrides && (
+                      <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+                        <Text size="xs" c="dimmed">
+                          Clear the campaign-specific gallery override state here to fall back to the global gallery configuration.
+                        </Text>
+                        <Button
+                          variant="subtle"
+                          color="gray"
+                          size="xs"
+                          onClick={() => updateForm({
+                            ...formState,
+                            ...clearCampaignGalleryOverrides(),
+                          })}
+                        >
+                          Use Inherited Gallery Settings
+                        </Button>
+                      </Group>
+                    )}
+                  </Stack>
                 </>
               )}
               {layoutTemplates.length > 0 && (

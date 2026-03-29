@@ -5,39 +5,16 @@
  * its own GallerySectionWrapper. Supports optional equal-height
  * side-by-side layout via SimpleGrid at tablet+.
  */
-import { lazy } from 'react';
 import { SimpleGrid, Stack } from '@mantine/core';
-import type { Campaign, GalleryBehaviorSettings, ContainerDimensions, MediaItem } from '@/types';
+import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
-import { normalizeAdapterId, resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
-import { resolveAdapterId, resolveEffectiveGallerySettings } from '@/utils/resolveAdapterId';
-import { GallerySectionWrapper } from './GallerySectionWrapper';
-const LayoutBuilderGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
-);
+import {
+  resolvePerTypeCampaignGalleryRenderPlan,
+  shouldUseEqualHeightPerTypeLayout,
+} from '@/utils/campaignGalleryRenderPlan';
 
-function renderAdapterForSection(
-  id: string,
-  media: MediaItem[],
-  settings: GalleryBehaviorSettings,
-  containerDimensions: ContainerDimensions,
-  campaign: Campaign,
-  isAdmin: boolean,
-) {
-  if (id === 'layout-builder' && campaign.layoutTemplateId) {
-    return (
-      <LayoutBuilderGallery
-        media={media}
-        settings={settings}
-        templateId={campaign.layoutTemplateId}
-        isAdmin={isAdmin}
-        containerDimensions={containerDimensions}
-      />
-    );
-  }
-  const Adapter = resolveAdapter(id);
-  return <Adapter media={media} settings={settings} containerDimensions={containerDimensions} />;
-}
+import { CampaignGalleryAdapterRenderer } from './CampaignGalleryAdapterRenderer';
+import { GallerySectionWrapper } from './GallerySectionWrapper';
 
 interface PerTypeGallerySectionProps {
   campaign: Campaign;
@@ -47,62 +24,57 @@ interface PerTypeGallerySectionProps {
 }
 
 export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdmin }: PerTypeGallerySectionProps) {
-  const hasVideos = campaign.videos.length > 0;
-  const hasImages = campaign.images.length > 0;
+  const videoPlan = resolvePerTypeCampaignGalleryRenderPlan(campaign, s, breakpoint, 'video');
+  const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(campaign, s, breakpoint, 'image');
+  const useEqualHeight = shouldUseEqualHeightPerTypeLayout(videoPlan, imagePlan);
 
-  const resolvedVideoSettings = resolveEffectiveGallerySettings(s, breakpoint, 'video', campaign.galleryOverrides);
-  const resolvedImageSettings = resolveEffectiveGallerySettings(s, breakpoint, 'image', campaign.galleryOverrides);
-  const videoId = normalizeAdapterId(resolveAdapterId(s, 'video', breakpoint, {
-    galleryOverrides: campaign.galleryOverrides,
-    legacyOverrideId: campaign.videoAdapterId,
-  }));
-  const imageId = normalizeAdapterId(resolveAdapterId(s, 'image', breakpoint, {
-    galleryOverrides: campaign.galleryOverrides,
-    legacyOverrideId: campaign.imageAdapterId,
-  }));
-  const videoSettings = {
-    ...resolvedVideoSettings,
-    tileSize: resolvedVideoSettings.videoTileSize ?? resolvedVideoSettings.tileSize,
-  };
-  const imageSettings = {
-    ...resolvedImageSettings,
-    tileSize: resolvedImageSettings.imageTileSize ?? resolvedImageSettings.tileSize,
-  };
-  const useEqualHeight = Boolean(videoSettings.perTypeSectionEqualHeight || imageSettings.perTypeSectionEqualHeight);
-
-  const videoSection = hasVideos && (
+  const videoSection = videoPlan && (
     <GallerySectionWrapper
-      settings={videoSettings}
-      bgType={videoSettings.videoBgType}
-      bgColor={videoSettings.videoBgColor}
-      bgGradient={videoSettings.videoBgGradient}
-      bgImageUrl={videoSettings.videoBgImageUrl}
-      borderRadius={videoSettings.videoBorderRadius}
+      settings={videoPlan.settings}
+      bgType={videoPlan.wrapper.bgType}
+      bgColor={videoPlan.wrapper.bgColor}
+      bgGradient={videoPlan.wrapper.bgGradient}
+      bgImageUrl={videoPlan.wrapper.bgImageUrl}
+      borderRadius={videoPlan.wrapper.borderRadius}
       style={useEqualHeight ? { minHeight: '100%' } : undefined}
     >
-      {(dims: ContainerDimensions) =>
-        renderAdapterForSection(videoId, campaign.videos, videoSettings, dims, campaign, isAdmin)
-      }
+      {(dims) => (
+        <CampaignGalleryAdapterRenderer
+          adapterId={videoPlan.adapterId}
+          media={videoPlan.media}
+          settings={videoPlan.settings}
+          campaign={campaign}
+          isAdmin={isAdmin}
+          containerDimensions={dims}
+        />
+      )}
     </GallerySectionWrapper>
   );
 
-  const imageSection = hasImages && (
+  const imageSection = imagePlan && (
     <GallerySectionWrapper
-      settings={imageSettings}
-      bgType={imageSettings.imageBgType}
-      bgColor={imageSettings.imageBgColor}
-      bgGradient={imageSettings.imageBgGradient}
-      bgImageUrl={imageSettings.imageBgImageUrl}
-      borderRadius={imageSettings.imageBorderRadius}
+      settings={imagePlan.settings}
+      bgType={imagePlan.wrapper.bgType}
+      bgColor={imagePlan.wrapper.bgColor}
+      bgGradient={imagePlan.wrapper.bgGradient}
+      bgImageUrl={imagePlan.wrapper.bgImageUrl}
+      borderRadius={imagePlan.wrapper.borderRadius}
       style={useEqualHeight ? { minHeight: '100%' } : undefined}
     >
-      {(dims: ContainerDimensions) =>
-        renderAdapterForSection(imageId, campaign.images, imageSettings, dims, campaign, isAdmin)
-      }
+      {(dims) => (
+        <CampaignGalleryAdapterRenderer
+          adapterId={imagePlan.adapterId}
+          media={imagePlan.media}
+          settings={imagePlan.settings}
+          campaign={campaign}
+          isAdmin={isAdmin}
+          containerDimensions={dims}
+        />
+      )}
     </GallerySectionWrapper>
   );
 
-  if (useEqualHeight && hasVideos && hasImages) {
+  if (useEqualHeight && videoPlan && imagePlan) {
     return (
       <SimpleGrid
         cols={{ base: 1, md: 2 }}

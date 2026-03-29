@@ -868,3 +868,58 @@ START HERE NEXT
 - Move back to the remaining Phase 23 parity/consolidation tracks.
 - Treat further SettingsPanel decomposition as out-of-scope unless a genuinely new inline subtree appears.
 ```
+
+## Entry - 2026-03-29 11:07:01 UTC
+
+### Snapshot
+
+- The campaign settings tab now exposes live gallery override summaries plus an inline inherited-reset path instead of hiding that state entirely behind the shared responsive editor.
+- Unified and per-type viewer sections now consume a shared campaign gallery render-plan path, so adapter resolution, wrapper props, tile-size projection, and layout-builder branching no longer diverge across two separate section implementations.
+- The first focused run caught a summary-label regression for non-adapter scope customizations; the helper was tightened so the summaries describe actual adapter overrides versus deeper responsive-setting customizations correctly.
+
+### Work Done
+
+- Added inline campaign gallery override summary badges to `UnifiedCampaignModal`, including inherited-versus-custom state and a top-level `Use Inherited Gallery Settings` action for fast reset without reopening the shared editor.
+- Expanded the campaign override summary helper so non-adapter nested overrides surface as responsive-setting customizations rather than being misreported as adapter-choice changes.
+- Added shared `campaignGalleryRenderPlan` utilities that resolve section media, effective settings, wrapper backgrounds, border radii, tile-size projection, and per-type equal-height state for campaign viewer sections.
+- Added `CampaignGalleryAdapterRenderer` and rewired `UnifiedGallerySection` plus `PerTypeGallerySection` to use the shared render-plan/adapter-render path instead of keeping duplicate layout-builder and adapter rendering branches in both section files.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/campaignGalleryOverrides.test.ts`
+  - `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+  - `src/utils/campaignGalleryRenderPlan.test.ts`
+  - `src/components/CardViewer/GallerySections.test.tsx`
+  - `src/components/CardViewer/CampaignViewer.test.tsx`
+  - `src/utils/resolveAdapterId.test.ts`
+  - result: 21 suites passed, 70 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- P23-G moved past basic shared-editor parity into better inheritance-first UX: campaign editors can now see and clear custom gallery state from the top-level settings surface instead of only from inside the modal.
+- P23-H now has a materially more centralized section render path: unified/per-type section planning and adapter rendering are shared rather than being reassembled in parallel implementations.
+- Remaining G/H work is now narrower: final parity coverage, any last-mile viewer-shell cleanup, and persistence/UX edges discovered during broader end-to-end verification.
+
+### Recommended Next Slice
+
+1. Continue with final render-parity and campaign persistence edges.
+   - The remaining leverage is in end-to-end parity gaps, not more structural refactoring of already-shared section planning.
+
+2. Keep focused resolver/viewer/campaign tests paired with `build:wp`.
+   - This slice again showed that small summary/helper changes can regress behavior in ways the UI alone does not immediately reveal.
+
+### Handoff
+
+```text
+STATUS
+- Campaign settings now surface live gallery override state plus an inline inherited reset path.
+- Viewer sections now share a central render-plan and adapter-render path.
+- The branch is green on the focused G/H suite and build:wp.
+
+START HERE NEXT
+- Keep pushing the remaining campaign parity and render-path endgame rather than returning to decomposition work.
+- Treat remaining G/H work as parity/persistence verification and final viewer-shell cleanup, not section-level resolution refactors.
+```

@@ -4,15 +4,12 @@
  * Renders all campaign media (images + videos) in a single adapter,
  * wrapped in a GallerySectionWrapper that provides container dimensions.
  */
-import { lazy } from 'react';
-import type { Campaign, GalleryBehaviorSettings, ContainerDimensions } from '@/types';
-import { normalizeAdapterId, resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
+import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
-import { resolveEffectiveGallerySettings, resolveUnifiedAdapterId } from '@/utils/resolveAdapterId';
+import { resolveUnifiedCampaignGalleryRenderPlan } from '@/utils/campaignGalleryRenderPlan';
+
+import { CampaignGalleryAdapterRenderer } from './CampaignGalleryAdapterRenderer';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
-const LayoutBuilderGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
-);
 
 interface UnifiedGallerySectionProps {
   campaign: Campaign;
@@ -22,42 +19,28 @@ interface UnifiedGallerySectionProps {
 }
 
 export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdmin }: UnifiedGallerySectionProps) {
-  const allMedia = [...campaign.videos, ...campaign.images].sort((a, b) => a.order - b.order);
-  if (allMedia.length === 0) return null;
-
-  const resolvedSettings = resolveEffectiveGallerySettings(s, breakpoint, 'unified', campaign.galleryOverrides);
-  const effectiveId = normalizeAdapterId(
-    resolveUnifiedAdapterId(s, breakpoint, {
-      galleryOverrides: campaign.galleryOverrides,
-      legacyOverrideId: campaign.imageAdapterId,
-    }),
-  );
-  const wrapperBorderRadius = Math.max(resolvedSettings.imageBorderRadius ?? 0, resolvedSettings.videoBorderRadius ?? 0);
+  const plan = resolveUnifiedCampaignGalleryRenderPlan(campaign, s, breakpoint);
+  if (!plan) return null;
 
   return (
     <GallerySectionWrapper
-      settings={resolvedSettings}
-      bgType={resolvedSettings.unifiedBgType}
-      bgColor={resolvedSettings.unifiedBgColor}
-      bgGradient={resolvedSettings.unifiedBgGradient}
-      bgImageUrl={resolvedSettings.unifiedBgImageUrl}
-      borderRadius={wrapperBorderRadius}
+      settings={plan.settings}
+      bgType={plan.wrapper.bgType}
+      bgColor={plan.wrapper.bgColor}
+      bgGradient={plan.wrapper.bgGradient}
+      bgImageUrl={plan.wrapper.bgImageUrl}
+      borderRadius={plan.wrapper.borderRadius}
     >
-      {(containerDimensions: ContainerDimensions) => {
-        if (effectiveId === 'layout-builder' && campaign.layoutTemplateId) {
-          return (
-            <LayoutBuilderGallery
-              media={allMedia}
-              settings={resolvedSettings}
-              templateId={campaign.layoutTemplateId}
-              isAdmin={isAdmin}
-              containerDimensions={containerDimensions}
-            />
-          );
-        }
-        const Adapter = resolveAdapter(effectiveId);
-        return <Adapter media={allMedia} settings={resolvedSettings} containerDimensions={containerDimensions} />;
-      }}
+      {(containerDimensions) => (
+        <CampaignGalleryAdapterRenderer
+          adapterId={plan.adapterId}
+          media={plan.media}
+          settings={plan.settings}
+          campaign={campaign}
+          isAdmin={isAdmin}
+          containerDimensions={containerDimensions}
+        />
+      )}
     </GallerySectionWrapper>
   );
 }

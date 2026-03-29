@@ -220,4 +220,25 @@ describe('campaignGalleryOverrides', () => {
       'Mode: unified',
     ]);
   });
+
+  it('describes non-adapter responsive setting overrides', () => {
+    const campaign = makeCampaign({
+      galleryOverrides: {
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                sectionPadding: 24,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(hasCampaignGalleryOverrides(campaign)).toBe(true);
+    expect(describeCampaignGalleryOverrides(campaign)).toEqual([
+      'Responsive settings: customized',
+    ]);
+  });
 });

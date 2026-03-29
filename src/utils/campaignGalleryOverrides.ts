@@ -33,6 +33,15 @@ function isEmptyScopeConfig(scope?: GalleryScopeConfig): boolean {
   return !scope.adapterId && !isNonEmptyObject(scope.common) && !isNonEmptyObject(scope.adapterSettings);
 }
 
+function hasCampaignResponsiveSettingOverrides(overrides: Partial<GalleryConfig> | undefined): boolean {
+  return CAMPAIGN_OVERRIDE_BREAKPOINTS.some((breakpoint) => (
+    ['image', 'video', 'unified'] as const
+  ).some((scope) => {
+    const scopeConfig = overrides?.breakpoints?.[breakpoint]?.[scope];
+    return isNonEmptyObject(scopeConfig?.common) || isNonEmptyObject(scopeConfig?.adapterSettings);
+  }));
+}
+
 function pruneCampaignGalleryOverrides(overrides?: Partial<GalleryConfig>): Partial<GalleryConfig> | undefined {
   if (!overrides) {
     return undefined;
@@ -73,6 +82,16 @@ export function hasCampaignScopeOverrides(
   return CAMPAIGN_OVERRIDE_BREAKPOINTS.some((breakpoint) => {
     const scopeConfig = overrides?.breakpoints?.[breakpoint]?.[scope];
     return !!scopeConfig && !isEmptyScopeConfig(scopeConfig);
+  });
+}
+
+function hasCampaignScopeAdapterOverrides(
+  overrides: Partial<GalleryConfig> | undefined,
+  scope: CampaignOverrideScope,
+): boolean {
+  return CAMPAIGN_OVERRIDE_BREAKPOINTS.some((breakpoint) => {
+    const scopeConfig = overrides?.breakpoints?.[breakpoint]?.[scope];
+    return typeof scopeConfig?.adapterId === 'string' && scopeConfig.adapterId.length > 0;
   });
 }
 
@@ -208,21 +227,25 @@ export function describeCampaignGalleryOverrides(source: CampaignGalleryOverride
   if (mode === 'unified') {
     if (unifiedAdapterId) {
       descriptions.push(`Unified: ${unifiedAdapterId}`);
-    } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'unified')) {
+    } else if (hasCampaignScopeAdapterOverrides(source.galleryOverrides, 'unified')) {
       descriptions.push('Unified: breakpoint-specific override');
     }
   } else {
     if (imageAdapterId) {
       descriptions.push(`Image: ${imageAdapterId}`);
-    } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'image')) {
+    } else if (hasCampaignScopeAdapterOverrides(source.galleryOverrides, 'image')) {
       descriptions.push('Image: breakpoint-specific override');
     }
 
     if (videoAdapterId) {
       descriptions.push(`Video: ${videoAdapterId}`);
-    } else if (hasCampaignScopeOverrides(source.galleryOverrides, 'video')) {
+    } else if (hasCampaignScopeAdapterOverrides(source.galleryOverrides, 'video')) {
       descriptions.push('Video: breakpoint-specific override');
     }
+  }
+
+  if (hasCampaignResponsiveSettingOverrides(source.galleryOverrides)) {
+    descriptions.push('Responsive settings: customized');
   }
 
   if (mode) {

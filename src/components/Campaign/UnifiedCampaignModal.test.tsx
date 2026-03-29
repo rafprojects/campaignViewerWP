@@ -165,6 +165,7 @@ describe('UnifiedCampaignModal', () => {
     expect(screen.getByText('Visibility')).toBeInTheDocument();
     expect(screen.getByText('Gallery Mode Override')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
+    expect(screen.getByText('Inheriting global gallery settings')).toBeInTheDocument();
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Categories')).toBeInTheDocument();
   });
@@ -286,6 +287,59 @@ describe('UnifiedCampaignModal', () => {
     const dialog = await openCampaignResponsiveConfigDialog();
 
     expect(within(dialog).getByText(/currently stores custom gallery overrides/i)).toBeInTheDocument();
+  });
+
+  it('shows live campaign override summaries and supports inline reset to inherited settings', () => {
+    const updateForm = vi.fn();
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      updateForm,
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                common: {
+                  sectionPadding: 24,
+                },
+              },
+              video: {
+                adapterId: 'diamond',
+              },
+            },
+          },
+        },
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByText('Custom gallery overrides')).toBeInTheDocument();
+    expect(screen.getByText('Responsive settings: customized')).toBeInTheDocument();
+    expect(screen.getByText('Video: breakpoint-specific override')).toBeInTheDocument();
+    expect(screen.getByText('Mode: per-type')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use Inherited Gallery Settings' }));
+
+    expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
+      imageAdapterId: '',
+      videoAdapterId: '',
+      galleryOverrides: undefined,
+    }));
   });
 
   it('saves unified adapter overrides from the shared responsive editor', async () => {
