@@ -18,8 +18,9 @@ import {
   describeCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
   hasCampaignGalleryOverrides,
-  syncCampaignGalleryOverrideMode,
   getUniformCampaignScopeAdapterId,
+  normalizeCampaignLegacyAdapterOverrides,
+  syncCampaignGalleryOverrideMode,
   syncCampaignScopeAdapterOverride,
 } from '@/utils/campaignGalleryOverrides';
 
@@ -456,11 +457,17 @@ export function UnifiedCampaignModal({
               setGalleryConfigEditorOpen(false);
             }}
             onSave={(galleryOverrides) => {
+              const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
+                imageAdapterId: formState.imageAdapterId,
+                videoAdapterId: formState.videoAdapterId,
+                galleryOverrides,
+              });
+
               updateForm({
                 ...formState,
                 galleryOverrides,
-                imageAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'image') || '',
-                videoAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'video') || '',
+                imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
+                videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
               });
               setGalleryConfigEditorOpen(false);
             }}

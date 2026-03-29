@@ -978,3 +978,51 @@ START HERE NEXT
 - Push into broader parity verification instead of more architectural reshaping.
 - Look for remaining campaign reset UX nits or runtime parity mismatches that only show up in end-to-end flows.
 ```
+
+## Entry - 2026-03-29 11:36:30 UTC
+
+### Snapshot
+
+- Campaign modal form state now normalizes legacy adapter bridge fields at the same two remaining handoff points that mattered: opening a campaign for edit and applying changes from the shared responsive editor.
+- That closes the last known mismatch where the final save payload was normalization-correct but the in-memory form state could still be derived through older fallback rules.
+- The focused campaign modal/hook slice and `build:wp` both stayed green.
+
+### Work Done
+
+- Reused `normalizeCampaignLegacyAdapterOverrides` inside `useUnifiedCampaignModal.openForEdit()` so nested unified overrides now hydrate the modal with bridge-field values that match what save will persist.
+- Reused the same normalization helper when `UnifiedCampaignModal` applies changes from the shared responsive editor, so inline quick selectors no longer track a separate bridge-field derivation path from the final save handler.
+- Added focused hook coverage for unified nested override hydration and updated modal coverage to assert normalized bridge-field state after applying shared-editor unified overrides.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/hooks/useUnifiedCampaignModal.test.ts`
+  - `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+  - result: 2 suites passed, 21 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- P23-G now has one normalization path for campaign bridge fields across edit hydration, shared-editor apply, and final save, which removes another source of modal/runtime parity drift.
+- This was a smaller but meaningful parity cleanup rather than a new architecture slice; the remaining G/H work is still trending toward broader verification and any last end-to-end UX edge cases.
+
+### Recommended Next Slice
+
+1. Run a broader campaign/admin parity pass.
+   - The next likely findings are now in behavior across flows, not in another obvious state-derivation split.
+
+2. Only add more code if that verification reveals a concrete mismatch.
+   - The big shared runtime/editor pieces are already in place, so the bar for further refactoring should stay high.
+
+### Handoff
+
+```text
+STATUS
+- Campaign edit hydration, shared-editor apply, and final save now share one legacy adapter normalization path.
+- Focused campaign modal/hook coverage and build:wp are green.
+
+START HERE NEXT
+- Probe broader campaign/admin flows for any remaining parity or reset UX mismatches.
+- Prefer bug-sized fixes over more structural churn unless verification exposes a real split.
+```

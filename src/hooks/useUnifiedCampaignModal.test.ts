@@ -74,6 +74,34 @@ describe('useUnifiedCampaignModal', () => {
     expect(result.current.formState.galleryOverrides?.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
   });
 
+  it('normalizes legacy bridge adapter ids from unified nested overrides when opening a campaign', async () => {
+    const { result } = renderHook(() => useUnifiedCampaignModal({
+      apiClient: makeApiClient(),
+      isAdmin: true,
+      onMutate: vi.fn().mockResolvedValue(undefined),
+      onNotify: vi.fn(),
+    }));
+
+    await act(async () => {
+      await result.current.openForEdit(makeCampaign({
+        imageAdapterId: 'masonry',
+        videoAdapterId: 'diamond',
+        galleryOverrides: {
+          mode: 'unified',
+          breakpoints: {
+            desktop: { unified: { adapterId: 'classic' } },
+            tablet: { unified: { adapterId: 'classic' } },
+            mobile: { unified: { adapterId: 'classic' } },
+          },
+        },
+      }));
+    });
+
+    expect(result.current.formState.imageAdapterId).toBe('classic');
+    expect(result.current.formState.videoAdapterId).toBe('classic');
+    expect(result.current.formState.galleryOverrides?.mode).toBe('unified');
+  });
+
   it('sends galleryOverrides in the save payload', async () => {
     const put = vi.fn().mockResolvedValue({ id: '1' });
     const { result } = renderHook(() => useUnifiedCampaignModal({

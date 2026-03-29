@@ -364,8 +364,8 @@ describe('UnifiedCampaignModal', () => {
 
     await waitFor(() => {
       expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-        imageAdapterId: '',
-        videoAdapterId: '',
+        imageAdapterId: 'classic',
+        videoAdapterId: 'classic',
         galleryOverrides: expect.objectContaining({
           mode: 'unified',
           breakpoints: expect.objectContaining({

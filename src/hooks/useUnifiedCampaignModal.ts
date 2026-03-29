@@ -17,7 +17,6 @@ import { sortByOrder } from '@/utils/sortByOrder';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 import {
-  getUniformCampaignScopeAdapterId,
   normalizeCampaignLegacyAdapterOverrides,
 } from '@/utils/campaignGalleryOverrides';
 import { useXhrUpload } from './useXhrUpload';
@@ -115,6 +114,11 @@ export function useUnifiedCampaignModal({
     setMode('edit');
     setEditingCampaignId(String(c.id));
     const galleryOverrides = cloneGalleryConfig(c.galleryOverrides);
+    const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
+      imageAdapterId: c.imageAdapterId ?? '',
+      videoAdapterId: c.videoAdapterId ?? '',
+      galleryOverrides,
+    });
     setFormState({
       title: c.title ?? '',
       description: c.description ?? '',
@@ -129,8 +133,8 @@ export function useUnifiedCampaignModal({
       publishAt: c.publishAt ?? '',
       unpublishAt: c.unpublishAt ?? '',
       layoutTemplateId: c.layoutTemplateId ?? '',
-      imageAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'image') || (c.imageAdapterId ?? ''),
-      videoAdapterId: getUniformCampaignScopeAdapterId(galleryOverrides, 'video') || (c.videoAdapterId ?? ''),
+      imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
+      videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
       galleryOverrides,
       categories: c.categories ?? [],
       borderColor: (c as Campaign).borderColor,

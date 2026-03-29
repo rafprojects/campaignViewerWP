@@ -549,6 +549,7 @@ Completed parity slices:
 5. the campaign settings tab now surfaces live gallery override summary badges plus an inline `Use Inherited Gallery Settings` reset action, so editors can scan and clear campaign-specific gallery state without reopening the shared modal just to understand or discard it
 6. campaign override summaries now distinguish adapter-selection overrides from deeper responsive-setting customizations, so admin and editing surfaces no longer misreport non-adapter nested overrides as if they were only adapter-choice changes
 7. campaign save payloads now normalize the legacy flat `imageAdapterId` and `videoAdapterId` bridge fields from the active nested `galleryOverrides` state, so REST/meta compatibility no longer persists stale hidden adapter ids when unified or per-breakpoint nested overrides are authoritative
+8. campaign edit hydration and shared-editor apply now reuse that same legacy adapter normalization path, so the modal's inline quick selectors and the final save payload stay aligned instead of deriving bridge-field state through separate rules
 
 Remaining P23-G work is now concentrated on any last scope-specific reset ergonomics and broader end-to-end verification, not on basic shared-editor capability, inherited-state visibility, or legacy save-payload compatibility.
 
@@ -699,6 +700,7 @@ Completed documentation/testing slices:
 26. focused frontend coverage remains green after extracting the remaining gallery-layout tab shell into `GalleryLayoutSettingsSection`, preserving the shared responsive-editor entry-point coverage while leaving `SettingsPanel` as a shell/coordinator
 27. focused frontend coverage now also validates the shared campaign render-plan helpers plus the inline campaign override summary/reset UX, keeping campaign parity messaging and viewer section planning green through the latest P23-G/P23-H consolidation slice
 28. focused frontend coverage now also validates legacy campaign adapter-id normalization from nested overrides plus the shared viewer-shell layout helper, keeping campaign save compatibility and outer gallery spacing behavior aligned through the latest combined P23-G/P23-H cleanup slice
+29. focused campaign modal and hook coverage now also validates that unified nested overrides normalize the legacy adapter bridge fields consistently during edit hydration and shared-editor apply flows, so form-state parity stays aligned with the final save path
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 
