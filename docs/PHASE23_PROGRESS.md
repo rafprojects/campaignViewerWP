@@ -770,3 +770,52 @@ START HERE NEXT
 - Extract the remaining inline Media Display tab body.
 - Keep extraction work structural unless a field has a clearer shared gallery-config home.
 ```
+
+## Entry - 2026-03-29 03:38:47 UTC
+
+### Snapshot
+
+- The entire Media Display tab body has now been extracted out of `SettingsPanel` into a dedicated `MediaDisplaySettingsSection` module.
+- The extracted section owns the remaining legacy gallery viewport, tile appearance, thumbnail-strip, transition, and navigation accordions without changing their runtime ownership.
+- As with the General extraction, the build surfaced a useful contract mismatch: the extracted section's local prop type was narrower than the panel updater contract and had to be widened.
+
+### Work Done
+
+- Added a dedicated `MediaDisplaySettingsSection` component under `src/components/Settings/`.
+- Moved the full inline Media Display accordion into that module, including lightbox/animation toggles, viewport height mode, border radius, shadow controls, tile appearance, thumbnail-strip controls, transitions, and overlay-arrow/dot-navigation settings.
+- Replaced the inline Media Display tab body in `SettingsPanel` with the new delegated section component while preserving tooltip rendering for the remaining legacy height controls.
+- Fixed the build-discovered follow-up by widening the extracted section's local settings type so it matches the `SettingsPanel` updater contract instead of assuming only the visibly used keys matter.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 2 suites passed, 33 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- `SettingsPanel` is now mostly a shell and coordinator: the General, Campaign Cards, Campaign Viewer, Advanced, Typography, and Media Display tab bodies all live in dedicated modules, while gallery-layout subtrees were already partially extracted earlier.
+- The repeated updater-type mismatch on extracted components is now a concrete pattern: section-local prop types should match the panel updater contract, even if some fields are not read directly by that section.
+- Further decomposition inside `SettingsPanel` is now a lower-yield cleanup compared with the remaining Phase 23 parity and consolidation work.
+
+### Recommended Next Slice
+
+1. Reassess whether another `SettingsPanel` extraction is still worth it.
+   - The remaining inline surface is comparatively small and mostly orchestration, gallery-layout entry wiring, and footer controls.
+
+2. Shift back toward the remaining non-decomposition Phase 23 tracks unless a clearly bounded shell extraction remains.
+   - Render-path parity, campaign parity, and final ownership cleanup are likely higher-yield than continuing to split already-thin orchestration code.
+
+### Handoff
+
+```text
+STATUS
+- Media Display settings now live in a dedicated section component.
+- The branch is green on the focused SettingsPanel suite and build:wp.
+
+START HERE NEXT
+- Decide whether to do one final low-yield SettingsPanel shell extraction or shift back to the remaining Phase 23 parity/consolidation tracks.
+- Keep extracted section prop types aligned with the panel updater contract.
+```

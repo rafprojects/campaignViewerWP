@@ -279,6 +279,8 @@ Completed first extraction slice:
 16. revalidated the campaign-cards extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite
 17. extracted the remaining general-tab body into a dedicated `GeneralSettingsSection` module so `SettingsPanel` now delegates theme, app-container, viewer-wrapper, auth-bar, security, and developer controls instead of holding that non-gallery panel inline
 18. revalidated the general-tab extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite after fixing the resulting stale import and prop-type mismatch surfaced by the build
+19. extracted the entire media-display tab body into a dedicated `MediaDisplaySettingsSection` module so `SettingsPanel` now delegates the remaining legacy gallery viewport, tile, thumbnail-strip, transition, and navigation controls instead of holding that large accordion inline
+20. revalidated the media-display extraction with a green production `build:wp` run and the focused `SettingsPanel` test suite after fixing the matching updater-prop type mismatch surfaced by the build
 
 ### Files to modify
 
@@ -683,6 +685,7 @@ Completed documentation/testing slices:
 22. focused frontend coverage now also validates layout-builder default glow settings, confirming registry-defined layout-builder fields, shared-editor rendering, flat save projection, and resolver projection stay aligned for `tileGlowColor` and `tileGlowSpread` without reusing the full tile-appearance ownership model
 23. focused frontend coverage remains green after extracting the inline campaign-cards tab into `CampaignCardSettingsSection`, preserving the existing card-tab interaction coverage while reducing the remaining `SettingsPanel` monolith surface
 24. focused frontend coverage remains green after extracting the inline general tab into `GeneralSettingsSection`, preserving the existing general-tab interaction and theme-selector coverage while reducing the remaining `SettingsPanel` monolith surface again
+25. focused frontend coverage remains green after extracting the inline media-display tab into `MediaDisplaySettingsSection`, preserving the existing gallery-tab interaction coverage while removing the last large legacy accordion body from `SettingsPanel`
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 
