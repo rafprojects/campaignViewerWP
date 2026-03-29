@@ -548,8 +548,9 @@ Completed parity slices:
 4. the campaign settings tab now mirrors unified-mode quick overrides more accurately by swapping the inline image/video selectors for a unified adapter selector when the campaign override mode is unified, and campaign override summaries now report unified adapter selections instead of only per-type fields
 5. the campaign settings tab now surfaces live gallery override summary badges plus an inline `Use Inherited Gallery Settings` reset action, so editors can scan and clear campaign-specific gallery state without reopening the shared modal just to understand or discard it
 6. campaign override summaries now distinguish adapter-selection overrides from deeper responsive-setting customizations, so admin and editing surfaces no longer misreport non-adapter nested overrides as if they were only adapter-choice changes
+7. campaign save payloads now normalize the legacy flat `imageAdapterId` and `videoAdapterId` bridge fields from the active nested `galleryOverrides` state, so REST/meta compatibility no longer persists stale hidden adapter ids when unified or per-breakpoint nested overrides are authoritative
 
-Remaining P23-G work is now concentrated on the last persistence/polish edges and any scope-specific reset ergonomics discovered during end-to-end verification, not on basic shared-editor capability or inherited-state visibility.
+Remaining P23-G work is now concentrated on any last scope-specific reset ergonomics and broader end-to-end verification, not on basic shared-editor capability, inherited-state visibility, or legacy save-payload compatibility.
 
 ### Files to modify
 
@@ -588,8 +589,9 @@ Completed render-path slices:
 5. focused section-level coverage now asserts both layout-builder branching and unsupported mobile fallback behavior for unified and per-type runtime sections, so the renderer path is no longer only indirectly covered through top-level viewer tests
 6. added shared campaign gallery render-plan helpers that resolve per-scope adapter ids, effective settings, wrapper backgrounds, border radii, tile-size projection, and equal-height state from one place instead of duplicating that planning logic inside each section component
 7. rewired `UnifiedGallerySection` and `PerTypeGallerySection` through a shared `CampaignGalleryAdapterRenderer`, so layout-builder branching and adapter rendering no longer live in two divergent section implementations
+8. the outer campaign viewer shell now resolves gallery mode plus clamped gap, max-width, and side-margin layout values through a shared helper reused by both `CampaignViewer` and `PerTypeGallerySection`, eliminating the last known drift between shell-level spacing and per-type section spacing
 
-Remaining P23-H work is now focused on explicit render-parity coverage and any last-mile cleanup around the outer viewer shell, not on duplicated section-level adapter planning.
+Remaining P23-H work is now focused on broader explicit render-parity coverage and any final viewer cleanup discovered during end-to-end verification, not on duplicated section-level planning or outer-shell layout drift.
 
 ### Files to modify
 
@@ -696,6 +698,7 @@ Completed documentation/testing slices:
 25. focused frontend coverage remains green after extracting the inline media-display tab into `MediaDisplaySettingsSection`, preserving the existing gallery-tab interaction coverage while removing the last large legacy accordion body from `SettingsPanel`
 26. focused frontend coverage remains green after extracting the remaining gallery-layout tab shell into `GalleryLayoutSettingsSection`, preserving the shared responsive-editor entry-point coverage while leaving `SettingsPanel` as a shell/coordinator
 27. focused frontend coverage now also validates the shared campaign render-plan helpers plus the inline campaign override summary/reset UX, keeping campaign parity messaging and viewer section planning green through the latest P23-G/P23-H consolidation slice
+28. focused frontend coverage now also validates legacy campaign adapter-id normalization from nested overrides plus the shared viewer-shell layout helper, keeping campaign save compatibility and outer gallery spacing behavior aligned through the latest combined P23-G/P23-H cleanup slice
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

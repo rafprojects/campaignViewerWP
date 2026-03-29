@@ -21,6 +21,11 @@ export interface ClearedCampaignGalleryOverrides {
   galleryOverrides: undefined;
 }
 
+export interface NormalizedCampaignLegacyAdapterOverrides {
+  imageAdapterId: string;
+  videoAdapterId: string;
+}
+
 function isNonEmptyObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
 }
@@ -95,6 +100,24 @@ function hasCampaignScopeAdapterOverrides(
   });
 }
 
+function getNormalizedLegacyScopeAdapterId(
+  source: CampaignGalleryOverrideSource,
+  scope: Extract<CampaignOverrideScope, 'image' | 'video'>,
+): string {
+  const uniformAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, scope);
+  if (uniformAdapterId) {
+    return uniformAdapterId;
+  }
+
+  if (hasCampaignScopeAdapterOverrides(source.galleryOverrides, scope)) {
+    return '';
+  }
+
+  return scope === 'image'
+    ? source.imageAdapterId || ''
+    : source.videoAdapterId || '';
+}
+
 export function getUniformCampaignScopeAdapterId(
   overrides: Partial<GalleryConfig> | undefined,
   scope: CampaignOverrideScope,
@@ -151,6 +174,25 @@ export function clearCampaignGalleryOverrides(): ClearedCampaignGalleryOverrides
     imageAdapterId: '',
     videoAdapterId: '',
     galleryOverrides: undefined,
+  };
+}
+
+export function normalizeCampaignLegacyAdapterOverrides(
+  source: CampaignGalleryOverrideSource,
+): NormalizedCampaignLegacyAdapterOverrides {
+  const mode = getCampaignGalleryOverrideMode(source.galleryOverrides);
+
+  if (mode === 'unified') {
+    const unifiedAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'unified');
+    return {
+      imageAdapterId: unifiedAdapterId || '',
+      videoAdapterId: unifiedAdapterId || '',
+    };
+  }
+
+  return {
+    imageAdapterId: getNormalizedLegacyScopeAdapterId(source, 'image'),
+    videoAdapterId: getNormalizedLegacyScopeAdapterId(source, 'video'),
   };
 }
 

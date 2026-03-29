@@ -12,6 +12,7 @@ import {
   resolvePerTypeCampaignGalleryRenderPlan,
   shouldUseEqualHeightPerTypeLayout,
 } from '@/utils/campaignGalleryRenderPlan';
+import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
 
 import { CampaignGalleryAdapterRenderer } from './CampaignGalleryAdapterRenderer';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
@@ -26,6 +27,7 @@ interface PerTypeGallerySectionProps {
 export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdmin }: PerTypeGallerySectionProps) {
   const videoPlan = resolvePerTypeCampaignGalleryRenderPlan(campaign, s, breakpoint, 'video');
   const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(campaign, s, breakpoint, 'image');
+  const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(s, campaign.galleryOverrides);
   const useEqualHeight = shouldUseEqualHeightPerTypeLayout(videoPlan, imagePlan);
 
   const videoSection = videoPlan && (
@@ -78,7 +80,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
     return (
       <SimpleGrid
         cols={{ base: 1, md: 2 }}
-        spacing={s.modalGalleryGap ?? 32}
+        spacing={galleryShellLayout.galleryGap}
         style={{ alignItems: 'stretch' }}
       >
         {videoSection}
@@ -88,7 +90,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
   }
 
   return (
-    <Stack gap={s.modalGalleryGap ?? 32} style={{ width: '100%' }}>
+    <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
       {videoSection}
       {imageSection}
     </Stack>

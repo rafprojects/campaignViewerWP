@@ -14,7 +14,7 @@ import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
-import { resolveGalleryMode } from '@/utils/resolveAdapterId';
+import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
 
@@ -64,7 +64,7 @@ export function CampaignViewer({
   // P15-A: Per-breakpoint adapter resolution
   const containerRef = useRef<HTMLDivElement>(null);
   const breakpoint = useBreakpoint(containerRef);
-  const galleryMode = resolveGalleryMode(galleryBehaviorSettings, campaign.galleryOverrides);
+  const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(galleryBehaviorSettings, campaign.galleryOverrides);
   // P21-F: Fullscreen and conditional rendering
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
   const galleriesOnly = s.campaignOpenMode === 'galleries-only';
@@ -250,10 +250,10 @@ export function CampaignViewer({
           {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
           <Box style={{
             width: '100%',
-            maxWidth: s.modalGalleryMaxWidth > 0 ? `${s.modalGalleryMaxWidth}px` : '100%',
+            maxWidth: galleryShellLayout.maxWidth,
             marginInline: 'auto',
-            paddingLeft: s.modalGalleryMargin > 0 ? `${s.modalGalleryMargin}px` : undefined,
-            paddingRight: s.modalGalleryMargin > 0 ? `${s.modalGalleryMargin}px` : undefined,
+            paddingLeft: galleryShellLayout.paddingLeft,
+            paddingRight: galleryShellLayout.paddingRight,
           }}>
             <Suspense fallback={
               <Center py="xl" mih={200}>
@@ -263,8 +263,8 @@ export function CampaignViewer({
                 </Stack>
               </Center>
             }>
-            <Stack gap={Math.max(0, Math.min(64, s.modalGalleryGap ?? 32))} style={{ width: '100%' }}>
-              {galleryMode === 'unified' ? (
+            <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
+              {galleryShellLayout.galleryMode === 'unified' ? (
                 <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
               ) : (
                 <PerTypeGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />

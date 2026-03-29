@@ -10,6 +10,7 @@ import {
   getUniformCampaignScopeAdapterId,
   hasCampaignGalleryOverrides,
   hasCampaignScopeOverrides,
+  normalizeCampaignLegacyAdapterOverrides,
   syncCampaignGalleryOverrideMode,
   syncCampaignScopeAdapterOverride,
 } from './campaignGalleryOverrides';
@@ -240,5 +241,41 @@ describe('campaignGalleryOverrides', () => {
     expect(describeCampaignGalleryOverrides(campaign)).toEqual([
       'Responsive settings: customized',
     ]);
+  });
+
+  it('normalizes legacy adapter ids from unified nested overrides for save compatibility', () => {
+    expect(normalizeCampaignLegacyAdapterOverrides(makeCampaign({
+      imageAdapterId: 'masonry',
+      videoAdapterId: 'diamond',
+      galleryOverrides: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: { unified: { adapterId: 'classic' } },
+          tablet: { unified: { adapterId: 'classic' } },
+          mobile: { unified: { adapterId: 'classic' } },
+        },
+      },
+    }))).toEqual({
+      imageAdapterId: 'classic',
+      videoAdapterId: 'classic',
+    });
+  });
+
+  it('clears stale legacy adapter ids when nested per-type overrides are breakpoint-specific', () => {
+    expect(normalizeCampaignLegacyAdapterOverrides(makeCampaign({
+      imageAdapterId: 'masonry',
+      videoAdapterId: 'diamond',
+      galleryOverrides: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: { image: { adapterId: 'masonry' } },
+          tablet: { image: { adapterId: 'justified' } },
+          mobile: { video: { adapterId: 'diamond' } },
+        },
+      },
+    }))).toEqual({
+      imageAdapterId: '',
+      videoAdapterId: '',
+    });
   });
 });

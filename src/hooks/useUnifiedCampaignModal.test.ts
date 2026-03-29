@@ -91,12 +91,13 @@ describe('useUnifiedCampaignModal', () => {
       result.current.updateForm({
         ...result.current.formState,
         imageAdapterId: 'justified',
+        videoAdapterId: 'diamond',
         galleryOverrides: {
           mode: 'unified',
           breakpoints: {
-            desktop: { image: { adapterId: 'justified' } },
-            tablet: { image: { adapterId: 'justified' } },
-            mobile: { image: { adapterId: 'justified' } },
+            desktop: { unified: { adapterId: 'classic' } },
+            tablet: { unified: { adapterId: 'classic' } },
+            mobile: { unified: { adapterId: 'classic' } },
           },
         },
       });
@@ -109,13 +110,64 @@ describe('useUnifiedCampaignModal', () => {
     expect(put).toHaveBeenCalledWith(
       '/wp-json/wp-super-gallery/v1/campaigns/1',
       expect.objectContaining({
-        imageAdapterId: 'justified',
+        imageAdapterId: 'classic',
+        videoAdapterId: 'classic',
         galleryOverrides: {
           mode: 'unified',
           breakpoints: {
-            desktop: { image: { adapterId: 'justified' } },
+            desktop: { unified: { adapterId: 'classic' } },
+            tablet: { unified: { adapterId: 'classic' } },
+            mobile: { unified: { adapterId: 'classic' } },
+          },
+        },
+      }),
+    );
+  });
+
+  it('clears stale flat adapter ids when saving breakpoint-specific nested per-type overrides', async () => {
+    const put = vi.fn().mockResolvedValue({ id: '1' });
+    const { result } = renderHook(() => useUnifiedCampaignModal({
+      apiClient: makeApiClient({ put }),
+      isAdmin: true,
+      onMutate: vi.fn().mockResolvedValue(undefined),
+      onNotify: vi.fn(),
+    }));
+
+    await act(async () => {
+      await result.current.openForEdit(makeCampaign());
+    });
+
+    act(() => {
+      result.current.updateForm({
+        ...result.current.formState,
+        imageAdapterId: 'masonry',
+        videoAdapterId: 'diamond',
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: { image: { adapterId: 'masonry' } },
             tablet: { image: { adapterId: 'justified' } },
-            mobile: { image: { adapterId: 'justified' } },
+            mobile: { video: { adapterId: 'diamond' } },
+          },
+        },
+      });
+    });
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(put).toHaveBeenCalledWith(
+      '/wp-json/wp-super-gallery/v1/campaigns/1',
+      expect.objectContaining({
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: { image: { adapterId: 'masonry' } },
+            tablet: { image: { adapterId: 'justified' } },
+            mobile: { video: { adapterId: 'diamond' } },
           },
         },
       }),

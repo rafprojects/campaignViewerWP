@@ -923,3 +923,58 @@ START HERE NEXT
 - Keep pushing the remaining campaign parity and render-path endgame rather than returning to decomposition work.
 - Treat remaining G/H work as parity/persistence verification and final viewer-shell cleanup, not section-level resolution refactors.
 ```
+
+## Entry - 2026-03-29 11:27:32 UTC
+
+### Snapshot
+
+- Campaign saves now derive the legacy flat adapter bridge fields from the active nested override state, so unified and breakpoint-specific campaign overrides no longer leave stale hidden adapter ids in the REST payload.
+- The outer campaign viewer shell now uses the same shared layout helper for gallery mode, clamped gap, max width, and side margins that per-type rendering reuses for section spacing, closing the remaining known shell-level layout drift.
+- The combined G/H slice stayed green on the focused campaign/viewer suite and `build:wp`.
+
+### Work Done
+
+- Added `normalizeCampaignLegacyAdapterOverrides` to convert nested campaign override state into compatibility-safe legacy `imageAdapterId` and `videoAdapterId` values at save time.
+- Rewired `useUnifiedCampaignModal.save()` to send those normalized legacy adapter bridge fields instead of blindly persisting whatever stale flat ids happen to be in form state.
+- Added `campaignViewerLayout` utilities and rewired `CampaignViewer` plus `PerTypeGallerySection` to share the same gallery mode and outer shell spacing/max-width calculations.
+- Expanded focused coverage for both the save-path normalization and the shared viewer-shell layout helper.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/campaignGalleryOverrides.test.ts`
+  - `src/utils/campaignViewerLayout.test.ts`
+  - `src/hooks/useUnifiedCampaignModal.test.ts`
+  - `src/components/CardViewer/GallerySections.test.tsx`
+  - `src/components/CardViewer/CampaignViewer.test.tsx`
+  - `src/utils/campaignGalleryRenderPlan.test.ts`
+  - result: 6 suites passed, 30 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- P23-G no longer has the previously identified legacy save-payload drift between nested campaign overrides and the flat adapter bridge fields the backend still persists for compatibility.
+- P23-H no longer has separate shell-level and per-type section-level gallery gap logic; the known outer viewer-shell layout drift is now closed through a shared helper.
+- Remaining G/H work is now mostly end-to-end parity verification and any small UX cleanup found during broader validation, not another structural runtime refactor.
+
+### Recommended Next Slice
+
+1. Run a broader campaign/viewer parity pass.
+   - The highest remaining risk is now end-to-end behavior gaps rather than another known architecture split.
+
+2. Keep docs and focused coverage moving with each final G/H cleanup slice.
+   - These last changes are subtle compatibility/parity fixes that are easy to regress without narrow tests and current handoff notes.
+
+### Handoff
+
+```text
+STATUS
+- Campaign saves now normalize legacy adapter bridge fields from nested overrides.
+- Campaign viewer shell spacing and mode layout now resolve through one shared helper.
+- The branch is green on the focused save/viewer suite and build:wp.
+
+START HERE NEXT
+- Push into broader parity verification instead of more architectural reshaping.
+- Look for remaining campaign reset UX nits or runtime parity mismatches that only show up in end-to-end flows.
+```
