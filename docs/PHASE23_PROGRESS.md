@@ -512,3 +512,57 @@ START HERE NEXT
 - Take tile border/glow ownership-parity as the next dedicated slice.
 - Keep campaign card border styling out of that change.
 ```
+
+## Entry - 2026-03-28 23:02:25 UTC
+
+### Snapshot
+
+- Tile-appearance parity is now implemented through a shared schema-driven adapter group instead of remaining on the inline flat-only settings path.
+- `tileBorderWidth`, `tileBorderColor`, `tileHoverBounce`, `tileGlowEnabled`, `tileGlowColor`, and `tileGlowSpread` now round-trip through nested `adapterSettings` for the shape adapters plus justified and masonry.
+- Hover bounce moved with border/glow in the same slice because all six fields share the same tile-style helper contract and conditional editor behavior.
+
+### Work Done
+
+- Added a new shared `tile-appearance` adapter setting group to the registry and attached it to justified, masonry, hexagonal, circular, and diamond.
+- Exposed those fields through the shared gallery config editor under a dedicated `Tile Appearance` group instead of leaving them as inline flat-only controls.
+- Added shared-editor conditional visibility for nested tile appearance details so border color only appears when border width is greater than 0, and glow color/spread only appear when hover glow is enabled.
+- Verified the existing legacy-to-nested compatibility builder now seeds those tile appearance fields into nested adapter settings automatically for the adapters that consume them.
+- Verified the existing SettingsPanel save bridge and shared resolver still project those nested adapter settings back onto the legacy flat runtime contract consumed by the live adapters.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 4 files passed, 77 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- Tile appearance now has an explicit nested ownership model for the adapters that actually consume the shared tile-style helper contract.
+- No backend changes were required for this slice because nested adapter-setting sanitization already recognized these fields.
+- The next clean gallery-only parity gap is now shape-specific spacing: `tileGapX` and `tileGapY` remain flat-only and are only consumed by the shape adapters.
+
+### Recommended Next Slice
+
+1. Resolve shape tile-gap parity.
+   - Move `tileGapX` and `tileGapY` into the existing shape adapter-owned schema surface.
+   - Keep the change limited to shape adapters and their shared editor/save-bridge coverage.
+
+2. Keep layout-builder slot-effect defaults separate.
+   - Layout builder only borrows glow color/spread as fallback slot defaults, so that ownership question is not the same thing as the shared tile-appearance contract.
+
+### Handoff
+
+```text
+STATUS
+- Tile-appearance parity is complete through the shared schema/editor path.
+- The branch is green on the focused frontend contract and build:wp.
+
+START HERE NEXT
+- Take shape tile-gap parity as the next dedicated slice.
+- Keep layout-builder slot-effect defaults separate from that change.
+```

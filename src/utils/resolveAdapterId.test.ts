@@ -475,6 +475,43 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.thumbnailGap).toBe(14);
   });
 
+  it('projects shared tile-appearance adapter settings back onto legacy runtime fields', () => {
+    const s = makeSettings({
+      tileBorderWidth: 0,
+      tileBorderColor: '#ffffff',
+      tileHoverBounce: true,
+      tileGlowEnabled: false,
+      tileGlowColor: '#7c9ef8',
+      tileGlowSpread: 12,
+      galleryConfig: {
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'hexagonal',
+              adapterSettings: {
+                tileBorderWidth: 2,
+                tileBorderColor: '#ff0000',
+                tileHoverBounce: false,
+                tileGlowEnabled: true,
+                tileGlowColor: '#00ffaa',
+                tileGlowSpread: 18,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+
+    expect(resolved.tileBorderWidth).toBe(2);
+    expect(resolved.tileBorderColor).toBe('#ff0000');
+    expect(resolved.tileHoverBounce).toBe(false);
+    expect(resolved.tileGlowEnabled).toBe(true);
+    expect(resolved.tileGlowColor).toBe('#00ffaa');
+    expect(resolved.tileGlowSpread).toBe(18);
+  });
+
   it('projects unified classic runtime fields from nested adapter settings', () => {
     const s = makeSettings({
       imageBorderRadius: 8,

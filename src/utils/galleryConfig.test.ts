@@ -31,6 +31,9 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius);
     expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius);
     expect(config.breakpoints?.desktop?.image?.adapterSettings?.thumbnailGap).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap);
+    expect(config.breakpoints?.desktop?.image?.adapterSettings?.tileBorderWidth).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth);
+    expect(config.breakpoints?.tablet?.video?.adapterSettings?.tileGlowEnabled).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowEnabled);
+    expect(config.breakpoints?.tablet?.video?.adapterSettings?.tileHoverBounce).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce);
   });
 
   it('seeds unified classic adapter settings with both viewport heights', () => {

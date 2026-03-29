@@ -307,12 +307,25 @@ Examples of adapter-specific settings the new model should absorb:
 
 `thumbnailGap` stays adapter-owned because only justified and masonry consume that denser photo-album spacing contract. It should live in a shared multi-adapter setting group for those adapters rather than being merged into nested `common.adapterItemGap`.
 
+### Tile appearance
+
+1. `tileBorderWidth`
+2. `tileBorderColor`
+3. `tileHoverBounce`
+4. `tileGlowEnabled`
+5. `tileGlowColor`
+6. `tileGlowSpread`
+
+These tile-style fields stay adapter-owned because only the shape adapters plus justified and masonry consume the shared border/bounce/glow runtime contract. They belong in a shared multi-adapter setting group rather than in nested `common` settings.
+
 ### Shape adapters
 
 1. `tileSize`
 2. `imageTileSize`
 3. `videoTileSize`
-4. related overlap or clip-path controls where appropriate
+4. `tileGapX`
+5. `tileGapY`
+6. related overlap or clip-path controls where appropriate
 
 ### Media frame
 

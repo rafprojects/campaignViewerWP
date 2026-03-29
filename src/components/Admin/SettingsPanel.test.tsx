@@ -731,6 +731,40 @@ describe('SettingsPanel', () => {
     expect(desktopImage?.adapterSettings?.mosaicTargetRowHeight).toBe(240);
   });
 
+  it('seeds shared editor tile-appearance values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'hexagonal',
+          tileBorderWidth: 2,
+          tileBorderColor: '#ff0000',
+          tileHoverBounce: false,
+          tileGlowEnabled: true,
+          tileGlowColor: '#00ffaa',
+          tileGlowSpread: 18,
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('hexagonal');
+    expect(desktopImage?.adapterSettings?.tileBorderWidth).toBe(2);
+    expect(desktopImage?.adapterSettings?.tileBorderColor).toBe('#ff0000');
+    expect(desktopImage?.adapterSettings?.tileHoverBounce).toBe(false);
+    expect(desktopImage?.adapterSettings?.tileGlowEnabled).toBe(true);
+    expect(desktopImage?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
+    expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
+  });
+
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
@@ -885,6 +919,79 @@ describe('SettingsPanel', () => {
               adapterSettings: expect.objectContaining({
                 thumbnailGap: 14,
                 masonryColumns: 3,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('projects shared editor tile-appearance fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      tileBorderWidth: 2,
+      tileBorderColor: '#ff0000',
+      tileHoverBounce: false,
+      tileGlowEnabled: true,
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'hexagonal',
+            adapterSettings: {
+              tileBorderWidth: 2,
+              tileBorderColor: '#ff0000',
+              tileHoverBounce: false,
+              tileGlowEnabled: true,
+              tileGlowColor: '#00ffaa',
+              tileGlowSpread: 18,
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      tileBorderWidth: 2,
+      tileBorderColor: '#ff0000',
+      tileHoverBounce: false,
+      tileGlowEnabled: true,
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                tileBorderWidth: 2,
+                tileBorderColor: '#ff0000',
+                tileHoverBounce: false,
+                tileGlowEnabled: true,
+                tileGlowColor: '#00ffaa',
+                tileGlowSpread: 18,
               }),
             }),
           }),

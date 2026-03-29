@@ -173,6 +173,8 @@ That adapter settings area should also expose a shared `Media Frame` group for `
 
 That adapter settings area should also expose a shared `Photo Grid` group for `thumbnailGap` on justified and masonry, so the legacy dense-grid spacing field remains adapter-owned instead of being conflated with the broader common `adapterItemGap` control.
 
+That adapter settings area should also expose a shared `Tile Appearance` group for tile border, hover-bounce, and glow fields on the shape adapters plus justified and masonry, with border color and glow detail fields appearing only when their controlling border-width or glow toggle is active.
+
 Optional:
 
 3. advanced summary or raw effective view if debugging visibility is useful

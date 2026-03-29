@@ -160,6 +160,45 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Target Row Height (px)')).toHaveValue('240');
   });
 
+  it('renders shared tile-appearance fields for shape selections with conditional detail fields', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'hexagonal',
+                adapterSettings: {
+                  tileBorderWidth: 2,
+                  tileBorderColor: '#ff0000',
+                  tileHoverBounce: false,
+                  tileGlowEnabled: true,
+                  tileGlowColor: '#00ffaa',
+                  tileGlowSpread: 18,
+                  imageTileSize: 180,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByText('Tile Appearance')).toBeInTheDocument();
+    expect(screen.getByLabelText('Border Width (px)')).toHaveValue('2');
+    expect(screen.getByLabelText('Border Color')).toHaveValue('#ff0000');
+    expect(screen.getByLabelText('Hover Bounce', { selector: 'input' })).toHaveValue('Off');
+    expect(screen.getByLabelText('Hover Glow', { selector: 'input' })).toHaveValue('On');
+    expect(screen.getByLabelText('Glow Color')).toHaveValue('#00ffaa');
+    expect(screen.getByLabelText('Glow Spread (px)')).toHaveValue('18');
+  });
+
   it('renders shared common adapter spacing controls from nested common settings', async () => {
     render(
       <GalleryConfigEditorModal

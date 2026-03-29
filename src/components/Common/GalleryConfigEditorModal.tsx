@@ -342,9 +342,27 @@ function hasVisibleAdapterSettingField(
   );
 }
 
-const CONDITIONAL_ADAPTER_FIELD_PRESET_KEYS = {
-  imageShadowCustom: 'imageShadowPreset',
-  videoShadowCustom: 'videoShadowPreset',
+const CONDITIONAL_ADAPTER_FIELD_CONTROLLERS = {
+  imageShadowCustom: {
+    controllerKey: 'imageShadowPreset',
+    isVisible: (value: number | string | boolean | undefined) => value === 'custom',
+  },
+  videoShadowCustom: {
+    controllerKey: 'videoShadowPreset',
+    isVisible: (value: number | string | boolean | undefined) => value === 'custom',
+  },
+  tileBorderColor: {
+    controllerKey: 'tileBorderWidth',
+    isVisible: (value: number | string | boolean | undefined) => typeof value === 'number' && value > 0,
+  },
+  tileGlowColor: {
+    controllerKey: 'tileGlowEnabled',
+    isVisible: (value: number | string | boolean | undefined) => value === true,
+  },
+  tileGlowSpread: {
+    controllerKey: 'tileGlowEnabled',
+    isVisible: (value: number | string | boolean | undefined) => value === true,
+  },
 } as const;
 
 function shouldRenderAdapterSettingField(
@@ -357,17 +375,17 @@ function shouldRenderAdapterSettingField(
     return false;
   }
 
-  const presetKey = CONDITIONAL_ADAPTER_FIELD_PRESET_KEYS[field.key as keyof typeof CONDITIONAL_ADAPTER_FIELD_PRESET_KEYS];
-  if (!presetKey) {
+  const controller = CONDITIONAL_ADAPTER_FIELD_CONTROLLERS[field.key as keyof typeof CONDITIONAL_ADAPTER_FIELD_CONTROLLERS];
+  if (!controller) {
     return true;
   }
 
-  const presetField = group.fields.find((candidate) => candidate.key === presetKey);
-  if (!presetField) {
+  const controllerField = group.fields.find((candidate) => candidate.key === controller.controllerKey);
+  if (!controllerField) {
     return false;
   }
 
-  return getRepresentativeAdapterSettingValue(config, breakpoint, group, presetField) === 'custom';
+  return controller.isVisible(getRepresentativeAdapterSettingValue(config, breakpoint, group, controllerField));
 }
 
 function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['group']): string {
@@ -376,6 +394,8 @@ function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['group']):
       return 'Media Frame';
     case 'photo-grid':
       return 'Photo Grid';
+    case 'tile-appearance':
+      return 'Tile Appearance';
     case 'compact-grid':
       return 'Compact Grid';
     case 'layout-builder':
