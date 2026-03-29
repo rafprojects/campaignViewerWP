@@ -721,3 +721,52 @@ START HERE NEXT
 - Extract the remaining General tab body into its own settings module.
 - Keep non-gallery appearance work separate from galleryConfig ownership.
 ```
+
+## Entry - 2026-03-29 03:07:08 UTC
+
+### Snapshot
+
+- The remaining General tab body has now been extracted out of `SettingsPanel` into a dedicated `GeneralSettingsSection` module.
+- Theme selection, app-container controls, viewer-wrapper appearance, auth-bar settings, security, and developer toggles now live outside the main settings shell.
+- The extraction stayed structural, but the first build caught two real cleanup issues: a stale `ThemeSelector` import and a too-narrow section prop type.
+
+### Work Done
+
+- Added a dedicated `GeneralSettingsSection` component under `src/components/Settings/`.
+- Moved the inline General tab control tree into that component, including theme selection, default layout, app container sizing, WordPress full-bleed toggles, viewer header visibility, viewer background, auth-bar behavior, idle timeout, and developer toggles.
+- Wired `SettingsPanel` to pass the existing state updater plus a dedicated theme-change callback into the new section so save state and preview behavior remain owned by the shell.
+- Fixed the build-discovered follow-up issues by removing the stale `ThemeSelector` import from `SettingsPanel` and widening the extracted section's local settings type to match the panel updater contract.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 2 suites passed, 33 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- `SettingsPanel` now delegates both non-gallery top-level tabs that were still obvious monolith candidates: Campaign Cards and General.
+- The build-only type mismatch confirmed that section extraction components need prop types aligned with the panel updater contract, even when some keys are not used directly in the extracted subtree.
+- The most obvious remaining inline surface in `SettingsPanel` is now the Media Display tab body.
+
+### Recommended Next Slice
+
+1. Extract the remaining Media Display tab body into a dedicated settings section.
+   - Keep it as a structural refactor first, then continue any deeper gallery-config migration work separately.
+
+2. Continue treating build failures after extraction as useful contract checks.
+   - They are catching stale imports and prop-shape drift that the focused tests alone will not surface.
+
+### Handoff
+
+```text
+STATUS
+- General settings now live in a dedicated section component.
+- The branch is green on the focused SettingsPanel suite and build:wp.
+
+START HERE NEXT
+- Extract the remaining inline Media Display tab body.
+- Keep extraction work structural unless a field has a clearer shared gallery-config home.
+```

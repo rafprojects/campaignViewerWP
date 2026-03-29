@@ -44,11 +44,10 @@ import {
   type GalleryConfig,
   type ShadowPreset,
 } from '@/types';
-import { ThemeSelector } from './ThemeSelector';
 import { SettingTooltip } from './SettingTooltip';
 import type { CustomFontEntry } from '../Common/TypographyEditor';
-import { GradientEditor } from '../Common/GradientEditor';
 import { GalleryAdapterSettingsSection, type UpdateGallerySetting } from '../Settings/GalleryAdapterSettingsSection';
+import { GeneralSettingsSection } from '../Settings/GeneralSettingsSection';
 import { GalleryLayoutDetailSections } from '../Settings/GalleryLayoutDetailSections';
 import { GalleryPresentationSections } from '../Settings/GalleryPresentationSections';
 import { CampaignViewerSettingsSection } from '../Settings/CampaignViewerSettingsSection';
@@ -422,205 +421,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
             {/* ── General Tab ───────────────────────────────────── */}
             <Tabs.Panel value="general" pt="md">
-              {activeTab === 'general' && <Stack gap="md">
-                <ThemeSelector
-                  description="Choose a color theme. Preview applies instantly; saved when you click Save."
+              {activeTab === 'general' && (
+                <GeneralSettingsSection
+                  settings={settings}
+                  updateSetting={updateSetting}
                   onThemeChange={(id) => updateSetting('theme' as keyof SettingsData, id as SettingsData[keyof SettingsData])}
                 />
-
-                <Select
-                  label="Default Layout"
-                  description="Default layout for displaying gallery items."
-                  value={settings.galleryLayout}
-                  onChange={(value) =>
-                    updateSetting('galleryLayout', (value as SettingsData['galleryLayout']) ?? 'grid')
-                  }
-                  data={[
-                    { value: 'grid', label: 'Grid' },
-                    { value: 'masonry', label: 'Masonry' },
-                    { value: 'carousel', label: 'Carousel' },
-                  ]}
-                />
-
-                <NumberInput
-                  label="Items Per Page"
-                  description="Number of items to display per page (1-100)."
-                  value={settings.itemsPerPage}
-                  onChange={(value) => updateSetting('itemsPerPage', typeof value === 'number' ? value : 12)}
-                  min={1}
-                  max={100}
-                  step={1}
-                />
-
-                <Divider label="App Container" labelPosition="center" />
-
-                <NumberInput
-                  label="App Max Width (px)"
-                  description="Maximum width of the gallery container. Set to 0 for full-width (edge-to-edge). Default 1200px."
-                  value={settings.appMaxWidth}
-                  onChange={(value) => updateSetting('appMaxWidth', typeof value === 'number' ? value : defaultSettings.appMaxWidth)}
-                  min={0}
-                  max={3000}
-                  step={50}
-                  placeholder="0 = full width"
-                />
-
-                <NumberInput
-                  label="Container Padding (px)"
-                  description="Horizontal padding inside the container. Set to 0 for true edge-to-edge content. Default 16px."
-                  value={settings.appPadding}
-                  onChange={(value) => updateSetting('appPadding', typeof value === 'number' ? value : defaultSettings.appPadding)}
-                  min={0}
-                  max={100}
-                  step={4}
-                  placeholder="16"
-                />
-
-                {/* WP Full Bleed: counteracts WordPress block-theme container padding
-                    (.has-global-padding / .is-layout-constrained) by wrapping the shortcode
-                    output in an alignfull div with per-breakpoint negative-margin CSS rules.
-                    Server-rendered in PHP — requires page refresh to take effect. */}
-                <Switch
-                  label="WP Full Bleed — Desktop (≥ 1024px)"
-                  description="Break out of the WordPress page container padding on desktop viewports. Requires page refresh."
-                  checked={settings.wpFullBleedDesktop}
-                  onChange={(e) => updateSetting('wpFullBleedDesktop', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="WP Full Bleed — Tablet (768-1023px)"
-                  description="Break out of the WordPress page container padding on tablet viewports. Requires page refresh."
-                  checked={settings.wpFullBleedTablet}
-                  onChange={(e) => updateSetting('wpFullBleedTablet', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="WP Full Bleed — Mobile (< 768px)"
-                  description="Break out of the WordPress page container padding on mobile viewports. Requires page refresh."
-                  checked={settings.wpFullBleedMobile}
-                  onChange={(e) => updateSetting('wpFullBleedMobile', e.currentTarget.checked)}
-                />
-
-                <Divider label="Viewer Header Visibility" labelPosition="center" />
-
-                <Switch
-                  label="Show Gallery Title"
-                  description='Show the "Campaign Gallery" heading.'
-                  checked={settings.showGalleryTitle}
-                  onChange={(e) => updateSetting('showGalleryTitle', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Gallery Subtitle"
-                  description="Show the subtitle text beneath the title."
-                  checked={settings.showGallerySubtitle}
-                  onChange={(e) => updateSetting('showGallerySubtitle', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Access Mode"
-                  description="Show the Lock / Hide access-mode toggle (admin only)."
-                  checked={settings.showAccessMode}
-                  onChange={(e) => updateSetting('showAccessMode', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Filter Tabs"
-                  description="Show the campaign filter tab strip."
-                  checked={settings.showFilterTabs}
-                  onChange={(e) => updateSetting('showFilterTabs', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Search Box"
-                  description="Show the campaign search input."
-                  checked={settings.showSearchBox}
-                  onChange={(e) => updateSetting('showSearchBox', e.currentTarget.checked)}
-                />
-
-                <Divider label="Viewer Background" labelPosition="center" />
-
-                <Select
-                  label="Background Type"
-                  description="Gallery container background style"
-                  data={[
-                    { value: 'theme', label: 'Default Theme' },
-                    { value: 'transparent', label: 'Transparent' },
-                    { value: 'solid', label: 'Solid color' },
-                    { value: 'gradient', label: 'Custom gradient' },
-                  ]}
-                  value={settings.viewerBgType ?? 'theme'}
-                  onChange={(v) => updateSetting('viewerBgType', (v ?? 'theme') as GalleryBehaviorSettings['viewerBgType'])}
-                />
-                {settings.viewerBgType === 'solid' && (
-                  <ColorInput
-                    label="Background Color"
-                    description="Solid background color for the gallery"
-                    value={settings.viewerBgColor}
-                    onChange={(v) => updateSetting('viewerBgColor', v)}
-                  />
-                )}
-                {settings.viewerBgType === 'gradient' && (
-                  <GradientEditor
-                    value={settings.viewerBgGradient ?? {}}
-                    onChange={(opts) => updateSetting('viewerBgGradient', opts)}
-                  />
-                )}
-                <Switch
-                  label="Show Header Border"
-                  description="Show border, shadow, and backdrop blur on the sticky gallery header."
-                  checked={settings.showViewerBorder ?? true}
-                  onChange={(e) => updateSetting('showViewerBorder', e.currentTarget.checked)}
-                />
-
-                <Divider label="Auth Bar" labelPosition="center" />
-
-                <Select
-                  label="Auth Bar Display Mode"
-                  description="How the authentication bar appears on the page."
-                  data={[
-                    { value: 'bar', label: 'Bar (full-width sticky bar)' },
-                    { value: 'floating', label: 'Floating (circular icon, bottom-right)' },
-                    { value: 'draggable', label: 'Draggable (movable floating icon)' },
-                    { value: 'minimal', label: 'Minimal (thin strip, ≤32px)' },
-                    { value: 'auto-hide', label: 'Auto-hide (bar hides on scroll)' },
-                  ]}
-                  value={settings.authBarDisplayMode ?? 'floating'}
-                  onChange={(v) => updateSetting('authBarDisplayMode', (v ?? 'floating') as GalleryBehaviorSettings['authBarDisplayMode'])}
-                />
-                {settings.authBarDisplayMode === 'draggable' && (
-                  <NumberInput
-                    label="Drag Margin (px)"
-                    description="Minimum distance from viewport edges when dragging."
-                    value={settings.authBarDragMargin ?? 16}
-                    onChange={(v) => updateSetting('authBarDragMargin', Number(v) || 16)}
-                    min={0}
-                    max={64}
-                  />
-                )}
-
-                <Divider label="Security" labelPosition="center" />
-
-                <NumberInput
-                  label="Session Idle Timeout (minutes)"
-                  description="Automatically sign out users after this many minutes of inactivity. Set to 0 to disable."
-                  value={settings.sessionIdleTimeoutMinutes}
-                  onChange={(value) => updateSetting('sessionIdleTimeoutMinutes', typeof value === 'number' ? value : 0)}
-                  min={0}
-                  max={480}
-                  step={5}
-                  placeholder="0 = disabled"
-                />
-
-                <Divider label="Developer" labelPosition="center" />
-
-                <Switch
-                  label="Enable Advanced Settings"
-                  description="Unlock the Advanced tab with granular control over card opacities, tile dimensions, lightbox behavior, breakpoints, and more."
-                  checked={settings.advancedSettingsEnabled}
-                  onChange={(e) => updateSetting('advancedSettingsEnabled', e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Show Settings Tooltips"
-                  description="Display info icons next to Advanced-tab labels that explain each setting on hover."
-                  checked={settings.showSettingsTooltips}
-                  onChange={(e) => updateSetting('showSettingsTooltips', e.currentTarget.checked)}
-                />
-              </Stack>}
+              )}
             </Tabs.Panel>
 
             {/* ── Campaign Cards Tab ────────────────────────── */}
