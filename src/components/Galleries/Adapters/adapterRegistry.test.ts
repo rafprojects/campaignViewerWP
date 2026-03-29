@@ -69,14 +69,21 @@ describe('adapterRegistry', () => {
       'navArrowBorderWidth',
       'navArrowHoverScale',
       'navArrowAutoHideMs',
+      'navArrowEdgeInset',
+      'navArrowMinHitTarget',
+      'navArrowFadeDurationMs',
+      'navArrowScaleTransitionMs',
       'dotNavEnabled',
       'dotNavPosition',
       'dotNavSize',
+      'dotNavMaxVisibleDots',
       'dotNavActiveColor',
       'dotNavInactiveColor',
       'dotNavShape',
       'dotNavSpacing',
       'dotNavActiveScale',
+      'viewportHeightMobileRatio',
+      'viewportHeightTabletRatio',
     ]));
     expect(getSettingGroupFieldDefinitions('compact-grid').map((field) => field.key)).toEqual([
       'gridCardWidth',
@@ -85,6 +92,10 @@ describe('adapterRegistry', () => {
     expect(getSettingGroupFieldDefinitions('justified').map((field) => field.key)).toEqual([
       'mosaicTargetRowHeight',
       'photoNormalizeHeight',
+    ]);
+    expect(getSettingGroupFieldDefinitions('masonry').map((field) => field.key)).toEqual([
+      'masonryColumns',
+      'masonryAutoColumnBreakpoints',
     ]);
     expect(getSettingGroupFieldDefinitions('shape').map((field) => field.key)).toEqual([
       'tileSize',

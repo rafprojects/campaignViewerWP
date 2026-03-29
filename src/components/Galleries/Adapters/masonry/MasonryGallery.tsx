@@ -61,7 +61,7 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
   // Responsive column function — uses shared helper; honours user's pin when set.
   const columns = pinned > 0
     ? pinned
-    : (containerWidth: number) => resolveColumnsFromWidth(containerWidth, 0);
+    : (containerWidth: number) => resolveColumnsFromWidth(containerWidth, 0, settings.masonryAutoColumnBreakpoints);
 
   // Normalize all photos to a consistent reference height so large-resolution
   // images don't dominate the layout. react-photo-album uses width/height

@@ -18,6 +18,7 @@ describe('GalleryConfigEditorModal', () => {
                 adapterId: 'masonry',
                 adapterSettings: {
                   masonryColumns: 3,
+                  masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
                 },
               },
               video: {
@@ -34,6 +35,7 @@ describe('GalleryConfigEditorModal', () => {
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
     expect(screen.getByText('Masonry Columns (0 = auto)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('3')).toBeInTheDocument();
+    expect(screen.getByLabelText('Auto Column Breakpoints')).toHaveValue('480:2,768:3,1024:4,1280:5');
   });
 
   it('renders registry-driven compact grid fields for matching adapters', async () => {
@@ -93,10 +95,17 @@ describe('GalleryConfigEditorModal', () => {
                   navArrowSize: 42,
                   navArrowColor: '#ff8800',
                   navArrowBgColor: 'rgba(1,2,3,0.5)',
+                  navArrowEdgeInset: 18,
+                  navArrowMinHitTarget: 56,
+                  navArrowFadeDurationMs: 320,
+                  navArrowScaleTransitionMs: 210,
                   dotNavEnabled: false,
                   dotNavPosition: 'overlay-top',
+                  dotNavMaxVisibleDots: 9,
                   dotNavActiveColor: '#00ffaa',
                   dotNavInactiveColor: 'rgba(4,5,6,0.25)',
+                  viewportHeightMobileRatio: 0.7,
+                  viewportHeightTabletRatio: 0.85,
                 },
               },
             },
@@ -124,10 +133,17 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Arrow Size (px)')).toHaveValue('42');
     expect(screen.getByLabelText('Arrow Color')).toHaveValue('#ff8800');
     expect(screen.getByLabelText('Arrow Background Color')).toHaveValue('rgba(1,2,3,0.5)');
+    expect(screen.getByLabelText('Arrow Edge Inset (px)')).toHaveValue('18');
+    expect(screen.getByLabelText('Arrow Min Hit Target (px)')).toHaveValue('56');
+    expect(screen.getByLabelText('Arrow Fade Duration (ms)')).toHaveValue('320');
+    expect(screen.getByLabelText('Arrow Scale Transition (ms)')).toHaveValue('210');
     expect(screen.getByLabelText('Enable Dot Navigator', { selector: 'input' })).toHaveValue('Off');
     expect(screen.getByLabelText('Dot Position', { selector: 'input' })).toHaveValue('Overlay Top');
+    expect(screen.getByLabelText('Max Visible Dots')).toHaveValue('9');
     expect(screen.getByLabelText('Active Dot Color')).toHaveValue('#00ffaa');
     expect(screen.getByLabelText('Inactive Dot Color')).toHaveValue('rgba(4,5,6,0.25)');
+    expect(screen.getByLabelText('Viewport Height Mobile Ratio')).toHaveValue('0.7');
+    expect(screen.getByLabelText('Viewport Height Tablet Ratio')).toHaveValue('0.85');
   });
 
   it('renders shared photo-grid adapter fields for justified selections', async () => {

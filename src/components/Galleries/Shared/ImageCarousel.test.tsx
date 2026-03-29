@@ -138,8 +138,27 @@ describe('ImageCarousel', () => {
     );
 
     expect(screen.getByTestId('image-viewer-frame')).toHaveStyle({
-      maxHeight: 'min(calc(100dvh - 6rem), 82dvh)',
-      maxWidth: 'min(calc(min(calc(100dvh - 6rem), 82dvh) * 1.5), 94vw)',
+      maxHeight: 'min(calc(100dvh - 6rem), 65dvh)',
+      maxWidth: 'min(calc(min(calc(100dvh - 6rem), 65dvh) * 1.5), 94vw)',
+    });
+  });
+
+  it('uses configured tablet viewport ratio when viewport mode is selected on tablet', () => {
+    render(
+      <ImageCarousel
+        images={images}
+        breakpoint="tablet"
+        settings={{
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          gallerySizingMode: 'viewport',
+          viewportHeightTabletRatio: 0.85,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('image-viewer-frame')).toHaveStyle({
+      maxHeight: 'min(calc(100dvh - 10rem), 85dvh)',
+      maxWidth: 'min(calc(min(calc(100dvh - 10rem), 85dvh) * 1.5), 88vw)',
     });
   });
 

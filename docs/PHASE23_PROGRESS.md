@@ -2,6 +2,69 @@
 
 Purpose: pragmatic, agent-readable checkpoint notes for continuing Phase 23 work without re-deriving recent decisions from git history or the larger report.
 
+## Entry - 2026-03-29 15:06:02 UTC
+
+### Snapshot
+
+- The remaining P23-C adapter-schema gap has now been closed.
+- The last orphaned adapter-owned settings were not just missing from schema metadata; parts of the live runtime were still ignoring them behind hardcoded constants.
+- P23-C can now be treated as complete for the current adapter family surface rather than as a vague bucket for leftover gallery settings.
+
+### Work Done
+
+- Added the remaining schema-owned classic carousel fields to the registry-owned `carousel` group:
+  - `dotNavMaxVisibleDots`
+  - `navArrowEdgeInset`
+  - `navArrowMinHitTarget`
+  - `navArrowFadeDurationMs`
+  - `navArrowScaleTransitionMs`
+  - `viewportHeightMobileRatio`
+  - `viewportHeightTabletRatio`
+- Added `masonryAutoColumnBreakpoints` to the registry-owned `masonry` group.
+- Wired `DotNavigator` to honor `dotNavMaxVisibleDots` instead of a hardcoded truncation threshold.
+- Wired `OverlayArrows` to honor edge inset, minimum hit target, fade duration, and scale transition duration instead of hardcoded layout and timing constants.
+- Wired `MediaCarouselAdapter` viewport mode to honor the configured mobile and tablet viewport-height ratios.
+- Wired masonry auto-column resolution to honor the configured breakpoint string instead of a fixed width-to-column heuristic only.
+- Extended the backend nested adapter-field allowlist so these keys now sanitize and round-trip through nested `galleryConfig` and campaign `galleryOverrides` payloads.
+- Updated focused frontend and backend coverage around registry field exposure, shared-editor rendering, settings-panel seed/projection behavior, runtime behavior, and nested REST sanitization.
+
+### Validation Run
+
+- Focused frontend suites passed:
+  - `src/components/Galleries/Adapters/adapterRegistry.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Galleries/Shared/DotNavigator.test.tsx`
+  - `src/components/Galleries/Shared/OverlayArrows.test.tsx`
+  - `src/components/Galleries/Shared/ImageCarousel.test.tsx`
+  - `src/utils/resolveColumnsFromWidth.test.ts`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 7 suites passed, 96 tests passed
+- Production build passed:
+  - `npm run build:wp`
+- Focused backend `wp-env` suites passed:
+  - `tests/WPSG_Settings_Test.php`
+  - `tests/WPSG_Campaign_Rest_Test.php`
+  - result: 15 tests passed, 111 assertions
+  - note: the usual `WP_DEBUG already defined` warning still appeared inside the container but the suite passed cleanly
+
+### Assessment
+
+- The key finding was that the remaining P23-C work was real implementation debt, not just stale documentation. These fields existed in flat settings and defaults, but some were not registry-owned and some were not even consumed by the live runtime.
+- With this slice landed, the current adapter family surface now has a coherent contract across registry metadata, shared-editor rendering, settings-panel bridge behavior, runtime resolution, and backend sanitization.
+- Remaining Phase 23 work should now move back to campaign parity, render-path cleanup, and any broader non-gallery appearance work rather than keeping P23-C open as a catch-all.
+
+### Handoff
+
+```text
+STATUS
+- P23-C is now effectively complete for the current adapter family surface.
+- Frontend focused suites, build:wp, and focused wp-env backend suites are green.
+
+START HERE NEXT
+- Do not reopen P23-C for these fields again.
+- Treat future work on this branch as P23-G/P23-H/P23-I/J follow-through unless a genuinely new adapter family introduces new schema ownership.
+```
+
 ## Entry - 2026-03-28 13:53:19 UTC
 
 ### Snapshot

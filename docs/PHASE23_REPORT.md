@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P23-A | Backend settings decomposition | In Progress 🚧 | Medium-Large (1-2 days) |
 | P23-B | Frontend settings decomposition | Completed ✅ | Medium-Large (1-2 days) |
-| P23-C | Authoritative adapter schema | In Progress 🚧 | Medium (1 day) |
+| P23-C | Authoritative adapter schema | Completed ✅ | Medium (1 day) |
 | P23-D | Nested responsive gallery config model | In Progress 🚧 | Large (1-2 days) |
 | P23-E | Shared resolver and inheritance layer | In Progress 🚧 | Medium-Large (1 day) |
 | P23-F | Shared Gallery Config editor UX | Completed ✅ | Large (1-2 days) |
@@ -362,8 +362,9 @@ Completed initial schema extraction:
 38. added a shared `tile-appearance` adapter group for tile border, hover-bounce, and glow fields, attaching it to the shape adapters plus justified and masonry so the shared tile-style contract can round-trip through nested adapter settings with the same conditional visibility rules as the legacy inline UI
 39. extended the shared `shape` adapter group to include `tileGapX` and `tileGapY`, so the remaining shape-only spacing fields can round-trip through nested adapter settings instead of staying stranded on the flat legacy path
 40. extended the existing `layout-builder` adapter group to include `tileGlowColor` and `tileGlowSpread` as slot-default fallback settings, so layout-builder-specific glow defaults can round-trip through nested adapter settings without pretending the full shared tile-appearance contract applies there
+41. closed the remaining live adapter-schema gap by moving `masonryAutoColumnBreakpoints` plus the last classic carousel runtime fields (`dotNavMaxVisibleDots`, `navArrowEdgeInset`, `navArrowMinHitTarget`, `navArrowFadeDurationMs`, `navArrowScaleTransitionMs`, `viewportHeightMobileRatio`, and `viewportHeightTabletRatio`) into registry-owned adapter groups, wiring the classic and masonry runtimes to honor them, and extending the shared backend nested adapter-field allowlist so editor UX, runtime behavior, and sanitization now share one contract for the full current adapter surface
 
-Remaining work in P23-C is now concentrated on broader non-gallery appearance slices and any future adapter field families that still need a clear nested ownership model.
+P23-C is now effectively complete for the current adapter family surface. Any future work here should be limited to brand-new adapter families, not unresolved ownership inside the existing schema-driven gallery contract.
 
 ### Files to modify
 
@@ -639,6 +640,7 @@ Completed sanitization/REST slices:
 11. nested `common` settings now also explicitly own the live gallery label and visibility controls used across adapter renderers, so nested payloads can sanitize and project label text, justification, icon visibility, and section-label visibility through the shared backend and resolver pipeline instead of treating them as stray top-level fields
 12. nested `common` settings now also explicitly own the scope-aware viewport background controls used by gallery section wrappers, so global settings and campaign override payloads can sanitize background type/color/gradient/image values through the same shared backend path
 13. campaign import flows now also route nested `galleryOverrides` through the shared gallery-override sanitizer before persistence, and duplicate flows preserve `_wpsg_gallery_overrides` directly, so non-editor lifecycle operations no longer punch a hole through the nested parity contract
+14. nested `adapterSettings` now also explicitly own the remaining classic navigation timing and spacing fields plus masonry auto-column breakpoint rules, so backend sanitization no longer treats those live runtime keys as stray compatibility-only fields when they arrive through nested config payloads
 
 Remaining P23-I work is concentrated on the smaller set of legacy settings that are still outside the shared editor's current schema surface, so the remaining compatibility-preserved unknown keys can either move into explicit validation maps or be intentionally rejected once their intended ownership is settled.
 
@@ -704,6 +706,7 @@ Completed documentation/testing slices:
 28. focused frontend coverage now also validates legacy campaign adapter-id normalization from nested overrides plus the shared viewer-shell layout helper, keeping campaign save compatibility and outer gallery spacing behavior aligned through the latest combined P23-G/P23-H cleanup slice
 29. focused campaign modal and hook coverage now also validates that unified nested overrides normalize the legacy adapter bridge fields consistently during edit hydration and shared-editor apply flows, so form-state parity stays aligned with the final save path
 30. focused `wp-env` backend coverage now also validates that REST and CLI duplicate/import flows preserve nested campaign gallery overrides, so campaign parity no longer depends on only the direct create/update editor path staying correct
+31. focused registry, shared-editor, settings-panel, classic runtime, build, and `wp-env` settings/campaign suites now also validate the last orphaned classic navigation and masonry auto-breakpoint fields, closing the final adapter-schema parity gap that had kept P23-C open
 
 Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
 

@@ -212,6 +212,9 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
                                 'theme' => 'nord',
                                 'headline<script>' => '<b>Unsafe</b>',
                             ],
+                            'adapterSettings' => [
+                                'masonryAutoColumnBreakpoints' => '<b>480:2,768:3,1024:4,1280:5</b>',
+                            ],
                         ],
                         'video' => [
                             'adapterId' => 'classic',
@@ -221,6 +224,13 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
                                 'thumbnailGap' => 99,
                                 'navArrowPosition' => 'bottom',
                                 'navArrowSize' => 999,
+                                'dotNavMaxVisibleDots' => 99,
+                                'navArrowEdgeInset' => 999,
+                                'navArrowMinHitTarget' => 5,
+                                'navArrowFadeDurationMs' => 5000,
+                                'navArrowScaleTransitionMs' => -1,
+                                'viewportHeightMobileRatio' => 2,
+                                'viewportHeightTabletRatio' => 0.1,
                                 'dotNavShape' => 'triangle',
                                 'dotNavActiveScale' => 9,
                                 'imageShadowPreset' => 'custom',
@@ -260,12 +270,20 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertFalse($created['galleryOverrides']['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
         $this->assertArrayNotHasKey('theme', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals('480:2,768:3,1024:4,1280:5', $created['galleryOverrides']['breakpoints']['desktop']['image']['adapterSettings']['masonryAutoColumnBreakpoints'] ?? null);
         $this->assertEquals('classic', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterId'] ?? null);
         $this->assertEquals(900, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['imageViewportHeight'] ?? null);
         $this->assertEquals(48, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['videoBorderRadius'] ?? null);
         $this->assertEquals(24, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['thumbnailGap'] ?? null);
         $this->assertEquals('bottom', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowPosition'] ?? null);
         $this->assertEquals(64, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowSize'] ?? null);
+        $this->assertEquals(20, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['dotNavMaxVisibleDots'] ?? null);
+        $this->assertEquals(48, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowEdgeInset'] ?? null);
+        $this->assertEquals(24, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowMinHitTarget'] ?? null);
+        $this->assertEquals(1000, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowFadeDurationMs'] ?? null);
+        $this->assertEquals(0, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowScaleTransitionMs'] ?? null);
+        $this->assertEquals(1.0, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightMobileRatio'] ?? null);
+        $this->assertEquals(0.3, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightTabletRatio'] ?? null);
         $this->assertArrayNotHasKey('dotNavShape', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
         $this->assertEquals(2.0, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['dotNavActiveScale'] ?? null);
         $this->assertEquals('custom', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['imageShadowPreset'] ?? null);
@@ -289,11 +307,19 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertFalse($stored['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
         $this->assertArrayNotHasKey('theme', $stored['breakpoints']['desktop']['image']['common'] ?? []);
         $this->assertEquals('Unsafe', $stored['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals('480:2,768:3,1024:4,1280:5', $stored['breakpoints']['desktop']['image']['adapterSettings']['masonryAutoColumnBreakpoints'] ?? null);
         $this->assertEquals(900, $stored['breakpoints']['desktop']['video']['adapterSettings']['imageViewportHeight'] ?? null);
         $this->assertEquals(48, $stored['breakpoints']['desktop']['video']['adapterSettings']['videoBorderRadius'] ?? null);
         $this->assertEquals(24, $stored['breakpoints']['desktop']['video']['adapterSettings']['thumbnailGap'] ?? null);
         $this->assertEquals('bottom', $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowPosition'] ?? null);
         $this->assertEquals(64, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowSize'] ?? null);
+        $this->assertEquals(20, $stored['breakpoints']['desktop']['video']['adapterSettings']['dotNavMaxVisibleDots'] ?? null);
+        $this->assertEquals(48, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowEdgeInset'] ?? null);
+        $this->assertEquals(24, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowMinHitTarget'] ?? null);
+        $this->assertEquals(1000, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowFadeDurationMs'] ?? null);
+        $this->assertEquals(0, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowScaleTransitionMs'] ?? null);
+        $this->assertEquals(1.0, $stored['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightMobileRatio'] ?? null);
+        $this->assertEquals(0.3, $stored['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightTabletRatio'] ?? null);
         $this->assertArrayNotHasKey('dotNavShape', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
         $this->assertEquals(2.0, $stored['breakpoints']['desktop']['video']['adapterSettings']['dotNavActiveScale'] ?? null);
         $this->assertEquals('custom', $stored['breakpoints']['desktop']['video']['adapterSettings']['imageShadowPreset'] ?? null);

@@ -30,10 +30,10 @@ const IMAGE_ASPECT_RATIO_MULTIPLIER = 1.5;
 const VIDEO_ASPECT_RATIO = '16 / 9';
 const VIDEO_ASPECT_RATIO_MULTIPLIER = 16 / 9;
 
-const VIEWPORT_MAX_HEIGHTS: Record<Breakpoint, string> = {
-  desktop: 'min(calc(100dvh - 16rem), 68dvh)',
-  tablet: 'min(calc(100dvh - 10rem), 74dvh)',
-  mobile: 'min(calc(100dvh - 6rem), 82dvh)',
+const VIEWPORT_HEIGHT_OFFSETS: Record<Breakpoint, string> = {
+  desktop: '16rem',
+  tablet: '10rem',
+  mobile: '6rem',
 };
 const VIEWPORT_MAX_WIDTHS: Record<Breakpoint, string> = {
   desktop: '72vw',
@@ -68,6 +68,34 @@ function deriveBreakpoint(containerWidth: number | undefined): Breakpoint {
   if (!containerWidth || containerWidth >= BP_TABLET_MAX) return 'desktop';
   if (containerWidth >= BP_MOBILE_MAX) return 'tablet';
   return 'mobile';
+}
+
+function clampViewportRatio(value: number | undefined, fallback: number): number {
+  return Math.max(0.3, Math.min(1, value ?? fallback));
+}
+
+function formatRatioDvh(value: number): string {
+  return `${Number((value * 100).toFixed(2))}dvh`;
+}
+
+function resolveViewportMaxHeight(breakpoint: Breakpoint, settings: GalleryBehaviorSettings): string {
+  const viewportBudget = `calc(100dvh - ${resolveBreakpointValue(breakpoint, VIEWPORT_HEIGHT_OFFSETS)})`;
+
+  if (breakpoint === 'mobile') {
+    return `min(${viewportBudget}, ${formatRatioDvh(clampViewportRatio(
+      settings.viewportHeightMobileRatio,
+      DEFAULT_GALLERY_BEHAVIOR_SETTINGS.viewportHeightMobileRatio,
+    ))})`;
+  }
+
+  if (breakpoint === 'tablet') {
+    return `min(${viewportBudget}, ${formatRatioDvh(clampViewportRatio(
+      settings.viewportHeightTabletRatio,
+      DEFAULT_GALLERY_BEHAVIOR_SETTINGS.viewportHeightTabletRatio,
+    ))})`;
+  }
+
+  return `min(${viewportBudget}, 68dvh)`;
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -218,7 +246,7 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
     [settings.galleryManualHeight, standardHeight],
   );
 
-  const viewportMaxHeight = resolveBreakpointValue(breakpoint, VIEWPORT_MAX_HEIGHTS);
+  const viewportMaxHeight = resolveViewportMaxHeight(breakpoint, settings);
   const viewportWidthCap = resolveBreakpointValue(breakpoint, VIEWPORT_MAX_WIDTHS);
   const viewportFrameMaxWidth = useMemo(
     () => `calc(${viewportMaxHeight} * ${aspectMultiplier})`,

@@ -628,6 +628,7 @@ describe('SettingsPanel', () => {
           gallerySelectionMode: 'per-breakpoint',
           desktopImageAdapterId: 'masonry',
           masonryColumns: 4,
+          masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
         }}
       />
     );
@@ -639,6 +640,7 @@ describe('SettingsPanel', () => {
     const desktopImage = value?.breakpoints?.desktop?.image;
     expect(desktopImage?.adapterId).toBe('masonry');
     expect(desktopImage?.adapterSettings?.masonryColumns).toBe(4);
+    expect(desktopImage?.adapterSettings?.masonryAutoColumnBreakpoints).toBe('480:2,768:3,1024:4,1280:5');
   });
 
   it('seeds shared editor classic carousel values from flat settings', async () => {
@@ -665,10 +667,17 @@ describe('SettingsPanel', () => {
           navArrowSize: 42,
           navArrowColor: '#ff8800',
           navArrowBgColor: 'rgba(1,2,3,0.5)',
+          navArrowEdgeInset: 18,
+          navArrowMinHitTarget: 56,
+          navArrowFadeDurationMs: 320,
+          navArrowScaleTransitionMs: 210,
           dotNavEnabled: false,
           dotNavPosition: 'overlay-top',
+          dotNavMaxVisibleDots: 9,
           dotNavActiveColor: '#00ffaa',
           dotNavInactiveColor: 'rgba(4,5,6,0.25)',
+          viewportHeightMobileRatio: 0.7,
+          viewportHeightTabletRatio: 0.85,
         }}
       />
     );
@@ -691,10 +700,17 @@ describe('SettingsPanel', () => {
     expect(adapterSettings?.navArrowSize).toBe(42);
     expect(adapterSettings?.navArrowColor).toBe('#ff8800');
     expect(adapterSettings?.navArrowBgColor).toBe('rgba(1,2,3,0.5)');
+    expect(adapterSettings?.navArrowEdgeInset).toBe(18);
+    expect(adapterSettings?.navArrowMinHitTarget).toBe(56);
+    expect(adapterSettings?.navArrowFadeDurationMs).toBe(320);
+    expect(adapterSettings?.navArrowScaleTransitionMs).toBe(210);
     expect(adapterSettings?.dotNavEnabled).toBe(false);
     expect(adapterSettings?.dotNavPosition).toBe('overlay-top');
+    expect(adapterSettings?.dotNavMaxVisibleDots).toBe(9);
     expect(adapterSettings?.dotNavActiveColor).toBe('#00ffaa');
     expect(adapterSettings?.dotNavInactiveColor).toBe('rgba(4,5,6,0.25)');
+    expect(adapterSettings?.viewportHeightMobileRatio).toBe(0.7);
+    expect(adapterSettings?.viewportHeightTabletRatio).toBe(0.85);
     expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(14);
     expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(18);
     expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageViewportHeight).toBe(560);
@@ -811,7 +827,14 @@ describe('SettingsPanel', () => {
       carouselVisibleCards: 3,
       navArrowPosition: 'bottom',
       navArrowColor: '#ff8800',
+      navArrowEdgeInset: 18,
+      navArrowMinHitTarget: 56,
+      navArrowFadeDurationMs: 320,
+      navArrowScaleTransitionMs: 210,
       dotNavEnabled: false,
+      dotNavMaxVisibleDots: 9,
+      viewportHeightMobileRatio: 0.7,
+      viewportHeightTabletRatio: 0.85,
     });
 
     apiClient = createMockApiClient({ updateSettings });
@@ -838,7 +861,14 @@ describe('SettingsPanel', () => {
               carouselVisibleCards: 3,
               navArrowPosition: 'bottom',
               navArrowColor: '#ff8800',
+              navArrowEdgeInset: 18,
+              navArrowMinHitTarget: 56,
+              navArrowFadeDurationMs: 320,
+              navArrowScaleTransitionMs: 210,
               dotNavEnabled: false,
+              dotNavMaxVisibleDots: 9,
+              viewportHeightMobileRatio: 0.7,
+              viewportHeightTabletRatio: 0.85,
             },
           },
           video: {
@@ -874,7 +904,14 @@ describe('SettingsPanel', () => {
       carouselVisibleCards: 3,
       navArrowPosition: 'bottom',
       navArrowColor: '#ff8800',
+      navArrowEdgeInset: 18,
+      navArrowMinHitTarget: 56,
+      navArrowFadeDurationMs: 320,
+      navArrowScaleTransitionMs: 210,
       dotNavEnabled: false,
+      dotNavMaxVisibleDots: 9,
+      viewportHeightMobileRatio: 0.7,
+      viewportHeightTabletRatio: 0.85,
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -886,7 +923,14 @@ describe('SettingsPanel', () => {
                 imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
                 navArrowPosition: 'bottom',
                 navArrowColor: '#ff8800',
+                navArrowEdgeInset: 18,
+                navArrowMinHitTarget: 56,
+                navArrowFadeDurationMs: 320,
+                navArrowScaleTransitionMs: 210,
                 dotNavEnabled: false,
+                dotNavMaxVisibleDots: 9,
+                viewportHeightMobileRatio: 0.7,
+                viewportHeightTabletRatio: 0.85,
               }),
             }),
             video: expect.objectContaining({
@@ -907,6 +951,7 @@ describe('SettingsPanel', () => {
       ...seedSettings,
       thumbnailGap: 14,
       masonryColumns: 3,
+      masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
     });
 
     apiClient = createMockApiClient({ updateSettings });
@@ -927,6 +972,7 @@ describe('SettingsPanel', () => {
             adapterSettings: {
               thumbnailGap: 14,
               masonryColumns: 3,
+              masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
             },
           },
         },
@@ -944,6 +990,7 @@ describe('SettingsPanel', () => {
     expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
       thumbnailGap: 14,
       masonryColumns: 3,
+      masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -951,6 +998,7 @@ describe('SettingsPanel', () => {
               adapterSettings: expect.objectContaining({
                 thumbnailGap: 14,
                 masonryColumns: 3,
+                masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
               }),
             }),
           }),

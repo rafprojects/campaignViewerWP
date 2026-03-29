@@ -345,8 +345,16 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'imageViewportHeight' => 9999,
                             'videoBorderRadius' => 99,
                             'thumbnailGap' => 99,
+                            'masonryAutoColumnBreakpoints' => '<b>480:2,768:3,1024:4,1280:5</b>',
                             'navArrowPosition' => 'invalid-option',
                             'navArrowSize' => 999,
+                            'dotNavMaxVisibleDots' => 99,
+                            'navArrowEdgeInset' => 999,
+                            'navArrowMinHitTarget' => 5,
+                            'navArrowFadeDurationMs' => 5000,
+                            'navArrowScaleTransitionMs' => -1,
+                            'viewportHeightMobileRatio' => 2,
+                            'viewportHeightTabletRatio' => 0.1,
                             'dotNavShape' => 'triangle',
                             'dotNavActiveScale' => 9,
                             'imageShadowPreset' => 'invalid-option',
@@ -381,8 +389,16 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals(900, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['imageViewportHeight'] ?? null);
         $this->assertEquals(48, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['videoBorderRadius'] ?? null);
         $this->assertEquals(24, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['thumbnailGap'] ?? null);
+        $this->assertEquals('480:2,768:3,1024:4,1280:5', $sanitized['breakpoints']['desktop']['image']['adapterSettings']['masonryAutoColumnBreakpoints'] ?? null);
         $this->assertArrayNotHasKey('navArrowPosition', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
         $this->assertEquals(64, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowSize'] ?? null);
+        $this->assertEquals(20, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['dotNavMaxVisibleDots'] ?? null);
+        $this->assertEquals(48, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowEdgeInset'] ?? null);
+        $this->assertEquals(24, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowMinHitTarget'] ?? null);
+        $this->assertEquals(1000, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowFadeDurationMs'] ?? null);
+        $this->assertEquals(0, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowScaleTransitionMs'] ?? null);
+        $this->assertEquals(1.0, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['viewportHeightMobileRatio'] ?? null);
+        $this->assertEquals(0.3, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['viewportHeightTabletRatio'] ?? null);
         $this->assertArrayNotHasKey('dotNavShape', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
         $this->assertEquals(2.0, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['dotNavActiveScale'] ?? null);
         $this->assertArrayNotHasKey('imageShadowPreset', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { GalleryBehaviorSettings } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
 
 interface DotNavigatorProps {
   total: number;
@@ -8,24 +8,46 @@ interface DotNavigatorProps {
   settings: GalleryBehaviorSettings;
 }
 
-/** Maximum dots before truncation kicks in. */
-const MAX_VISIBLE_DOTS = 7;
+type DotItem = { index: number; type: 'dot' | 'ellipsis' };
 
-function buildDots(total: number, currentIndex: number) {
-  if (total <= MAX_VISIBLE_DOTS) {
+function buildDots(total: number, currentIndex: number, maxVisibleDots: number): DotItem[] {
+  if (total <= maxVisibleDots) {
     return Array.from({ length: total }, (_, i) => ({ index: i, type: 'dot' as const }));
   }
 
-  const visible = new Set<number>();
-  visible.add(0);
-  visible.add(total - 1);
-  for (let delta = -1; delta <= 1; delta++) {
-    const index = currentIndex + delta;
-    if (index >= 0 && index < total) visible.add(index);
+  const visible = new Set<number>([0, total - 1, currentIndex]);
+  let left = currentIndex - 1;
+  let right = currentIndex + 1;
+
+  while (visible.size < maxVisibleDots) {
+    let added = false;
+
+    if (left >= 1) {
+      visible.add(left);
+      left -= 1;
+      added = true;
+    }
+
+    if (visible.size >= maxVisibleDots) {
+      break;
+    }
+
+    if (right <= total - 2) {
+      visible.add(right);
+      right += 1;
+      added = true;
+    }
+
+    if (!added) {
+      break;
+    }
   }
 
+  visible.add(0);
+  visible.add(total - 1);
+
   const sorted = [...visible].sort((a, b) => a - b);
-  const result: Array<{ index: number; type: 'dot' | 'ellipsis' }> = [];
+  const result: DotItem[] = [];
   let previous = -1;
 
   for (const index of sorted) {
@@ -47,7 +69,11 @@ function buildDots(total: number, currentIndex: number) {
 export function DotNavigator({ total, currentIndex, onSelect, settings }: DotNavigatorProps) {
   if (!settings.dotNavEnabled || total <= 1) return null;
 
-  const dots = buildDots(total, currentIndex);
+  const dots = buildDots(
+    total,
+    currentIndex,
+    Math.max(3, settings.dotNavMaxVisibleDots ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavMaxVisibleDots),
+  );
 
   const isOverlay = settings.dotNavPosition !== 'below';
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
 
 interface OverlayArrowsProps {
   onPrev: () => void;
@@ -27,37 +27,43 @@ export function OverlayArrows({
   previousLabel = 'Previous',
   nextLabel = 'Next',
 }: OverlayArrowsProps) {
-  const [visible, setVisible] = useState(settings.navArrowAutoHideMs === 0);
+  const autoHideMs = settings.navArrowAutoHideMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs;
+  const edgeInset = settings.navArrowEdgeInset ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowEdgeInset;
+  const minHitTarget = settings.navArrowMinHitTarget ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowMinHitTarget;
+  const fadeDurationMs = settings.navArrowFadeDurationMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowFadeDurationMs;
+  const scaleTransitionMs = settings.navArrowScaleTransitionMs ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowScaleTransitionMs;
+
+  const [visible, setVisible] = useState(autoHideMs === 0);
   const hideTimerRef = useRef<number>(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const scheduleHide = useCallback(() => {
-    if (settings.navArrowAutoHideMs <= 0) return;
+    if (autoHideMs <= 0) return;
     window.clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = window.setTimeout(() => setVisible(false), settings.navArrowAutoHideMs);
-  }, [settings.navArrowAutoHideMs]);
+    hideTimerRef.current = window.setTimeout(() => setVisible(false), autoHideMs);
+  }, [autoHideMs]);
 
   /* Seed initial visibility */
   useEffect(() => {
-    if (settings.navArrowAutoHideMs > 0) {
+    if (autoHideMs > 0) {
       setVisible(false);
     } else {
       setVisible(true);
     }
     return () => window.clearTimeout(hideTimerRef.current);
-  }, [settings.navArrowAutoHideMs]);
+  }, [autoHideMs]);
 
   /* Attach interaction listeners on the *parent* element (the viewport Box)
      so they fire even while the overlay wrapper has pointer-events: none. */
   useEffect(() => {
-    if (settings.navArrowAutoHideMs <= 0) return;
+    if (autoHideMs <= 0) return;
     const parent = wrapperRef.current?.parentElement;
     if (!parent) return;
 
     const show = () => {
       setVisible(true);
       window.clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = window.setTimeout(() => setVisible(false), settings.navArrowAutoHideMs);
+      hideTimerRef.current = window.setTimeout(() => setVisible(false), autoHideMs);
     };
 
     parent.addEventListener('mousemove', show);
@@ -66,7 +72,7 @@ export function OverlayArrows({
       parent.removeEventListener('mousemove', show);
       parent.removeEventListener('touchstart', show);
     };
-  }, [settings.navArrowAutoHideMs, scheduleHide]);
+  }, [autoHideMs, scheduleHide]);
 
   if (total <= 1) return null;
 
@@ -75,9 +81,9 @@ export function OverlayArrows({
      that caused the "initial drop" bug). */
   const verticalStyle: CSSProperties =
     settings.navArrowPosition === 'top'
-      ? { top: 12 }
+      ? { top: edgeInset }
       : settings.navArrowPosition === 'bottom'
-        ? { bottom: 12 }
+        ? { bottom: edgeInset }
         : { top: 0, bottom: 0, marginBlock: 'auto' };
 
   const iconSize = Math.round(settings.navArrowSize * 0.6);
@@ -89,13 +95,13 @@ export function OverlayArrows({
     border: settings.navArrowBorderWidth > 0
       ? `${settings.navArrowBorderWidth}px solid ${settings.navArrowColor}`
       : 'none',
-    transition: 'opacity 250ms ease, transform 150ms ease',
+    transition: `opacity ${fadeDurationMs}ms ease, transform ${scaleTransitionMs}ms ease`,
     opacity: visible ? 1 : 0,
     pointerEvents: visible ? 'auto' : 'none',
-    width: Math.max(44, settings.navArrowSize),
-    height: Math.max(44, settings.navArrowSize),
-    minWidth: Math.max(44, settings.navArrowSize),
-    minHeight: Math.max(44, settings.navArrowSize),
+    width: Math.max(minHitTarget, settings.navArrowSize),
+    height: Math.max(minHitTarget, settings.navArrowSize),
+    minWidth: Math.max(minHitTarget, settings.navArrowSize),
+    minHeight: Math.max(minHitTarget, settings.navArrowSize),
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
@@ -117,7 +123,7 @@ export function OverlayArrows({
     >
       <button
         type="button"
-        style={{ ...baseBtnStyle, left: 12, ...verticalStyle }}
+        style={{ ...baseBtnStyle, left: edgeInset, ...verticalStyle }}
         onClick={(e) => { e.stopPropagation(); onPrev(); }}
         onMouseEnter={(e) => handleHover(e, true)}
         onMouseLeave={(e) => handleHover(e, false)}
@@ -128,7 +134,7 @@ export function OverlayArrows({
 
       <button
         type="button"
-        style={{ ...baseBtnStyle, right: 12, ...verticalStyle }}
+        style={{ ...baseBtnStyle, right: edgeInset, ...verticalStyle }}
         onClick={(e) => { e.stopPropagation(); onNext(); }}
         onMouseEnter={(e) => handleHover(e, true)}
         onMouseLeave={(e) => handleHover(e, false)}
