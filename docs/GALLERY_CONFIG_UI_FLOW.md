@@ -177,6 +177,8 @@ That adapter settings area should also expose a shared `Tile Appearance` group f
 
 That adapter settings area should also expose a shared `Shape Layout` group for `tileGapX` and `tileGapY` on the shape adapters, so shape-only spacing stays with the adapters that consume it instead of being folded into broader common spacing controls.
 
+That adapter settings area should also expose the existing `Layout Builder` group for `layoutBuilderScope`, `tileGlowColor`, and `tileGlowSpread`, so slot-default glow behavior stays adapter-owned for layout-builder without implying that the broader shared `Tile Appearance` contract applies there.
+
 Optional:
 
 3. advanced summary or raw effective view if debugging visibility is useful

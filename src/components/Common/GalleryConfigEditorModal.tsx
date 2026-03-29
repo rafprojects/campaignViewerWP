@@ -162,7 +162,7 @@ function getRepresentativeAdapterSettingValue(
     const value = scopeConfig?.adapterSettings?.[field.key];
     if (
       (field.control === 'number' && typeof value === 'number')
-      || ((field.control === 'select' || field.control === 'text') && typeof value === 'string')
+      || ((field.control === 'select' || field.control === 'text' || field.control === 'color') && typeof value === 'string')
       || (field.control === 'boolean' && typeof value === 'boolean')
     ) {
       return value;
@@ -382,7 +382,7 @@ function shouldRenderAdapterSettingField(
 
   const controllerField = group.fields.find((candidate) => candidate.key === controller.controllerKey);
   if (!controllerField) {
-    return false;
+    return true;
   }
 
   return controller.isVisible(getRepresentativeAdapterSettingValue(config, breakpoint, group, controllerField));
@@ -958,6 +958,24 @@ export function GalleryConfigEditorModal({
                             group,
                             field,
                             event.currentTarget.value,
+                          ))}
+                        />
+                      );
+                    }
+
+                    if (field.control === 'color') {
+                      return (
+                        <ColorInput
+                          key={String(field.key)}
+                          label={field.label}
+                          description={field.description}
+                          value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
+                          onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                            current,
+                            activeBreakpoint,
+                            group,
+                            field,
+                            value,
                           ))}
                         />
                       );

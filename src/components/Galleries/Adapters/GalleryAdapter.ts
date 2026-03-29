@@ -99,7 +99,21 @@ export interface AdapterTextSettingField {
   placeholder?: string;
 }
 
-export type AdapterSettingFieldDefinition = AdapterNumberSettingField | AdapterSelectSettingField | AdapterBooleanSettingField | AdapterTextSettingField;
+export interface AdapterColorSettingField {
+  control: 'color';
+  key: keyof GalleryBehaviorSettings;
+  label: string;
+  description: string;
+  appliesTo?: AdapterSettingFieldAppliesTo;
+  fallback: string;
+}
+
+export type AdapterSettingFieldDefinition =
+  | AdapterNumberSettingField
+  | AdapterSelectSettingField
+  | AdapterBooleanSettingField
+  | AdapterTextSettingField
+  | AdapterColorSettingField;
 
 export interface AdapterSettingGroupDefinition {
   group: AdapterSettingGroup;

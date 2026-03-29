@@ -64,6 +64,22 @@ describe('galleryConfig helpers', () => {
     expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
   });
 
+  it('seeds layout-builder adapter defaults from legacy settings', () => {
+    const config = buildGalleryConfigFromLegacySettings({
+      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+      gallerySelectionMode: 'per-breakpoint',
+      desktopImageAdapterId: 'layout-builder',
+      layoutBuilderScope: 'viewport',
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+    });
+
+    expect(config.breakpoints?.desktop?.image?.adapterId).toBe('layout-builder');
+    expect(config.breakpoints?.desktop?.image?.adapterSettings?.layoutBuilderScope).toBe('viewport');
+    expect(config.breakpoints?.desktop?.image?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
+    expect(config.breakpoints?.desktop?.image?.adapterSettings?.tileGlowSpread).toBe(18);
+  });
+
   it('parses nested config from JSON and rejects invalid values', () => {
     expect(parseGalleryConfig('{"mode":"per-type"}')?.mode).toBe('per-type');
     expect(parseGalleryConfig('not-json')).toBeUndefined();

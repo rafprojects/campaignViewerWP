@@ -518,6 +518,34 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.tileGapY).toBe(10);
   });
 
+  it('projects layout-builder adapter defaults back onto legacy runtime fields', () => {
+    const s = makeSettings({
+      layoutBuilderScope: 'full',
+      tileGlowColor: '#7c9ef8',
+      tileGlowSpread: 12,
+      galleryConfig: {
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'layout-builder',
+              adapterSettings: {
+                layoutBuilderScope: 'viewport',
+                tileGlowColor: '#00ffaa',
+                tileGlowSpread: 18,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+
+    expect(resolved.layoutBuilderScope).toBe('viewport');
+    expect(resolved.tileGlowColor).toBe('#00ffaa');
+    expect(resolved.tileGlowSpread).toBe(18);
+  });
+
   it('projects unified classic runtime fields from nested adapter settings', () => {
     const s = makeSettings({
       imageBorderRadius: 8,

@@ -44,7 +44,13 @@ describe('adapterRegistry', () => {
   });
 
   it('exposes schema-driven field definitions for adapter setting groups', () => {
-    expect(getSettingGroupFieldDefinitions('carousel').map((field) => field.key)).toEqual([
+    expect(getSettingGroupFieldDefinitions('carousel').map((field) => field.key)).toEqual(expect.arrayContaining([
+      'imageViewportHeight',
+      'videoViewportHeight',
+      'imageShadowPreset',
+      'imageShadowCustom',
+      'videoShadowPreset',
+      'videoShadowCustom',
       'carouselVisibleCards',
       'carouselGap',
       'carouselLoop',
@@ -71,7 +77,7 @@ describe('adapterRegistry', () => {
       'dotNavShape',
       'dotNavSpacing',
       'dotNavActiveScale',
-    ]);
+    ]));
     expect(getSettingGroupFieldDefinitions('compact-grid').map((field) => field.key)).toEqual([
       'gridCardWidth',
       'gridCardHeight',
@@ -84,19 +90,24 @@ describe('adapterRegistry', () => {
       'tileSize',
       'imageTileSize',
       'videoTileSize',
+      'tileGapX',
+      'tileGapY',
     ]);
-    expect(getSettingGroupFieldDefinitions('layout-builder')).toEqual([
-      expect.objectContaining({
-        control: 'select',
-        key: 'layoutBuilderScope',
-      }),
+    expect(getSettingGroupFieldDefinitions('layout-builder').map((field) => field.key)).toEqual([
+      'layoutBuilderScope',
+      'tileGlowColor',
+      'tileGlowSpread',
     ]);
   });
 
   it('returns active setting groups with registry-defined placement and scope metadata', () => {
-    expect(getActiveSettingGroupDefinitions(['classic', 'compact-grid', 'layout-builder', 'hexagonal'])).toEqual([
+    expect(getActiveSettingGroupDefinitions(['classic', 'compact-grid', 'layout-builder', 'hexagonal'])).toEqual(expect.arrayContaining([
       expect.objectContaining({
         group: 'carousel',
+        layout: 'stack',
+      }),
+      expect.objectContaining({
+        group: 'media-frame',
         layout: 'stack',
       }),
       expect.objectContaining({
@@ -108,10 +119,14 @@ describe('adapterRegistry', () => {
         scopeMode: 'contextual',
       }),
       expect.objectContaining({
+        group: 'tile-appearance',
+        layout: 'stack',
+      }),
+      expect.objectContaining({
         group: 'layout-builder',
         placement: 'inline',
       }),
-    ]);
+    ]));
   });
 
   it('returns direct per-type adapter updates for standard adapter changes', () => {

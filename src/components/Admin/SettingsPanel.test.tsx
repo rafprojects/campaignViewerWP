@@ -769,6 +769,34 @@ describe('SettingsPanel', () => {
     expect(desktopImage?.adapterSettings?.tileGapY).toBe(10);
   });
 
+  it('seeds shared editor layout-builder defaults from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'layout-builder',
+          layoutBuilderScope: 'viewport',
+          tileGlowColor: '#00ffaa',
+          tileGlowSpread: 18,
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('layout-builder');
+    expect(desktopImage?.adapterSettings?.layoutBuilderScope).toBe('viewport');
+    expect(desktopImage?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
+    expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
+  });
+
   it('projects shared editor carousel adapter fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
@@ -1004,6 +1032,68 @@ describe('SettingsPanel', () => {
                 tileGlowSpread: 18,
                 tileGapX: 12,
                 tileGapY: 10,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('projects shared editor layout-builder defaults back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      layoutBuilderScope: 'viewport',
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'layout-builder',
+            adapterSettings: {
+              layoutBuilderScope: 'viewport',
+              tileGlowColor: '#00ffaa',
+              tileGlowSpread: 18,
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      layoutBuilderScope: 'viewport',
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterId: 'layout-builder',
+              adapterSettings: expect.objectContaining({
+                layoutBuilderScope: 'viewport',
+                tileGlowColor: '#00ffaa',
+                tileGlowSpread: 18,
               }),
             }),
           }),

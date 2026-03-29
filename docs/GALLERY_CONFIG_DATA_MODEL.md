@@ -359,8 +359,12 @@ Classic image/video shadow depth settings follow that same adapter-specific owne
 ### Layout builder
 
 1. scope behavior
-2. template requirements
-3. any layout-builder-specific gallery presentation rules
+2. default slot glow color
+3. default slot glow spread
+4. template requirements
+5. any layout-builder-specific gallery presentation rules
+
+Layout-builder glow defaults stay adapter-owned because only the layout-builder runtime consumes them as per-slot fallbacks when a slot uses Hover = Glow without its own override. They belong in the `layout-builder` setting group rather than in the shared `tile-appearance` group.
 
 ---
 

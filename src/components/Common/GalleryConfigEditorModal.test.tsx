@@ -192,10 +192,10 @@ describe('GalleryConfigEditorModal', () => {
     );
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
-  expect(screen.getByText('Shape Layout')).toBeInTheDocument();
-  expect(screen.getByLabelText('Image Tile Size (px)')).toHaveValue('180');
-  expect(screen.getByLabelText('Gap X (px)')).toHaveValue('12');
-  expect(screen.getByLabelText('Gap Y (px)')).toHaveValue('10');
+    expect(screen.getByText('Shape Layout')).toBeInTheDocument();
+    expect(screen.getByLabelText('Image Tile Size (px)')).toHaveValue('180');
+    expect(screen.getByLabelText('Gap X (px)')).toHaveValue('12');
+    expect(screen.getByLabelText('Gap Y (px)')).toHaveValue('10');
     expect(screen.getByText('Tile Appearance')).toBeInTheDocument();
     expect(screen.getByLabelText('Border Width (px)')).toHaveValue('2');
     expect(screen.getByLabelText('Border Color')).toHaveValue('#ff0000');
@@ -203,6 +203,37 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Hover Glow', { selector: 'input' })).toHaveValue('On');
     expect(screen.getByLabelText('Glow Color')).toHaveValue('#00ffaa');
     expect(screen.getByLabelText('Glow Spread (px)')).toHaveValue('18');
+  });
+
+  it('renders layout-builder fallback glow defaults for layout-builder selections', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'layout-builder',
+                adapterSettings: {
+                  layoutBuilderScope: 'viewport',
+                  tileGlowColor: '#00ffaa',
+                  tileGlowSpread: 18,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByLabelText('Layout Builder Scope', { selector: 'input' })).toHaveValue('Viewport Only');
+    expect(screen.getByText('Default Glow Spread (px)')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('18')).toBeInTheDocument();
   });
 
   it('renders shared common adapter spacing controls from nested common settings', async () => {

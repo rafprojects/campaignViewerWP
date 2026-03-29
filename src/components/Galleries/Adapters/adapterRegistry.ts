@@ -689,6 +689,23 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
           { value: 'viewport', label: 'Viewport Only' },
         ],
       },
+      {
+        control: 'color',
+        key: 'tileGlowColor',
+        label: 'Default Glow Color',
+        description: 'Fallback glow color for slots using Hover = Glow when the slot does not override it.',
+        fallback: '#7c9ef8',
+      },
+      {
+        control: 'number',
+        key: 'tileGlowSpread',
+        label: 'Default Glow Spread (px)',
+        description: 'Fallback glow radius for slots using Hover = Glow when the slot does not override it.',
+        min: 2,
+        max: 60,
+        step: 2,
+        fallback: 12,
+      },
     ],
   },
 };

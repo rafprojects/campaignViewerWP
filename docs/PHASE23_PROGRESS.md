@@ -618,3 +618,57 @@ START HERE NEXT
 - Audit layout-builder-specific appearance defaults as the next dedicated slice.
 - Keep broader non-gallery appearance work out of that change.
 ```
+
+## Entry - 2026-03-29 02:28:42 UTC
+
+### Snapshot
+
+- Layout-builder glow-default parity is now implemented through the existing `layout-builder` adapter group instead of remaining on the flat-only compatibility path.
+- `tileGlowColor` and `tileGlowSpread` now round-trip through nested `adapterSettings` for layout-builder selections as slot-default fallbacks.
+- The follow-up implementation also made both schema-driven adapter renderers understand `color` fields, because the shared editor and inline adapter settings had only previously handled number, boolean, select, and text controls.
+
+### Work Done
+
+- Extended the shared `layout-builder` adapter setting group to include default glow color and glow spread alongside the existing scope selector.
+- Exposed those fields through the shared gallery config editor under `Layout Builder` so slot-default glow behavior no longer depends on flat-only settings ownership.
+- Added generic adapter-setting support for schema-defined `color` fields in both `GalleryConfigEditorModal` and `GalleryAdapterSettingsSection`.
+- Adjusted conditional adapter-field rendering so glow detail fields stay conditional in `tile-appearance` but render normally in groups that only reuse the glow keys as defaults.
+- Verified the existing legacy-to-nested compatibility builder, SettingsPanel save bridge, and shared resolver now seed and project layout-builder glow defaults correctly.
+
+### Validation Run
+
+- Focused frontend suite passed:
+  - `src/components/Galleries/Adapters/adapterRegistry.test.ts`
+  - `src/utils/galleryConfig.test.ts`
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - result: 5 files passed, 92 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- Layout-builder-specific glow defaults now have explicit nested adapter ownership instead of borrowing the flat tile-appearance path indirectly.
+- No backend changes were required for this slice because nested adapter-setting sanitization already recognized `tileGlowColor` and `tileGlowSpread`.
+- The remaining parity work is now broader and less gallery-specific: the obvious adapter-owned gaps are effectively closed, and the next slices should focus on non-gallery appearance ownership or other remaining flat settings that still lack a clear nested home.
+
+### Recommended Next Slice
+
+1. Audit the remaining non-gallery appearance fields.
+   - Keep campaign card styling and other non-gallery UI concerns separate from the gallery adapter contract.
+
+2. Preserve the schema-driven renderers as the only place new adapter field types are introduced.
+   - If another adapter-specific field family needs a new control type, update the shared and inline renderers together.
+
+### Handoff
+
+```text
+STATUS
+- Layout-builder default glow parity is complete through the shared schema/editor path.
+- The branch is green on the focused frontend contract and build:wp.
+
+START HERE NEXT
+- Move to the remaining non-gallery appearance ownership audit.
+- Keep future adapter control-type additions synchronized across both schema-driven renderers.
+```
