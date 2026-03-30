@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '../../../test/test-utils';
 import { ImageCarousel } from './ImageCarousel';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem, type GalleryBehaviorSettings } from '@/types';
@@ -31,6 +31,10 @@ const images: MediaItem[] = [
 ];
 
 describe('ImageCarousel', () => {
+  beforeAll(async () => {
+    await import('@/components/Galleries/Shared/Lightbox');
+  });
+
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
@@ -53,9 +57,12 @@ describe('ImageCarousel', () => {
     });
 
     fireEvent.click(screen.getByLabelText('Open lightbox'));
+    await act(async () => {
+      await Promise.resolve();
+      vi.runAllTimers();
+    });
     await waitFor(() => {
-      // Lightbox is now a Portal-based overlay (not a Mantine Modal), so we
-      // verify it opened by checking the close button and image are rendered.
+      expect(screen.getByRole('dialog', { name: 'Media lightbox' })).toBeInTheDocument();
       expect(screen.getByLabelText('Close lightbox')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByLabelText('Next image (lightbox)'));
@@ -67,9 +74,12 @@ describe('ImageCarousel', () => {
       expect(screen.getAllByAltText('Image One')[0]).toBeInTheDocument();
     });
     fireEvent.click(screen.getByLabelText(/close lightbox/i));
+    await act(async () => {
+      vi.runAllTimers();
+    });
     await waitFor(() => {
       // After close, the portal overlay is unmounted.
-      expect(screen.queryByLabelText('Close lightbox')).toBeNull();
+      expect(screen.queryByRole('dialog', { name: 'Media lightbox' })).toBeNull();
     });
   });
 
@@ -165,12 +175,15 @@ describe('ImageCarousel', () => {
   it('opens lightbox on Space key press on viewer frame', async () => {
     render(<ImageCarousel images={images} />);
     const frame = screen.getByTestId('image-viewer-frame');
-    fireEvent.keyDown(frame, { key: ' ' });
+    fireEvent.keyDown(frame, { key: ' ', code: 'Space' });
 
-    await act(async () => { vi.runAllTimers(); });
+    await act(async () => {
+      await Promise.resolve();
+      vi.runAllTimers();
+    });
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Media lightbox' })).toBeInTheDocument();
     });
   });
 
