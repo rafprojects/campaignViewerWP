@@ -5,13 +5,14 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
-import type { LayoutTemplate, MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type LayoutTemplate, type MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
+import { resolveGalleryMode } from '@/utils/resolveAdapterId';
 import {
   buildCampaignGalleryOverrideEditorValue,
   clearCampaignGalleryOverrides,
@@ -48,6 +49,7 @@ const GALLERY_MODE_OPTIONS = [
 
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
+  galleryBehaviorSettings?: GalleryBehaviorSettings;
   /** When 'individual', show per-card border color picker. */
   cardBorderMode?: 'single' | 'auto' | 'individual';
   /** Available layout templates for the template selector. */
@@ -60,6 +62,7 @@ interface UnifiedCampaignModalProps {
 
 export function UnifiedCampaignModal({
   modal,
+  galleryBehaviorSettings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   cardBorderMode,
   layoutTemplates = [],
   onEditLayout,
@@ -88,6 +91,7 @@ export function UnifiedCampaignModal({
   const isExtraSmall = useMediaQuery('(max-width: 575px)');
   const isEdit = mode === 'edit';
   const campaignGalleryOverrideMode = getCampaignGalleryOverrideMode(formState.galleryOverrides);
+  const effectiveCampaignGalleryMode = resolveGalleryMode(galleryBehaviorSettings, formState.galleryOverrides);
   const hasCustomGalleryOverrides = hasCampaignGalleryOverrides(formState);
   const galleryOverrideSummary = describeCampaignGalleryOverrides(formState);
 
@@ -305,7 +309,7 @@ export function UnifiedCampaignModal({
                         ),
                       })}
                     />
-                    {campaignGalleryOverrideMode === 'unified' ? (
+                    {effectiveCampaignGalleryMode === 'unified' ? (
                       <Select
                         label="Unified Gallery"
                         description="Override the global unified gallery type for this campaign"

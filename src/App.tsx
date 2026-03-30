@@ -282,7 +282,7 @@ function AppContent({
         />
       )}
 
-      <UnifiedCampaignModal modal={editModal} />
+      <UnifiedCampaignModal modal={editModal} galleryBehaviorSettings={resolvedSettings} />
 
       <ArchiveCampaignModal
         opened={!!archiveModal.archiveModalCampaign}

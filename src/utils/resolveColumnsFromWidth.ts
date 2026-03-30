@@ -8,6 +8,8 @@
  */
 type ParsedAutoColumnBreakpoint = { width: number; columns: number };
 
+const MAX_PARSED_AUTO_COLUMN_BREAKPOINT_CACHE_SIZE = 100;
+
 const parsedAutoColumnBreakpointCache = new Map<string, ReadonlyArray<ParsedAutoColumnBreakpoint>>();
 
 function cloneParsedAutoColumnBreakpoints(
@@ -25,6 +27,8 @@ export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undef
 
   const cachedBreakpoints = parsedAutoColumnBreakpointCache.get(cacheKey);
   if (cachedBreakpoints) {
+    parsedAutoColumnBreakpointCache.delete(cacheKey);
+    parsedAutoColumnBreakpointCache.set(cacheKey, cachedBreakpoints);
     return cloneParsedAutoColumnBreakpoints(cachedBreakpoints);
   }
 
@@ -48,6 +52,14 @@ export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undef
     .sort((left, right) => left.width - right.width);
 
   const frozenBreakpoints = Object.freeze(parsedBreakpoints.map((breakpoint) => Object.freeze({ ...breakpoint })));
+
+  if (parsedAutoColumnBreakpointCache.size >= MAX_PARSED_AUTO_COLUMN_BREAKPOINT_CACHE_SIZE) {
+    const oldestCacheKey = parsedAutoColumnBreakpointCache.keys().next().value;
+    if (oldestCacheKey !== undefined) {
+      parsedAutoColumnBreakpointCache.delete(oldestCacheKey);
+    }
+  }
+
   parsedAutoColumnBreakpointCache.set(cacheKey, frozenBreakpoints);
   return cloneParsedAutoColumnBreakpoints(frozenBreakpoints);
 }

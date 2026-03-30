@@ -160,7 +160,7 @@ class WPSG_Settings_Core_Fields {
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[allow_user_theme_override]"
                    id="wpsg_allow_user_theme_override"
                    value="1"
-                   <?php checked($value, true); ?>>
+                   <?php checked((bool) $value, true); ?>>
             <?php esc_html_e('Allow visitors to switch themes via the gallery UI.', 'wp-super-gallery'); ?>
         </label>
         <p class="description">
@@ -230,7 +230,7 @@ class WPSG_Settings_Core_Fields {
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_lightbox]"
                    id="wpsg_enable_lightbox"
                    value="1"
-                   <?php checked($value, true); ?>>
+                   <?php checked((bool) $value, true); ?>>
             <?php esc_html_e('Enable fullscreen lightbox when clicking gallery items.', 'wp-super-gallery'); ?>
         </label>
         <?php
@@ -249,7 +249,7 @@ class WPSG_Settings_Core_Fields {
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_animations]"
                    id="wpsg_enable_animations"
                    value="1"
-                   <?php checked($value, true); ?>>
+                   <?php checked((bool) $value, true); ?>>
             <?php esc_html_e('Enable smooth animations and transitions.', 'wp-super-gallery'); ?>
         </label>
         <p class="description">

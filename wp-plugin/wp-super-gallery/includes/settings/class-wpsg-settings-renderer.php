@@ -78,6 +78,8 @@ class WPSG_Settings_Renderer {
                 'testingText'          => __('Testing...', 'wp-super-gallery'),
                 'connectionFailedText' => __('Connection failed', 'wp-super-gallery'),
                 'requestFailedText'    => __('Request failed', 'wp-super-gallery'),
+                'authRejectedText'     => __('Authentication test was rejected. Refresh the page and try again.', 'wp-super-gallery'),
+                'unexpectedResponseText' => __('Unexpected server response while testing authentication.', 'wp-super-gallery'),
             ]
         );
 

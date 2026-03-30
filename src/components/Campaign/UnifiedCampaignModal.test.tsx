@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, within } from '../../test/test-util
 import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
 
 vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
   const { useState } = await import('react');
@@ -288,6 +289,43 @@ describe('UnifiedCampaignModal', () => {
     render(<UnifiedCampaignModal modal={modal} />);
 
     expect(screen.getByDisplayValue('Unified')).toBeInTheDocument();
+    expect(screen.getByLabelText('Unified Gallery', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Image Gallery')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Video Gallery')).not.toBeInTheDocument();
+  });
+
+  it('uses the effective global unified mode to choose the quick override controls when no explicit campaign mode override exists', () => {
+    const galleryBehaviorSettings: GalleryBehaviorSettings = {
+      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+      unifiedGalleryEnabled: true,
+      galleryConfig: {
+        ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig,
+        mode: 'unified',
+      },
+    };
+
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: undefined,
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} galleryBehaviorSettings={galleryBehaviorSettings} />);
+
     expect(screen.getByLabelText('Unified Gallery', { selector: 'input' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Image Gallery')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Video Gallery')).not.toBeInTheDocument();
