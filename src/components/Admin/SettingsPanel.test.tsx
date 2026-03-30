@@ -445,6 +445,44 @@ describe('SettingsPanel', () => {
     expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgImageUrl).toBe('https://example.com/unified-bg.jpg');
   });
 
+  it('prefers explicit nested gallery config values when seeding the shared editor', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySectionPadding: 16,
+          carouselVisibleCards: 2,
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              tablet: {
+                image: {
+                  adapterId: 'classic',
+                  common: {
+                    sectionPadding: 30,
+                  },
+                  adapterSettings: {
+                    carouselVisibleCards: 5,
+                  },
+                },
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.tablet?.image?.common?.sectionPadding).toBe(30);
+    expect(value?.breakpoints?.tablet?.image?.adapterSettings?.carouselVisibleCards).toBe(5);
+  });
+
   it('projects shared editor viewport background fields back into flat settings', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,

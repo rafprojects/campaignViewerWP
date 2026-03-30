@@ -42,10 +42,153 @@ const LEGACY_VIEWPORT_BACKGROUND_FIELD_MAP: Record<GalleryConfigScope, LegacyVie
   },
 };
 
+const LEGACY_COMMON_SETTING_FIELD_MAP = {
+  gallerySectionMaxWidth: 'sectionMaxWidth',
+  gallerySectionMaxHeight: 'sectionMaxHeight',
+  gallerySectionMinWidth: 'sectionMinWidth',
+  gallerySectionMinHeight: 'sectionMinHeight',
+  gallerySectionHeightMode: 'sectionHeightMode',
+  gallerySectionPadding: 'sectionPadding',
+  adapterContentPadding: 'adapterContentPadding',
+  adapterSizingMode: 'adapterSizingMode',
+  adapterMaxWidthPct: 'adapterMaxWidthPct',
+  adapterMaxHeightPct: 'adapterMaxHeightPct',
+  adapterItemGap: 'adapterItemGap',
+  adapterJustifyContent: 'adapterJustifyContent',
+  gallerySizingMode: 'gallerySizingMode',
+  galleryManualHeight: 'galleryManualHeight',
+  perTypeSectionEqualHeight: 'perTypeSectionEqualHeight',
+  galleryImageLabel: 'galleryImageLabel',
+  galleryVideoLabel: 'galleryVideoLabel',
+  galleryLabelJustification: 'galleryLabelJustification',
+  showGalleryLabelIcon: 'showGalleryLabelIcon',
+  showCampaignGalleryLabels: 'showCampaignGalleryLabels',
+} as const satisfies Partial<Record<keyof GalleryBehaviorSettings, keyof GalleryCommonSettings>>;
+
+const LEGACY_SCOPED_COMMON_SETTING_FIELD_MAP = {
+  imageBgType: { scope: 'image', commonKey: 'viewportBgType' },
+  imageBgColor: { scope: 'image', commonKey: 'viewportBgColor' },
+  imageBgGradient: { scope: 'image', commonKey: 'viewportBgGradient' },
+  imageBgImageUrl: { scope: 'image', commonKey: 'viewportBgImageUrl' },
+  videoBgType: { scope: 'video', commonKey: 'viewportBgType' },
+  videoBgColor: { scope: 'video', commonKey: 'viewportBgColor' },
+  videoBgGradient: { scope: 'video', commonKey: 'viewportBgGradient' },
+  videoBgImageUrl: { scope: 'video', commonKey: 'viewportBgImageUrl' },
+  unifiedBgType: { scope: 'unified', commonKey: 'viewportBgType' },
+  unifiedBgColor: { scope: 'unified', commonKey: 'viewportBgColor' },
+  unifiedBgGradient: { scope: 'unified', commonKey: 'viewportBgGradient' },
+  unifiedBgImageUrl: { scope: 'unified', commonKey: 'viewportBgImageUrl' },
+} as const satisfies Partial<Record<keyof GalleryBehaviorSettings, { scope: GalleryConfigScope; commonKey: keyof GalleryCommonSettings }>>;
+
+const LEGACY_UNIFIED_ADAPTER_SETTING_KEYS = [
+  'unifiedGalleryEnabled',
+  'unifiedGalleryAdapterId',
+] as const satisfies readonly (keyof GalleryBehaviorSettings)[];
+
+const LEGACY_PER_TYPE_ADAPTER_SETTING_KEYS = [
+  'gallerySelectionMode',
+  'imageGalleryAdapterId',
+  'videoGalleryAdapterId',
+  'desktopImageAdapterId',
+  'desktopVideoAdapterId',
+  'tabletImageAdapterId',
+  'tabletVideoAdapterId',
+  'mobileImageAdapterId',
+  'mobileVideoAdapterId',
+] as const satisfies readonly (keyof GalleryBehaviorSettings)[];
+
 export function getLegacyViewportBackgroundFieldMap(
   scope: GalleryConfigScope,
 ): LegacyViewportBackgroundFieldMap {
   return LEGACY_VIEWPORT_BACKGROUND_FIELD_MAP[scope];
+}
+
+function getCollectionScopesForMode(mode?: GalleryConfig['mode']): GalleryConfigScope[] {
+  return mode === 'unified'
+    ? ['unified', 'image', 'video']
+    : ['image', 'video', 'unified'];
+}
+
+function getOrCreateScopeConfig(
+  config: GalleryConfig,
+  breakpoint: GalleryConfigBreakpoint,
+  scope: GalleryConfigScope,
+): GalleryScopeConfig {
+  config.breakpoints ??= {};
+  const breakpointConfig = config.breakpoints[breakpoint] ?? {};
+  config.breakpoints[breakpoint] = breakpointConfig;
+
+  const scopeConfig = breakpointConfig[scope] ?? {};
+  breakpointConfig[scope] = scopeConfig;
+
+  return scopeConfig;
+}
+
+function syncSharedCommonSettingAcrossScopes<K extends keyof GalleryCommonSettings>(
+  config: GalleryConfig,
+  key: K,
+  value: GalleryCommonSettings[K],
+) {
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    for (const scope of GALLERY_SCOPES) {
+      const scopeConfig = getOrCreateScopeConfig(config, breakpoint, scope);
+      scopeConfig.common ??= {};
+      scopeConfig.common[key] = value;
+    }
+  }
+}
+
+function syncScopedCommonSettingAcrossBreakpoints<K extends keyof GalleryCommonSettings>(
+  config: GalleryConfig,
+  scope: GalleryConfigScope,
+  key: K,
+  value: GalleryCommonSettings[K],
+) {
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    const scopeConfig = getOrCreateScopeConfig(config, breakpoint, scope);
+    scopeConfig.common ??= {};
+    scopeConfig.common[key] = value;
+  }
+}
+
+function syncUnifiedScopeAdapters(
+  config: GalleryConfig,
+  adapterId: string,
+) {
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    const scopeConfig = getOrCreateScopeConfig(config, breakpoint, 'unified');
+    scopeConfig.adapterId = adapterId;
+  }
+}
+
+function syncPerTypeScopeAdapters(
+  config: GalleryConfig,
+  settings: GalleryBehaviorSettings,
+) {
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    getOrCreateScopeConfig(config, breakpoint, 'image').adapterId = getLegacyPerTypeAdapterId(settings, breakpoint, 'image');
+    getOrCreateScopeConfig(config, breakpoint, 'video').adapterId = getLegacyPerTypeAdapterId(settings, breakpoint, 'video');
+  }
+}
+
+function scopeUsesAdapterSettingKey(
+  adapterId: string | undefined,
+  scope: GalleryConfigScope,
+  key: keyof GalleryBehaviorSettings,
+): boolean {
+  const registration = getAdapterRegistration(adapterId ?? '');
+  if (!registration) {
+    return false;
+  }
+
+  return registration.settingGroups.some((group) => {
+    const definition = getSettingGroupDefinition(group);
+    if (!definition) {
+      return false;
+    }
+
+    return definition.fields.some((field) => field.key === key && isAdapterSettingFieldApplicableToScope(field, scope));
+  });
 }
 
 function isAdapterSettingFieldApplicableToScope(
@@ -295,9 +438,10 @@ export function collectGalleryAdapterSettingValues(
   config: GalleryConfig,
 ): Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>> {
   const collected: Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>> = {};
+  const scopes = getCollectionScopesForMode(config.mode);
 
   for (const breakpoint of GALLERY_BREAKPOINTS) {
-    for (const scope of GALLERY_SCOPES) {
+    for (const scope of scopes) {
       const adapterSettings = config.breakpoints?.[breakpoint]?.[scope]?.adapterSettings;
       if (!adapterSettings) {
         continue;
@@ -317,6 +461,81 @@ export function collectGalleryAdapterSettingValues(
   }
 
   return collected;
+}
+
+export function syncLegacyGallerySettingToConfig<K extends keyof GalleryBehaviorSettings>(
+  config: GalleryConfig | undefined,
+  settings: GalleryBehaviorSettings,
+  key: K,
+  value: GalleryBehaviorSettings[K],
+): GalleryConfig | undefined {
+  const commonKey = LEGACY_COMMON_SETTING_FIELD_MAP[key as keyof typeof LEGACY_COMMON_SETTING_FIELD_MAP];
+  const scopedCommonKey = LEGACY_SCOPED_COMMON_SETTING_FIELD_MAP[key as keyof typeof LEGACY_SCOPED_COMMON_SETTING_FIELD_MAP];
+  const isUnifiedAdapterSetting = (LEGACY_UNIFIED_ADAPTER_SETTING_KEYS as readonly string[]).includes(key);
+  const isPerTypeAdapterSetting = (LEGACY_PER_TYPE_ADAPTER_SETTING_KEYS as readonly string[]).includes(key);
+
+  if (!commonKey && !scopedCommonKey && !isUnifiedAdapterSetting && !isPerTypeAdapterSetting) {
+    let usesAdapterSetting = false;
+    for (const breakpoint of GALLERY_BREAKPOINTS) {
+      for (const scope of GALLERY_SCOPES) {
+        const adapterId = config?.breakpoints?.[breakpoint]?.[scope]?.adapterId;
+        if (scopeUsesAdapterSettingKey(adapterId, scope, key)) {
+          usesAdapterSetting = true;
+          break;
+        }
+      }
+      if (usesAdapterSetting) {
+        break;
+      }
+    }
+
+    if (!usesAdapterSetting) {
+      return undefined;
+    }
+  }
+
+  const nextConfig = cloneGalleryConfig(config) ?? buildGalleryConfigFromLegacySettings(settings);
+
+  if (commonKey) {
+    syncSharedCommonSettingAcrossScopes(nextConfig, commonKey, value as GalleryCommonSettings[typeof commonKey]);
+    return nextConfig;
+  }
+
+  if (scopedCommonKey) {
+    syncScopedCommonSettingAcrossBreakpoints(
+      nextConfig,
+      scopedCommonKey.scope,
+      scopedCommonKey.commonKey,
+      value as GalleryCommonSettings[typeof scopedCommonKey.commonKey],
+    );
+    return nextConfig;
+  }
+
+  if (isUnifiedAdapterSetting) {
+    nextConfig.mode = settings.unifiedGalleryEnabled ? 'unified' : 'per-type';
+    syncUnifiedScopeAdapters(nextConfig, settings.unifiedGalleryAdapterId);
+    syncPerTypeScopeAdapters(nextConfig, settings);
+    return nextConfig;
+  }
+
+  if (isPerTypeAdapterSetting) {
+    syncPerTypeScopeAdapters(nextConfig, settings);
+    return nextConfig;
+  }
+
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    for (const scope of GALLERY_SCOPES) {
+      const scopeConfig = getOrCreateScopeConfig(nextConfig, breakpoint, scope);
+      if (!scopeUsesAdapterSettingKey(scopeConfig.adapterId, scope, key)) {
+        continue;
+      }
+
+      scopeConfig.adapterSettings ??= {};
+      scopeConfig.adapterSettings[key] = value;
+    }
+  }
+
+  return nextConfig;
 }
 
 function parseGalleryScopeConfig(input: unknown): GalleryScopeConfig | undefined {

@@ -41,7 +41,12 @@ import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
 import { TypographySettingsSection } from '../Settings/TypographySettingsSection';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { buildGalleryConfigFromLegacySettings, collectGalleryAdapterSettingValues, mergeGalleryConfig } from '@/utils/galleryConfig';
+import {
+  buildGalleryConfigFromLegacySettings,
+  collectGalleryAdapterSettingValues,
+  mergeGalleryConfig,
+  syncLegacyGallerySettingToConfig,
+} from '@/utils/galleryConfig';
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
@@ -107,8 +112,12 @@ function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   const seed = buildGalleryConfigFromLegacySettings(settings);
 
   return settings.galleryConfig
-    ? mergeGalleryConfig(settings.galleryConfig, seed)
+    ? mergeGalleryConfig(seed, settings.galleryConfig)
     : seed;
+}
+
+function isGalleryBehaviorSettingKey(key: keyof SettingsData): key is keyof GalleryBehaviorSettings {
+  return Object.prototype.hasOwnProperty.call(DEFAULT_GALLERY_BEHAVIOR_SETTINGS, key);
 }
 
 export interface SettingsData extends GalleryBehaviorSettings {
@@ -148,7 +157,7 @@ const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettin
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
   const seedSettings: SettingsData = initialSettings
-    ? { ...defaultSettings, ...initialSettings }
+    ? mapResponseToSettings(initialSettings as Awaited<ReturnType<ApiClient['getSettings']>>)
     : defaultSettings;
 
   const [settings, setSettings] = useState<SettingsData>(seedSettings);
@@ -193,7 +202,24 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   }, [opened, loadSettings, initialSettings]);
 
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
-    applySettingsUpdate((prev) => ({ ...prev, [key]: value }));
+    applySettingsUpdate((prev) => {
+      const next = { ...prev, [key]: value };
+
+      if (isGalleryBehaviorSettingKey(key)) {
+        const syncedGalleryConfig = syncLegacyGallerySettingToConfig(
+          prev.galleryConfig,
+          next,
+          key,
+          value as GalleryBehaviorSettings[K & keyof GalleryBehaviorSettings],
+        );
+
+        if (syncedGalleryConfig) {
+          next.galleryConfig = syncedGalleryConfig;
+        }
+      }
+
+      return next;
+    });
   };
 
   const updateGallerySetting: UpdateGallerySetting = (key, value) => {

@@ -3,8 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import {
   buildGalleryConfigFromLegacySettings,
+  collectGalleryAdapterSettingValues,
   mergeGalleryConfig,
   parseGalleryConfig,
+  syncLegacyGallerySettingToConfig,
 } from './galleryConfig';
 
 describe('galleryConfig helpers', () => {
@@ -104,5 +106,79 @@ describe('galleryConfig helpers', () => {
     expect(merged.breakpoints?.desktop?.image?.adapterId).toBe('hexagonal');
     expect(merged.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(28);
     expect(merged.breakpoints?.mobile?.image?.adapterId).toBe('classic');
+  });
+
+  it('collects representative adapter settings from scopes relevant to the active mode', () => {
+    const collected = collectGalleryAdapterSettingValues({
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          unified: {
+            adapterSettings: {
+              carouselVisibleCards: 1,
+            },
+          },
+          image: {
+            adapterSettings: {
+              carouselVisibleCards: 3,
+            },
+          },
+        },
+        tablet: {
+          image: {
+            adapterSettings: {
+              carouselVisibleCards: 5,
+            },
+          },
+        },
+      },
+    });
+
+    expect(collected.carouselVisibleCards).toBe(3);
+  });
+
+  it('syncs inline legacy gallery settings back into nested config', () => {
+    const settings = {
+      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+      adapterItemGap: 20,
+    };
+
+    const synced = syncLegacyGallerySettingToConfig(
+      {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'classic',
+              common: {
+                adapterItemGap: 12,
+              },
+            },
+            video: {
+              adapterId: 'classic',
+              common: {
+                adapterItemGap: 18,
+              },
+            },
+          },
+          tablet: {
+            image: {
+              adapterId: 'classic',
+            },
+            video: {
+              adapterId: 'classic',
+            },
+          },
+        },
+      },
+      settings,
+      'adapterItemGap',
+      20,
+    );
+
+    expect(synced?.breakpoints?.desktop?.image?.common?.adapterItemGap).toBe(20);
+    expect(synced?.breakpoints?.desktop?.video?.common?.adapterItemGap).toBe(20);
+    expect(synced?.breakpoints?.tablet?.image?.common?.adapterItemGap).toBe(20);
+    expect(synced?.breakpoints?.tablet?.video?.common?.adapterItemGap).toBe(20);
   });
 });
