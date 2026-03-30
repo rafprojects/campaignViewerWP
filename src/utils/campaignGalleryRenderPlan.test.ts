@@ -103,6 +103,54 @@ describe('campaignGalleryRenderPlan', () => {
     expect(plan?.wrapper.borderRadius).toBe(18);
   });
 
+  it('resolves breakpoint-specific unified settings for non-desktop render plans', () => {
+    const plan = resolveUnifiedCampaignGalleryRenderPlan(
+      makeCampaign(),
+      makeSettings({
+        galleryConfig: {
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: {
+                adapterId: 'classic',
+                common: {
+                  viewportBgType: 'solid',
+                  viewportBgColor: '#112233',
+                },
+                adapterSettings: {
+                  carouselVisibleCards: 2,
+                  imageBorderRadius: 10,
+                  videoBorderRadius: 12,
+                },
+              },
+            },
+            tablet: {
+              unified: {
+                adapterId: 'classic',
+                common: {
+                  viewportBgType: 'gradient',
+                  viewportBgGradient: 'linear-gradient(135deg, #334455 0%, #556677 100%)',
+                },
+                adapterSettings: {
+                  carouselVisibleCards: 4,
+                  imageBorderRadius: 14,
+                  videoBorderRadius: 20,
+                },
+              },
+            },
+          },
+        },
+      }),
+      'tablet',
+    );
+
+    expect(plan?.adapterId).toBe('classic');
+    expect(plan?.settings.carouselVisibleCards).toBe(4);
+    expect(plan?.wrapper.bgType).toBe('gradient');
+    expect(plan?.wrapper.bgGradient).toBe('linear-gradient(135deg, #334455 0%, #556677 100%)');
+    expect(plan?.wrapper.borderRadius).toBe(20);
+  });
+
   it('resolves per-type plans with tile-size projection and adapter fallback', () => {
     const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(
       makeCampaign({ videos: [], images: [image] }),

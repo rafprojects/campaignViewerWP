@@ -4,8 +4,103 @@ import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 
-// Static import to warm module cache for the lazy-loaded responsive editor.
-import '@/components/Common/GalleryConfigEditorModal';
+vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
+  const { useState } = await import('react');
+
+  interface MockGalleryConfigEditorModalProps {
+    opened: boolean;
+    title: string;
+    contextSummary?: string;
+    clearLabel?: string;
+    saveLabel?: string;
+    value?: {
+      mode?: 'unified' | 'per-type';
+      breakpoints?: {
+        desktop?: {
+          unified?: {
+            adapterId?: string;
+          };
+        };
+      };
+    };
+    onClear?: () => void;
+    onSave: (value: {
+      mode: 'unified' | 'per-type';
+      breakpoints: Record<string, unknown>;
+    }) => void;
+  }
+
+  function MockGalleryConfigEditorModal({
+    opened,
+    title,
+    contextSummary,
+    clearLabel = 'Clear Campaign Overrides',
+    saveLabel = 'Apply Campaign Gallery Config',
+    value,
+    onClear,
+    onSave,
+  }: MockGalleryConfigEditorModalProps) {
+    const [mode, setMode] = useState<'unified' | 'per-type'>(value?.mode ?? 'per-type');
+    const [unifiedAdapterId, setUnifiedAdapterId] = useState(value?.breakpoints?.desktop?.unified?.adapterId ?? '');
+
+    if (!opened) {
+      return null;
+    }
+
+    return (
+      <div role="dialog" aria-label={title}>
+        <h2>{title}</h2>
+        {contextSummary ? <p>{contextSummary}</p> : null}
+        <div>Shared Section Spacing</div>
+        <div>Adapter Content Padding (px)</div>
+        <label>
+          Gallery Mode
+          <select
+            aria-label="Gallery Mode"
+            value={mode}
+            onChange={(event) => setMode(event.currentTarget.value as 'unified' | 'per-type')}
+          >
+            <option value="per-type">Per-Type</option>
+            <option value="unified">Unified</option>
+          </select>
+        </label>
+        {mode === 'unified' && (
+          <label>
+            Unified Gallery Adapter
+            <select
+              aria-label="Unified Gallery Adapter"
+              value={unifiedAdapterId}
+              onChange={(event) => setUnifiedAdapterId(event.currentTarget.value)}
+            >
+              <option value="">Default</option>
+              <option value="classic">Classic</option>
+            </select>
+          </label>
+        )}
+        <button type="button" onClick={() => onClear?.()}>{clearLabel}</button>
+        <button
+          type="button"
+          onClick={() => onSave({
+            mode,
+            breakpoints: mode === 'unified'
+              ? {
+                desktop: { unified: { adapterId: unifiedAdapterId || 'classic' } },
+                tablet: { unified: { adapterId: unifiedAdapterId || 'classic' } },
+                mobile: { unified: { adapterId: unifiedAdapterId || 'classic' } },
+              }
+              : {},
+          })}
+        >
+          {saveLabel}
+        </button>
+      </div>
+    );
+  }
+
+  return {
+    GalleryConfigEditorModal: MockGalleryConfigEditorModal,
+  };
+});
 
 // Stub MediaLibraryPicker to avoid its heavy data fetching
 vi.mock('@/components/Campaign/MediaLibraryPicker', () => ({
@@ -345,21 +440,16 @@ describe('UnifiedCampaignModal', () => {
   it('saves unified adapter overrides from the shared responsive editor', async () => {
     const updateForm = vi.fn();
     const modal = makeMockModal({ activeTab: 'settings', updateForm });
-    const unifiedAdapterLabel = getAdapterSelectOptions({ context: 'unified-gallery' })
-      .find((option) => option.value === 'classic')?.label;
 
     render(<UnifiedCampaignModal modal={modal} />);
 
     const dialog = await openCampaignResponsiveConfigDialog();
 
-    const galleryModeInput = await within(dialog).findByLabelText('Gallery Mode', { selector: 'input' }, { timeout: 10000 });
-    fireEvent.click(galleryModeInput);
-    fireEvent.click(await screen.findByRole('option', { name: 'Unified' }));
+    fireEvent.change(within(dialog).getByLabelText('Gallery Mode'), { target: { value: 'unified' } });
 
-    expect(await within(dialog).findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Unified Gallery Adapter')).toBeInTheDocument();
 
-    fireEvent.click(within(dialog).getByLabelText('Unified Gallery Adapter', { selector: 'input' }));
-    fireEvent.click(await screen.findByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
+    fireEvent.change(within(dialog).getByLabelText('Unified Gallery Adapter'), { target: { value: 'classic' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Apply Campaign Gallery Config' }));
 
     await waitFor(() => {

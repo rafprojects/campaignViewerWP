@@ -2,6 +2,208 @@
 
 Purpose: pragmatic, agent-readable checkpoint notes for continuing Phase 23 work without re-deriving recent decisions from git history or the larger report.
 
+## Entry - 2026-03-30 02:00:00 UTC
+
+### Snapshot
+
+- Followed the broad verification pass with the unrelated lint cleanup the user requested, while explicitly deferring stale Playwright work for later.
+- The lint pass initially went green only after a small `MediaTab` dependency cleanup, and that first warning cleanup briefly introduced a callback-initialization ordering regression that the focused `MediaTab` suite immediately caught.
+
+### Work Done
+
+- Updated `PHASE23_REPORT.md` so P23-G and P23-H are explicitly marked completed, and P23-J now reflects the broader verification state plus the deferred browser-suite maintenance boundary.
+- Cleared the unrelated ESLint blockers in:
+  - `e2e/media-flows.spec.ts`
+  - `src/components/Admin/CampaignImportModal.test.tsx`
+  - `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcuts.test.tsx`
+  - `src/components/Admin/LayoutBuilder/MaskPropertiesPanel.tsx`
+  - `src/components/Admin/MediaTab.tsx`
+  - `src/main.tsx`
+  - `src/utils/safeLocalStorage.test.ts`
+- Fixed the intermediate `MediaTab` callback initialization regression by moving the SWR-seeding effect below the stabilized oEmbed callback it depends on.
+
+### Validation Run
+
+- Repo-wide lint passed:
+  - `npm run lint`
+- Focused cleanup regression suite passed:
+  - `src/components/Admin/CampaignImportModal.test.tsx`
+  - `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcuts.test.tsx`
+  - `src/components/Admin/MediaTab.test.tsx`
+  - `src/utils/safeLocalStorage.test.ts`
+  - result: 4 files passed, 59 tests passed
+
+### Assessment
+
+- The unrelated ESLint debt is now closed, so Phase 23 no longer has repo-wide lint as a closeout blocker.
+- The remaining deferred verification debt is the mocked Playwright suite, whose failures still look like stale UI/auth expectations rather than missing gallery-config behavior.
+
+### Handoff
+
+```text
+STATUS
+- P23-G and P23-H are documented as completed.
+- Repo-wide lint is green.
+- Focused regression coverage for the lint cleanup is green.
+- Mocked Playwright remains deferred for a separate maintenance pass.
+
+START HERE NEXT
+- If you want to keep closing out Phase 23, the next sensible step is commit preparation and any final report wording cleanup.
+- Leave Playwright for a dedicated UI/auth expectation refresh rather than mixing it back into the Phase 23 implementation slice.
+```
+
+## Entry - 2026-03-30 01:46:00 UTC
+
+### Snapshot
+
+- Ran a broader verification push after the shared-editor follow-through slice to determine whether Phase 23 still had hidden implementation debt or was mostly at track-closeout status.
+- Full frontend Vitest initially surfaced one real stability issue: the campaign modal bridge suite was reusing the full lazy-loaded responsive editor for a save-wiring assertion, and that single test now timed out under full-suite load even though the save path still worked.
+- Repo-wide lint and mocked Playwright remain red, but the failures point to broader repository debt rather than the Phase 23 gallery-config follow-through files.
+
+### Work Done
+
+- Replaced the heavy shared-editor dependency inside `UnifiedCampaignModal.test.tsx` with a lightweight stub so that file now validates campaign-modal wiring instead of re-exercising the full editor surface that already has dedicated coverage in `GalleryConfigEditorModal.test.tsx`.
+- Re-ran the full Vitest suite after that test-boundary fix, confirming the timeout was eliminated without weakening the real shared-editor tests.
+- Ran a full production `build:wp` pass and a full `wp-env` PHPUnit pass across the plugin test suite.
+- Audited the failing Playwright specs and confirmed their current breakage is driven by stale UI/auth assumptions such as `Campaign Gallery` versus `Gallery`, `Admin Panel` versus `Admin menu`, and older access-gating expectations rather than the current nested gallery follow-through behavior.
+
+### Validation Run
+
+- Full frontend unit/integration suite passed:
+  - `npm run test:silent`
+  - result: 85 test files passed, 1197 tests passed, 1 skipped
+- Production build passed:
+  - `npm run build:wp`
+- Full backend PHPUnit suite passed in `wp-env`:
+  - `wp-env run tests-cli ... ./vendor/bin/phpunit -c phpunit.xml.dist`
+  - result: 492 tests passed, 1423 assertions
+- Repo-wide lint remains red on unrelated existing files:
+  - `e2e/media-flows.spec.ts`
+  - `src/components/Admin/CampaignImportModal.test.tsx`
+  - `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcuts.test.tsx`
+  - `src/components/Admin/LayoutBuilder/MaskPropertiesPanel.tsx`
+  - `src/components/Admin/MediaTab.tsx`
+  - `src/main.tsx`
+  - `src/utils/safeLocalStorage.test.ts`
+- Mocked Playwright suite remains red on stale browser specs:
+  - `e2e/smoke.spec.ts`
+  - `e2e/auth-permissions.spec.ts`
+  - `e2e/media-flows.spec.ts`
+  - `e2e/admin-actions.spec.ts`
+
+### Assessment
+
+- Phase 23 follow-through now has strong broad verification across frontend unit/integration, production bundling, and backend WordPress PHPUnit coverage.
+- The only issue discovered inside the follow-through surface during this sweep was a test-performance problem in the campaign modal bridge file, and that has been fixed locally without reopening product code.
+- Remaining blockers to declaring broader repo health are stale mocked E2E coverage and unrelated lint debt; neither currently reads as a missing Phase 23 gallery-config implementation slice.
+
+### Handoff
+
+```text
+STATUS
+- Full Vitest is green again after stabilizing the campaign modal bridge test.
+- build:wp is green.
+- Full wp-env PHPUnit is green.
+- Remaining red signals are repo-wide lint debt and stale mocked Playwright specs outside the core Phase 23 follow-through path.
+
+START HERE NEXT
+- Decide whether to treat the stale lint/E2E failures as separate cleanup work from Phase 23 closeout.
+- If closing tracks now, update PHASE23_REPORT status lines using the verification results above rather than waiting on those unrelated suites.
+```
+
+## Entry - 2026-03-30 01:12:28 UTC
+
+### Snapshot
+
+- The shared editor still had one meaningful follow-through gap after the unified-tab slice: shared common settings were visually breakpoint-aware, but writes still broadcast across all breakpoints.
+- Campaign parity also still lacked scope-level reset actions inside the shared editor, even though the Phase 23 UX contract called for resets that were narrower than all-or-nothing clear flows.
+- The render path itself was already shared, but the explicit coverage around responsive unified settings was still lighter than the rest of the Phase 23 contract.
+
+### Work Done
+
+- Changed the shared editor so common-setting writes now target the active breakpoint only instead of mirroring each edit across desktop/tablet/mobile.
+- Kept shared common settings shared across the active mode surface at that breakpoint, so per-type edits still apply to both image and video within the selected breakpoint while unified edits remain unified-only.
+- Added scope-level reset actions in the shared editor for `Reset Unified Gallery`, `Reset Image Gallery`, and `Reset Video Gallery`, restoring just the selected scope back to the opened baseline instead of forcing users to clear the whole draft.
+- Added focused shared-editor coverage for breakpoint-specific common-setting edits and per-type scope reset behavior.
+- Added `SettingsPanel` bridge coverage proving breakpoint-specific nested common settings survive save while the flat compatibility fields still project the representative value.
+- Added render-plan and section-level coverage for tablet-specific unified settings so responsive unified wrapper/background/border-radius resolution is now directly asserted instead of inferred from desktop-only cases.
+
+### Validation Run
+
+- Focused frontend JSON run passed:
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Admin/SettingsPanel.test.tsx`
+  - `src/utils/campaignGalleryRenderPlan.test.ts`
+  - `src/components/CardViewer/GallerySections.test.tsx`
+  - `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+  - result: 11 suites passed, 79 tests passed
+- Additional resolver/viewer confidence pass passed:
+  - `src/utils/resolveAdapterId.test.ts`
+  - `src/components/CardViewer/CampaignViewer.test.tsx`
+  - result: 34 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- This slice closed a real editor/runtime contract mismatch rather than just expanding test quantity. The runtime already respected breakpoint-specific nested common settings, but the shared editor had still been flattening those edits back across every breakpoint.
+- The current behavior now matches the intended model more closely: breakpoint tabs control the deep editor body, scope resets are available without destructive clear-all actions, and the flat compatibility bridge remains explicit about its representative-value behavior.
+- Remaining Phase 23 follow-through should now stay focused on broader end-to-end verification and any small workflow cleanup discovered there, not on missing responsive editor semantics for the current gallery contract.
+
+### Handoff
+
+```text
+STATUS
+- Shared editor common settings are now active-breakpoint aware.
+- Scope-level reset actions are live in the shared editor.
+- Focused frontend coverage and build are green for the editor, bridge, and render path.
+
+START HERE NEXT
+- Continue with end-to-end verification and any remaining small workflow cleanup in P23-G/P23-H/P23-J.
+- Do not reopen the shared editor for breakpoint-broadcast common-setting writes unless a new compatibility requirement forces it.
+```
+
+## Entry - 2026-03-29 17:21:25 UTC
+
+### Snapshot
+
+- The shared responsive gallery editor had a real unified-mode breakpoint gap: unified galleries participate in the responsive model, but the editor only exposed breakpoint tabs in per-type mode.
+- That meant unified adapter-specific settings were effectively pinned to the desktop breakpoint even when tablet/mobile nested values already existed in the data model and runtime resolver.
+- This slice closes that mismatch without changing the existing quick unified-adapter save behavior.
+
+### Work Done
+
+- Kept the existing top-level unified adapter selector as the scan-friendly shortcut that still applies the selected adapter id across all breakpoints.
+- Restored breakpoint context inside unified mode by rendering the same desktop/tablet/mobile tab affordance used elsewhere in the shared editor, so the active breakpoint now drives unified adapter-setting editing instead of remaining stuck on desktop.
+- Exposed matching breakpoint reset behavior in unified mode by reusing the existing active-breakpoint reset action once unified tabs became meaningful.
+- Added focused regression coverage proving unified classic adapter settings can be edited on the tablet breakpoint without collapsing desktop/mobile values to the same state.
+
+### Validation Run
+
+- Focused frontend JSON run passed:
+  - `src/components/Common/GalleryConfigEditorModal.test.tsx`
+  - `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+  - result: 4 suites passed, 32 tests passed
+- Production build passed:
+  - `npm run build:wp`
+
+### Assessment
+
+- This was a follow-through parity issue, not a new architecture track. The nested model and runtime already supported responsive unified settings; the shared editor was the lagging piece.
+- The current behavior now matches the documented claim that unified mode remains responsive while preserving the existing quick selector semantics that keep the parent screens scan-friendly.
+- Remaining Phase 23 follow-through should keep targeting these small but real parity gaps rather than reopening the already-closed adapter-schema work.
+
+### Handoff
+
+```text
+STATUS
+- Shared editor unified mode now has real breakpoint context.
+- Focused frontend coverage and build are green.
+
+START HERE NEXT
+- Continue with remaining P23-G/P23-H/P23-J follow-through, especially explicit render-parity checks and any remaining campaign ergonomics that still differ from the documented model.
+```
+
 ## Entry - 2026-03-29 15:06:02 UTC
 
 ### Snapshot

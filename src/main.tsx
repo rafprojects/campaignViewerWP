@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { StrictMode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { createPortal } from 'react-dom'
@@ -40,7 +41,6 @@ if ('serviceWorker' in navigator && !import.meta.env.DEV) {
     void navigator.serviceWorker
       .register(`${import.meta.env.BASE_URL}sw.js`)
       .catch((error) => {
-        // eslint-disable-next-line no-console
         console.error('Service worker registration failed:', error);
       });
   });

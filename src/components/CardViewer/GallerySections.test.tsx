@@ -202,6 +202,57 @@ describe('UnifiedGallerySection', () => {
     expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-bg-color', '#112233');
   });
 
+  it('projects tablet-specific unified settings onto the wrapper props', () => {
+    const settings = makeSettings({
+      unifiedBgType: 'none',
+      unifiedBgColor: '#000000',
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: {
+            unified: {
+              adapterId: 'classic',
+              common: {
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
+              },
+              adapterSettings: {
+                imageBorderRadius: 10,
+                videoBorderRadius: 12,
+              },
+            },
+          },
+          tablet: {
+            unified: {
+              adapterId: 'classic',
+              common: {
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #334455 0%, #556677 100%)',
+              },
+              adapterSettings: {
+                imageBorderRadius: 14,
+                videoBorderRadius: 20,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    renderWithSuspense(
+      <UnifiedGallerySection
+        campaign={makeCampaign()}
+        settings={settings}
+        breakpoint="tablet"
+        isAdmin={false}
+      />,
+    );
+
+    expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-bg-type', 'gradient');
+    expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-bg-gradient', 'linear-gradient(135deg, #334455 0%, #556677 100%)');
+    expect(screen.getByTestId('gallery-section-wrapper')).toHaveAttribute('data-border-radius', '20');
+  });
+
   it('uses the max unified media border radius on the wrapper props', () => {
     const settings = makeSettings({
       imageBorderRadius: 8,

@@ -41,20 +41,11 @@ const {
   mockNudgeSlots,
   mockRemoveSlots,
   mockClearSelection,
-  mockDuplicateSlots,
   mockNormalizeZIndices,
   mockBringForward,
   mockSendBackward,
   mockBringToFront,
   mockSendToBack,
-  mockSetName,
-  mockSetAspectRatio,
-  mockTogglePreview,
-  mockMarkSaved,
-  mockSetTemplate,
-  mockAutoAssignMedia,
-  mockAddOverlay,
-  mockSetBackgroundImage,
   mockSelectedSlotIds,
   mockBuilderReturn,
 } = vi.hoisted(() => {
@@ -123,10 +114,8 @@ const {
   };
   return {
     mockUndo, mockRedo, mockNudgeSlots, mockRemoveSlots, mockClearSelection,
-    mockDuplicateSlots, mockNormalizeZIndices, mockBringForward, mockSendBackward,
-    mockBringToFront, mockSendToBack, mockSetName, mockSetAspectRatio,
-    mockTogglePreview, mockMarkSaved, mockSetTemplate, mockAutoAssignMedia,
-    mockAddOverlay, mockSetBackgroundImage, mockSelectedSlotIds, mockBuilderReturn,
+    mockNormalizeZIndices, mockBringForward, mockSendBackward,
+    mockBringToFront, mockSendToBack, mockSelectedSlotIds, mockBuilderReturn,
   };
 });
 

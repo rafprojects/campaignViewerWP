@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
 import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch } from '@mantine/core';
 import {
   DndContext,
@@ -103,13 +103,13 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   };
 
-  const navigateLightbox = (direction: 'prev' | 'next') => {
+  const navigateLightbox = useCallback((direction: 'prev' | 'next') => {
     if (direction === 'prev') {
       setLightboxIndex((i) => (i > 0 ? i - 1 : imageItems.length - 1));
     } else {
       setLightboxIndex((i) => (i < imageItems.length - 1 ? i + 1 : 0));
     }
-  };
+  }, [imageItems.length]);
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -130,7 +130,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxOpen, imageItems.length]);
+  }, [lightboxOpen, navigateLightbox]);
 
   // Card size configurations
   const sizeConfig = useMemo(() => ({
@@ -139,21 +139,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     medium: { span: { base: 12, sm: 6, md: 4 }, height: 170 },
     large: { span: { base: 12, sm: 6 }, height: 240 },
   }), []);
-
-  // Sync local media state from SWR cache. This fires on initial load,
-  // campaign switch, and background revalidation. OEmbed enrichment runs
-  // once after the first sync for the current campaign.
-  const enrichedRef = useRef<string>(''); // tracks campaignId already enriched
-  useEffect(() => {
-    if (mediaItems.length > 0 || !swrLoading) {
-      setMedia(mediaItems);
-      // Run oEmbed enrichment once per campaign after initial data arrives
-      if (campaignId && mediaItems.length > 0 && enrichedRef.current !== campaignId) {
-        enrichedRef.current = campaignId;
-        void enrichOEmbedMetadata(mediaItems);
-      }
-    }
-  }, [mediaItems, swrLoading, campaignId]);
 
   // Show skeleton only on first load (SWR loading and no cached data yet)
   const effectiveLoading = swrLoading && media.length === 0;
@@ -169,7 +154,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   }
 
   /** Enrich external media items that are missing thumbnail / caption via oEmbed. */
-  async function enrichOEmbedMetadata(items: MediaItem[]) {
+  const enrichOEmbedMetadata = useCallback(async (items: MediaItem[]) => {
     const needs = items.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));
     if (needs.length === 0) return;
 
@@ -201,7 +186,22 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     } catch (e) {
       console.warn('Error fetching oEmbed metadata', e);
     }
-  }
+  }, [apiClient, campaignId]);
+
+  // Sync local media state from SWR cache. This fires on initial load,
+  // campaign switch, and background revalidation. OEmbed enrichment runs
+  // once after the first sync for the current campaign.
+  const enrichedRef = useRef<string>(''); // tracks campaignId already enriched
+  useEffect(() => {
+    if (mediaItems.length > 0 || !swrLoading) {
+      setMedia(mediaItems);
+      // Run oEmbed enrichment once per campaign after initial data arrives
+      if (campaignId && mediaItems.length > 0 && enrichedRef.current !== campaignId) {
+        enrichedRef.current = campaignId;
+        void enrichOEmbedMetadata(mediaItems);
+      }
+    }
+  }, [mediaItems, swrLoading, campaignId, enrichOEmbedMetadata]);
 
   async function handleUpload() {
     if (!selectedFile) return;
@@ -448,19 +448,22 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     () => media.map((m) => m.id).sort().join(','),
     [media],
   );
+  const usageSummaryIds = useMemo(
+    () => (mediaIdKey ? mediaIdKey.split(',') : []),
+    [mediaIdKey],
+  );
 
   // P18-G: Fetch usage summary whenever the rendered media list changes (use
   // `media`, not the SWR seed `mediaItems`, so mutations stay in sync)
   useEffect(() => {
-    if (media.length === 0) {
+    if (usageSummaryIds.length === 0) {
       setUsageSummary({});
       setUsageSummaryLoading(false);
       return;
     }
-    const ids = media.map((m) => m.id);
     let canceled = false;
     setUsageSummaryLoading(true);
-    void apiClient.getMediaUsageSummary(ids)
+    void apiClient.getMediaUsageSummary(usageSummaryIds)
       .then((data) => {
         if (canceled) return;
         setUsageSummary(data);
@@ -472,7 +475,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         setUsageSummaryLoading(false);
       });
     return () => { canceled = true; };
-  }, [mediaIdKey, apiClient]);
+  }, [usageSummaryIds, apiClient]);
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
   const displayedMedia = useMemo(() => {

@@ -89,7 +89,7 @@ When the user clicks the config action:
 1. Gallery Config editor opens
 2. editor header shows `Global` context badge
 3. editor preserves breakpoint and scope context from parent screen
-4. editor exposes common and adapter-specific sections
+4. editor applies common and adapter-specific changes to the active breakpoint context rather than silently mirroring them across the full responsive surface
 5. user applies changes
 6. parent screen summary refreshes immediately
 
@@ -128,7 +128,7 @@ When the user clicks the config action in campaign context:
 2. editor header shows `Campaign` context badge
 3. editor indicates inherited values versus campaign overrides
 4. user may override common settings, adapter settings, or both
-5. reset actions are available for current field group, current scope, current breakpoint, or full campaign gallery config
+5. reset actions are available for the visible scope, the current breakpoint, or the full campaign gallery config
 6. parent screen summary refreshes to reflect effective values
 
 ---
@@ -143,7 +143,7 @@ Should contain:
 
 1. context badge (`Global` or `Campaign`)
 2. breakpoint selector
-3. scope selector
+3. scope selector or clearly labeled scope-specific controls for the active mode
 4. active adapter selector if not already fixed by parent context
 
 ### 2. Summary strip
@@ -162,6 +162,8 @@ Should contain at minimum:
 2. Adapter settings section
 
 The common settings section should cover the active shared gallery presentation slice, including section sizing/spacing, gallery height behavior, labels, and scope-aware viewport background controls.
+
+Common settings should resolve against the active breakpoint rather than broadcasting every change to all breakpoints at once. In unified mode, the top-level unified adapter selector remains a deliberate all-breakpoint shortcut, but the breakpoint tabs still control the deeper common-setting and adapter-setting body.
 
 Common settings should be limited to the first-pass field list defined in the data model document. Additional common fields should only be added in later phases after schema review.
 
@@ -188,9 +190,10 @@ Optional:
 Should contain:
 
 1. Apply
-2. Reset current scope
+2. Reset visible scope
 3. Reset current breakpoint
-4. Reset all campaign overrides when in campaign context
+4. Reset all draft changes
+5. Reset all campaign overrides when in campaign context
 
 ---
 
@@ -217,7 +220,8 @@ Responsive configuration becomes unusable if users lose track of what they are e
 ### Required cues
 
 1. breakpoint selector must always be visible in the deeper editor
-2. scope selector must always be visible in the deeper editor
+2. scope context must always be visible in the deeper editor, either through a selector or clearly labeled per-scope controls
+3. the active breakpoint must govern both common-setting edits and adapter-setting edits
 3. switching breakpoint or scope must update summaries and sections immediately
 4. the current target should never be ambiguous
 

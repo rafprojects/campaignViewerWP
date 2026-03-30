@@ -146,6 +146,214 @@ describe('GalleryConfigEditorModal', () => {
     expect(screen.getByLabelText('Viewport Height Tablet Ratio')).toHaveValue('0.85');
   });
 
+  it('uses breakpoint tabs to edit unified adapter settings without collapsing them to desktop only', async () => {
+    const onSave = vi.fn();
+
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: {
+                adapterId: 'classic',
+                adapterSettings: {
+                  carouselVisibleCards: 3,
+                },
+              },
+            },
+            tablet: {
+              unified: {
+                adapterId: 'classic',
+                adapterSettings: {
+                  carouselVisibleCards: 2,
+                },
+              },
+            },
+            mobile: {
+              unified: {
+                adapterId: 'classic',
+                adapterSettings: {
+                  carouselVisibleCards: 1,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(await screen.findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Visible Cards')).toHaveValue('3');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
+
+    expect(await screen.findByText('Editing breakpoint-specific unified settings for the tablet layout. The unified adapter selector above still applies across all breakpoints.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Visible Cards')).toHaveValue('2');
+
+    fireEvent.change(screen.getByLabelText('Visible Cards'), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'unified',
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            unified: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                carouselVisibleCards: 3,
+              }),
+            }),
+          }),
+          tablet: expect.objectContaining({
+            unified: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                carouselVisibleCards: 4,
+              }),
+            }),
+          }),
+          mobile: expect.objectContaining({
+            unified: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                carouselVisibleCards: 1,
+              }),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('applies shared common-setting edits to the active breakpoint only', async () => {
+    const onSave = vi.fn();
+
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'compact-grid',
+                common: {
+                  sectionPadding: 16,
+                },
+              },
+            },
+            tablet: {
+              image: {
+                adapterId: 'compact-grid',
+                common: {
+                  sectionPadding: 24,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(await screen.findByLabelText('Section Padding (px)')).toHaveValue('16');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
+
+    expect(await screen.findByText('Settings below apply to the tablet breakpoint for the current per-type gallery surface.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Section Padding (px)')).toHaveValue('24');
+
+    fireEvent.change(screen.getByLabelText('Section Padding (px)'), { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                sectionPadding: 16,
+              }),
+            }),
+          }),
+          tablet: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                sectionPadding: 30,
+              }),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('resets a per-type scope back to the opened baseline without touching the sibling scope', async () => {
+    const onSave = vi.fn();
+
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'compact-grid',
+                common: {
+                  viewportBgType: 'solid',
+                  viewportBgColor: '#112233',
+                },
+              },
+              video: {
+                adapterId: 'classic',
+                common: {
+                  viewportBgType: 'gradient',
+                  viewportBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(await screen.findByLabelText('Image Gallery Background Color')).toHaveValue('#112233');
+
+    fireEvent.change(screen.getByLabelText('Image Gallery Background Color'), { target: { value: '#445566' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Image Gallery' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
+              }),
+            }),
+            video: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+              }),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
   it('renders shared photo-grid adapter fields for justified selections', async () => {
     render(
       <GalleryConfigEditorModal

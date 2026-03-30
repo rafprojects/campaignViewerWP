@@ -347,6 +347,72 @@ describe('SettingsPanel', () => {
     }));
   });
 
+  it('preserves breakpoint-specific common settings while projecting representative flat values', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      gallerySectionPadding: 16,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    act(() => {
+      onSave({
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                sectionPadding: 16,
+              },
+            },
+          },
+          tablet: {
+            image: {
+              common: {
+                sectionPadding: 30,
+              },
+            },
+          },
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gallerySectionPadding: 16,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                sectionPadding: 16,
+              }),
+            }),
+          }),
+          tablet: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                sectionPadding: 30,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
   it('seeds shared editor viewport background fields from flat settings', async () => {
     render(
       <SettingsPanel

@@ -2,7 +2,7 @@
 **Status:** In Progress 🚧
 **Version:** v0.22.0
 **Created:** March 25, 2026
-**Last updated:** March 29, 2026
+**Last updated:** March 30, 2026
 
 ### Tracks
 
@@ -14,8 +14,8 @@
 | P23-D | Nested responsive gallery config model | In Progress 🚧 | Large (1-2 days) |
 | P23-E | Shared resolver and inheritance layer | In Progress 🚧 | Medium-Large (1 day) |
 | P23-F | Shared Gallery Config editor UX | Completed ✅ | Large (1-2 days) |
-| P23-G | Campaign full gallery config parity | In Progress 🚧 | Large (1-2 days) |
-| P23-H | Render-path consolidation | In Progress 🚧 | Medium (1 day) |
+| P23-G | Campaign full gallery config parity | Completed ✅ | Large (1-2 days) |
+| P23-H | Render-path consolidation | Completed ✅ | Medium (1 day) |
 | P23-I | Shared sanitization and REST support | In Progress 🚧 | Medium-Large (1 day) |
 | P23-J | Documentation, testing, and rollout verification | In Progress 🚧 | Medium (1 day) |
 | P23-J1 | PHP test audit and coverage expansion | Planned 📋 | Medium (0.5-1 day) |
@@ -509,6 +509,8 @@ Completed shared editor slices:
 13. expanded the shared editor again to expose a shared `Tile Appearance` adapter group for tile border, hover-bounce, and glow fields, including conditional detail-field visibility for border color and glow settings so the nested editor preserves the same progressive disclosure as the inline legacy tile-appearance UI
 14. expanded the shared editor again to expose the remaining shape-only spacing controls under the shared `Shape Layout` group, so `tileGapX` and `tileGapY` now edit through the same responsive adapter-settings surface as the existing shape tile-size controls
 15. expanded the shared and inline schema-driven adapter renderers to understand `color` fields, then used that support to expose layout-builder default glow color and spread under the existing `Layout Builder` group without keeping those slot-default values flat-only
+16. restored breakpoint context inside unified mode by keeping the single unified adapter selector as the scan-friendly all-breakpoint shortcut while exposing desktop/tablet/mobile tabs for the deeper editor state, so unified gallery adapter settings no longer silently pin tablet/mobile edits to the desktop breakpoint
+17. made the shared editor's common-setting writes truly breakpoint-aware while adding scope-level reset actions for unified/image/video work, so the active breakpoint tab now governs shared common settings as well as adapter settings instead of only the adapter-specific slices
 
 Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
 
@@ -552,8 +554,9 @@ Completed parity slices:
 7. campaign save payloads now normalize the legacy flat `imageAdapterId` and `videoAdapterId` bridge fields from the active nested `galleryOverrides` state, so REST/meta compatibility no longer persists stale hidden adapter ids when unified or per-breakpoint nested overrides are authoritative
 8. campaign edit hydration and shared-editor apply now reuse that same legacy adapter normalization path, so the modal's inline quick selectors and the final save payload stay aligned instead of deriving bridge-field state through separate rules
 9. campaign duplicate and import flows in both REST and CLI now preserve nested `_wpsg_gallery_overrides` data instead of only copying the legacy flat adapter bridge fields, so campaign gallery parity survives non-edit lifecycle operations as well as direct modal saves
+10. the shared editor now exposes scope-level reset actions for unified/image/video work, so campaign editors can discard one scope's override set without clearing sibling scopes or wiping the entire campaign gallery override payload
 
-Remaining P23-G work is now concentrated on any last scope-specific reset ergonomics and broader end-to-end verification, not on basic shared-editor capability, inherited-state visibility, or legacy save-payload compatibility.
+P23-G is now effectively complete for the current Phase 23 campaign-parity scope. Any remaining work is broader rollout verification or repo-wide browser-suite maintenance rather than missing campaign gallery override behavior.
 
 ### Files to modify
 
@@ -593,8 +596,9 @@ Completed render-path slices:
 6. added shared campaign gallery render-plan helpers that resolve per-scope adapter ids, effective settings, wrapper backgrounds, border radii, tile-size projection, and equal-height state from one place instead of duplicating that planning logic inside each section component
 7. rewired `UnifiedGallerySection` and `PerTypeGallerySection` through a shared `CampaignGalleryAdapterRenderer`, so layout-builder branching and adapter rendering no longer live in two divergent section implementations
 8. the outer campaign viewer shell now resolves gallery mode plus clamped gap, max-width, and side-margin layout values through a shared helper reused by both `CampaignViewer` and `PerTypeGallerySection`, eliminating the last known drift between shell-level spacing and per-type section spacing
+9. focused render-plan and section-level coverage now explicitly validates tablet-specific unified wrapper and adapter-setting resolution, so responsive unified render parity is no longer inferred only from resolver-level tests or desktop-only section cases
 
-Remaining P23-H work is now focused on broader explicit render-parity coverage and any final viewer cleanup discovered during end-to-end verification, not on duplicated section-level planning or outer-shell layout drift.
+P23-H is now effectively complete for the Phase 23 render-path consolidation scope. Any remaining work is broader rollout verification or adjacent browser-suite maintenance rather than unresolved section-planning or responsive render-path drift.
 
 ### Files to modify
 
@@ -707,8 +711,13 @@ Completed documentation/testing slices:
 29. focused campaign modal and hook coverage now also validates that unified nested overrides normalize the legacy adapter bridge fields consistently during edit hydration and shared-editor apply flows, so form-state parity stays aligned with the final save path
 30. focused `wp-env` backend coverage now also validates that REST and CLI duplicate/import flows preserve nested campaign gallery overrides, so campaign parity no longer depends on only the direct create/update editor path staying correct
 31. focused registry, shared-editor, settings-panel, classic runtime, build, and `wp-env` settings/campaign suites now also validate the last orphaned classic navigation and masonry auto-breakpoint fields, closing the final adapter-schema parity gap that had kept P23-C open
+32. focused shared-editor coverage now also validates unified-mode breakpoint switching, confirming breakpoint-specific unified adapter settings no longer collapse to desktop-only state while the top-level unified adapter selector continues to serve as the all-breakpoint shortcut
+33. focused shared-editor, `SettingsPanel`, resolver, `CampaignViewer`, render-plan, gallery-section, campaign modal, and build validation now also covers breakpoint-aware common-setting edits, scope-level reset actions, representative flat-bridge projection, and tablet-specific unified render parity in one follow-through pass
+34. a broader verification push now also includes a green full `npm run test:silent` pass, a green production `build:wp` pass, and a green full `wp-env` PHPUnit run (`492` tests / `1423` assertions), while stabilizing the campaign modal bridge suite by replacing its heavy shared-editor integration with a lightweight stub so the test validates modal wiring without re-running the editor's full surface in two places
+35. repo-wide lint is now green again after clearing unrelated ESLint issues in the admin test/layout surface, the mask-properties panel, `MediaTab`, and a small mocked E2E helper, while mocked Playwright remains deferred because its stale browser expectations reflect broader UI/auth drift rather than missing gallery-parity implementation work
+36. focused cleanup regression coverage for `CampaignImportModal`, `BuilderKeyboardShortcuts`, `MediaTab`, and `safeLocalStorage` also remains green after the unrelated lint cleanup, confirming the follow-on hygiene pass did not reopen the Phase 23 implementation surface
 
-Remaining P23-J work is broader documentation completion, wider suite validation, and final rollout verification once the remaining parity and consolidation slices are finished.
+Remaining P23-J work is now final documentation closeout plus any deferred browser-suite maintenance the team wants to bundle into release hardening. The core Phase 23 gallery-config path is already green across the full frontend test suite, production build, full `wp-env` PHPUnit run, and repo-wide lint.
 
 ### Files to modify
 

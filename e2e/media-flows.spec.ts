@@ -109,7 +109,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
         mediaItems.sort((a, b) => (orderMap.get(a.id) ?? a.order) - (orderMap.get(b.id) ?? b.order));
         mediaItems.forEach((it, i) => { it.order = i + 1; });
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
