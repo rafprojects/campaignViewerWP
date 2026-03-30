@@ -3,14 +3,14 @@ import { test, expect } from '@playwright/test';
 test.describe('auth and permissions', () => {
   test('login flow shows campaigns with permissions', async ({ page }) => {
     await page.addInitScript(() => {
-      (window as Window & {
+      const globals = window as Window & {
         __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
         __WPSG_API_BASE__?: string;
-      }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-      (window as Window & {
-        __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
-        __WPSG_API_BASE__?: string;
-      }).__WPSG_API_BASE__ = 'http://localhost:5173';
+        __WPSG_CONFIG__?: { enableJwt?: boolean };
+      };
+      globals.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+      globals.__WPSG_API_BASE__ = 'http://localhost:5173';
+      globals.__WPSG_CONFIG__ = { enableJwt: true };
     });
 
     await page.route('**/wp-json/jwt-auth/v1/token', async (route) => {
@@ -80,13 +80,18 @@ test.describe('auth and permissions', () => {
 
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
-    await page.getByLabel('Email').fill('viewer@example.com');
-    await page.getByLabel('Password').fill('password');
+    await expect(page.getByText('Public Campaign')).toBeVisible();
+    await page.getByRole('button', { name: 'Admin menu' }).click();
+    await expect(page.getByText('Sign in to access private campaigns.')).toBeVisible();
     await page.getByRole('button', { name: 'Sign in' }).click();
+    const signInDialog = page.getByRole('dialog', { name: 'Sign in' });
+    await expect(signInDialog).toBeVisible();
+    await signInDialog.getByLabel('Email').fill('viewer@example.com');
+    await signInDialog.getByLabel('Password').fill('password');
+    await signInDialog.getByRole('button', { name: 'Sign in' }).click();
 
     await expect(page.getByText('Public Campaign')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Private Campaign' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open campaign Private Campaign' })).toBeVisible();
   });
 
   test('hide mode removes private campaigns without access', async ({ page }) => {

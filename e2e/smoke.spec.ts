@@ -27,6 +27,6 @@ test('renders campaign gallery with mocked API', async ({ page }) => {
 
   await page.goto('/');
 
-  await expect(page.getByText('Campaign Gallery')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gallery' })).toBeVisible();
   await expect(page.getByText('Public Campaign')).toBeVisible();
 });

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the Phase 23 user flow for gallery configuration in WP Super Gallery.
+This document records the implemented Phase 23 user flow for gallery configuration in WP Super Gallery.
 
 The gallery configuration UX must satisfy four requirements:
 
@@ -10,6 +10,8 @@ The gallery configuration UX must satisfy four requirements:
 2. support responsive configuration without overwhelming the main UI
 3. support the same editing concepts in global and campaign contexts
 4. make inheritance and reset behavior explicit, especially for campaign parity
+
+It now reflects the shipped shared editor behavior, including breakpoint-aware common-setting edits, unified-mode breakpoint tabs, and scope-level reset actions.
 
 ---
 
@@ -222,8 +224,8 @@ Responsive configuration becomes unusable if users lose track of what they are e
 1. breakpoint selector must always be visible in the deeper editor
 2. scope context must always be visible in the deeper editor, either through a selector or clearly labeled per-scope controls
 3. the active breakpoint must govern both common-setting edits and adapter-setting edits
-3. switching breakpoint or scope must update summaries and sections immediately
-4. the current target should never be ambiguous
+4. switching breakpoint or scope must update summaries and sections immediately
+5. the current target should never be ambiguous
 
 ### Scope model
 
@@ -335,7 +337,7 @@ This document does not define:
 3. exact Mantine component selection for each control
 4. whether additive Phase 23 component-tree or Mantine map reference documents are needed before implementation completes
 
-Those are implementation details. This document defines the user flow and behavioral requirements.
+Those are implementation details. This document records the user flow and behavioral requirements the shipped implementation follows.
 
 ---
 
@@ -355,7 +357,7 @@ The UI flow is successful if:
 
 ## Summary
 
-The Phase 23 gallery configuration UX should be:
+The Phase 23 gallery configuration UX is:
 
 1. visible at a glance
 2. deep when needed

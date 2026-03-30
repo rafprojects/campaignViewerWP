@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the Phase 23 gallery configuration model for WP Super Gallery.
+This document records the implemented Phase 23 gallery configuration model for WP Super Gallery.
 
 The goals of the model are:
 
@@ -52,7 +52,7 @@ Settings specific to one adapter or adapter family.
 
 ---
 
-## Proposed Type Model
+## Implemented Type Model
 
 The examples below are intentionally close to TypeScript, but are meant as architecture definitions rather than final code.
 
@@ -83,6 +83,11 @@ export interface GalleryCommonSettings {
   viewportBgGradient?: string;
   viewportBgImageUrl?: string;
   perTypeSectionEqualHeight?: boolean;
+  galleryImageLabel?: string;
+  galleryVideoLabel?: string;
+  galleryLabelJustification?: 'left' | 'center' | 'right';
+  showGalleryLabelIcon?: boolean;
+  showCampaignGalleryLabels?: boolean;
 }
 
 export interface GalleryScopeConfig {
@@ -103,13 +108,13 @@ export interface GalleryConfig {
 }
 ```
 
-`adapterSettings` is intentionally broad in the first planning pass. Once the authoritative adapter schema lands, the final TypeScript representation should be generated from, or validated against, that schema so per-adapter settings become strongly typed rather than permanently remaining a generic record.
+`adapterSettings` remains intentionally broad at the top-level TypeScript type, but the live editor, shared adapter registry, runtime resolver, and backend sanitizer now constrain the known Phase 23 adapter fields through one schema-driven contract.
 
 ---
 
-## Global Settings Shape
+## Implemented Global Settings Shape
 
-Phase 23 should retain existing flat settings in `GalleryBehaviorSettings`, but add a new nested field.
+Phase 23 retains existing flat settings in `GalleryBehaviorSettings`, while adding a nested preferred field.
 
 ```ts
 export interface GalleryBehaviorSettings {
@@ -131,13 +136,13 @@ export interface GalleryBehaviorSettings {
 }
 ```
 
-### Rule
+### Current Rule
 
 If `galleryConfig` is present and valid, it takes precedence over equivalent legacy flat fields.
 
 ---
 
-## Campaign Settings Shape
+## Implemented Campaign Settings Shape
 
 Phase 23 selects full gallery parity, so campaigns need a nested override field that matches the same model.
 
@@ -153,9 +158,9 @@ export interface Campaign {
 }
 ```
 
-The recommended WordPress storage key for the nested campaign override payload is `_wpsg_gallery_overrides`.
+The WordPress storage key for the nested campaign override payload is `_wpsg_gallery_overrides`.
 
-### Rule
+### Current Rule
 
 Campaigns should store only the portions they override, but the allowed override surface is the full editor-supported gallery config model.
 
@@ -167,7 +172,7 @@ That means campaigns are not limited to adapter ids or adapter-specific deltas. 
 
 Effective gallery behavior must be resolved in one place, in one deterministic order.
 
-### Recommended order
+### Current order
 
 1. campaign nested override
 2. campaign legacy override (`imageAdapterId`, `videoAdapterId`, layout binding, etc.)
@@ -257,9 +262,9 @@ The same schema must drive:
 
 ## Common Settings Scope
 
-Phase 23 does not need to move every user-facing setting into the nested responsive model on day one. The first pass should cover core gallery layout concerns.
+Phase 23 does not move every user-facing setting into the nested responsive model. The implemented surface covers the core gallery layout and presentation concerns needed for the shared editor, runtime resolver, and campaign parity path.
 
-### First-pass recommended common settings
+### Current nested common settings coverage
 
 1. section max/min width and height
 2. section height mode
@@ -273,8 +278,13 @@ Phase 23 does not need to move every user-facing setting into the nested respons
 10. gallery manual height
 11. viewport background type/color/gradient/image URL
 12. equal-height behavior for per-type sections
+13. gallery image label text
+14. gallery video label text
+15. gallery label justification
+16. gallery label icon visibility
+17. campaign gallery label visibility
 
-### Deferred for later phases unless needed by implementation
+### Still out of scope for Phase 23
 
 1. broader non-gallery UI settings
 2. typography system migration into the same responsive structure
@@ -412,7 +422,7 @@ Those are implementation details or future cleanup concerns.
 
 ## Summary
 
-Phase 23 should adopt a nested, responsive gallery configuration model with these properties:
+Phase 23 adopts a nested, responsive gallery configuration model with these properties:
 
 1. one conceptual model for global and campaign contexts
 2. one resolver for effective behavior

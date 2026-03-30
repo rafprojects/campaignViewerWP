@@ -1,5 +1,5 @@
 # Phase 23 - Settings Architecture Refactor, Responsive Gallery Config & Campaign Parity
-**Status:** In Progress 🚧
+**Status:** Completed ✅
 **Version:** v0.22.0
 **Created:** March 25, 2026
 **Last updated:** March 30, 2026
@@ -8,17 +8,17 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P23-A | Backend settings decomposition | In Progress 🚧 | Medium-Large (1-2 days) |
+| P23-A | Backend settings decomposition | Completed ✅ | Medium-Large (1-2 days) |
 | P23-B | Frontend settings decomposition | Completed ✅ | Medium-Large (1-2 days) |
 | P23-C | Authoritative adapter schema | Completed ✅ | Medium (1 day) |
-| P23-D | Nested responsive gallery config model | In Progress 🚧 | Large (1-2 days) |
-| P23-E | Shared resolver and inheritance layer | In Progress 🚧 | Medium-Large (1 day) |
+| P23-D | Nested responsive gallery config model | Completed ✅ | Large (1-2 days) |
+| P23-E | Shared resolver and inheritance layer | Completed ✅ | Medium-Large (1 day) |
 | P23-F | Shared Gallery Config editor UX | Completed ✅ | Large (1-2 days) |
 | P23-G | Campaign full gallery config parity | Completed ✅ | Large (1-2 days) |
 | P23-H | Render-path consolidation | Completed ✅ | Medium (1 day) |
-| P23-I | Shared sanitization and REST support | In Progress 🚧 | Medium-Large (1 day) |
-| P23-J | Documentation, testing, and rollout verification | In Progress 🚧 | Medium (1 day) |
-| P23-J1 | PHP test audit and coverage expansion | Planned 📋 | Medium (0.5-1 day) |
+| P23-I | Shared sanitization and REST support | Completed ✅ | Medium-Large (1 day) |
+| P23-J | Documentation, testing, and rollout verification | Completed ✅ | Medium (1 day) |
+| P23-J1 | PHP test audit and coverage expansion | Completed ✅ | Medium (0.5-1 day) |
 
 ---
 
@@ -34,69 +34,70 @@
     - [Existing pipeline](#existing-pipeline)
     - [Phase 23 pipeline goals](#phase-23-pipeline-goals)
   - [Execution Priority](#execution-priority)
-  - [Track P23-A - Backend Settings Decomposition](#track-p23-a---backend-settings-decomposition)
+  - [Track P23-A - Backend Settings Decomposition COMPLETE](#track-p23-a---backend-settings-decomposition-complete)
     - [Problem](#problem)
     - [Fix](#fix)
     - [Progress so far](#progress-so-far)
     - [Files to modify](#files-to-modify)
     - [Acceptance criteria](#acceptance-criteria)
-  - [Track P23-B - Frontend Settings Decomposition](#track-p23-b---frontend-settings-decomposition)
+  - [Track P23-B - Frontend Settings Decomposition COMPLETE](#track-p23-b---frontend-settings-decomposition-complete)
     - [Problem](#problem-1)
     - [Fix](#fix-1)
     - [Progress so far](#progress-so-far-1)
     - [Files to modify](#files-to-modify-1)
     - [Acceptance criteria](#acceptance-criteria-1)
-  - [Track P23-C - Authoritative Adapter Schema](#track-p23-c---authoritative-adapter-schema)
+  - [Track P23-C - Authoritative Adapter Schema COMPLETE](#track-p23-c---authoritative-adapter-schema-complete)
     - [Problem](#problem-2)
     - [Fix](#fix-2)
     - [Progress so far](#progress-so-far-2)
     - [Files to modify](#files-to-modify-2)
     - [Acceptance criteria](#acceptance-criteria-2)
-  - [Track P23-D - Nested Responsive Gallery Config Model](#track-p23-d---nested-responsive-gallery-config-model)
+  - [Track P23-D - Nested Responsive Gallery Config Model COMPLETE](#track-p23-d---nested-responsive-gallery-config-model-complete)
     - [Problem](#problem-3)
     - [Fix](#fix-3)
     - [Progress so far](#progress-so-far-3)
     - [Files to modify](#files-to-modify-3)
     - [Acceptance criteria](#acceptance-criteria-3)
-  - [Track P23-E - Shared Resolver and Inheritance Layer](#track-p23-e---shared-resolver-and-inheritance-layer)
+  - [Track P23-E - Shared Resolver and Inheritance Layer COMPLETE](#track-p23-e---shared-resolver-and-inheritance-layer-complete)
     - [Problem](#problem-4)
     - [Fix](#fix-4)
     - [Progress so far](#progress-so-far-4)
     - [Files to modify](#files-to-modify-4)
     - [Acceptance criteria](#acceptance-criteria-4)
-  - [Track P23-F - Shared Gallery Config Editor UX](#track-p23-f---shared-gallery-config-editor-ux)
+  - [Track P23-F - Shared Gallery Config Editor UX COMPLETE](#track-p23-f---shared-gallery-config-editor-ux-complete)
     - [Problem](#problem-5)
     - [Fix](#fix-5)
     - [Progress so far](#progress-so-far-5)
     - [Files to modify](#files-to-modify-5)
     - [Acceptance criteria](#acceptance-criteria-5)
-  - [Track P23-G - Campaign Full Gallery Config Parity](#track-p23-g---campaign-full-gallery-config-parity)
+  - [Track P23-G - Campaign Full Gallery Config Parity COMPLETE](#track-p23-g---campaign-full-gallery-config-parity-complete)
     - [Problem](#problem-6)
     - [Fix](#fix-6)
     - [Progress so far](#progress-so-far-6)
     - [Files to modify](#files-to-modify-6)
     - [Acceptance criteria](#acceptance-criteria-6)
-  - [Track P23-H - Render-Path Consolidation](#track-p23-h---render-path-consolidation)
+  - [Track P23-H - Render-Path Consolidation COMPLETE](#track-p23-h---render-path-consolidation-complete)
     - [Problem](#problem-7)
     - [Fix](#fix-7)
     - [Progress so far](#progress-so-far-7)
     - [Files to modify](#files-to-modify-7)
     - [Acceptance criteria](#acceptance-criteria-7)
-  - [Track P23-I - Shared Sanitization and REST Support](#track-p23-i---shared-sanitization-and-rest-support)
+  - [Track P23-I - Shared Sanitization and REST Support COMPLETE](#track-p23-i---shared-sanitization-and-rest-support-complete)
     - [Problem](#problem-8)
     - [Fix](#fix-8)
     - [Progress so far](#progress-so-far-8)
     - [Files to modify](#files-to-modify-8)
     - [Acceptance criteria](#acceptance-criteria-8)
-  - [Track P23-J - Documentation, Testing, and Rollout Verification](#track-p23-j---documentation-testing-and-rollout-verification)
+  - [Track P23-J - Documentation, Testing, and Rollout Verification COMPLETE](#track-p23-j---documentation-testing-and-rollout-verification-complete)
     - [Problem](#problem-9)
     - [Fix](#fix-9)
     - [Progress so far](#progress-so-far-9)
     - [Files to modify](#files-to-modify-9)
     - [Acceptance criteria](#acceptance-criteria-9)
-  - [Track P23-J1 - PHP Test Audit and Coverage Expansion](#track-p23-j1---php-test-audit-and-coverage-expansion)
+  - [Track P23-J1 - PHP Test Audit and Coverage Expansion COMPLETE](#track-p23-j1---php-test-audit-and-coverage-expansion-complete)
     - [Problem](#problem-10)
     - [Fix](#fix-10)
+    - [Progress so far](#progress-so-far-10)
     - [Files to modify](#files-to-modify-10)
     - [Acceptance criteria](#acceptance-criteria-10)
   - [Testing Strategy](#testing-strategy)
@@ -198,7 +199,7 @@ The priority is intentional: the schema and resolver must exist before the share
 
 ---
 
-## Track P23-A - Backend Settings Decomposition
+## Track P23-A - Backend Settings Decomposition COMPLETE
 
 ### Problem
 
@@ -216,7 +217,7 @@ Split backend settings responsibilities into:
 
 ### Progress so far
 
-Completed extractions:
+Completed backend decomposition slices:
 
 1. conversion utilities module
 2. admin renderer module
@@ -225,8 +226,9 @@ Completed extractions:
 5. sanitization module
 6. core auth/display/performance field-group module
 7. typography font metadata and helper module
+8. `class-wpsg-settings.php` now operates as a thin facade that delegates registry loading, conversion, sanitization, rendering, typography metadata, and service behavior to the extracted settings modules while preserving the existing outward API
 
-Remaining backend decomposition in P23-A is primarily follow-up cleanup to reduce the remaining compatibility surface in `WPSG_Settings` and any additional renderer grouping that still proves worthwhile as the shared gallery config work lands.
+P23-A is complete. The backend settings surface is now decomposed behind a thin facade, and any future module splitting would be incremental post-phase cleanup rather than unfinished Phase 23 architecture work.
 
 ### Files to modify
 
@@ -241,7 +243,7 @@ Remaining backend decomposition in P23-A is primarily follow-up cleanup to reduc
 
 ---
 
-## Track P23-B - Frontend Settings Decomposition
+## Track P23-B - Frontend Settings Decomposition COMPLETE
 
 ### Problem
 
@@ -299,7 +301,7 @@ P23-B is now complete: `SettingsPanel` has been reduced to shell/orchestration r
 
 ---
 
-## Track P23-C - Authoritative Adapter Schema
+## Track P23-C - Authoritative Adapter Schema COMPLETE
 
 ### Problem
 
@@ -364,7 +366,7 @@ Completed initial schema extraction:
 40. extended the existing `layout-builder` adapter group to include `tileGlowColor` and `tileGlowSpread` as slot-default fallback settings, so layout-builder-specific glow defaults can round-trip through nested adapter settings without pretending the full shared tile-appearance contract applies there
 41. closed the remaining live adapter-schema gap by moving `masonryAutoColumnBreakpoints` plus the last classic carousel runtime fields (`dotNavMaxVisibleDots`, `navArrowEdgeInset`, `navArrowMinHitTarget`, `navArrowFadeDurationMs`, `navArrowScaleTransitionMs`, `viewportHeightMobileRatio`, and `viewportHeightTabletRatio`) into registry-owned adapter groups, wiring the classic and masonry runtimes to honor them, and extending the shared backend nested adapter-field allowlist so editor UX, runtime behavior, and sanitization now share one contract for the full current adapter surface
 
-P23-C is now effectively complete for the current adapter family surface. Any future work here should be limited to brand-new adapter families, not unresolved ownership inside the existing schema-driven gallery contract.
+P23-C is complete for the current Phase 23 adapter family surface. Any future work here should be limited to brand-new adapter families, not unresolved ownership inside the existing schema-driven gallery contract.
 
 ### Files to modify
 
@@ -380,7 +382,7 @@ P23-C is now effectively complete for the current adapter family surface. Any fu
 
 ---
 
-## Track P23-D - Nested Responsive Gallery Config Model
+## Track P23-D - Nested Responsive Gallery Config Model COMPLETE
 
 ### Problem
 
@@ -398,15 +400,19 @@ Add a nested `galleryConfig` structure that organizes gallery behavior by:
 
 ### Progress so far
 
-Completed initial compatibility bridge:
+Completed nested gallery model slices:
 
 1. added shared nested `galleryConfig` types to the frontend settings contract
 2. added `galleryOverrides` typing to campaigns for the future parity path
 3. added a legacy-to-nested compatibility builder that derives breakpoint and scope adapter config from existing flat settings
 4. updated `mergeSettingsWithDefaults()` so explicit nested config overlays the legacy-derived bridge instead of competing with it
 5. added focused tests for nested config parsing, merge precedence, and legacy hydration
+6. moved the shared gallery editor onto direct breakpoint/scope/common/adapter nested state editing rather than limiting the model to a compatibility-only bridge
+7. moved runtime resolver, viewer, and render-plan consumers onto nested gallery config as the primary source of truth while preserving the legacy flat bridge as fallback
+8. added shared REST and sanitizer support so global `gallery_config` and campaign `galleryOverrides` now round-trip through the backend as first-class nested payloads
+9. documented and verified the nested model across the shared editor, settings bridge, resolver/runtime coverage, and the full `wp-env` PHPUnit suite
 
-Remaining work in P23-D is to move actual runtime/editor consumers onto the nested model incrementally and expand the nested structure beyond the first-pass common settings bridge.
+P23-D is complete. The nested model now drives the editor, runtime resolution, and backend round-trip behavior while the legacy flat fields remain as an intentional compatibility bridge.
 
 ### Files to modify
 
@@ -422,7 +428,7 @@ Remaining work in P23-D is to move actual runtime/editor consumers onto the nest
 
 ---
 
-## Track P23-E - Shared Resolver and Inheritance Layer
+## Track P23-E - Shared Resolver and Inheritance Layer COMPLETE
 
 ### Problem
 
@@ -455,8 +461,10 @@ Completed initial resolver migration:
 9. added focused tests covering nested precedence, common-setting projection, and the updated viewer path
 10. nested common-setting resolution now also projects gallery label and visibility controls back onto the legacy runtime settings contract, so nested config can affect live adapter title rendering without requiring local per-adapter fallback logic
 11. nested common-setting resolution now also projects scope-aware viewport background controls back onto the legacy runtime settings contract, so nested image/video/unified background presentation can flow through the shared resolver instead of remaining stranded on the flat settings path
+12. shared resolver helpers now also drive campaign render-plan helpers and the outer viewer-shell layout path, so section spacing, wrapper presentation, and adapter planning no longer reimplement resolution order locally
+13. focused render-plan, gallery-section, and viewer coverage now validates breakpoint-specific unified behavior, campaign override precedence, and centralized fallback behavior through the shared resolver path
 
-Remaining work in P23-E is to extend the resolver beyond adapter ids and mode selection so common settings, campaign overrides, and inheritance/reset semantics all flow through the same effective-config path.
+P23-E is complete. Global settings, campaign overrides, and runtime render paths now share one effective-resolution contract with test coverage around precedence, projection, and fallback behavior.
 
 ### Files to modify
 
@@ -472,7 +480,7 @@ Remaining work in P23-E is to extend the resolver beyond adapter ids and mode se
 
 ---
 
-## Track P23-F - Shared Gallery Config Editor UX
+## Track P23-F - Shared Gallery Config Editor UX COMPLETE
 
 ### Problem
 
@@ -512,7 +520,7 @@ Completed shared editor slices:
 16. restored breakpoint context inside unified mode by keeping the single unified adapter selector as the scan-friendly all-breakpoint shortcut while exposing desktop/tablet/mobile tabs for the deeper editor state, so unified gallery adapter settings no longer silently pin tablet/mobile edits to the desktop breakpoint
 17. made the shared editor's common-setting writes truly breakpoint-aware while adding scope-level reset actions for unified/image/video work, so the active breakpoint tab now governs shared common settings as well as adapter settings instead of only the adapter-specific slices
 
-Remaining work in P23-F is now limited to UX polish or follow-up ergonomics discovered while completing campaign parity, not the core shared-editor architecture itself.
+P23-F is complete. Any future UX polish belongs to post-phase iteration rather than unfinished shared-editor architecture.
 
 ### Files to modify
 
@@ -529,7 +537,7 @@ Remaining work in P23-F is now limited to UX polish or follow-up ergonomics disc
 
 ---
 
-## Track P23-G - Campaign Full Gallery Config Parity
+## Track P23-G - Campaign Full Gallery Config Parity COMPLETE
 
 ### Problem
 
@@ -556,7 +564,7 @@ Completed parity slices:
 9. campaign duplicate and import flows in both REST and CLI now preserve nested `_wpsg_gallery_overrides` data instead of only copying the legacy flat adapter bridge fields, so campaign gallery parity survives non-edit lifecycle operations as well as direct modal saves
 10. the shared editor now exposes scope-level reset actions for unified/image/video work, so campaign editors can discard one scope's override set without clearing sibling scopes or wiping the entire campaign gallery override payload
 
-P23-G is now effectively complete for the current Phase 23 campaign-parity scope. Any remaining work is broader rollout verification or repo-wide browser-suite maintenance rather than missing campaign gallery override behavior.
+P23-G is complete for the current Phase 23 campaign-parity scope. Any remaining follow-up belongs to broader rollout hardening rather than missing campaign gallery override behavior.
 
 ### Files to modify
 
@@ -574,7 +582,7 @@ P23-G is now effectively complete for the current Phase 23 campaign-parity scope
 
 ---
 
-## Track P23-H - Render-Path Consolidation
+## Track P23-H - Render-Path Consolidation COMPLETE
 
 ### Problem
 
@@ -598,7 +606,7 @@ Completed render-path slices:
 8. the outer campaign viewer shell now resolves gallery mode plus clamped gap, max-width, and side-margin layout values through a shared helper reused by both `CampaignViewer` and `PerTypeGallerySection`, eliminating the last known drift between shell-level spacing and per-type section spacing
 9. focused render-plan and section-level coverage now explicitly validates tablet-specific unified wrapper and adapter-setting resolution, so responsive unified render parity is no longer inferred only from resolver-level tests or desktop-only section cases
 
-P23-H is now effectively complete for the Phase 23 render-path consolidation scope. Any remaining work is broader rollout verification or adjacent browser-suite maintenance rather than unresolved section-planning or responsive render-path drift.
+P23-H is complete for the Phase 23 render-path consolidation scope. Any remaining follow-up belongs to broader rollout hardening rather than unresolved section-planning or responsive render-path drift.
 
 ### Files to modify
 
@@ -614,7 +622,7 @@ P23-H is now effectively complete for the Phase 23 render-path consolidation sco
 
 ---
 
-## Track P23-I - Shared Sanitization and REST Support
+## Track P23-I - Shared Sanitization and REST Support COMPLETE
 
 ### Problem
 
@@ -645,8 +653,9 @@ Completed sanitization/REST slices:
 12. nested `common` settings now also explicitly own the scope-aware viewport background controls used by gallery section wrappers, so global settings and campaign override payloads can sanitize background type/color/gradient/image values through the same shared backend path
 13. campaign import flows now also route nested `galleryOverrides` through the shared gallery-override sanitizer before persistence, and duplicate flows preserve `_wpsg_gallery_overrides` directly, so non-editor lifecycle operations no longer punch a hole through the nested parity contract
 14. nested `adapterSettings` now also explicitly own the remaining classic navigation timing and spacing fields plus masonry auto-column breakpoint rules, so backend sanitization no longer treats those live runtime keys as stray compatibility-only fields when they arrive through nested config payloads
+15. the broader verification pass confirmed the shared sanitizer/REST path stays green in the full `wp-env` PHPUnit suite, including settings, campaign REST, duplicate, and import flows
 
-Remaining P23-I work is concentrated on the smaller set of legacy settings that are still outside the shared editor's current schema surface, so the remaining compatibility-preserved unknown keys can either move into explicit validation maps or be intentionally rejected once their intended ownership is settled.
+P23-I is complete for the current nested gallery contract. Any future validation-map expansion belongs to new fields rather than unresolved sanitizer or REST drift in the existing Phase 23 surface.
 
 ### Files to modify
 
@@ -661,7 +670,7 @@ Remaining P23-I work is concentrated on the smaller set of legacy settings that 
 
 ---
 
-## Track P23-J - Documentation, Testing, and Rollout Verification
+## Track P23-J - Documentation, Testing, and Rollout Verification COMPLETE
 
 ### Problem
 
@@ -716,8 +725,9 @@ Completed documentation/testing slices:
 34. a broader verification push now also includes a green full `npm run test:silent` pass, a green production `build:wp` pass, and a green full `wp-env` PHPUnit run (`492` tests / `1423` assertions), while stabilizing the campaign modal bridge suite by replacing its heavy shared-editor integration with a lightweight stub so the test validates modal wiring without re-running the editor's full surface in two places
 35. repo-wide lint is now green again after clearing unrelated ESLint issues in the admin test/layout surface, the mask-properties panel, `MediaTab`, and a small mocked E2E helper, while mocked Playwright remains deferred because its stale browser expectations reflect broader UI/auth drift rather than missing gallery-parity implementation work
 36. focused cleanup regression coverage for `CampaignImportModal`, `BuilderKeyboardShortcuts`, `MediaTab`, and `safeLocalStorage` also remains green after the unrelated lint cleanup, confirming the follow-on hygiene pass did not reopen the Phase 23 implementation surface
+37. final documentation closeout now aligns this report, the gallery data model document, and the UI flow document with the implemented nested model, shared editor behavior, and phase-closeout boundary so deferred mocked Playwright maintenance is clearly treated as broader repo hardening rather than unfinished Phase 23 gallery work
 
-Remaining P23-J work is now final documentation closeout plus any deferred browser-suite maintenance the team wants to bundle into release hardening. The core Phase 23 gallery-config path is already green across the full frontend test suite, production build, full `wp-env` PHPUnit run, and repo-wide lint.
+P23-J is complete. The core Phase 23 gallery-config path is green across the full frontend test suite, production build, full `wp-env` PHPUnit run, and repo-wide lint, while deferred mocked Playwright maintenance remains separate browser-suite hardening work.
 
 ### Files to modify
 
@@ -734,7 +744,7 @@ Remaining P23-J work is now final documentation closeout plus any deferred brows
 
 ---
 
-## Track P23-J1 - PHP Test Audit and Coverage Expansion
+## Track P23-J1 - PHP Test Audit and Coverage Expansion COMPLETE
 
 ### Problem
 
@@ -743,6 +753,16 @@ The plugin already has a meaningful PHP test suite, but it has not been systemat
 ### Fix
 
 Audit the existing PHP tests, identify stale or missing coverage areas, and expand the suite to cover the new settings decomposition, nested gallery config compatibility, resolver-facing REST behavior, and campaign gallery override persistence.
+
+### Progress so far
+
+Completed PHP audit/coverage slices:
+
+1. reviewed the existing settings, campaign REST, REST-extended, CLI, and sanitizer suites against the server-side Phase 23 surface instead of relying only on the pre-phase baseline
+2. expanded focused PHP coverage for global `gallery_config`, nested campaign override round-trips, shared sanitizer rules, and duplicate/import preservation of `_wpsg_gallery_overrides`
+3. revalidated the full plugin PHPUnit suite locally through `wp-env`, confirming the broader server-side baseline remains green at `492` tests and `1423` assertions
+
+P23-J1 is complete. The relevant Phase 23 PHP surface is audited, expanded, and passing in the full plugin test environment.
 
 ### Files to modify
 
