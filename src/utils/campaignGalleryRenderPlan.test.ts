@@ -151,6 +151,23 @@ describe('campaignGalleryRenderPlan', () => {
     expect(plan?.wrapper.borderRadius).toBe(20);
   });
 
+  it('does not reuse legacy per-type image overrides as unified adapter fallbacks', () => {
+    const plan = resolveUnifiedCampaignGalleryRenderPlan(
+      makeCampaign({
+        imageAdapterId: 'masonry',
+      }),
+      makeSettings({
+        unifiedGalleryAdapterId: 'compact-grid',
+        galleryConfig: {
+          mode: 'unified',
+        },
+      }),
+      'desktop',
+    );
+
+    expect(plan?.adapterId).toBe('compact-grid');
+  });
+
   it('resolves per-type plans with tile-size projection and adapter fallback', () => {
     const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(
       makeCampaign({ videos: [], images: [image] }),

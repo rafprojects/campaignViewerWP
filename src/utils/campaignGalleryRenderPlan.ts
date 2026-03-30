@@ -107,7 +107,6 @@ export function resolveUnifiedCampaignGalleryRenderPlan(
     adapterId: normalizeAdapterId(
       resolveUnifiedAdapterId(settings, breakpoint, {
         galleryOverrides: campaign.galleryOverrides,
-        legacyOverrideId: campaign.imageAdapterId,
       }),
     ),
     settings: resolvedSettings,
