@@ -374,6 +374,31 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey('userId', $data);
     }
 
+    public function test_create_user_applies_authenticated_rate_limit() {
+        add_filter('wpsg_rate_limit_authenticated', fn() => 1);
+        add_filter('pre_wp_mail', function () { return true; }, 10, 0);
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.33';
+
+        $first = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $first->set_param('email', 'limited-user-' . uniqid() . '@example.com');
+        $first->set_param('displayName', 'Limited User One');
+        $first->set_param('role', 'subscriber');
+
+        $second = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $second->set_param('email', 'limited-user-' . uniqid() . '@example.com');
+        $second->set_param('displayName', 'Limited User Two');
+        $second->set_param('role', 'subscriber');
+
+        $first_response = rest_do_request($first);
+        $second_response = rest_do_request($second);
+
+        $this->assertContains($first_response->get_status(), [200, 201]);
+        $this->assertEquals(429, $second_response->get_status());
+
+        remove_all_filters('wpsg_rate_limit_authenticated');
+        unset($_SERVER['REMOTE_ADDR']);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Taxonomy Endpoints
     // ═══════════════════════════════════════════════════════════════════════

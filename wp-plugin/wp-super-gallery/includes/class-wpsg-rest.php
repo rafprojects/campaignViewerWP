@@ -362,7 +362,7 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'create_user'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'rate_limit_authenticated'],
             ],
         ]);
 
