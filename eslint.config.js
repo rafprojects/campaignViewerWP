@@ -5,7 +5,15 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'wp-plugin'] },
+  {
+    ignores: [
+      'dist',
+      'coverage',
+      'node_modules',
+      'wp-plugin/wp-super-gallery/assets',
+      'wp-plugin/wp-super-gallery/vendor',
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -40,6 +48,14 @@ export default tseslint.config(
     files: ['**/contexts/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['**/*.{js,cjs,mjs}'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
     },
   },
 )

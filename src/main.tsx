@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { StrictMode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { createPortal } from 'react-dom'
@@ -71,6 +70,7 @@ const parseProps = (node: Element): MountProps => {
  * MantineThemeOverride into MantineProvider. This component re-renders
  * only when the theme changes (O(1) map lookup, pre-computed objects).
  */
+// eslint-disable-next-line react-refresh/only-export-components
 function ThemedApp({
   props,
   isShadowDom,

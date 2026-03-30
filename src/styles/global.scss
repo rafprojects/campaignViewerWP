@@ -205,7 +205,9 @@
   color: var(--wpsg-color-text);
 }
 
-.wp-super-gallery .wpsg-mantine-select-option[data-selected] {
+// Select dropdowns may render in a portal, so selected option styling
+// cannot rely on the .wp-super-gallery ancestor being present.
+.wpsg-mantine-select-option[data-selected] {
   background-color: var(--wpsg-color-primary);
   color: #ffffff;
 }

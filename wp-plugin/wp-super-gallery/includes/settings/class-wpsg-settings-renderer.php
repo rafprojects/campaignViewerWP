@@ -16,6 +16,13 @@ if (!defined('ABSPATH')) {
 class WPSG_Settings_Renderer {
 
     /**
+     * Admin hook suffix for the settings page.
+     *
+     * @var string
+     */
+    private static $settings_page_hook = '';
+
+    /**
      * Register admin hooks for the settings page.
      *
      * @return void
@@ -23,6 +30,7 @@ class WPSG_Settings_Renderer {
     public static function init() {
         add_action('admin_menu', [self::class, 'add_menu_page']);
         add_action('admin_init', [self::class, 'register_settings']);
+        add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin_assets']);
         add_action('wp_ajax_wpsg_test_auth', ['WPSG_Settings_Service', 'ajax_test_auth']);
     }
 
@@ -32,7 +40,7 @@ class WPSG_Settings_Renderer {
      * @return void
      */
     public static function add_menu_page() {
-        add_submenu_page(
+        self::$settings_page_hook = add_submenu_page(
             'edit.php?post_type=wpsg_campaign',
             __('Super Gallery Settings', 'wp-super-gallery'),
             __('Settings', 'wp-super-gallery'),
@@ -40,6 +48,40 @@ class WPSG_Settings_Renderer {
             WPSG_Settings::PAGE_SLUG,
             [self::class, 'render_settings_page']
         );
+    }
+
+    /**
+     * Enqueue settings-page-only admin assets.
+     *
+     * @param string $hook_suffix Current admin page hook suffix.
+     * @return void
+     */
+    public static function enqueue_admin_assets($hook_suffix) {
+        if (empty(self::$settings_page_hook) || self::$settings_page_hook !== $hook_suffix) {
+            return;
+        }
+
+        wp_register_script(
+            'wpsg-settings-admin',
+            WPSG_PLUGIN_URL . 'includes/settings/assets/settings-auth-test.js',
+            [],
+            WPSG_VERSION,
+            true
+        );
+
+        wp_localize_script(
+            'wpsg-settings-admin',
+            'wpsgSettingsAuthTest',
+            [
+                'ajaxUrl'              => admin_url('admin-ajax.php'),
+                'nonce'                => wp_create_nonce('wpsg_test_auth'),
+                'testingText'          => __('Testing...', 'wp-super-gallery'),
+                'connectionFailedText' => __('Connection failed', 'wp-super-gallery'),
+                'requestFailedText'    => __('Request failed', 'wp-super-gallery'),
+            ]
+        );
+
+        wp_enqueue_script('wpsg-settings-admin');
     }
 
     /**
@@ -206,48 +248,6 @@ class WPSG_Settings_Renderer {
                 </tbody>
             </table>
         </div>
-
-        <script>
-        (function() {
-            var testBtn = document.getElementById('wpsg-test-auth');
-            var resultSpan = document.getElementById('wpsg-test-auth-result');
-
-            if (testBtn) {
-                testBtn.addEventListener('click', function() {
-                    testBtn.disabled = true;
-                    resultSpan.textContent = '<?php echo esc_js(__('Testing...', 'wp-super-gallery')); ?>';
-                    resultSpan.style.color = '';
-
-                    fetch(ajaxurl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: new URLSearchParams({
-                            action: 'wpsg_test_auth',
-                            _ajax_nonce: '<?php echo wp_create_nonce('wpsg_test_auth'); ?>'
-                        })
-                    })
-                    .then(function(response) { return response.json(); })
-                    .then(function(data) {
-                        testBtn.disabled = false;
-                        if (data.success) {
-                            resultSpan.textContent = '✓ ' + data.data.message;
-                            resultSpan.style.color = 'green';
-                        } else {
-                            resultSpan.textContent = '✗ ' + (data.data.message || 'Connection failed');
-                            resultSpan.style.color = 'red';
-                        }
-                    })
-                    .catch(function() {
-                        testBtn.disabled = false;
-                        resultSpan.textContent = '✗ Request failed';
-                        resultSpan.style.color = 'red';
-                    });
-                });
-            }
-        })();
-        </script>
         <?php
     }
 }
