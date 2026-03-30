@@ -35,17 +35,17 @@
           testBtn.disabled = false;
 
           if (data.success) {
-            resultSpan.textContent = '✓ ' + data.data.message;
+            resultSpan.textContent = data.data.message;
             resultSpan.style.color = 'green';
             return;
           }
 
-          resultSpan.textContent = '✗ ' + (data.data.message || config.connectionFailedText);
+          resultSpan.textContent = data.data.message || config.connectionFailedText;
           resultSpan.style.color = 'red';
         })
         .catch(function() {
           testBtn.disabled = false;
-          resultSpan.textContent = '✗ ' + config.requestFailedText;
+          resultSpan.textContent = config.requestFailedText;
           resultSpan.style.color = 'red';
         });
     });

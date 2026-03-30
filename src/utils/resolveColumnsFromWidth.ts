@@ -6,12 +6,21 @@
  * @param pinned - user-configured fixed column count (0 = auto)
  * @param autoColumnBreakpoints - optional comma-separated width:columns pairs
  */
+const parsedAutoColumnBreakpointCache = new Map<string, Array<{ width: number; columns: number }>>();
+
 export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undefined): Array<{ width: number; columns: number }> {
-  if (!autoColumnBreakpoints?.trim()) {
+  const cacheKey = autoColumnBreakpoints?.trim() ?? '';
+
+  if (!cacheKey) {
     return [];
   }
 
-  return autoColumnBreakpoints
+  const cachedBreakpoints = parsedAutoColumnBreakpointCache.get(cacheKey);
+  if (cachedBreakpoints) {
+    return cachedBreakpoints;
+  }
+
+  const parsedBreakpoints = cacheKey
     .split(',')
     .map((entry) => {
       const [widthText, columnsText] = entry.split(':').map((part) => part.trim());
@@ -29,6 +38,9 @@ export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undef
     })
     .filter((entry): entry is { width: number; columns: number } => entry !== null)
     .sort((left, right) => left.width - right.width);
+
+  parsedAutoColumnBreakpointCache.set(cacheKey, parsedBreakpoints);
+  return parsedBreakpoints;
 }
 
 export function resolveColumnsFromWidth(width: number, pinned: number, autoColumnBreakpoints?: string): number {

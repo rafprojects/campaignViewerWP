@@ -58,7 +58,14 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
                 <Text fw={700}>{c.title}</Text>
                 {hasCampaignGalleryOverrides(c) && (
                   <Tooltip label={`Custom gallery: ${galleryOverrideSummary.join(', ') || 'Nested campaign gallery overrides'}`} withArrow>
-                    <IconLayoutGrid size={14} color="var(--mantine-color-violet-5)" />
+                    <Box
+                      component="span"
+                      role="img"
+                      aria-label={`Custom gallery overrides: ${galleryOverrideSummary.join(', ') || 'Nested campaign gallery overrides'}`}
+                      style={{ display: 'inline-flex' }}
+                    >
+                      <IconLayoutGrid size={14} color="var(--mantine-color-violet-5)" aria-hidden="true" />
+                    </Box>
                   </Tooltip>
                 )}
               </Group>
