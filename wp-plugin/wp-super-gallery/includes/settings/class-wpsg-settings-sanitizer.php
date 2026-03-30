@@ -155,6 +155,54 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
+     * Build the standard fallback response for an invalid nested leaf setting.
+     *
+     * @param string $flat_key Flat registry key.
+     * @param array $defaults Registered defaults.
+     * @param bool $use_default_fallbacks Whether to fall back instead of rejecting.
+     * @return array{accepted: bool, value: mixed}
+     */
+    private static function invalid_nested_gallery_setting_result($flat_key, $defaults, $use_default_fallbacks) {
+        return [
+            'accepted' => $use_default_fallbacks,
+            'value' => $use_default_fallbacks ? $defaults[$flat_key] : null,
+        ];
+    }
+
+    /**
+     * Validate CSS color values accepted by nested gallery settings.
+     *
+     * Supports hex, rgb/rgba, hsl/hsla, CSS variables, and named colors.
+     *
+     * @param string $value Potential color string.
+     * @return bool
+     */
+    private static function is_valid_css_color($value) {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return false;
+        }
+
+        if (preg_match('/^#[0-9a-fA-F]{3,8}$/', $value)) {
+            return true;
+        }
+
+        if (preg_match('/^var\(--[A-Za-z0-9_-]+\)$/', $value)) {
+            return true;
+        }
+
+        if (preg_match('/^rgba?\(\s*[0-9.]+%?\s*,\s*[0-9.]+%?\s*,\s*[0-9.]+%?(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)$/i', $value)) {
+            return true;
+        }
+
+        if (preg_match('/^hsla?\(\s*[0-9.]+(?:deg|grad|rad|turn)?\s*,\s*[0-9.]+%\s*,\s*[0-9.]+%(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)$/i', $value)) {
+            return true;
+        }
+
+        return preg_match('/^[a-zA-Z-]+$/', $value) === 1;
+    }
+
+    /**
      * Sanitize settings before saving.
      *
      * @param array $input Raw input array.
@@ -777,6 +825,10 @@ class WPSG_Settings_Sanitizer {
 
         $default = $defaults[$flat_key];
 
+        if (is_array($value) || is_object($value)) {
+            return self::invalid_nested_gallery_setting_result($flat_key, $defaults, $use_default_fallbacks);
+        }
+
         if (is_bool($default)) {
             return [
                 'accepted' => true,
@@ -808,10 +860,22 @@ class WPSG_Settings_Sanitizer {
             ];
         }
 
+        if (str_ends_with($flat_key, '_color')) {
+            $sanitized_value = sanitize_text_field((string) $value);
+            if (self::is_valid_css_color($sanitized_value)) {
+                return [
+                    'accepted' => true,
+                    'value' => $sanitized_value,
+                ];
+            }
+
+            return self::invalid_nested_gallery_setting_result($flat_key, $defaults, $use_default_fallbacks);
+        }
+
         if (str_ends_with($flat_key, '_url') || str_ends_with($flat_key, '_image_url')) {
             return [
                 'accepted' => true,
-                'value' => esc_url_raw((string) $value),
+                'value' => esc_url_raw(trim((string) $value)),
             ];
         }
 
@@ -1121,7 +1185,10 @@ class WPSG_Settings_Sanitizer {
 
                 $clean_stop = [];
                 if (isset($stop['color'])) {
-                    $clean_stop['color'] = sanitize_text_field((string) $stop['color']);
+                    $candidate_color = sanitize_text_field((string) $stop['color']);
+                    if (self::is_valid_css_color($candidate_color)) {
+                        $clean_stop['color'] = $candidate_color;
+                    }
                 }
                 if (isset($stop['position'])) {
                     $clean_stop['position'] = max(0, min(100, intval($stop['position'])));

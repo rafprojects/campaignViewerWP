@@ -315,6 +315,70 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Test invalid nested scalar/color values are rejected for global gallery config payloads.
+     */
+    public function test_sanitize_gallery_config_payload_rejects_invalid_nested_scalar_and_color_values() {
+        $defaults = WPSG_Settings::get_defaults();
+
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_config_payload([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'common' => [
+                            'viewportBgColor' => 'bad color',
+                            'viewportBgImageUrl' => ['https://example.com/not-allowed.jpg'],
+                        ],
+                        'adapterSettings' => [
+                            'tileGlowColor' => 'bad color',
+                            'masonryAutoColumnBreakpoints' => ['480:2'],
+                        ],
+                    ],
+                ],
+            ],
+        ], $defaults['gallery_config']);
+
+        $common = $sanitized['breakpoints']['desktop']['image']['common'] ?? [];
+        $adapter_settings = $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+
+        $this->assertEquals($defaults['image_bg_color'], $common['viewportBgColor'] ?? null);
+        $this->assertEquals($defaults['image_bg_image_url'], $common['viewportBgImageUrl'] ?? null);
+        $this->assertEquals($defaults['tile_glow_color'], $adapter_settings['tileGlowColor'] ?? null);
+        $this->assertEquals($defaults['masonry_auto_column_breakpoints'], $adapter_settings['masonryAutoColumnBreakpoints'] ?? null);
+    }
+
+    /**
+     * Test invalid nested scalar/color values are rejected for campaign overrides.
+     */
+    public function test_sanitize_gallery_overrides_rejects_invalid_nested_scalar_and_color_values() {
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_overrides([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'common' => [
+                            'viewportBgColor' => 'bad color',
+                            'viewportBgImageUrl' => ['https://example.com/not-allowed.jpg'],
+                        ],
+                        'adapterSettings' => [
+                            'tileGlowColor' => 'bad color',
+                            'masonryAutoColumnBreakpoints' => ['480:2'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $common = $sanitized['breakpoints']['desktop']['image']['common'] ?? [];
+        $adapter_settings = $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+
+        $this->assertArrayNotHasKey('viewportBgColor', $common);
+        $this->assertArrayNotHasKey('viewportBgImageUrl', $common);
+        $this->assertArrayNotHasKey('tileGlowColor', $adapter_settings);
+        $this->assertArrayNotHasKey('masonryAutoColumnBreakpoints', $adapter_settings);
+    }
+
+    /**
      * Test shared campaign gallery override sanitization reuses the nested gallery payload rules.
      */
     public function test_sanitize_gallery_overrides_handles_campaign_payloads() {
