@@ -28,6 +28,8 @@ type ScopeSpecificCommonSettingKey = Extract<
 >;
 type SharedCommonSettingKey = Exclude<CommonSettingKey, ScopeSpecificCommonSettingKey>;
 
+const BLOCKED_ADAPTER_SETTING_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 const COMMON_SETTING_FIELD_MAP: Record<SharedCommonSettingKey, keyof GalleryBehaviorSettings> = {
   sectionMaxWidth: 'gallerySectionMaxWidth',
   sectionMaxHeight: 'gallerySectionMaxHeight',
@@ -171,17 +173,18 @@ export function resolveEffectiveGallerySettings(
 ): GalleryBehaviorSettings {
   const resolvedCommonSettings = resolveGalleryCommonSettings(s, breakpoint, scope, galleryOverrides);
   const resolvedAdapterSettings = resolveEffectiveGalleryConfig(s, galleryOverrides).breakpoints?.[breakpoint]?.[scope]?.adapterSettings ?? {};
+  const resolvedSettings = applyResolvedGalleryCommonSettings(s, resolvedCommonSettings, scope);
+  const resolvedSettingsRecord = resolvedSettings as unknown as Record<string, unknown>;
 
-  return Object.entries(resolvedAdapterSettings).reduce((resolvedSettings, [key, value]) => {
-    if (value === undefined) {
-      return resolvedSettings;
+  for (const [key, value] of Object.entries(resolvedAdapterSettings)) {
+    if (value === undefined || BLOCKED_ADAPTER_SETTING_KEYS.has(key)) {
+      continue;
     }
 
-    return {
-      ...resolvedSettings,
-      [key]: value,
-    } as GalleryBehaviorSettings;
-  }, applyResolvedGalleryCommonSettings(s, resolvedCommonSettings, scope));
+    resolvedSettingsRecord[key] = value;
+  }
+
+  return resolvedSettings;
 }
 
 /**

@@ -6,9 +6,17 @@
  * @param pinned - user-configured fixed column count (0 = auto)
  * @param autoColumnBreakpoints - optional comma-separated width:columns pairs
  */
-const parsedAutoColumnBreakpointCache = new Map<string, Array<{ width: number; columns: number }>>();
+type ParsedAutoColumnBreakpoint = { width: number; columns: number };
 
-export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undefined): Array<{ width: number; columns: number }> {
+const parsedAutoColumnBreakpointCache = new Map<string, ReadonlyArray<ParsedAutoColumnBreakpoint>>();
+
+function cloneParsedAutoColumnBreakpoints(
+  breakpoints: ReadonlyArray<ParsedAutoColumnBreakpoint>,
+): ParsedAutoColumnBreakpoint[] {
+  return breakpoints.map((breakpoint) => ({ ...breakpoint }));
+}
+
+export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undefined): ParsedAutoColumnBreakpoint[] {
   const cacheKey = autoColumnBreakpoints?.trim() ?? '';
 
   if (!cacheKey) {
@@ -17,7 +25,7 @@ export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undef
 
   const cachedBreakpoints = parsedAutoColumnBreakpointCache.get(cacheKey);
   if (cachedBreakpoints) {
-    return cachedBreakpoints;
+    return cloneParsedAutoColumnBreakpoints(cachedBreakpoints);
   }
 
   const parsedBreakpoints = cacheKey
@@ -34,13 +42,14 @@ export function parseAutoColumnBreakpoints(autoColumnBreakpoints: string | undef
       return {
         width: parsedWidth,
         columns: parsedColumns,
-      };
+      } as ParsedAutoColumnBreakpoint;
     })
-    .filter((entry): entry is { width: number; columns: number } => entry !== null)
+    .filter((entry): entry is ParsedAutoColumnBreakpoint => entry !== null)
     .sort((left, right) => left.width - right.width);
 
-  parsedAutoColumnBreakpointCache.set(cacheKey, parsedBreakpoints);
-  return parsedBreakpoints;
+  const frozenBreakpoints = Object.freeze(parsedBreakpoints.map((breakpoint) => Object.freeze({ ...breakpoint })));
+  parsedAutoColumnBreakpointCache.set(cacheKey, frozenBreakpoints);
+  return cloneParsedAutoColumnBreakpoints(frozenBreakpoints);
 }
 
 export function resolveColumnsFromWidth(width: number, pinned: number, autoColumnBreakpoints?: string): number {

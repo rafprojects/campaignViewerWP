@@ -43,9 +43,6 @@ function buildDots(total: number, currentIndex: number, maxVisibleDots: number):
     }
   }
 
-  visible.add(0);
-  visible.add(total - 1);
-
   const sorted = [...visible].sort((a, b) => a - b);
   const result: DotItem[] = [];
   let previous = -1;

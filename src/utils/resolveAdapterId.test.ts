@@ -483,6 +483,35 @@ describe('resolveEffectiveGallerySettings', () => {
     expect(resolved.gridCardWidth).toBe(220);
   });
 
+  it('ignores dangerous adapter setting keys when projecting nested adapter settings', () => {
+    const dangerousSettings = Object.create(null) as Record<string, unknown>;
+    dangerousSettings.gridCardWidth = 220;
+    dangerousSettings.__proto__ = { polluted: true };
+    dangerousSettings.constructor = 'malicious';
+    dangerousSettings.prototype = 'malicious';
+
+    const s = makeSettings({
+      gridCardWidth: 160,
+      galleryConfig: {
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'compact-grid',
+              adapterSettings: dangerousSettings,
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image') as GalleryBehaviorSettings & Record<string, unknown>;
+
+    expect(resolved.gridCardWidth).toBe(220);
+    expect(resolved.polluted).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(resolved, 'constructor')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(resolved, 'prototype')).toBe(false);
+  });
+
   it('projects shared photo-grid adapter settings back onto legacy runtime fields', () => {
     const s = makeSettings({
       thumbnailGap: 6,
