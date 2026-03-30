@@ -86,6 +86,14 @@ function resolveScopeConfig(
   return config.breakpoints?.[breakpoint]?.[scope];
 }
 
+function resolveOverrideScopeConfig(
+  galleryOverrides: Partial<GalleryConfig> | undefined,
+  breakpoint: Breakpoint,
+  scope: GalleryConfigScope,
+) {
+  return galleryOverrides?.breakpoints?.[breakpoint]?.[scope];
+}
+
 export function resolveGalleryMode(
   s: GalleryBehaviorSettings,
   galleryOverrides?: Partial<GalleryConfig>,
@@ -99,11 +107,10 @@ export function resolveUnifiedAdapterId(
   options: GalleryResolutionOptions = {},
 ): string {
   const globalConfig = resolveBaseGalleryConfig(s);
-  const effectiveConfig = resolveEffectiveGalleryConfig(s, options.galleryOverrides);
 
   return resolveSupportedAdapterChain(
     [
-      options.galleryOverrides ? resolveScopeConfig(effectiveConfig, breakpoint, 'unified')?.adapterId : undefined,
+      resolveOverrideScopeConfig(options.galleryOverrides, breakpoint, 'unified')?.adapterId,
       options.legacyOverrideId,
       resolveScopeConfig(globalConfig, breakpoint, 'unified')?.adapterId,
       s.unifiedGalleryAdapterId,
@@ -194,7 +201,7 @@ export function resolveAdapterId(
 
   return resolveSupportedAdapterChain(
     [
-      options.galleryOverrides ? resolveScopeConfig(resolveEffectiveGalleryConfig(s, options.galleryOverrides), breakpoint, mediaType)?.adapterId : undefined,
+      resolveOverrideScopeConfig(options.galleryOverrides, breakpoint, mediaType)?.adapterId,
       options.legacyOverrideId,
       resolveScopeConfig(globalConfig, breakpoint, mediaType)?.adapterId,
       legacyId,

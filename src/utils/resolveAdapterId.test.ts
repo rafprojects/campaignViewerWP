@@ -247,6 +247,36 @@ describe('resolveUnifiedAdapterId', () => {
     expect(resolveUnifiedAdapterId(s, 'tablet')).toBe('justified');
   });
 
+  it('does not treat non-adapter campaign overrides as an explicit unified adapter override', () => {
+    const s = makeSettings({
+      unifiedGalleryAdapterId: 'compact-grid',
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: {
+            unified: {
+              adapterId: 'justified',
+            },
+          },
+        },
+      },
+    });
+
+    const campaignOverrides: Partial<GalleryConfig> = {
+      breakpoints: {
+        desktop: {
+          unified: {
+            common: {
+              sectionPadding: 24,
+            },
+          },
+        },
+      },
+    };
+
+    expect(resolveUnifiedAdapterId(s, 'desktop', { galleryOverrides: campaignOverrides, legacyOverrideId: 'diamond' })).toBe('diamond');
+  });
+
   it('prefers campaign nested unified adapter overrides ahead of legacy campaign overrides', () => {
     const campaignOverrides: Partial<GalleryConfig> = {
       breakpoints: {

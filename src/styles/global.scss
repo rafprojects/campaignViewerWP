@@ -196,12 +196,12 @@
 // Mantine active/selected state helpers. These stay in CSS so selectors like
 // [data-active] and [data-selected] are handled by the browser instead of
 // leaking through React inline style objects.
-.wp-super-gallery .wpsg-mantine-tabs-tab[data-active] {
+.wpsg-mantine-tabs-tab[data-active] {
   color: var(--wpsg-color-text);
   border-color: var(--wpsg-color-primary);
 }
 
-.wp-super-gallery .wpsg-mantine-segmented-control-label[data-active] {
+.wpsg-mantine-segmented-control-label[data-active] {
   color: var(--wpsg-color-text);
 }
 

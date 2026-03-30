@@ -126,7 +126,7 @@ class WPSG_Settings_Core_Fields {
             ],
             __('Neon', 'wp-super-gallery') => [
                 'cyberpunk' => __('Cyberpunk', 'wp-super-gallery'),
-                'synthwave' => __('Synthwave \u002784', 'wp-super-gallery'),
+                'synthwave' => __('Synthwave \'84', 'wp-super-gallery'),
             ],
         ];
         ?>
