@@ -293,6 +293,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       size={isSmallScreen ? '100%' : 'lg'}
       fullScreen={!!isExtraSmall}
       centered
+      withinPortal={false}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
       transitionProps={{ transition: 'fade', duration: 200 }}
@@ -431,6 +432,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 title="Responsive Gallery Config"
                 value={buildGalleryConfigEditorSeed(settings)}
                 onSave={handleGalleryConfigEditorSave}
+                zIndex={400}
               />
             </Suspense>
           )}

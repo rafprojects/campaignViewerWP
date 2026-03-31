@@ -352,6 +352,8 @@ class WPSG_Settings_Registry {
             'gruvbox-dark',
             'cyberpunk',
             'synthwave',
+            'github-light',
+            'catppuccin-latte',
         ],
         'gallery_layout' => ['grid', 'masonry', 'carousel'],
         'scroll_animation_style' => ['smooth', 'instant'],

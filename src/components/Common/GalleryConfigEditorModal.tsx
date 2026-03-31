@@ -36,6 +36,7 @@ interface GalleryConfigEditorModalProps {
   clearLabel?: string;
   unifiedAdapterEnabled?: boolean;
   unifiedAdapterDescription?: string;
+  zIndex?: number;
 }
 
 type SharedCommonSettingKey = keyof Pick<
@@ -504,6 +505,7 @@ export function GalleryConfigEditorModal({
   clearLabel = 'Clear Overrides',
   unifiedAdapterEnabled = true,
   unifiedAdapterDescription,
+  zIndex,
 }: GalleryConfigEditorModalProps) {
   const [draft, setDraft] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
   const [baseline, setBaseline] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
@@ -525,7 +527,7 @@ export function GalleryConfigEditorModal({
   }, [opened, value]);
 
   return (
-    <Modal opened={opened} onClose={onClose} title={title} size="lg" centered>
+    <Modal opened={opened} onClose={onClose} title={title} size="lg" centered zIndex={zIndex}>
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.

@@ -18,6 +18,7 @@ const { setThemeSpy, setPreviewThemeSpy } = vi.hoisted(() => ({
 //   • renders minimal DOM to keep role-queries fast.
 let capturedModalValue: Partial<GalleryConfig> | undefined;
 let capturedOnSave: ((cfg: GalleryConfig) => void) | undefined;
+let capturedModalZIndex: number | undefined;
 
 vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
   GalleryConfigEditorModal: (props: {
@@ -26,9 +27,11 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
     value?: Partial<GalleryConfig>;
     onSave: (cfg: GalleryConfig) => void;
     onClose: () => void;
+    zIndex?: number;
   }) => {
     capturedModalValue = props.value;
     capturedOnSave = props.onSave;
+    capturedModalZIndex = props.zIndex;
     if (!props.opened) return null;
     return (
       <div role="dialog" data-testid="gallery-config-editor-modal">
@@ -176,6 +179,7 @@ describe('SettingsPanel', () => {
     setPreviewThemeSpy.mockReset();
     capturedModalValue = undefined;
     capturedOnSave = undefined;
+    capturedModalZIndex = undefined;
     apiClient = createMockApiClient();
   });
 
@@ -841,6 +845,18 @@ describe('SettingsPanel', () => {
     await screen.findByText('Gallery Adapters');
 
     expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
+  });
+
+  it('opens the shared responsive gallery editor above the settings modal', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    await openResponsiveConfigEditor();
+
+    expect(screen.getByTestId('gallery-config-editor-modal')).toBeInTheDocument();
+    expect(capturedModalZIndex).toBe(400);
   });
 
   it('renders per-type breakpoint adapter grids without the selection mode toggle', async () => {

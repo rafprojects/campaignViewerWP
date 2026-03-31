@@ -1,6 +1,6 @@
 # Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes
 
-**Status:** In progress
+**Status:** Complete
 **Version:** TBD
 **Created:** March 30, 2026
 **Last updated:** March 31, 2026
@@ -13,7 +13,7 @@
 | P24-B | Per-breakpoint gallery adapter selection parity | Completed ✅ | Medium-Large (1-2 days) |
 | P24-C | Theme live preview and selection UX | Completed ✅ | Medium (0.5-1 day) |
 | P24-D | Gallery config editor accessibility | Completed ✅ | Medium (0.5-1 day) |
-| P24-E | Deferred review cleanup | Not started | Small-Medium (0.5 day) |
+| P24-E | Deferred review cleanup | Completed ✅ | Small-Medium (0.5 day) |
 
 ---
 
@@ -50,7 +50,7 @@
     - [Subtasks](#subtasks-3)
     - [Files to modify](#files-to-modify-3)
     - [Acceptance criteria](#acceptance-criteria-3)
-  - [Track P24-E — Deferred Review Cleanup](#track-p24-e--deferred-review-cleanup)
+  - [Track P24-E — Deferred Review Cleanup COMPLETE](#track-p24-e--deferred-review-cleanup-complete)
     - [Problem](#problem-4)
     - [Fix](#fix-4)
     - [Subtasks](#subtasks-4)
@@ -336,7 +336,7 @@ Two access issues limit the usefulness of the shared Gallery Config editor:
 
 ---
 
-## Track P24-E — Deferred Review Cleanup
+## Track P24-E — Deferred Review Cleanup COMPLETE
 
 ### Problem
 
@@ -369,9 +369,8 @@ Two deferred review items from the PHP and React implementation reviews are dire
 - `wp-plugin/wp-super-gallery/tests/WPSG_Settings_Test.php` — update assertions
 
 **Frontend:**
-- `src/components/Admin/MediaTab.tsx` — replace window.confirm
-- Other admin components with window.confirm calls
-- Test files for the above
+- `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` — replace window.confirm
+- `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcuts.test.tsx` — verify confirm modal flow
 
 ### Acceptance criteria
 

@@ -541,6 +541,7 @@ export function UnifiedCampaignModal({
             saveLabel="Apply Campaign Gallery Config"
             clearLabel="Clear Campaign Overrides"
             unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
+            zIndex={400}
           />
         </Suspense>
       )}

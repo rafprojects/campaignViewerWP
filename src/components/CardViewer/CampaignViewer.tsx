@@ -433,6 +433,7 @@ export function CampaignViewer({
             saveLabel="Save Campaign Gallery Config"
             clearLabel="Use Inherited Gallery Settings"
             unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
+            zIndex={400}
           />
         </Suspense>
       )}

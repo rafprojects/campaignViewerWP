@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
 import type { ReactNode } from 'react';
 
 // ── Heavy dep mocks ──────────────────────────────────────────────────────────
@@ -138,7 +139,11 @@ import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <MantineProvider>{children}</MantineProvider>;
+  return (
+    <MantineProvider>
+      <ModalsProvider>{children}</ModalsProvider>
+    </MantineProvider>
+  );
 }
 
 const mockApiClient = {
@@ -235,8 +240,6 @@ describe('LayoutBuilderModal — keyboard shortcuts (P19-A)', () => {
     mockNormalizeZIndices.mockReturnValue({
       id: 1, name: 'Test', slots: [], overlays: [], canvasAspectRatio: 1.78,
     });
-    // jsdom does not implement window.confirm; stub it
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
   });
 
   it('Ctrl+Z calls builder.undo()', () => {
@@ -293,6 +296,21 @@ describe('LayoutBuilderModal — keyboard shortcuts (P19-A)', () => {
     pressKey('Escape');
     expect(mockClearSelection).not.toHaveBeenCalled();
     expect(mockOnClose).toHaveBeenCalledOnce();
+  });
+
+  it('Escape opens a discard confirmation modal when the builder is dirty', async () => {
+    const mockOnClose = vi.fn();
+    mockBuilderReturn.isDirty = true;
+
+    renderModal({ onClose: mockOnClose });
+    pressKey('Escape');
+
+    expect(await screen.findByText('Discard changes?')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    await vi.waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledOnce();
+    });
   });
 
   it('ArrowLeft calls nudgeSlots(-1, 0) for selected slots', () => {

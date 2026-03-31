@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '../../test/test-utils';
+
+let capturedGalleryConfigEditorZIndex: number | undefined;
 
 vi.mock('./UnifiedGallerySection', () => ({
   UnifiedGallerySection: () => <div data-testid="unified-gallery-section" />,
@@ -18,6 +20,7 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
     clearLabel = 'Use Inherited Gallery Settings',
     onSave,
     onClear,
+    zIndex,
   }: {
     opened: boolean;
     title: string;
@@ -28,7 +31,10 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
       breakpoints: Record<string, unknown>;
     }) => void;
     onClear?: () => void;
+    zIndex?: number;
   }) => {
+    capturedGalleryConfigEditorZIndex = zIndex;
+
     if (!opened) {
       return null;
     }
@@ -117,6 +123,10 @@ function CaptureActiveCampaign({ onActiveCampaign }: { onActiveCampaign: (campai
 }
 
 describe('CampaignViewer', () => {
+  beforeEach(() => {
+    capturedGalleryConfigEditorZIndex = undefined;
+  });
+
   it('shows access notice when locked', () => {
     render(
       <CampaignContextProvider>
@@ -210,6 +220,11 @@ describe('CampaignViewer', () => {
     );
 
     fireEvent.click(await screen.findByRole('button', { name: 'Open Gallery Config' }));
+
+    await screen.findByRole('dialog', { name: 'Campaign Gallery Config' });
+
+    expect(capturedGalleryConfigEditorZIndex).toBe(400);
+
     fireEvent.click(await screen.findByRole('button', { name: 'Save Campaign Gallery Config' }));
 
     await waitFor(() => {

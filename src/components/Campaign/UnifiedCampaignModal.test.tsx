@@ -1,9 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '../../test/test-utils';
 import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+
+let capturedGalleryConfigEditorZIndex: number | undefined;
 
 vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
   const { useState } = await import('react');
@@ -29,6 +31,7 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
       mode: 'unified' | 'per-type';
       breakpoints: Record<string, unknown>;
     }) => void;
+    zIndex?: number;
   }
 
   function MockGalleryConfigEditorModal({
@@ -40,9 +43,12 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
     value,
     onClear,
     onSave,
+    zIndex,
   }: MockGalleryConfigEditorModalProps) {
     const [mode, setMode] = useState<'unified' | 'per-type'>(value?.mode ?? 'per-type');
     const [unifiedAdapterId, setUnifiedAdapterId] = useState(value?.breakpoints?.desktop?.unified?.adapterId ?? '');
+
+    capturedGalleryConfigEditorZIndex = zIndex;
 
     if (!opened) {
       return null;
@@ -178,6 +184,10 @@ async function openCampaignResponsiveConfigDialog() {
 }
 
 describe('UnifiedCampaignModal', () => {
+  beforeEach(() => {
+    capturedGalleryConfigEditorZIndex = undefined;
+  });
+
   it('does not render when opened is false', () => {
     const modal = makeMockModal({ opened: false });
     render(<UnifiedCampaignModal modal={modal} />);
@@ -264,6 +274,16 @@ describe('UnifiedCampaignModal', () => {
     expect(screen.getByText('Inheriting global gallery settings')).toBeInTheDocument();
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Categories')).toBeInTheDocument();
+  });
+
+  it('opens the campaign responsive config editor above the parent campaign modal', async () => {
+    const modal = makeMockModal({ activeTab: 'settings' });
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    await openCampaignResponsiveConfigDialog();
+
+    expect(capturedGalleryConfigEditorZIndex).toBe(400);
+    expect(screen.getByRole('dialog', { name: 'Campaign Responsive Gallery Config' })).toBeInTheDocument();
   });
 
   it('renders the current nested gallery mode override on the settings tab', () => {
