@@ -90,6 +90,8 @@ function getDescription(meta: ThemeMeta): string {
 // ---------------------------------------------------------------------------
 
 export interface ThemeSelectorProps {
+  /** Controlled selected theme ID from settings state */
+  value?: string;
   /** Override Select label (default: "Theme") */
   label?: string;
   /** Override Select description */
@@ -101,20 +103,22 @@ export interface ThemeSelectorProps {
 }
 
 export function ThemeSelector({
+  value,
   label = 'Theme',
   description = 'Choose a color theme. Preview applies instantly; saved when you click Save.',
   selectProps,
   onThemeChange,
 }: ThemeSelectorProps) {
   const { themeId, availableThemes, setPreviewTheme } = useTheme();
+  const resolvedValue = value ?? themeId;
 
   // Local state ensures the dropdown reflects the selection immediately,
   // even if the MantineProvider re-render introduced by setPreviewTheme
   // causes the Select to lose its controlled value momentarily.
-  const [localValue, setLocalValue] = useState(themeId);
+  const [localValue, setLocalValue] = useState(resolvedValue);
 
   // Keep in sync when context themeId changes externally (e.g. on reset)
-  useEffect(() => { setLocalValue(themeId); }, [themeId]);
+  useEffect(() => { setLocalValue(resolvedValue); }, [resolvedValue]);
 
   const data = availableThemes.map((meta) => ({
     value: meta.id,

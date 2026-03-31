@@ -121,6 +121,7 @@ function isGalleryBehaviorSettingKey(key: keyof SettingsData): key is keyof Gall
 }
 
 export interface SettingsData extends GalleryBehaviorSettings {
+  theme?: string;
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;
@@ -148,6 +149,7 @@ interface SettingsPanelProps {
 
 const mapResponseToSettings = (response: Awaited<ReturnType<ApiClient['getSettings']>>): SettingsData => ({
   ...mergeSettingsWithDefaults(response as Partial<GalleryBehaviorSettings>),
+  theme: response.theme,
   galleryLayout: (response.galleryLayout as SettingsData['galleryLayout']) ?? defaultSettings.galleryLayout,
   itemsPerPage: response.itemsPerPage ?? defaultSettings.itemsPerPage,
   enableLightbox: response.enableLightbox ?? defaultSettings.enableLightbox,
@@ -169,6 +171,15 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const hasChangesRef = useRef(false);
+
+  const revertThemePreview = useCallback(() => {
+    if (settings.theme !== originalSettings.theme && typeof originalSettings.theme === 'string') {
+      setPreviewTheme(originalSettings.theme);
+      return;
+    }
+
+    setPreviewTheme(null);
+  }, [originalSettings.theme, setPreviewTheme, settings.theme]);
 
   const applySettingsUpdate = useCallback((recipe: (prev: SettingsData) => SettingsData) => {
     setSettings((prev) => {
@@ -196,7 +207,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   }, [apiClient]);
 
   useEffect(() => {
-    if (opened && !initialSettings) {
+    if (opened && (!initialSettings || typeof initialSettings.theme !== 'string')) {
       void loadSettings();
     }
   }, [opened, loadSettings, initialSettings]);
@@ -236,9 +247,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       setHasChanges(false);
       hasChangesRef.current = false;
       onSettingsSaved?.(saved);
-      // Commit the previewed theme as the saved theme
-      const themeVal = (settings as unknown as Record<string, unknown>).theme;
-      if (typeof themeVal === 'string') setTheme(themeVal);
+      const persistedTheme = typeof saved.theme === 'string' ? saved.theme : settings.theme;
+      if (typeof persistedTheme === 'string') {
+        setTheme(persistedTheme);
+      }
       setPreviewTheme(null);
       onNotify({ type: 'success', text: 'Settings saved successfully.' });
     } catch (err) {
@@ -252,7 +264,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     setSettings(originalSettings);
     setHasChanges(false);
     hasChangesRef.current = false;
-    setPreviewTheme(null);
+    revertThemePreview();
   };
 
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
@@ -376,7 +388,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   return (
     <Modal
       opened={opened}
-      onClose={() => { setPreviewTheme(null); onClose(); }}
+      onClose={() => { revertThemePreview(); onClose(); }}
       title={
         <Group gap="sm">
           <IconSettings size={22} />
@@ -436,7 +448,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 <GeneralSettingsSection
                   settings={settings}
                   updateSetting={updateSetting}
-                  onThemeChange={(id) => updateSetting('theme' as keyof SettingsData, id as SettingsData[keyof SettingsData])}
+                  onThemeChange={(id) => updateSetting('theme', id)}
                 />
               )}
             </Tabs.Panel>

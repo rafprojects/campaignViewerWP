@@ -4,6 +4,11 @@ import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryConfig } from '@/types';
 
+const { setThemeSpy, setPreviewThemeSpy } = vi.hoisted(() => ({
+  setThemeSpy: vi.fn(),
+  setPreviewThemeSpy: vi.fn(),
+}));
+
 // ── Lightweight mock for GalleryConfigEditorModal ──────────────────────
 // The real modal (816 lines + full adapter registry + Suspense/lazy) is the
 // primary cause of 60–186 s test times.  We replace it with a thin stub that:
@@ -34,8 +39,22 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
 
 // Mock ThemeSelector since it depends on ThemeContext
 vi.mock('./ThemeSelector', () => ({
-  ThemeSelector: ({ description }: { description?: string }) => (
-    <div data-testid="theme-selector">{description}</div>
+  ThemeSelector: ({
+    description,
+    value,
+    onThemeChange,
+  }: {
+    description?: string;
+    value?: string;
+    onThemeChange?: (themeId: string) => void;
+  }) => (
+    <div data-testid="theme-selector">
+      <span>{description}</span>
+      <span data-testid="theme-selector-value">{value ?? ''}</span>
+      <button type="button" onClick={() => onThemeChange?.('solarized-dark')}>
+        Select Solarized Dark
+      </button>
+    </div>
   ),
 }));
 
@@ -43,8 +62,8 @@ vi.mock('./ThemeSelector', () => ({
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({
     themeId: 'default-dark',
-    setTheme: vi.fn(),
-    setPreviewTheme: vi.fn(),
+    setTheme: setThemeSpy,
+    setPreviewTheme: setPreviewThemeSpy,
     colorScheme: 'dark' as const,
     cssVars: '',
     mantineTheme: {},
@@ -152,6 +171,8 @@ describe('SettingsPanel', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setThemeSpy.mockReset();
+    setPreviewThemeSpy.mockReset();
     capturedModalValue = undefined;
     capturedOnSave = undefined;
     apiClient = createMockApiClient();
@@ -627,6 +648,104 @@ describe('SettingsPanel', () => {
 
     await waitForTabs();
     expect(screen.getByTestId('theme-selector')).toBeDefined();
+  });
+
+  it('passes the saved theme value into ThemeSelector', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          theme: 'solarized-light',
+        }}
+      />
+    );
+
+    await waitForTabs();
+
+    expect(screen.getByTestId('theme-selector-value')).toHaveTextContent('solarized-light');
+  });
+
+  it('loads the saved theme from the API when cached initial settings omit it', async () => {
+    apiClient = createMockApiClient({
+      getSettings: vi.fn().mockResolvedValue({
+        ...seedSettings,
+        theme: 'solarized-dark',
+      }),
+    });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('theme-selector-value')).toHaveTextContent('solarized-dark');
+    });
+  });
+
+  it('persists the selected theme on save', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      theme: 'solarized-dark',
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          theme: 'default-dark',
+        }}
+      />
+    );
+
+    await waitForTabs();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Solarized Dark' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+        theme: 'solarized-dark',
+      }));
+    });
+
+    expect(setThemeSpy).toHaveBeenCalledWith('solarized-dark');
+  });
+
+  it('reverts the theme preview to the original saved theme when closing with unsaved theme changes', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          theme: 'default-dark',
+        }}
+      />
+    );
+
+    await waitForTabs();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Solarized Dark' }));
+
+    const closeButton = document.querySelector('.mantine-Modal-close') as HTMLButtonElement;
+    expect(closeButton).not.toBeNull();
+    fireEvent.click(closeButton);
+
+    expect(setPreviewThemeSpy).toHaveBeenCalledWith('default-dark');
   });
 
   it('does not render content when opened is false', () => {
