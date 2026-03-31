@@ -21,12 +21,16 @@ class WPSG_Embed {
 
         if ($entry && isset($entry['file'])) {
             $script_url = $base_url . $entry['file'];
-            wp_register_script($handle, $script_url, [], WPSG_VERSION, true);
+            // Vite entry/chunk filenames are content-hashed already. Avoid a
+            // WordPress `?ver=` query on ES module entrypoints or the browser
+            // will treat the entry script and lazy-loaded `./index-*.js`
+            // imports as distinct module URLs, duplicating app state.
+            wp_register_script($handle, $script_url, [], null, true);
 
             if (!empty($entry['css'])) {
                 foreach ($entry['css'] as $index => $css_file) {
                     $style_handle = $handle . '-style-' . $index;
-                    wp_register_style($style_handle, $base_url . $css_file, [], WPSG_VERSION);
+                    wp_register_style($style_handle, $base_url . $css_file, [], null);
                 }
             }
 

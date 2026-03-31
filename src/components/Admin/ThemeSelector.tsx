@@ -111,6 +111,7 @@ export function ThemeSelector({
 }: ThemeSelectorProps) {
   const { themeId, availableThemes, setPreviewTheme } = useTheme();
   const resolvedValue = value ?? themeId;
+  const { comboboxProps, ...restSelectProps } = selectProps ?? {};
 
   // Local state ensures the dropdown reflects the selection immediately,
   // even if the MantineProvider re-render introduced by setPreviewTheme
@@ -164,7 +165,10 @@ export function ThemeSelector({
       data={data}
       renderOption={renderOption}
       allowDeselect={false}
-      {...selectProps}
+      // Keep the dropdown in the same tree as the shadow-root modal so
+      // preview updates and styling stay scoped to the active gallery instance.
+      comboboxProps={{ withinPortal: false, ...comboboxProps }}
+      {...restSelectProps}
     />
   );
 }

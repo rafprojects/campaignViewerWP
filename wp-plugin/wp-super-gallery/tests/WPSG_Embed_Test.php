@@ -143,4 +143,15 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         $this->assertEquals( $tag, $result );
         $this->assertStringNotContainsString( 'type="module"', $result );
     }
+
+    public function test_register_assets_uses_versionless_manifest_entry_script() {
+        wp_deregister_script( 'wp-super-gallery-app' );
+
+        WPSG_Embed::register_assets();
+
+        $registered = wp_scripts()->registered['wp-super-gallery-app'] ?? null;
+
+        $this->assertNotNull( $registered );
+        $this->assertNull( $registered->ver );
+    }
 }

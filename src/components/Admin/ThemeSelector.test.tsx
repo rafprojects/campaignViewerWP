@@ -8,6 +8,10 @@ const { setPreviewThemeSpy } = vi.hoisted(() => ({
   setPreviewThemeSpy: vi.fn(),
 }));
 
+const { selectPropsSpy } = vi.hoisted(() => ({
+  selectPropsSpy: vi.fn(),
+}));
+
 vi.mock('@mantine/core', async () => {
   const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core');
 
@@ -19,18 +23,22 @@ vi.mock('@mantine/core', async () => {
       value,
       onChange,
       data,
+      comboboxProps,
     }: {
       label?: ReactNode;
       description?: ReactNode;
       value?: string | null;
       onChange?: (nextValue: string | null) => void;
       data: Array<{ value: string; label: string }>;
+      comboboxProps?: { withinPortal?: boolean };
     }) => (
+      (selectPropsSpy({ comboboxProps }),
       <label>
         {label ? <span>{label}</span> : null}
         {description ? <span>{description}</span> : null}
         <select
           aria-label={typeof label === 'string' ? label : 'Theme'}
+          data-within-portal={String(comboboxProps?.withinPortal)}
           value={value ?? ''}
           onChange={(event) => onChange?.(event.currentTarget.value || null)}
         >
@@ -40,7 +48,7 @@ vi.mock('@mantine/core', async () => {
             </option>
           ))}
         </select>
-      </label>
+      </label>)
     ),
   };
 });
@@ -76,6 +84,7 @@ describe('ThemeSelector', () => {
   beforeEach(() => {
     localStorage.clear();
     setPreviewThemeSpy.mockReset();
+    selectPropsSpy.mockReset();
   });
 
   it('renders a Select with default label', () => {
@@ -118,5 +127,12 @@ describe('ThemeSelector', () => {
     expect(setPreviewThemeSpy).toHaveBeenCalledWith(alternateTheme.id);
     expect(onThemeChange).toHaveBeenCalledWith(alternateTheme.id);
     expect(screen.getByRole('combobox')).toHaveValue(alternateTheme.id);
+  });
+
+  it('keeps the theme dropdown inside the current render tree', () => {
+    render(<ThemeSelector />, { wrapper });
+
+    expect(selectPropsSpy).toHaveBeenCalled();
+    expect(screen.getByRole('combobox')).toHaveAttribute('data-within-portal', 'false');
   });
 });
