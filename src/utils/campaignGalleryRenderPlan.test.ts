@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   type Campaign,
   type Company,
   type GalleryBehaviorSettings,
@@ -13,6 +12,7 @@ import {
   resolveUnifiedCampaignGalleryRenderPlan,
   shouldUseEqualHeightPerTypeLayout,
 } from './campaignGalleryRenderPlan';
+import { mergeSettingsWithDefaults } from './mergeSettingsWithDefaults';
 
 const company: Company = {
   id: 'acme',
@@ -59,10 +59,7 @@ function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
 }
 
 function makeSettings(overrides: Partial<GalleryBehaviorSettings> = {}): GalleryBehaviorSettings {
-  return {
-    ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-    ...overrides,
-  };
+  return mergeSettingsWithDefaults(overrides);
 }
 
 describe('campaignGalleryRenderPlan', () => {
