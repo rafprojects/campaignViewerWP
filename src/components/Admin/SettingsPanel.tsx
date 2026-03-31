@@ -206,11 +206,36 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     }
   }, [apiClient]);
 
-  useEffect(() => {
-    if (opened && (!initialSettings || typeof initialSettings.theme !== 'string')) {
-      void loadSettings();
+  const loadMissingTheme = useCallback(async () => {
+    try {
+      const response = await apiClient.getSettings();
+      if (typeof response.theme !== 'string') {
+        return;
+      }
+
+      if (!hasChangesRef.current) {
+        setSettings((prev) => ({ ...prev, theme: response.theme }));
+      }
+      setOriginalSettings((prev) => ({ ...prev, theme: response.theme }));
+    } catch {
+      // If settings endpoint doesn't exist or fails, keep current state
     }
-  }, [opened, loadSettings, initialSettings]);
+  }, [apiClient]);
+
+  useEffect(() => {
+    if (!opened) {
+      return;
+    }
+
+    if (!initialSettings) {
+      void loadSettings();
+      return;
+    }
+
+    if (typeof initialSettings.theme !== 'string') {
+      void loadMissingTheme();
+    }
+  }, [opened, loadSettings, loadMissingTheme, initialSettings]);
 
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
     applySettingsUpdate((prev) => {
