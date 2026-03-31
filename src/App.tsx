@@ -17,6 +17,7 @@ import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './ty
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
+import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
 import { mergeSettingsWithDefaults } from './utils/mergeSettingsWithDefaults';
 import { sortByOrder } from './utils/sortByOrder';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -138,10 +139,11 @@ function AppContent({
       const repThumb = rep?.thumbnail || rep?.url;
       const thumbnail = item.coverImage || repThumb || item.thumbnail || FALLBACK_IMAGE_SRC;
       const coverImage = item.coverImage || repThumb || item.thumbnail || FALLBACK_IMAGE_SRC;
+      const galleryOverrides = buildCampaignGalleryOverrideEditorValue(item);
       const orderedMedia = sortedMedia.map((m) => ({
         ...m, thumbnail: m.thumbnail || (m.type === 'image' ? m.url : thumbnail), caption: m.caption || 'Campaign media',
       }));
-      return { ...item, companyId: item.companyId, company: buildCompany(item.companyId), thumbnail, coverImage,
+      return { ...item, companyId: item.companyId, company: buildCompany(item.companyId), thumbnail, coverImage, galleryOverrides,
         videos: orderedMedia.filter((m) => m.type === 'video'), images: orderedMedia.filter((m) => m.type === 'image') } as Campaign;
     });
     setCampaignLoadProgress({ total: items.length, completed: items.length });
@@ -278,6 +280,8 @@ function AppContent({
           isAdmin={isAdmin}
           isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}
+          onCampaignsUpdated={campaignsMutator}
+          onNotify={handleAdminNotify}
           apiClient={apiClient}
         />
       )}

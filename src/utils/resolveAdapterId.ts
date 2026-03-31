@@ -7,12 +7,11 @@ import type {
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { isAdapterSupportedAtBreakpoint, normalizeAdapterId } from '@/components/Galleries/Adapters/adapterRegistry';
 import {
-  buildGalleryCommonSettingsFromLegacy,
-  buildGalleryConfigFromLegacySettings,
+  getRepresentativeScopeAdapterId,
   getLegacyViewportBackgroundFieldMap,
   mergeGalleryConfig,
 } from './galleryConfig';
-import { getLegacyFlatAdapterId, getLegacyPerTypeAdapterId } from './galleryAdapterSelection';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS as DEFAULT_SETTINGS } from '@/types';
 
 type GalleryMode = 'unified' | 'per-type';
 
@@ -69,7 +68,7 @@ function resolveSupportedAdapterChain(ids: Array<string | undefined>, breakpoint
 }
 
 function resolveBaseGalleryConfig(s: GalleryBehaviorSettings): GalleryConfig {
-  return s.galleryConfig ?? buildGalleryConfigFromLegacySettings(s);
+  return s.galleryConfig ?? DEFAULT_SETTINGS.galleryConfig ?? { mode: 'per-type', breakpoints: {} };
 }
 
 function resolveEffectiveGalleryConfig(
@@ -113,9 +112,8 @@ export function resolveUnifiedAdapterId(
   return resolveSupportedAdapterChain(
     [
       resolveOverrideScopeConfig(options.galleryOverrides, breakpoint, 'unified')?.adapterId,
-      options.legacyOverrideId,
       resolveScopeConfig(globalConfig, breakpoint, 'unified')?.adapterId,
-      s.unifiedGalleryAdapterId,
+      getRepresentativeScopeAdapterId(globalConfig, 'unified'),
     ],
     breakpoint,
   );
@@ -127,13 +125,9 @@ export function resolveGalleryCommonSettings(
   scope: GalleryConfigScope,
   galleryOverrides?: Partial<GalleryConfig>,
 ): GalleryCommonSettings {
-  const legacyCommon = buildGalleryCommonSettingsFromLegacy(s, scope);
   const effectiveConfig = resolveEffectiveGalleryConfig(s, galleryOverrides);
 
-  return {
-    ...legacyCommon,
-    ...(resolveScopeConfig(effectiveConfig, breakpoint, scope)?.common ?? {}),
-  };
+  return resolveScopeConfig(effectiveConfig, breakpoint, scope)?.common ?? {};
 }
 
 export function applyResolvedGalleryCommonSettings(
@@ -184,6 +178,10 @@ export function resolveEffectiveGallerySettings(
     resolvedSettingsRecord[key] = value;
   }
 
+  for (const blockedKey of BLOCKED_ADAPTER_SETTING_KEYS) {
+    delete resolvedSettingsRecord[blockedKey];
+  }
+
   return resolvedSettings;
 }
 
@@ -200,15 +198,14 @@ export function resolveAdapterId(
   options: GalleryResolutionOptions = {},
 ): string {
   const globalConfig = resolveBaseGalleryConfig(s);
-  const legacyId = getLegacyPerTypeAdapterId(s, breakpoint, mediaType);
+  const legacyOverrideId = options.galleryOverrides ? undefined : options.legacyOverrideId;
 
   return resolveSupportedAdapterChain(
     [
       resolveOverrideScopeConfig(options.galleryOverrides, breakpoint, mediaType)?.adapterId,
-      options.legacyOverrideId,
+      legacyOverrideId,
       resolveScopeConfig(globalConfig, breakpoint, mediaType)?.adapterId,
-      legacyId,
-      getLegacyFlatAdapterId(s, mediaType),
+      getRepresentativeScopeAdapterId(globalConfig, mediaType),
     ],
     breakpoint,
   );

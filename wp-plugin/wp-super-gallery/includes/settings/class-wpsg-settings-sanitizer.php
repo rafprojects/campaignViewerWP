@@ -140,6 +140,51 @@ class WPSG_Settings_Sanitizer {
     ];
 
     /**
+     * Return the flat gallery setting keys retained only for legacy
+     * compatibility. New writes should persist nested `gallery_config` instead.
+     *
+     * @return string[]
+     */
+    public static function get_legacy_gallery_setting_keys() {
+        return array_values(array_unique(array_merge(
+            [
+                'image_gallery_adapter_id',
+                'video_gallery_adapter_id',
+                'unified_gallery_enabled',
+                'unified_gallery_adapter_id',
+                'gallery_selection_mode',
+                'desktop_image_adapter_id',
+                'desktop_video_adapter_id',
+                'tablet_image_adapter_id',
+                'tablet_video_adapter_id',
+                'mobile_image_adapter_id',
+                'mobile_video_adapter_id',
+            ],
+            array_values(self::$nested_common_field_map),
+            array_values(self::get_nested_common_field_map_for_scope('image')),
+            array_values(self::get_nested_common_field_map_for_scope('video')),
+            array_values(self::get_nested_common_field_map_for_scope('unified')),
+            array_values(self::$nested_adapter_field_map)
+        )));
+    }
+
+    /**
+     * Determine whether a flat setting key is retained only for legacy gallery compatibility.
+     *
+     * @param string $key Flat setting key.
+     * @return bool
+     */
+    private static function is_legacy_gallery_setting_key($key) {
+        static $legacy_gallery_setting_keys = null;
+
+        if ($legacy_gallery_setting_keys === null) {
+            $legacy_gallery_setting_keys = array_fill_keys(self::get_legacy_gallery_setting_keys(), true);
+        }
+
+        return isset($legacy_gallery_setting_keys[$key]);
+    }
+
+    /**
      * Convert a camelCase-style nested key to snake_case for registry matching.
      *
      * @param string $key Nested key.
@@ -241,26 +286,6 @@ class WPSG_Settings_Sanitizer {
             $sanitized['items_per_page'] = max(1, min(100, $items));
         }
 
-        if (isset($input['video_viewport_height'])) {
-            $height = intval($input['video_viewport_height']);
-            $sanitized['video_viewport_height'] = max(180, min(900, $height));
-        }
-
-        if (isset($input['image_viewport_height'])) {
-            $height = intval($input['image_viewport_height']);
-            $sanitized['image_viewport_height'] = max(180, min(900, $height));
-        }
-
-        if (isset($input['gallery_manual_height'])) {
-            $height = sanitize_text_field((string) $input['gallery_manual_height']);
-            $height = trim($height);
-            if (preg_match('/^\d+(?:\.\d+)?\s*(px|em|rem|vh|dvh|svh|lvh|vw|%)$/i', $height)) {
-                $sanitized['gallery_manual_height'] = $height;
-            } else {
-                $sanitized['gallery_manual_height'] = $defaults['gallery_manual_height'];
-            }
-        }
-
         if (isset($input['thumbnail_scroll_speed'])) {
             $speed = floatval($input['thumbnail_scroll_speed']);
             $sanitized['thumbnail_scroll_speed'] = max(0.25, min(3, $speed));
@@ -289,16 +314,6 @@ class WPSG_Settings_Sanitizer {
                 : $defaults['scroll_transition_type'];
         }
 
-        if (isset($input['image_border_radius'])) {
-            $radius = intval($input['image_border_radius']);
-            $sanitized['image_border_radius'] = max(0, min(48, $radius));
-        }
-
-        if (isset($input['video_border_radius'])) {
-            $radius = intval($input['video_border_radius']);
-            $sanitized['video_border_radius'] = max(0, min(48, $radius));
-        }
-
         if (isset($input['transition_fade_enabled'])) {
             $sanitized['transition_fade_enabled'] = (bool) $input['transition_fade_enabled'];
         }
@@ -315,9 +330,6 @@ class WPSG_Settings_Sanitizer {
         if (isset($input['image_thumbnail_height'])) {
             $sanitized['image_thumbnail_height'] = max(30, min(200, intval($input['image_thumbnail_height'])));
         }
-        if (isset($input['thumbnail_gap'])) {
-            $sanitized['thumbnail_gap'] = max(0, min(24, intval($input['thumbnail_gap'])));
-        }
         if (isset($input['thumbnail_wheel_scroll_enabled'])) {
             $sanitized['thumbnail_wheel_scroll_enabled'] = (bool) $input['thumbnail_wheel_scroll_enabled'];
         }
@@ -327,172 +339,6 @@ class WPSG_Settings_Sanitizer {
         if (isset($input['thumbnail_scroll_buttons_visible'])) {
             $sanitized['thumbnail_scroll_buttons_visible'] = (bool) $input['thumbnail_scroll_buttons_visible'];
         }
-
-        if (isset($input['nav_arrow_position'])) {
-            $sanitized['nav_arrow_position'] = in_array($input['nav_arrow_position'], $valid_options['nav_arrow_position'], true)
-                ? $input['nav_arrow_position']
-                : $defaults['nav_arrow_position'];
-        }
-        if (isset($input['nav_arrow_size'])) {
-            $sanitized['nav_arrow_size'] = max(20, min(64, intval($input['nav_arrow_size'])));
-        }
-        if (isset($input['nav_arrow_color'])) {
-            $sanitized['nav_arrow_color'] = sanitize_text_field($input['nav_arrow_color']);
-        }
-        if (isset($input['nav_arrow_bg_color'])) {
-            $sanitized['nav_arrow_bg_color'] = sanitize_text_field($input['nav_arrow_bg_color']);
-        }
-        if (isset($input['nav_arrow_border_width'])) {
-            $sanitized['nav_arrow_border_width'] = max(0, min(6, intval($input['nav_arrow_border_width'])));
-        }
-        if (isset($input['nav_arrow_hover_scale'])) {
-            $sanitized['nav_arrow_hover_scale'] = max(1.0, min(1.5, floatval($input['nav_arrow_hover_scale'])));
-        }
-        if (isset($input['nav_arrow_auto_hide_ms'])) {
-            $sanitized['nav_arrow_auto_hide_ms'] = max(0, min(10000, intval($input['nav_arrow_auto_hide_ms'])));
-        }
-
-        if (isset($input['dot_nav_enabled'])) {
-            $sanitized['dot_nav_enabled'] = (bool) $input['dot_nav_enabled'];
-        }
-        if (isset($input['dot_nav_position'])) {
-            $sanitized['dot_nav_position'] = in_array($input['dot_nav_position'], $valid_options['dot_nav_position'], true)
-                ? $input['dot_nav_position']
-                : $defaults['dot_nav_position'];
-        }
-        if (isset($input['dot_nav_size'])) {
-            $sanitized['dot_nav_size'] = max(4, min(24, intval($input['dot_nav_size'])));
-        }
-        if (isset($input['dot_nav_active_color'])) {
-            $sanitized['dot_nav_active_color'] = sanitize_text_field($input['dot_nav_active_color']);
-        }
-        if (isset($input['dot_nav_inactive_color'])) {
-            $sanitized['dot_nav_inactive_color'] = sanitize_text_field($input['dot_nav_inactive_color']);
-        }
-        if (isset($input['dot_nav_shape'])) {
-            $sanitized['dot_nav_shape'] = in_array($input['dot_nav_shape'], $valid_options['dot_nav_shape'], true)
-                ? $input['dot_nav_shape']
-                : $defaults['dot_nav_shape'];
-        }
-        if (isset($input['dot_nav_spacing'])) {
-            $sanitized['dot_nav_spacing'] = max(2, min(20, intval($input['dot_nav_spacing'])));
-        }
-        if (isset($input['dot_nav_active_scale'])) {
-            $sanitized['dot_nav_active_scale'] = max(1.0, min(2.0, floatval($input['dot_nav_active_scale'])));
-        }
-
-        if (isset($input['image_shadow_preset'])) {
-            $sanitized['image_shadow_preset'] = in_array($input['image_shadow_preset'], $valid_options['image_shadow_preset'], true)
-                ? $input['image_shadow_preset']
-                : $defaults['image_shadow_preset'];
-        }
-        if (isset($input['video_shadow_preset'])) {
-            $sanitized['video_shadow_preset'] = in_array($input['video_shadow_preset'], $valid_options['video_shadow_preset'], true)
-                ? $input['video_shadow_preset']
-                : $defaults['video_shadow_preset'];
-        }
-        if (isset($input['image_shadow_custom'])) {
-            $sanitized['image_shadow_custom'] = sanitize_text_field($input['image_shadow_custom']);
-        }
-        if (isset($input['video_shadow_custom'])) {
-            $sanitized['video_shadow_custom'] = sanitize_text_field($input['video_shadow_custom']);
-        }
-
-        $valid_adapters = class_exists('WPSG_CPT') ? WPSG_CPT::VALID_ADAPTERS
-            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
-        if (isset($input['image_gallery_adapter_id'])) {
-            $sanitized['image_gallery_adapter_id'] = in_array($input['image_gallery_adapter_id'], $valid_adapters, true)
-                ? $input['image_gallery_adapter_id']
-                : 'classic';
-        }
-        if (isset($input['video_gallery_adapter_id'])) {
-            $sanitized['video_gallery_adapter_id'] = in_array($input['video_gallery_adapter_id'], $valid_adapters, true)
-                ? $input['video_gallery_adapter_id']
-                : 'classic';
-        }
-        if (isset($input['unified_gallery_enabled'])) {
-            $sanitized['unified_gallery_enabled'] = (bool) $input['unified_gallery_enabled'];
-        }
-        if (isset($input['unified_gallery_adapter_id'])) {
-            $sanitized['unified_gallery_adapter_id'] = in_array($input['unified_gallery_adapter_id'], $valid_adapters, true)
-                ? $input['unified_gallery_adapter_id']
-                : 'compact-grid';
-        }
-        if (isset($input['gallery_selection_mode'])) {
-            $sanitized['gallery_selection_mode'] = in_array($input['gallery_selection_mode'], ['unified', 'per-breakpoint'], true)
-                ? $input['gallery_selection_mode']
-                : 'unified';
-        }
-        $bp_adapter_fields = [
-            'desktop_image_adapter_id', 'desktop_video_adapter_id',
-            'tablet_image_adapter_id',  'tablet_video_adapter_id',
-            'mobile_image_adapter_id',  'mobile_video_adapter_id',
-        ];
-        foreach ($bp_adapter_fields as $field) {
-            if (isset($input[$field])) {
-                $sanitized[$field] = in_array($input[$field], $valid_adapters, true)
-                    ? $input[$field]
-                    : 'classic';
-            }
-        }
-        if (isset($input['layout_builder_scope'])) {
-            $sanitized['layout_builder_scope'] = in_array($input['layout_builder_scope'], ['full', 'viewport'], true)
-                ? $input['layout_builder_scope']
-                : 'full';
-        }
-        if (isset($input['mosaic_target_row_height'])) {
-            $sanitized['mosaic_target_row_height'] = max(60, min(600, intval($input['mosaic_target_row_height'])));
-        }
-        if (isset($input['grid_card_width'])) {
-            $sanitized['grid_card_width'] = max(80, min(400, intval($input['grid_card_width'])));
-        }
-        if (isset($input['grid_card_height'])) {
-            $sanitized['grid_card_height'] = max(80, min(600, intval($input['grid_card_height'])));
-        }
-        if (isset($input['tile_size'])) {
-            $sanitized['tile_size'] = max(60, min(400, intval($input['tile_size'])));
-        }
-        if (isset($input['tile_gap_x'])) {
-            $sanitized['tile_gap_x'] = max(0, min(60, intval($input['tile_gap_x'])));
-        }
-        if (isset($input['tile_gap_y'])) {
-            $sanitized['tile_gap_y'] = max(0, min(60, intval($input['tile_gap_y'])));
-        }
-        if (isset($input['tile_border_width'])) {
-            $sanitized['tile_border_width'] = max(0, min(20, intval($input['tile_border_width'])));
-        }
-        if (isset($input['tile_border_color'])) {
-            $sanitized['tile_border_color'] = sanitize_hex_color($input['tile_border_color']) ?: '#ffffff';
-        }
-        if (isset($input['tile_glow_enabled'])) {
-            $sanitized['tile_glow_enabled'] = (bool) $input['tile_glow_enabled'];
-        }
-        if (isset($input['tile_glow_color'])) {
-            $sanitized['tile_glow_color'] = sanitize_hex_color($input['tile_glow_color']) ?: '#7c9ef8';
-        }
-        if (isset($input['tile_glow_spread'])) {
-            $sanitized['tile_glow_spread'] = max(2, min(60, intval($input['tile_glow_spread'])));
-        }
-        if (isset($input['tile_hover_bounce'])) {
-            $sanitized['tile_hover_bounce'] = (bool) $input['tile_hover_bounce'];
-        }
-        if (isset($input['masonry_columns'])) {
-            $sanitized['masonry_columns'] = max(0, min(8, intval($input['masonry_columns'])));
-        }
-
-        $allowed_bg_types = ['none', 'solid', 'gradient', 'image'];
-        if (isset($input['image_bg_type'])) { $sanitized['image_bg_type'] = in_array($input['image_bg_type'], $allowed_bg_types, true) ? $input['image_bg_type'] : 'none'; }
-        if (isset($input['image_bg_color'])) { $sanitized['image_bg_color'] = sanitize_text_field($input['image_bg_color']); }
-        if (isset($input['image_bg_gradient'])) { $sanitized['image_bg_gradient'] = sanitize_text_field($input['image_bg_gradient']); }
-        if (isset($input['image_bg_image_url'])) { $sanitized['image_bg_image_url'] = esc_url_raw($input['image_bg_image_url']); }
-        if (isset($input['video_bg_type'])) { $sanitized['video_bg_type'] = in_array($input['video_bg_type'], $allowed_bg_types, true) ? $input['video_bg_type'] : 'none'; }
-        if (isset($input['video_bg_color'])) { $sanitized['video_bg_color'] = sanitize_text_field($input['video_bg_color']); }
-        if (isset($input['video_bg_gradient'])) { $sanitized['video_bg_gradient'] = sanitize_text_field($input['video_bg_gradient']); }
-        if (isset($input['video_bg_image_url'])) { $sanitized['video_bg_image_url'] = esc_url_raw($input['video_bg_image_url']); }
-        if (isset($input['unified_bg_type'])) { $sanitized['unified_bg_type'] = in_array($input['unified_bg_type'], $allowed_bg_types, true) ? $input['unified_bg_type'] : 'none'; }
-        if (isset($input['unified_bg_color'])) { $sanitized['unified_bg_color'] = sanitize_text_field($input['unified_bg_color']); }
-        if (isset($input['unified_bg_gradient'])) { $sanitized['unified_bg_gradient'] = sanitize_text_field($input['unified_bg_gradient']); }
-        if (isset($input['unified_bg_image_url'])) { $sanitized['unified_bg_image_url'] = esc_url_raw($input['unified_bg_image_url']); }
 
         if (isset($input['card_border_radius'])) {
             $sanitized['card_border_radius'] = max(0, min(24, intval($input['card_border_radius'])));
@@ -581,13 +427,6 @@ class WPSG_Settings_Sanitizer {
         if (isset($input['wp_full_bleed_mobile'])) {
             $sanitized['wp_full_bleed_mobile'] = (bool) $input['wp_full_bleed_mobile'];
         }
-        if (isset($input['image_tile_size'])) {
-            $sanitized['image_tile_size'] = max(60, min(400, intval($input['image_tile_size'])));
-        }
-        if (isset($input['video_tile_size'])) {
-            $sanitized['video_tile_size'] = max(60, min(400, intval($input['video_tile_size'])));
-        }
-
         if (isset($input['enable_lightbox'])) {
             $sanitized['enable_lightbox'] = (bool) $input['enable_lightbox'];
         }
@@ -623,6 +462,22 @@ class WPSG_Settings_Sanitizer {
                 continue;
             }
             if (!array_key_exists($key, $defaults)) {
+                continue;
+            }
+
+            if (self::is_legacy_gallery_setting_key($key)) {
+                $legacy_setting = self::sanitize_nested_gallery_setting(
+                    $key,
+                    $value,
+                    $defaults,
+                    $valid_options,
+                    $field_ranges,
+                    true
+                );
+
+                if ($legacy_setting['accepted']) {
+                    $sanitized[$key] = $legacy_setting['value'];
+                }
                 continue;
             }
 

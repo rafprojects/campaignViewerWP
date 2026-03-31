@@ -1,22 +1,35 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader, Switch } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import type { Campaign, GalleryBehaviorSettings } from '@/types';
+import type { Campaign, GalleryBehaviorSettings, GalleryConfig } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useInContextSave } from '@/hooks/useInContextSave';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
+import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { buildGradientCss } from '@/utils/gradientCss';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
+import {
+  buildCampaignGalleryOverrideEditorValue,
+  clearCampaignGalleryOverrides,
+  hasCampaignGalleryOverrides,
+} from '@/utils/campaignGalleryOverrides';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
+
+const LazyGalleryConfigEditorModal = lazy(() =>
+  import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
+    default: module.GalleryConfigEditorModal,
+  })),
+);
 
 interface CampaignViewerProps {
   campaign: Campaign;
@@ -25,6 +38,8 @@ interface CampaignViewerProps {
   galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin: boolean;
   apiClient?: ApiClient;
+  onCampaignsUpdated?: () => Promise<unknown> | void;
+  onNotify?: (message: { type: 'error' | 'success'; text: string }) => void;
   onClose: () => void;
 }
 
@@ -35,15 +50,98 @@ export function CampaignViewer({
   galleryBehaviorSettings,
   isAdmin,
   apiClient,
+  onCampaignsUpdated,
+  onNotify,
   onClose,
 }: CampaignViewerProps) {
   const s = galleryBehaviorSettings;
-  const { setActiveCampaign } = useCampaignContext();
+  const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
+  const [viewerCampaign, setViewerCampaign] = useState(campaign);
+  const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
+  const [isSavingGalleryConfig, setIsSavingGalleryConfig] = useState(false);
+
+  useEffect(() => {
+    setViewerCampaign(campaign);
+    setGalleryConfigEditorOpen(false);
+  }, [campaign]);
+
+  const openGalleryConfigEditor = useCallback((nextCampaign: Campaign) => {
+    setViewerCampaign((current) => (current.id === nextCampaign.id ? current : nextCampaign));
+    setGalleryConfigEditorOpen(true);
+  }, []);
+
+  const persistCampaignGalleryConfig = useCallback(async (
+    nextState: Pick<Campaign, 'galleryOverrides'>,
+  ) => {
+    if (isSavingGalleryConfig) {
+      return;
+    }
+
+    if (!isAdmin) {
+      onNotify?.({ type: 'error', text: 'Admin permissions required.' });
+      return;
+    }
+
+    if (!apiClient) {
+      onNotify?.({ type: 'error', text: 'Campaign API client unavailable.' });
+      return;
+    }
+
+    setIsSavingGalleryConfig(true);
+
+    const payload = {
+      galleryOverrides: nextState.galleryOverrides ?? null,
+    };
+
+    try {
+      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(viewerCampaign.id)}`, payload);
+
+      setViewerCampaign((current) => ({
+        ...current,
+        imageAdapterId: undefined,
+        videoAdapterId: undefined,
+        galleryOverrides: nextState.galleryOverrides,
+        updatedAt: new Date().toISOString(),
+      }));
+      setGalleryConfigEditorOpen(false);
+      onNotify?.({ type: 'success', text: 'Campaign gallery config updated.' });
+      await onCampaignsUpdated?.();
+    } catch (err) {
+      onNotify?.({
+        type: 'error',
+        text: getErrorMessage(err, 'Failed to save campaign gallery config.'),
+      });
+    } finally {
+      setIsSavingGalleryConfig(false);
+    }
+  }, [apiClient, isAdmin, isSavingGalleryConfig, onCampaignsUpdated, onNotify, viewerCampaign.id]);
+
+  const handleGalleryConfigSave = useCallback((galleryOverrides: GalleryConfig) => {
+    void persistCampaignGalleryConfig({
+      galleryOverrides,
+    });
+  }, [persistCampaignGalleryConfig]);
+
+  const handleGalleryConfigClear = useCallback(() => {
+    void persistCampaignGalleryConfig({ galleryOverrides: clearCampaignGalleryOverrides().galleryOverrides });
+  }, [persistCampaignGalleryConfig]);
+
   // P22-K5: Keep CampaignContext in sync with viewer open/close
   useEffect(() => {
-    setActiveCampaign(opened ? campaign : null);
-    return () => setActiveCampaign(null);
-  }, [opened, campaign, setActiveCampaign]);
+    if (!opened) {
+      setActiveCampaign(null);
+      setOnEditGalleryConfig(undefined);
+      return;
+    }
+
+    setActiveCampaign(viewerCampaign);
+    setOnEditGalleryConfig(openGalleryConfigEditor);
+
+    return () => {
+      setActiveCampaign(null);
+      setOnEditGalleryConfig(undefined);
+    };
+  }, [opened, openGalleryConfigEditor, setActiveCampaign, setOnEditGalleryConfig, viewerCampaign]);
   // P22-L1: Preload Google Fonts referenced in typography overrides
   useEffect(() => {
     loadGoogleFontsFromOverrides(s.typographyOverrides, GOOGLE_FONT_NAMES);
@@ -59,12 +157,13 @@ export function CampaignViewer({
   const coverHBase = Math.round(coverH * 0.67);
   const coverHSm = Math.round(coverH * 0.83);
   const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
+  const displayedCampaign = viewerCampaign;
   // Reactive media query so fullScreen updates on orientation changes / resizes
   const isMobile = useMediaQuery('(max-width: 48em)'); // ≤ 768px
   // P15-A: Per-breakpoint adapter resolution
   const containerRef = useRef<HTMLDivElement>(null);
   const breakpoint = useBreakpoint(containerRef);
-  const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(galleryBehaviorSettings, campaign.galleryOverrides);
+  const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(galleryBehaviorSettings, displayedCampaign.galleryOverrides);
   // P21-F: Fullscreen and conditional rendering
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
   const galleriesOnly = s.campaignOpenMode === 'galleries-only';
@@ -112,7 +211,7 @@ export function CampaignViewer({
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
         close: { color: 'white', background: 'rgba(0,0,0,0.65)', borderRadius: '50%', width: 36, height: 36 },
       }}
-      aria-label={`Campaign details for ${campaign.title}`}
+      aria-label={`Campaign details for ${displayedCampaign.title}`}
     >
       {/* Cover Image Header — hidden in galleries-only mode or when cover image disabled */}
       {!galleriesOnly && s.showCampaignCoverImage !== false && (
@@ -138,8 +237,8 @@ export function CampaignViewer({
           </Stack>
         </InContextEditor>
         <Image
-          src={campaign.coverImage}
-          alt={campaign.title}
+          src={displayedCampaign.coverImage}
+          alt={displayedCampaign.title}
           h={{ base: coverHBase, sm: coverHSm, md: coverH }}
           fit="cover"
           loading="lazy"
@@ -165,8 +264,8 @@ export function CampaignViewer({
           size="lg"
         >
           <Group gap={8}>
-            <CompanyLogo logo={campaign.company.logo} companyName={campaign.company.name} />
-            <span>{campaign.company.name}</span>
+            <CompanyLogo logo={displayedCampaign.company.logo} companyName={displayedCampaign.company.name} />
+            <span>{displayedCampaign.company.name}</span>
           </Group>
         </Badge>
         )}
@@ -174,14 +273,14 @@ export function CampaignViewer({
         {/* Title and meta overlay */}
         <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
           <Title order={2} size="h3" mb="sm" style={campaignTitleStyle}>
-            {campaign.title}
+            {displayedCampaign.title}
           </Title>
           {s.showCampaignDate !== false && (
           <Group gap="lg" wrap="wrap">
             <Group gap={4}>
               <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
               <Text size="sm" c="dimmed" style={campaignDateStyle}>
-                {new Date(campaign.createdAt).toLocaleDateString('en-US', {
+                {new Date(displayedCampaign.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -192,7 +291,7 @@ export function CampaignViewer({
             <Group gap={4}>
               <IconTag size={16} color="var(--wpsg-color-text-muted)" />
               <Text size="sm" c="dimmed">
-                {campaign.tags.join(', ')}
+                {displayedCampaign.tags.join(', ')}
               </Text>
             </Group>
             )}
@@ -231,7 +330,7 @@ export function CampaignViewer({
             <Title order={2} size="h4" mb="sm" style={campaignAboutHeadingStyle}>{s.campaignAboutHeadingText || 'About this Campaign'}</Title>
             {s.showCampaignDescription !== false && (
             <Text c="dimmed" lh={1.6} style={campaignDescriptionStyle}>
-              {campaign.description}
+              {displayedCampaign.description}
             </Text>
             )}
           </Box>
@@ -247,7 +346,7 @@ export function CampaignViewer({
           )}
 
           {/* Media Sections */}
-          {hasAccess && (campaign.videos.length > 0 || campaign.images.length > 0) && (
+          {hasAccess && (displayedCampaign.videos.length > 0 || displayedCampaign.images.length > 0) && (
           <Box style={{
             width: '100%',
             maxWidth: galleryShellLayout.maxWidth,
@@ -265,16 +364,16 @@ export function CampaignViewer({
             }>
             <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
               {galleryShellLayout.galleryMode === 'unified' ? (
-                <UnifiedGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
+                <UnifiedGallerySection campaign={displayedCampaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
               ) : (
-                <PerTypeGallerySection campaign={campaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
+                <PerTypeGallerySection campaign={displayedCampaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
               )}
             </Stack>
             </Suspense>
           </Box>
           )}
 
-          {hasAccess && campaign.videos.length === 0 && campaign.images.length === 0 && (
+          {hasAccess && displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0 && (
             <Text c="dimmed" ta="center" py="xl">No media available for this campaign.</Text>
           )}
 
@@ -294,23 +393,23 @@ export function CampaignViewer({
             <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
             <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{campaign.videos.length}</Text>
+              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
               <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Videos</Text>
             </Paper>
             <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{campaign.images.length}</Text>
+              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.images.length}</Text>
               <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Images</Text>
             </Paper>
             <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{campaign.tags.length}</Text>
+              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.tags.length}</Text>
               <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Tags</Text>
             </Paper>
             <Paper p="md" radius="md" withBorder ta="center">
               <Text size="xl" fw={700} style={campaignStatsValueStyle}>
-                {campaign.visibility === 'public' ? '🌐' : '🔒'}
+                {displayedCampaign.visibility === 'public' ? '🌐' : '🔒'}
               </Text>
               <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>
-                {campaign.visibility === 'public' ? 'Public' : 'Private'}
+                {displayedCampaign.visibility === 'public' ? 'Public' : 'Private'}
               </Text>
             </Paper>
           </SimpleGrid>
@@ -318,6 +417,26 @@ export function CampaignViewer({
           )}
         </Stack>
       </Box>
+
+      {galleryConfigEditorOpen && (
+        <Suspense fallback={<GalleryConfigEditorLoader />}>
+          <LazyGalleryConfigEditorModal
+            opened={galleryConfigEditorOpen}
+            onClose={() => setGalleryConfigEditorOpen(false)}
+            title="Campaign Gallery Config"
+            value={buildCampaignGalleryOverrideEditorValue(displayedCampaign)}
+            contextSummary={hasCampaignGalleryOverrides(displayedCampaign)
+              ? 'This campaign currently stores custom gallery overrides. Changes saved here update the active campaign immediately.'
+              : 'This campaign is currently inheriting global gallery settings. Any changes saved here create campaign-specific overrides immediately.'}
+            onClear={handleGalleryConfigClear}
+            onSave={handleGalleryConfigSave}
+            saveLabel="Save Campaign Gallery Config"
+            clearLabel="Use Inherited Gallery Settings"
+            unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
+            zIndex={400}
+          />
+        </Suspense>
+      )}
     </Modal>
   );
 }

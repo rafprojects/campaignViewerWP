@@ -149,31 +149,44 @@ export function getCampaignGalleryOverrideMode(
 export function buildCampaignGalleryOverrideEditorValue(
   source: CampaignGalleryOverrideSource,
 ): Partial<GalleryConfig> | undefined {
-  if (source.galleryOverrides) {
-    return cloneGalleryConfig(source.galleryOverrides as GalleryConfig);
-  }
+  const next = cloneGalleryConfig(source.galleryOverrides as GalleryConfig) ?? {};
+  const hasLegacyAdapterIds = !!source.imageAdapterId || !!source.videoAdapterId;
 
-  if (!source.imageAdapterId && !source.videoAdapterId) {
+  if (!source.galleryOverrides && !hasLegacyAdapterIds) {
     return undefined;
   }
 
-  return pruneCampaignGalleryOverrides({
-    mode: 'per-type',
-    breakpoints: {
-      desktop: {
-        image: source.imageAdapterId ? { adapterId: source.imageAdapterId } : undefined,
-        video: source.videoAdapterId ? { adapterId: source.videoAdapterId } : undefined,
-      },
-      tablet: {
-        image: source.imageAdapterId ? { adapterId: source.imageAdapterId } : undefined,
-        video: source.videoAdapterId ? { adapterId: source.videoAdapterId } : undefined,
-      },
-      mobile: {
-        image: source.imageAdapterId ? { adapterId: source.imageAdapterId } : undefined,
-        video: source.videoAdapterId ? { adapterId: source.videoAdapterId } : undefined,
-      },
-    },
-  });
+  if (next.mode !== 'unified' && hasLegacyAdapterIds) {
+    next.mode = next.mode ?? 'per-type';
+    next.breakpoints = next.breakpoints ?? {};
+
+    ([
+      ['image', source.imageAdapterId],
+      ['video', source.videoAdapterId],
+    ] as const).forEach(([scope, legacyAdapterId]) => {
+      if (!legacyAdapterId) {
+        return;
+      }
+
+      CAMPAIGN_OVERRIDE_BREAKPOINTS.forEach((breakpoint) => {
+        const breakpointConfig = next.breakpoints?.[breakpoint] ?? {};
+        const scopeConfig = breakpointConfig[scope];
+
+        if (scopeConfig?.adapterId) {
+          next.breakpoints![breakpoint] = breakpointConfig;
+          return;
+        }
+
+        breakpointConfig[scope] = {
+          ...scopeConfig,
+          adapterId: legacyAdapterId,
+        };
+        next.breakpoints![breakpoint] = breakpointConfig;
+      });
+    });
+  }
+
+  return pruneCampaignGalleryOverrides(next);
 }
 
 export function clearCampaignGalleryOverrides(): ClearedCampaignGalleryOverrides {
@@ -237,6 +250,38 @@ export function syncCampaignScopeAdapterOverride(
     delete breakpointConfig[scope]?.adapterId;
   });
 
+  return pruneCampaignGalleryOverrides(next);
+}
+
+export function setCampaignBreakpointScopeAdapterOverride(
+  overrides: Partial<GalleryConfig> | undefined,
+  breakpoint: GalleryConfigBreakpoint,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+  adapterId: string,
+): Partial<GalleryConfig> | undefined {
+  const next = cloneGalleryConfig(overrides as GalleryConfig) ?? {};
+  next.breakpoints = next.breakpoints ?? {};
+
+  const breakpointConfig = next.breakpoints[breakpoint] ?? {};
+  const scopeConfig = breakpointConfig[scope];
+
+  if (adapterId) {
+    breakpointConfig[scope] = {
+      ...scopeConfig,
+      adapterId,
+    };
+  } else if (scopeConfig) {
+    const nextScopeConfig = { ...scopeConfig };
+    delete nextScopeConfig.adapterId;
+
+    if (Object.keys(nextScopeConfig).length > 0) {
+      breakpointConfig[scope] = nextScopeConfig;
+    } else {
+      delete breakpointConfig[scope];
+    }
+  }
+
+  next.breakpoints[breakpoint] = breakpointConfig;
   return pruneCampaignGalleryOverrides(next);
 }
 

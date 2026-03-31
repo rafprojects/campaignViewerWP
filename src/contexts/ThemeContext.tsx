@@ -30,6 +30,10 @@ import {
   DEFAULT_THEME_ID,
   type ThemeEntry,
 } from '../themes/index';
+import {
+  buildThemeStyleElementId,
+  normalizeThemeScopeToken,
+} from '@/utils/themeScope';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -127,6 +131,18 @@ export interface ThemeProviderProps {
    * isolation.
    */
   shadowRoot?: ShadowRoot | null;
+
+  /**
+   * Host element for non-shadow mounts. Used to scope custom WPSG CSS
+   * variables per gallery instance when rendering in the normal DOM.
+   */
+  hostElement?: HTMLElement | null;
+
+  /**
+   * Scoped selector for non-shadow custom CSS variable injection.
+   * Example: `[data-wpsg-theme-scope="abc123"]`.
+   */
+  themeScopeSelector?: string;
 }
 
 export function ThemeProvider({
@@ -134,6 +150,8 @@ export function ThemeProvider({
   allowPersistence = true,
   forcedThemeId,
   shadowRoot,
+  hostElement,
+  themeScopeSelector,
 }: ThemeProviderProps) {
   // Resolve initial theme
   const initialId = forcedThemeId ?? resolveInitialThemeId(allowPersistence);
@@ -143,6 +161,10 @@ export function ThemeProvider({
 
   // The effective theme ID: preview overrides saved, forced overrides all
   const effectiveThemeId = forcedThemeId ?? previewThemeId ?? themeId;
+  const scopeId = hostElement?.dataset.wpsgThemeScope
+    ? normalizeThemeScopeToken(hostElement.dataset.wpsgThemeScope)
+    : null;
+  const scopedStyleId = scopeId ? buildThemeStyleElementId(scopeId) : null;
 
   // Lookup from the pre-computed registry — O(1), no re-computation
   const entry: ThemeEntry = useMemo(() => getTheme(effectiveThemeId), [effectiveThemeId]);
@@ -183,21 +205,57 @@ export function ThemeProvider({
     }
   }, [forcedThemeId]);
 
-  // Shadow DOM CSS variable injection
+  // Inject custom WPSG CSS variables into either the shadow root or a
+  // scoped document-level style tag for normal DOM mounts.
   useEffect(() => {
-    if (!shadowRoot) return;
+    if (shadowRoot) {
+      const styleId = 'wpsg-theme-vars';
+      let styleEl = shadowRoot.querySelector(`#${styleId}`) as HTMLStyleElement | null;
 
-    const styleId = 'wpsg-theme-vars';
-    let styleEl = shadowRoot.querySelector(`#${styleId}`) as HTMLStyleElement | null;
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        shadowRoot.prepend(styleEl);
+      }
+
+      styleEl.textContent = entry.cssVars;
+    }
+
+    return;
+  }, [shadowRoot, entry.cssVars]);
+
+  useEffect(() => {
+    if (shadowRoot || !scopedStyleId || !themeScopeSelector) {
+      return;
+    }
+
+    let styleEl = document.getElementById(scopedStyleId) as HTMLStyleElement | null;
 
     if (!styleEl) {
       styleEl = document.createElement('style');
-      styleEl.id = styleId;
-      shadowRoot.prepend(styleEl);
+      styleEl.id = scopedStyleId;
+      document.head.appendChild(styleEl);
     }
 
-    styleEl.textContent = entry.cssVars;
-  }, [shadowRoot, entry.cssVars]);
+    return () => {
+      if (styleEl?.parentNode === document.head) {
+        document.head.removeChild(styleEl);
+      }
+    };
+  }, [shadowRoot, scopedStyleId, themeScopeSelector]);
+
+  useEffect(() => {
+    if (shadowRoot || !scopedStyleId || !themeScopeSelector) {
+      return;
+    }
+
+    const styleEl = document.getElementById(scopedStyleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      return;
+    }
+
+    styleEl.textContent = entry.cssVars.replace(/:host/g, themeScopeSelector);
+  }, [shadowRoot, scopedStyleId, themeScopeSelector, entry.cssVars]);
 
   // Context value — memoized to prevent unnecessary re-renders
   const value = useMemo<ThemeContextValue>(

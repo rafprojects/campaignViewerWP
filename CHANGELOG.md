@@ -5,6 +5,21 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-03-31
+
+### Added - Phase 24: Flat-Field Deprecation, Gallery Selection Parity & UX Fixes
+
+- **P24-A** Flat-field deprecation on write paths — global settings and campaign saves now write nested gallery config only, while legacy flat gallery fields are still promoted on read for compatibility and pruned on subsequent nested saves.
+- **P24-B** Breakpoint-grid adapter selection parity — unified and per-type gallery selection now use consistent breakpoint grids in Settings and campaign edit flows, with inherited-state behavior for campaign overrides.
+- **P24-C** Theme selection UX hardening — `ThemeSelector` is now controlled from settings state, previews immediately on selection, and reverts on cancel instead of drifting from the persisted theme value.
+- **P24-D** Gallery config editor access improvements — lazy editor entry points now expose explicit loading feedback and campaign-context editing shortcuts.
+- **P24-E** Deferred review cleanup — remaining settings sanitization and confirmation-modal cleanup tied to the Phase 24 settings pipeline were completed.
+
+### Fixed
+
+- WordPress manifest-based ES module entry assets now register without `?ver=` so Vite lazy chunks resolve to the same main module instance; this removes the duplicated React context state that broke live theme preview inside the lazy-loaded settings UI.
+- Added a PHP regression test asserting that hashed manifest entry scripts are registered versionless.
+
 ## [0.22.0] - 2026-03-30
 
 ### Added - Phase 23: Settings Architecture Refactor, Responsive Gallery Config & Campaign Parity

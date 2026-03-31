@@ -1,24 +1,90 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import type { ReactNode } from 'react';
-import { ThemeProvider } from '../../contexts/ThemeContext';
+import { DEFAULT_THEME_ID, getAllThemeMeta } from '@/themes/index';
 
-// We need to import ThemeSelector *after* mocks if any, but ThemeSelector
-// uses useTheme which uses ThemeContext — we wrap in ThemeProvider.
+const { setPreviewThemeSpy } = vi.hoisted(() => ({
+  setPreviewThemeSpy: vi.fn(),
+}));
+
+const { selectPropsSpy } = vi.hoisted(() => ({
+  selectPropsSpy: vi.fn(),
+}));
+
+vi.mock('@mantine/core', async () => {
+  const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core');
+
+  return {
+    ...actual,
+    Select: ({
+      label,
+      description,
+      value,
+      onChange,
+      data,
+      comboboxProps,
+    }: {
+      label?: ReactNode;
+      description?: ReactNode;
+      value?: string | null;
+      onChange?: (nextValue: string | null) => void;
+      data: Array<{ value: string; label: string }>;
+      comboboxProps?: { withinPortal?: boolean };
+    }) => (
+      (selectPropsSpy({ comboboxProps }),
+      <label>
+        {label ? <span>{label}</span> : null}
+        {description ? <span>{description}</span> : null}
+        <select
+          aria-label={typeof label === 'string' ? label : 'Theme'}
+          data-within-portal={String(comboboxProps?.withinPortal)}
+          value={value ?? ''}
+          onChange={(event) => onChange?.(event.currentTarget.value || null)}
+        >
+          {data.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>)
+    ),
+  };
+});
+
+vi.mock('@/hooks/useTheme', async () => {
+  const themes = await vi.importActual<typeof import('@/themes/index')>('@/themes/index');
+
+  return {
+    useTheme: () => ({
+      themeId: themes.DEFAULT_THEME_ID,
+      availableThemes: themes.getAllThemeMeta(),
+      setPreviewTheme: setPreviewThemeSpy,
+      setTheme: vi.fn(),
+      colorScheme: 'dark' as const,
+      cssVars: '',
+      mantineTheme: {},
+    }),
+  };
+});
+
 import { ThemeSelector } from './ThemeSelector';
+
+const allThemes = getAllThemeMeta();
+const alternateTheme = allThemes.find((theme) => theme.id !== DEFAULT_THEME_ID)!;
 
 function wrapper({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider>
-      <MantineProvider>{children}</MantineProvider>
-    </ThemeProvider>
+    <MantineProvider>{children}</MantineProvider>
   );
 }
 
 describe('ThemeSelector', () => {
   beforeEach(() => {
     localStorage.clear();
+    setPreviewThemeSpy.mockReset();
+    selectPropsSpy.mockReset();
   });
 
   it('renders a Select with default label', () => {
@@ -37,12 +103,45 @@ describe('ThemeSelector', () => {
     expect(screen.getByText('Pick one')).toBeInTheDocument();
   });
 
-  it('renders a textbox input for the theme select', () => {
+  it('uses the context theme when no controlled value is provided', () => {
     render(<ThemeSelector />, { wrapper });
 
-    const input = screen.getByRole('textbox');
-    expect(input).toBeInTheDocument();
-    // The current theme value should be set
-    expect((input as HTMLInputElement).value.length).toBeGreaterThan(0);
+    expect(screen.getByRole('combobox')).toHaveValue(DEFAULT_THEME_ID);
+  });
+
+  it('prefers the controlled settings value over the theme context value', () => {
+    render(<ThemeSelector value={alternateTheme.id} />, { wrapper });
+
+    expect(screen.getByRole('combobox')).toHaveValue(alternateTheme.id);
+  });
+
+  it('applies live preview and reports the selected theme to settings state', () => {
+    const onThemeChange = vi.fn();
+
+    render(<ThemeSelector onThemeChange={onThemeChange} />, { wrapper });
+
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: alternateTheme.id },
+    });
+
+    expect(setPreviewThemeSpy).toHaveBeenCalledWith(alternateTheme.id);
+    expect(onThemeChange).toHaveBeenCalledWith(alternateTheme.id);
+    expect(screen.getByRole('combobox')).toHaveValue(alternateTheme.id);
+  });
+
+  it('keeps the theme dropdown inside the current render tree', () => {
+    render(<ThemeSelector />, { wrapper });
+
+    expect(selectPropsSpy).toHaveBeenCalled();
+    expect(screen.getByRole('combobox')).toHaveAttribute('data-within-portal', 'false');
+  });
+
+  it('does not allow caller-provided comboboxProps to re-enable portal rendering', () => {
+    render(
+      <ThemeSelector selectProps={{ comboboxProps: { withinPortal: true } }} />,
+      { wrapper },
+    );
+
+    expect(screen.getByRole('combobox')).toHaveAttribute('data-within-portal', 'false');
   });
 });

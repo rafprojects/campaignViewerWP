@@ -121,8 +121,10 @@ class WPSG_Settings_Core_Fields {
             ],
             __('Community', 'wp-super-gallery') => [
                 'catppuccin-mocha' => __('Catppuccin Mocha', 'wp-super-gallery'),
+                'catppuccin-latte' => __('Catppuccin Latte', 'wp-super-gallery'),
                 'tokyo-night'      => __('Tokyo Night', 'wp-super-gallery'),
                 'gruvbox-dark'     => __('Gruvbox Dark', 'wp-super-gallery'),
+                'github-light'     => __('GitHub Light', 'wp-super-gallery'),
             ],
             __('Neon', 'wp-super-gallery') => [
                 'cyberpunk' => __('Cyberpunk', 'wp-super-gallery'),

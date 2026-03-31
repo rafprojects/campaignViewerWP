@@ -6,6 +6,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from 
 import { ThemeSelector } from '../Admin/ThemeSelector';
 
 interface GeneralSettingsData extends GalleryBehaviorSettings {
+  theme?: string;
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;
@@ -23,6 +24,7 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
     <Stack gap="md">
       <ThemeSelector
         description="Choose a color theme. Preview applies instantly; saved when you click Save."
+        value={settings.theme}
         onThemeChange={onThemeChange}
       />
 

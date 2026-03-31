@@ -89,6 +89,37 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $input = ['theme' => 'nord'];
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $this->assertEquals('nord', $sanitized['theme']);
+
+        $input = ['theme' => 'github-light'];
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+        $this->assertEquals('github-light', $sanitized['theme']);
+
+        $input = ['theme' => 'catppuccin-latte'];
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+        $this->assertEquals('catppuccin-latte', $sanitized['theme']);
+    }
+
+    /**
+     * Test deprecated flat gallery settings still sanitize through the generic handler.
+     */
+    public function test_sanitize_settings_legacy_gallery_fields_use_generic_handler() {
+        $defaults = WPSG_Settings::get_defaults();
+
+        $input = [
+            'image_gallery_adapter_id' => 'masonry',
+            'gallery_selection_mode' => 'per-breakpoint',
+            'grid_card_width' => 999,
+            'tile_glow_color' => '<b>#112233</b>',
+            'gallery_manual_height' => 'calc(100vh)',
+        ];
+
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+
+        $this->assertEquals('masonry', $sanitized['image_gallery_adapter_id']);
+        $this->assertEquals('per-breakpoint', $sanitized['gallery_selection_mode']);
+        $this->assertEquals(400, $sanitized['grid_card_width']);
+        $this->assertEquals('#112233', $sanitized['tile_glow_color']);
+        $this->assertEquals($defaults['gallery_manual_height'], $sanitized['gallery_manual_height']);
     }
 
     /**

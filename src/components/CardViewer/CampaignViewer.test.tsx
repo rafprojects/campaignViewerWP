@@ -1,5 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '../../test/test-utils';
+import { useEffect } from 'react';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '../../test/test-utils';
+
+let capturedGalleryConfigEditorZIndex: number | undefined;
 
 vi.mock('./UnifiedGallerySection', () => ({
   UnifiedGallerySection: () => <div data-testid="unified-gallery-section" />,
@@ -9,9 +12,59 @@ vi.mock('./PerTypeGallerySection', () => ({
   PerTypeGallerySection: () => <div data-testid="per-type-gallery-section" />,
 }));
 
+vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
+  GalleryConfigEditorModal: ({
+    opened,
+    title,
+    saveLabel = 'Save Campaign Gallery Config',
+    clearLabel = 'Use Inherited Gallery Settings',
+    onSave,
+    onClear,
+    zIndex,
+  }: {
+    opened: boolean;
+    title: string;
+    saveLabel?: string;
+    clearLabel?: string;
+    onSave: (value: {
+      mode: 'unified' | 'per-type';
+      breakpoints: Record<string, unknown>;
+    }) => void;
+    onClear?: () => void;
+    zIndex?: number;
+  }) => {
+    capturedGalleryConfigEditorZIndex = zIndex;
+
+    if (!opened) {
+      return null;
+    }
+
+    return (
+      <div role="dialog" aria-label={title}>
+        <h2>{title}</h2>
+        <button
+          type="button"
+          onClick={() => onSave({
+            mode: 'unified',
+            breakpoints: {
+              desktop: { unified: { adapterId: 'classic' } },
+              tablet: { unified: { adapterId: 'classic' } },
+              mobile: { unified: { adapterId: 'classic' } },
+            },
+          })}
+        >
+          {saveLabel}
+        </button>
+        <button type="button" onClick={() => onClear?.()}>{clearLabel}</button>
+      </div>
+    );
+  },
+}));
+
 import { CampaignViewer } from './CampaignViewer';
-import { CampaignContextProvider } from '@/contexts/CampaignContext';
+import { CampaignContextProvider, useCampaignContext } from '@/contexts/CampaignContext';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type Campaign, type Company, type MediaItem } from '@/types';
+import type { ApiClient } from '@/services/apiClient';
 
 const company: Company = {
   id: 'acme',
@@ -45,7 +98,35 @@ const campaign: Campaign = {
   updatedAt: '2026-01-02T00:00:00.000Z',
 };
 
+function GalleryConfigTrigger() {
+  const { activeCampaign, onEditGalleryConfig } = useCampaignContext();
+
+  if (!activeCampaign || !onEditGalleryConfig) {
+    return null;
+  }
+
+  return (
+    <button type="button" onClick={() => onEditGalleryConfig(activeCampaign)}>
+      Open Gallery Config
+    </button>
+  );
+}
+
+function CaptureActiveCampaign({ onActiveCampaign }: { onActiveCampaign: (campaign: Campaign | null) => void }) {
+  const { activeCampaign } = useCampaignContext();
+
+  useEffect(() => {
+    onActiveCampaign(activeCampaign);
+  }, [activeCampaign, onActiveCampaign]);
+
+  return null;
+}
+
 describe('CampaignViewer', () => {
+  beforeEach(() => {
+    capturedGalleryConfigEditorZIndex = undefined;
+  });
+
   it('shows access notice when locked', () => {
     render(
       <CampaignContextProvider>
@@ -90,6 +171,82 @@ describe('CampaignViewer', () => {
     // Admin actions are now in AuthBarFloating (via CampaignContext).
     // Verify the dialog rendered successfully.
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('registers the active campaign in context when opened', async () => {
+    const onActiveCampaign = vi.fn();
+
+    render(
+      <CampaignContextProvider>
+        <CampaignViewer
+          campaign={campaign}
+          opened
+          hasAccess
+          galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+          isAdmin={false}
+          onClose={() => undefined}
+        />
+        <CaptureActiveCampaign onActiveCampaign={onActiveCampaign} />
+      </CampaignContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(onActiveCampaign).toHaveBeenLastCalledWith(expect.objectContaining({ id: '1' }));
+    });
+  });
+
+  it('opens the viewer gallery config editor via CampaignContext and saves overrides through the campaign API', async () => {
+    const apiClient = {
+      put: vi.fn().mockResolvedValue({ ok: true }),
+    } as unknown as ApiClient;
+    const onNotify = vi.fn();
+    const onCampaignsUpdated = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <CampaignContextProvider>
+        <CampaignViewer
+          campaign={campaign}
+          opened
+          hasAccess
+          galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+          isAdmin
+          apiClient={apiClient}
+          onNotify={onNotify}
+          onCampaignsUpdated={onCampaignsUpdated}
+          onClose={() => undefined}
+        />
+        <GalleryConfigTrigger />
+      </CampaignContextProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Gallery Config' }));
+
+    await screen.findByRole('dialog', { name: 'Campaign Gallery Config' });
+
+    expect(capturedGalleryConfigEditorZIndex).toBe(400);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save Campaign Gallery Config' }));
+
+    await waitFor(() => {
+      expect(apiClient.put).toHaveBeenCalledWith(
+        '/wp-json/wp-super-gallery/v1/campaigns/1',
+        expect.objectContaining({
+          galleryOverrides: expect.objectContaining({
+            mode: 'unified',
+          }),
+        }),
+      );
+    });
+
+    const payload = (apiClient.put as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageAdapterId');
+    expect(payload).not.toHaveProperty('videoAdapterId');
+
+    expect(onCampaignsUpdated).toHaveBeenCalled();
+    expect(onNotify).toHaveBeenCalledWith({
+      type: 'success',
+      text: 'Campaign gallery config updated.',
+    });
   });
 
   it('prefers campaign unified mode overrides over global per-type viewer mode', () => {

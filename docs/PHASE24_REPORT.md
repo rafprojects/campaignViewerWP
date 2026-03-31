@@ -1,19 +1,19 @@
 # Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes
 
-**Status:** Planning
-**Version:** TBD
+**Status:** Complete
+**Version:** v0.23.0
 **Created:** March 30, 2026
-**Last updated:** March 30, 2026
+**Last updated:** March 31, 2026
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P24-A | Flat-to-nested gallery field deprecation | Not started | Large (2-4 days) |
-| P24-B | Per-breakpoint gallery adapter selection parity | Not started | Medium-Large (1-2 days) |
-| P24-C | Theme live preview and selection UX | Not started | Medium (0.5-1 day) |
-| P24-D | Gallery config editor accessibility | Not started | Medium (0.5-1 day) |
-| P24-E | Deferred review cleanup | Not started | Small-Medium (0.5 day) |
+| P24-A | Flat-to-nested gallery field deprecation | Completed ✅ | Large (2-4 days) |
+| P24-B | Per-breakpoint gallery adapter selection parity | Completed ✅ | Medium-Large (1-2 days) |
+| P24-C | Theme live preview and selection UX | Completed ✅ | Medium (0.5-1 day) |
+| P24-D | Gallery config editor accessibility | Completed ✅ | Medium (0.5-1 day) |
+| P24-E | Deferred review cleanup | Completed ✅ | Small-Medium (0.5 day) |
 
 ---
 
@@ -26,31 +26,31 @@
   - [Key Decisions (Pre-Resolved)](#key-decisions-pre-resolved)
   - [Architecture Decisions](#architecture-decisions)
   - [Execution Priority](#execution-priority)
-  - [Track P24-A — Flat-to-Nested Gallery Field Deprecation](#track-p24-a--flat-to-nested-gallery-field-deprecation)
+  - [Track P24-A — Flat-to-Nested Gallery Field Deprecation COMPLETE](#track-p24-a--flat-to-nested-gallery-field-deprecation-complete)
     - [Problem](#problem)
     - [Fix](#fix)
     - [Subtasks](#subtasks)
     - [Files to modify](#files-to-modify)
     - [Acceptance criteria](#acceptance-criteria)
-  - [Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity](#track-p24-b--per-breakpoint-gallery-adapter-selection-parity)
+  - [Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity COMPLETE](#track-p24-b--per-breakpoint-gallery-adapter-selection-parity-complete)
     - [Problem](#problem-1)
     - [Fix](#fix-1)
     - [Subtasks](#subtasks-1)
     - [Files to modify](#files-to-modify-1)
     - [Acceptance criteria](#acceptance-criteria-1)
-  - [Track P24-C — Theme Live Preview and Selection UX](#track-p24-c--theme-live-preview-and-selection-ux)
+  - [Track P24-C — Theme Live Preview and Selection UX COMPLETE](#track-p24-c--theme-live-preview-and-selection-ux-complete)
     - [Problem](#problem-2)
     - [Fix](#fix-2)
     - [Subtasks](#subtasks-2)
     - [Files to modify](#files-to-modify-2)
     - [Acceptance criteria](#acceptance-criteria-2)
-  - [Track P24-D — Gallery Config Editor Accessibility](#track-p24-d--gallery-config-editor-accessibility)
+  - [Track P24-D — Gallery Config Editor Accessibility COMPLETE](#track-p24-d--gallery-config-editor-accessibility-complete)
     - [Problem](#problem-3)
     - [Fix](#fix-3)
     - [Subtasks](#subtasks-3)
     - [Files to modify](#files-to-modify-3)
     - [Acceptance criteria](#acceptance-criteria-3)
-  - [Track P24-E — Deferred Review Cleanup](#track-p24-e--deferred-review-cleanup)
+  - [Track P24-E — Deferred Review Cleanup COMPLETE](#track-p24-e--deferred-review-cleanup-complete)
     - [Problem](#problem-4)
     - [Fix](#fix-4)
     - [Subtasks](#subtasks-4)
@@ -60,6 +60,15 @@
     - [Automated](#automated)
     - [Manual verification](#manual-verification)
   - [Planned File Inventory](#planned-file-inventory)
+    - [Primary implementation targets](#primary-implementation-targets)
+    - [Phase 24 docs](#phase-24-docs)
+  - [Addendum — Theme Preview Debugging Deep Dive](#addendum--theme-preview-debugging-deep-dive)
+    - [Symptoms We Saw](#symptoms-we-saw)
+    - [What We Tried First](#what-we-tried-first)
+    - [What Did Not Work and Why](#what-did-not-work-and-why)
+    - [What Actually Worked](#what-actually-worked)
+    - [Testing Approaches Used](#testing-approaches-used)
+    - [PR Review Follow-Up (PR #39)](#pr-review-follow-up-pr-39)
 
 ---
 
@@ -114,7 +123,7 @@ Additionally, two deferred review items (D-16: settings sanitization consolidati
 
 ---
 
-## Track P24-A — Flat-to-Nested Gallery Field Deprecation
+## Track P24-A — Flat-to-Nested Gallery Field Deprecation COMPLETE
 
 ### Problem
 
@@ -132,6 +141,13 @@ Deprecate flat gallery adapter fields in three phases:
 1. **Stop writing.** Remove flat-field projection from the global settings save path and campaign save path. The nested `galleryConfig` / `galleryOverrides` becomes the only written representation.
 2. **Migrate on read.** When loading settings, if `galleryConfig` is empty or missing but flat fields are present, promote the flat fields into nested form (one-time migration per installation). Write the result back on the next explicit save.
 3. **Mark for removal.** Add deprecation markers (`@deprecated`) to flat-field types, defaults, and registry entries. Document the removal timeline (Phase 25).
+
+Completed implementation summary:
+
+- Global settings now save nested `galleryConfig` only; legacy flat gallery keys are removed from the outbound payload and pruned from stored options when nested config is posted.
+- Campaign create/update now save nested `galleryOverrides` only; legacy flat campaign adapter meta remains readable for migration and is deleted on the next nested override save.
+- Load paths promote legacy flat settings and campaign adapter overrides into nested config before runtime resolution, while still rehydrating flat compatibility values in memory for current editor surfaces.
+- Resolver/runtime logic now treats nested config as authoritative, with legacy fallbacks limited to migration and one-release compatibility reads.
 
 ### Subtasks
 
@@ -178,7 +194,7 @@ Deprecate flat gallery adapter fields in three phases:
 
 ---
 
-## Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity
+## Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity COMPLETE
 
 ### Problem
 
@@ -232,7 +248,7 @@ Make per-breakpoint selection the standard adapter selection UX everywhere:
 
 ---
 
-## Track P24-C — Theme Live Preview and Selection UX
+## Track P24-C — Theme Live Preview and Selection UX COMPLETE
 
 ### Problem
 
@@ -284,7 +300,7 @@ Two bugs affect the theme selection experience:
 
 ---
 
-## Track P24-D — Gallery Config Editor Accessibility
+## Track P24-D — Gallery Config Editor Accessibility COMPLETE
 
 ### Problem
 
@@ -327,7 +343,7 @@ Two access issues limit the usefulness of the shared Gallery Config editor:
 
 ---
 
-## Track P24-E — Deferred Review Cleanup
+## Track P24-E — Deferred Review Cleanup COMPLETE
 
 ### Problem
 
@@ -360,9 +376,8 @@ Two deferred review items from the PHP and React implementation reviews are dire
 - `wp-plugin/wp-super-gallery/tests/WPSG_Settings_Test.php` — update assertions
 
 **Frontend:**
-- `src/components/Admin/MediaTab.tsx` — replace window.confirm
-- Other admin components with window.confirm calls
-- Test files for the above
+- `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` — replace window.confirm
+- `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcuts.test.tsx` — verify confirm modal flow
 
 ### Acceptance criteria
 
@@ -436,3 +451,113 @@ Two deferred review items from the PHP and React implementation reviews are dire
 | `docs/PHASE24_REPORT.md` | This document |
 | `docs/GALLERY_CONFIG_DATA_MODEL.md` | Updated with deprecation notes (P24-A10) |
 | `docs/GALLERY_CONFIG_UI_FLOW.md` | Updated with breakpoint grid UX (P24-B) |
+
+---
+
+## Addendum — Theme Preview Debugging Deep Dive
+
+### Symptoms We Saw
+
+The Phase 24 theme work initially looked correct in source, but the live WordPress settings dialog still behaved incorrectly in two distinct ways:
+
+1. The selector could display the wrong saved theme.
+2. Picking a new theme did not visibly update the UI until after saving and reloading.
+
+The misleading part was that some of the state changes were real. The settings form could receive the newly selected theme, yet the rendered UI stayed on the old palette. That made the bug look like a simple controlled-input problem at first, even though the remaining failure was deeper in the runtime.
+
+### What We Tried First
+
+The first round of fixes focused on the most obvious React-side problems.
+
+1. We made `ThemeSelector` controlled.
+   Previously, the dropdown display could derive its value from `useTheme().themeId`, which meant context or localStorage state could disagree with the actual `settings.theme` value being edited in the settings form. Passing `settings.theme` down from `GeneralSettingsSection` fixed the incorrect displayed value and made the staged form state authoritative.
+
+2. We wired live preview and cancel/revert behavior through the settings flow.
+   Selecting a theme now updates staged settings state and calls `setPreviewTheme()` immediately, while cancel/reset paths revert the temporary preview back to the previously saved theme.
+
+3. We kept the Mantine combobox inside the current render tree.
+   Because this admin UI can run inside a Shadow DOM host, Mantine portal behavior was an obvious suspect. Setting `comboboxProps={{ withinPortal: false }}` was the right defensive change and remains important because it keeps the dropdown inside the active gallery/modal subtree instead of rendering elsewhere in the document.
+
+Those changes fixed real UX issues, but they did not fully resolve the live preview failure on the actual WordPress page.
+
+### What Did Not Work and Why
+
+Several early explanations were directionally reasonable but incomplete.
+
+- Treating the bug as purely a Mantine portal or Shadow DOM scoping problem.
+  That explained why keeping the dropdown in-tree was safer, but it did not explain why preview state changes still failed to affect the visible theme after the portal issue was addressed.
+
+- Treating the bug as a duplicate-provider mistake in the source tree.
+  Source inspection did not show multiple `ThemeProvider` instances wrapped around different app regions. The eventual problem was not duplicate provider code in the repo; it was duplicate module instantiation at runtime.
+
+- Relying only on component/unit tests.
+  Focused Vitest coverage can prove that `ThemeSelector` calls the right handlers and keeps the dropdown inside the current tree, but those tests do not execute through WordPress asset registration or Vite's real lazy-chunk loading path. The remaining bug only appeared when the built plugin was loaded by WordPress itself.
+
+### What Actually Worked
+
+The breakthrough came from debugging the real WordPress page directly instead of staying inside isolated React tests.
+
+We opened the local site, authenticated into the admin experience, and inspected the live settings modal while changing themes. From there, we used three concrete signals:
+
+1. Shadow-root CSS variable inspection.
+   We read the injected `#wpsg-theme-vars` style and watched the effective CSS variables before and after changing the theme.
+
+2. Live React hook/provider inspection.
+   We inspected the React fiber/hook state in the browser to see whether the saved theme and preview theme were changing inside the same provider instance.
+
+3. Real asset URL comparison.
+   We compared the module URLs WordPress was serving with the URLs used by Vite lazy imports.
+
+That final comparison exposed the actual root cause:
+
+- WordPress was registering the Vite entry asset with `WPSG_VERSION`, producing a URL like `index-<hash>.js?ver=0.22.0`.
+- Lazy-loaded chunks imported the same main module as `./index-<hash>.js`, without the query string.
+- Browsers treat those as different ES module URLs.
+- The result was two instantiations of what should have been the same main module.
+
+Once that happened, singleton/module state split in two. React contexts defined in the main entry path were duplicated, so the lazy-loaded settings code could end up reading and writing a different `ThemeContext` instance than the one driving the visible app shell. In practice, that meant `setPreviewTheme()` looked wired correctly in source, but the lazy-loaded settings panel was not talking to the same runtime context instance as the rendered gallery UI.
+
+The real fix was therefore in the WordPress embed layer, not just the React UI:
+
+- In `WPSG_Embed::register_assets()`, manifest-based hashed JS and CSS assets now register with `null` version instead of `WPSG_VERSION`.
+- That keeps the entry module URL queryless.
+- Because Vite filenames are already content-hashed, cache busting still works.
+- With matching module URLs, the entry script and lazy chunks share one module instance again, so the lazy-loaded settings UI and the main app finally use the same `ThemeContext`.
+
+We kept the React-side theme UX fixes because they solved real staging/display problems. But the release-blocking preview bug was only fully fixed after removing the `?ver=` query from hashed ES module entry assets.
+
+### Testing Approaches Used
+
+This issue needed multiple layers of verification because no single test style exposed the whole failure.
+
+- Source inspection.
+  We traced the flow through `ThemeSelector`, `GeneralSettingsSection`, `SettingsPanel`, `ThemeContext`, and the WordPress embed/asset registration path.
+
+- Focused frontend tests.
+  We used targeted Vitest coverage to verify selector behavior and to confirm that the dropdown stays inside the current render tree rather than escaping through a portal.
+
+- Direct debugging on the real website.
+  We went into the actual local WordPress site at `https://192.168.1.220/test/` instead of relying only on local component rendering. That mattered because the root cause depended on how WordPress emitted the built Vite entry script.
+
+- Browser/runtime inspection.
+  We inspected the shadow-root theme style element, compared effective CSS variables before and after selection, and checked live React provider/hook state inside the browser.
+
+- Post-fix live verification.
+  After the WordPress asset registration change, we re-tested on the live site and confirmed the behavior end to end. Starting from a saved `catppuccin-latte` theme, previewing `material-dark` changed the injected background variable from `#eff1f5` to `#121212` and flipped the effective scheme from light to dark immediately, without saving. Resetting the preview restored the saved theme.
+
+- Backend regression coverage.
+  We added a focused PHP regression test asserting that the manifest-based entry script is registered with a `null` version so WordPress does not append the query string that caused the duplicate-module problem.
+
+### PR Review Follow-Up (PR #39)
+
+After the initial Phase 24 merge work, Copilot review on PR #39 surfaced five follow-up observations. We evaluated each against the live code path and the current tests.
+
+| Issue | File | Choice | Rationale |
+|------|------|--------|-----------|
+| Theme scope token and selector escaping | `src/main.tsx` | Accept | The existing selector builder trusted `host.id` / `data-wpsg-key` too directly. That was low-probability in normal WP usage, but still the wrong trust boundary for a selector interpolated into scoped CSS. We now normalize the stored scope token to a safe charset and build selectors from that sanitized token. |
+| Scoped non-shadow theme style cleanup | `src/contexts/ThemeContext.tsx` | Accept | The non-shadow path created a document-head style tag without cleanup. That could leak stale tags across gallery mount/unmount cycles. We added explicit lifecycle cleanup and test coverage for unmount removal. |
+| Global replacement of `:host` in scoped CSS injection | `src/contexts/ThemeContext.tsx` | Accept | `replace(':host', ...)` was only robust while the generated CSS contained a single `:host` selector. Switching to a global replacement removes that hidden assumption and costs essentially nothing. |
+| Prevent caller override of `withinPortal: false` | `src/components/Admin/ThemeSelector.tsx` | Accept | The shadow/modal scoping fix only holds if the dropdown stays in-tree. Allowing `selectProps` to silently override that behavior would make the fix fragile, so `withinPortal: false` is now enforced last. |
+| Legacy settings pruning condition should check camelCase `galleryConfig` directly | `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` | Reject | The review concern assumed the raw request body was being checked directly. In reality `update_settings()` first runs `WPSG_Settings::from_js($body)`, which converts `galleryConfig` into `gallery_config` before the pruning condition is evaluated. Existing PHP coverage already verifies `from_js()` carries `gallery_config`, so the current guard is correct and did not need a code change. |
+
+Focused validation after these follow-ups covered `ThemeSelector.test.tsx`, `ThemeContext.test.tsx`, and the new `themeScope.test.ts`, all passing locally.

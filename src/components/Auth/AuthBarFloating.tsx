@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
-import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive } from '@tabler/icons-react';
+import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 
@@ -44,7 +44,7 @@ export function AuthBarFloating({
   onLogout,
 }: AuthBarFloatingProps) {
   const margin = dragMargin;
-  const { activeCampaign, onEditCampaign, onArchiveCampaign, onAddExternalMedia } = useCampaignContext();
+  const { activeCampaign, onEditCampaign, onEditGalleryConfig, onArchiveCampaign, onAddExternalMedia } = useCampaignContext();
 
   // Read saved position (works in SSR — just returns null)
   const saved = readSavedPos();
@@ -213,6 +213,18 @@ export function AuthBarFloating({
                       >
                         Edit Campaign
                       </Button>
+                      {onEditGalleryConfig && (
+                        <Button
+                          variant="subtle"
+                          size="xs"
+                          leftSection={<IconAdjustments size={14} />}
+                          justify="start"
+                          onClick={() => { onEditGalleryConfig(activeCampaign); setPopoverOpen(false); }}
+                          aria-label={`Edit gallery config for ${activeCampaign.title}`}
+                        >
+                          Edit Gallery Config
+                        </Button>
+                      )}
                       <Button
                         variant="subtle"
                         size="xs"

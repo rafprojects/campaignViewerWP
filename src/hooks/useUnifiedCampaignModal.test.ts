@@ -102,7 +102,7 @@ describe('useUnifiedCampaignModal', () => {
     expect(result.current.formState.galleryOverrides?.mode).toBe('unified');
   });
 
-  it('sends galleryOverrides in the save payload', async () => {
+  it('sends only nested galleryOverrides in the save payload', async () => {
     const put = vi.fn().mockResolvedValue({ id: '1' });
     const { result } = renderHook(() => useUnifiedCampaignModal({
       apiClient: makeApiClient({ put }),
@@ -138,8 +138,6 @@ describe('useUnifiedCampaignModal', () => {
     expect(put).toHaveBeenCalledWith(
       '/wp-json/wp-super-gallery/v1/campaigns/1',
       expect.objectContaining({
-        imageAdapterId: 'classic',
-        videoAdapterId: 'classic',
         galleryOverrides: {
           mode: 'unified',
           breakpoints: {
@@ -150,9 +148,13 @@ describe('useUnifiedCampaignModal', () => {
         },
       }),
     );
+
+    const payload = put.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageAdapterId');
+    expect(payload).not.toHaveProperty('videoAdapterId');
   });
 
-  it('clears stale flat adapter ids when saving breakpoint-specific nested per-type overrides', async () => {
+  it('omits flat adapter ids when saving breakpoint-specific nested per-type overrides', async () => {
     const put = vi.fn().mockResolvedValue({ id: '1' });
     const { result } = renderHook(() => useUnifiedCampaignModal({
       apiClient: makeApiClient({ put }),
@@ -188,8 +190,6 @@ describe('useUnifiedCampaignModal', () => {
     expect(put).toHaveBeenCalledWith(
       '/wp-json/wp-super-gallery/v1/campaigns/1',
       expect.objectContaining({
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
           breakpoints: {
@@ -200,5 +200,9 @@ describe('useUnifiedCampaignModal', () => {
         },
       }),
     );
+
+    const payload = put.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageAdapterId');
+    expect(payload).not.toHaveProperty('videoAdapterId');
   });
 });

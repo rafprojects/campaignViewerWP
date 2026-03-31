@@ -13,6 +13,7 @@ import {
   Box,
   SegmentedControl,
 } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import {
   IconDeviceFloppy,
   IconArrowBackUp,
@@ -172,9 +173,19 @@ export function LayoutBuilderModal({
   // ── Close with dirty guard ──
   const handleClose = useCallback(() => {
     if (builder.isDirty) {
-      const confirmed = window.confirm('You have unsaved changes. Discard them?');
-      if (!confirmed) return;
+      modals.openConfirmModal({
+        title: 'Discard changes?',
+        children: <Text size="sm">You have unsaved changes. Discard them?</Text>,
+        labels: {
+          confirm: 'Discard',
+          cancel: 'Keep editing',
+        },
+        confirmProps: { color: 'red' },
+        onConfirm: onClose,
+      });
+      return;
     }
+
     onClose();
   }, [builder.isDirty, onClose]);
 

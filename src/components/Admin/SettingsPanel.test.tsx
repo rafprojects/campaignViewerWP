@@ -3,6 +3,12 @@ import { act, render, screen, waitFor, fireEvent } from '@/test/test-utils';
 import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryConfig } from '@/types';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
+
+const { setThemeSpy, setPreviewThemeSpy } = vi.hoisted(() => ({
+  setThemeSpy: vi.fn(),
+  setPreviewThemeSpy: vi.fn(),
+}));
 
 // ── Lightweight mock for GalleryConfigEditorModal ──────────────────────
 // The real modal (816 lines + full adapter registry + Suspense/lazy) is the
@@ -12,6 +18,7 @@ import type { GalleryConfig } from '@/types';
 //   • renders minimal DOM to keep role-queries fast.
 let capturedModalValue: Partial<GalleryConfig> | undefined;
 let capturedOnSave: ((cfg: GalleryConfig) => void) | undefined;
+let capturedModalZIndex: number | undefined;
 
 vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
   GalleryConfigEditorModal: (props: {
@@ -20,9 +27,11 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
     value?: Partial<GalleryConfig>;
     onSave: (cfg: GalleryConfig) => void;
     onClose: () => void;
+    zIndex?: number;
   }) => {
     capturedModalValue = props.value;
     capturedOnSave = props.onSave;
+    capturedModalZIndex = props.zIndex;
     if (!props.opened) return null;
     return (
       <div role="dialog" data-testid="gallery-config-editor-modal">
@@ -34,8 +43,22 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
 
 // Mock ThemeSelector since it depends on ThemeContext
 vi.mock('./ThemeSelector', () => ({
-  ThemeSelector: ({ description }: { description?: string }) => (
-    <div data-testid="theme-selector">{description}</div>
+  ThemeSelector: ({
+    description,
+    value,
+    onThemeChange,
+  }: {
+    description?: string;
+    value?: string;
+    onThemeChange?: (themeId: string) => void;
+  }) => (
+    <div data-testid="theme-selector">
+      <span>{description}</span>
+      <span data-testid="theme-selector-value">{value ?? ''}</span>
+      <button type="button" onClick={() => onThemeChange?.('solarized-dark')}>
+        Select Solarized Dark
+      </button>
+    </div>
   ),
 }));
 
@@ -43,8 +66,8 @@ vi.mock('./ThemeSelector', () => ({
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({
     themeId: 'default-dark',
-    setTheme: vi.fn(),
-    setPreviewTheme: vi.fn(),
+    setTheme: setThemeSpy,
+    setPreviewTheme: setPreviewThemeSpy,
     colorScheme: 'dark' as const,
     cssVars: '',
     mantineTheme: {},
@@ -152,8 +175,11 @@ describe('SettingsPanel', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setThemeSpy.mockReset();
+    setPreviewThemeSpy.mockReset();
     capturedModalValue = undefined;
     capturedOnSave = undefined;
+    capturedModalZIndex = undefined;
     apiClient = createMockApiClient();
   });
 
@@ -270,7 +296,7 @@ describe('SettingsPanel', () => {
     expect(saveButton).toBeDisabled();
   });
 
-  it('projects shared editor gallery presentation fields back into flat settings', async () => {
+  it('stores shared editor gallery presentation fields only in nested galleryConfig', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       gallerySizingMode: 'manual',
@@ -319,14 +345,15 @@ describe('SettingsPanel', () => {
       expect(updateSettings).toHaveBeenCalledOnce();
     });
 
-    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      gallerySizingMode: 'manual',
-      galleryManualHeight: '75vh',
-      galleryImageLabel: 'Photo Reel',
-      galleryVideoLabel: 'Video Reel',
-      galleryLabelJustification: 'right',
-      showGalleryLabelIcon: true,
-      showCampaignGalleryLabels: false,
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('gallerySizingMode');
+    expect(payload).not.toHaveProperty('galleryManualHeight');
+    expect(payload).not.toHaveProperty('galleryImageLabel');
+    expect(payload).not.toHaveProperty('galleryVideoLabel');
+    expect(payload).not.toHaveProperty('galleryLabelJustification');
+    expect(payload).not.toHaveProperty('showGalleryLabelIcon');
+    expect(payload).not.toHaveProperty('showCampaignGalleryLabels');
+    expect(payload).toMatchObject({
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -344,10 +371,10 @@ describe('SettingsPanel', () => {
           }),
         }),
       }),
-    }));
+    });
   });
 
-  it('preserves breakpoint-specific common settings while projecting representative flat values', async () => {
+  it('preserves breakpoint-specific common settings in nested galleryConfig only', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       gallerySectionPadding: 16,
@@ -390,8 +417,9 @@ describe('SettingsPanel', () => {
       expect(updateSettings).toHaveBeenCalledOnce();
     });
 
-    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      gallerySectionPadding: 16,
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('gallerySectionPadding');
+    expect(payload).toMatchObject({
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -410,7 +438,7 @@ describe('SettingsPanel', () => {
           }),
         }),
       }),
-    }));
+    });
   });
 
   it('seeds shared editor viewport background fields from flat settings', async () => {
@@ -483,7 +511,7 @@ describe('SettingsPanel', () => {
     expect(value?.breakpoints?.tablet?.image?.adapterSettings?.carouselVisibleCards).toBe(5);
   });
 
-  it('projects shared editor viewport background fields back into flat settings', async () => {
+  it('stores shared editor viewport background fields only in nested galleryConfig', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       imageBgType: 'solid',
@@ -537,13 +565,14 @@ describe('SettingsPanel', () => {
       expect(updateSettings).toHaveBeenCalledOnce();
     });
 
-    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      imageBgType: 'solid',
-      imageBgColor: '#112233',
-      videoBgType: 'gradient',
-      videoBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
-      unifiedBgType: 'image',
-      unifiedBgImageUrl: 'https://example.com/unified-bg.jpg',
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageBgType');
+    expect(payload).not.toHaveProperty('imageBgColor');
+    expect(payload).not.toHaveProperty('videoBgType');
+    expect(payload).not.toHaveProperty('videoBgGradient');
+    expect(payload).not.toHaveProperty('unifiedBgType');
+    expect(payload).not.toHaveProperty('unifiedBgImageUrl');
+    expect(payload).toMatchObject({
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -568,7 +597,7 @@ describe('SettingsPanel', () => {
           }),
         }),
       }),
-    }));
+    });
   });
 
   it('shows shared gallery height controls for flat gallery sizing settings', async () => {
@@ -627,6 +656,104 @@ describe('SettingsPanel', () => {
 
     await waitForTabs();
     expect(screen.getByTestId('theme-selector')).toBeDefined();
+  });
+
+  it('passes the saved theme value into ThemeSelector', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          theme: 'solarized-light',
+        }}
+      />
+    );
+
+    await waitForTabs();
+
+    expect(screen.getByTestId('theme-selector-value')).toHaveTextContent('solarized-light');
+  });
+
+  it('loads the saved theme from the API when cached initial settings omit it', async () => {
+    apiClient = createMockApiClient({
+      getSettings: vi.fn().mockResolvedValue({
+        ...seedSettings,
+        theme: 'solarized-dark',
+      }),
+    });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('theme-selector-value')).toHaveTextContent('solarized-dark');
+    });
+  });
+
+  it('persists the selected theme on save', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      theme: 'solarized-dark',
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          theme: 'default-dark',
+        }}
+      />
+    );
+
+    await waitForTabs();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Solarized Dark' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+        theme: 'solarized-dark',
+      }));
+    });
+
+    expect(setThemeSpy).toHaveBeenCalledWith('solarized-dark');
+  });
+
+  it('reverts the theme preview to the original saved theme when closing with unsaved theme changes', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          theme: 'default-dark',
+        }}
+      />
+    );
+
+    await waitForTabs();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Solarized Dark' }));
+
+    const closeButton = document.querySelector('.mantine-Modal-close') as HTMLButtonElement;
+    expect(closeButton).not.toBeNull();
+    fireEvent.click(closeButton);
+
+    expect(setPreviewThemeSpy).toHaveBeenCalledWith('default-dark');
   });
 
   it('does not render content when opened is false', () => {
@@ -718,6 +845,84 @@ describe('SettingsPanel', () => {
     await screen.findByText('Gallery Adapters');
 
     expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
+  });
+
+  it('opens the shared responsive gallery editor above the settings modal', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    await openResponsiveConfigEditor();
+
+    expect(screen.getByTestId('gallery-config-editor-modal')).toBeInTheDocument();
+    expect(capturedModalZIndex).toBe(400);
+  });
+
+  it('renders per-type breakpoint adapter grids without the selection mode toggle', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    expect(screen.queryByText('Gallery Selection Mode')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Desktop Image Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Tablet Video Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+  });
+
+  it('writes unified breakpoint adapter selections directly to nested gallery config', async () => {
+    const unifiedClassicLabel = getAdapterSelectOptions({ context: 'unified-gallery', breakpoint: 'desktop' })
+      .find((option) => option.value === 'classic')?.label;
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          unifiedGalleryEnabled: true,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    expect(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: unifiedClassicLabel ?? 'Classic' }));
+
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.desktop?.unified?.adapterId).toBe('classic');
+  });
+
+  it('writes per-type breakpoint adapter selections directly to nested gallery config', async () => {
+    const masonryLabel = getAdapterSelectOptions({ context: 'per-breakpoint-gallery', breakpoint: 'mobile' })
+      .find((option) => option.value === 'masonry')?.label;
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    fireEvent.click(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: masonryLabel ?? 'Masonry' }));
+
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.mobile?.image?.adapterId).toBe('masonry');
   });
 
   it('seeds shared editor adapter-specific values from flat settings', async () => {
@@ -917,7 +1122,7 @@ describe('SettingsPanel', () => {
     expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
   });
 
-  it('projects shared editor carousel adapter fields back into flat settings', async () => {
+  it('stores shared editor carousel adapter fields only in nested galleryConfig', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       imageBorderRadius: 14,
@@ -996,26 +1201,11 @@ describe('SettingsPanel', () => {
       expect(updateSettings).toHaveBeenCalledOnce();
     });
 
-    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      imageBorderRadius: 14,
-      videoBorderRadius: 18,
-      imageViewportHeight: 600,
-      videoViewportHeight: 480,
-      imageShadowPreset: 'custom',
-      imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
-      videoShadowPreset: 'strong',
-      videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
-      carouselVisibleCards: 3,
-      navArrowPosition: 'bottom',
-      navArrowColor: '#ff8800',
-      navArrowEdgeInset: 18,
-      navArrowMinHitTarget: 56,
-      navArrowFadeDurationMs: 320,
-      navArrowScaleTransitionMs: 210,
-      dotNavEnabled: false,
-      dotNavMaxVisibleDots: 9,
-      viewportHeightMobileRatio: 0.7,
-      viewportHeightTabletRatio: 0.85,
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageBorderRadius');
+    expect(payload).not.toHaveProperty('videoBorderRadius');
+    expect(payload).not.toHaveProperty('carouselVisibleCards');
+    expect(payload).toMatchObject({
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -1047,10 +1237,10 @@ describe('SettingsPanel', () => {
           }),
         }),
       }),
-    }));
+    });
   });
 
-  it('projects shared editor photo-grid fields back into flat settings', async () => {
+  it('stores shared editor photo-grid fields only in nested galleryConfig', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       thumbnailGap: 14,
@@ -1091,10 +1281,10 @@ describe('SettingsPanel', () => {
       expect(updateSettings).toHaveBeenCalledOnce();
     });
 
-    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      thumbnailGap: 14,
-      masonryColumns: 3,
-      masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('thumbnailGap');
+    expect(payload).not.toHaveProperty('masonryColumns');
+    expect(payload).toMatchObject({
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -1108,10 +1298,10 @@ describe('SettingsPanel', () => {
           }),
         }),
       }),
-    }));
+    });
   });
 
-  it('projects shared editor shape-specific fields back into flat settings', async () => {
+  it('stores shared editor shape-specific fields only in nested galleryConfig', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       tileBorderWidth: 2,
@@ -1162,15 +1352,10 @@ describe('SettingsPanel', () => {
       expect(updateSettings).toHaveBeenCalledOnce();
     });
 
-    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      tileBorderWidth: 2,
-      tileBorderColor: '#ff0000',
-      tileHoverBounce: false,
-      tileGlowEnabled: true,
-      tileGlowColor: '#00ffaa',
-      tileGlowSpread: 18,
-      tileGapX: 12,
-      tileGapY: 10,
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('tileBorderWidth');
+    expect(payload).not.toHaveProperty('tileGlowColor');
+    expect(payload).toMatchObject({
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -1189,10 +1374,10 @@ describe('SettingsPanel', () => {
           }),
         }),
       }),
-    }));
+    });
   });
 
-  it('projects shared editor layout-builder defaults back into flat settings', async () => {
+  it('stores shared editor layout-builder defaults only in nested galleryConfig', async () => {
     const updateSettings = vi.fn().mockResolvedValue({
       ...seedSettings,
       layoutBuilderScope: 'viewport',
@@ -1233,10 +1418,10 @@ describe('SettingsPanel', () => {
       expect(updateSettings).toHaveBeenCalledOnce();
     });
 
-    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
-      layoutBuilderScope: 'viewport',
-      tileGlowColor: '#00ffaa',
-      tileGlowSpread: 18,
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('layoutBuilderScope');
+    expect(payload).not.toHaveProperty('tileGlowColor');
+    expect(payload).toMatchObject({
       galleryConfig: expect.objectContaining({
         breakpoints: expect.objectContaining({
           desktop: expect.objectContaining({
@@ -1251,7 +1436,7 @@ describe('SettingsPanel', () => {
           }),
         }),
       }),
-    }));
+    });
   });
 
   it('seeds additional registry-driven adapter values from flat settings', async () => {

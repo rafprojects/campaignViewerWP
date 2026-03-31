@@ -11,7 +11,7 @@ The gallery configuration UX must satisfy four requirements:
 3. support the same editing concepts in global and campaign contexts
 4. make inheritance and reset behavior explicit, especially for campaign parity
 
-It now reflects the shipped shared editor behavior, including breakpoint-aware common-setting edits, unified-mode breakpoint tabs, and scope-level reset actions.
+It now reflects the shipped shared editor behavior, including breakpoint-aware common-setting edits, unified-mode breakpoint tabs, scope-level reset actions, and Phase 24 nested-only persistence.
 
 ---
 
@@ -38,6 +38,13 @@ It preserves scanability while avoiding a giant inline form that would recreate 
 3. Campaign context should default to inherited values, even though full parity is supported.
 4. Responsive scope should be explicit: breakpoint and scope are first-class selectors, not hidden assumptions.
 5. Reset actions should exist at meaningful levels, not only as all-or-nothing resets.
+
+## Persistence Contract
+
+1. Global settings UI may hydrate from legacy flat gallery fields when older data is loaded, but saves persist nested `galleryConfig` only.
+2. Campaign UI may hydrate from legacy flat campaign adapter overrides when older data is loaded, but saves persist nested `galleryOverrides` only.
+3. Quick selectors and the deeper gallery editor write directly to nested breakpoint and scope values.
+4. Successful nested saves prune legacy flat gallery storage so the runtime converges on one authoritative representation.
 
 ---
 
@@ -74,6 +81,8 @@ The parent screen should show:
 4. visible adapter selection row
 5. concise summary of current effective configuration
 6. config action that opens the deeper editor
+
+Those quick selectors are now nested-authoritative: each visible adapter choice writes to `galleryConfig.breakpoints[bp].[scope].adapterId` rather than syncing legacy flat adapter fields back into the save payload.
 
 ### Parent screen summary goals
 
@@ -114,6 +123,8 @@ The campaign parent screen should show the same visible control pattern as globa
 4. config action to open the deeper editor
 5. reset actions where appropriate
 
+Campaign quick selectors follow the same nested-authoritative contract, but remain clearable so users can return a cell to `Inherited` without creating a flat campaign adapter override.
+
 ### Inheritance-first behavior
 
 Campaign gallery settings should start from inherited global behavior.
@@ -132,6 +143,8 @@ When the user clicks the config action in campaign context:
 4. user may override common settings, adapter settings, or both
 5. reset actions are available for the visible scope, the current breakpoint, or the full campaign gallery config
 6. parent screen summary refreshes to reflect effective values
+
+If the campaign was loaded from legacy flat adapter overrides, the editor first promotes those values into nested `galleryOverrides` so the user edits one consistent model.
 
 ---
 

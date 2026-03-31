@@ -46,7 +46,7 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
-            'theme' => 'default-light',   // valid theme ID
+            'theme' => 'github-light',   // valid theme ID
             'itemsPerPage' => 24,
             'enableLightbox' => false,
         ]));
@@ -54,7 +54,7 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
 
         $this->assertEquals(200, $response->get_status());
         $data = $response->get_data();
-        $this->assertEquals('default-light', $data['theme'] ?? null);
+        $this->assertEquals('github-light', $data['theme'] ?? null);
         $this->assertEquals(24, $data['itemsPerPage'] ?? null);
         $this->assertFalse($data['enableLightbox']);
     }
