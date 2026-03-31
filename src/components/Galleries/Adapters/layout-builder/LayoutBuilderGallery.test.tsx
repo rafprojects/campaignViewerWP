@@ -196,12 +196,20 @@ describe('LayoutBuilderGallery', () => {
   afterEach(() => {
     globalThis.fetch = originalFetch;
     globalThis.ResizeObserver = originalRO;
+    vi.doUnmock('@/hooks/useLayoutTemplate');
+    vi.resetModules();
     vi.restoreAllMocks();
   });
 
   it('renders loading state initially', async () => {
-    // Slow down fetch — never resolves
-    globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {})) as unknown as typeof globalThis.fetch;
+    vi.resetModules();
+    vi.doMock('@/hooks/useLayoutTemplate', () => ({
+      useLayoutTemplate: () => ({
+        template: null,
+        isLoading: true,
+        error: null,
+      }),
+    }));
 
     const { LayoutBuilderGallery } = await import(
       '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
@@ -219,7 +227,14 @@ describe('LayoutBuilderGallery', () => {
   });
 
   it('renders error state on fetch failure', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof globalThis.fetch;
+    vi.resetModules();
+    vi.doMock('@/hooks/useLayoutTemplate', () => ({
+      useLayoutTemplate: () => ({
+        template: null,
+        isLoading: false,
+        error: 'Failed to fetch layout template (500)',
+      }),
+    }));
 
     const { LayoutBuilderGallery } = await import(
       '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
@@ -233,9 +248,7 @@ describe('LayoutBuilderGallery', () => {
       />,
     );
 
-    await waitFor(() => {
-      expect(screen.getByText(/Failed to fetch/i)).toBeInTheDocument();
-    });
+    expect(screen.getByText(/Failed to fetch/i)).toBeInTheDocument();
   });
 
   it('renders slots with assigned media after template loads', async () => {
