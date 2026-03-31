@@ -3,7 +3,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from './ThemeContext';
 import { useTheme } from '../hooks/useTheme';
-import { DEFAULT_THEME_ID, getAllThemeMeta } from '../themes/index';
+import { DEFAULT_THEME_ID, getAllThemeMeta, getTheme } from '../themes/index';
 
 function wrapper({ children }: { children: ReactNode }) {
   return <ThemeProvider>{children}</ThemeProvider>;
@@ -21,6 +21,7 @@ describe('ThemeProvider', () => {
     // Reset any window globals
     delete (window as unknown as Record<string, unknown>).__wpsgThemeId;
     delete (window as unknown as Record<string, unknown>).__WPSG_CONFIG__;
+    document.head.querySelectorAll('style[id^="wpsg-theme-vars-"]').forEach((node) => node.remove());
   });
 
   it('provides default theme when no preference is set', () => {
@@ -153,5 +154,42 @@ describe('ThemeProvider', () => {
     expect(result.current.themeId).toBe(otherTheme!.id);
     // Should NOT have persisted
     expect(localStorage.getItem('wpsg-theme-id')).toBeNull();
+  });
+
+  it('updates scoped document CSS variables when previewing a theme in non-shadow mode', () => {
+    const host = document.createElement('div');
+    host.dataset.wpsgThemeScope = 'test-scope';
+    document.body.appendChild(host);
+
+    const scopedWrapper = ({ children }: { children: ReactNode }) => (
+      <ThemeProvider
+        hostElement={host}
+        themeScopeSelector='[data-wpsg-theme-scope="test-scope"]'
+      >
+        {children}
+      </ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper: scopedWrapper });
+    const otherTheme = result.current.availableThemes.find((theme) => theme.id !== DEFAULT_THEME_ID);
+    expect(otherTheme).toBeDefined();
+
+    const initialStyle = document.head.querySelector('#wpsg-theme-vars-test-scope') as HTMLStyleElement | null;
+    expect(initialStyle).toBeTruthy();
+    expect(initialStyle?.textContent).toContain('[data-wpsg-theme-scope="test-scope"]');
+
+    act(() => {
+      result.current.setPreviewTheme(otherTheme!.id);
+    });
+
+    const updatedStyle = document.head.querySelector('#wpsg-theme-vars-test-scope') as HTMLStyleElement | null;
+    expect(updatedStyle).toBeTruthy();
+    expect(result.current.themeId).toBe(otherTheme!.id);
+    expect(updatedStyle?.textContent).toBe(
+      getTheme(otherTheme!.id).cssVars.replace(':host', '[data-wpsg-theme-scope="test-scope"]'),
+    );
+
+    host.remove();
+    updatedStyle?.remove();
   });
 });

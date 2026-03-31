@@ -127,6 +127,18 @@ export interface ThemeProviderProps {
    * isolation.
    */
   shadowRoot?: ShadowRoot | null;
+
+  /**
+   * Host element for non-shadow mounts. Used to scope custom WPSG CSS
+   * variables per gallery instance when rendering in the normal DOM.
+   */
+  hostElement?: HTMLElement | null;
+
+  /**
+   * Scoped selector for non-shadow custom CSS variable injection.
+   * Example: `[data-wpsg-theme-scope="abc123"]`.
+   */
+  themeScopeSelector?: string;
 }
 
 export function ThemeProvider({
@@ -134,6 +146,8 @@ export function ThemeProvider({
   allowPersistence = true,
   forcedThemeId,
   shadowRoot,
+  hostElement,
+  themeScopeSelector,
 }: ThemeProviderProps) {
   // Resolve initial theme
   const initialId = forcedThemeId ?? resolveInitialThemeId(allowPersistence);
@@ -183,21 +197,39 @@ export function ThemeProvider({
     }
   }, [forcedThemeId]);
 
-  // Shadow DOM CSS variable injection
+  // Inject custom WPSG CSS variables into either the shadow root or a
+  // scoped document-level style tag for normal DOM mounts.
   useEffect(() => {
-    if (!shadowRoot) return;
+    if (shadowRoot) {
+      const styleId = 'wpsg-theme-vars';
+      let styleEl = shadowRoot.querySelector(`#${styleId}`) as HTMLStyleElement | null;
 
-    const styleId = 'wpsg-theme-vars';
-    let styleEl = shadowRoot.querySelector(`#${styleId}`) as HTMLStyleElement | null;
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        shadowRoot.prepend(styleEl);
+      }
+
+      styleEl.textContent = entry.cssVars;
+      return;
+    }
+
+    const scopeId = hostElement?.dataset.wpsgThemeScope;
+    if (!scopeId || !themeScopeSelector) {
+      return;
+    }
+
+    const styleId = `wpsg-theme-vars-${scopeId}`;
+    let styleEl = document.head.querySelector(`#${styleId}`) as HTMLStyleElement | null;
 
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.id = styleId;
-      shadowRoot.prepend(styleEl);
+      document.head.appendChild(styleEl);
     }
 
-    styleEl.textContent = entry.cssVars;
-  }, [shadowRoot, entry.cssVars]);
+    styleEl.textContent = entry.cssVars.replace(':host', themeScopeSelector);
+  }, [shadowRoot, hostElement, themeScopeSelector, entry.cssVars]);
 
   // Context value — memoized to prevent unnecessary re-renders
   const value = useMemo<ThemeContextValue>(

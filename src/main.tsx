@@ -65,6 +65,14 @@ const parseProps = (node: Element): MountProps => {
   }
 }
 
+const ensureThemeScopeSelector = (host: HTMLElement): string => {
+  if (!host.dataset.wpsgThemeScope) {
+    host.dataset.wpsgThemeScope = host.id || host.dataset.wpsgKey || `wpsg-theme-${Math.random().toString(36).slice(2, 10)}`
+  }
+
+  return `[data-wpsg-theme-scope="${host.dataset.wpsgThemeScope}"]`
+}
+
 /**
  * Inner shell that consumes the ThemeContext and feeds the resolved
  * MantineThemeOverride into MantineProvider. This component re-renders
@@ -110,14 +118,21 @@ function ThemedApp({
  */
 const renderApp = (
   mountNode: Element,
+  hostElement: HTMLElement,
   props: MountProps,
   shadowRootEl?: ShadowRoot,
 ) => {
   const isShadow = !!shadowRootEl
+  const themeScopeSelector = shadowRootEl ? undefined : ensureThemeScopeSelector(hostElement)
 
   createRoot(mountNode).render(
     <StrictMode>
-      <ThemeProvider shadowRoot={shadowRootEl ?? null} allowPersistence={allowThemePersistence}>
+      <ThemeProvider
+        shadowRoot={shadowRootEl ?? null}
+        hostElement={hostElement}
+        themeScopeSelector={themeScopeSelector}
+        allowPersistence={allowThemePersistence}
+      >
         <ThemedApp
           props={props}
           isShadowDom={isShadow}
@@ -147,7 +162,7 @@ const mountWithShadow = (host: HTMLElement, props: MountProps) => {
   const mountPoint = document.createElement('div')
   mountPoint.setAttribute('data-wpsg-mount', 'true')
   shadowRoot.appendChild(mountPoint)
-  renderApp(mountPoint, props, shadowRoot)
+  renderApp(mountPoint, host, props, shadowRoot)
 }
 
 const mountDefault = (host: HTMLElement, props: MountProps) => {
@@ -156,7 +171,7 @@ const mountDefault = (host: HTMLElement, props: MountProps) => {
     return
   }
   host.setAttribute('data-wpsg-mounted', 'true')
-  renderApp(host, props)
+  renderApp(host, host, props)
 }
 
 /**
@@ -172,9 +187,11 @@ const sharedRootMap = new WeakMap<HTMLElement, Root>();
 const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
   interface MountInstance {
     mountPoint: HTMLElement
+    hostElement: HTMLElement
     shadowRoot?: ShadowRoot
     props: MountProps
     portalKey: string
+    themeScopeSelector?: string
   }
 
   const instances: MountInstance[] = []
@@ -197,10 +214,16 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
       mountPoint.setAttribute('data-wpsg-mount', 'true')
       shadowRoot.appendChild(mountPoint)
       const portalKey = host.id || (host.dataset.wpsgKey ??= `wpsg-${Math.random().toString(36).slice(2, 10)}`)
-      instances.push({ mountPoint, shadowRoot, props: parseProps(host), portalKey })
+      instances.push({ mountPoint, hostElement: host, shadowRoot, props: parseProps(host), portalKey })
     } else {
       const portalKey = host.id || (host.dataset.wpsgKey ??= `wpsg-${Math.random().toString(36).slice(2, 10)}`)
-      instances.push({ mountPoint: host, props: parseProps(host), portalKey })
+      instances.push({
+        mountPoint: host,
+        hostElement: host,
+        props: parseProps(host),
+        portalKey,
+        themeScopeSelector: ensureThemeScopeSelector(host),
+      })
     }
   })
 
@@ -233,6 +256,8 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
         createPortal(
           <ThemeProvider
             shadowRoot={inst.shadowRoot ?? null}
+            hostElement={inst.hostElement}
+            themeScopeSelector={inst.themeScopeSelector}
             allowPersistence={i === 0 && allowThemePersistence}
           >
             <ThemedApp

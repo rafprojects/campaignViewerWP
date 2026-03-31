@@ -1,18 +1,18 @@
 # Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes
 
-**Status:** Planning
+**Status:** In progress
 **Version:** TBD
 **Created:** March 30, 2026
-**Last updated:** March 30, 2026
+**Last updated:** March 31, 2026
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P24-A | Flat-to-nested gallery field deprecation | Not started | Large (2-4 days) |
-| P24-B | Per-breakpoint gallery adapter selection parity | Not started | Medium-Large (1-2 days) |
-| P24-C | Theme live preview and selection UX | Not started | Medium (0.5-1 day) |
-| P24-D | Gallery config editor accessibility | Not started | Medium (0.5-1 day) |
+| P24-B | Per-breakpoint gallery adapter selection parity | Completed ✅ | Medium-Large (1-2 days) |
+| P24-C | Theme live preview and selection UX | Completed ✅ | Medium (0.5-1 day) |
+| P24-D | Gallery config editor accessibility | Completed ✅ | Medium (0.5-1 day) |
 | P24-E | Deferred review cleanup | Not started | Small-Medium (0.5 day) |
 
 ---
@@ -32,19 +32,19 @@
     - [Subtasks](#subtasks)
     - [Files to modify](#files-to-modify)
     - [Acceptance criteria](#acceptance-criteria)
-  - [Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity](#track-p24-b--per-breakpoint-gallery-adapter-selection-parity)
+  - [Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity COMPLETE](#track-p24-b--per-breakpoint-gallery-adapter-selection-parity-complete)
     - [Problem](#problem-1)
     - [Fix](#fix-1)
     - [Subtasks](#subtasks-1)
     - [Files to modify](#files-to-modify-1)
     - [Acceptance criteria](#acceptance-criteria-1)
-  - [Track P24-C — Theme Live Preview and Selection UX](#track-p24-c--theme-live-preview-and-selection-ux)
+  - [Track P24-C — Theme Live Preview and Selection UX COMPLETE](#track-p24-c--theme-live-preview-and-selection-ux-complete)
     - [Problem](#problem-2)
     - [Fix](#fix-2)
     - [Subtasks](#subtasks-2)
     - [Files to modify](#files-to-modify-2)
     - [Acceptance criteria](#acceptance-criteria-2)
-  - [Track P24-D — Gallery Config Editor Accessibility](#track-p24-d--gallery-config-editor-accessibility)
+  - [Track P24-D — Gallery Config Editor Accessibility COMPLETE](#track-p24-d--gallery-config-editor-accessibility-complete)
     - [Problem](#problem-3)
     - [Fix](#fix-3)
     - [Subtasks](#subtasks-3)
@@ -178,7 +178,7 @@ Deprecate flat gallery adapter fields in three phases:
 
 ---
 
-## Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity
+## Track P24-B — Per-Breakpoint Gallery Adapter Selection Parity COMPLETE
 
 ### Problem
 
@@ -232,7 +232,7 @@ Make per-breakpoint selection the standard adapter selection UX everywhere:
 
 ---
 
-## Track P24-C — Theme Live Preview and Selection UX
+## Track P24-C — Theme Live Preview and Selection UX COMPLETE
 
 ### Problem
 
@@ -284,7 +284,7 @@ Two bugs affect the theme selection experience:
 
 ---
 
-## Track P24-D — Gallery Config Editor Accessibility
+## Track P24-D — Gallery Config Editor Accessibility COMPLETE
 
 ### Problem
 
