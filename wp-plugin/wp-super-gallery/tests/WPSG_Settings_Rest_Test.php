@@ -58,4 +58,49 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(24, $data['itemsPerPage'] ?? null);
         $this->assertFalse($data['enableLightbox']);
     }
+
+    public function test_settings_post_round_trips_gallery_config_for_admin() {
+        $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
+        $user = get_user_by('id', $user_id);
+        $user->add_cap('manage_wpsg');
+        foreach ( WPSG_CPT::CPT_CAPS as $cap ) {
+            $user->add_cap( $cap );
+        }
+        wp_set_current_user($user_id);
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(wp_json_encode([
+            'galleryConfig' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'masonry',
+                            'common' => [
+                                'sectionPadding' => 24,
+                                'viewportBgType' => 'solid',
+                                'viewportBgColor' => '#112233',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]));
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals('unified', $data['galleryConfig']['mode'] ?? null);
+        $this->assertEquals('masonry', $data['galleryConfig']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
+        $this->assertEquals(24, $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['sectionPadding'] ?? null);
+        $this->assertEquals('solid', $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['viewportBgColor'] ?? null);
+
+        $stored = get_option(WPSG_Settings::OPTION_NAME, []);
+        $this->assertEquals('unified', $stored['gallery_config']['mode'] ?? null);
+        $this->assertEquals('masonry', $stored['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
+        $this->assertEquals('solid', $stored['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $stored['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgColor'] ?? null);
+    }
 }

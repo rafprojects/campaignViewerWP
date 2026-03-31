@@ -55,14 +55,13 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const borderRadius = settings.imageBorderRadius;
   const gap = settings.thumbnailGap ?? 6;
   const pinned = settings.masonryColumns ?? 0;
 
   // Responsive column function — uses shared helper; honours user's pin when set.
   const columns = pinned > 0
     ? pinned
-    : (containerWidth: number) => resolveColumnsFromWidth(containerWidth, 0);
+    : (containerWidth: number) => resolveColumnsFromWidth(containerWidth, 0, settings.masonryAutoColumnBreakpoints);
 
   // Normalize all photos to a consistent reference height so large-resolution
   // images don't dominate the layout. react-photo-album uses width/height
@@ -104,7 +103,9 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
         spacing={gap}
         onClick={({ index }) => openAt(index)}
         render={{
-          button({ style, className, ...props }) {
+          button({ style, className, ...props }, { photo }) {
+            const borderRadius = (photo as RpaPhoto).item.type === 'video' ? settings.videoBorderRadius : settings.imageBorderRadius;
+
             return (
               <button
                 {...props}
@@ -132,6 +133,7 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;
             const isVideo = p.item.type === 'video';
+            const borderRadius = isVideo ? settings.videoBorderRadius : settings.imageBorderRadius;
             const iconSize = Math.max(22, Math.min(width, height) * 0.2);
             return (
               <Box

@@ -39,17 +39,17 @@ These tests validate server-side behavior in the WordPress plugin (REST endpoint
   - Validate REST responses, transient caching, and provider logic (oEmbed proxy, normalization).
 
 - How to run:
-  - Ensure you have the WordPress PHPUnit test environment set up (see WordPress testing docs).
-  - From the plugin directory, run the WP test runner configured for your environment. Example (project-specific):
+  - Ensure `wp-env` is installed and the repo WordPress test environment can start.
+  - From the repo root, start `wp-env`, then run PHPUnit inside the `tests-cli` container. This repo expects the WordPress test harness to come from that container.
 
 ```bash
 # from repo root
-cd wp-plugin/wp-super-gallery
-# run WP PHPUnit (environment dependent)
-phpunit -c phpunit.xml.dist
+wp-env start
+wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 Notes:
+- Running `./vendor/bin/phpunit -c phpunit.xml.dist` directly on the host will fail unless `WP_TESTS_DIR` already points at a valid WordPress test library install.
 - These tests require a WordPress test fixture; they cannot be run with `npm run test` (frontend) and are executed separately in CI when PHP/WP tests are configured.
 - We added `wp-plugin/wp-super-gallery/tests/test-proxy-oembed.php` to assert `proxy_oembed()` behaviors (missing URL returns 400; cached payloads returned).
 

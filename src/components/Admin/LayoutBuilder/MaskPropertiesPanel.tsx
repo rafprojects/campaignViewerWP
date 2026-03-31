@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ASSET_MIME } from './DesignAssetsGrid';
 import {
   Stack,
@@ -115,24 +115,20 @@ export function MaskPropertiesPanel({
   };
 
   // ── Drop-to-apply: drag a Design Asset onto the preview area ──
-  const handlePanelDragOver = useCallback((e: React.DragEvent) => {
+  const handlePanelDragOver = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes(ASSET_MIME)) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
       setIsDragOver(true);
     }
-  }, []);
-  const handlePanelDragLeave = useCallback(() => setIsDragOver(false), []);
-  const handlePanelDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
-      const url = e.dataTransfer.getData(ASSET_MIME);
-      if (url) setMask({ url });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ml],
-  );
+  };
+  const handlePanelDragLeave = () => setIsDragOver(false);
+  const handlePanelDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const url = e.dataTransfer.getData(ASSET_MIME);
+    if (url) setMask({ url });
+  };
 
   return (
     <Stack gap={4} p={4}>

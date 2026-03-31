@@ -13,6 +13,23 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         return $user_id;
     }
 
+    private function create_public_campaign(array $meta = []): int {
+        $campaign_id = wp_insert_post([
+            'post_type' => 'wpsg_campaign',
+            'post_title' => 'Scheduled Campaign',
+            'post_status' => 'publish',
+        ]);
+
+        update_post_meta($campaign_id, 'visibility', 'public');
+        update_post_meta($campaign_id, 'status', 'active');
+
+        foreach ($meta as $key => $value) {
+            update_post_meta($campaign_id, $key, $value);
+        }
+
+        return $campaign_id;
+    }
+
     public function setUp(): void {
         parent::setUp();
         // Nonce bypass handled via WPSG_ALLOW_NONCE_BYPASS constant in bootstrap.php.
@@ -127,6 +144,247 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $data = $response->get_data();
         $this->assertIsArray($data);
         $this->assertGreaterThanOrEqual(2, count($data));
+    }
+
+    public function test_future_public_campaign_is_hidden_from_direct_reads() {
+        $campaign_id = $this->create_public_campaign([
+            'publish_at' => gmdate('Y-m-d H:i:s', time() + HOUR_IN_SECONDS),
+            'media_items' => [
+                [
+                    'id' => 'scheduled-media-1',
+                    'url' => 'https://example.com/future.jpg',
+                    'type' => 'image',
+                ],
+            ],
+        ]);
+
+        wp_set_current_user(0);
+
+        $campaign_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $campaign_response = rest_do_request($campaign_request);
+        $this->assertEquals(403, $campaign_response->get_status());
+
+        $media_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $media_response = rest_do_request($media_request);
+        $this->assertEquals(403, $media_response->get_status());
+    }
+
+    public function test_expired_public_campaign_is_excluded_from_permissions_payload() {
+        $viewer_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
+        $visible_campaign_id = $this->create_public_campaign();
+        $expired_campaign_id = $this->create_public_campaign([
+            'unpublish_at' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+
+        wp_set_current_user($viewer_id);
+
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/permissions');
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+
+        $this->assertContains((string) $visible_campaign_id, $data['campaignIds']);
+        $this->assertNotContains((string) $expired_campaign_id, $data['campaignIds']);
+    }
+
+    public function test_campaign_gallery_overrides_round_trip() {
+        $this->set_admin_user();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_param('title', 'Campaign Overrides');
+        $create->set_param('status', 'active');
+        $create->set_param('galleryOverrides', [
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'adapterId' => 'masonry',
+                        'common' => [
+                            'sectionPadding' => 24,
+                        ],
+                    ],
+                ],
+                'tablet' => [
+                    'image' => [
+                        'adapterId' => 'masonry',
+                    ],
+                ],
+                'mobile' => [
+                    'image' => [
+                        'adapterId' => 'masonry',
+                    ],
+                ],
+            ],
+        ]);
+
+        $create_response = rest_do_request($create);
+        $this->assertEquals(201, $create_response->get_status());
+
+        $created = $create_response->get_data();
+        $campaign_id = intval($created['id'] ?? 0);
+        $this->assertEquals('masonry', $created['galleryOverrides']['breakpoints']['desktop']['image']['adapterId'] ?? null);
+        $this->assertEquals('per-type', $created['galleryOverrides']['mode'] ?? null);
+
+        $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
+        $this->assertEquals('masonry', $stored['breakpoints']['desktop']['image']['adapterId'] ?? null);
+        $this->assertEquals(24, $stored['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+
+        $update = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $update->set_param('galleryOverrides', []);
+        $update_response = rest_do_request($update);
+
+        $this->assertEquals(200, $update_response->get_status());
+        $updated = $update_response->get_data();
+        $this->assertNull($updated['galleryOverrides'] ?? null);
+        $this->assertEmpty(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true));
+    }
+
+    public function test_campaign_gallery_overrides_round_trip_from_json_body() {
+        $this->set_admin_user();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_header('Content-Type', 'application/json');
+        $create->set_body(wp_json_encode([
+            'title' => 'Campaign Overrides JSON',
+            'status' => 'active',
+            'galleryOverrides' => [
+                'mode' => 'per-type',
+                'breakpoints' => [
+                    'desktop' => [
+                        'image' => [
+                            'adapterId' => 'not-a-real-adapter',
+                            'common' => [
+                                'sectionPadding' => 240,
+                                'adapterMaxWidthPct' => 10,
+                                'adapterJustifyContent' => 'invalid-option',
+                                'galleryManualHeight' => 'calc(100vh)',
+                                'viewportBgType' => 'solid',
+                                'viewportBgColor' => '<b>#112233</b>',
+                                'viewportBgGradient' => '<b>linear-gradient(135deg, #111111 0%, #222222 100%)</b>',
+                                'viewportBgImageUrl' => 'https://example.com/image-bg.jpg',
+                                'galleryImageLabel' => '<b>Photos</b>',
+                                'galleryVideoLabel' => '<i>Clips</i>',
+                                'galleryLabelJustification' => 'invalid-option',
+                                'showGalleryLabelIcon' => '1',
+                                'showCampaignGalleryLabels' => '0',
+                                'theme' => 'nord',
+                                'headline<script>' => '<b>Unsafe</b>',
+                            ],
+                            'adapterSettings' => [
+                                'masonryAutoColumnBreakpoints' => '<b>480:2,768:3,1024:4,1280:5</b>',
+                            ],
+                        ],
+                        'video' => [
+                            'adapterId' => 'classic',
+                            'adapterSettings' => [
+                                'imageViewportHeight' => 9999,
+                                'videoBorderRadius' => 99,
+                                'thumbnailGap' => 99,
+                                'navArrowPosition' => 'bottom',
+                                'navArrowSize' => 999,
+                                'dotNavMaxVisibleDots' => 99,
+                                'navArrowEdgeInset' => 999,
+                                'navArrowMinHitTarget' => 5,
+                                'navArrowFadeDurationMs' => 5000,
+                                'navArrowScaleTransitionMs' => -1,
+                                'viewportHeightMobileRatio' => 2,
+                                'viewportHeightTabletRatio' => 0.1,
+                                'dotNavShape' => 'triangle',
+                                'dotNavActiveScale' => 9,
+                                'imageShadowPreset' => 'custom',
+                                'imageShadowCustom' => '<b>0 0 12px rgba(0,0,0,0.4)</b>',
+                                'modalTransition' => 'not-a-real-transition',
+                            ],
+                        ],
+                    ],
+                    'watch' => [
+                        'image' => [
+                            'adapterId' => 'classic',
+                        ],
+                    ],
+                ],
+            ],
+        ]));
+
+        $response = rest_do_request($create);
+        $this->assertEquals(201, $response->get_status());
+
+        $created = $response->get_data();
+        $campaign_id = intval($created['id'] ?? 0);
+        $this->assertEquals('per-type', $created['galleryOverrides']['mode'] ?? null);
+        $this->assertArrayNotHasKey('adapterId', $created['galleryOverrides']['breakpoints']['desktop']['image'] ?? []);
+        $this->assertEquals(60, $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+        $this->assertEquals(50, $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
+        $this->assertArrayNotHasKey('adapterJustifyContent', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('galleryManualHeight', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('solid', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['viewportBgColor'] ?? null);
+        $this->assertEquals('linear-gradient(135deg, #111111 0%, #222222 100%)', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['viewportBgGradient'] ?? null);
+        $this->assertEquals('https://example.com/image-bg.jpg', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['viewportBgImageUrl'] ?? null);
+        $this->assertEquals('Photos', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['galleryVideoLabel'] ?? null);
+        $this->assertArrayNotHasKey('galleryLabelJustification', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertTrue($created['galleryOverrides']['breakpoints']['desktop']['image']['common']['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($created['galleryOverrides']['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
+        $this->assertArrayNotHasKey('theme', $created['galleryOverrides']['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Unsafe', $created['galleryOverrides']['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals('480:2,768:3,1024:4,1280:5', $created['galleryOverrides']['breakpoints']['desktop']['image']['adapterSettings']['masonryAutoColumnBreakpoints'] ?? null);
+        $this->assertEquals('classic', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterId'] ?? null);
+        $this->assertEquals(900, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['imageViewportHeight'] ?? null);
+        $this->assertEquals(48, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['videoBorderRadius'] ?? null);
+        $this->assertEquals(24, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['thumbnailGap'] ?? null);
+        $this->assertEquals('bottom', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowPosition'] ?? null);
+        $this->assertEquals(64, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowSize'] ?? null);
+        $this->assertEquals(20, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['dotNavMaxVisibleDots'] ?? null);
+        $this->assertEquals(48, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowEdgeInset'] ?? null);
+        $this->assertEquals(24, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowMinHitTarget'] ?? null);
+        $this->assertEquals(1000, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowFadeDurationMs'] ?? null);
+        $this->assertEquals(0, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['navArrowScaleTransitionMs'] ?? null);
+        $this->assertEquals(1.0, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightMobileRatio'] ?? null);
+        $this->assertEquals(0.3, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightTabletRatio'] ?? null);
+        $this->assertArrayNotHasKey('dotNavShape', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertEquals(2.0, $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['dotNavActiveScale'] ?? null);
+        $this->assertEquals('custom', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['imageShadowPreset'] ?? null);
+        $this->assertEquals('0 0 12px rgba(0,0,0,0.4)', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings']['imageShadowCustom'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertArrayNotHasKey('watch', $created['galleryOverrides']['breakpoints'] ?? []);
+
+        $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
+        $this->assertEquals(60, $stored['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+        $this->assertEquals(50, $stored['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
+        $this->assertArrayNotHasKey('adapterJustifyContent', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('galleryManualHeight', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('solid', $stored['breakpoints']['desktop']['image']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $stored['breakpoints']['desktop']['image']['common']['viewportBgColor'] ?? null);
+        $this->assertEquals('linear-gradient(135deg, #111111 0%, #222222 100%)', $stored['breakpoints']['desktop']['image']['common']['viewportBgGradient'] ?? null);
+        $this->assertEquals('https://example.com/image-bg.jpg', $stored['breakpoints']['desktop']['image']['common']['viewportBgImageUrl'] ?? null);
+        $this->assertEquals('Photos', $stored['breakpoints']['desktop']['image']['common']['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $stored['breakpoints']['desktop']['image']['common']['galleryVideoLabel'] ?? null);
+        $this->assertArrayNotHasKey('galleryLabelJustification', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertTrue($stored['breakpoints']['desktop']['image']['common']['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($stored['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
+        $this->assertArrayNotHasKey('theme', $stored['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Unsafe', $stored['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals('480:2,768:3,1024:4,1280:5', $stored['breakpoints']['desktop']['image']['adapterSettings']['masonryAutoColumnBreakpoints'] ?? null);
+        $this->assertEquals(900, $stored['breakpoints']['desktop']['video']['adapterSettings']['imageViewportHeight'] ?? null);
+        $this->assertEquals(48, $stored['breakpoints']['desktop']['video']['adapterSettings']['videoBorderRadius'] ?? null);
+        $this->assertEquals(24, $stored['breakpoints']['desktop']['video']['adapterSettings']['thumbnailGap'] ?? null);
+        $this->assertEquals('bottom', $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowPosition'] ?? null);
+        $this->assertEquals(64, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowSize'] ?? null);
+        $this->assertEquals(20, $stored['breakpoints']['desktop']['video']['adapterSettings']['dotNavMaxVisibleDots'] ?? null);
+        $this->assertEquals(48, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowEdgeInset'] ?? null);
+        $this->assertEquals(24, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowMinHitTarget'] ?? null);
+        $this->assertEquals(1000, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowFadeDurationMs'] ?? null);
+        $this->assertEquals(0, $stored['breakpoints']['desktop']['video']['adapterSettings']['navArrowScaleTransitionMs'] ?? null);
+        $this->assertEquals(1.0, $stored['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightMobileRatio'] ?? null);
+        $this->assertEquals(0.3, $stored['breakpoints']['desktop']['video']['adapterSettings']['viewportHeightTabletRatio'] ?? null);
+        $this->assertArrayNotHasKey('dotNavShape', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertEquals(2.0, $stored['breakpoints']['desktop']['video']['adapterSettings']['dotNavActiveScale'] ?? null);
+        $this->assertEquals('custom', $stored['breakpoints']['desktop']['video']['adapterSettings']['imageShadowPreset'] ?? null);
+        $this->assertEquals('0 0 12px rgba(0,0,0,0.4)', $stored['breakpoints']['desktop']['video']['adapterSettings']['imageShadowCustom'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $stored['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
+        $this->assertArrayNotHasKey('watch', $stored['breakpoints'] ?? []);
     }
 
     public function test_update_campaign_returns_404_for_unknown_id() {
@@ -259,9 +517,10 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
      * @since 0.18.0 P20-D
      */
     public function test_sanitize_datetime_accepts_valid_iso8601() {
-        $this->assertEquals( '2026-03-05T14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00' ) );
-        $this->assertEquals( '2026-03-05T14:30:00+05:30', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00+05:30' ) );
-        $this->assertEquals( '2026-03-05T14:30:00Z', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00Z' ) );
+        $this->assertEquals( '2026-03-05 14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00' ) );
+        $this->assertEquals( '2026-03-05 09:00:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00+05:30' ) );
+        $this->assertEquals( '2026-03-05 14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00Z' ) );
+        $this->assertEquals( '2026-03-05 14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05 14:30:00' ) );
     }
 
     /**

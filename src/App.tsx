@@ -25,7 +25,7 @@ import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
-import { CampaignContextProvider } from './contexts/CampaignContext';
+import { CampaignContextProvider } from '@/contexts/CampaignContext';
 import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
@@ -282,7 +282,7 @@ function AppContent({
         />
       )}
 
-      <UnifiedCampaignModal modal={editModal} />
+      <UnifiedCampaignModal modal={editModal} galleryBehaviorSettings={resolvedSettings} />
 
       <ArchiveCampaignModal
         opened={!!archiveModal.archiveModalCampaign}

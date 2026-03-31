@@ -117,18 +117,36 @@ describe('ErrorBoundary', () => {
   it('calls onReset callback when Try Again is clicked', () => {
     const spy = suppressConsoleError();
     const onReset = vi.fn();
+    let throwFlag = true;
 
-    render(
+    function ResettableBomb() {
+      if (throwFlag) {
+        throw new Error('Test explosion');
+      }
+
+      return <div>Recovered after reset</div>;
+    }
+
+    const { rerender } = render(
       <ErrorBoundary onReset={onReset}>
-        <Bomb shouldThrow />
+        <ResettableBomb />
       </ErrorBoundary>,
     );
-    spy.mockRestore();
 
     const btn = screen.getByRole('button', { name: /try again/i });
+    throwFlag = false;
     fireEvent.click(btn);
 
+    rerender(
+      <ErrorBoundary onReset={onReset}>
+        <ResettableBomb />
+      </ErrorBoundary>,
+    );
+
+    spy.mockRestore();
+
     expect(onReset).toHaveBeenCalledOnce();
+    expect(screen.getByText('Recovered after reset')).toBeInTheDocument();
   });
 
   it('renders custom fallback when fallback prop is provided', () => {

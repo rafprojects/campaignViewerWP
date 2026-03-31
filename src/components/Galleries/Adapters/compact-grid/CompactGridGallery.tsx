@@ -78,7 +78,7 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
             index={index}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
-            borderRadius={borderRadius}
+            borderRadius={item.type === 'video' ? settings.videoBorderRadius : borderRadius}
             onOpen={openAt}
           />
         ))}

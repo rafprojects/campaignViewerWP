@@ -190,6 +190,288 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Test sanitize_settings preserves nested gallery_config payloads.
+     */
+    public function test_sanitize_settings_handles_nested_gallery_config() {
+        $input = [
+            'gallery_config' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'masonry',
+                            'common' => [
+                                'sectionPadding' => 24,
+                                'viewportBgType' => 'solid',
+                                'viewportBgColor' => '#112233',
+                            ],
+                            'adapterSettings' => [
+                                'masonryColumns' => 4,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+
+        $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
+        $this->assertEquals('masonry', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
+        $this->assertEquals(24, $sanitized['gallery_config']['breakpoints']['desktop']['unified']['common']['sectionPadding'] ?? null);
+        $this->assertEquals('solid', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgColor'] ?? null);
+        $this->assertEquals(4, $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterSettings']['masonryColumns'] ?? null);
+    }
+
+    /**
+     * Test shared global nested gallery sanitization applies field-level metadata rules.
+     */
+    public function test_sanitize_gallery_config_payload_applies_field_level_rules() {
+        $defaults = WPSG_Settings::get_defaults();
+
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_config_payload([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'common' => [
+                            'sectionPadding' => 999,
+                            'adapterMaxWidthPct' => 10,
+                            'adapterJustifyContent' => 'invalid-option',
+                            'galleryManualHeight' => 'calc(100vh)',
+                            'viewportBgType' => 'solid',
+                            'viewportBgColor' => '<b>#112233</b>',
+                            'viewportBgGradient' => '<b>linear-gradient(135deg, #111111 0%, #222222 100%)</b>',
+                            'viewportBgImageUrl' => 'https://example.com/image-bg.jpg',
+                            'perTypeSectionEqualHeight' => '1',
+                            'galleryImageLabel' => '<b>Photos</b>',
+                            'galleryVideoLabel' => '<i>Clips</i>',
+                            'galleryLabelJustification' => 'invalid-option',
+                            'showGalleryLabelIcon' => '1',
+                            'showCampaignGalleryLabels' => '0',
+                            'theme' => 'nord',
+                            'headline<script>' => '<b>Allowed</b>',
+                        ],
+                        'adapterSettings' => [
+                            'masonryColumns' => 99,
+                            'imageViewportHeight' => 9999,
+                            'videoBorderRadius' => 99,
+                            'thumbnailGap' => 99,
+                            'navArrowPosition' => 'bottom',
+                            'navArrowSize' => 999,
+                            'dotNavShape' => 'triangle',
+                            'dotNavActiveScale' => 9,
+                            'imageShadowPreset' => 'custom',
+                            'imageShadowCustom' => '<b>0 0 12px rgba(0,0,0,0.4)</b>',
+                            'layoutBuilderScope' => 'invalid-option',
+                            'tileSize' => 10,
+                            'tileGlowSpread' => 999,
+                            'carouselAutoplayDirection' => 'invalid-option',
+                            'modalTransition' => 'not-a-real-transition',
+                            'customMarkup' => '<b>Keep</b>',
+                        ],
+                    ],
+                ],
+            ],
+        ], $defaults['gallery_config']);
+
+        $common = $sanitized['breakpoints']['desktop']['image']['common'] ?? [];
+        $adapter_settings = $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+
+        $this->assertEquals('per-type', $sanitized['mode'] ?? null);
+        $this->assertEquals(60, $common['sectionPadding'] ?? null);
+        $this->assertEquals(50, $common['adapterMaxWidthPct'] ?? null);
+        $this->assertEquals('center', $common['adapterJustifyContent'] ?? null);
+        $this->assertEquals('420px', $common['galleryManualHeight'] ?? null);
+        $this->assertEquals('solid', $common['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $common['viewportBgColor'] ?? null);
+        $this->assertEquals('linear-gradient(135deg, #111111 0%, #222222 100%)', $common['viewportBgGradient'] ?? null);
+        $this->assertEquals('https://example.com/image-bg.jpg', $common['viewportBgImageUrl'] ?? null);
+        $this->assertTrue($common['perTypeSectionEqualHeight'] ?? false);
+        $this->assertEquals('Photos', $common['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $common['galleryVideoLabel'] ?? null);
+        $this->assertEquals('left', $common['galleryLabelJustification'] ?? null);
+        $this->assertTrue($common['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($common['showCampaignGalleryLabels'] ?? true);
+        $this->assertArrayNotHasKey('theme', $common);
+        $this->assertEquals('Allowed', $common['headlinescript'] ?? null);
+        $this->assertEquals(8, $adapter_settings['masonryColumns'] ?? null);
+        $this->assertEquals(900, $adapter_settings['imageViewportHeight'] ?? null);
+        $this->assertEquals(48, $adapter_settings['videoBorderRadius'] ?? null);
+        $this->assertEquals(24, $adapter_settings['thumbnailGap'] ?? null);
+        $this->assertEquals('bottom', $adapter_settings['navArrowPosition'] ?? null);
+        $this->assertEquals(64, $adapter_settings['navArrowSize'] ?? null);
+        $this->assertEquals('circle', $adapter_settings['dotNavShape'] ?? null);
+        $this->assertEquals(2.0, $adapter_settings['dotNavActiveScale'] ?? null);
+        $this->assertEquals('custom', $adapter_settings['imageShadowPreset'] ?? null);
+        $this->assertEquals('0 0 12px rgba(0,0,0,0.4)', $adapter_settings['imageShadowCustom'] ?? null);
+        $this->assertEquals('full', $adapter_settings['layoutBuilderScope'] ?? null);
+        $this->assertEquals(60, $adapter_settings['tileSize'] ?? null);
+        $this->assertEquals(60, $adapter_settings['tileGlowSpread'] ?? null);
+        $this->assertEquals('ltr', $adapter_settings['carouselAutoplayDirection'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $adapter_settings);
+        $this->assertEquals('Keep', $adapter_settings['customMarkup'] ?? null);
+    }
+
+    /**
+     * Test invalid nested scalar/color values are rejected for global gallery config payloads.
+     */
+    public function test_sanitize_gallery_config_payload_rejects_invalid_nested_scalar_and_color_values() {
+        $defaults = WPSG_Settings::get_defaults();
+
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_config_payload([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'common' => [
+                            'viewportBgColor' => 'bad color',
+                            'viewportBgImageUrl' => ['https://example.com/not-allowed.jpg'],
+                        ],
+                        'adapterSettings' => [
+                            'tileGlowColor' => 'bad color',
+                            'masonryAutoColumnBreakpoints' => ['480:2'],
+                        ],
+                    ],
+                ],
+            ],
+        ], $defaults['gallery_config']);
+
+        $common = $sanitized['breakpoints']['desktop']['image']['common'] ?? [];
+        $adapter_settings = $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+
+        $this->assertEquals($defaults['image_bg_color'], $common['viewportBgColor'] ?? null);
+        $this->assertEquals($defaults['image_bg_image_url'], $common['viewportBgImageUrl'] ?? null);
+        $this->assertEquals($defaults['tile_glow_color'], $adapter_settings['tileGlowColor'] ?? null);
+        $this->assertEquals($defaults['masonry_auto_column_breakpoints'], $adapter_settings['masonryAutoColumnBreakpoints'] ?? null);
+    }
+
+    /**
+     * Test invalid nested scalar/color values are rejected for campaign overrides.
+     */
+    public function test_sanitize_gallery_overrides_rejects_invalid_nested_scalar_and_color_values() {
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_overrides([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'common' => [
+                            'viewportBgColor' => 'bad color',
+                            'viewportBgImageUrl' => ['https://example.com/not-allowed.jpg'],
+                        ],
+                        'adapterSettings' => [
+                            'tileGlowColor' => 'bad color',
+                            'masonryAutoColumnBreakpoints' => ['480:2'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $common = $sanitized['breakpoints']['desktop']['image']['common'] ?? [];
+        $adapter_settings = $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+
+        $this->assertArrayNotHasKey('viewportBgColor', $common);
+        $this->assertArrayNotHasKey('viewportBgImageUrl', $common);
+        $this->assertArrayNotHasKey('tileGlowColor', $adapter_settings);
+        $this->assertArrayNotHasKey('masonryAutoColumnBreakpoints', $adapter_settings);
+    }
+
+    /**
+     * Test shared campaign gallery override sanitization reuses the nested gallery payload rules.
+     */
+    public function test_sanitize_gallery_overrides_handles_campaign_payloads() {
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_overrides(wp_json_encode([
+            'mode' => 'per-type',
+            'breakpoints' => [
+                'desktop' => [
+                    'image' => [
+                        'adapterId' => 'not-a-real-adapter',
+                        'common' => [
+                            'sectionPadding' => 999,
+                            'adapterMaxWidthPct' => 10,
+                            'adapterJustifyContent' => 'invalid-option',
+                            'galleryManualHeight' => 'calc(100vh)',
+                            'viewportBgType' => 'solid',
+                            'viewportBgColor' => '<b>#112233</b>',
+                            'viewportBgGradient' => '<b>linear-gradient(135deg, #111111 0%, #222222 100%)</b>',
+                            'viewportBgImageUrl' => 'https://example.com/image-bg.jpg',
+                            'galleryImageLabel' => '<b>Photos</b>',
+                            'galleryVideoLabel' => '<i>Clips</i>',
+                            'galleryLabelJustification' => 'invalid-option',
+                            'showGalleryLabelIcon' => '1',
+                            'showCampaignGalleryLabels' => '0',
+                            'theme' => 'nord',
+                            'headline<script>' => '<b>Unsafe</b>',
+                        ],
+                        'adapterSettings' => [
+                            'imageViewportHeight' => 9999,
+                            'videoBorderRadius' => 99,
+                            'thumbnailGap' => 99,
+                            'masonryAutoColumnBreakpoints' => '<b>480:2,768:3,1024:4,1280:5</b>',
+                            'navArrowPosition' => 'invalid-option',
+                            'navArrowSize' => 999,
+                            'dotNavMaxVisibleDots' => 99,
+                            'navArrowEdgeInset' => 999,
+                            'navArrowMinHitTarget' => 5,
+                            'navArrowFadeDurationMs' => 5000,
+                            'navArrowScaleTransitionMs' => -1,
+                            'viewportHeightMobileRatio' => 2,
+                            'viewportHeightTabletRatio' => 0.1,
+                            'dotNavShape' => 'triangle',
+                            'dotNavActiveScale' => 9,
+                            'imageShadowPreset' => 'invalid-option',
+                            'imageShadowCustom' => '<b>0 0 12px rgba(0,0,0,0.4)</b>',
+                            'modalTransition' => 'not-a-real-transition',
+                        ],
+                    ],
+                    'video' => [
+                        'adapterId' => 'classic',
+                    ],
+                ],
+            ],
+        ]));
+
+        $this->assertEquals('per-type', $sanitized['mode'] ?? null);
+        $this->assertArrayNotHasKey('adapterId', $sanitized['breakpoints']['desktop']['image'] ?? []);
+        $this->assertEquals(60, $sanitized['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
+        $this->assertEquals(50, $sanitized['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
+        $this->assertArrayNotHasKey('adapterJustifyContent', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertArrayNotHasKey('galleryManualHeight', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('solid', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgType'] ?? null);
+        $this->assertEquals('#112233', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgColor'] ?? null);
+        $this->assertEquals('linear-gradient(135deg, #111111 0%, #222222 100%)', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgGradient'] ?? null);
+        $this->assertEquals('https://example.com/image-bg.jpg', $sanitized['breakpoints']['desktop']['image']['common']['viewportBgImageUrl'] ?? null);
+        $this->assertEquals('Photos', $sanitized['breakpoints']['desktop']['image']['common']['galleryImageLabel'] ?? null);
+        $this->assertEquals('Clips', $sanitized['breakpoints']['desktop']['image']['common']['galleryVideoLabel'] ?? null);
+        $this->assertArrayNotHasKey('galleryLabelJustification', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertTrue($sanitized['breakpoints']['desktop']['image']['common']['showGalleryLabelIcon'] ?? false);
+        $this->assertFalse($sanitized['breakpoints']['desktop']['image']['common']['showCampaignGalleryLabels'] ?? true);
+        $this->assertArrayNotHasKey('theme', $sanitized['breakpoints']['desktop']['image']['common'] ?? []);
+        $this->assertEquals('Unsafe', $sanitized['breakpoints']['desktop']['image']['common']['headlinescript'] ?? null);
+        $this->assertEquals(900, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['imageViewportHeight'] ?? null);
+        $this->assertEquals(48, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['videoBorderRadius'] ?? null);
+        $this->assertEquals(24, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['thumbnailGap'] ?? null);
+        $this->assertEquals('480:2,768:3,1024:4,1280:5', $sanitized['breakpoints']['desktop']['image']['adapterSettings']['masonryAutoColumnBreakpoints'] ?? null);
+        $this->assertArrayNotHasKey('navArrowPosition', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
+        $this->assertEquals(64, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowSize'] ?? null);
+        $this->assertEquals(20, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['dotNavMaxVisibleDots'] ?? null);
+        $this->assertEquals(48, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowEdgeInset'] ?? null);
+        $this->assertEquals(24, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowMinHitTarget'] ?? null);
+        $this->assertEquals(1000, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowFadeDurationMs'] ?? null);
+        $this->assertEquals(0, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['navArrowScaleTransitionMs'] ?? null);
+        $this->assertEquals(1.0, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['viewportHeightMobileRatio'] ?? null);
+        $this->assertEquals(0.3, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['viewportHeightTabletRatio'] ?? null);
+        $this->assertArrayNotHasKey('dotNavShape', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
+        $this->assertEquals(2.0, $sanitized['breakpoints']['desktop']['image']['adapterSettings']['dotNavActiveScale'] ?? null);
+        $this->assertArrayNotHasKey('imageShadowPreset', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
+        $this->assertEquals('0 0 12px rgba(0,0,0,0.4)', $sanitized['breakpoints']['desktop']['image']['adapterSettings']['imageShadowCustom'] ?? null);
+        $this->assertArrayNotHasKey('modalTransition', $sanitized['breakpoints']['desktop']['image']['adapterSettings'] ?? []);
+        $this->assertEquals('classic', $sanitized['breakpoints']['desktop']['video']['adapterId'] ?? null);
+    }
+
+    /**
      * Test filter_auth_provider returns setting value.
      */
     public function test_filter_auth_provider_returns_setting() {

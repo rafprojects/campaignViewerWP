@@ -12,6 +12,22 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.22.0 (March 30, 2026)
+- **MINOR**: Phase 23 — Settings Architecture Refactor, Responsive Gallery Config & Campaign Parity
+  - **P23-A**: Backend settings decomposed into thin facade + registry/conversion/sanitizer/renderer/field-group modules.
+  - **P23-B**: Frontend settings decomposed — all tab bodies extracted; SettingsPanel reduced to shell/orchestration.
+  - **P23-C**: Authoritative adapter schema — centralized registry with schema-driven field rendering and adapter-specific setting groups.
+  - **P23-D**: Nested responsive `galleryConfig` model (mode → breakpoint → scope → common/adapter settings) with legacy flat bridge.
+  - **P23-E**: Shared effective-config resolver used by editor, runtime, and render paths with full campaign override precedence.
+  - **P23-F**: Lazy-loaded shared Gallery Config editor with breakpoint/scope switching, reset/clear actions, inherited-vs-overridden messaging.
+  - **P23-G**: Campaign full gallery config parity — deep responsive overrides, scope-level reset, override badges, duplicate/import preservation.
+  - **P23-H**: Render-path consolidation — shared `CampaignGalleryAdapterRenderer`, centralized shell spacing, breakpoint-specific resolution.
+  - **P23-I**: Schema-driven nested payload sanitization for global and campaign contexts; adapter field allowlists; misplaced-key rejection.
+  - **P23-J/J1**: Phase docs, data model doc, UI flow doc; PHP test audit and coverage expansion (85 frontend files / 1205 tests, 495 backend / 1433 assertions).
+  - Schedule visibility gate in `can_view_campaign()` for publish_at/unpublish_at enforcement.
+  - Datetime sanitizer normalized to accept stored UTC format alongside ISO 8601.
+  - Mixed-state campaign selector indicator for breakpoint-specific overrides.
+
 ### v0.21.0 (March 25, 2026)
 - **MINOR**: Phase 22 — Carousel Overhaul, Viewer Alignment & Gallery Layout Fixes
   - **P22-P8b**: Compact grid justification fix — switched CSS Grid from `auto-fill` to `auto-fit` so incomplete rows align properly.

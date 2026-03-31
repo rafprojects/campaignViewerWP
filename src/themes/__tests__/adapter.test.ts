@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { adaptTheme } from '../adapter';
+import { adaptTheme, themeStateClasses } from '../adapter';
 import type { ThemeDefinition } from '../types';
 import baseDefaults from '../definitions/_base.json';
 import defaultDarkDef from '../definitions/default-dark.json';
@@ -96,6 +96,19 @@ describe('adaptTheme', () => {
     expect(components['Modal']).toBeDefined();
     expect(components['Select']).toBeDefined();
     expect(components['Tabs']).toBeDefined();
+  });
+
+  it('adds stable classNames for Mantine active and selected state styling', () => {
+    const def = makeThemeDef();
+    const result = adaptTheme(def);
+
+    const tabs = result.components?.Tabs as { classNames?: Record<string, string> } | undefined;
+    const segmentedControl = result.components?.SegmentedControl as { classNames?: Record<string, string> } | undefined;
+    const select = result.components?.Select as { classNames?: Record<string, string> } | undefined;
+
+    expect(tabs?.classNames?.tab).toBe(themeStateClasses.tabsTab);
+    expect(segmentedControl?.classNames?.label).toBe(themeStateClasses.segmentedControlLabel);
+    expect(select?.classNames?.option).toBe(themeStateClasses.selectOption);
   });
 
   it('stores semantic colors in theme.other', () => {

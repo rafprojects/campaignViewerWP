@@ -1,15 +1,36 @@
+import { Suspense, lazy, useState } from 'react';
 import {
   ActionIcon, Badge, Button, Card, Center, ColorInput, FileButton, Group, Image, Loader,
   Modal, Progress, Select, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
-import type { LayoutTemplate, MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type LayoutTemplate, type MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
+import { resolveGalleryMode } from '@/utils/resolveAdapterId';
+import {
+  buildCampaignGalleryOverrideEditorValue,
+  clearCampaignGalleryOverrides,
+  describeCampaignGalleryOverrides,
+  getCampaignGalleryOverrideMode,
+  hasMixedCampaignScopeAdapterOverrides,
+  hasCampaignGalleryOverrides,
+  getUniformCampaignScopeAdapterId,
+  normalizeCampaignLegacyAdapterOverrides,
+  syncCampaignGalleryOverrideMode,
+  syncCampaignScopeAdapterOverride,
+} from '@/utils/campaignGalleryOverrides';
+
+const LazyGalleryConfigEditorModal = lazy(() =>
+  import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
+    default: module.GalleryConfigEditorModal,
+  })),
+);
 
 /** Convert ISO date string to datetime-local input value. */
 function toLocalInputValue(iso: string): string {
@@ -20,19 +41,51 @@ function toLocalInputValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const ADAPTER_OPTIONS = [
-  { value: 'classic', label: 'Classic Carousel' },
-  { value: 'compact-grid', label: 'Compact Grid' },
-  { value: 'justified', label: 'Justified' },
-  { value: 'masonry', label: 'Masonry' },
-  { value: 'hexagonal', label: 'Hexagonal' },
-  { value: 'circular', label: 'Circular' },
-  { value: 'diamond', label: 'Diamond' },
-  { value: 'layout-builder', label: 'Layout Builder' },
+const ADAPTER_OPTIONS = getAdapterSelectOptions({ context: 'campaign-override' });
+const UNIFIED_ADAPTER_OPTIONS = getAdapterSelectOptions({ context: 'unified-gallery' });
+const GALLERY_MODE_OPTIONS = [
+  { value: 'unified', label: 'Unified' },
+  { value: 'per-type', label: 'Per-Type' },
 ];
+
+function getQuickOverridePlaceholder(isMixed: boolean): string {
+  return isMixed ? 'Mixed (breakpoint-specific)' : 'Default (from settings)';
+}
+
+function getQuickOverrideDescription(baseDescription: string, isMixed: boolean): string {
+  return isMixed
+    ? `${baseDescription} Breakpoint-specific overrides are active. Choosing a value here will replace them across all breakpoints.`
+    : baseDescription;
+}
+
+function getQuickOverrideValue(
+  scope: 'unified' | 'image' | 'video',
+  formState: UnifiedCampaignModalHandle['formState'],
+  isMixed: boolean,
+): string | null {
+  if (isMixed) {
+    return null;
+  }
+
+  const uniformAdapterId = getUniformCampaignScopeAdapterId(formState.galleryOverrides, scope);
+  if (uniformAdapterId) {
+    return uniformAdapterId;
+  }
+
+  if (scope === 'image') {
+    return formState.imageAdapterId || null;
+  }
+
+  if (scope === 'video') {
+    return formState.videoAdapterId || null;
+  }
+
+  return null;
+}
 
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
+  galleryBehaviorSettings?: GalleryBehaviorSettings;
   /** When 'individual', show per-card border color picker. */
   cardBorderMode?: 'single' | 'auto' | 'individual';
   /** Available layout templates for the template selector. */
@@ -45,11 +98,13 @@ interface UnifiedCampaignModalProps {
 
 export function UnifiedCampaignModal({
   modal,
+  galleryBehaviorSettings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   cardBorderMode,
   layoutTemplates = [],
   onEditLayout,
   availableCategories = [],
 }: UnifiedCampaignModalProps) {
+  const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const {
     opened, mode, formState, updateForm, isSaving,
     coverImageUploading, handleSelectCoverImage, handleUploadCoverImage,
@@ -71,6 +126,16 @@ export function UnifiedCampaignModal({
 
   const isExtraSmall = useMediaQuery('(max-width: 575px)');
   const isEdit = mode === 'edit';
+  const campaignGalleryOverrideMode = getCampaignGalleryOverrideMode(formState.galleryOverrides);
+  const effectiveCampaignGalleryMode = resolveGalleryMode(galleryBehaviorSettings, formState.galleryOverrides);
+  const hasCustomGalleryOverrides = hasCampaignGalleryOverrides(formState);
+  const galleryOverrideSummary = describeCampaignGalleryOverrides(formState);
+  const hasMixedUnifiedQuickOverride = hasMixedCampaignScopeAdapterOverrides(formState.galleryOverrides, 'unified');
+  const hasMixedImageQuickOverride = hasMixedCampaignScopeAdapterOverrides(formState.galleryOverrides, 'image');
+  const hasMixedVideoQuickOverride = hasMixedCampaignScopeAdapterOverrides(formState.galleryOverrides, 'video');
+  const unifiedQuickOverrideValue = getQuickOverrideValue('unified', formState, hasMixedUnifiedQuickOverride);
+  const imageQuickOverrideValue = getQuickOverrideValue('image', formState, hasMixedImageQuickOverride);
+  const videoQuickOverrideValue = getQuickOverrideValue('video', formState, hasMixedVideoQuickOverride);
 
   return (
     <>
@@ -269,26 +334,117 @@ export function UnifiedCampaignModal({
                 />
               )}
               {isEdit && (
-                <Group grow wrap="wrap" gap="sm">
-                  <Select
-                    label="Image Gallery"
-                    description="Override the global image gallery type for this campaign"
-                    placeholder="Default (from settings)"
-                    clearable
-                    data={ADAPTER_OPTIONS}
-                    value={formState.imageAdapterId || null}
-                    onChange={(v) => updateForm({ ...formState, imageAdapterId: v ?? '' })}
-                  />
-                  <Select
-                    label="Video Gallery"
-                    description="Override the global video gallery type for this campaign"
-                    placeholder="Default (from settings)"
-                    clearable
-                    data={ADAPTER_OPTIONS}
-                    value={formState.videoAdapterId || null}
-                    onChange={(v) => updateForm({ ...formState, videoAdapterId: v ?? '' })}
-                  />
-                </Group>
+                <>
+                  <Group grow wrap="wrap" gap="sm">
+                    <Select
+                      label="Gallery Mode Override"
+                      description="Override the global gallery mode for this campaign"
+                      placeholder="Default (from settings)"
+                      clearable
+                      data={GALLERY_MODE_OPTIONS}
+                      value={campaignGalleryOverrideMode || null}
+                      onChange={(v) => updateForm({
+                        ...formState,
+                        galleryOverrides: syncCampaignGalleryOverrideMode(
+                          formState.galleryOverrides,
+                          (v as 'unified' | 'per-type' | null) ?? '',
+                        ),
+                      })}
+                    />
+                    {effectiveCampaignGalleryMode === 'unified' ? (
+                      <Select
+                        label="Unified Gallery"
+                        description={getQuickOverrideDescription(
+                          'Override the global unified gallery type for this campaign.',
+                          hasMixedUnifiedQuickOverride,
+                        )}
+                        placeholder={getQuickOverridePlaceholder(hasMixedUnifiedQuickOverride)}
+                        clearable
+                        data={UNIFIED_ADAPTER_OPTIONS}
+                        value={unifiedQuickOverrideValue}
+                        onChange={(v) => updateForm({
+                          ...formState,
+                          imageAdapterId: '',
+                          videoAdapterId: '',
+                          galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'unified', v ?? ''),
+                        })}
+                      />
+                    ) : (
+                      <>
+                        <Select
+                          label="Image Gallery"
+                          description={getQuickOverrideDescription(
+                            'Override the global image gallery type for this campaign.',
+                            hasMixedImageQuickOverride,
+                          )}
+                          placeholder={getQuickOverridePlaceholder(hasMixedImageQuickOverride)}
+                          clearable
+                          data={ADAPTER_OPTIONS}
+                          value={imageQuickOverrideValue}
+                          onChange={(v) => updateForm({
+                            ...formState,
+                            imageAdapterId: v ?? '',
+                            galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'image', v ?? ''),
+                          })}
+                        />
+                        <Select
+                          label="Video Gallery"
+                          description={getQuickOverrideDescription(
+                            'Override the global video gallery type for this campaign.',
+                            hasMixedVideoQuickOverride,
+                          )}
+                          placeholder={getQuickOverridePlaceholder(hasMixedVideoQuickOverride)}
+                          clearable
+                          data={ADAPTER_OPTIONS}
+                          value={videoQuickOverrideValue}
+                          onChange={(v) => updateForm({
+                            ...formState,
+                            videoAdapterId: v ?? '',
+                            galleryOverrides: syncCampaignScopeAdapterOverride(formState.galleryOverrides, 'video', v ?? ''),
+                          })}
+                        />
+                      </>
+                    )}
+                  </Group>
+                  <Group justify="space-between" align="flex-start" gap="md">
+                    <Text size="sm" c="dimmed" maw={560}>
+                      Quick overrides remain visible here. Use the shared responsive editor for breakpoint-aware campaign gallery selection.
+                    </Text>
+                    <Button variant="light" onClick={() => setGalleryConfigEditorOpen(true)}>
+                      Edit Responsive Config
+                    </Button>
+                  </Group>
+                  <Stack gap={6}>
+                    <Group gap="xs" wrap="wrap">
+                      <Badge color={hasCustomGalleryOverrides ? 'grape' : 'gray'} variant={hasCustomGalleryOverrides ? 'light' : 'outline'}>
+                        {hasCustomGalleryOverrides ? 'Custom gallery overrides' : 'Inheriting global gallery settings'}
+                      </Badge>
+                      {galleryOverrideSummary.map((summary) => (
+                        <Badge key={summary} color="violet" variant="light">
+                          {summary}
+                        </Badge>
+                      ))}
+                    </Group>
+                    {hasCustomGalleryOverrides && (
+                      <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+                        <Text size="xs" c="dimmed">
+                          Clear the campaign-specific gallery override state here to fall back to the global gallery configuration.
+                        </Text>
+                        <Button
+                          variant="subtle"
+                          color="gray"
+                          size="xs"
+                          onClick={() => updateForm({
+                            ...formState,
+                            ...clearCampaignGalleryOverrides(),
+                          })}
+                        >
+                          Use Inherited Gallery Settings
+                        </Button>
+                      </Group>
+                    )}
+                  </Stack>
+                </>
               )}
               {layoutTemplates.length > 0 && (
                 <Group grow wrap="wrap" gap="sm" align="flex-end">
@@ -337,6 +493,45 @@ export function UnifiedCampaignModal({
         confirmLabel="Discard"
         confirmColor="red"
       />
+
+      {galleryConfigEditorOpen && (
+        <Suspense fallback={null}>
+          <LazyGalleryConfigEditorModal
+            opened={galleryConfigEditorOpen}
+            onClose={() => setGalleryConfigEditorOpen(false)}
+            title="Campaign Responsive Gallery Config"
+            value={buildCampaignGalleryOverrideEditorValue(formState)}
+            contextSummary={hasCampaignGalleryOverrides(formState)
+              ? 'This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings.'
+              : 'This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides.'}
+            onClear={() => {
+              updateForm({
+                ...formState,
+                ...clearCampaignGalleryOverrides(),
+              });
+              setGalleryConfigEditorOpen(false);
+            }}
+            onSave={(galleryOverrides) => {
+              const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
+                imageAdapterId: formState.imageAdapterId,
+                videoAdapterId: formState.videoAdapterId,
+                galleryOverrides,
+              });
+
+              updateForm({
+                ...formState,
+                galleryOverrides,
+                imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
+                videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
+              });
+              setGalleryConfigEditorOpen(false);
+            }}
+            saveLabel="Apply Campaign Gallery Config"
+            clearLabel="Clear Campaign Overrides"
+            unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
+          />
+        </Suspense>
+      )}
     </>
   );
 }

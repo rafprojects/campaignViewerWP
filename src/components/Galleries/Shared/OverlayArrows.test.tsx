@@ -11,6 +11,10 @@ const BASE_SETTINGS: GalleryBehaviorSettings = {
   navArrowBorderWidth: 0,
   navArrowHoverScale: 1.2,
   navArrowAutoHideMs: 0,
+  navArrowEdgeInset: 8,
+  navArrowMinHitTarget: 44,
+  navArrowFadeDurationMs: 200,
+  navArrowScaleTransitionMs: 150,
 } as unknown as GalleryBehaviorSettings;
 
 describe('OverlayArrows', () => {
@@ -185,7 +189,7 @@ describe('OverlayArrows', () => {
       />,
     );
     const prev = screen.getByLabelText('Previous') as HTMLButtonElement;
-    expect(prev.style.top).toBe('12px');
+    expect(prev.style.top).toBe('8px');
   });
 
   it('navArrowPosition bottom renders arrows at bottom', () => {
@@ -198,6 +202,29 @@ describe('OverlayArrows', () => {
       />,
     );
     const prev = screen.getByLabelText('Previous') as HTMLButtonElement;
-    expect(prev.style.bottom).toBe('12px');
+    expect(prev.style.bottom).toBe('8px');
+  });
+
+  it('uses edge inset, minimum hit target, and custom transition durations', () => {
+    render(
+      <OverlayArrows
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        total={3}
+        settings={{
+          ...BASE_SETTINGS,
+          navArrowEdgeInset: 18,
+          navArrowMinHitTarget: 60,
+          navArrowFadeDurationMs: 320,
+          navArrowScaleTransitionMs: 210,
+        }}
+      />,
+    );
+
+    const prev = screen.getByLabelText('Previous') as HTMLButtonElement;
+    expect(prev.style.left).toBe('18px');
+    expect(prev.style.width).toBe('60px');
+    expect(prev.style.height).toBe('60px');
+    expect(prev.style.transition).toBe('opacity 320ms ease, transform 210ms ease');
   });
 });

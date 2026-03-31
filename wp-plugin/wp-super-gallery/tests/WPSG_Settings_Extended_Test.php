@@ -88,6 +88,18 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('unknown_camel_key', $result);
     }
 
+    public function test_from_js_includes_gallery_config_payload() {
+        $body = [
+            'galleryConfig' => [
+                'mode' => 'unified',
+            ],
+        ];
+        $result = WPSG_Settings::from_js($body);
+
+        $this->assertArrayHasKey('gallery_config', $result);
+        $this->assertEquals('unified', $result['gallery_config']['mode'] ?? null);
+    }
+
     // ── filter_auth_provider ───────────────────────────────────────────────
 
     public function test_filter_auth_provider_returns_stored_value() {

@@ -2,18 +2,18 @@ import { test, expect } from '@playwright/test';
 
 test('admin actions call REST endpoints', async ({ page }) => {
   await page.addInitScript(() => {
-    (window as Window & {
+    const globals = window as Window & {
       __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
       __WPSG_API_BASE__?: string;
-    }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    (window as Window & {
-      __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
-      __WPSG_API_BASE__?: string;
-    }).__WPSG_API_BASE__ = 'http://localhost:5173';
+      __WPSG_CONFIG__?: { enableJwt?: boolean };
+    };
+    globals.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+    globals.__WPSG_API_BASE__ = 'http://localhost:5173';
+    globals.__WPSG_CONFIG__ = { enableJwt: true };
     localStorage.setItem('wpsg_access_token', 'fake-token');
     localStorage.setItem(
       'wpsg_user',
-      JSON.stringify({ id: '1', email: 'admin@example.com', role: 'viewer' }),
+      JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }),
     );
   });
 
@@ -88,50 +88,44 @@ test('admin actions call REST endpoints', async ({ page }) => {
     });
   });
 
-  const promptValues = [
-    'Updated Title',
-    'Updated Description',
-    'video',
-    'https://example.com/video',
-    'Caption',
-    'https://example.com/thumb.jpg',
-  ];
-
-  page.on('dialog', async (dialog) => {
-    const type = dialog.type();
-    if (type === 'confirm') {
-      await dialog.accept();
-      return;
-    }
-    if (type === 'prompt') {
-      const value = promptValues.shift() ?? '';
-      await dialog.accept(value);
-      return;
-    }
-    await dialog.accept();
-  });
-
   const openCampaign = async () => {
     const closeViewer = page.getByRole('button', { name: 'Close campaign viewer' });
     if (await closeViewer.isVisible()) {
       await closeViewer.click();
     }
-    await page.getByText('Admin Campaign').click();
+    await page.getByRole('button', { name: 'Open campaign Admin Campaign' }).click();
+  };
+
+  const openAdminMenu = async () => {
+    await page.getByRole('button', { name: 'Admin menu' }).click();
   };
 
   await page.goto('/');
 
   await openCampaign();
 
-  await page.getByRole('button', { name: 'Edit Campaign' }).click();
+  await openAdminMenu();
+  await page.getByRole('button', { name: 'Edit Admin Campaign' }).click();
+  await page.getByRole('textbox', { name: /^Title/ }).fill('Updated Title');
+  await page.getByRole('textbox', { name: /^Description/ }).fill('Updated Description');
+  await page.getByRole('button', { name: 'Save Changes' }).click();
   await expect(page.getByText('Campaign updated.')).toBeVisible();
 
   await openCampaign();
-  await page.getByRole('button', { name: 'Manage Media' }).click();
+  await openAdminMenu();
+  await page.getByRole('button', { name: 'Manage media for Admin Campaign' }).click();
+  const addExternalMediaDialog = page.getByRole('dialog', { name: 'Add External Media' });
+  await expect(addExternalMediaDialog).toBeVisible();
+  await addExternalMediaDialog.getByPlaceholder('https://...').fill('https://example.com/video');
+  await addExternalMediaDialog.getByPlaceholder('Optional caption').fill('Caption');
+  await addExternalMediaDialog.getByPlaceholder('Optional thumbnail URL').fill('https://example.com/thumb.jpg');
+  await addExternalMediaDialog.getByRole('button', { name: 'Add Media' }).click();
   await expect(page.getByText('Media added.')).toBeVisible();
 
   await openCampaign();
-  await page.getByRole('button', { name: 'Archive Campaign' }).click();
+  await openAdminMenu();
+  await page.getByRole('button', { name: 'Archive Admin Campaign' }).click();
+  await page.getByRole('button', { name: 'Archive campaign Admin Campaign' }).click();
   await expect(page.getByText('Campaign archived.')).toBeVisible();
 
   await expect.poll(() => counts.put).toBeGreaterThan(0);

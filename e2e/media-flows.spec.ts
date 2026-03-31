@@ -2,14 +2,14 @@ import { test, expect } from '@playwright/test';
 
 test('admin media flows: upload, external add, edit, delete, reorder', async ({ page }) => {
   await page.addInitScript(() => {
-    (window as Window & {
+    const globals = window as Window & {
       __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
       __WPSG_API_BASE__?: string;
-    }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    (window as Window & {
-      __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
-      __WPSG_API_BASE__?: string;
-    }).__WPSG_API_BASE__ = 'http://localhost:5173';
+      __WPSG_CONFIG__?: { enableJwt?: boolean };
+    };
+    globals.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+    globals.__WPSG_API_BASE__ = 'http://localhost:5173';
+    globals.__WPSG_CONFIG__ = { enableJwt: true };
     localStorage.setItem('wpsg_access_token', 'fake-token');
     localStorage.setItem(
       'wpsg_user',
@@ -109,7 +109,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
         mediaItems.sort((a, b) => (orderMap.get(a.id) ?? a.order) - (orderMap.get(b.id) ?? b.order));
         mediaItems.forEach((it, i) => { it.order = i + 1; });
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
@@ -137,29 +137,33 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
 
   await page.goto('/');
 
+  await page.getByRole('button', { name: 'Admin menu' }).click();
   await page.getByRole('button', { name: 'Admin Panel' }).click();
   await page.getByRole('tab', { name: 'Media' }).click();
 
   // Upload flow
   await page.getByRole('button', { name: 'Add Media' }).click();
+  const addMediaDialog = page.getByRole('dialog', { name: 'Add Media' });
   const [fileChooser] = await Promise.all([
     page.waitForEvent('filechooser'),
-    page.getByRole('button', { name: 'Choose file' }).click(),
+    addMediaDialog.getByRole('button', { name: 'Choose file' }).click(),
   ]);
   await fileChooser.setFiles({
     name: 'upload.jpg',
     mimeType: 'image/jpeg',
     buffer: Buffer.from('upload'),
   });
-  await page.getByRole('button', { name: 'Upload' }).click();
+  await addMediaDialog.getByRole('button', { name: 'Upload' }).click();
   await expect(page.getByText('Media uploaded and added to campaign.')).toBeVisible();
 
   // External add flow
   await page.getByRole('button', { name: 'Add Media' }).click();
-  await page.getByPlaceholder('https://youtube.com/...').fill('https://youtube.com/watch?v=dQw4w9WgXcQ');
-  await page.getByRole('button', { name: 'Preview' }).click();
+  const externalMediaDialog = page.getByRole('dialog', { name: 'Add Media' });
+  await expect(externalMediaDialog).toBeVisible();
+  await externalMediaDialog.getByRole('textbox', { name: 'External media URL' }).fill('https://youtube.com/watch?v=dQw4w9WgXcQ');
+  await externalMediaDialog.getByRole('button', { name: 'Preview external media' }).click();
   await expect(page.getByText('Preview loaded')).toBeVisible();
-  await page.getByRole('dialog', { name: 'Add Media' }).getByRole('button', { name: 'Add' }).click();
+  await externalMediaDialog.getByRole('button', { name: 'Add external media' }).click();
   await expect(page.getByText('External media added.')).toBeVisible();
 
   // Edit flow
@@ -169,18 +173,21 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Media updated.')).toBeVisible();
 
-  // Reorder flow
-  const downButtons = page.getByRole('button', { name: 'Move media down' });
-  if (await downButtons.count()) {
-    await downButtons.first().click();
-  }
+  // Reorder flow uses the keyboard-enabled drag handle in the current UI.
+  const dragHandles = page.getByRole('button', { name: 'Drag media to reorder' });
+  await expect(dragHandles).toHaveCount(2);
+  await dragHandles.first().focus();
+  await dragHandles.first().press('ArrowRight');
 
   // Verify reorder succeeded: expect success notification and that the
   // server received an items array for reordering.
-  await expect(page.getByText('Reordered')).toBeVisible();
+  await expect(page.getByText('Media order updated.')).toBeVisible();
   expect(lastReorderItems.length).toBeGreaterThan(0);
 
   // Delete flow
   await page.getByRole('button', { name: 'Delete media' }).first().click();
+  const removeDialog = page.getByRole('dialog', { name: 'Remove from Campaign' });
+  await expect(removeDialog).toBeVisible();
+  await removeDialog.getByRole('button', { name: /^Remove media / }).click();
   await expect(page.getByText('Media removed.')).toBeVisible();
 });

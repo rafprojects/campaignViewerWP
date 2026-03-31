@@ -51,7 +51,6 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const borderRadius = settings.imageBorderRadius;
   const gap = settings.thumbnailGap ?? 6;
   const targetRowHeight = settings.mosaicTargetRowHeight ?? 200;
 
@@ -98,7 +97,9 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
         render={{
           // ⚠ CRITICAL: never set display here — it breaks the flex-row layout.
           // Only set overflow/radius/position which do not affect the layout flow.
-          button({ style, className, ...props }) {
+          button({ style, className, ...props }, { photo }) {
+            const borderRadius = (photo as RpaPhoto).item.type === 'video' ? settings.videoBorderRadius : settings.imageBorderRadius;
+
             return (
               <button
                 {...props}
@@ -122,6 +123,7 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;
             const isVideo = p.item.type === 'video';
+            const borderRadius = isVideo ? settings.videoBorderRadius : settings.imageBorderRadius;
             const iconSize = Math.max(20, Math.min(width, height) * 0.2);
             return (
               <Box

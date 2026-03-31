@@ -40,7 +40,6 @@ if ('serviceWorker' in navigator && !import.meta.env.DEV) {
     void navigator.serviceWorker
       .register(`${import.meta.env.BASE_URL}sw.js`)
       .catch((error) => {
-        // eslint-disable-next-line no-console
         console.error('Service worker registration failed:', error);
       });
   });
@@ -71,6 +70,7 @@ const parseProps = (node: Element): MountProps => {
  * MantineThemeOverride into MantineProvider. This component re-renders
  * only when the theme changes (O(1) map lookup, pre-computed objects).
  */
+// eslint-disable-next-line react-refresh/only-export-components
 function ThemedApp({
   props,
   isShadowDom,

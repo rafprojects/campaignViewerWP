@@ -15,7 +15,12 @@ import type { AdminCampaign } from '@/hooks/useAdminSWR';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { sortByOrder } from '@/utils/sortByOrder';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
+import { cloneGalleryConfig } from '@/utils/galleryConfig';
+import {
+  normalizeCampaignLegacyAdapterOverrides,
+} from '@/utils/campaignGalleryOverrides';
 import { useXhrUpload } from './useXhrUpload';
+import type { GalleryConfig } from '@/types';
 
 export interface UnifiedCampaignFormState {
   title: string;
@@ -31,6 +36,7 @@ export interface UnifiedCampaignFormState {
   layoutTemplateId: string;
   imageAdapterId: string;
   videoAdapterId: string;
+  galleryOverrides?: Partial<GalleryConfig>;
   categories: string[];
 }
 
@@ -47,6 +53,7 @@ const emptyForm: UnifiedCampaignFormState = {
   layoutTemplateId: '',
   imageAdapterId: '',
   videoAdapterId: '',
+  galleryOverrides: undefined,
   categories: [],
 };
 
@@ -106,6 +113,12 @@ export function useUnifiedCampaignModal({
     const c = campaign as Campaign & Partial<AdminCampaign>;
     setMode('edit');
     setEditingCampaignId(String(c.id));
+    const galleryOverrides = cloneGalleryConfig(c.galleryOverrides);
+    const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
+      imageAdapterId: c.imageAdapterId ?? '',
+      videoAdapterId: c.videoAdapterId ?? '',
+      galleryOverrides,
+    });
     setFormState({
       title: c.title ?? '',
       description: c.description ?? '',
@@ -120,8 +133,9 @@ export function useUnifiedCampaignModal({
       publishAt: c.publishAt ?? '',
       unpublishAt: c.unpublishAt ?? '',
       layoutTemplateId: c.layoutTemplateId ?? '',
-      imageAdapterId: c.imageAdapterId ?? '',
-      videoAdapterId: c.videoAdapterId ?? '',
+      imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
+      videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
+      galleryOverrides,
       categories: c.categories ?? [],
       borderColor: (c as Campaign).borderColor,
     });
@@ -214,6 +228,8 @@ export function useUnifiedCampaignModal({
     savingRef.current = true;
     setIsSaving(true);
 
+    const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides(formState);
+
     const payload: Record<string, unknown> = {
       title: formState.title,
       description: formState.description,
@@ -225,8 +241,9 @@ export function useUnifiedCampaignModal({
       publishAt: formState.publishAt || '',
       unpublishAt: formState.unpublishAt || '',
       layoutTemplateId: formState.layoutTemplateId || '',
-      imageAdapterId: formState.imageAdapterId || '',
-      videoAdapterId: formState.videoAdapterId || '',
+      imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
+      videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
+      galleryOverrides: formState.galleryOverrides ?? null,
     };
     if (coverImageChanged) payload.coverImage = formState.coverImage || '';
     if (formState.borderColor !== undefined) payload.borderColor = formState.borderColor;

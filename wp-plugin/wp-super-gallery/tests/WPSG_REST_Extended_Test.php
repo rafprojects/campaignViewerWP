@@ -48,6 +48,16 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         update_post_meta($cid, 'media_items', [
             ['id' => 'm1', 'url' => 'https://example.com/1.jpg', 'title' => 'Img'],
         ]);
+        update_post_meta($cid, '_wpsg_gallery_overrides', wp_json_encode([
+            'mode' => 'unified',
+            'breakpoints' => [
+                'desktop' => [
+                    'unified' => [
+                        'adapterId' => 'classic',
+                    ],
+                ],
+            ],
+        ]));
 
         $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/duplicate");
         $res = rest_do_request($req);
@@ -55,6 +65,11 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         $this->assertContains($res->get_status(), [200, 201]);
         $data = $res->get_data();
         $this->assertNotEquals($cid, $data['id'] ?? $cid);
+        $this->assertEquals('unified', $data['galleryOverrides']['mode'] ?? null);
+        $this->assertEquals(
+            'classic',
+            $data['galleryOverrides']['breakpoints']['desktop']['unified']['adapterId'] ?? null
+        );
     }
 
     public function test_batch_campaigns_archive() {
@@ -89,6 +104,19 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
                 'visibility'  => 'private',
                 'status'      => 'draft',
                 'tags'        => ['imported'],
+                'galleryOverrides' => [
+                    'mode' => 'per-type',
+                    'breakpoints' => [
+                        'desktop' => [
+                            'image' => [
+                                'adapterId' => 'masonry',
+                            ],
+                            'video' => [
+                                'adapterId' => 'diamond',
+                            ],
+                        ],
+                    ],
+                ],
                 'media_items' => [],
             ],
         ];
@@ -99,6 +127,16 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         $res = rest_do_request($req);
 
         $this->assertContains($res->get_status(), [200, 201]);
+        $data = $res->get_data();
+        $this->assertEquals('per-type', $data['galleryOverrides']['mode'] ?? null);
+        $this->assertEquals(
+            'masonry',
+            $data['galleryOverrides']['breakpoints']['desktop']['image']['adapterId'] ?? null
+        );
+        $this->assertEquals(
+            'diamond',
+            $data['galleryOverrides']['breakpoints']['desktop']['video']['adapterId'] ?? null
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -334,6 +372,31 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         $this->assertContains($res->get_status(), [200, 201]);
         $data = $res->get_data();
         $this->assertArrayHasKey('userId', $data);
+    }
+
+    public function test_create_user_applies_authenticated_rate_limit() {
+        add_filter('wpsg_rate_limit_authenticated', fn() => 1);
+        add_filter('pre_wp_mail', function () { return true; }, 10, 0);
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.33';
+
+        $first = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $first->set_param('email', 'limited-user-' . uniqid() . '@example.com');
+        $first->set_param('displayName', 'Limited User One');
+        $first->set_param('role', 'subscriber');
+
+        $second = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $second->set_param('email', 'limited-user-' . uniqid() . '@example.com');
+        $second->set_param('displayName', 'Limited User Two');
+        $second->set_param('role', 'subscriber');
+
+        $first_response = rest_do_request($first);
+        $second_response = rest_do_request($second);
+
+        $this->assertContains($first_response->get_status(), [200, 201]);
+        $this->assertEquals(429, $second_response->get_status());
+
+        remove_all_filters('wpsg_rate_limit_authenticated');
+        unset($_SERVER['REMOTE_ADDR']);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

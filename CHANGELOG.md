@@ -5,6 +5,31 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-03-30
+
+### Added - Phase 23: Settings Architecture Refactor, Responsive Gallery Config & Campaign Parity
+
+- **P23-A** Backend settings decomposition — split monolithic `class-wpsg-settings.php` into thin facade with registry, conversion, sanitizer, renderer, and field-group modules.
+- **P23-B** Frontend settings decomposition — extracted all tab bodies (General, Layout, Media Display, Typography, Campaign Cards, Campaign Viewer, Advanced) into dedicated section modules; `SettingsPanel` reduced to shell/orchestration.
+- **P23-C** Authoritative adapter schema — centralized adapter metadata (id, label, scope, breakpoint restrictions, capabilities, field groups) in a shared registry; replaced duplicated option lists and hardcoded visibility rules with schema-driven rendering.
+- **P23-D** Nested responsive gallery config model — `galleryConfig` structure organized by mode → breakpoint → scope → common/adapter settings; legacy flat fields serve as compatibility bridge.
+- **P23-E** Shared resolver and inheritance layer — unified effective-config resolution (campaign nested → campaign legacy → global nested → global flat → fallback) for editor, runtime, and render paths.
+- **P23-F** Shared Gallery Config editor UX — lazy-loaded responsive gallery editor with breakpoint/scope switching, common and adapter-specific settings, reset/clear actions, and inherited-vs-overridden messaging; used by both SettingsPanel and campaign modal.
+- **P23-G** Campaign full gallery config parity — campaigns can override the same responsive gallery surface as global settings; inheritance-first with scope-level reset; override summaries and badges in admin UI; duplicate/import flows preserve nested overrides.
+- **P23-H** Render-path consolidation — unified and per-type gallery sections share one `CampaignGalleryAdapterRenderer`; shell-level spacing resolved through shared helpers; breakpoint-specific resolution validated.
+- **P23-I** Shared sanitization and REST support — schema-driven nested payload sanitization for both global `gallery_config` and campaign `galleryOverrides`; explicit adapter field allowlists; misplaced-key rejection with forward-compatible unknown-key preservation.
+- **P23-J/J1** Documentation, testing, and PHP test audit — phase report, data model doc, UI flow doc; focused frontend and PHPUnit coverage; full suite verification (85 frontend files / 1205 tests, 495 backend tests / 1433 assertions).
+
+### Fixed
+
+- Campaign quick selectors now show "Mixed (breakpoint-specific)" indicator when breakpoint-specific overrides differ across breakpoints.
+- Schedule visibility gate added to `can_view_campaign()` — future and expired campaigns are no longer exposed through direct reads or permission-derived lists.
+- Datetime sanitizer now accepts the plugin's own stored UTC format (`Y-m-d H:i:s`) alongside ISO 8601, normalizing all inputs to UTC for storage.
+- REST rate limiting now covers user creation requests.
+- Nested gallery scalar values validated in sanitizer.
+- Legacy per-type adapter correctly ignored in unified mode for campaign overrides.
+- Nested gallery config syncs with inline settings edits.
+
 ## [0.21.0] - 2026-03-25
 
 ### Added - Phase 22: Carousel Overhaul, Viewer Alignment & Gallery Layout Fixes

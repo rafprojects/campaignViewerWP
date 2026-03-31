@@ -1,7 +1,36 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@/test/test-utils';
+import { act, render, screen, waitFor, fireEvent } from '@/test/test-utils';
 import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
+import type { GalleryConfig } from '@/types';
+
+// ── Lightweight mock for GalleryConfigEditorModal ──────────────────────
+// The real modal (816 lines + full adapter registry + Suspense/lazy) is the
+// primary cause of 60–186 s test times.  We replace it with a thin stub that:
+//   • captures `value` so seed-tests can inspect it directly,
+//   • exposes `onSave` so projection-tests can invoke it with a crafted config,
+//   • renders minimal DOM to keep role-queries fast.
+let capturedModalValue: Partial<GalleryConfig> | undefined;
+let capturedOnSave: ((cfg: GalleryConfig) => void) | undefined;
+
+vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
+  GalleryConfigEditorModal: (props: {
+    opened: boolean;
+    title: string;
+    value?: Partial<GalleryConfig>;
+    onSave: (cfg: GalleryConfig) => void;
+    onClose: () => void;
+  }) => {
+    capturedModalValue = props.value;
+    capturedOnSave = props.onSave;
+    if (!props.opened) return null;
+    return (
+      <div role="dialog" data-testid="gallery-config-editor-modal">
+        <span>Responsive Gallery Config</span>
+      </div>
+    );
+  },
+}));
 
 // Mock ThemeSelector since it depends on ThemeContext
 vi.mock('./ThemeSelector', () => ({
@@ -90,6 +119,19 @@ async function clickTabAndWait(name: string, contentText: string) {
   await screen.findByText(contentText);
 }
 
+/**
+ * Navigate to Gallery Layout → click "Edit Responsive Config".
+ * With `GalleryConfigEditorModal` mocked, the Suspense/lazy overhead is gone.
+ * Returns captured `value` and `onSave` from the mock for direct inspection.
+ */
+async function openResponsiveConfigEditor() {
+  fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+  await screen.findByText('Gallery Adapters');
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+  await screen.findByTestId('gallery-config-editor-modal');
+  return { value: capturedModalValue!, onSave: capturedOnSave! };
+}
+
 /** Toggle a Mantine Switch by its visible label text. */
 function toggleSwitchByLabel(label: string) {
   const el = screen.getByText(label);
@@ -110,6 +152,8 @@ describe('SettingsPanel', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedModalValue = undefined;
+    capturedOnSave = undefined;
     apiClient = createMockApiClient();
   });
 
@@ -226,6 +270,334 @@ describe('SettingsPanel', () => {
     expect(saveButton).toBeDisabled();
   });
 
+  it('projects shared editor gallery presentation fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      gallerySizingMode: 'manual',
+      galleryManualHeight: '75vh',
+      galleryImageLabel: 'Photo Reel',
+      galleryVideoLabel: 'Video Reel',
+      galleryLabelJustification: 'right',
+      showGalleryLabelIcon: true,
+      showCampaignGalleryLabels: false,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    // Simulate the modal applying a gallery config with presentation fields
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            common: {
+              gallerySizingMode: 'manual',
+              galleryManualHeight: '75vh',
+              galleryImageLabel: 'Photo Reel',
+              galleryVideoLabel: 'Video Reel',
+              galleryLabelJustification: 'right',
+              showGalleryLabelIcon: true,
+              showCampaignGalleryLabels: false,
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gallerySizingMode: 'manual',
+      galleryManualHeight: '75vh',
+      galleryImageLabel: 'Photo Reel',
+      galleryVideoLabel: 'Video Reel',
+      galleryLabelJustification: 'right',
+      showGalleryLabelIcon: true,
+      showCampaignGalleryLabels: false,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                gallerySizingMode: 'manual',
+                galleryManualHeight: '75vh',
+                galleryImageLabel: 'Photo Reel',
+                galleryVideoLabel: 'Video Reel',
+                galleryLabelJustification: 'right',
+                showGalleryLabelIcon: true,
+                showCampaignGalleryLabels: false,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('preserves breakpoint-specific common settings while projecting representative flat values', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      gallerySectionPadding: 16,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    act(() => {
+      onSave({
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                sectionPadding: 16,
+              },
+            },
+          },
+          tablet: {
+            image: {
+              common: {
+                sectionPadding: 30,
+              },
+            },
+          },
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      gallerySectionPadding: 16,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                sectionPadding: 16,
+              }),
+            }),
+          }),
+          tablet: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                sectionPadding: 30,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('seeds shared editor viewport background fields from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          imageBgType: 'solid',
+          imageBgColor: '#112233',
+          videoBgType: 'gradient',
+          videoBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+          unifiedBgType: 'image',
+          unifiedBgImageUrl: 'https://example.com/unified-bg.jpg',
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgType).toBe('solid');
+    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgColor).toBe('#112233');
+    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgType).toBe('gradient');
+    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgGradient).toBe(
+      'linear-gradient(135deg, #123456 0%, #654321 100%)',
+    );
+    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgType).toBe('image');
+    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgImageUrl).toBe('https://example.com/unified-bg.jpg');
+  });
+
+  it('prefers explicit nested gallery config values when seeding the shared editor', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySectionPadding: 16,
+          carouselVisibleCards: 2,
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              tablet: {
+                image: {
+                  adapterId: 'classic',
+                  common: {
+                    sectionPadding: 30,
+                  },
+                  adapterSettings: {
+                    carouselVisibleCards: 5,
+                  },
+                },
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.tablet?.image?.common?.sectionPadding).toBe(30);
+    expect(value?.breakpoints?.tablet?.image?.adapterSettings?.carouselVisibleCards).toBe(5);
+  });
+
+  it('projects shared editor viewport background fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      imageBgType: 'solid',
+      imageBgColor: '#112233',
+      videoBgType: 'gradient',
+      videoBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+      unifiedBgType: 'image',
+      unifiedBgImageUrl: 'https://example.com/unified-bg.jpg',
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    act(() => {
+      onSave({
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
+              },
+            },
+            video: {
+              common: {
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+              },
+            },
+            unified: {
+              common: {
+                viewportBgType: 'image',
+                viewportBgImageUrl: 'https://example.com/unified-bg.jpg',
+              },
+            },
+          },
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      imageBgType: 'solid',
+      imageBgColor: '#112233',
+      videoBgType: 'gradient',
+      videoBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+      unifiedBgType: 'image',
+      unifiedBgImageUrl: 'https://example.com/unified-bg.jpg',
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'solid',
+                viewportBgColor: '#112233',
+              }),
+            }),
+            video: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #123456 0%, #654321 100%)',
+              }),
+            }),
+            unified: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'image',
+                viewportBgImageUrl: 'https://example.com/unified-bg.jpg',
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('shows shared gallery height controls for flat gallery sizing settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySizingMode: 'manual',
+          galleryManualHeight: '75vh',
+        }}
+      />
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    // The seed should propagate gallerySizingMode and galleryManualHeight
+    // into the common settings for at least one breakpoint scope.
+    const desktopImage = value?.breakpoints?.desktop?.image?.common;
+    const desktopVideo = value?.breakpoints?.desktop?.video?.common;
+    const anyScope = desktopImage ?? desktopVideo;
+    expect(anyScope?.gallerySizingMode).toBe('manual');
+    expect(anyScope?.galleryManualHeight).toBe('75vh');
+  });
+
   it('shows error notification when save fails', async () => {
     apiClient = createMockApiClient({
       updateSettings: vi.fn().mockRejectedValue(new Error('Save failed')),
@@ -334,6 +706,637 @@ describe('SettingsPanel', () => {
     }
 
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
+  });
+
+  it('shows the shared responsive gallery editor entry point on the layout tab', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
+  });
+
+  it('seeds shared editor adapter-specific values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'masonry',
+          masonryColumns: 4,
+          masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
+        }}
+      />
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    // The seed should include the masonry adapter with masonryColumns in adapterSettings
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('masonry');
+    expect(desktopImage?.adapterSettings?.masonryColumns).toBe(4);
+    expect(desktopImage?.adapterSettings?.masonryAutoColumnBreakpoints).toBe('480:2,768:3,1024:4,1280:5');
+  });
+
+  it('seeds shared editor classic carousel values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          imageBorderRadius: 14,
+          videoBorderRadius: 18,
+          imageViewportHeight: 560,
+          videoViewportHeight: 500,
+          imageShadowPreset: 'custom',
+          imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+          videoShadowPreset: 'strong',
+          videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
+          carouselVisibleCards: 3,
+          carouselLoop: false,
+          carouselAutoplayDirection: 'rtl',
+          navArrowPosition: 'bottom',
+          navArrowSize: 42,
+          navArrowColor: '#ff8800',
+          navArrowBgColor: 'rgba(1,2,3,0.5)',
+          navArrowEdgeInset: 18,
+          navArrowMinHitTarget: 56,
+          navArrowFadeDurationMs: 320,
+          navArrowScaleTransitionMs: 210,
+          dotNavEnabled: false,
+          dotNavPosition: 'overlay-top',
+          dotNavMaxVisibleDots: 9,
+          dotNavActiveColor: '#00ffaa',
+          dotNavInactiveColor: 'rgba(4,5,6,0.25)',
+          viewportHeightMobileRatio: 0.7,
+          viewportHeightTabletRatio: 0.85,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    // Carousel adapter settings should be seeded from flat settings
+    // Check any scope that carries adapter settings for the classic carousel
+    const scopes = [
+      value?.breakpoints?.desktop?.image,
+      value?.breakpoints?.desktop?.video,
+      value?.breakpoints?.desktop?.unified,
+    ];
+    const adapterSettings = scopes.find(s => s?.adapterSettings?.carouselVisibleCards !== undefined)?.adapterSettings;
+    expect(adapterSettings).toBeDefined();
+    expect(adapterSettings?.carouselVisibleCards).toBe(3);
+    expect(adapterSettings?.carouselLoop).toBe(false);
+    expect(adapterSettings?.navArrowPosition).toBe('bottom');
+    expect(adapterSettings?.navArrowSize).toBe(42);
+    expect(adapterSettings?.navArrowColor).toBe('#ff8800');
+    expect(adapterSettings?.navArrowBgColor).toBe('rgba(1,2,3,0.5)');
+    expect(adapterSettings?.navArrowEdgeInset).toBe(18);
+    expect(adapterSettings?.navArrowMinHitTarget).toBe(56);
+    expect(adapterSettings?.navArrowFadeDurationMs).toBe(320);
+    expect(adapterSettings?.navArrowScaleTransitionMs).toBe(210);
+    expect(adapterSettings?.dotNavEnabled).toBe(false);
+    expect(adapterSettings?.dotNavPosition).toBe('overlay-top');
+    expect(adapterSettings?.dotNavMaxVisibleDots).toBe(9);
+    expect(adapterSettings?.dotNavActiveColor).toBe('#00ffaa');
+    expect(adapterSettings?.dotNavInactiveColor).toBe('rgba(4,5,6,0.25)');
+    expect(adapterSettings?.viewportHeightMobileRatio).toBe(0.7);
+    expect(adapterSettings?.viewportHeightTabletRatio).toBe(0.85);
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(14);
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(18);
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageViewportHeight).toBe(560);
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(500);
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageShadowPreset).toBe('custom');
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageShadowCustom).toBe('0 8px 24px rgba(0,0,0,0.35)');
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoShadowPreset).toBe('strong');
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
+  });
+
+  it('seeds shared editor photo-grid values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'justified',
+          thumbnailGap: 12,
+          mosaicTargetRowHeight: 240,
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('justified');
+    expect(desktopImage?.adapterSettings?.thumbnailGap).toBe(12);
+    expect(desktopImage?.adapterSettings?.mosaicTargetRowHeight).toBe(240);
+  });
+
+  it('seeds shared editor shape-specific values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'hexagonal',
+          tileBorderWidth: 2,
+          tileBorderColor: '#ff0000',
+          tileHoverBounce: false,
+          tileGlowEnabled: true,
+          tileGlowColor: '#00ffaa',
+          tileGlowSpread: 18,
+          tileGapX: 12,
+          tileGapY: 10,
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('hexagonal');
+    expect(desktopImage?.adapterSettings?.tileBorderWidth).toBe(2);
+    expect(desktopImage?.adapterSettings?.tileBorderColor).toBe('#ff0000');
+    expect(desktopImage?.adapterSettings?.tileHoverBounce).toBe(false);
+    expect(desktopImage?.adapterSettings?.tileGlowEnabled).toBe(true);
+    expect(desktopImage?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
+    expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
+    expect(desktopImage?.adapterSettings?.tileGapX).toBe(12);
+    expect(desktopImage?.adapterSettings?.tileGapY).toBe(10);
+  });
+
+  it('seeds shared editor layout-builder defaults from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'layout-builder',
+          layoutBuilderScope: 'viewport',
+          tileGlowColor: '#00ffaa',
+          tileGlowSpread: 18,
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('layout-builder');
+    expect(desktopImage?.adapterSettings?.layoutBuilderScope).toBe('viewport');
+    expect(desktopImage?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
+    expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
+  });
+
+  it('projects shared editor carousel adapter fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
+      imageViewportHeight: 600,
+      videoViewportHeight: 480,
+      imageShadowPreset: 'custom',
+      imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+      videoShadowPreset: 'strong',
+      videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
+      carouselVisibleCards: 3,
+      navArrowPosition: 'bottom',
+      navArrowColor: '#ff8800',
+      navArrowEdgeInset: 18,
+      navArrowMinHitTarget: 56,
+      navArrowFadeDurationMs: 320,
+      navArrowScaleTransitionMs: 210,
+      dotNavEnabled: false,
+      dotNavMaxVisibleDots: 9,
+      viewportHeightMobileRatio: 0.7,
+      viewportHeightTabletRatio: 0.85,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    // Simulate the modal applying a gallery config with carousel adapter settings
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'classic',
+            adapterSettings: {
+              imageBorderRadius: 14,
+              imageViewportHeight: 600,
+              imageShadowPreset: 'custom',
+              imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+              carouselVisibleCards: 3,
+              navArrowPosition: 'bottom',
+              navArrowColor: '#ff8800',
+              navArrowEdgeInset: 18,
+              navArrowMinHitTarget: 56,
+              navArrowFadeDurationMs: 320,
+              navArrowScaleTransitionMs: 210,
+              dotNavEnabled: false,
+              dotNavMaxVisibleDots: 9,
+              viewportHeightMobileRatio: 0.7,
+              viewportHeightTabletRatio: 0.85,
+            },
+          },
+          video: {
+            adapterId: 'classic',
+            adapterSettings: {
+              videoBorderRadius: 18,
+              videoViewportHeight: 480,
+              videoShadowPreset: 'strong',
+              videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      imageBorderRadius: 14,
+      videoBorderRadius: 18,
+      imageViewportHeight: 600,
+      videoViewportHeight: 480,
+      imageShadowPreset: 'custom',
+      imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+      videoShadowPreset: 'strong',
+      videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
+      carouselVisibleCards: 3,
+      navArrowPosition: 'bottom',
+      navArrowColor: '#ff8800',
+      navArrowEdgeInset: 18,
+      navArrowMinHitTarget: 56,
+      navArrowFadeDurationMs: 320,
+      navArrowScaleTransitionMs: 210,
+      dotNavEnabled: false,
+      dotNavMaxVisibleDots: 9,
+      viewportHeightMobileRatio: 0.7,
+      viewportHeightTabletRatio: 0.85,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                imageBorderRadius: 14,
+                carouselVisibleCards: 3,
+                imageShadowPreset: 'custom',
+                imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
+                navArrowPosition: 'bottom',
+                navArrowColor: '#ff8800',
+                navArrowEdgeInset: 18,
+                navArrowMinHitTarget: 56,
+                navArrowFadeDurationMs: 320,
+                navArrowScaleTransitionMs: 210,
+                dotNavEnabled: false,
+                dotNavMaxVisibleDots: 9,
+                viewportHeightMobileRatio: 0.7,
+                viewportHeightTabletRatio: 0.85,
+              }),
+            }),
+            video: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                videoBorderRadius: 18,
+                videoShadowPreset: 'strong',
+                videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('projects shared editor photo-grid fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      thumbnailGap: 14,
+      masonryColumns: 3,
+      masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'masonry',
+            adapterSettings: {
+              thumbnailGap: 14,
+              masonryColumns: 3,
+              masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      thumbnailGap: 14,
+      masonryColumns: 3,
+      masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                thumbnailGap: 14,
+                masonryColumns: 3,
+                masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('projects shared editor shape-specific fields back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      tileBorderWidth: 2,
+      tileBorderColor: '#ff0000',
+      tileHoverBounce: false,
+      tileGlowEnabled: true,
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+      tileGapX: 12,
+      tileGapY: 10,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'hexagonal',
+            adapterSettings: {
+              tileBorderWidth: 2,
+              tileBorderColor: '#ff0000',
+              tileHoverBounce: false,
+              tileGlowEnabled: true,
+              tileGlowColor: '#00ffaa',
+              tileGlowSpread: 18,
+              tileGapX: 12,
+              tileGapY: 10,
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      tileBorderWidth: 2,
+      tileBorderColor: '#ff0000',
+      tileHoverBounce: false,
+      tileGlowEnabled: true,
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+      tileGapX: 12,
+      tileGapY: 10,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                tileBorderWidth: 2,
+                tileBorderColor: '#ff0000',
+                tileHoverBounce: false,
+                tileGlowEnabled: true,
+                tileGlowColor: '#00ffaa',
+                tileGlowSpread: 18,
+                tileGapX: 12,
+                tileGapY: 10,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('projects shared editor layout-builder defaults back into flat settings', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      layoutBuilderScope: 'viewport',
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+    });
+
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />,
+    );
+
+    await waitForTabs();
+    const { onSave } = await openResponsiveConfigEditor();
+
+    const galleryConfig: GalleryConfig = {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'layout-builder',
+            adapterSettings: {
+              layoutBuilderScope: 'viewport',
+              tileGlowColor: '#00ffaa',
+              tileGlowSpread: 18,
+            },
+          },
+        },
+      },
+    };
+
+    act(() => { onSave(galleryConfig); });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    expect(updateSettings).toHaveBeenCalledWith(expect.objectContaining({
+      layoutBuilderScope: 'viewport',
+      tileGlowColor: '#00ffaa',
+      tileGlowSpread: 18,
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterId: 'layout-builder',
+              adapterSettings: expect.objectContaining({
+                layoutBuilderScope: 'viewport',
+                tileGlowColor: '#00ffaa',
+                tileGlowSpread: 18,
+              }),
+            }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('seeds additional registry-driven adapter values from flat settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySelectionMode: 'per-breakpoint',
+          desktopImageAdapterId: 'compact-grid',
+          gridCardWidth: 210,
+          gridCardHeight: 260,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    // The compact-grid adapter settings should be seeded
+    const desktopImage = value?.breakpoints?.desktop?.image;
+    expect(desktopImage?.adapterId).toBe('compact-grid');
+    expect(desktopImage?.adapterSettings?.gridCardWidth).toBe(210);
+    expect(desktopImage?.adapterSettings?.gridCardHeight).toBe(260);
+  });
+
+  it('shows shared section sizing controls for flat section sizing settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          gallerySectionMaxWidth: 1100,
+          gallerySectionMinWidth: 360,
+          gallerySectionHeightMode: 'manual',
+          gallerySectionMaxHeight: 620,
+          gallerySectionMinHeight: 260,
+          perTypeSectionEqualHeight: true,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const common = value?.breakpoints?.desktop?.image?.common
+      ?? value?.breakpoints?.desktop?.video?.common;
+    expect(common?.sectionMaxWidth).toBe(1100);
+    expect(common?.sectionMinWidth).toBe(360);
+    expect(common?.sectionHeightMode).toBe('manual');
+    expect(common?.sectionMaxHeight).toBe(620);
+    expect(common?.sectionMinHeight).toBe(260);
+    expect(common?.perTypeSectionEqualHeight).toBe(true);
+  });
+
+  it('shows shared adapter sizing controls for flat adapter sizing settings', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          adapterSizingMode: 'manual',
+          adapterMaxWidthPct: 85,
+          adapterMaxHeightPct: 90,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    const { value } = await openResponsiveConfigEditor();
+
+    const common = value?.breakpoints?.desktop?.image?.common
+      ?? value?.breakpoints?.desktop?.video?.common;
+    expect(common?.adapterSizingMode).toBe('manual');
+    expect(common?.adapterMaxWidthPct).toBe(85);
+    expect(common?.adapterMaxHeightPct).toBe(90);
   });
 
   it('interacts with Media Display tab controls', async () => {

@@ -7,6 +7,7 @@ const BASE_SETTINGS: GalleryBehaviorSettings = {
   dotNavEnabled: true,
   dotNavPosition: 'below',
   dotNavSize: 10,
+  dotNavMaxVisibleDots: 7,
   dotNavActiveColor: '#ffffff',
   dotNavInactiveColor: 'rgba(128,128,128,0.4)',
   dotNavShape: 'circle',
@@ -96,6 +97,19 @@ describe('DotNavigator', () => {
     expect(tabs.length).toBeLessThan(15);
     // Should have at least one ellipsis element
     expect(container.textContent).toContain('…');
+  });
+
+  it('honors dotNavMaxVisibleDots when truncating', () => {
+    render(
+      <DotNavigator
+        total={15}
+        currentIndex={7}
+        onSelect={vi.fn()}
+        settings={{ ...BASE_SETTINGS, dotNavMaxVisibleDots: 9 }}
+      />,
+    );
+
+    expect(screen.getAllByRole('tab')).toHaveLength(9);
   });
 
   it('positions as overlay-bottom when dotNavPosition is overlay-bottom', () => {

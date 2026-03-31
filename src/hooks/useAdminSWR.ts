@@ -13,7 +13,7 @@
  */
 import useSWR, { mutate as globalMutate, type KeyedMutator } from 'swr';
 import type { ApiClient } from '@/services/apiClient';
-import type { MediaItem } from '@/types';
+import type { GalleryConfig, MediaItem } from '@/types';
 import { sortByOrder } from '@/utils/sortByOrder';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -51,6 +51,8 @@ export interface AdminCampaign {
   imageAdapterId?: string;
   /** Per-campaign video gallery adapter override. */
   videoAdapterId?: string;
+  /** Phase 23 nested campaign gallery override surface. */
+  galleryOverrides?: Partial<GalleryConfig>;
   /** P18-H: Category names assigned to this campaign. */
   categories?: string[];
 }

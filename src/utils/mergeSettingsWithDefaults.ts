@@ -2,6 +2,58 @@ import {
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   type GalleryBehaviorSettings,
 } from '@/types';
+import {
+  buildGalleryConfigFromLegacySettings,
+  cloneGalleryConfig,
+  mergeGalleryConfig,
+  parseGalleryConfig,
+} from './galleryConfig';
+
+const LEGACY_GALLERY_BRIDGE_KEYS: Array<keyof GalleryBehaviorSettings> = [
+  'unifiedGalleryEnabled',
+  'unifiedGalleryAdapterId',
+  'gallerySelectionMode',
+  'imageGalleryAdapterId',
+  'videoGalleryAdapterId',
+  'desktopImageAdapterId',
+  'desktopVideoAdapterId',
+  'tabletImageAdapterId',
+  'tabletVideoAdapterId',
+  'mobileImageAdapterId',
+  'mobileVideoAdapterId',
+  'gallerySectionMaxWidth',
+  'gallerySectionMaxHeight',
+  'gallerySectionMinWidth',
+  'gallerySectionMinHeight',
+  'gallerySectionHeightMode',
+  'gallerySectionPadding',
+  'adapterContentPadding',
+  'adapterSizingMode',
+  'adapterMaxWidthPct',
+  'adapterMaxHeightPct',
+  'adapterItemGap',
+  'adapterJustifyContent',
+  'gallerySizingMode',
+  'galleryManualHeight',
+  'perTypeSectionEqualHeight',
+  'imageBgType',
+  'imageBgColor',
+  'imageBgGradient',
+  'imageBgImageUrl',
+  'videoBgType',
+  'videoBgColor',
+  'videoBgGradient',
+  'videoBgImageUrl',
+  'unifiedBgType',
+  'unifiedBgColor',
+  'unifiedBgGradient',
+  'unifiedBgImageUrl',
+  'galleryImageLabel',
+  'galleryVideoLabel',
+  'galleryLabelJustification',
+  'showGalleryLabelIcon',
+  'showCampaignGalleryLabels',
+];
 
 /**
  * Merge a partial settings response with the full defaults.
@@ -16,11 +68,18 @@ export function mergeSettingsWithDefaults(
   partial: Partial<GalleryBehaviorSettings> | Record<string, unknown>,
 ): GalleryBehaviorSettings {
   const result = { ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS };
+  const partialRecord = partial as Record<string, unknown>;
+  const incomingGalleryConfig = parseGalleryConfig(partialRecord.galleryConfig);
+  const hasLegacyGalleryBridgeOverride = LEGACY_GALLERY_BRIDGE_KEYS.some((key) => partialRecord[key] !== undefined && partialRecord[key] !== null);
 
   for (const key of Object.keys(DEFAULT_GALLERY_BEHAVIOR_SETTINGS) as Array<
     keyof GalleryBehaviorSettings
   >) {
-    const incoming = (partial as Record<string, unknown>)[key];
+    if (key === 'galleryConfig') {
+      continue;
+    }
+
+    const incoming = partialRecord[key];
     if (incoming !== undefined && incoming !== null) {
       // P21-I: typography_overrides arrives as a JSON string from the PHP API.
       if (key === 'typographyOverrides' && typeof incoming === 'string') {
@@ -44,6 +103,16 @@ export function mergeSettingsWithDefaults(
       (result as any)[key] = incoming;
     }
   }
+
+  if (!incomingGalleryConfig && !hasLegacyGalleryBridgeOverride) {
+    result.galleryConfig = cloneGalleryConfig(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig);
+    return result;
+  }
+
+  const legacyGalleryConfig = buildGalleryConfigFromLegacySettings(result);
+  result.galleryConfig = incomingGalleryConfig
+    ? mergeGalleryConfig(legacyGalleryConfig, incomingGalleryConfig)
+    : cloneGalleryConfig(legacyGalleryConfig);
 
   return result;
 }

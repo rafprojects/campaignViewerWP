@@ -1,5 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '../../test/test-utils';
+
+vi.mock('./UnifiedGallerySection', () => ({
+  UnifiedGallerySection: () => <div data-testid="unified-gallery-section" />,
+}));
+
+vi.mock('./PerTypeGallerySection', () => ({
+  PerTypeGallerySection: () => <div data-testid="per-type-gallery-section" />,
+}));
+
 import { CampaignViewer } from './CampaignViewer';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type Campaign, type Company, type MediaItem } from '@/types';
@@ -81,5 +90,61 @@ describe('CampaignViewer', () => {
     // Admin actions are now in AuthBarFloating (via CampaignContext).
     // Verify the dialog rendered successfully.
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('prefers campaign unified mode overrides over global per-type viewer mode', () => {
+    render(
+      <CampaignContextProvider>
+        <CampaignViewer
+          campaign={{
+            ...campaign,
+            galleryOverrides: { mode: 'unified' },
+          }}
+          opened
+          hasAccess
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            unifiedGalleryEnabled: false,
+            galleryConfig: {
+              mode: 'per-type',
+              breakpoints: {},
+            },
+          }}
+          isAdmin={false}
+          onClose={() => undefined}
+        />
+      </CampaignContextProvider>,
+    );
+
+    expect(screen.getByTestId('unified-gallery-section')).toBeInTheDocument();
+    expect(screen.queryByTestId('per-type-gallery-section')).not.toBeInTheDocument();
+  });
+
+  it('prefers campaign per-type mode overrides over global unified viewer mode', () => {
+    render(
+      <CampaignContextProvider>
+        <CampaignViewer
+          campaign={{
+            ...campaign,
+            galleryOverrides: { mode: 'per-type' },
+          }}
+          opened
+          hasAccess
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            unifiedGalleryEnabled: true,
+            galleryConfig: {
+              mode: 'unified',
+              breakpoints: {},
+            },
+          }}
+          isAdmin={false}
+          onClose={() => undefined}
+        />
+      </CampaignContextProvider>,
+    );
+
+    expect(screen.getByTestId('per-type-gallery-section')).toBeInTheDocument();
+    expect(screen.queryByTestId('unified-gallery-section')).not.toBeInTheDocument();
   });
 });

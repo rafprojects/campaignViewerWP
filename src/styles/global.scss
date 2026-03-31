@@ -193,6 +193,25 @@
   box-shadow: var(--wpsg-shadow-md);
 }
 
+// Mantine active/selected state helpers. These stay in CSS so selectors like
+// [data-active] and [data-selected] are handled by the browser instead of
+// leaking through React inline style objects.
+.wpsg-mantine-tabs-tab[data-active] {
+  color: var(--wpsg-color-text);
+  border-color: var(--wpsg-color-primary);
+}
+
+.wpsg-mantine-segmented-control-label[data-active] {
+  color: var(--wpsg-color-text);
+}
+
+// Select dropdowns may render in a portal, so selected option styling
+// cannot rely on the .wp-super-gallery ancestor being present.
+.wpsg-mantine-select-option[data-selected] {
+  background-color: var(--wpsg-color-primary);
+  color: #ffffff;
+}
+
 // Compact layout variant
 .wp-super-gallery--compact .wp-super-gallery__container {
   max-width: 64rem;

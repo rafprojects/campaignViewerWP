@@ -1,0 +1,51 @@
+import { Accordion, Button, Group, Text } from '@mantine/core';
+
+import type { GalleryBehaviorSettings } from '@/types';
+
+import { GalleryAdapterSettingsSection, type UpdateGallerySetting } from './GalleryAdapterSettingsSection';
+import { GalleryLayoutDetailSections } from './GalleryLayoutDetailSections';
+import { GalleryPresentationSections } from './GalleryPresentationSections';
+
+interface GalleryLayoutSettingsSectionProps {
+  settings: GalleryBehaviorSettings;
+  updateSetting: UpdateGallerySetting;
+  onOpenResponsiveConfig: () => void;
+}
+
+export function GalleryLayoutSettingsSection({
+  settings,
+  updateSetting,
+  onOpenResponsiveConfig,
+}: GalleryLayoutSettingsSectionProps) {
+  return (
+    <Accordion variant="separated" defaultValue="adapters">
+      <Accordion.Item value="adapters">
+        <Accordion.Control>Gallery Adapters</Accordion.Control>
+        <Accordion.Panel>
+          <Group justify="space-between" align="flex-start" mb="md">
+            <Text size="sm" c="dimmed" maw={560}>
+              Quick selectors stay inline here. Use the responsive editor when you need breakpoint-aware nested gallery selection without flattening the layout tab again.
+            </Text>
+            <Button variant="light" onClick={onOpenResponsiveConfig}>
+              Edit Responsive Config
+            </Button>
+          </Group>
+          <GalleryAdapterSettingsSection
+            settings={settings}
+            updateSetting={updateSetting}
+          />
+        </Accordion.Panel>
+      </Accordion.Item>
+
+      <GalleryPresentationSections
+        settings={settings}
+        updateSetting={updateSetting}
+      />
+
+      <GalleryLayoutDetailSections
+        settings={settings}
+        updateSetting={updateSetting}
+      />
+    </Accordion>
+  );
+}

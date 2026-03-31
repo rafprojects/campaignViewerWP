@@ -3,7 +3,7 @@
  * Plugin Name:       WP Super Gallery
  * Plugin URI:        https://github.com/rafprojects/wp-super-gallery
  * Description:       Embeddable campaign gallery with Shadow DOM rendering.
- * Version:           0.21.0
+ * Version:           0.22.0
  * Requires at least: 6.0
  * Tested up to:      6.7
  * Requires PHP:      8.0
@@ -19,13 +19,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.21.0');
+define('WPSG_VERSION', '0.22.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cpt.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
+require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-registry.php';
+require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-core-fields.php';
+require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-renderer.php';
+require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-sanitizer.php';
+require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-service.php';
+require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-typography.php';
+require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-utils.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-db.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';

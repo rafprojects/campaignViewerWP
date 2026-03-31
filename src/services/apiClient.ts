@@ -1,5 +1,5 @@
 import type { AuthProvider } from '@/services/auth/AuthProvider';
-import type { LayoutTemplate, TypographyOverride } from '@/types';
+import type { GalleryConfig, LayoutTemplate, TypographyOverride } from '@/types';
 import type { GradientOptions } from '@/utils/gradientCss';
 
 export interface ApiClientOptions {
@@ -592,6 +592,7 @@ export interface SettingsResponse {
   mobileImageAdapterId?: string;
   mobileVideoAdapterId?: string;
   layoutBuilderScope?: 'full' | 'viewport';
+  galleryConfig?: GalleryConfig | string;
   // P20-K
   sessionIdleTimeoutMinutes?: number;
   // P20-B: Data retention

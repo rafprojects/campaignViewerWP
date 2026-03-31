@@ -362,7 +362,7 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'create_user'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'rate_limit_authenticated'],
             ],
         ]);
 
@@ -1059,6 +1059,7 @@ class WPSG_REST {
             'cover_image',
             '_wpsg_image_adapter_id',
             '_wpsg_video_adapter_id',
+            '_wpsg_gallery_overrides',
             '_wpsg_layout_binding_template_id',
             '_wpsg_layout_binding',
         ];
@@ -1213,6 +1214,13 @@ class WPSG_REST {
                 } else {
                     update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
                 }
+            }
+        }
+
+        if (array_key_exists('galleryOverrides', $src)) {
+            $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($src['galleryOverrides']);
+            if (!empty($gallery_overrides)) {
+                update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
             }
         }
 
@@ -3673,6 +3681,10 @@ class WPSG_REST {
             return true;
         }
 
+        if (!self::is_campaign_within_schedule_window($post_id)) {
+            return false;
+        }
+
         $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';
         if ($visibility === 'public') {
             return true;
@@ -3695,6 +3707,22 @@ class WPSG_REST {
         }
 
         return false;
+    }
+
+    private static function is_campaign_within_schedule_window($post_id) {
+        $now = gmdate('Y-m-d H:i:s');
+
+        $publish_at = (string) get_post_meta($post_id, 'publish_at', true);
+        if ($publish_at !== '' && $publish_at > $now) {
+            return false;
+        }
+
+        $unpublish_at = (string) get_post_meta($post_id, 'unpublish_at', true);
+        if ($unpublish_at !== '' && $unpublish_at <= $now) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function get_accessible_campaign_ids($user_id) {
@@ -3794,9 +3822,28 @@ class WPSG_REST {
             'layoutBinding' => get_post_meta($post->ID, '_wpsg_layout_binding', true) ?: null,
             'imageAdapterId' => get_post_meta($post->ID, '_wpsg_image_adapter_id', true) ?: null,
             'videoAdapterId' => get_post_meta($post->ID, '_wpsg_video_adapter_id', true) ?: null,
+            'galleryOverrides' => self::get_campaign_gallery_overrides($post->ID),
             'createdAt' => get_post_time('c', true, $post),
             'updatedAt' => get_post_modified_time('c', true, $post),
         ];
+    }
+
+    private static function get_campaign_gallery_overrides($post_id) {
+        $raw = get_post_meta($post_id, '_wpsg_gallery_overrides', true);
+        if (empty($raw)) {
+            return null;
+        }
+
+        if (is_array($raw)) {
+            return $raw;
+        }
+
+        if (!is_string($raw)) {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+        return is_array($decoded) ? $decoded : null;
     }
 
     private static function apply_campaign_meta($post_id, $request) {
@@ -3901,6 +3948,14 @@ class WPSG_REST {
                 delete_post_meta($post_id, '_wpsg_video_adapter_id');
             } else {
                 update_post_meta($post_id, '_wpsg_video_adapter_id', $video_adapter_id);
+            }
+        }
+        if ($request->has_param('galleryOverrides')) {
+            $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($request->get_param('galleryOverrides'));
+            if (empty($gallery_overrides)) {
+                delete_post_meta($post_id, '_wpsg_gallery_overrides');
+            } else {
+                update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
             }
         }
 

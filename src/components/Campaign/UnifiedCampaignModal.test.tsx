@@ -1,7 +1,107 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
+import { render, screen, fireEvent, waitFor, within } from '../../test/test-utils';
 import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+
+vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
+  const { useState } = await import('react');
+
+  interface MockGalleryConfigEditorModalProps {
+    opened: boolean;
+    title: string;
+    contextSummary?: string;
+    clearLabel?: string;
+    saveLabel?: string;
+    value?: {
+      mode?: 'unified' | 'per-type';
+      breakpoints?: {
+        desktop?: {
+          unified?: {
+            adapterId?: string;
+          };
+        };
+      };
+    };
+    onClear?: () => void;
+    onSave: (value: {
+      mode: 'unified' | 'per-type';
+      breakpoints: Record<string, unknown>;
+    }) => void;
+  }
+
+  function MockGalleryConfigEditorModal({
+    opened,
+    title,
+    contextSummary,
+    clearLabel = 'Clear Campaign Overrides',
+    saveLabel = 'Apply Campaign Gallery Config',
+    value,
+    onClear,
+    onSave,
+  }: MockGalleryConfigEditorModalProps) {
+    const [mode, setMode] = useState<'unified' | 'per-type'>(value?.mode ?? 'per-type');
+    const [unifiedAdapterId, setUnifiedAdapterId] = useState(value?.breakpoints?.desktop?.unified?.adapterId ?? '');
+
+    if (!opened) {
+      return null;
+    }
+
+    return (
+      <div role="dialog" aria-label={title}>
+        <h2>{title}</h2>
+        {contextSummary ? <p>{contextSummary}</p> : null}
+        <div>Shared Section Spacing</div>
+        <div>Adapter Content Padding (px)</div>
+        <label>
+          Gallery Mode
+          <select
+            aria-label="Gallery Mode"
+            value={mode}
+            onChange={(event) => setMode(event.currentTarget.value as 'unified' | 'per-type')}
+          >
+            <option value="per-type">Per-Type</option>
+            <option value="unified">Unified</option>
+          </select>
+        </label>
+        {mode === 'unified' && (
+          <label>
+            Unified Gallery Adapter
+            <select
+              aria-label="Unified Gallery Adapter"
+              value={unifiedAdapterId}
+              onChange={(event) => setUnifiedAdapterId(event.currentTarget.value)}
+            >
+              <option value="">Default</option>
+              <option value="classic">Classic</option>
+            </select>
+          </label>
+        )}
+        <button type="button" onClick={() => onClear?.()}>{clearLabel}</button>
+        <button
+          type="button"
+          onClick={() => onSave({
+            mode,
+            breakpoints: mode === 'unified'
+              ? {
+                desktop: { unified: { adapterId: unifiedAdapterId || 'classic' } },
+                tablet: { unified: { adapterId: unifiedAdapterId || 'classic' } },
+                mobile: { unified: { adapterId: unifiedAdapterId || 'classic' } },
+              }
+              : {},
+          })}
+        >
+          {saveLabel}
+        </button>
+      </div>
+    );
+  }
+
+  return {
+    GalleryConfigEditorModal: MockGalleryConfigEditorModal,
+  };
+});
 
 // Stub MediaLibraryPicker to avoid its heavy data fetching
 vi.mock('@/components/Campaign/MediaLibraryPicker', () => ({
@@ -61,6 +161,20 @@ function makeMockModal(overrides: Partial<UnifiedCampaignModalHandle> = {}): Uni
     save: vi.fn(),
     ...overrides,
   };
+}
+
+async function openCampaignResponsiveConfigDialog() {
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
+
+  await screen.findByText('Campaign Responsive Gallery Config', {}, { timeout: 10000 });
+
+  return await waitFor(() => {
+    const dialogs = screen.getAllByRole('dialog');
+    expect(dialogs.length).toBeGreaterThan(1);
+    const dialog = dialogs[dialogs.length - 1];
+    expect(within(dialog).getByText('Campaign Responsive Gallery Config')).toBeInTheDocument();
+    return dialog as HTMLElement;
+  });
 }
 
 describe('UnifiedCampaignModal', () => {
@@ -145,8 +259,343 @@ describe('UnifiedCampaignModal', () => {
     render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Visibility')).toBeInTheDocument();
+    expect(screen.getByText('Gallery Mode Override')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
+    expect(screen.getByText('Inheriting global gallery settings')).toBeInTheDocument();
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Categories')).toBeInTheDocument();
+  });
+
+  it('renders the current nested gallery mode override on the settings tab', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: { mode: 'unified' },
+        categories: [],
+      },
+    });
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByDisplayValue('Unified')).toBeInTheDocument();
+    expect(screen.getByLabelText('Unified Gallery', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Image Gallery')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Video Gallery')).not.toBeInTheDocument();
+  });
+
+  it('uses the effective global unified mode to choose the quick override controls when no explicit campaign mode override exists', () => {
+    const galleryBehaviorSettings: GalleryBehaviorSettings = {
+      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+      unifiedGalleryEnabled: true,
+      galleryConfig: {
+        ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig,
+        mode: 'unified',
+      },
+    };
+
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: undefined,
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} galleryBehaviorSettings={galleryBehaviorSettings} />);
+
+    expect(screen.getByLabelText('Unified Gallery', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Image Gallery')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Video Gallery')).not.toBeInTheDocument();
+  });
+
+  it('updates the quick unified gallery override from the settings tab', () => {
+    const updateForm = vi.fn();
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      updateForm,
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: 'masonry',
+        videoAdapterId: 'diamond',
+        galleryOverrides: { mode: 'unified' },
+        categories: [],
+      },
+    });
+    const unifiedAdapterLabel = getAdapterSelectOptions({ context: 'unified-gallery' })
+      .find((option) => option.value === 'classic')?.label;
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    fireEvent.click(screen.getByLabelText('Unified Gallery', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
+
+    expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
+      imageAdapterId: '',
+      videoAdapterId: '',
+      galleryOverrides: expect.objectContaining({
+        mode: 'unified',
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            unified: expect.objectContaining({ adapterId: 'classic' }),
+          }),
+          tablet: expect.objectContaining({
+            unified: expect.objectContaining({ adapterId: 'classic' }),
+          }),
+          mobile: expect.objectContaining({
+            unified: expect.objectContaining({ adapterId: 'classic' }),
+          }),
+        }),
+      }),
+    }));
+  });
+
+  it('shows a mixed-state indicator for breakpoint-specific unified quick overrides', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: { adapterId: 'classic' },
+            },
+            tablet: {
+              unified: { adapterId: 'compact-grid' },
+            },
+            mobile: {
+              unified: { adapterId: 'classic' },
+            },
+          },
+        },
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByLabelText('Unified Gallery', { selector: 'input' })).toHaveAttribute(
+      'placeholder',
+      'Mixed (breakpoint-specific)',
+    );
+    expect(screen.getByText(/Breakpoint-specific overrides are active\./i)).toBeInTheDocument();
+  });
+
+  it('shows a mixed-state indicator for breakpoint-specific per-type quick overrides', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: { adapterId: 'masonry' },
+            },
+            tablet: {
+              image: { adapterId: 'justified' },
+            },
+            mobile: {
+              image: { adapterId: 'masonry' },
+            },
+          },
+        },
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByLabelText('Image Gallery', { selector: 'input' })).toHaveAttribute(
+      'placeholder',
+      'Mixed (breakpoint-specific)',
+    );
+    expect(screen.getByText(/Breakpoint-specific overrides are active\./i)).toBeInTheDocument();
+  });
+
+  it('opens the shared responsive editor from campaign settings', async () => {
+    const modal = makeMockModal({ activeTab: 'settings' });
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    const dialog = await openCampaignResponsiveConfigDialog();
+
+    expect(within(dialog).getByText('Shared Section Spacing')).toBeInTheDocument();
+    expect(within(dialog).getByText('Adapter Content Padding (px)')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Clear Campaign Overrides' })).toBeInTheDocument();
+    expect(within(dialog).getByText(/currently inheriting global gallery settings/i)).toBeInTheDocument();
+  });
+
+  it('shows overridden-state messaging when campaign gallery overrides exist', async () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: 'masonry',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'per-type',
+        },
+        categories: [],
+      },
+    });
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    const dialog = await openCampaignResponsiveConfigDialog();
+
+    expect(within(dialog).getByText(/currently stores custom gallery overrides/i)).toBeInTheDocument();
+  });
+
+  it('shows live campaign override summaries and supports inline reset to inherited settings', () => {
+    const updateForm = vi.fn();
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      updateForm,
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                common: {
+                  sectionPadding: 24,
+                },
+              },
+              video: {
+                adapterId: 'diamond',
+              },
+            },
+          },
+        },
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByText('Custom gallery overrides')).toBeInTheDocument();
+    expect(screen.getByText('Responsive settings: customized')).toBeInTheDocument();
+    expect(screen.getByText('Video: breakpoint-specific override')).toBeInTheDocument();
+    expect(screen.getByText('Mode: per-type')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use Inherited Gallery Settings' }));
+
+    expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
+      imageAdapterId: '',
+      videoAdapterId: '',
+      galleryOverrides: undefined,
+    }));
+  });
+
+  it('saves unified adapter overrides from the shared responsive editor', async () => {
+    const updateForm = vi.fn();
+    const modal = makeMockModal({ activeTab: 'settings', updateForm });
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    const dialog = await openCampaignResponsiveConfigDialog();
+
+    fireEvent.change(within(dialog).getByLabelText('Gallery Mode'), { target: { value: 'unified' } });
+
+    expect(within(dialog).getByLabelText('Unified Gallery Adapter')).toBeInTheDocument();
+
+    fireEvent.change(within(dialog).getByLabelText('Unified Gallery Adapter'), { target: { value: 'classic' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Apply Campaign Gallery Config' }));
+
+    await waitFor(() => {
+      expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
+        imageAdapterId: 'classic',
+        videoAdapterId: 'classic',
+        galleryOverrides: expect.objectContaining({
+          mode: 'unified',
+          breakpoints: expect.objectContaining({
+            desktop: expect.objectContaining({
+              unified: expect.objectContaining({ adapterId: 'classic' }),
+            }),
+            tablet: expect.objectContaining({
+              unified: expect.objectContaining({ adapterId: 'classic' }),
+            }),
+            mobile: expect.objectContaining({
+              unified: expect.objectContaining({ adapterId: 'classic' }),
+            }),
+          }),
+        }),
+      }));
+    });
   });
 
   it('renders media grid with items on media tab', () => {
