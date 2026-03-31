@@ -74,9 +74,9 @@ export interface Campaign {
   unpublishAt?: string;
   /** P15-B: Optional layout template reference. */
   layoutTemplateId?: string;
-  /** Per-campaign image gallery adapter override (empty = use global setting). */
+  /** @deprecated Legacy flat campaign override compatibility only. Persist galleryOverrides instead. */
   imageAdapterId?: string;
-  /** Per-campaign video gallery adapter override (empty = use global setting). */
+  /** @deprecated Legacy flat campaign override compatibility only. Persist galleryOverrides instead. */
   videoAdapterId?: string;
   /** Phase 23 nested campaign gallery override surface. */
   galleryOverrides?: Partial<GalleryConfig>;
@@ -547,9 +547,13 @@ export interface GalleryBehaviorSettings {
   thumbnailDragScrollEnabled: boolean;
   thumbnailScrollButtonsVisible: boolean;
   // P12-C: Pluggable Gallery Adapters
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.image.adapterId instead. */
   imageGalleryAdapterId: string;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.video.adapterId instead. */
   videoGalleryAdapterId: string;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.mode instead. */
   unifiedGalleryEnabled: boolean;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.unified.adapterId instead. */
   unifiedGalleryAdapterId: string;
   gridCardWidth: number;
   gridCardHeight: number;
@@ -741,11 +745,17 @@ export interface GalleryBehaviorSettings {
   // P15-A: Per-breakpoint gallery selection
   /** @deprecated Legacy flat-field compatibility only. Active UI writes nested galleryConfig. */
   gallerySelectionMode: 'unified' | 'per-breakpoint';
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.desktop.image.adapterId instead. */
   desktopImageAdapterId: string;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.desktop.video.adapterId instead. */
   desktopVideoAdapterId: string;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.tablet.image.adapterId instead. */
   tabletImageAdapterId: string;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.tablet.video.adapterId instead. */
   tabletVideoAdapterId: string;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.mobile.image.adapterId instead. */
   mobileImageAdapterId: string;
+  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.mobile.video.adapterId instead. */
   mobileVideoAdapterId: string;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';

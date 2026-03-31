@@ -140,6 +140,35 @@ class WPSG_Settings_Sanitizer {
     ];
 
     /**
+     * Return the flat gallery setting keys retained only for legacy
+     * compatibility. New writes should persist nested `gallery_config` instead.
+     *
+     * @return string[]
+     */
+    public static function get_legacy_gallery_setting_keys() {
+        return array_values(array_unique(array_merge(
+            [
+                'image_gallery_adapter_id',
+                'video_gallery_adapter_id',
+                'unified_gallery_enabled',
+                'unified_gallery_adapter_id',
+                'gallery_selection_mode',
+                'desktop_image_adapter_id',
+                'desktop_video_adapter_id',
+                'tablet_image_adapter_id',
+                'tablet_video_adapter_id',
+                'mobile_image_adapter_id',
+                'mobile_video_adapter_id',
+            ],
+            array_values(self::$nested_common_field_map),
+            array_values(self::get_nested_common_field_map_for_scope('image')),
+            array_values(self::get_nested_common_field_map_for_scope('video')),
+            array_values(self::get_nested_common_field_map_for_scope('unified')),
+            array_values(self::$nested_adapter_field_map)
+        )));
+    }
+
+    /**
      * Convert a camelCase-style nested key to snake_case for registry matching.
      *
      * @param string $key Nested key.

@@ -103,8 +103,8 @@ describe('mergeSettingsWithDefaults', () => {
     });
     expect(merged.gallerySelectionMode).toBe('per-breakpoint');
     expect(merged.desktopImageAdapterId).toBe('masonry');
-    // Unrelated field still has default
-    expect(merged.imageGalleryAdapterId).toBe('classic');
+    // Legacy compatibility values are rehydrated from nested galleryConfig.
+    expect(merged.imageGalleryAdapterId).toBe('masonry');
   });
 
   it('preserves falsy value 0 (does not replace with default)', () => {

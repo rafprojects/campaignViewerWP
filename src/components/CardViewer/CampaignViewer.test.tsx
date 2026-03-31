@@ -216,14 +216,16 @@ describe('CampaignViewer', () => {
       expect(apiClient.put).toHaveBeenCalledWith(
         '/wp-json/wp-super-gallery/v1/campaigns/1',
         expect.objectContaining({
-          imageAdapterId: 'classic',
-          videoAdapterId: 'classic',
           galleryOverrides: expect.objectContaining({
             mode: 'unified',
           }),
         }),
       );
     });
+
+    const payload = (apiClient.put as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageAdapterId');
+    expect(payload).not.toHaveProperty('videoAdapterId');
 
     expect(onCampaignsUpdated).toHaveBeenCalled();
     expect(onNotify).toHaveBeenCalledWith({

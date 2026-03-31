@@ -8,8 +8,14 @@ import type {
   GalleryScopeConfig,
 } from '@/types';
 import type { AdapterSettingFieldDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
-import { getAdapterRegistration, getSettingGroupDefinition } from '@/components/Galleries/Adapters/adapterRegistry';
-import { getLegacyPerTypeAdapterId } from './galleryAdapterSelection';
+import {
+  getAdapterRegistration,
+  getRegisteredAdapters,
+  getSettingGroupDefinition,
+  isAdapterSupportedAtBreakpoint,
+  normalizeAdapterId,
+} from '@/components/Galleries/Adapters/adapterRegistry';
+import { getLegacyFlatAdapterId, getLegacyPerTypeAdapterId, LEGACY_BREAKPOINT_SCOPE_KEYS } from './galleryAdapterSelection';
 
 export const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
 const GALLERY_SCOPES: GalleryConfigScope[] = ['unified', 'image', 'video'];
@@ -96,6 +102,31 @@ const LEGACY_PER_TYPE_ADAPTER_SETTING_KEYS = [
   'mobileImageAdapterId',
   'mobileVideoAdapterId',
 ] as const satisfies readonly (keyof GalleryBehaviorSettings)[];
+
+const LEGACY_ADAPTER_SETTING_KEYS = Array.from(
+  new Set(
+    getRegisteredAdapters().flatMap((adapter) => (
+      adapter.settingGroups.flatMap((group) => (
+        getSettingGroupDefinition(group)?.fields.map((field) => field.key) ?? []
+      ))
+    )),
+  ),
+) as Array<keyof GalleryBehaviorSettings>;
+
+export const LEGACY_GALLERY_SETTING_KEYS: Array<keyof GalleryBehaviorSettings> = Array.from(
+  new Set<keyof GalleryBehaviorSettings>([
+    ...(Object.keys(LEGACY_COMMON_SETTING_FIELD_MAP) as Array<keyof GalleryBehaviorSettings>),
+    ...(Object.keys(LEGACY_SCOPED_COMMON_SETTING_FIELD_MAP) as Array<keyof GalleryBehaviorSettings>),
+    ...LEGACY_UNIFIED_ADAPTER_SETTING_KEYS,
+    ...LEGACY_PER_TYPE_ADAPTER_SETTING_KEYS,
+    ...LEGACY_ADAPTER_SETTING_KEYS,
+  ]),
+);
+
+type RepresentativeGalleryCommonSettingKey = Exclude<
+  keyof GalleryCommonSettings,
+  'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl'
+>;
 
 export function getLegacyViewportBackgroundFieldMap(
   scope: GalleryConfigScope,
@@ -364,6 +395,47 @@ function buildLegacyScopeConfig(
   };
 }
 
+function resolveLegacyBreakpointAdapterId(
+  settings: Pick<
+    GalleryBehaviorSettings,
+    | 'unifiedGalleryAdapterId'
+    | 'gallerySelectionMode'
+    | 'imageGalleryAdapterId'
+    | 'videoGalleryAdapterId'
+    | 'desktopImageAdapterId'
+    | 'desktopVideoAdapterId'
+    | 'tabletImageAdapterId'
+    | 'tabletVideoAdapterId'
+    | 'mobileImageAdapterId'
+    | 'mobileVideoAdapterId'
+  >,
+  breakpoint: GalleryConfigBreakpoint,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+): string {
+  if (scope === 'unified') {
+    const normalizedUnifiedId = normalizeAdapterId(settings.unifiedGalleryAdapterId);
+    return isAdapterSupportedAtBreakpoint(normalizedUnifiedId, breakpoint) ? normalizedUnifiedId : 'classic';
+  }
+
+  const perBreakpointAdapterId = settings.gallerySelectionMode === 'per-breakpoint'
+    ? settings[LEGACY_BREAKPOINT_SCOPE_KEYS[scope][breakpoint]]
+    : getLegacyFlatAdapterId(settings, scope);
+  const fallbackAdapterId = getLegacyFlatAdapterId(settings, scope);
+
+  for (const adapterId of [perBreakpointAdapterId, fallbackAdapterId]) {
+    if (!adapterId) {
+      continue;
+    }
+
+    const normalizedAdapterId = normalizeAdapterId(adapterId);
+    if (isAdapterSupportedAtBreakpoint(normalizedAdapterId, breakpoint)) {
+      return normalizedAdapterId;
+    }
+  }
+
+  return 'classic';
+}
+
 export function buildGalleryConfigFromLegacySettings(
   settings: Pick<
     GalleryBehaviorSettings,
@@ -416,19 +488,19 @@ export function buildGalleryConfigFromLegacySettings(
     mode: settings.unifiedGalleryEnabled ? 'unified' : 'per-type',
     breakpoints: {
       desktop: {
-        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified'),
-        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'desktop', 'image'), 'image'),
-        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'desktop', 'video'), 'video'),
+        unified: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'desktop', 'unified'), 'unified'),
+        image: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'desktop', 'image'), 'image'),
+        video: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'desktop', 'video'), 'video'),
       },
       tablet: {
-        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified'),
-        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'tablet', 'image'), 'image'),
-        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'tablet', 'video'), 'video'),
+        unified: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'tablet', 'unified'), 'unified'),
+        image: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'tablet', 'image'), 'image'),
+        video: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'tablet', 'video'), 'video'),
       },
       mobile: {
-        unified: buildLegacyScopeConfig(settings, settings.unifiedGalleryAdapterId, 'unified'),
-        image: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'mobile', 'image'), 'image'),
-        video: buildLegacyScopeConfig(settings, getLegacyPerTypeAdapterId(settings, 'mobile', 'video'), 'video'),
+        unified: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'mobile', 'unified'), 'unified'),
+        image: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'mobile', 'image'), 'image'),
+        video: buildLegacyScopeConfig(settings, resolveLegacyBreakpointAdapterId(settings, 'mobile', 'video'), 'video'),
       },
     },
   };
@@ -461,6 +533,112 @@ export function collectGalleryAdapterSettingValues(
   }
 
   return collected;
+}
+
+export function getRepresentativeScopeAdapterId(
+  config: GalleryConfig,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+): string {
+  return config.breakpoints?.desktop?.[scope]?.adapterId
+    ?? config.breakpoints?.tablet?.[scope]?.adapterId
+    ?? config.breakpoints?.mobile?.[scope]?.adapterId
+    ?? '';
+}
+
+export function getRepresentativeGalleryCommonSetting(
+  config: GalleryConfig,
+  key: RepresentativeGalleryCommonSettingKey,
+): number | string | boolean | undefined {
+  const scopes = config.mode === 'unified'
+    ? ['unified'] as const
+    : ['image', 'video'] as const;
+
+  for (const scope of scopes) {
+    const value = config.breakpoints?.desktop?.[scope]?.common?.[key]
+      ?? config.breakpoints?.tablet?.[scope]?.common?.[key]
+      ?? config.breakpoints?.mobile?.[scope]?.common?.[key];
+
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+export function getScopeGalleryCommonSetting(
+  config: GalleryConfig,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+  key: 'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl',
+): string | undefined {
+  const value = config.breakpoints?.desktop?.[scope]?.common?.[key]
+    ?? config.breakpoints?.tablet?.[scope]?.common?.[key]
+    ?? config.breakpoints?.mobile?.[scope]?.common?.[key];
+
+  return typeof value === 'string' ? value : undefined;
+}
+
+export function collectLegacyGallerySettingValues(
+  config: GalleryConfig,
+): Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>> {
+  const mode = config.mode === 'unified' ? 'unified' : 'per-type';
+  const projected: Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>> = {
+    ...collectGalleryAdapterSettingValues(config),
+    unifiedGalleryEnabled: mode === 'unified',
+    unifiedGalleryAdapterId: getRepresentativeScopeAdapterId(config, 'unified'),
+    gallerySelectionMode: mode === 'per-type' ? 'per-breakpoint' : 'unified',
+    imageGalleryAdapterId: getRepresentativeScopeAdapterId(config, 'image'),
+    videoGalleryAdapterId: getRepresentativeScopeAdapterId(config, 'video'),
+    desktopImageAdapterId: config.breakpoints?.desktop?.image?.adapterId ?? '',
+    desktopVideoAdapterId: config.breakpoints?.desktop?.video?.adapterId ?? '',
+    tabletImageAdapterId: config.breakpoints?.tablet?.image?.adapterId ?? '',
+    tabletVideoAdapterId: config.breakpoints?.tablet?.video?.adapterId ?? '',
+    mobileImageAdapterId: config.breakpoints?.mobile?.image?.adapterId ?? '',
+    mobileVideoAdapterId: config.breakpoints?.mobile?.video?.adapterId ?? '',
+  };
+
+  const legacyCommonValues = {
+    gallerySectionMaxWidth: getRepresentativeGalleryCommonSetting(config, 'sectionMaxWidth'),
+    gallerySectionMaxHeight: getRepresentativeGalleryCommonSetting(config, 'sectionMaxHeight'),
+    gallerySectionMinWidth: getRepresentativeGalleryCommonSetting(config, 'sectionMinWidth'),
+    gallerySectionMinHeight: getRepresentativeGalleryCommonSetting(config, 'sectionMinHeight'),
+    gallerySectionHeightMode: getRepresentativeGalleryCommonSetting(config, 'sectionHeightMode'),
+    gallerySectionPadding: getRepresentativeGalleryCommonSetting(config, 'sectionPadding'),
+    adapterContentPadding: getRepresentativeGalleryCommonSetting(config, 'adapterContentPadding'),
+    adapterSizingMode: getRepresentativeGalleryCommonSetting(config, 'adapterSizingMode'),
+    adapterMaxWidthPct: getRepresentativeGalleryCommonSetting(config, 'adapterMaxWidthPct'),
+    adapterMaxHeightPct: getRepresentativeGalleryCommonSetting(config, 'adapterMaxHeightPct'),
+    adapterItemGap: getRepresentativeGalleryCommonSetting(config, 'adapterItemGap'),
+    adapterJustifyContent: getRepresentativeGalleryCommonSetting(config, 'adapterJustifyContent'),
+    gallerySizingMode: getRepresentativeGalleryCommonSetting(config, 'gallerySizingMode'),
+    galleryManualHeight: getRepresentativeGalleryCommonSetting(config, 'galleryManualHeight'),
+    perTypeSectionEqualHeight: getRepresentativeGalleryCommonSetting(config, 'perTypeSectionEqualHeight'),
+    galleryImageLabel: getRepresentativeGalleryCommonSetting(config, 'galleryImageLabel'),
+    galleryVideoLabel: getRepresentativeGalleryCommonSetting(config, 'galleryVideoLabel'),
+    galleryLabelJustification: getRepresentativeGalleryCommonSetting(config, 'galleryLabelJustification'),
+    showGalleryLabelIcon: getRepresentativeGalleryCommonSetting(config, 'showGalleryLabelIcon'),
+    showCampaignGalleryLabels: getRepresentativeGalleryCommonSetting(config, 'showCampaignGalleryLabels'),
+    imageBgType: getScopeGalleryCommonSetting(config, 'image', 'viewportBgType'),
+    imageBgColor: getScopeGalleryCommonSetting(config, 'image', 'viewportBgColor'),
+    imageBgGradient: getScopeGalleryCommonSetting(config, 'image', 'viewportBgGradient'),
+    imageBgImageUrl: getScopeGalleryCommonSetting(config, 'image', 'viewportBgImageUrl'),
+    videoBgType: getScopeGalleryCommonSetting(config, 'video', 'viewportBgType'),
+    videoBgColor: getScopeGalleryCommonSetting(config, 'video', 'viewportBgColor'),
+    videoBgGradient: getScopeGalleryCommonSetting(config, 'video', 'viewportBgGradient'),
+    videoBgImageUrl: getScopeGalleryCommonSetting(config, 'video', 'viewportBgImageUrl'),
+    unifiedBgType: getScopeGalleryCommonSetting(config, 'unified', 'viewportBgType'),
+    unifiedBgColor: getScopeGalleryCommonSetting(config, 'unified', 'viewportBgColor'),
+    unifiedBgGradient: getScopeGalleryCommonSetting(config, 'unified', 'viewportBgGradient'),
+    unifiedBgImageUrl: getScopeGalleryCommonSetting(config, 'unified', 'viewportBgImageUrl'),
+  } satisfies Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>>;
+
+  for (const [key, value] of Object.entries(legacyCommonValues)) {
+    if (value !== undefined) {
+      projected[key as keyof GalleryBehaviorSettings] = value as GalleryBehaviorSettings[keyof GalleryBehaviorSettings];
+    }
+  }
+
+  return projected;
 }
 
 export function syncLegacyGallerySettingToConfig<K extends keyof GalleryBehaviorSettings>(

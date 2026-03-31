@@ -21,7 +21,6 @@ import {
   buildCampaignGalleryOverrideEditorValue,
   clearCampaignGalleryOverrides,
   hasCampaignGalleryOverrides,
-  normalizeCampaignLegacyAdapterOverrides,
 } from '@/utils/campaignGalleryOverrides';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
@@ -72,7 +71,7 @@ export function CampaignViewer({
   }, []);
 
   const persistCampaignGalleryConfig = useCallback(async (
-    nextState: Pick<Campaign, 'imageAdapterId' | 'videoAdapterId' | 'galleryOverrides'>,
+    nextState: Pick<Campaign, 'galleryOverrides'>,
   ) => {
     if (isSavingGalleryConfig) {
       return;
@@ -90,15 +89,7 @@ export function CampaignViewer({
 
     setIsSavingGalleryConfig(true);
 
-    const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
-      imageAdapterId: nextState.imageAdapterId ?? '',
-      videoAdapterId: nextState.videoAdapterId ?? '',
-      galleryOverrides: nextState.galleryOverrides,
-    });
-
     const payload = {
-      imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
-      videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
       galleryOverrides: nextState.galleryOverrides ?? null,
     };
 
@@ -107,8 +98,8 @@ export function CampaignViewer({
 
       setViewerCampaign((current) => ({
         ...current,
-        imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId || undefined,
-        videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId || undefined,
+        imageAdapterId: undefined,
+        videoAdapterId: undefined,
         galleryOverrides: nextState.galleryOverrides,
         updatedAt: new Date().toISOString(),
       }));
@@ -127,14 +118,12 @@ export function CampaignViewer({
 
   const handleGalleryConfigSave = useCallback((galleryOverrides: GalleryConfig) => {
     void persistCampaignGalleryConfig({
-      imageAdapterId: viewerCampaign.imageAdapterId ?? '',
-      videoAdapterId: viewerCampaign.videoAdapterId ?? '',
       galleryOverrides,
     });
-  }, [persistCampaignGalleryConfig, viewerCampaign.imageAdapterId, viewerCampaign.videoAdapterId]);
+  }, [persistCampaignGalleryConfig]);
 
   const handleGalleryConfigClear = useCallback(() => {
-    void persistCampaignGalleryConfig(clearCampaignGalleryOverrides());
+    void persistCampaignGalleryConfig({ galleryOverrides: clearCampaignGalleryOverrides().galleryOverrides });
   }, [persistCampaignGalleryConfig]);
 
   // P22-K5: Keep CampaignContext in sync with viewer open/close

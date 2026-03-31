@@ -3505,6 +3505,13 @@ class WPSG_REST {
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $current = WPSG_Settings::get_settings();
         $merged = array_merge($current, $sanitized);
+
+        if (array_key_exists('gallery_config', $input)) {
+            foreach (WPSG_Settings_Sanitizer::get_legacy_gallery_setting_keys() as $legacy_key) {
+                unset($merged[$legacy_key]);
+            }
+        }
+
         update_option(WPSG_Settings::OPTION_NAME, $merged);
         self::bump_cache_version();
 
@@ -3929,28 +3936,11 @@ class WPSG_REST {
                 }
             }
         }
-
-        // Per-campaign gallery adapter overrides.
-        $valid_adapters = WPSG_CPT::VALID_ADAPTERS;
-        $image_adapter_id = $request->get_param('imageAdapterId');
-        if (!is_null($image_adapter_id)) {
-            $image_adapter_id = sanitize_text_field($image_adapter_id);
-            if ($image_adapter_id === '' || !in_array($image_adapter_id, $valid_adapters, true)) {
-                delete_post_meta($post_id, '_wpsg_image_adapter_id');
-            } else {
-                update_post_meta($post_id, '_wpsg_image_adapter_id', $image_adapter_id);
-            }
-        }
-        $video_adapter_id = $request->get_param('videoAdapterId');
-        if (!is_null($video_adapter_id)) {
-            $video_adapter_id = sanitize_text_field($video_adapter_id);
-            if ($video_adapter_id === '' || !in_array($video_adapter_id, $valid_adapters, true)) {
-                delete_post_meta($post_id, '_wpsg_video_adapter_id');
-            } else {
-                update_post_meta($post_id, '_wpsg_video_adapter_id', $video_adapter_id);
-            }
-        }
         if ($request->has_param('galleryOverrides')) {
+            foreach (WPSG_CPT::LEGACY_CAMPAIGN_ADAPTER_META_KEYS as $meta_key) {
+                delete_post_meta($post_id, $meta_key);
+            }
+
             $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($request->get_param('galleryOverrides'));
             if (empty($gallery_overrides)) {
                 delete_post_meta($post_id, '_wpsg_gallery_overrides');

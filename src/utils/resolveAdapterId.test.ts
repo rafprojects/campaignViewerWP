@@ -6,7 +6,6 @@ import {
   resolveGalleryMode,
   resolveUnifiedAdapterId,
 } from './resolveAdapterId';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { GalleryBehaviorSettings, GalleryConfig } from '@/types';
 import { mergeSettingsWithDefaults } from './mergeSettingsWithDefaults';
 
@@ -18,11 +17,10 @@ function makeSettings(overrides: Partial<GalleryBehaviorSettings> = {}): Gallery
 }
 
 function makeLegacyOnlySettings(overrides: Partial<GalleryBehaviorSettings> = {}): GalleryBehaviorSettings {
-  return {
-    ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+  return mergeSettingsWithDefaults({
     ...overrides,
     galleryConfig: undefined,
-  };
+  });
 }
 
 // ── Unified mode ─────────────────────────────────────────────
@@ -69,7 +67,7 @@ describe('resolveGalleryMode', () => {
     expect(resolveGalleryMode(s)).toBe('unified');
   });
 
-  it('falls back to legacy unifiedGalleryEnabled when nested mode is absent', () => {
+  it('hydrates nested mode from legacy unifiedGalleryEnabled when galleryConfig is absent', () => {
     expect(resolveGalleryMode(makeLegacyOnlySettings({ unifiedGalleryEnabled: true }))).toBe('unified');
     expect(resolveGalleryMode(makeLegacyOnlySettings({ unifiedGalleryEnabled: false }))).toBe('per-type');
   });
@@ -167,7 +165,7 @@ describe('resolveAdapterId – per-breakpoint mode', () => {
 // ── Default settings behaviour ───────────────────────────────
 
 describe('resolveAdapterId – with defaults', () => {
-  it('defaults are unified mode returning classic for both types', () => {
+  it('default migrated settings resolve classic for both types', () => {
     const s = makeLegacyOnlySettings();
     expect(resolveAdapterId(s, 'image', 'desktop')).toBe('classic');
     expect(resolveAdapterId(s, 'video', 'mobile')).toBe('classic');
@@ -247,7 +245,7 @@ describe('resolveUnifiedAdapterId', () => {
     expect(resolveUnifiedAdapterId(s, 'tablet')).toBe('justified');
   });
 
-  it('does not treat non-adapter campaign overrides as an explicit unified adapter override', () => {
+  it('falls back to the global nested unified adapter when campaign overrides only change common settings', () => {
     const s = makeSettings({
       unifiedGalleryAdapterId: 'compact-grid',
       galleryConfig: {
@@ -274,7 +272,7 @@ describe('resolveUnifiedAdapterId', () => {
       },
     };
 
-    expect(resolveUnifiedAdapterId(s, 'desktop', { galleryOverrides: campaignOverrides, legacyOverrideId: 'diamond' })).toBe('diamond');
+    expect(resolveUnifiedAdapterId(s, 'desktop', { galleryOverrides: campaignOverrides, legacyOverrideId: 'diamond' })).toBe('justified');
   });
 
   it('prefers campaign nested unified adapter overrides ahead of legacy campaign overrides', () => {

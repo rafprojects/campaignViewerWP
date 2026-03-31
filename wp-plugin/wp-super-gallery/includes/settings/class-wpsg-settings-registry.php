@@ -68,6 +68,7 @@ class WPSG_Settings_Registry {
         'video_shadow_preset'        => 'subtle',
         'image_shadow_custom'        => '0 2px 8px rgba(0,0,0,0.15)',
         'video_shadow_custom'        => '0 2px 8px rgba(0,0,0,0.15)',
+        // @deprecated Phase 24 legacy compatibility only. Persist nested gallery_config instead.
         'image_gallery_adapter_id'   => 'classic',
         'video_gallery_adapter_id'   => 'classic',
         'unified_gallery_enabled'    => false,
@@ -206,7 +207,7 @@ class WPSG_Settings_Registry {
         'auth_bar_mobile_breakpoint'     => 768,
         'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
         'session_idle_timeout_minutes' => 0,
-        // Deprecated legacy compatibility only. Active UI writes nested galleryConfig.
+        // @deprecated Phase 24 legacy compatibility only. Persist nested gallery_config instead.
         'gallery_selection_mode'         => 'unified',
         'desktop_image_adapter_id'       => 'classic',
         'desktop_video_adapter_id'       => 'classic',
@@ -369,10 +370,11 @@ class WPSG_Settings_Registry {
         'image_bg_type'          => ['none', 'solid', 'gradient', 'image'],
         'video_bg_type'          => ['none', 'solid', 'gradient', 'image'],
         'unified_bg_type'        => ['none', 'solid', 'gradient', 'image'],
+        // @deprecated Phase 24 legacy compatibility only. Persist nested gallery_config instead.
         'image_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
         'video_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
         'unified_gallery_adapter_id' => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
-        // Deprecated legacy compatibility only. Active UI writes nested galleryConfig.
+        // @deprecated Phase 24 legacy compatibility only. Persist nested gallery_config instead.
         'gallery_selection_mode'     => ['unified', 'per-breakpoint'],
         'desktop_image_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
         'desktop_video_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],

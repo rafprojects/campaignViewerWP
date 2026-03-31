@@ -44,7 +44,8 @@ import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import {
   buildGalleryConfigFromLegacySettings,
-  collectGalleryAdapterSettingValues,
+  collectLegacyGallerySettingValues,
+  LEGACY_GALLERY_SETTING_KEYS,
   mergeGalleryConfig,
   syncLegacyGallerySettingToConfig,
 } from '@/utils/galleryConfig';
@@ -56,58 +57,6 @@ const LazyGalleryConfigEditorModal = lazy(() =>
     default: module.GalleryConfigEditorModal,
   })),
 );
-
-function getRepresentativeGalleryCommonSetting(
-  galleryConfig: GalleryConfig,
-  key:
-    | 'sectionMaxWidth'
-    | 'sectionMaxHeight'
-    | 'sectionMinWidth'
-    | 'sectionMinHeight'
-    | 'sectionHeightMode'
-    | 'perTypeSectionEqualHeight'
-    | 'sectionPadding'
-    | 'adapterContentPadding'
-    | 'adapterSizingMode'
-    | 'adapterMaxWidthPct'
-    | 'adapterMaxHeightPct'
-    | 'adapterItemGap'
-    | 'adapterJustifyContent'
-    | 'gallerySizingMode'
-    | 'galleryManualHeight'
-    | 'galleryImageLabel'
-    | 'galleryVideoLabel'
-    | 'galleryLabelJustification'
-    | 'showGalleryLabelIcon'
-    | 'showCampaignGalleryLabels',
-): number | string | boolean | undefined {
-  const scopes = galleryConfig.mode === 'unified'
-    ? ['unified'] as const
-    : ['image', 'video'] as const;
-
-  for (const scope of scopes) {
-    const value = galleryConfig.breakpoints?.desktop?.[scope]?.common?.[key]
-      ?? galleryConfig.breakpoints?.tablet?.[scope]?.common?.[key]
-      ?? galleryConfig.breakpoints?.mobile?.[scope]?.common?.[key];
-    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
-      return value;
-    }
-  }
-
-  return undefined;
-}
-
-function getScopeGalleryCommonSetting(
-  galleryConfig: GalleryConfig,
-  scope: 'unified' | 'image' | 'video',
-  key: 'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl',
-): string | undefined {
-  const value = galleryConfig.breakpoints?.desktop?.[scope]?.common?.[key]
-    ?? galleryConfig.breakpoints?.tablet?.[scope]?.common?.[key]
-    ?? galleryConfig.breakpoints?.mobile?.[scope]?.common?.[key];
-
-  return typeof value === 'string' ? value : undefined;
-}
 
 function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   const seed = buildGalleryConfigFromLegacySettings(settings);
@@ -266,7 +215,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await apiClient.updateSettings(settings);
+      const payload = { ...settings } as Partial<SettingsData> & Record<string, unknown>;
+      for (const key of LEGACY_GALLERY_SETTING_KEYS) {
+        delete payload[key];
+      }
+
+      const response = await apiClient.updateSettings(payload as Partial<SettingsData>);
       const saved = mapResponseToSettings(response);
       setSettings(saved);
       setOriginalSettings(saved);
@@ -314,96 +268,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
   const handleGalleryConfigEditorSave = (galleryConfig: GalleryConfig) => {
     applySettingsUpdate((prev) => {
-      const adapterSettingValues = collectGalleryAdapterSettingValues(galleryConfig);
-      const nextUnifiedAdapterId = galleryConfig.breakpoints?.desktop?.unified?.adapterId
-        ?? galleryConfig.breakpoints?.tablet?.unified?.adapterId
-        ?? galleryConfig.breakpoints?.mobile?.unified?.adapterId
-        ?? prev.unifiedGalleryAdapterId;
-      const desktopImageAdapterId = galleryConfig.breakpoints?.desktop?.image?.adapterId ?? prev.desktopImageAdapterId;
-      const desktopVideoAdapterId = galleryConfig.breakpoints?.desktop?.video?.adapterId ?? prev.desktopVideoAdapterId;
-      const tabletImageAdapterId = galleryConfig.breakpoints?.tablet?.image?.adapterId ?? prev.tabletImageAdapterId;
-      const tabletVideoAdapterId = galleryConfig.breakpoints?.tablet?.video?.adapterId ?? prev.tabletVideoAdapterId;
-      const mobileImageAdapterId = galleryConfig.breakpoints?.mobile?.image?.adapterId ?? prev.mobileImageAdapterId;
-      const mobileVideoAdapterId = galleryConfig.breakpoints?.mobile?.video?.adapterId ?? prev.mobileVideoAdapterId;
-      const gallerySectionMaxWidth = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMaxWidth') ?? prev.gallerySectionMaxWidth;
-      const gallerySectionMaxHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMaxHeight') ?? prev.gallerySectionMaxHeight;
-      const gallerySectionMinWidth = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMinWidth') ?? prev.gallerySectionMinWidth;
-      const gallerySectionMinHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionMinHeight') ?? prev.gallerySectionMinHeight;
-      const gallerySectionHeightMode = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionHeightMode') ?? prev.gallerySectionHeightMode;
-      const perTypeSectionEqualHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'perTypeSectionEqualHeight') ?? prev.perTypeSectionEqualHeight;
-      const gallerySectionPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'sectionPadding') ?? prev.gallerySectionPadding;
-      const adapterContentPadding = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterContentPadding') ?? prev.adapterContentPadding;
-      const adapterSizingMode = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterSizingMode') ?? prev.adapterSizingMode;
-      const adapterMaxWidthPct = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterMaxWidthPct') ?? prev.adapterMaxWidthPct;
-      const adapterMaxHeightPct = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterMaxHeightPct') ?? prev.adapterMaxHeightPct;
-      const adapterItemGap = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterItemGap') ?? prev.adapterItemGap;
-      const adapterJustifyContent = getRepresentativeGalleryCommonSetting(galleryConfig, 'adapterJustifyContent') ?? prev.adapterJustifyContent;
-      const gallerySizingMode = getRepresentativeGalleryCommonSetting(galleryConfig, 'gallerySizingMode') ?? prev.gallerySizingMode;
-      const galleryManualHeight = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryManualHeight') ?? prev.galleryManualHeight;
-      const galleryImageLabel = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryImageLabel') ?? prev.galleryImageLabel;
-      const galleryVideoLabel = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryVideoLabel') ?? prev.galleryVideoLabel;
-      const galleryLabelJustification = getRepresentativeGalleryCommonSetting(galleryConfig, 'galleryLabelJustification') ?? prev.galleryLabelJustification;
-      const showGalleryLabelIcon = getRepresentativeGalleryCommonSetting(galleryConfig, 'showGalleryLabelIcon') ?? prev.showGalleryLabelIcon;
-      const showCampaignGalleryLabels = getRepresentativeGalleryCommonSetting(galleryConfig, 'showCampaignGalleryLabels') ?? prev.showCampaignGalleryLabels;
-      const imageBgType = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgType') ?? prev.imageBgType;
-      const imageBgColor = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgColor') ?? prev.imageBgColor;
-      const imageBgGradient = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgGradient') ?? prev.imageBgGradient;
-      const imageBgImageUrl = getScopeGalleryCommonSetting(galleryConfig, 'image', 'viewportBgImageUrl') ?? prev.imageBgImageUrl;
-      const videoBgType = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgType') ?? prev.videoBgType;
-      const videoBgColor = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgColor') ?? prev.videoBgColor;
-      const videoBgGradient = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgGradient') ?? prev.videoBgGradient;
-      const videoBgImageUrl = getScopeGalleryCommonSetting(galleryConfig, 'video', 'viewportBgImageUrl') ?? prev.videoBgImageUrl;
-      const unifiedBgType = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgType') ?? prev.unifiedBgType;
-      const unifiedBgColor = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgColor') ?? prev.unifiedBgColor;
-      const unifiedBgGradient = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgGradient') ?? prev.unifiedBgGradient;
-      const unifiedBgImageUrl = getScopeGalleryCommonSetting(galleryConfig, 'unified', 'viewportBgImageUrl') ?? prev.unifiedBgImageUrl;
+      const legacyGallerySettings = collectLegacyGallerySettingValues(galleryConfig);
 
       return {
         ...prev,
-        ...(adapterSettingValues as Partial<SettingsData>),
         galleryConfig,
-        unifiedGalleryEnabled: galleryConfig.mode === 'unified',
-        unifiedGalleryAdapterId: nextUnifiedAdapterId,
-        imageGalleryAdapterId: desktopImageAdapterId || prev.imageGalleryAdapterId,
-        videoGalleryAdapterId: desktopVideoAdapterId || prev.videoGalleryAdapterId,
-        desktopImageAdapterId,
-        desktopVideoAdapterId,
-        tabletImageAdapterId,
-        tabletVideoAdapterId,
-        mobileImageAdapterId,
-        mobileVideoAdapterId,
-        gallerySectionMaxWidth: gallerySectionMaxWidth as SettingsData['gallerySectionMaxWidth'],
-        gallerySectionMaxHeight: gallerySectionMaxHeight as SettingsData['gallerySectionMaxHeight'],
-        gallerySectionMinWidth: gallerySectionMinWidth as SettingsData['gallerySectionMinWidth'],
-        gallerySectionMinHeight: gallerySectionMinHeight as SettingsData['gallerySectionMinHeight'],
-        gallerySectionHeightMode: gallerySectionHeightMode as SettingsData['gallerySectionHeightMode'],
-        perTypeSectionEqualHeight: perTypeSectionEqualHeight as SettingsData['perTypeSectionEqualHeight'],
-        gallerySectionPadding: gallerySectionPadding as SettingsData['gallerySectionPadding'],
-        adapterContentPadding: adapterContentPadding as SettingsData['adapterContentPadding'],
-        adapterSizingMode: adapterSizingMode as SettingsData['adapterSizingMode'],
-        adapterMaxWidthPct: adapterMaxWidthPct as SettingsData['adapterMaxWidthPct'],
-        adapterMaxHeightPct: adapterMaxHeightPct as SettingsData['adapterMaxHeightPct'],
-        adapterItemGap: adapterItemGap as SettingsData['adapterItemGap'],
-        adapterJustifyContent: adapterJustifyContent as SettingsData['adapterJustifyContent'],
-        gallerySizingMode: gallerySizingMode as SettingsData['gallerySizingMode'],
-        galleryManualHeight: galleryManualHeight as SettingsData['galleryManualHeight'],
-        galleryImageLabel: galleryImageLabel as SettingsData['galleryImageLabel'],
-        galleryVideoLabel: galleryVideoLabel as SettingsData['galleryVideoLabel'],
-        galleryLabelJustification: galleryLabelJustification as SettingsData['galleryLabelJustification'],
-        showGalleryLabelIcon: showGalleryLabelIcon as SettingsData['showGalleryLabelIcon'],
-        showCampaignGalleryLabels: showCampaignGalleryLabels as SettingsData['showCampaignGalleryLabels'],
-        imageBgType: imageBgType as SettingsData['imageBgType'],
-        imageBgColor: imageBgColor as SettingsData['imageBgColor'],
-        imageBgGradient: imageBgGradient as SettingsData['imageBgGradient'],
-        imageBgImageUrl: imageBgImageUrl as SettingsData['imageBgImageUrl'],
-        videoBgType: videoBgType as SettingsData['videoBgType'],
-        videoBgColor: videoBgColor as SettingsData['videoBgColor'],
-        videoBgGradient: videoBgGradient as SettingsData['videoBgGradient'],
-        videoBgImageUrl: videoBgImageUrl as SettingsData['videoBgImageUrl'],
-        unifiedBgType: unifiedBgType as SettingsData['unifiedBgType'],
-        unifiedBgColor: unifiedBgColor as SettingsData['unifiedBgColor'],
-        unifiedBgGradient: unifiedBgGradient as SettingsData['unifiedBgGradient'],
-        unifiedBgImageUrl: unifiedBgImageUrl as SettingsData['unifiedBgImageUrl'],
+        ...(legacyGallerySettings as Partial<SettingsData>),
       };
     });
 

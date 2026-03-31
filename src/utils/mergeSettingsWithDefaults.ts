@@ -4,56 +4,12 @@ import {
 } from '@/types';
 import {
   buildGalleryConfigFromLegacySettings,
+  collectLegacyGallerySettingValues,
   cloneGalleryConfig,
+  LEGACY_GALLERY_SETTING_KEYS,
   mergeGalleryConfig,
   parseGalleryConfig,
 } from './galleryConfig';
-
-const LEGACY_GALLERY_BRIDGE_KEYS: Array<keyof GalleryBehaviorSettings> = [
-  'unifiedGalleryEnabled',
-  'unifiedGalleryAdapterId',
-  'gallerySelectionMode',
-  'imageGalleryAdapterId',
-  'videoGalleryAdapterId',
-  'desktopImageAdapterId',
-  'desktopVideoAdapterId',
-  'tabletImageAdapterId',
-  'tabletVideoAdapterId',
-  'mobileImageAdapterId',
-  'mobileVideoAdapterId',
-  'gallerySectionMaxWidth',
-  'gallerySectionMaxHeight',
-  'gallerySectionMinWidth',
-  'gallerySectionMinHeight',
-  'gallerySectionHeightMode',
-  'gallerySectionPadding',
-  'adapterContentPadding',
-  'adapterSizingMode',
-  'adapterMaxWidthPct',
-  'adapterMaxHeightPct',
-  'adapterItemGap',
-  'adapterJustifyContent',
-  'gallerySizingMode',
-  'galleryManualHeight',
-  'perTypeSectionEqualHeight',
-  'imageBgType',
-  'imageBgColor',
-  'imageBgGradient',
-  'imageBgImageUrl',
-  'videoBgType',
-  'videoBgColor',
-  'videoBgGradient',
-  'videoBgImageUrl',
-  'unifiedBgType',
-  'unifiedBgColor',
-  'unifiedBgGradient',
-  'unifiedBgImageUrl',
-  'galleryImageLabel',
-  'galleryVideoLabel',
-  'galleryLabelJustification',
-  'showGalleryLabelIcon',
-  'showCampaignGalleryLabels',
-];
 
 /**
  * Merge a partial settings response with the full defaults.
@@ -70,7 +26,7 @@ export function mergeSettingsWithDefaults(
   const result = { ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS };
   const partialRecord = partial as Record<string, unknown>;
   const incomingGalleryConfig = parseGalleryConfig(partialRecord.galleryConfig);
-  const hasLegacyGalleryBridgeOverride = LEGACY_GALLERY_BRIDGE_KEYS.some((key) => partialRecord[key] !== undefined && partialRecord[key] !== null);
+  const hasLegacyGalleryBridgeOverride = LEGACY_GALLERY_SETTING_KEYS.some((key) => partialRecord[key] !== undefined && partialRecord[key] !== null);
 
   for (const key of Object.keys(DEFAULT_GALLERY_BEHAVIOR_SETTINGS) as Array<
     keyof GalleryBehaviorSettings
@@ -113,6 +69,13 @@ export function mergeSettingsWithDefaults(
   result.galleryConfig = incomingGalleryConfig
     ? mergeGalleryConfig(legacyGalleryConfig, incomingGalleryConfig)
     : cloneGalleryConfig(legacyGalleryConfig);
+
+  const resolvedGalleryConfig = result.galleryConfig
+    ?? cloneGalleryConfig(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig)
+    ?? { mode: 'per-type', breakpoints: {} };
+  result.galleryConfig = resolvedGalleryConfig;
+
+  Object.assign(result, collectLegacyGallerySettingValues(resolvedGalleryConfig));
 
   return result;
 }

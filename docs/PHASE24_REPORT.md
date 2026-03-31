@@ -9,7 +9,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P24-A | Flat-to-nested gallery field deprecation | Not started | Large (2-4 days) |
+| P24-A | Flat-to-nested gallery field deprecation | Completed ✅ | Large (2-4 days) |
 | P24-B | Per-breakpoint gallery adapter selection parity | Completed ✅ | Medium-Large (1-2 days) |
 | P24-C | Theme live preview and selection UX | Completed ✅ | Medium (0.5-1 day) |
 | P24-D | Gallery config editor accessibility | Completed ✅ | Medium (0.5-1 day) |
@@ -26,7 +26,7 @@
   - [Key Decisions (Pre-Resolved)](#key-decisions-pre-resolved)
   - [Architecture Decisions](#architecture-decisions)
   - [Execution Priority](#execution-priority)
-  - [Track P24-A — Flat-to-Nested Gallery Field Deprecation](#track-p24-a--flat-to-nested-gallery-field-deprecation)
+  - [Track P24-A — Flat-to-Nested Gallery Field Deprecation COMPLETE](#track-p24-a--flat-to-nested-gallery-field-deprecation-complete)
     - [Problem](#problem)
     - [Fix](#fix)
     - [Subtasks](#subtasks)
@@ -60,6 +60,8 @@
     - [Automated](#automated)
     - [Manual verification](#manual-verification)
   - [Planned File Inventory](#planned-file-inventory)
+    - [Primary implementation targets](#primary-implementation-targets)
+    - [Phase 24 docs](#phase-24-docs)
 
 ---
 
@@ -114,7 +116,7 @@ Additionally, two deferred review items (D-16: settings sanitization consolidati
 
 ---
 
-## Track P24-A — Flat-to-Nested Gallery Field Deprecation
+## Track P24-A — Flat-to-Nested Gallery Field Deprecation COMPLETE
 
 ### Problem
 
@@ -132,6 +134,13 @@ Deprecate flat gallery adapter fields in three phases:
 1. **Stop writing.** Remove flat-field projection from the global settings save path and campaign save path. The nested `galleryConfig` / `galleryOverrides` becomes the only written representation.
 2. **Migrate on read.** When loading settings, if `galleryConfig` is empty or missing but flat fields are present, promote the flat fields into nested form (one-time migration per installation). Write the result back on the next explicit save.
 3. **Mark for removal.** Add deprecation markers (`@deprecated`) to flat-field types, defaults, and registry entries. Document the removal timeline (Phase 25).
+
+Completed implementation summary:
+
+- Global settings now save nested `galleryConfig` only; legacy flat gallery keys are removed from the outbound payload and pruned from stored options when nested config is posted.
+- Campaign create/update now save nested `galleryOverrides` only; legacy flat campaign adapter meta remains readable for migration and is deleted on the next nested override save.
+- Load paths promote legacy flat settings and campaign adapter overrides into nested config before runtime resolution, while still rehydrating flat compatibility values in memory for current editor surfaces.
+- Resolver/runtime logic now treats nested config as authoritative, with legacy fallbacks limited to migration and one-release compatibility reads.
 
 ### Subtasks
 

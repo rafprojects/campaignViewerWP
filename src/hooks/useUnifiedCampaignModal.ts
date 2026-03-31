@@ -17,6 +17,7 @@ import { sortByOrder } from '@/utils/sortByOrder';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 import {
+  buildCampaignGalleryOverrideEditorValue,
   normalizeCampaignLegacyAdapterOverrides,
 } from '@/utils/campaignGalleryOverrides';
 import { useXhrUpload } from './useXhrUpload';
@@ -113,7 +114,11 @@ export function useUnifiedCampaignModal({
     const c = campaign as Campaign & Partial<AdminCampaign>;
     setMode('edit');
     setEditingCampaignId(String(c.id));
-    const galleryOverrides = cloneGalleryConfig(c.galleryOverrides);
+    const galleryOverrides = buildCampaignGalleryOverrideEditorValue({
+      imageAdapterId: c.imageAdapterId ?? '',
+      videoAdapterId: c.videoAdapterId ?? '',
+      galleryOverrides: cloneGalleryConfig(c.galleryOverrides),
+    });
     const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
       imageAdapterId: c.imageAdapterId ?? '',
       videoAdapterId: c.videoAdapterId ?? '',
@@ -228,8 +233,6 @@ export function useUnifiedCampaignModal({
     savingRef.current = true;
     setIsSaving(true);
 
-    const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides(formState);
-
     const payload: Record<string, unknown> = {
       title: formState.title,
       description: formState.description,
@@ -241,8 +244,6 @@ export function useUnifiedCampaignModal({
       publishAt: formState.publishAt || '',
       unpublishAt: formState.unpublishAt || '',
       layoutTemplateId: formState.layoutTemplateId || '',
-      imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
-      videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
       galleryOverrides: formState.galleryOverrides ?? null,
     };
     if (coverImageChanged) payload.coverImage = formState.coverImage || '';
