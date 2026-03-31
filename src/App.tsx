@@ -278,6 +278,8 @@ function AppContent({
           isAdmin={isAdmin}
           isAuthenticated={isAuthenticated}
           onAccessModeChange={setLocalAccessMode}
+          onCampaignsUpdated={campaignsMutator}
+          onNotify={handleAdminNotify}
           apiClient={apiClient}
         />
       )}

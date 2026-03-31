@@ -41,6 +41,7 @@ import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
 import { TypographySettingsSection } from '../Settings/TypographySettingsSection';
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import {
   buildGalleryConfigFromLegacySettings,
   collectGalleryAdapterSettingValues,
@@ -554,7 +555,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         </Box>
 
           {galleryConfigEditorOpen && (
-            <Suspense fallback={null}>
+            <Suspense fallback={<GalleryConfigEditorLoader />}>
               <LazyGalleryConfigEditorModal
                 opened={galleryConfigEditorOpen}
                 onClose={() => setGalleryConfigEditorOpen(false)}

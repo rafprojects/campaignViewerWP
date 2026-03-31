@@ -9,6 +9,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type L
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
+import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
@@ -495,7 +496,7 @@ export function UnifiedCampaignModal({
       />
 
       {galleryConfigEditorOpen && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<GalleryConfigEditorLoader />}>
           <LazyGalleryConfigEditorModal
             opened={galleryConfigEditorOpen}
             onClose={() => setGalleryConfigEditorOpen(false)}
