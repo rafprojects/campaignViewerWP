@@ -13,6 +13,7 @@ import { startWebVitalsMonitoring } from './services/monitoring/webVitals'
 import { initSentry } from './services/monitoring/sentry'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { useTheme } from './hooks/useTheme'
+import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/themeScope'
 
 type MountProps = Record<string, unknown>
 
@@ -66,11 +67,7 @@ const parseProps = (node: Element): MountProps => {
 }
 
 const ensureThemeScopeSelector = (host: HTMLElement): string => {
-  if (!host.dataset.wpsgThemeScope) {
-    host.dataset.wpsgThemeScope = host.id || host.dataset.wpsgKey || `wpsg-theme-${Math.random().toString(36).slice(2, 10)}`
-  }
-
-  return `[data-wpsg-theme-scope="${host.dataset.wpsgThemeScope}"]`
+  return buildThemeScopeSelector(ensureHostThemeScopeToken(host))
 }
 
 /**

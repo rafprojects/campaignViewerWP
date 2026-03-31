@@ -186,10 +186,34 @@ describe('ThemeProvider', () => {
     expect(updatedStyle).toBeTruthy();
     expect(result.current.themeId).toBe(otherTheme!.id);
     expect(updatedStyle?.textContent).toBe(
-      getTheme(otherTheme!.id).cssVars.replace(':host', '[data-wpsg-theme-scope="test-scope"]'),
+      getTheme(otherTheme!.id).cssVars.replace(/:host/g, '[data-wpsg-theme-scope="test-scope"]'),
     );
 
     host.remove();
     updatedStyle?.remove();
+  });
+
+  it('removes scoped document CSS variables on unmount', () => {
+    const host = document.createElement('div');
+    host.dataset.wpsgThemeScope = 'cleanup-scope';
+    document.body.appendChild(host);
+
+    const scopedWrapper = ({ children }: { children: ReactNode }) => (
+      <ThemeProvider
+        hostElement={host}
+        themeScopeSelector='[data-wpsg-theme-scope="cleanup-scope"]'
+      >
+        {children}
+      </ThemeProvider>
+    );
+
+    const { unmount } = renderHook(() => useTheme(), { wrapper: scopedWrapper });
+
+    expect(document.head.querySelector('#wpsg-theme-vars-cleanup-scope')).toBeTruthy();
+
+    unmount();
+
+    expect(document.head.querySelector('#wpsg-theme-vars-cleanup-scope')).toBeNull();
+    host.remove();
   });
 });

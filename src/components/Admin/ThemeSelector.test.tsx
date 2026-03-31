@@ -135,4 +135,13 @@ describe('ThemeSelector', () => {
     expect(selectPropsSpy).toHaveBeenCalled();
     expect(screen.getByRole('combobox')).toHaveAttribute('data-within-portal', 'false');
   });
+
+  it('does not allow caller-provided comboboxProps to re-enable portal rendering', () => {
+    render(
+      <ThemeSelector selectProps={{ comboboxProps: { withinPortal: true } }} />,
+      { wrapper },
+    );
+
+    expect(screen.getByRole('combobox')).toHaveAttribute('data-within-portal', 'false');
+  });
 });

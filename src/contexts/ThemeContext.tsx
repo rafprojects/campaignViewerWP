@@ -30,6 +30,10 @@ import {
   DEFAULT_THEME_ID,
   type ThemeEntry,
 } from '../themes/index';
+import {
+  buildThemeStyleElementId,
+  normalizeThemeScopeToken,
+} from '@/utils/themeScope';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -157,6 +161,10 @@ export function ThemeProvider({
 
   // The effective theme ID: preview overrides saved, forced overrides all
   const effectiveThemeId = forcedThemeId ?? previewThemeId ?? themeId;
+  const scopeId = hostElement?.dataset.wpsgThemeScope
+    ? normalizeThemeScopeToken(hostElement.dataset.wpsgThemeScope)
+    : null;
+  const scopedStyleId = scopeId ? buildThemeStyleElementId(scopeId) : null;
 
   // Lookup from the pre-computed registry — O(1), no re-computation
   const entry: ThemeEntry = useMemo(() => getTheme(effectiveThemeId), [effectiveThemeId]);
@@ -211,25 +219,43 @@ export function ThemeProvider({
       }
 
       styleEl.textContent = entry.cssVars;
+    }
+
+    return;
+  }, [shadowRoot, entry.cssVars]);
+
+  useEffect(() => {
+    if (shadowRoot || !scopedStyleId || !themeScopeSelector) {
       return;
     }
 
-    const scopeId = hostElement?.dataset.wpsgThemeScope;
-    if (!scopeId || !themeScopeSelector) {
-      return;
-    }
-
-    const styleId = `wpsg-theme-vars-${scopeId}`;
-    let styleEl = document.head.querySelector(`#${styleId}`) as HTMLStyleElement | null;
+    let styleEl = document.getElementById(scopedStyleId) as HTMLStyleElement | null;
 
     if (!styleEl) {
       styleEl = document.createElement('style');
-      styleEl.id = styleId;
+      styleEl.id = scopedStyleId;
       document.head.appendChild(styleEl);
     }
 
-    styleEl.textContent = entry.cssVars.replace(':host', themeScopeSelector);
-  }, [shadowRoot, hostElement, themeScopeSelector, entry.cssVars]);
+    return () => {
+      if (styleEl?.parentNode === document.head) {
+        document.head.removeChild(styleEl);
+      }
+    };
+  }, [shadowRoot, scopedStyleId, themeScopeSelector]);
+
+  useEffect(() => {
+    if (shadowRoot || !scopedStyleId || !themeScopeSelector) {
+      return;
+    }
+
+    const styleEl = document.getElementById(scopedStyleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      return;
+    }
+
+    styleEl.textContent = entry.cssVars.replace(/:host/g, themeScopeSelector);
+  }, [shadowRoot, scopedStyleId, themeScopeSelector, entry.cssVars]);
 
   // Context value — memoized to prevent unnecessary re-renders
   const value = useMemo<ThemeContextValue>(

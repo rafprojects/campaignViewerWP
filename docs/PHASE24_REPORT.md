@@ -68,6 +68,7 @@
     - [What Did Not Work and Why](#what-did-not-work-and-why)
     - [What Actually Worked](#what-actually-worked)
     - [Testing Approaches Used](#testing-approaches-used)
+    - [PR Review Follow-Up (PR #39)](#pr-review-follow-up-pr-39)
 
 ---
 
@@ -546,3 +547,17 @@ This issue needed multiple layers of verification because no single test style e
 
 - Backend regression coverage.
   We added a focused PHP regression test asserting that the manifest-based entry script is registered with a `null` version so WordPress does not append the query string that caused the duplicate-module problem.
+
+### PR Review Follow-Up (PR #39)
+
+After the initial Phase 24 merge work, Copilot review on PR #39 surfaced five follow-up observations. We evaluated each against the live code path and the current tests.
+
+| Issue | File | Choice | Rationale |
+|------|------|--------|-----------|
+| Theme scope token and selector escaping | `src/main.tsx` | Accept | The existing selector builder trusted `host.id` / `data-wpsg-key` too directly. That was low-probability in normal WP usage, but still the wrong trust boundary for a selector interpolated into scoped CSS. We now normalize the stored scope token to a safe charset and build selectors from that sanitized token. |
+| Scoped non-shadow theme style cleanup | `src/contexts/ThemeContext.tsx` | Accept | The non-shadow path created a document-head style tag without cleanup. That could leak stale tags across gallery mount/unmount cycles. We added explicit lifecycle cleanup and test coverage for unmount removal. |
+| Global replacement of `:host` in scoped CSS injection | `src/contexts/ThemeContext.tsx` | Accept | `replace(':host', ...)` was only robust while the generated CSS contained a single `:host` selector. Switching to a global replacement removes that hidden assumption and costs essentially nothing. |
+| Prevent caller override of `withinPortal: false` | `src/components/Admin/ThemeSelector.tsx` | Accept | The shadow/modal scoping fix only holds if the dropdown stays in-tree. Allowing `selectProps` to silently override that behavior would make the fix fragile, so `withinPortal: false` is now enforced last. |
+| Legacy settings pruning condition should check camelCase `galleryConfig` directly | `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` | Reject | The review concern assumed the raw request body was being checked directly. In reality `update_settings()` first runs `WPSG_Settings::from_js($body)`, which converts `galleryConfig` into `gallery_config` before the pruning condition is evaluated. Existing PHP coverage already verifies `from_js()` carries `gallery_config`, so the current guard is correct and did not need a code change. |
+
+Focused validation after these follow-ups covered `ThemeSelector.test.tsx`, `ThemeContext.test.tsx`, and the new `themeScope.test.ts`, all passing locally.

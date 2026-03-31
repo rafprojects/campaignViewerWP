@@ -167,7 +167,7 @@ export function ThemeSelector({
       allowDeselect={false}
       // Keep the dropdown in the same tree as the shadow-root modal so
       // preview updates and styling stay scoped to the active gallery instance.
-      comboboxProps={{ withinPortal: false, ...comboboxProps }}
+      comboboxProps={{ ...comboboxProps, withinPortal: false }}
       {...restSelectProps}
     />
   );
