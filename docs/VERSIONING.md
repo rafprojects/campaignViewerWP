@@ -12,6 +12,15 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### v0.23.0 (March 31, 2026)
+- **MINOR**: Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes
+  - **P24-A**: Global settings and campaign save paths now write nested gallery config only; legacy flat adapter fields remain readable for migration and are pruned on later nested saves.
+  - **P24-B**: Settings and campaign edit flows now use consistent per-breakpoint adapter grids in unified and per-type modes.
+  - **P24-C**: Theme selection UX hardened — controlled selector state, immediate preview, cancel/reset reversion, and live theme application inside the settings workflow.
+  - **P24-D**: Gallery config editor access improved with clearer lazy-load feedback and faster campaign-context entry points.
+  - **P24-E**: Deferred cleanup from prior review rounds completed in the settings pipeline.
+  - WordPress manifest entry registration now leaves hashed ES module assets versionless so the browser does not instantiate duplicate copies of the main module, fixing the lazy-loaded theme preview/runtime split.
+
 ### v0.22.0 (March 30, 2026)
 - **MINOR**: Phase 23 — Settings Architecture Refactor, Responsive Gallery Config & Campaign Parity
   - **P23-A**: Backend settings decomposed into thin facade + registry/conversion/sanitizer/renderer/field-group modules.

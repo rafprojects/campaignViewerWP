@@ -1,7 +1,7 @@
 # Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes
 
 **Status:** Complete
-**Version:** TBD
+**Version:** v0.23.0
 **Created:** March 30, 2026
 **Last updated:** March 31, 2026
 
@@ -62,6 +62,12 @@
   - [Planned File Inventory](#planned-file-inventory)
     - [Primary implementation targets](#primary-implementation-targets)
     - [Phase 24 docs](#phase-24-docs)
+  - [Addendum — Theme Preview Debugging Deep Dive](#addendum--theme-preview-debugging-deep-dive)
+    - [Symptoms We Saw](#symptoms-we-saw)
+    - [What We Tried First](#what-we-tried-first)
+    - [What Did Not Work and Why](#what-did-not-work-and-why)
+    - [What Actually Worked](#what-actually-worked)
+    - [Testing Approaches Used](#testing-approaches-used)
 
 ---
 
@@ -444,3 +450,99 @@ Two deferred review items from the PHP and React implementation reviews are dire
 | `docs/PHASE24_REPORT.md` | This document |
 | `docs/GALLERY_CONFIG_DATA_MODEL.md` | Updated with deprecation notes (P24-A10) |
 | `docs/GALLERY_CONFIG_UI_FLOW.md` | Updated with breakpoint grid UX (P24-B) |
+
+---
+
+## Addendum — Theme Preview Debugging Deep Dive
+
+### Symptoms We Saw
+
+The Phase 24 theme work initially looked correct in source, but the live WordPress settings dialog still behaved incorrectly in two distinct ways:
+
+1. The selector could display the wrong saved theme.
+2. Picking a new theme did not visibly update the UI until after saving and reloading.
+
+The misleading part was that some of the state changes were real. The settings form could receive the newly selected theme, yet the rendered UI stayed on the old palette. That made the bug look like a simple controlled-input problem at first, even though the remaining failure was deeper in the runtime.
+
+### What We Tried First
+
+The first round of fixes focused on the most obvious React-side problems.
+
+1. We made `ThemeSelector` controlled.
+   Previously, the dropdown display could derive its value from `useTheme().themeId`, which meant context or localStorage state could disagree with the actual `settings.theme` value being edited in the settings form. Passing `settings.theme` down from `GeneralSettingsSection` fixed the incorrect displayed value and made the staged form state authoritative.
+
+2. We wired live preview and cancel/revert behavior through the settings flow.
+   Selecting a theme now updates staged settings state and calls `setPreviewTheme()` immediately, while cancel/reset paths revert the temporary preview back to the previously saved theme.
+
+3. We kept the Mantine combobox inside the current render tree.
+   Because this admin UI can run inside a Shadow DOM host, Mantine portal behavior was an obvious suspect. Setting `comboboxProps={{ withinPortal: false }}` was the right defensive change and remains important because it keeps the dropdown inside the active gallery/modal subtree instead of rendering elsewhere in the document.
+
+Those changes fixed real UX issues, but they did not fully resolve the live preview failure on the actual WordPress page.
+
+### What Did Not Work and Why
+
+Several early explanations were directionally reasonable but incomplete.
+
+- Treating the bug as purely a Mantine portal or Shadow DOM scoping problem.
+  That explained why keeping the dropdown in-tree was safer, but it did not explain why preview state changes still failed to affect the visible theme after the portal issue was addressed.
+
+- Treating the bug as a duplicate-provider mistake in the source tree.
+  Source inspection did not show multiple `ThemeProvider` instances wrapped around different app regions. The eventual problem was not duplicate provider code in the repo; it was duplicate module instantiation at runtime.
+
+- Relying only on component/unit tests.
+  Focused Vitest coverage can prove that `ThemeSelector` calls the right handlers and keeps the dropdown inside the current tree, but those tests do not execute through WordPress asset registration or Vite's real lazy-chunk loading path. The remaining bug only appeared when the built plugin was loaded by WordPress itself.
+
+### What Actually Worked
+
+The breakthrough came from debugging the real WordPress page directly instead of staying inside isolated React tests.
+
+We opened the local site, authenticated into the admin experience, and inspected the live settings modal while changing themes. From there, we used three concrete signals:
+
+1. Shadow-root CSS variable inspection.
+   We read the injected `#wpsg-theme-vars` style and watched the effective CSS variables before and after changing the theme.
+
+2. Live React hook/provider inspection.
+   We inspected the React fiber/hook state in the browser to see whether the saved theme and preview theme were changing inside the same provider instance.
+
+3. Real asset URL comparison.
+   We compared the module URLs WordPress was serving with the URLs used by Vite lazy imports.
+
+That final comparison exposed the actual root cause:
+
+- WordPress was registering the Vite entry asset with `WPSG_VERSION`, producing a URL like `index-<hash>.js?ver=0.22.0`.
+- Lazy-loaded chunks imported the same main module as `./index-<hash>.js`, without the query string.
+- Browsers treat those as different ES module URLs.
+- The result was two instantiations of what should have been the same main module.
+
+Once that happened, singleton/module state split in two. React contexts defined in the main entry path were duplicated, so the lazy-loaded settings code could end up reading and writing a different `ThemeContext` instance than the one driving the visible app shell. In practice, that meant `setPreviewTheme()` looked wired correctly in source, but the lazy-loaded settings panel was not talking to the same runtime context instance as the rendered gallery UI.
+
+The real fix was therefore in the WordPress embed layer, not just the React UI:
+
+- In `WPSG_Embed::register_assets()`, manifest-based hashed JS and CSS assets now register with `null` version instead of `WPSG_VERSION`.
+- That keeps the entry module URL queryless.
+- Because Vite filenames are already content-hashed, cache busting still works.
+- With matching module URLs, the entry script and lazy chunks share one module instance again, so the lazy-loaded settings UI and the main app finally use the same `ThemeContext`.
+
+We kept the React-side theme UX fixes because they solved real staging/display problems. But the release-blocking preview bug was only fully fixed after removing the `?ver=` query from hashed ES module entry assets.
+
+### Testing Approaches Used
+
+This issue needed multiple layers of verification because no single test style exposed the whole failure.
+
+- Source inspection.
+  We traced the flow through `ThemeSelector`, `GeneralSettingsSection`, `SettingsPanel`, `ThemeContext`, and the WordPress embed/asset registration path.
+
+- Focused frontend tests.
+  We used targeted Vitest coverage to verify selector behavior and to confirm that the dropdown stays inside the current render tree rather than escaping through a portal.
+
+- Direct debugging on the real website.
+  We went into the actual local WordPress site at `https://192.168.1.220/test/` instead of relying only on local component rendering. That mattered because the root cause depended on how WordPress emitted the built Vite entry script.
+
+- Browser/runtime inspection.
+  We inspected the shadow-root theme style element, compared effective CSS variables before and after selection, and checked live React provider/hook state inside the browser.
+
+- Post-fix live verification.
+  After the WordPress asset registration change, we re-tested on the live site and confirmed the behavior end to end. Starting from a saved `catppuccin-latte` theme, previewing `material-dark` changed the injected background variable from `#eff1f5` to `#121212` and flipped the effective scheme from light to dark immediately, without saving. Resetting the preview restored the saved theme.
+
+- Backend regression coverage.
+  We added a focused PHP regression test asserting that the manifest-based entry script is registered with a `null` version so WordPress does not append the query string that caused the duplicate-module problem.
