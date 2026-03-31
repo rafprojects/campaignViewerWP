@@ -739,6 +739,7 @@ export interface GalleryBehaviorSettings {
   // P20-K: Session idle timeout (minutes). 0 = disabled.
   sessionIdleTimeoutMinutes: number;
   // P15-A: Per-breakpoint gallery selection
+  /** @deprecated Legacy flat-field compatibility only. Active UI writes nested galleryConfig. */
   gallerySelectionMode: 'unified' | 'per-breakpoint';
   desktopImageAdapterId: string;
   desktopVideoAdapterId: string;
@@ -1080,7 +1081,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
   // P20-K: Session idle timeout
   sessionIdleTimeoutMinutes: 0,
-  // P15-A: Per-breakpoint gallery selection
+  // P15-A: Legacy per-breakpoint gallery selection compatibility
   gallerySelectionMode: 'unified',
   desktopImageAdapterId: 'classic',
   desktopVideoAdapterId: 'classic',

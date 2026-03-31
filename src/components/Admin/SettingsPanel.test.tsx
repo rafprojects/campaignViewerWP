@@ -3,6 +3,7 @@ import { act, render, screen, waitFor, fireEvent } from '@/test/test-utils';
 import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryConfig } from '@/types';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 const { setThemeSpy, setPreviewThemeSpy } = vi.hoisted(() => ({
   setThemeSpy: vi.fn(),
@@ -837,6 +838,72 @@ describe('SettingsPanel', () => {
     await screen.findByText('Gallery Adapters');
 
     expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
+  });
+
+  it('renders per-type breakpoint adapter grids without the selection mode toggle', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    expect(screen.queryByText('Gallery Selection Mode')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Desktop Image Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Tablet Video Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+  });
+
+  it('writes unified breakpoint adapter selections directly to nested gallery config', async () => {
+    const unifiedClassicLabel = getAdapterSelectOptions({ context: 'unified-gallery', breakpoint: 'desktop' })
+      .find((option) => option.value === 'classic')?.label;
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          unifiedGalleryEnabled: true,
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    expect(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: unifiedClassicLabel ?? 'Classic' }));
+
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.desktop?.unified?.adapterId).toBe('classic');
+  });
+
+  it('writes per-type breakpoint adapter selections directly to nested gallery config', async () => {
+    const masonryLabel = getAdapterSelectOptions({ context: 'per-breakpoint-gallery', breakpoint: 'mobile' })
+      .find((option) => option.value === 'masonry')?.label;
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    await screen.findByText('Gallery Adapters');
+
+    fireEvent.click(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: masonryLabel ?? 'Masonry' }));
+
+    const { value } = await openResponsiveConfigEditor();
+
+    expect(value?.breakpoints?.mobile?.image?.adapterId).toBe('masonry');
   });
 
   it('seeds shared editor adapter-specific values from flat settings', async () => {

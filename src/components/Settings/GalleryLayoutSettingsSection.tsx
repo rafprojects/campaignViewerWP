@@ -24,7 +24,7 @@ export function GalleryLayoutSettingsSection({
         <Accordion.Panel>
           <Group justify="space-between" align="flex-start" mb="md">
             <Text size="sm" c="dimmed" maw={560}>
-              Quick selectors stay inline here. Use the responsive editor when you need breakpoint-aware nested gallery selection without flattening the layout tab again.
+              Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes.
             </Text>
             <Button variant="light" onClick={onOpenResponsiveConfig}>
               Edit Responsive Config

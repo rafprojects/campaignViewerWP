@@ -363,7 +363,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         ...(adapterSettingValues as Partial<SettingsData>),
         galleryConfig,
         unifiedGalleryEnabled: galleryConfig.mode === 'unified',
-        gallerySelectionMode: galleryConfig.mode === 'unified' ? 'unified' : 'per-breakpoint',
         unifiedGalleryAdapterId: nextUnifiedAdapterId,
         imageGalleryAdapterId: desktopImageAdapterId || prev.imageGalleryAdapterId,
         videoGalleryAdapterId: desktopVideoAdapterId || prev.videoGalleryAdapterId,

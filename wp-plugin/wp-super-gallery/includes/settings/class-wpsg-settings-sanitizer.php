@@ -418,6 +418,7 @@ class WPSG_Settings_Sanitizer {
                 ? $input['unified_gallery_adapter_id']
                 : 'compact-grid';
         }
+        // Deprecated legacy compatibility only. Active UI writes nested galleryConfig.
         if (isset($input['gallery_selection_mode'])) {
             $sanitized['gallery_selection_mode'] = in_array($input['gallery_selection_mode'], ['unified', 'per-breakpoint'], true)
                 ? $input['gallery_selection_mode']

@@ -1,8 +1,8 @@
-import { Box, ColorInput, Group, NumberInput, Select, SegmentedControl, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
-import type { GalleryBehaviorSettings } from '@/types';
-import type { AdapterSelectionUpdate, AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
-import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getPerTypeAdapterSelectionUpdates, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
-import { getLegacyActiveAdapterIds, getLegacyScopeAdapterIds } from '@/utils/galleryAdapterSelection';
+import { Box, ColorInput, Group, NumberInput, Select, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
+import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope } from '@/types';
+import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
+import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
+import { buildGalleryConfigFromLegacySettings, cloneGalleryConfig, GALLERY_BREAKPOINTS, mergeGalleryConfig } from '@/utils/galleryConfig';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
   key: K,
@@ -12,6 +12,54 @@ export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
 interface GalleryAdapterSettingsSectionProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
+}
+
+const BREAKPOINT_LABELS: Record<GalleryConfigBreakpoint, string> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+};
+
+function buildResolvedGalleryConfig(settings: GalleryBehaviorSettings): GalleryConfig {
+  const seed = buildGalleryConfigFromLegacySettings(settings);
+  return settings.galleryConfig ? mergeGalleryConfig(seed, settings.galleryConfig) : seed;
+}
+
+function getConfiguredAdapterId(
+  galleryConfig: GalleryConfig,
+  breakpoint: GalleryConfigBreakpoint,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+): string {
+  return galleryConfig.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? '';
+}
+
+function setConfiguredAdapterId(
+  galleryConfig: GalleryConfig,
+  breakpoint: GalleryConfigBreakpoint,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+  adapterId: string,
+): GalleryConfig {
+  const next = cloneGalleryConfig(galleryConfig) ?? { mode: 'per-type', breakpoints: {} };
+  next.breakpoints ??= {};
+  const breakpointConfig = next.breakpoints[breakpoint] ?? {};
+  const scopeConfig = breakpointConfig[scope] ?? {};
+
+  breakpointConfig[scope] = {
+    ...scopeConfig,
+    adapterId,
+  };
+  next.breakpoints[breakpoint] = breakpointConfig;
+
+  return next;
+}
+
+function getConfiguredScopeAdapterIds(
+  galleryConfig: GalleryConfig,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+): string[] {
+  return GALLERY_BREAKPOINTS
+    .map((breakpoint) => getConfiguredAdapterId(galleryConfig, breakpoint, scope))
+    .filter((adapterId) => adapterId.length > 0);
 }
 
 function renderSettingFields(
@@ -104,9 +152,10 @@ function renderSettingGroup(
   updateSetting: UpdateGallerySetting,
   imageAdapterIds: string[],
   videoAdapterIds: string[],
+  isUnifiedMode: boolean,
 ) {
   if (groupDefinition.scopeMode === 'contextual') {
-    if (settings.unifiedGalleryEnabled) {
+    if (isUnifiedMode) {
       return renderSettingFields(groupDefinition, settings, updateSetting, { includeAppliesTo: ['unified'] });
     }
 
@@ -139,121 +188,118 @@ function renderSettingGroup(
   return <Box key={groupDefinition.group}>{fields}</Box>;
 }
 
-function applySelectionUpdates(
-  updates: AdapterSelectionUpdate[],
-  updateSetting: UpdateGallerySetting,
-) {
-  updates.forEach((update) => {
-    updateSetting(update.key, update.value as GalleryBehaviorSettings[typeof update.key]);
-  });
-}
-
 export function GalleryAdapterSettingsSection({ settings, updateSetting }: GalleryAdapterSettingsSectionProps) {
-  const imageAdapterIds = getLegacyScopeAdapterIds(settings, 'image');
-  const videoAdapterIds = getLegacyScopeAdapterIds(settings, 'video');
-  const activeAdapterIds = getLegacyActiveAdapterIds(settings);
+  const resolvedGalleryConfig = buildResolvedGalleryConfig(settings);
+  const isUnifiedMode = resolvedGalleryConfig.mode === 'unified';
+  const unifiedAdapterIds = getConfiguredScopeAdapterIds(resolvedGalleryConfig, 'unified');
+  const imageAdapterIds = getConfiguredScopeAdapterIds(resolvedGalleryConfig, 'image');
+  const videoAdapterIds = getConfiguredScopeAdapterIds(resolvedGalleryConfig, 'video');
+  const activeAdapterIds = isUnifiedMode ? unifiedAdapterIds : [...imageAdapterIds, ...videoAdapterIds];
   const activeSettingGroups = getActiveSettingGroupDefinitions(activeAdapterIds);
   const inlineSettingGroups = activeSettingGroups.filter((groupDefinition) => groupDefinition.placement === 'inline');
   const sectionSettingGroups = activeSettingGroups.filter((groupDefinition) => groupDefinition.placement !== 'inline');
+
+  const updateConfiguredAdapterId = (
+    breakpoint: GalleryConfigBreakpoint,
+    scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+    adapterId: string,
+  ) => {
+    updateSetting('galleryConfig', setConfiguredAdapterId(resolvedGalleryConfig, breakpoint, scope, adapterId));
+  };
 
   return (
     <Stack gap="md">
       <Switch
         label="Unified Gallery Mode"
         description="When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
-        checked={settings.unifiedGalleryEnabled}
+        checked={isUnifiedMode}
         onChange={(e) => updateSetting('unifiedGalleryEnabled', e.currentTarget.checked)}
       />
 
-      {settings.unifiedGalleryEnabled ? (
-        <Select
-          label="Unified Gallery Adapter"
-          description="Layout used when images and videos are displayed together."
-          value={settings.unifiedGalleryAdapterId}
-          onChange={(value) => updateSetting('unifiedGalleryAdapterId', (value ?? 'compact-grid') as GalleryBehaviorSettings['unifiedGalleryAdapterId'])}
-          data={getAdapterSelectOptions({ context: 'unified-gallery' })}
-        />
-      ) : (
-        <>
-          <Box>
-            <Text size="sm" fw={500} mb={4}>Gallery Selection Mode</Text>
-            <Text size="xs" c="dimmed" mb={8}>
-              Unified: one adapter for all screen sizes. Per-breakpoint: different adapters for desktop, tablet, and mobile.
-            </Text>
-            <SegmentedControl
-              fullWidth
-              value={settings.gallerySelectionMode}
-              onChange={(value) => updateSetting('gallerySelectionMode', value as GalleryBehaviorSettings['gallerySelectionMode'])}
-              data={[
-                { value: 'unified', label: 'Unified' },
-                { value: 'per-breakpoint', label: 'Per Breakpoint' },
-              ]}
-            />
-          </Box>
+      {isUnifiedMode ? (
+        <Box>
+          <Text size="sm" fw={500} mb={4}>Unified Breakpoint Adapters</Text>
+          <Text size="xs" c="dimmed" mb={8}>
+            Choose the unified gallery adapter used at each breakpoint.
+          </Text>
+          <SimpleGrid cols={2} spacing="xs" mb={4}>
+            <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
+            <Text size="xs" fw={600} ta="center">Unified</Text>
+          </SimpleGrid>
+          {GALLERY_BREAKPOINTS.map((breakpoint) => {
+            const adapterOptions = getAdapterSelectOptions({
+              context: 'unified-gallery',
+              breakpoint,
+            });
 
-          {settings.gallerySelectionMode === 'per-breakpoint' ? (
-            <Box>
-              <SimpleGrid cols={3} spacing="xs" mb={4}>
-                <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
-                <Text size="xs" fw={600} ta="center">Image</Text>
-                <Text size="xs" fw={600} ta="center">Video</Text>
+            return (
+              <SimpleGrid cols={2} spacing="xs" mb="xs" key={breakpoint}>
+                <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
+                  {BREAKPOINT_LABELS[breakpoint]}
+                </Text>
+                <Select
+                  size="xs"
+                  label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
+                  aria-label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
+                  value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'unified') || null}
+                  onChange={(value) => updateConfiguredAdapterId(
+                    breakpoint,
+                    'unified',
+                    value ?? settings.unifiedGalleryAdapterId ?? 'compact-grid',
+                  )}
+                  data={adapterOptions}
+                />
               </SimpleGrid>
-              {(['desktop', 'tablet', 'mobile'] as const).map((breakpoint) => {
-                const adapterOptions = getAdapterSelectOptions({
-                  context: 'per-breakpoint-gallery',
-                  breakpoint,
-                });
+            );
+          })}
+        </Box>
+      ) : (
+        <Box>
+          <Text size="sm" fw={500} mb={4}>Per-Type Breakpoint Adapters</Text>
+          <Text size="xs" c="dimmed" mb={8}>
+            Choose separate image and video adapters for each breakpoint.
+          </Text>
+          <SimpleGrid cols={3} spacing="xs" mb={4}>
+            <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
+            <Text size="xs" fw={600} ta="center">Image</Text>
+            <Text size="xs" fw={600} ta="center">Video</Text>
+          </SimpleGrid>
+          {GALLERY_BREAKPOINTS.map((breakpoint) => {
+            const adapterOptions = getAdapterSelectOptions({
+              context: 'per-breakpoint-gallery',
+              breakpoint,
+            });
 
-                return (
-                  <SimpleGrid cols={3} spacing="xs" mb="xs" key={breakpoint}>
-                    <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
-                      {breakpoint.charAt(0).toUpperCase() + breakpoint.slice(1)}
-                    </Text>
-                    <Select
-                      size="xs"
-                      value={settings[`${breakpoint}ImageAdapterId` as keyof GalleryBehaviorSettings] as string}
-                      onChange={(value) => updateSetting(
-                        `${breakpoint}ImageAdapterId` as keyof GalleryBehaviorSettings,
-                        (value ?? 'classic') as GalleryBehaviorSettings[keyof GalleryBehaviorSettings],
-                      )}
-                      data={adapterOptions}
-                    />
-                    <Select
-                      size="xs"
-                      value={settings[`${breakpoint}VideoAdapterId` as keyof GalleryBehaviorSettings] as string}
-                      onChange={(value) => updateSetting(
-                        `${breakpoint}VideoAdapterId` as keyof GalleryBehaviorSettings,
-                        (value ?? 'classic') as GalleryBehaviorSettings[keyof GalleryBehaviorSettings],
-                      )}
-                      data={adapterOptions}
-                    />
-                  </SimpleGrid>
-                );
-              })}
-              {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds))}
-            </Box>
-          ) : (
-            <>
-              <Select
-                label="Image Gallery Adapter"
-                description="Layout for campaigns with images."
-                value={settings.imageGalleryAdapterId}
-                onChange={(value) => applySelectionUpdates(getPerTypeAdapterSelectionUpdates(settings, 'image', value), updateSetting)}
-                data={getAdapterSelectOptions({ context: 'per-type-gallery' })}
-              />
-              <Select
-                label="Video Gallery Adapter"
-                description="Layout for campaigns with videos."
-                value={settings.videoGalleryAdapterId}
-                onChange={(value) => applySelectionUpdates(getPerTypeAdapterSelectionUpdates(settings, 'video', value), updateSetting)}
-                data={getAdapterSelectOptions({ context: 'per-type-gallery' })}
-              />
-            </>
-          )}
-        </>
+            return (
+              <SimpleGrid cols={3} spacing="xs" mb="xs" key={breakpoint}>
+                <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
+                  {BREAKPOINT_LABELS[breakpoint]}
+                </Text>
+                <Select
+                  size="xs"
+                  label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
+                  aria-label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
+                  value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'image') || null}
+                  onChange={(value) => updateConfiguredAdapterId(breakpoint, 'image', value ?? 'classic')}
+                  data={adapterOptions}
+                />
+                <Select
+                  size="xs"
+                  label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
+                  aria-label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
+                  value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'video') || null}
+                  onChange={(value) => updateConfiguredAdapterId(breakpoint, 'video', value ?? 'classic')}
+                  data={adapterOptions}
+                />
+              </SimpleGrid>
+            );
+          })}
+        </Box>
       )}
 
-      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds))}
+      {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+
+      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
     </Stack>
   );
 }

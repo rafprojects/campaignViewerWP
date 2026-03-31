@@ -584,6 +584,7 @@ export interface SettingsResponse {
   authBarMobileBreakpoint?: number;
   cardAutoColumnsBreakpoints?: string;
   // P15-A: Per-breakpoint gallery selection
+  /** @deprecated Legacy flat-field compatibility only. Active UI writes nested galleryConfig. */
   gallerySelectionMode?: 'unified' | 'per-breakpoint';
   desktopImageAdapterId?: string;
   desktopVideoAdapterId?: string;

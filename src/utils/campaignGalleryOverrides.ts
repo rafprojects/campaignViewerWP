@@ -240,6 +240,38 @@ export function syncCampaignScopeAdapterOverride(
   return pruneCampaignGalleryOverrides(next);
 }
 
+export function setCampaignBreakpointScopeAdapterOverride(
+  overrides: Partial<GalleryConfig> | undefined,
+  breakpoint: GalleryConfigBreakpoint,
+  scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
+  adapterId: string,
+): Partial<GalleryConfig> | undefined {
+  const next = cloneGalleryConfig(overrides as GalleryConfig) ?? {};
+  next.breakpoints = next.breakpoints ?? {};
+
+  const breakpointConfig = next.breakpoints[breakpoint] ?? {};
+  const scopeConfig = breakpointConfig[scope];
+
+  if (adapterId) {
+    breakpointConfig[scope] = {
+      ...scopeConfig,
+      adapterId,
+    };
+  } else if (scopeConfig) {
+    const nextScopeConfig = { ...scopeConfig };
+    delete nextScopeConfig.adapterId;
+
+    if (Object.keys(nextScopeConfig).length > 0) {
+      breakpointConfig[scope] = nextScopeConfig;
+    } else {
+      delete breakpointConfig[scope];
+    }
+  }
+
+  next.breakpoints[breakpoint] = breakpointConfig;
+  return pruneCampaignGalleryOverrides(next);
+}
+
 export function syncCampaignGalleryOverrideMode(
   overrides: Partial<GalleryConfig> | undefined,
   mode: GalleryConfigMode | '',

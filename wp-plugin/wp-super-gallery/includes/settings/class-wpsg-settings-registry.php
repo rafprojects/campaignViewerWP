@@ -206,6 +206,7 @@ class WPSG_Settings_Registry {
         'auth_bar_mobile_breakpoint'     => 768,
         'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
         'session_idle_timeout_minutes' => 0,
+        // Deprecated legacy compatibility only. Active UI writes nested galleryConfig.
         'gallery_selection_mode'         => 'unified',
         'desktop_image_adapter_id'       => 'classic',
         'desktop_video_adapter_id'       => 'classic',
@@ -371,6 +372,7 @@ class WPSG_Settings_Registry {
         'image_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
         'video_gallery_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
         'unified_gallery_adapter_id' => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond'],
+        // Deprecated legacy compatibility only. Active UI writes nested galleryConfig.
         'gallery_selection_mode'     => ['unified', 'per-breakpoint'],
         'desktop_image_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
         'desktop_video_adapter_id'   => ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'],
