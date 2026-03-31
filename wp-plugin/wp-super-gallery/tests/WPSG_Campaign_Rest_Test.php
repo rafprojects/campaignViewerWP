@@ -13,6 +13,23 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         return $user_id;
     }
 
+    private function create_public_campaign(array $meta = []): int {
+        $campaign_id = wp_insert_post([
+            'post_type' => 'wpsg_campaign',
+            'post_title' => 'Scheduled Campaign',
+            'post_status' => 'publish',
+        ]);
+
+        update_post_meta($campaign_id, 'visibility', 'public');
+        update_post_meta($campaign_id, 'status', 'active');
+
+        foreach ($meta as $key => $value) {
+            update_post_meta($campaign_id, $key, $value);
+        }
+
+        return $campaign_id;
+    }
+
     public function setUp(): void {
         parent::setUp();
         // Nonce bypass handled via WPSG_ALLOW_NONCE_BYPASS constant in bootstrap.php.
@@ -127,6 +144,48 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $data = $response->get_data();
         $this->assertIsArray($data);
         $this->assertGreaterThanOrEqual(2, count($data));
+    }
+
+    public function test_future_public_campaign_is_hidden_from_direct_reads() {
+        $campaign_id = $this->create_public_campaign([
+            'publish_at' => gmdate('Y-m-d H:i:s', time() + HOUR_IN_SECONDS),
+            'media_items' => [
+                [
+                    'id' => 'scheduled-media-1',
+                    'url' => 'https://example.com/future.jpg',
+                    'type' => 'image',
+                ],
+            ],
+        ]);
+
+        wp_set_current_user(0);
+
+        $campaign_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $campaign_response = rest_do_request($campaign_request);
+        $this->assertEquals(403, $campaign_response->get_status());
+
+        $media_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $media_response = rest_do_request($media_request);
+        $this->assertEquals(403, $media_response->get_status());
+    }
+
+    public function test_expired_public_campaign_is_excluded_from_permissions_payload() {
+        $viewer_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
+        $visible_campaign_id = $this->create_public_campaign();
+        $expired_campaign_id = $this->create_public_campaign([
+            'unpublish_at' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+
+        wp_set_current_user($viewer_id);
+
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/permissions');
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+
+        $this->assertContains((string) $visible_campaign_id, $data['campaignIds']);
+        $this->assertNotContains((string) $expired_campaign_id, $data['campaignIds']);
     }
 
     public function test_campaign_gallery_overrides_round_trip() {
@@ -458,9 +517,10 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
      * @since 0.18.0 P20-D
      */
     public function test_sanitize_datetime_accepts_valid_iso8601() {
-        $this->assertEquals( '2026-03-05T14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00' ) );
-        $this->assertEquals( '2026-03-05T14:30:00+05:30', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00+05:30' ) );
-        $this->assertEquals( '2026-03-05T14:30:00Z', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00Z' ) );
+        $this->assertEquals( '2026-03-05 14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00' ) );
+        $this->assertEquals( '2026-03-05 09:00:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00+05:30' ) );
+        $this->assertEquals( '2026-03-05 14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05T14:30:00Z' ) );
+        $this->assertEquals( '2026-03-05 14:30:00', WPSG_CPT::sanitize_datetime( '2026-03-05 14:30:00' ) );
     }
 
     /**

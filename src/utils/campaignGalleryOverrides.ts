@@ -131,6 +131,13 @@ export function getUniformCampaignScopeAdapterId(
   return adapterIds.every((adapterId) => adapterId === adapterIds[0]) ? adapterIds[0] : '';
 }
 
+export function hasMixedCampaignScopeAdapterOverrides(
+  overrides: Partial<GalleryConfig> | undefined,
+  scope: CampaignOverrideScope,
+): boolean {
+  return hasCampaignScopeAdapterOverrides(overrides, scope) && !getUniformCampaignScopeAdapterId(overrides, scope);
+}
+
 export function getCampaignGalleryOverrideMode(
   overrides: Partial<GalleryConfig> | undefined,
 ): GalleryConfigMode | '' {

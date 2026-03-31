@@ -3681,6 +3681,10 @@ class WPSG_REST {
             return true;
         }
 
+        if (!self::is_campaign_within_schedule_window($post_id)) {
+            return false;
+        }
+
         $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';
         if ($visibility === 'public') {
             return true;
@@ -3703,6 +3707,22 @@ class WPSG_REST {
         }
 
         return false;
+    }
+
+    private static function is_campaign_within_schedule_window($post_id) {
+        $now = gmdate('Y-m-d H:i:s');
+
+        $publish_at = (string) get_post_meta($post_id, 'publish_at', true);
+        if ($publish_at !== '' && $publish_at > $now) {
+            return false;
+        }
+
+        $unpublish_at = (string) get_post_meta($post_id, 'unpublish_at', true);
+        if ($unpublish_at !== '' && $unpublish_at <= $now) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function get_accessible_campaign_ids($user_id) {

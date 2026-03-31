@@ -381,6 +381,92 @@ describe('UnifiedCampaignModal', () => {
     }));
   });
 
+  it('shows a mixed-state indicator for breakpoint-specific unified quick overrides', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: { adapterId: 'classic' },
+            },
+            tablet: {
+              unified: { adapterId: 'compact-grid' },
+            },
+            mobile: {
+              unified: { adapterId: 'classic' },
+            },
+          },
+        },
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByLabelText('Unified Gallery', { selector: 'input' })).toHaveAttribute(
+      'placeholder',
+      'Mixed (breakpoint-specific)',
+    );
+    expect(screen.getByText(/Breakpoint-specific overrides are active\./i)).toBeInTheDocument();
+  });
+
+  it('shows a mixed-state indicator for breakpoint-specific per-type quick overrides', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign',
+        description: 'A test campaign',
+        company: 'acme',
+        coverImage: '',
+        status: 'active',
+        visibility: 'private',
+        tags: 'tag1, tag2',
+        publishAt: '',
+        unpublishAt: '',
+        layoutTemplateId: '',
+        imageAdapterId: '',
+        videoAdapterId: '',
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: { adapterId: 'masonry' },
+            },
+            tablet: {
+              image: { adapterId: 'justified' },
+            },
+            mobile: {
+              image: { adapterId: 'masonry' },
+            },
+          },
+        },
+        categories: [],
+      },
+    });
+
+    render(<UnifiedCampaignModal modal={modal} />);
+
+    expect(screen.getByLabelText('Image Gallery', { selector: 'input' })).toHaveAttribute(
+      'placeholder',
+      'Mixed (breakpoint-specific)',
+    );
+    expect(screen.getByText(/Breakpoint-specific overrides are active\./i)).toBeInTheDocument();
+  });
+
   it('opens the shared responsive editor from campaign settings', async () => {
     const modal = makeMockModal({ activeTab: 'settings' });
     render(<UnifiedCampaignModal modal={modal} />);

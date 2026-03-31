@@ -296,12 +296,12 @@ class WPSG_CPT {
     /**
      * Validate and sanitize ISO 8601 datetime strings.
      *
-     * Accepts format: Y-m-d\TH:i:s (e.g. 2026-03-05T14:30:00)
-     * Also accepts Y-m-d\TH:i:sP (with timezone offset) and empty string.
+     * Accepts ISO 8601 inputs and the plugin's stored UTC format.
+     * All valid inputs are normalized to Y-m-d H:i:s in UTC for storage.
      *
      * @since 0.18.0 P20-D
      * @param  mixed $value Raw value.
-     * @return string Validated datetime or empty string.
+     * @return string Normalized UTC datetime or empty string.
      */
     public static function sanitize_datetime( $value ): string {
         if ( ! is_string( $value ) || trim( $value ) === '' ) {
@@ -309,12 +309,16 @@ class WPSG_CPT {
         }
         $value = sanitize_text_field( $value );
 
-        // Strict parse using DateTimeImmutable to reject invalid ranges.
-        $formats = array( 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:s' );
+        $formats = array( 'Y-m-d H:i:s', 'Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s\Z', 'Y-m-d\TH:i:s' );
         foreach ( $formats as $fmt ) {
-            $dt = \DateTimeImmutable::createFromFormat( $fmt, $value );
-            if ( $dt && $dt->format( $fmt ) === $value ) {
-                return $value;
+            $dt = \DateTimeImmutable::createFromFormat( '!' . $fmt, $value, new \DateTimeZone( 'UTC' ) );
+            $errors = \DateTimeImmutable::getLastErrors();
+            $has_errors = is_array( $errors )
+                ? ( $errors['warning_count'] > 0 || $errors['error_count'] > 0 )
+                : false;
+
+            if ( $dt && ! $has_errors && $dt->format( $fmt ) === $value ) {
+                return $dt->setTimezone( new \DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
             }
         }
         return '';

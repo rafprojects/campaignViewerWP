@@ -156,7 +156,12 @@ class WPSG_CPT_Registration_Test extends WP_UnitTestCase {
     public function test_sanitize_datetime_valid_iso8601() {
         $input = '2024-03-15T10:30:00Z';
         $result = WPSG_CPT::sanitize_datetime($input);
-        $this->assertNotEmpty($result);
+        $this->assertEquals('2024-03-15 10:30:00', $result);
+    }
+
+    public function test_sanitize_datetime_accepts_stored_utc_format() {
+        $result = WPSG_CPT::sanitize_datetime('2024-03-15 10:30:00');
+        $this->assertEquals('2024-03-15 10:30:00', $result);
     }
 
     public function test_sanitize_datetime_rejects_invalid() {

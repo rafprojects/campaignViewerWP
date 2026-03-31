@@ -18,6 +18,7 @@ import {
   clearCampaignGalleryOverrides,
   describeCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
+  hasMixedCampaignScopeAdapterOverrides,
   hasCampaignGalleryOverrides,
   getUniformCampaignScopeAdapterId,
   normalizeCampaignLegacyAdapterOverrides,
@@ -46,6 +47,41 @@ const GALLERY_MODE_OPTIONS = [
   { value: 'unified', label: 'Unified' },
   { value: 'per-type', label: 'Per-Type' },
 ];
+
+function getQuickOverridePlaceholder(isMixed: boolean): string {
+  return isMixed ? 'Mixed (breakpoint-specific)' : 'Default (from settings)';
+}
+
+function getQuickOverrideDescription(baseDescription: string, isMixed: boolean): string {
+  return isMixed
+    ? `${baseDescription} Breakpoint-specific overrides are active. Choosing a value here will replace them across all breakpoints.`
+    : baseDescription;
+}
+
+function getQuickOverrideValue(
+  scope: 'unified' | 'image' | 'video',
+  formState: UnifiedCampaignModalHandle['formState'],
+  isMixed: boolean,
+): string | null {
+  if (isMixed) {
+    return null;
+  }
+
+  const uniformAdapterId = getUniformCampaignScopeAdapterId(formState.galleryOverrides, scope);
+  if (uniformAdapterId) {
+    return uniformAdapterId;
+  }
+
+  if (scope === 'image') {
+    return formState.imageAdapterId || null;
+  }
+
+  if (scope === 'video') {
+    return formState.videoAdapterId || null;
+  }
+
+  return null;
+}
 
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
@@ -94,6 +130,12 @@ export function UnifiedCampaignModal({
   const effectiveCampaignGalleryMode = resolveGalleryMode(galleryBehaviorSettings, formState.galleryOverrides);
   const hasCustomGalleryOverrides = hasCampaignGalleryOverrides(formState);
   const galleryOverrideSummary = describeCampaignGalleryOverrides(formState);
+  const hasMixedUnifiedQuickOverride = hasMixedCampaignScopeAdapterOverrides(formState.galleryOverrides, 'unified');
+  const hasMixedImageQuickOverride = hasMixedCampaignScopeAdapterOverrides(formState.galleryOverrides, 'image');
+  const hasMixedVideoQuickOverride = hasMixedCampaignScopeAdapterOverrides(formState.galleryOverrides, 'video');
+  const unifiedQuickOverrideValue = getQuickOverrideValue('unified', formState, hasMixedUnifiedQuickOverride);
+  const imageQuickOverrideValue = getQuickOverrideValue('image', formState, hasMixedImageQuickOverride);
+  const videoQuickOverrideValue = getQuickOverrideValue('video', formState, hasMixedVideoQuickOverride);
 
   return (
     <>
@@ -312,11 +354,14 @@ export function UnifiedCampaignModal({
                     {effectiveCampaignGalleryMode === 'unified' ? (
                       <Select
                         label="Unified Gallery"
-                        description="Override the global unified gallery type for this campaign"
-                        placeholder="Default (from settings)"
+                        description={getQuickOverrideDescription(
+                          'Override the global unified gallery type for this campaign.',
+                          hasMixedUnifiedQuickOverride,
+                        )}
+                        placeholder={getQuickOverridePlaceholder(hasMixedUnifiedQuickOverride)}
                         clearable
                         data={UNIFIED_ADAPTER_OPTIONS}
-                        value={getUniformCampaignScopeAdapterId(formState.galleryOverrides, 'unified') || null}
+                        value={unifiedQuickOverrideValue}
                         onChange={(v) => updateForm({
                           ...formState,
                           imageAdapterId: '',
@@ -328,11 +373,14 @@ export function UnifiedCampaignModal({
                       <>
                         <Select
                           label="Image Gallery"
-                          description="Override the global image gallery type for this campaign"
-                          placeholder="Default (from settings)"
+                          description={getQuickOverrideDescription(
+                            'Override the global image gallery type for this campaign.',
+                            hasMixedImageQuickOverride,
+                          )}
+                          placeholder={getQuickOverridePlaceholder(hasMixedImageQuickOverride)}
                           clearable
                           data={ADAPTER_OPTIONS}
-                          value={formState.imageAdapterId || null}
+                          value={imageQuickOverrideValue}
                           onChange={(v) => updateForm({
                             ...formState,
                             imageAdapterId: v ?? '',
@@ -341,11 +389,14 @@ export function UnifiedCampaignModal({
                         />
                         <Select
                           label="Video Gallery"
-                          description="Override the global video gallery type for this campaign"
-                          placeholder="Default (from settings)"
+                          description={getQuickOverrideDescription(
+                            'Override the global video gallery type for this campaign.',
+                            hasMixedVideoQuickOverride,
+                          )}
+                          placeholder={getQuickOverridePlaceholder(hasMixedVideoQuickOverride)}
                           clearable
                           data={ADAPTER_OPTIONS}
-                          value={formState.videoAdapterId || null}
+                          value={videoQuickOverrideValue}
                           onChange={(v) => updateForm({
                             ...formState,
                             videoAdapterId: v ?? '',
