@@ -1,10 +1,11 @@
 import { Suspense, lazy, useState } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, ColorInput, FileButton, Group, Image, Loader,
-  Modal, Progress, Select, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
+  Modal, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
+import { ModalSelect as Select } from '@/components/Common/ModalSelect';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type LayoutTemplate, type MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
@@ -541,7 +542,7 @@ export function UnifiedCampaignModal({
             saveLabel="Apply Campaign Gallery Config"
             clearLabel="Clear Campaign Overrides"
             unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
-            zIndex={400}
+            zIndex={500}
           />
         </Suspense>
       )}

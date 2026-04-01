@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from './test/test-utils';
+import { render, screen, fireEvent, waitFor, within } from './test/test-utils';
 import { mutate } from 'swr';
 import App from './App';
 
@@ -344,10 +344,8 @@ describe('App', () => {
     });
   });
 
-  // Note: The external media modal test is skipped due to modal stacking issues
-  // when CampaignViewer (fullscreen modal) and Add External Media modal are both open.
-  // This will be addressed as part of future UX improvements.
-  it.skip('adds external media using modal', async () => {
+  it('adds external media using shared manage media modal', async () => {
+    window.__WPSG_CONFIG__ = { enableJwt: true };
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
     localStorage.setItem('wpsg_access_token', 'token');
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
@@ -357,18 +355,17 @@ describe('App', () => {
 
     render(<App />);
 
-    // Open campaign viewer
     await openCampaignViewer('Campaign Alpha');
+    await openAdminMenu();
 
-    // Test Add External Media with modal
     const manageMediaBtn = await screen.findByRole('button', { name: 'Manage media for Campaign Alpha' });
     fireEvent.click(manageMediaBtn);
-    // External media modal opens
-    const urlInput = await screen.findByLabelText('URL');
-    fireEvent.change(urlInput, { target: { value: 'https://example.com/video' } });
-    const captionInput = screen.getByLabelText('Caption');
-    fireEvent.change(captionInput, { target: { value: 'Caption' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add Media' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Manage Media' });
+    fireEvent.change(within(dialog).getByLabelText('External media URL'), {
+      target: { value: 'https://example.com/video' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add external media' }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(

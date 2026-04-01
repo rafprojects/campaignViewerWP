@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { fireEvent, render, screen } from '@/test/test-utils';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 import { GalleryConfigEditorModal } from './GalleryConfigEditorModal';
 
@@ -148,6 +149,8 @@ describe('GalleryConfigEditorModal', () => {
 
   it('uses breakpoint tabs to edit unified adapter settings without collapsing them to desktop only', async () => {
     const onSave = vi.fn();
+    const tabletAdapterLabel = getAdapterSelectOptions({ context: 'unified-gallery', breakpoint: 'tablet' })
+      .find((option) => option.value === 'justified')?.label;
 
     render(
       <GalleryConfigEditorModal
@@ -187,15 +190,18 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Visible Cards')).toHaveValue('3');
+    const unifiedAdapterInputs = await screen.findAllByLabelText('Unified Gallery Adapter', { selector: 'input' });
+
+    expect(unifiedAdapterInputs[0]).toBeInTheDocument();
+    expect(screen.getByDisplayValue('3')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
 
-    expect(await screen.findByText('Editing breakpoint-specific unified settings for the tablet layout. The unified adapter selector above still applies across all breakpoints.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Visible Cards')).toHaveValue('2');
-
-    fireEvent.change(screen.getByLabelText('Visible Cards'), { target: { value: '4' } });
+    expect(await screen.findByText('Editing breakpoint-specific unified settings for the tablet layout.')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2')).toBeInTheDocument();
+    fireEvent.change(screen.getByDisplayValue('2'), { target: { value: '4' } });
+    fireEvent.click(screen.getAllByLabelText('Unified Gallery Adapter', { selector: 'input' })[1]);
+    fireEvent.click(screen.getByRole('option', { name: tabletAdapterLabel ?? 'Justified' }));
     fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
 
     expect(onSave).toHaveBeenCalledWith(
@@ -211,6 +217,7 @@ describe('GalleryConfigEditorModal', () => {
           }),
           tablet: expect.objectContaining({
             unified: expect.objectContaining({
+              adapterId: 'justified',
               adapterSettings: expect.objectContaining({
                 carouselVisibleCards: 4,
               }),
@@ -226,6 +233,38 @@ describe('GalleryConfigEditorModal', () => {
         }),
       }),
     );
+  });
+
+  it('emits undefined draft changes when clearMode is draft-backed', async () => {
+    const onChange = vi.fn();
+
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'masonry',
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        onChange={onChange}
+        clearMode="draft"
+        clearLabel="Preview Inherited Gallery Settings"
+      />,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Preview Inherited Gallery Settings' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Inherited Gallery Settings' }));
+
+    expect(onChange).toHaveBeenLastCalledWith(undefined);
   });
 
   it('applies shared common-setting edits to the active breakpoint only', async () => {

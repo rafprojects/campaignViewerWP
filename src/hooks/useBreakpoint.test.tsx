@@ -71,15 +71,18 @@ function makeContainerRef(clientWidth: number) {
 // mobile < 768, tablet ∈ [768, 1200), desktop ≥ 1200
 
 const originalResizeObserver = globalThis.ResizeObserver;
+const originalInnerWidth = window.innerWidth;
 
 beforeEach(() => {
   globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
   observerCallback = null;
   observerDisconnected = false;
+  Object.defineProperty(window, 'innerWidth', { value: originalInnerWidth, configurable: true, writable: true });
 });
 
 afterEach(() => {
   globalThis.ResizeObserver = originalResizeObserver;
+  Object.defineProperty(window, 'innerWidth', { value: originalInnerWidth, configurable: true, writable: true });
 });
 
 // ── Tests ────────────────────────────────────────────────────
@@ -172,5 +175,35 @@ describe('useBreakpoint', () => {
     expect(observerDisconnected).toBe(false);
     unmount();
     expect(observerDisconnected).toBe(true);
+  });
+
+  it('can resolve from viewport width when requested', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1360, configurable: true, writable: true });
+    const ref = { current: null } as React.RefObject<HTMLElement | null>;
+
+    const { result } = renderHook(() => useBreakpoint(ref, { source: 'viewport' }), { wrapper: Wrapper });
+
+    expect(result.current).toBe('desktop');
+  });
+
+  it('updates viewport-sourced breakpoints on window resize', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1360, configurable: true, writable: true });
+    const ref = { current: null } as React.RefObject<HTMLElement | null>;
+
+    const { result } = renderHook(() => useBreakpoint(ref, { source: 'viewport' }), { wrapper: Wrapper });
+
+    expect(result.current).toBe('desktop');
+
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { value: 980, configurable: true, writable: true });
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(result.current).toBe('tablet');
+
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', { value: 640, configurable: true, writable: true });
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(result.current).toBe('mobile');
   });
 });

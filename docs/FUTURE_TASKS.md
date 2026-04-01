@@ -1,8 +1,42 @@
 # Future Tasks & Enhancements
 
-This document tracks deferred and exploratory work remaining after Phase 18 is planned. Items promoted to active phase execution are moved into dedicated phase reports and removed from this backlog.
+This document tracks deferred and exploratory work remaining. Items promoted to active phase execution are moved into dedicated phase reports and removed from this backlog.
 
-> **Note:** Phase 18 is under way — see [archive/phases/PHASE18_REPORT.md](archive/phases/PHASE18_REPORT.md) for the promoted items (bulk actions, campaign duplication, export/import JSON, keyboard shortcuts, analytics dashboard, media usage tracking, campaign categories, access request workflow, App.tsx/AdminPanel.tsx reduction, JS+PHP coverage to ≥ 75 %).
+---
+
+## Current Triage Snapshot
+
+### Promoted or completed elsewhere
+
+| Item | Disposition |
+|------|-------------|
+| Modal-safe gallery-config selectors, shared manage-media entry, settings stacking fix, backlog cleanup | Active in [PHASE25_REPORT.md](PHASE25_REPORT.md) |
+| Bulk actions, campaign duplication, keyboard shortcuts, analytics dashboard, media usage tracking, campaign categories, access request workflow | Keep in [PHASE18_REPORT.md](PHASE18_REPORT.md); do not duplicate here |
+| Theme live preview, gallery config accessibility, per-breakpoint adapter parity, deferred review cleanup | Keep in [PHASE24_REPORT.md](PHASE24_REPORT.md); do not duplicate here |
+| Settings panel as a modal overlay | Already implemented; only the stacking bug moved to Phase 25 |
+| Access-request option storage migration | Already implemented via `wpsg_access_requests` table plus migration support |
+
+### Phase 25 follow-on candidates after the current core fixes
+
+| Candidate | Why it was surfaced now | Impact | Effort |
+|-----------|-------------------------|--------|--------|
+| Final legacy gallery bridge removal | Phase 24 intentionally deferred full flat-field read-path removal to the next phase; legacy adapter fields still exist in types, resolver helpers, and tests | Medium-High | Medium |
+| Builder template deep clone | Solves a real duplication surprise with relatively contained scope | Medium | Low |
+| Time-limited access grants | Strong user value for event-style galleries; clear implementation path | High | Low-Medium |
+| Admin tab data reuse / SWR cache hardening | Noticeable admin UX gain with moderate scope if the cache audit stays disciplined | Medium | Low-Medium |
+
+### Prune candidates
+
+| Item | Why it is a prune candidate |
+|------|-----------------------------|
+| URL-based image input re-enable | Security-heavy convenience feature; upload-only already covers the core workflow |
+| Third-party OAuth providers | High maintenance and product ambiguity without a clear deployment demand signal |
+| GraphQL API alternative | High maintenance cost with unclear near-term ROI |
+| Progressive Web App support | Worth revisiting only if there is a concrete offline/mobile deployment requirement |
+
+### Specialized / long-horizon notes
+
+The detailed sections below remain as the long-form backlog for builder, access, media, integration, review debt, and deferred adapter ideas. The tables above are the active triage layer and should be updated first when items move in or out of scope.
 
 ---
 
@@ -114,20 +148,18 @@ This document tracks deferred and exploratory work remaining after Phase 18 is p
 
 ---
 
-### Access Request Workflow — Scale Considerations (P18-I Follow-Up)
+### Access Request Workflow — Legacy Scale Note (Prune Candidate)
 
-**Context:** P18-I stores access requests as WP options (keyed by token) with an index option listing all tokens. This is adequate for a few hundred requests per campaign. At higher volumes, a dedicated table is warranted.
+**Current state:** The original premise of this task is stale. Access requests already have a dedicated `wpsg_access_requests` table plus migration support from the old options-based format.
 
-**What it would take:**
-- `wpsg_access_requests` table: `(id, token, email, campaign_id, status, requested_at, resolved_at)`.
-- Index on `(campaign_id, status)` for admin list queries.
-- Migrate existing option-based records at plugin upgrade time.
+**Decision:** Remove this as an active backlog item unless production evidence shows a new bottleneck in the current table-backed implementation.
 
-**Open questions:**
-- Q1: What is the realistic upper bound of access requests for a typical installation? For most galleries this never exceeds a few hundred — the option approach may be indefinitely adequate.
-- Q2: If a dedicated table is added, should it also store a `user_id` column (for when the requester is a logged-in WP user)?
+**If reopened, focus should shift to:**
+- additional indexes based on real query plans
+- retention / archival strategy for resolved requests
+- reporting and audit UX rather than the already-completed storage migration
 
-**Effort:** Low (schema + migration) | **Impact:** Low for most, Medium for high-traffic galleries
+**Impact:** Low | **Status:** Prune candidate
 
 ---
 
@@ -400,29 +432,21 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ## Build & Bundle
 
-### Async Chunk Candidates — Admin Code-Split
+### Remaining Admin Code-Split Opportunities
 
-**Context:** `vendor-dockview` was split into its own chunk in P17-E, reducing the admin chunk from 710 kB to 410 kB raw. The next step is lazy-loading admin sub-sections that are rarely visited on first open.
+**Current state:** The first-generation lazy targets originally listed here are already lazy-loaded: `LayoutBuilderModal`, `SettingsPanel`, `MediaTab`, and `AnalyticsDashboard`. The next step is no longer "add lazy loading" but "decide whether secondary splits inside the remaining heavy surfaces are worth the complexity."
 
-**Known high-value candidates:**
+**Remaining candidates worth measuring before implementation:**
 
-| Component | Trigger | Approx raw size |
-|-----------|---------|----------------|
-| `LayoutBuilderModal` + dockview | User opens Layout Builder | ~350 kB (est.) |
-| `SettingsPanel` | User clicks Settings | ~60 kB (est.) |
-| `MediaTab` | User navigates to Media tab | ~80 kB (est.) |
-| `AccessTab` | User navigates to Access tab | ~40 kB (est.) |
-| `AnalyticsDashboard` + recharts (P18-F) | User opens Analytics tab | ~80 kB (est.) |
+| Component / surface | Trigger | Note |
+|---------------------|---------|------|
+| `SettingsPanel` tab internals (especially typography tooling) | User opens specific settings tabs | Only worth doing if the panel keeps growing; current root-level lazy load already removes it from first paint |
+| `MediaTab` add/edit/reorder subflows | User opens the media workspace | Data fetch latency is already reduced via SWR; profile bundle cost before splitting UI helpers |
+| Layout Builder secondary tooling | User opens builder plus deeper tools | Measure after the builder route-vs-modal decision settles |
 
-**Implementation approach:** Wrap each lazy target in `React.lazy(() => import('./...'))` gated by `<Suspense fallback={<Loader />}>`. Each becomes its own Rollup chunk. Remove from `manualChunks.admin` once lazy.
+**Action:** Profile before adding more chunk boundaries. The obvious wins from the original note are already implemented.
 
-**Action:** Before implementing, profile the actual initial-parse budget and measure whether TTI improves. Start with `LayoutBuilderModal` (largest + rarest trigger). The `AnalyticsDashboard` (recharts) is the highest-priority new candidate from P18.
-
-**Open questions:**
-- Q1: Should lazy chunks be preloaded on hover over the relevant nav item (to make the first render instantaneous) or strictly on click?
-- Q2: Does the `<Suspense>` fallback need to match the section dimensions to prevent layout shift?
-
-**Effort:** Medium | **Impact:** Medium (current gzip is ~187 kB — real-world impact modest unless embedded on high-traffic public pages)
+**Effort:** Medium | **Impact:** Medium when profiling proves a real parse or interaction cost
 
 ---
 
@@ -447,34 +471,27 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ## UX Workflow
 
-### Settings Panel as a Non-Disruptive Modal
+### Settings Panel as a Non-Disruptive Modal (Completed)
 
-**Context:** Navigating to Settings currently causes a full admin-panel tab transition. Returning to a campaign requires re-selecting it.
+**Current state:** This is already the shipped behavior. Settings render as a modal overlay instead of a full admin-tab transition.
 
-**What it would take:**
-- Convert the Settings panel from a full admin tab to a `<Drawer>` or large `<Modal>` that overlays the current admin view.
-- The underlying campaign list or detail page remains mounted and visible through the overlay.
-- Settings save/cancel closes the drawer without a full re-render.
+**Remaining work:** Only modal stacking correctness remained when opening Settings above an active campaign viewer. That follow-up is now tracked in [PHASE25_REPORT.md](PHASE25_REPORT.md), so this item should be removed from the active backlog.
 
-**Open questions:**
-- Q1: The Settings panel is large (~20 accordion sections). Does it fit in a `<Drawer>` UX model, or does it need a `Modal size="xl"`?
-- Q2: Should settings changes take effect immediately (live preview behind the overlay) or only on explicit save? Immediate effect is powerful but risks inadvertent changes to live gallery visitors before the admin clicks Save.
-
-**Effort:** Medium | **Impact:** Low–Medium
+**Status:** Completed / remove from backlog
 
 ---
 
 ### Reuse Loaded Admin Tab Data Across Tab Switches
 
-**Context:** Switching between admin tabs (Campaigns, Media, Access, Analytics) re-fetches data when the tab is re-activated, even when filters/targets have not changed. For large media libraries this is a noticeable delay.
+**Context:** The admin surface now relies on SWR-backed data sources rather than React Query. There is already deduping and targeted `mutate()` usage in several places, but perceived reload cost can still show up when switching between heavy tabs or reopening campaign-specific panes.
 
 **What it would take:**
-- Confirm whether React Query's existing `staleTime` config is set to a non-zero value. If not, set it to 30 seconds for all admin queries.
-- Validate that `queryClient.invalidateQueries()` is consistently called after mutations so stale data cannot persist after a write.
+- Audit SWR keys and `dedupingInterval` / `revalidateOnFocus` / `revalidateOnReconnect` settings across `useAdminSWR`, `AdminPanel`, `LayoutTemplateList`, and related tab loaders.
+- Validate that manual `mutate()` calls are consistently wired after mutations so stale data does not persist after writes.
 - Preserve MediaTab scroll position and filter state across tab switches.
 
 **Open questions:**
-- Q1: Is this already partially solved by React Query's caching? Audit current `staleTime` / `gcTime` settings before committing to active development.
+- Q1: Is this already sufficiently mitigated by current SWR deduping and local optimistic state in the heaviest tabs? Measure before expanding scope.
 - Q2: Should preserved tab state (scroll position, active filters) be in React state (lost on component unmount) or URL params (persistent on refresh)?
 
 **Effort:** Low–Medium | **Impact:** Medium
@@ -542,8 +559,7 @@ When promoting future tasks to an active phase:
 ---
 
 *Document created: February 1, 2026*  
-*Last updated: March 5, 2026 — Added "JWT In-Memory Token Auth (Standalone SPA)" under Access Control (deferred from Phase 20 P20-K decision; see JWT_AUTH_ANALYSIS.md).*  
-*Updated: Added "Deferred Review Tasks" section from archived review triage in [archive/reviews/PHP_IMPLEMENTATION_REVIEW.txt](archive/reviews/PHP_IMPLEMENTATION_REVIEW.txt) and [archive/reviews/REACT_IMPLEMENTATION_REVIEW.txt](archive/reviews/REACT_IMPLEMENTATION_REVIEW.txt).*
+*Last updated: March 31, 2026 — Re-triaged backlog, linked active work to [PHASE25_REPORT.md](PHASE25_REPORT.md), removed stale/completed items, and refreshed the review-debt list to match the current architecture.*
 
 ---
 
@@ -551,6 +567,13 @@ When promoting future tasks to an active phase:
 
 Items below were triaged from the PHP and React implementation review deferred task lists.
 Easy/ASAP items were handled separately — see ASAP_TASKS.md and the implementation notes in the source review docs.
+
+### Removed from active review backlog
+
+- `D-16` moved to [PHASE24_REPORT.md](PHASE24_REPORT.md) deferred review cleanup and should not stay duplicated here.
+- `RD-1` overlaps with the standalone SPA JWT item above; keep one canonical JWT hardening entry, not two.
+- `RD-6` is no longer active backlog; there are no remaining `window.confirm` usages in `src/`.
+- `RD-7`, `RD-11`, and `RD-20` targeted `EditCampaignModal`, which has been replaced by `UnifiedCampaignModal`.
 
 ### PHP — From archived PHP_IMPLEMENTATION_REVIEW.txt
 
@@ -599,23 +622,12 @@ Files: `class-wpsg-rest.php`, `class-wpsg-cli.php`
 Add chunked/streamed export for campaigns with large media arrays. Most campaigns have <100 items.  
 LOE: Medium (4-6 hours) | Impact: Low
 
-**D-16: Consolidate Settings Sanitization to Generic Handler**
-Files: `class-wpsg-settings.php`  
-Remove 150+ redundant per-field sanitization blocks. Generic fallback already exists. Risks subtle regressions.  
-LOE: Medium (4-6 hours) | Impact: Low (DX only)
-
 **D-17: Add Default Content-Security-Policy Header**
 Files: `wp-super-gallery.php`  
 Ship sensible default CSP. Could break sites if too restrictive. Needs testing with all embed providers.  
 LOE: Medium (3-5 hours) | Impact: Low
 
 ### React — From archived REACT_IMPLEMENTATION_REVIEW.txt
-
-**RD-1: JWT Token Storage Migration (localStorage → in-memory)**
-Files: `src/services/apiClient.ts`, `src/hooks/useAuth.ts`, `src/contexts/AuthContext.tsx`  
-Move JWT tokens from localStorage to in-memory + httpOnly refresh cookie. Requires PHP backend coordination. Mitigated by DOMPurify and CSP.  
-LOE: High (8-12 hours) | Impact: Medium  
-*Note: Overlaps with existing "JWT In-Memory Token Auth" section above.*
 
 **RD-2: SettingsPanel Tab-Level Code Splitting**
 Files: `src/components/Admin/SettingsPanel.tsx` (~1822 lines)  
@@ -632,16 +644,6 @@ Files: `src/hooks/useLayoutBuilderState.ts`
 Break callback cascade by storing template in a ref. Extra re-renders, not user-visible.  
 LOE: Medium (3-4 hours) | Impact: Low
 
-**RD-6: Replace window.confirm with Mantine Modal**
-Files: `src/components/Admin/MediaTab.tsx`, other admin components  
-UX-only improvement. No functional issue.  
-LOE: Medium (3-4 hours) | Impact: Low
-
-**RD-7: JSON.stringify Change Detection in EditCampaignModal**
-Files: `src/components/Campaign/EditCampaignModal.tsx`  
-Replace JSON.stringify comparison with per-key dirty tracking. Negligible CPU cost.  
-LOE: Medium (2-3 hours) | Impact: Low
-
 **RD-8: CardGallery setTimeout → transitionend**
 Files: `src/gallery-adapters/card/CardGallery.tsx`  
 Replace setTimeout with CSS transitionend event listener. Minor UX polish.  
@@ -656,11 +658,6 @@ LOE: Low (1-2 hours) | Impact: Low
 Files: `src/components/Admin/AdminPanel.tsx`, `src/components/Admin/AccessTab.tsx`  
 Reduce prop drilling by passing hook object directly. Code organization improvement.  
 LOE: Low (1-2 hours) | Impact: Low
-
-**RD-11: EditCampaignModal Props Grouping**
-Files: `src/components/Campaign/EditCampaignModal.tsx`  
-Group 34 props into interface objects. Developer experience only.  
-LOE: Medium (2-3 hours) | Impact: Low
 
 **RD-15: SlotPropertiesPanel IIFE Extraction**
 Files: `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx`  
@@ -681,11 +678,6 @@ LOE: Medium (blocked on RD-1) | Impact: Low
 Files: `src/hooks/useMediaDimensions.ts`  
 Stabilize with ID-based caching to reduce recalculations. Minor optimization.  
 LOE: Low (1-2 hours) | Impact: Low
-
-**RD-20: localStorage Draft Recovery**
-Files: `src/components/Campaign/EditCampaignModal.tsx`  
-Implement draft recovery prompt or remove autosave. Requires UX decision.  
-LOE: Low-Medium (2-3 hours) | Impact: Low
 
 **RD-21: Standardize Error Handling Patterns**
 Files: Multiple hooks  

@@ -19,7 +19,6 @@ import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
 import {
   buildCampaignGalleryOverrideEditorValue,
-  clearCampaignGalleryOverrides,
   hasCampaignGalleryOverrides,
 } from '@/utils/campaignGalleryOverrides';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
@@ -58,17 +57,33 @@ export function CampaignViewer({
   const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   const [viewerCampaign, setViewerCampaign] = useState(campaign);
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
+  const [galleryConfigEditorValue, setGalleryConfigEditorValue] = useState<Partial<GalleryConfig> | undefined>(undefined);
+  const [galleryConfigPreviewBaseline, setGalleryConfigPreviewBaseline] = useState<Partial<GalleryConfig> | undefined>(undefined);
   const [isSavingGalleryConfig, setIsSavingGalleryConfig] = useState(false);
 
   useEffect(() => {
     setViewerCampaign(campaign);
     setGalleryConfigEditorOpen(false);
+    setGalleryConfigEditorValue(undefined);
+    setGalleryConfigPreviewBaseline(undefined);
   }, [campaign]);
 
   const openGalleryConfigEditor = useCallback((nextCampaign: Campaign) => {
     setViewerCampaign((current) => (current.id === nextCampaign.id ? current : nextCampaign));
+    setGalleryConfigEditorValue(buildCampaignGalleryOverrideEditorValue(nextCampaign));
+    setGalleryConfigPreviewBaseline(nextCampaign.galleryOverrides);
     setGalleryConfigEditorOpen(true);
   }, []);
+
+  const closeGalleryConfigEditor = useCallback(() => {
+    setViewerCampaign((current) => ({
+      ...current,
+      galleryOverrides: galleryConfigPreviewBaseline,
+    }));
+    setGalleryConfigEditorOpen(false);
+    setGalleryConfigEditorValue(undefined);
+    setGalleryConfigPreviewBaseline(undefined);
+  }, [galleryConfigPreviewBaseline]);
 
   const persistCampaignGalleryConfig = useCallback(async (
     nextState: Pick<Campaign, 'galleryOverrides'>,
@@ -104,6 +119,8 @@ export function CampaignViewer({
         updatedAt: new Date().toISOString(),
       }));
       setGalleryConfigEditorOpen(false);
+      setGalleryConfigEditorValue(undefined);
+      setGalleryConfigPreviewBaseline(undefined);
       onNotify?.({ type: 'success', text: 'Campaign gallery config updated.' });
       await onCampaignsUpdated?.();
     } catch (err) {
@@ -116,15 +133,18 @@ export function CampaignViewer({
     }
   }, [apiClient, isAdmin, isSavingGalleryConfig, onCampaignsUpdated, onNotify, viewerCampaign.id]);
 
-  const handleGalleryConfigSave = useCallback((galleryOverrides: GalleryConfig) => {
+  const handleGalleryConfigSave = useCallback((galleryOverrides: GalleryConfig | undefined) => {
     void persistCampaignGalleryConfig({
       galleryOverrides,
     });
   }, [persistCampaignGalleryConfig]);
 
-  const handleGalleryConfigClear = useCallback(() => {
-    void persistCampaignGalleryConfig({ galleryOverrides: clearCampaignGalleryOverrides().galleryOverrides });
-  }, [persistCampaignGalleryConfig]);
+  const handleGalleryConfigPreviewChange = useCallback((galleryOverrides: GalleryConfig | undefined) => {
+    setViewerCampaign((current) => ({
+      ...current,
+      galleryOverrides,
+    }));
+  }, []);
 
   // P22-K5: Keep CampaignContext in sync with viewer open/close
   useEffect(() => {
@@ -162,7 +182,10 @@ export function CampaignViewer({
   const isMobile = useMediaQuery('(max-width: 48em)'); // ≤ 768px
   // P15-A: Per-breakpoint adapter resolution
   const containerRef = useRef<HTMLDivElement>(null);
-  const breakpoint = useBreakpoint(containerRef);
+  // The campaign viewer is intentionally width-clamped, so container width
+  // tends to collapse desktop screens into the tablet breakpoint. Use the
+  // viewport here so desktop/tablet/mobile map to the actual device size.
+  const breakpoint = useBreakpoint(containerRef, { source: 'viewport' });
   const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(galleryBehaviorSettings, displayedCampaign.galleryOverrides);
   // P21-F: Fullscreen and conditional rendering
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
@@ -422,18 +445,19 @@ export function CampaignViewer({
         <Suspense fallback={<GalleryConfigEditorLoader />}>
           <LazyGalleryConfigEditorModal
             opened={galleryConfigEditorOpen}
-            onClose={() => setGalleryConfigEditorOpen(false)}
+            onClose={closeGalleryConfigEditor}
             title="Campaign Gallery Config"
-            value={buildCampaignGalleryOverrideEditorValue(displayedCampaign)}
+            value={galleryConfigEditorValue}
             contextSummary={hasCampaignGalleryOverrides(displayedCampaign)
-              ? 'This campaign currently stores custom gallery overrides. Changes saved here update the active campaign immediately.'
-              : 'This campaign is currently inheriting global gallery settings. Any changes saved here create campaign-specific overrides immediately.'}
-            onClear={handleGalleryConfigClear}
+              ? 'This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.'
+              : 'This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.'}
+            onChange={handleGalleryConfigPreviewChange}
             onSave={handleGalleryConfigSave}
             saveLabel="Save Campaign Gallery Config"
-            clearLabel="Use Inherited Gallery Settings"
+            clearLabel="Preview Inherited Gallery Settings"
+            clearMode="draft"
             unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
-            zIndex={400}
+            zIndex={500}
           />
         </Suspense>
       )}

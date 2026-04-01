@@ -856,7 +856,7 @@ describe('SettingsPanel', () => {
     await openResponsiveConfigEditor();
 
     expect(screen.getByTestId('gallery-config-editor-modal')).toBeInTheDocument();
-    expect(capturedModalZIndex).toBe(400);
+    expect(capturedModalZIndex).toBe(500);
   });
 
   it('renders per-type breakpoint adapter grids without the selection mode toggle', async () => {

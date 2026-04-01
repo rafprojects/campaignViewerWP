@@ -282,7 +282,7 @@ describe('UnifiedCampaignModal', () => {
 
     await openCampaignResponsiveConfigDialog();
 
-    expect(capturedGalleryConfigEditorZIndex).toBe(400);
+    expect(capturedGalleryConfigEditorZIndex).toBe(500);
     expect(screen.getByRole('dialog', { name: 'Campaign Responsive Gallery Config' })).toBeInTheDocument();
   });
 

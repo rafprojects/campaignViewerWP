@@ -297,16 +297,25 @@ function AppContent({
 
       <AddExternalMediaModal
         opened={!!externalMediaModal.externalMediaCampaign}
-        mediaType={externalMediaModal.externalMediaType}
-        onMediaTypeChange={externalMediaModal.setExternalMediaType}
-        url={externalMediaModal.externalMediaUrl}
-        onUrlChange={externalMediaModal.setExternalMediaUrl}
-        caption={externalMediaModal.externalMediaCaption}
-        onCaptionChange={externalMediaModal.setExternalMediaCaption}
-        thumbnail={externalMediaModal.externalMediaThumbnail}
-        onThumbnailChange={externalMediaModal.setExternalMediaThumbnail}
-        onClose={() => externalMediaModal.setExternalMediaCampaign(null)}
-        onConfirm={externalMediaModal.confirmAddExternalMedia}
+        dropRef={externalMediaModal.dropRef}
+        selectedFile={externalMediaModal.selectedFile}
+        onSelectFile={externalMediaModal.setSelectedFile}
+        previewUrl={externalMediaModal.previewUrl}
+        uploadTitle={externalMediaModal.uploadTitle}
+        onUploadTitleChange={externalMediaModal.setUploadTitle}
+        uploadCaption={externalMediaModal.uploadCaption}
+        onUploadCaptionChange={externalMediaModal.setUploadCaption}
+        uploadProgress={externalMediaModal.uploadProgress}
+        uploading={externalMediaModal.uploading}
+        onUpload={externalMediaModal.confirmUploadMedia}
+        externalUrl={externalMediaModal.externalMediaUrl}
+        onExternalUrlChange={externalMediaModal.setExternalMediaUrl}
+        externalError={externalMediaModal.externalMediaError}
+        onFetchOEmbed={externalMediaModal.fetchExternalPreview}
+        externalLoading={externalMediaModal.externalMediaLoading}
+        onAddExternal={externalMediaModal.confirmAddExternalMedia}
+        externalPreview={externalMediaModal.externalMediaPreview}
+        onClose={externalMediaModal.closeExternalMediaModal}
       />
     </div>
     </CampaignContextProvider>

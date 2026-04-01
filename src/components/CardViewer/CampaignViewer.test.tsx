@@ -19,7 +19,9 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
     saveLabel = 'Save Campaign Gallery Config',
     clearLabel = 'Use Inherited Gallery Settings',
     onSave,
+    onChange,
     onClear,
+    onClose,
     zIndex,
   }: {
     opened: boolean;
@@ -29,8 +31,13 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
     onSave: (value: {
       mode: 'unified' | 'per-type';
       breakpoints: Record<string, unknown>;
-    }) => void;
+    } | undefined) => void;
+    onChange?: (value: {
+      mode: 'unified' | 'per-type';
+      breakpoints: Record<string, unknown>;
+    } | undefined) => void;
     onClear?: () => void;
+    onClose: () => void;
     zIndex?: number;
   }) => {
     capturedGalleryConfigEditorZIndex = zIndex;
@@ -42,6 +49,19 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
     return (
       <div role="dialog" aria-label={title}>
         <h2>{title}</h2>
+        <button
+          type="button"
+          onClick={() => onChange?.({
+            mode: 'unified',
+            breakpoints: {
+              desktop: { unified: { adapterId: 'classic' } },
+              tablet: { unified: { adapterId: 'classic' } },
+              mobile: { unified: { adapterId: 'classic' } },
+            },
+          })}
+        >
+          Preview Unified Gallery Config
+        </button>
         <button
           type="button"
           onClick={() => onSave({
@@ -56,6 +76,7 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
           {saveLabel}
         </button>
         <button type="button" onClick={() => onClear?.()}>{clearLabel}</button>
+        <button type="button" onClick={onClose}>Cancel Preview</button>
       </div>
     );
   },
@@ -223,7 +244,7 @@ describe('CampaignViewer', () => {
 
     await screen.findByRole('dialog', { name: 'Campaign Gallery Config' });
 
-    expect(capturedGalleryConfigEditorZIndex).toBe(400);
+    expect(capturedGalleryConfigEditorZIndex).toBe(500);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Save Campaign Gallery Config' }));
 
@@ -247,6 +268,40 @@ describe('CampaignViewer', () => {
       type: 'success',
       text: 'Campaign gallery config updated.',
     });
+  });
+
+  it('previews gallery config changes in the viewer and reverts them on cancel', async () => {
+    render(
+      <CampaignContextProvider>
+        <CampaignViewer
+          campaign={campaign}
+          opened
+          hasAccess
+          galleryBehaviorSettings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+          isAdmin
+          onClose={() => undefined}
+        />
+        <GalleryConfigTrigger />
+      </CampaignContextProvider>,
+    );
+
+    expect(screen.getByTestId('per-type-gallery-section')).toBeInTheDocument();
+    expect(screen.queryByTestId('unified-gallery-section')).not.toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Gallery Config' }));
+    await screen.findByRole('dialog', { name: 'Campaign Gallery Config' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Unified Gallery Config' }));
+
+    expect(screen.getByTestId('unified-gallery-section')).toBeInTheDocument();
+    expect(screen.queryByTestId('per-type-gallery-section')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel Preview' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('per-type-gallery-section')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('unified-gallery-section')).not.toBeInTheDocument();
   });
 
   it('prefers campaign unified mode overrides over global per-type viewer mode', () => {

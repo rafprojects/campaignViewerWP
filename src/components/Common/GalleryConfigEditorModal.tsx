@@ -1,4 +1,4 @@
-import { Button, ColorInput, Divider, Group, Modal, NumberInput, Select, Stack, Tabs, Text, TextInput } from '@mantine/core';
+import { Button, ColorInput, Divider, Group, Modal, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
 import {
@@ -6,6 +6,7 @@ import {
   getActiveSettingGroupDefinitions,
   getAdapterSelectOptions,
 } from '@/components/Galleries/Adapters/adapterRegistry';
+import { ModalSelect as Select } from '@/components/Common/ModalSelect';
 import type {
   AdapterSettingFieldDefinition,
   AdapterSettingGroupDefinition,
@@ -29,11 +30,13 @@ interface GalleryConfigEditorModalProps {
   title: string;
   value?: Partial<GalleryConfig>;
   onClose: () => void;
-  onSave: (value: GalleryConfig) => void;
+  onSave: (value: GalleryConfig | undefined) => void;
+  onChange?: (value: GalleryConfig | undefined) => void;
   onClear?: () => void;
   contextSummary?: string;
   saveLabel?: string;
   clearLabel?: string;
+  clearMode?: 'external' | 'draft';
   unifiedAdapterEnabled?: boolean;
   unifiedAdapterDescription?: string;
   zIndex?: number;
@@ -499,32 +502,49 @@ export function GalleryConfigEditorModal({
   value,
   onClose,
   onSave,
+  onChange,
   onClear,
   contextSummary,
   saveLabel = 'Apply Gallery Config',
   clearLabel = 'Clear Overrides',
+  clearMode = 'external',
   unifiedAdapterEnabled = true,
   unifiedAdapterDescription,
   zIndex,
 }: GalleryConfigEditorModalProps) {
-  const [draft, setDraft] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
-  const [baseline, setBaseline] = useState<GalleryConfig>({ mode: 'per-type', breakpoints: {} });
+  const [draft, setDraft] = useState<GalleryConfig | undefined>(undefined);
+  const [baseline, setBaseline] = useState<GalleryConfig | undefined>(undefined);
   const [activeBreakpoint, setActiveBreakpoint] = useState<GalleryConfigBreakpoint>('desktop');
+  const resolvedDraft = draft ?? { mode: 'per-type' as const, breakpoints: {} };
+  const resolvedBaseline = baseline ?? { mode: 'per-type' as const, breakpoints: {} };
+  const updateDraft = (updater: (current: GalleryConfig) => GalleryConfig) => {
+    setDraft((current) => updater(current ?? { mode: 'per-type', breakpoints: {} }));
+  };
   const activeSettingGroups = getActiveSettingGroupDefinitions(
-    getEditableScopes(draft.mode ?? 'per-type').map((scope) => draft.breakpoints?.[activeBreakpoint]?.[scope]?.adapterId),
-  ).filter((group) => group.fields.some((field) => shouldRenderAdapterSettingField(draft, activeBreakpoint, group, field)));
-  const unifiedAdapterHelpText = `${unifiedAdapterDescription ?? 'Adapter applied when images and videos render together.'} Breakpoint tabs below control responsive unified settings.`;
+    getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => resolvedDraft.breakpoints?.[activeBreakpoint]?.[scope]?.adapterId),
+  ).filter((group) => group.fields.some((field) => shouldRenderAdapterSettingField(resolvedDraft, activeBreakpoint, group, field)));
+  const unifiedAdapterHelpText = `${unifiedAdapterDescription ?? 'Adapter applied when images and videos render together.'} Each breakpoint tab controls its own unified adapter and responsive settings.`;
 
   useEffect(() => {
     if (!opened) {
       return;
     }
 
-    const nextBaseline = pruneConfig(cloneGalleryConfig(value as GalleryConfig) ?? { mode: 'per-type', breakpoints: {} });
+    const nextBaseline = value
+      ? pruneConfig(cloneGalleryConfig(value as GalleryConfig) ?? { mode: 'per-type', breakpoints: {} })
+      : undefined;
     setBaseline(nextBaseline);
     setDraft(nextBaseline);
     setActiveBreakpoint('desktop');
   }, [opened, value]);
+
+  useEffect(() => {
+    if (!opened || !onChange) {
+      return;
+    }
+
+    onChange(draft ? pruneConfig(draft) : undefined);
+  }, [draft, onChange, opened]);
 
   return (
     <Modal opened={opened} onClose={onClose} title={title} size="lg" centered zIndex={zIndex}>
@@ -546,34 +566,19 @@ export function GalleryConfigEditorModal({
             { value: 'unified', label: 'Unified' },
             { value: 'per-type', label: 'Per-Type' },
           ]}
-          value={draft.mode ?? 'per-type'}
+          value={resolvedDraft.mode ?? 'per-type'}
           onChange={(nextMode) => {
             if (nextMode === 'unified' || nextMode === 'per-type') {
-              setDraft((current) => setConfigMode(current, nextMode));
+              updateDraft((current) => setConfigMode(current, nextMode));
             }
           }}
         />
 
-        {draft.mode === 'unified' ? (
+        {resolvedDraft.mode === 'unified' ? (
           unifiedAdapterEnabled ? (
-            <Select
-              label="Unified Gallery Adapter"
-              description={unifiedAdapterHelpText}
-              data={getAdapterSelectOptions({ context: 'unified-gallery' })}
-              value={getScopeAdapterId(draft, 'desktop', 'unified') || null}
-              onChange={(adapterId) => {
-                const nextId = adapterId ?? '';
-                setDraft((current) => {
-                  let next = current;
-                  GALLERY_BREAKPOINTS.forEach((breakpoint) => {
-                    next = setScopeAdapterId(next, breakpoint, 'unified', nextId);
-                  });
-                  return next;
-                });
-              }}
-              clearable
-              placeholder="Default adapter"
-            />
+            <Text size="sm" c="dimmed">
+              {unifiedAdapterHelpText}
+            </Text>
           ) : (
             <Text size="sm" c="dimmed">
               Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice.
@@ -591,12 +596,29 @@ export function GalleryConfigEditorModal({
           </Tabs.List>
 
           {GALLERY_BREAKPOINTS.map((breakpoint) => {
-            if (draft.mode === 'unified') {
+            if (resolvedDraft.mode === 'unified') {
               return (
                 <Tabs.Panel key={breakpoint} value={breakpoint} pt="md">
-                  <Text size="sm" c="dimmed">
-                    Editing breakpoint-specific unified settings for the {breakpoint} layout. The unified adapter selector above still applies across all breakpoints.
-                  </Text>
+                  <Stack gap="md">
+                    <Text size="sm" c="dimmed">
+                      Editing breakpoint-specific unified settings for the {breakpoint} layout.
+                    </Text>
+                    {unifiedAdapterEnabled ? (
+                      <Select
+                        label="Unified Gallery Adapter"
+                        description={`Unified gallery adapter for the ${breakpoint} breakpoint.`}
+                        data={getAdapterSelectOptions({ context: 'unified-gallery', breakpoint })}
+                        value={getScopeAdapterId(resolvedDraft, breakpoint, 'unified') || null}
+                        onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'unified', adapterId ?? ''))}
+                        clearable
+                        placeholder="Default adapter"
+                      />
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        Unified adapter overrides remain inherited in this slice.
+                      </Text>
+                    )}
+                  </Stack>
                 </Tabs.Panel>
               );
             }
@@ -613,8 +635,8 @@ export function GalleryConfigEditorModal({
                     label="Image Adapter"
                     description={`Image gallery adapter for the ${breakpoint} breakpoint.`}
                     data={adapterOptions}
-                    value={getScopeAdapterId(draft, breakpoint, 'image') || null}
-                    onChange={(adapterId) => setDraft((current) => setScopeAdapterId(current, breakpoint, 'image', adapterId ?? ''))}
+                    value={getScopeAdapterId(resolvedDraft, breakpoint, 'image') || null}
+                    onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'image', adapterId ?? ''))}
                     clearable
                     placeholder="Default adapter"
                   />
@@ -622,8 +644,8 @@ export function GalleryConfigEditorModal({
                     label="Video Adapter"
                     description={`Video gallery adapter for the ${breakpoint} breakpoint.`}
                     data={adapterOptions}
-                    value={getScopeAdapterId(draft, breakpoint, 'video') || null}
-                    onChange={(adapterId) => setDraft((current) => setScopeAdapterId(current, breakpoint, 'video', adapterId ?? ''))}
+                    value={getScopeAdapterId(resolvedDraft, breakpoint, 'video') || null}
+                    onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'video', adapterId ?? ''))}
                     clearable
                     placeholder="Default adapter"
                   />
@@ -634,7 +656,7 @@ export function GalleryConfigEditorModal({
         </Tabs>
 
         <Text size="xs" c="dimmed">
-          Settings below apply to the {activeBreakpoint} breakpoint {draft.mode === 'unified'
+          Settings below apply to the {activeBreakpoint} breakpoint {resolvedDraft.mode === 'unified'
             ? 'for the unified gallery surface.'
             : 'for the current per-type gallery surface.'}
         </Text>
@@ -644,8 +666,8 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Gallery Section Max Width (px)"
           description="Maximum width for each gallery section. 0 keeps the section fully responsive."
-          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMaxWidth') ?? 0}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxWidth', typeof value === 'number' ? value : 0))}
+          value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMaxWidth') ?? 0}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxWidth', typeof value === 'number' ? value : 0))}
           min={0}
           max={2000}
           step={50}
@@ -654,8 +676,8 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Gallery Section Min Width (px)"
           description="Minimum width floor for each gallery section."
-          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMinWidth') ?? 300}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinWidth', typeof value === 'number' ? value : 300))}
+          value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMinWidth') ?? 300}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinWidth', typeof value === 'number' ? value : 300))}
           min={200}
           max={600}
           step={50}
@@ -669,17 +691,17 @@ export function GalleryConfigEditorModal({
             { value: 'manual', label: 'Manual (fixed max height)' },
             { value: 'viewport', label: 'Viewport (% of screen)' },
           ]}
-          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'sectionHeightMode') ?? 'auto'}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionHeightMode', value ?? 'auto'))}
+          value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'sectionHeightMode') ?? 'auto'}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionHeightMode', value ?? 'auto'))}
           allowDeselect={false}
         />
 
-        {getRepresentativeStringCommonValue(draft, activeBreakpoint, 'sectionHeightMode') === 'manual' && (
+        {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'sectionHeightMode') === 'manual' && (
           <NumberInput
             label="Gallery Section Max Height (px)"
             description="Maximum height used when section height mode is manual."
-            value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMaxHeight') ?? 0}
-            onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxHeight', typeof value === 'number' ? value : 0))}
+            value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMaxHeight') ?? 0}
+            onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxHeight', typeof value === 'number' ? value : 0))}
             min={0}
             max={2000}
             step={50}
@@ -689,8 +711,8 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Gallery Section Min Height (px)"
           description="Minimum height floor for each gallery section."
-          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionMinHeight') ?? 150}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinHeight', typeof value === 'number' ? value : 150))}
+          value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMinHeight') ?? 150}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinHeight', typeof value === 'number' ? value : 150))}
           min={100}
           max={400}
           step={50}
@@ -703,8 +725,8 @@ export function GalleryConfigEditorModal({
             { value: 'false', label: 'Off' },
             { value: 'true', label: 'On' },
           ]}
-          value={String(getRepresentativeBooleanCommonValue(draft, activeBreakpoint, 'perTypeSectionEqualHeight') ?? false)}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'perTypeSectionEqualHeight', value === 'true'))}
+          value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'perTypeSectionEqualHeight') ?? false)}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'perTypeSectionEqualHeight', value === 'true'))}
           allowDeselect={false}
         />
 
@@ -713,8 +735,8 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Section Padding (px)"
           description="Applies the same inner section padding across the currently edited gallery mode surface."
-          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'sectionPadding') ?? 16}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionPadding', typeof value === 'number' ? value : 16))}
+          value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionPadding') ?? 16}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionPadding', typeof value === 'number' ? value : 16))}
           min={0}
           max={32}
           step={4}
@@ -723,8 +745,8 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Adapter Content Padding (px)"
           description="Applies the same inner adapter padding across the currently edited gallery mode surface."
-          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterContentPadding') ?? 0}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterContentPadding', typeof value === 'number' ? value : 0))}
+          value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterContentPadding') ?? 0}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterContentPadding', typeof value === 'number' ? value : 0))}
           min={0}
           max={24}
           step={4}
@@ -739,18 +761,18 @@ export function GalleryConfigEditorModal({
             { value: 'fill', label: 'Fill (100%)' },
             { value: 'manual', label: 'Manual (custom %)' },
           ]}
-          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'adapterSizingMode') ?? 'fill'}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterSizingMode', value ?? 'fill'))}
+          value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterSizingMode') ?? 'fill'}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterSizingMode', value ?? 'fill'))}
           allowDeselect={false}
         />
 
-        {getRepresentativeStringCommonValue(draft, activeBreakpoint, 'adapterSizingMode') === 'manual' && (
+        {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterSizingMode') === 'manual' && (
           <>
             <NumberInput
               label="Adapter Max Width (%)"
               description="Maximum adapter width as a percentage of its gallery section."
-              value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterMaxWidthPct') ?? 100}
-              onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxWidthPct', typeof value === 'number' ? value : 100))}
+              value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterMaxWidthPct') ?? 100}
+              onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxWidthPct', typeof value === 'number' ? value : 100))}
               min={50}
               max={100}
               step={5}
@@ -759,8 +781,8 @@ export function GalleryConfigEditorModal({
             <NumberInput
               label="Adapter Max Height (%)"
               description="Maximum adapter height as a percentage of its gallery section."
-              value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterMaxHeightPct') ?? 100}
-              onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxHeightPct', typeof value === 'number' ? value : 100))}
+              value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterMaxHeightPct') ?? 100}
+              onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxHeightPct', typeof value === 'number' ? value : 100))}
               min={50}
               max={100}
               step={5}
@@ -771,8 +793,8 @@ export function GalleryConfigEditorModal({
         <NumberInput
           label="Adapter Item Gap (px)"
           description="Applies shared item spacing across the currently edited gallery mode surface."
-          value={getRepresentativeNumberCommonValue(draft, activeBreakpoint, 'adapterItemGap') ?? 16}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterItemGap', typeof value === 'number' ? value : 16))}
+          value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterItemGap') ?? 16}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterItemGap', typeof value === 'number' ? value : 16))}
           min={0}
           max={64}
           step={4}
@@ -789,8 +811,8 @@ export function GalleryConfigEditorModal({
             { value: 'space-evenly', label: 'Space Evenly' },
             { value: 'stretch', label: 'Stretch' },
           ]}
-          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'adapterJustifyContent') ?? 'center'}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterJustifyContent', value ?? 'center'))}
+          value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterJustifyContent') ?? 'center'}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterJustifyContent', value ?? 'center'))}
           allowDeselect={false}
         />
 
@@ -804,17 +826,17 @@ export function GalleryConfigEditorModal({
             { value: 'viewport', label: 'Restrain to view' },
             { value: 'manual', label: 'Manually control height' },
           ]}
-          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'gallerySizingMode') ?? 'auto'}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'gallerySizingMode', value ?? 'auto'))}
+          value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'gallerySizingMode') ?? 'auto'}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'gallerySizingMode', value ?? 'auto'))}
           allowDeselect={false}
         />
 
-        {getRepresentativeStringCommonValue(draft, activeBreakpoint, 'gallerySizingMode') === 'manual' && (
+        {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'gallerySizingMode') === 'manual' && (
           <TextInput
             label="Manual Gallery Height"
             description="Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
-            value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryManualHeight') ?? '420px'}
-            onChange={(event) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryManualHeight', event.currentTarget.value))}
+            value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryManualHeight') ?? '420px'}
+            onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryManualHeight', event.currentTarget.value))}
             placeholder="420px"
           />
         )}
@@ -824,15 +846,15 @@ export function GalleryConfigEditorModal({
         <TextInput
           label="Image Gallery Label"
           description="Shared heading text for image gallery sections when labels are enabled."
-          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryImageLabel') ?? 'Images'}
-          onChange={(event) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryImageLabel', event.currentTarget.value))}
+          value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryImageLabel') ?? 'Images'}
+          onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryImageLabel', event.currentTarget.value))}
         />
 
         <TextInput
           label="Video Gallery Label"
           description="Shared heading text for video gallery sections when labels are enabled."
-          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryVideoLabel') ?? 'Videos'}
-          onChange={(event) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryVideoLabel', event.currentTarget.value))}
+          value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryVideoLabel') ?? 'Videos'}
+          onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryVideoLabel', event.currentTarget.value))}
         />
 
         <Select
@@ -843,8 +865,8 @@ export function GalleryConfigEditorModal({
             { value: 'center', label: 'Center' },
             { value: 'right', label: 'Right' },
           ]}
-          value={getRepresentativeStringCommonValue(draft, activeBreakpoint, 'galleryLabelJustification') ?? 'left'}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryLabelJustification', value ?? 'left'))}
+          value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryLabelJustification') ?? 'left'}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryLabelJustification', value ?? 'left'))}
           allowDeselect={false}
         />
 
@@ -855,8 +877,8 @@ export function GalleryConfigEditorModal({
             { value: 'true', label: 'On' },
             { value: 'false', label: 'Off' },
           ]}
-          value={String(getRepresentativeBooleanCommonValue(draft, activeBreakpoint, 'showGalleryLabelIcon') ?? false)}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showGalleryLabelIcon', value === 'true'))}
+          value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'showGalleryLabelIcon') ?? false)}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showGalleryLabelIcon', value === 'true'))}
           allowDeselect={false}
         />
 
@@ -867,20 +889,20 @@ export function GalleryConfigEditorModal({
             { value: 'true', label: 'On' },
             { value: 'false', label: 'Off' },
           ]}
-          value={String(getRepresentativeBooleanCommonValue(draft, activeBreakpoint, 'showCampaignGalleryLabels') ?? true)}
-          onChange={(value) => setDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showCampaignGalleryLabels', value === 'true'))}
+          value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'showCampaignGalleryLabels') ?? true)}
+          onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showCampaignGalleryLabels', value === 'true'))}
           allowDeselect={false}
         />
 
         <Divider label="Viewport Backgrounds" labelPosition="center" />
 
-        {getEditableScopes(draft.mode ?? 'per-type').map((scope) => {
+        {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => {
           const scopeLabel = formatScopeLabel(scope);
           const defaults = getScopeViewportBackgroundFallbacks(scope);
-          const bgType = getScopeCommonValue(draft, activeBreakpoint, scope, 'viewportBgType') ?? defaults.viewportBgType;
-          const bgColor = getScopeCommonValue(draft, activeBreakpoint, scope, 'viewportBgColor') ?? defaults.viewportBgColor;
-          const bgGradient = getScopeCommonValue(draft, activeBreakpoint, scope, 'viewportBgGradient') ?? defaults.viewportBgGradient;
-          const bgImageUrl = getScopeCommonValue(draft, activeBreakpoint, scope, 'viewportBgImageUrl') ?? defaults.viewportBgImageUrl;
+          const bgType = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgType') ?? defaults.viewportBgType;
+          const bgColor = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgColor') ?? defaults.viewportBgColor;
+          const bgGradient = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgGradient') ?? defaults.viewportBgGradient;
+          const bgImageUrl = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgImageUrl') ?? defaults.viewportBgImageUrl;
 
           return (
             <Stack key={scope} gap="sm">
@@ -896,7 +918,7 @@ export function GalleryConfigEditorModal({
                   { value: 'image', label: 'Background Image' },
                 ]}
                 value={bgType}
-                onChange={(value) => setDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgType', value ?? 'none'))}
+                onChange={(value) => updateDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgType', value ?? 'none'))}
                 allowDeselect={false}
               />
 
@@ -905,7 +927,7 @@ export function GalleryConfigEditorModal({
                   label={`${scopeLabel} Background Color`}
                   description="Solid background color behind the viewport."
                   value={bgColor}
-                  onChange={(value) => setDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgColor', value))}
+                  onChange={(value) => updateDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgColor', value))}
                 />
               )}
 
@@ -914,7 +936,7 @@ export function GalleryConfigEditorModal({
                   label={`${scopeLabel} Background Gradient`}
                   description="CSS gradient string used behind the viewport."
                   value={bgGradient}
-                  onChange={(event) => setDraft((current) => setCommonSettingForScope(
+                  onChange={(event) => updateDraft((current) => setCommonSettingForScope(
                     current,
                     activeBreakpoint,
                     scope,
@@ -929,7 +951,7 @@ export function GalleryConfigEditorModal({
                   label={`${scopeLabel} Background Image URL`}
                   description="Image shown behind the viewport."
                   value={bgImageUrl}
-                  onChange={(event) => setDraft((current) => setCommonSettingForScope(
+                  onChange={(event) => updateDraft((current) => setCommonSettingForScope(
                     current,
                     activeBreakpoint,
                     scope,
@@ -949,8 +971,8 @@ export function GalleryConfigEditorModal({
               {activeSettingGroups.map((group) => (
                 <Stack key={group.group} gap="sm">
                   <Text size="sm" fw={600}>{formatSettingGroupLabel(group.group)}</Text>
-                  {group.fields.filter((field) => shouldRenderAdapterSettingField(draft, activeBreakpoint, group, field)).map((field) => {
-                    const representativeValue = getRepresentativeAdapterSettingValue(draft, activeBreakpoint, group, field);
+                  {group.fields.filter((field) => shouldRenderAdapterSettingField(resolvedDraft, activeBreakpoint, group, field)).map((field) => {
+                    const representativeValue = getRepresentativeAdapterSettingValue(resolvedDraft, activeBreakpoint, group, field);
 
                     if (field.control === 'number') {
                       return (
@@ -959,7 +981,7 @@ export function GalleryConfigEditorModal({
                           label={field.label}
                           description={field.description}
                           value={typeof representativeValue === 'number' ? representativeValue : field.fallback}
-                          onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                          onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                             current,
                             activeBreakpoint,
                             group,
@@ -984,7 +1006,7 @@ export function GalleryConfigEditorModal({
                             { value: 'false', label: 'Off' },
                           ]}
                           value={String(typeof representativeValue === 'boolean' ? representativeValue : field.fallback)}
-                          onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                          onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                             current,
                             activeBreakpoint,
                             group,
@@ -1004,7 +1026,7 @@ export function GalleryConfigEditorModal({
                           description={field.description}
                           value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
                           placeholder={field.placeholder}
-                          onChange={(event) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                          onChange={(event) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                             current,
                             activeBreakpoint,
                             group,
@@ -1022,7 +1044,7 @@ export function GalleryConfigEditorModal({
                           label={field.label}
                           description={field.description}
                           value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
-                          onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                          onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                             current,
                             activeBreakpoint,
                             group,
@@ -1040,7 +1062,7 @@ export function GalleryConfigEditorModal({
                         description={field.description}
                         data={field.options}
                         value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
-                        onChange={(value) => setDraft((current) => setAdapterSettingForMatchingScopes(
+                        onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                           current,
                           activeBreakpoint,
                           group,
@@ -1059,12 +1081,12 @@ export function GalleryConfigEditorModal({
 
         <Group justify="space-between" align="center" wrap="wrap" gap="sm">
           <Group gap="sm">
-            {getEditableScopes(draft.mode ?? 'per-type').map((scope) => (
+            {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => (
               <Button
                 key={scope}
                 variant="subtle"
                 color="gray"
-                onClick={() => setDraft((current) => resetScopeToBaseline(current, baseline, scope))}
+                onClick={() => updateDraft((current) => resetScopeToBaseline(current, resolvedBaseline, scope))}
               >
                 Reset {formatScopeLabel(scope)}
               </Button>
@@ -1072,22 +1094,33 @@ export function GalleryConfigEditorModal({
             <Button
               variant="subtle"
               color="gray"
-              onClick={() => setDraft((current) => resetBreakpointToBaseline(current, baseline, activeBreakpoint))}
+              onClick={() => updateDraft((current) => resetBreakpointToBaseline(current, resolvedBaseline, activeBreakpoint))}
             >
               Reset {activeBreakpoint}
             </Button>
             <Button variant="subtle" color="gray" onClick={() => setDraft(baseline)}>
               Reset All Changes
             </Button>
-            {onClear && (
-              <Button variant="subtle" color="red" onClick={onClear}>
+            {(clearMode === 'draft' || onClear) && (
+              <Button
+                variant="subtle"
+                color="red"
+                onClick={() => {
+                  if (clearMode === 'draft') {
+                    setDraft(undefined);
+                    return;
+                  }
+
+                  onClear?.();
+                }}
+              >
                 {clearLabel}
               </Button>
             )}
           </Group>
           <Group gap="sm">
             <Button variant="default" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => onSave(pruneConfig(draft))}>{saveLabel}</Button>
+            <Button onClick={() => onSave(draft ? pruneConfig(draft) : undefined)}>{saveLabel}</Button>
           </Group>
         </Group>
       </Stack>
