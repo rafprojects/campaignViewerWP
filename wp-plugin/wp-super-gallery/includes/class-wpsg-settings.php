@@ -125,8 +125,14 @@ class WPSG_Settings {
      */
     public static function get_settings() {
         self::load_registry();
-        $settings = get_option(self::OPTION_NAME, []);
-        return wp_parse_args($settings, self::$defaults);
+        $stored_settings = get_option(self::OPTION_NAME, []);
+        $settings = wp_parse_args($stored_settings, self::$defaults);
+
+        if (!array_key_exists('gallery_config', $stored_settings)) {
+            return $settings;
+        }
+
+        return WPSG_Settings_Utils::apply_gallery_config_legacy_bridge($settings);
     }
 
     /**

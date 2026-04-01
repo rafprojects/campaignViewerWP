@@ -130,6 +130,35 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         }
     }
 
+    public function test_get_settings_bridges_gallery_config_back_to_legacy_fields() {
+        update_option('wpsg_settings', [
+            'gallery_config' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'masonry',
+                            'common' => [
+                                'sectionPadding' => 24,
+                                'viewportBgType' => 'solid',
+                                'viewportBgColor' => '#112233',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $settings = WPSG_Settings::get_settings();
+
+        $this->assertTrue($settings['unified_gallery_enabled'] ?? false);
+        $this->assertEquals('masonry', $settings['unified_gallery_adapter_id'] ?? null);
+        $this->assertEquals('unified', $settings['gallery_selection_mode'] ?? null);
+        $this->assertEquals(24, $settings['gallery_section_padding'] ?? null);
+        $this->assertEquals('solid', $settings['unified_bg_type'] ?? null);
+        $this->assertEquals('#112233', $settings['unified_bg_color'] ?? null);
+    }
+
     // ── sanitize_settings ──────────────────────────────────────────────────
 
     public function test_sanitize_settings_rejects_invalid_auth_provider() {

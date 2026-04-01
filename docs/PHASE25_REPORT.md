@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** March 31, 2026
-**Last updated:** March 31, 2026
+**Last updated:** April 1, 2026
 
 ### Tracks
 
@@ -15,6 +15,12 @@
 | P25-E | Add live gallery-config preview with cancel-to-revert and save-to-persist semantics | Implemented, pending QA | Medium (0.5-1 day) |
 | P25-F | Restore true per-breakpoint adapter selection in the shared gallery-config editor | Implemented, pending QA | Medium (0.5 day) |
 | P25-G | Raise the shared Manage Media modal above the campaign viewer stack | Implemented, pending QA | Small (0.25 day) |
+| P25-H | Reorganize Campaign Gallery Config into accordions and only expose adapter settings for explicit overrides | Implemented, pending QA | Medium (0.5 day) |
+| P25-I | Add campaign card image-resolution controls for thumbnail imagery | Planned | Medium (0.5-1 day) |
+| P25-J | Stabilize carousel multi-card focus and smooth small-set looping | Implemented, pending QA | Medium (0.5 day) |
+| P25-K | Audit remaining carousel autoplay and advanced loop behavior in modal contexts | Planned | Medium (0.5 day) |
+| P25-L | Add carousel card aspect-ratio and image-fit controls for image slides | Planned | Medium-Large (1-2 days) |
+| P25-M | Fix WordPress settings sync so gallery settings saves no longer reset to defaults | Implemented, pending QA | Medium (0.5-1 day) |
 
 ---
 
@@ -54,6 +60,25 @@ Manual QA after the first implementation pass confirmed that dropdowns and Setti
 3. The shared Manage Media modal still opened below the campaign viewer stack because it was using the default modal layer.
 
 These became P25-E through P25-G.
+
+## Second QA Follow-On Set
+
+The next QA pass surfaced a more UX-oriented batch that still fits Phase 25 because it sits directly on top of the responsive gallery-config and carousel work already in flight:
+
+1. Campaign Gallery Config is too flat and needs accordion structure so sections can be collapsed while tuning breakpoints.
+2. The campaign override editor should only surface adapter-specific controls for explicit adapter choices on the active breakpoint instead of defaulting inherited scopes to carousel controls.
+3. Card image settings need a focused image-resolution control path for thumbnail imagery.
+4. Carousel multi-card behavior still needs cleanup around centered focus, visible-card counts, looping, autoplay, and image-specific fit/aspect-ratio controls.
+
+These became P25-H through P25-L.
+
+## Critical Settings Sync Follow-On
+
+While verifying the new carousel behavior in the WordPress-hosted app, a more serious regression surfaced: saving app settings could make the WordPress side appear to reset gallery configuration back to defaults.
+
+That issue belongs in the same phase because it blocks safe QA of the newly added gallery-config/editor work. It also exposed a second hardening gap: the plugin still lacks export/import for full settings snapshots.
+
+The destructive reset bug became P25-M. Export/import remains a follow-on candidate once the sync fix is verified in a full WordPress test environment.
 
 ## Track P25-E - Live Campaign Gallery Preview
 
@@ -102,6 +127,84 @@ Pass an explicit high `zIndex` through the campaign Manage Media wrapper so the 
 - Manage Media always opens above the campaign viewer.
 - The admin Media tab can continue using the shared modal without inheriting campaign-viewer-specific stacking assumptions.
 
+## Track P25-H - Campaign Gallery Config UX Cleanup
+
+### Problem
+
+Campaign Gallery Config has become hard to scan because every shared setting block stays expanded, and inherited breakpoint scopes were still surfacing carousel controls even when that breakpoint did not actually define an explicit adapter override.
+
+### Fix
+
+Reorganize the shared campaign gallery editor into accordion sections and only expose adapter-specific controls when the active breakpoint has an explicit adapter override for the relevant scope.
+
+### Acceptance criteria
+
+- Campaign Gallery Config sections can be collapsed while editing.
+- Inherited scopes no longer masquerade as explicit classic/carousel overrides.
+- Adapter-specific settings reflect the adapter actually selected on the active breakpoint.
+
+## Track P25-I - Card Image Resolution Controls
+
+### Problem
+
+Card thumbnail tuning still lacks a dedicated image-resolution control path, which makes it harder to intentionally trade off fidelity against payload size for image-heavy galleries.
+
+### Proposed direction
+
+Add an image-only card-thumbnail resolution selector with common presets plus a custom path, scoped to card imagery rather than videos.
+
+## Track P25-J - Carousel Multi-Card Focus and Small-Set Looping
+
+### Problem
+
+Carousel multi-card mode was still tracking the leftmost snap as the active item, which made captions and dot state feel off-center in multi-card layouts. Small multi-card sets also needed a safer looping path because Embla can fall back or jump abruptly when there are not enough distinct slides for a clean native loop.
+
+### Fix
+
+Treat the centered slide as the active item in multi-card mode, keep arrow/dot navigation aligned to that centered focus, and use a synthetic three-band loop fallback for small multi-card sets. The synthetic loop now waits for Embla `settle` before the invisible recenter so the last-to-first wrap remains visually smooth.
+
+### Acceptance criteria
+
+- Multi-card captions and dot state track the centered slide rather than the leftmost snap.
+- Small multi-card sets can still wrap cleanly without exposing empty trailing frames.
+- The synthetic last-to-first wrap completes with a smooth visible transition before the invisible recenter occurs.
+
+## Track P25-K - Carousel Autoplay Audit
+
+### Problem
+
+QA still reports autoplay inconsistency in some modal/tablet contexts, which needs an isolated pass now that breakpoint resolution and basic multi-card guardrails are in better shape.
+
+### Proposed direction
+
+Audit Embla autoplay behavior with the current modal viewer lifecycle, hover handling, and drag interaction settings before making additional runtime changes.
+
+## Track P25-L - Carousel Image Fit / Aspect Ratio Controls
+
+### Problem
+
+The classic carousel still lacks targeted image-card aspect-ratio and fit controls, which limits visual polish for image-dominant campaigns.
+
+### Proposed direction
+
+Add image-focused aspect-ratio and fit controls so carousel cards can be tuned more like image tiles, without forcing the same constraints onto videos.
+
+## Track P25-M - WordPress Settings Sync / Reset Bug
+
+### Problem
+
+The WordPress-hosted settings flow was treating nested `gallery_config` as canonical on save, but legacy flat gallery settings were no longer being reconstructed on PHP reads or REST responses. That made subsequent settings loads look like they had snapped back to defaults even though the nested config had been saved.
+
+### Fix
+
+Keep nested `gallery_config` canonical in storage, continue stripping legacy gallery fields on save, and add a PHP-side bridge that reconstructs the legacy flat gallery settings from `gallery_config` whenever `WPSG_Settings::get_settings()` or the settings REST response is used.
+
+### Acceptance criteria
+
+- Saving WordPress app settings no longer makes gallery configuration appear to reset to defaults.
+- The stored option keeps nested `gallery_config` as the canonical persisted representation.
+- PHP callers and REST responses still receive legacy flat gallery fields projected from the nested config so existing consumers stay in sync.
+
 ## Follow-On Candidates After Core QA
 
 These are not active implementation tracks yet, but they were promoted out of the general backlog as the next most defensible Phase 25 follow-ons once the current modal and QA blockers are verified.
@@ -110,6 +213,7 @@ These are not active implementation tracks yet, but they were promoted out of th
 |-----------|---------------------|
 | Final legacy gallery bridge removal | Explicit carryover from Phase 24; legacy flat-field reads and bridge helpers still exist in the current codebase |
 | Builder template deep clone | Solves a real duplication surprise with contained scope |
+| Global settings export/import | Adds a recovery path for destructive config regressions and makes settings migration safer across environments |
 | Time-limited access grants | High user value for event-style galleries with a clear implementation path |
 | Admin tab data reuse / SWR cache hardening | Medium user impact with a bounded audit-first implementation path |
 
@@ -186,7 +290,12 @@ Reorganize the backlog into a cleaner schema, identify prune candidates for conf
 - P25-E implementation now keeps a viewer-local draft of campaign gallery overrides so responsive edits preview immediately and cancel restores the last saved viewer state.
 - P25-F implementation now exposes unified adapter selection inside each breakpoint tab instead of flattening one unified adapter across desktop, tablet, and mobile.
 - P25-G implementation now raises the campaign Manage Media wrapper above the viewer stack without changing the admin Media tab's default modal layer.
+- P25-H implementation now organizes the campaign gallery editor into accordion sections and only exposes adapter-specific controls for explicit active-breakpoint adapter overrides.
+- P25-J implementation now treats the centered slide as the active multi-card focus, routes arrow/dot navigation through that centered focus, and uses a settle-based synthetic loop fallback for small multi-card sets so last-to-first wraps stay smooth.
+- P25-M implementation now keeps nested `gallery_config` canonical in WordPress storage while reconstructing legacy flat gallery settings on PHP reads and REST responses so settings saves no longer appear to wipe gallery configuration.
 - Targeted validation passed for `src/App.test.tsx`, `src/components/Common/ModalSelect.test.tsx`, `src/components/Common/GalleryConfigEditorModal.test.tsx`, `src/components/Campaign/UnifiedCampaignModal.test.tsx`, `src/components/CardViewer/CampaignViewer.test.tsx`, and `src/components/Admin/SettingsPanel.test.tsx`.
-- Follow-up targeted validation is required for the new preview/revert flow, breakpoint-specific unified adapter edits, and Manage Media stacking.
+- Additional targeted validation passed for `src/components/Galleries/Adapters/carouselBehavior.test.ts`, `src/components/Galleries/Adapters/MediaCarouselAdapter.test.tsx`, `src/components/Common/GalleryConfigEditorModal.test.tsx`, `src/components/Admin/SettingsPanel.test.tsx`, and `npm run build:wp`.
+- WordPress phpunit coverage was expanded for the P25-M bridge, but it could not be executed in this workspace because the local `wordpress-tests-lib` environment is not installed.
+- Follow-up targeted validation is required for the new preview/revert flow, breakpoint-specific unified adapter edits, Manage Media stacking, the new campaign-editor/carousel quick wins, and in-browser verification of the WordPress settings reset fix.
 - `docs/FUTURE_TASKS.md` already has live worktree edits; cleanup there should be patched carefully and remain candidate-based.
 - The existing modal tests are useful for regression coverage, but they do not fully simulate Mantine portal behavior, so this phase should keep at least one explicit test around modal-scoped select props.

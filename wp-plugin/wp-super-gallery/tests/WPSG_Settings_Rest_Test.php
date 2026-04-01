@@ -92,6 +92,12 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(200, $response->get_status());
         $data = $response->get_data();
         $this->assertEquals('unified', $data['galleryConfig']['mode'] ?? null);
+        $this->assertTrue($data['unifiedGalleryEnabled'] ?? false);
+        $this->assertEquals('masonry', $data['unifiedGalleryAdapterId'] ?? null);
+        $this->assertEquals('unified', $data['gallerySelectionMode'] ?? null);
+        $this->assertEquals(24, $data['gallerySectionPadding'] ?? null);
+        $this->assertEquals('solid', $data['unifiedBgType'] ?? null);
+        $this->assertEquals('#112233', $data['unifiedBgColor'] ?? null);
         $this->assertEquals('masonry', $data['galleryConfig']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
         $this->assertEquals(24, $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['sectionPadding'] ?? null);
         $this->assertEquals('solid', $data['galleryConfig']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
@@ -102,5 +108,8 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('masonry', $stored['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
         $this->assertEquals('solid', $stored['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgType'] ?? null);
         $this->assertEquals('#112233', $stored['gallery_config']['breakpoints']['desktop']['unified']['common']['viewportBgColor'] ?? null);
+        $this->assertArrayNotHasKey('unified_gallery_adapter_id', $stored);
+        $this->assertArrayNotHasKey('gallery_section_padding', $stored);
+        $this->assertArrayNotHasKey('unified_bg_type', $stored);
     }
 }

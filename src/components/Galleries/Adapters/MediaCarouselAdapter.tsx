@@ -5,7 +5,7 @@
  * with embla-carousel-react for proper multi-slide carousels,
  * autoplay, drag, loop, and more.
  */
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconPhoto, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -18,6 +18,17 @@ import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { resolveBoxShadow } from '@/utils/shadowPresets';
 import { combineMaxWidthConstraints, resolveBreakpointValue } from '@/utils/resolveBreakpointValue';
+import {
+  getCarouselAlign,
+  getClosestSyntheticFocusIndex,
+  getCarouselContainScroll,
+  getCarouselFocusIndex,
+  getCarouselSnapIndexForFocus,
+  getSyntheticLoopRecenterIndex,
+  normalizeCarouselVisibleCards,
+  shouldLoopCarousel,
+  shouldUseSyntheticCarouselLoop,
+} from './carouselBehavior';
 
 const Lightbox = lazy(() =>
   import('@/components/Galleries/Shared/Lightbox').then((m) => ({ default: m.Lightbox })),
@@ -98,6 +109,12 @@ function resolveViewportMaxHeight(breakpoint: Breakpoint, settings: GalleryBehav
   return `min(${viewportBudget}, 68dvh)`;
 }
 
+interface RenderedSlide {
+  key: string;
+  item: MediaItem;
+  originalIndex: number;
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
 export function MediaCarouselAdapter({
@@ -129,11 +146,38 @@ export interface MediaCarouselInnerProps {
 export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: MediaCarouselInnerProps) {
   // ── Embla setup ──────────────────────────────────────────────────
 
-  const visibleCards = Math.max(1, settings.carouselVisibleCards);
+  const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
   const gap = settings.carouselGap;
+  const requestedLoopEnabled = shouldLoopCarousel(settings.carouselLoop, media.length, visibleCards);
+  const [forceSyntheticLoop, setForceSyntheticLoop] = useState(false);
+  const syntheticLoopEnabled = shouldUseSyntheticCarouselLoop(settings.carouselLoop, media.length, visibleCards)
+    || forceSyntheticLoop;
+  const loopEnabled = requestedLoopEnabled && !syntheticLoopEnabled;
+  const renderedSlides = useMemo<RenderedSlide[]>(() => {
+    if (!syntheticLoopEnabled) {
+      return media.map((item, index) => ({
+        key: item.id,
+        item,
+        originalIndex: index,
+      }));
+    }
+
+    return Array.from({ length: 3 }, (_unused, copyIndex) => {
+      return media.map((item, index) => ({
+        key: `${item.id}-${copyIndex}-${index}`,
+        item,
+        originalIndex: index,
+      }));
+    }).flat();
+  }, [media, syntheticLoopEnabled]);
+  const autoplayEnabled = settings.carouselAutoplay && media.length > 1;
+
+  useEffect(() => {
+    setForceSyntheticLoop(false);
+  }, [media.length, settings.carouselLoop, visibleCards]);
 
   const autoplayPlugin = useMemo(() => {
-    if (!settings.carouselAutoplay) return [];
+    if (!autoplayEnabled) return [];
     return [
       Autoplay({
         delay: settings.carouselAutoplaySpeed,
@@ -141,15 +185,16 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
         stopOnMouseEnter: settings.carouselAutoplayPauseOnHover,
       }),
     ];
-  }, [settings.carouselAutoplay, settings.carouselAutoplaySpeed, settings.carouselAutoplayPauseOnHover]);
+  }, [autoplayEnabled, settings.carouselAutoplayPauseOnHover, settings.carouselAutoplaySpeed]);
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     {
-      loop: settings.carouselLoop,
+      loop: loopEnabled,
       dragFree: false,
       slidesToScroll: 1,
-      align: visibleCards > 1 ? 'start' : 'center',
-      containScroll: 'trimSnaps',
+      startIndex: syntheticLoopEnabled ? media.length : 0,
+      align: getCarouselAlign(visibleCards),
+      containScroll: syntheticLoopEnabled ? false : getCarouselContainScroll(loopEnabled, visibleCards),
       watchDrag: settings.carouselDragEnabled,
       direction: settings.carouselAutoplayDirection === 'rtl' ? 'rtl' : 'ltr',
     },
@@ -159,21 +204,66 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [slidesInView, setSlidesInView] = useState<number[]>([]);
   const [playingSlides, setPlayingSlides] = useState<Set<number>>(new Set());
+  const pendingSyntheticRecenterRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    pendingSyntheticRecenterRef.current = null;
+  }, [media.length, syntheticLoopEnabled, visibleCards]);
+
+  useEffect(() => {
+    if (!emblaApi || syntheticLoopEnabled || !requestedLoopEnabled || visibleCards <= 1) return;
+
+    const syncLoopMode = () => {
+      if (!emblaApi.internalEngine().options.loop) {
+        setForceSyntheticLoop(true);
+      }
+    };
+
+    syncLoopMode();
+    emblaApi.on('reInit', syncLoopMode);
+
+    return () => {
+      emblaApi.off('reInit', syncLoopMode);
+    };
+  }, [emblaApi, requestedLoopEnabled, syntheticLoopEnabled, visibleCards]);
 
   // Track selected index and visible slides
   useEffect(() => {
     if (!emblaApi) return;
 
     const onSelect = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
-      setSlidesInView(emblaApi.slidesInView());
+      const snapIndex = emblaApi.selectedScrollSnap();
+
+      if (syntheticLoopEnabled) {
+        pendingSyntheticRecenterRef.current = getSyntheticLoopRecenterIndex(snapIndex, media.length);
+      } else {
+        pendingSyntheticRecenterRef.current = null;
+      }
+
+      setSelectedIndex(snapIndex);
+      setSlidesInView(
+        emblaApi.slidesInView().map((index) => renderedSlides[index]?.originalIndex ?? 0),
+      );
     };
     const onSlidesInView = () => {
-      setSlidesInView(emblaApi.slidesInView());
+      setSlidesInView(
+        emblaApi.slidesInView().map((index) => renderedSlides[index]?.originalIndex ?? 0),
+      );
+    };
+    const onSettle = () => {
+      const recenteredIndex = pendingSyntheticRecenterRef.current;
+
+      if (recenteredIndex === null) {
+        return;
+      }
+
+      pendingSyntheticRecenterRef.current = null;
+      emblaApi.scrollTo(recenteredIndex, true);
     };
 
     emblaApi.on('select', onSelect);
     emblaApi.on('slidesInView', onSlidesInView);
+    emblaApi.on('settle', onSettle);
 
     // Initialize
     onSelect();
@@ -182,8 +272,9 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
     return () => {
       emblaApi.off('select', onSelect);
       emblaApi.off('slidesInView', onSlidesInView);
+      emblaApi.off('settle', onSettle);
     };
-  }, [emblaApi]);
+  }, [emblaApi, media.length, renderedSlides, syntheticLoopEnabled]);
 
   // Pause videos when they scroll out of view
   useEffect(() => {
@@ -197,12 +288,14 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
     });
   }, [slidesInView, playingSlides.size]);
 
-  const currentItem = media[selectedIndex];
+  const focusedRenderedIndex = getCarouselFocusIndex(selectedIndex, visibleCards, renderedSlides.length, loopEnabled);
+  const focusedIndex = renderedSlides[focusedRenderedIndex]?.originalIndex ?? 0;
+  const currentItem = media[focusedIndex];
 
   // Navigation
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-  const scrollTo = useCallback((index: number) => emblaApi?.scrollTo(index), [emblaApi]);
+  const scrollTo = useCallback((index: number, jump?: boolean) => emblaApi?.scrollTo(index, jump), [emblaApi]);
 
   // ── Lightbox ─────────────────────────────────────────────────────
 
@@ -272,18 +365,22 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
 
   const handleDotSelect = useCallback(
     (index: number) => {
-      scrollTo(index);
+      const targetFocusIndex = syntheticLoopEnabled
+        ? getClosestSyntheticFocusIndex(index, focusedRenderedIndex, media.length)
+        : index;
+
+      scrollTo(getCarouselSnapIndexForFocus(targetFocusIndex, visibleCards, renderedSlides.length, loopEnabled));
     },
-    [scrollTo],
+    [focusedRenderedIndex, loopEnabled, media.length, renderedSlides.length, scrollTo, syntheticLoopEnabled, visibleCards],
   );
 
   // ── Slide flex basis ─────────────────────────────────────────────
 
   const slideBasis = useMemo(() => {
     if (visibleCards <= 1) return '100%';
-    const totalGap = (visibleCards - 1) * gap;
-    return `calc((100% - ${totalGap}px) / ${visibleCards})`;
-  }, [visibleCards, gap]);
+    return `calc(100% / ${visibleCards})`;
+  }, [visibleCards]);
+  const slideSpacing = `${gap}px`;
 
   // ── Keyboard nav ─────────────────────────────────────────────────
 
@@ -297,138 +394,147 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
         scrollNext();
       } else if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        const item = media[selectedIndex];
+        const item = media[focusedIndex];
         if (item?.type === 'video') {
-          setPlayingSlides((prev) => new Set(prev).add(selectedIndex));
+          setPlayingSlides((prev) => new Set(prev).add(focusedIndex));
         } else {
           openLightbox();
         }
       }
     },
-    [media, selectedIndex, scrollPrev, scrollNext, openLightbox],
+    [focusedIndex, media, openLightbox, scrollNext, scrollPrev],
   );
 
   // ── Render slide ─────────────────────────────────────────────────
 
-  const renderSlide = (item: MediaItem, index: number) => {
+  const renderSlide = (slide: RenderedSlide, renderedIndex: number) => {
+    const { item, originalIndex } = slide;
     const isSlideVideo = item.type === 'video';
     const isSlideUploadVideo = isSlideVideo && item.source === 'upload';
-    const isSlidePlaying = playingSlides.has(index);
+    const isSlidePlaying = playingSlides.has(originalIndex);
     const playerTitle = `Video player: ${item.caption || 'Campaign video'}`;
-    const showDarken = settings.carouselDarkenUnfocused && index !== selectedIndex;
+    const showDarken = settings.carouselDarkenUnfocused && renderedIndex !== focusedRenderedIndex;
 
     return (
       <div
-        key={item.id}
+        key={slide.key}
         role="group"
         aria-roledescription="slide"
-        aria-label={`Slide ${index + 1} of ${media.length}`}
+        aria-label={`Slide ${originalIndex + 1} of ${media.length}`}
         style={{
           flex: `0 0 ${slideBasis}`,
           minWidth: 0,
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius,
+          paddingInlineStart: slideSpacing,
+          boxSizing: 'border-box',
           height: '100%',
         }}
       >
-        {isSlideVideo && isSlidePlaying ? (
-          isSlideUploadVideo ? (
-            <Box
-              data-testid="video-player-surface"
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'transparent',
-              }}
+        <div
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius,
+            height: '100%',
+          }}
+        >
+          {isSlideVideo && isSlidePlaying ? (
+            isSlideUploadVideo ? (
+              <Box
+                data-testid="video-player-surface"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <video
+                  src={item.url}
+                  controls
+                  autoPlay
+                  playsInline
+                  poster={item.thumbnail}
+                  aria-label={playerTitle}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'transparent' }}
+                />
+              </Box>
+            ) : (
+              <Box
+                data-testid="video-player-surface"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <iframe
+                  src={withAutoplay(item.embedUrl ?? item.url)}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={playerTitle}
+                  style={{ width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' }}
+                />
+              </Box>
+            )
+          ) : isSlideVideo ? (
+            <div
+              style={{ width: '100%', height: '100%', backgroundColor: 'transparent', position: 'relative', cursor: 'pointer' }}
+              onClick={() => setPlayingSlides((prev) => new Set(prev).add(originalIndex))}
             >
-              <video
-                src={item.url}
-                controls
-                autoPlay
-                playsInline
-                poster={item.thumbnail}
-                aria-label={playerTitle}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'transparent' }}
+              <Image
+                src={item.thumbnail}
+                alt={item.caption || 'Campaign video'}
+                h="100%"
+                fit="contain"
               />
-            </Box>
+              <ActionIcon
+                pos="absolute"
+                top="50%"
+                left="50%"
+                style={{ transform: 'translate(-50%, -50%)' }}
+                size="xl"
+                radius="xl"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPlayingSlides((prev) => new Set(prev).add(originalIndex));
+                }}
+                aria-label="Play video"
+              >
+                <IconPlayerPlay size={32} fill="currentColor" />
+              </ActionIcon>
+            </div>
           ) : (
-            <Box
-              data-testid="video-player-surface"
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'transparent',
-              }}
+            <div
+              style={{ width: '100%', height: '100%', cursor: 'zoom-in' }}
+              onClick={openLightbox}
             >
-              <iframe
-                src={withAutoplay(item.embedUrl ?? item.url)}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={playerTitle}
-                style={{ width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' }}
+              <Image
+                src={item.url}
+                alt={item.caption || 'Campaign image'}
+                fit="contain"
+                h="100%"
               />
-            </Box>
-          )
-        ) : isSlideVideo ? (
-          <div
-            style={{ width: '100%', height: '100%', backgroundColor: 'transparent', position: 'relative', cursor: 'pointer' }}
-            onClick={() => setPlayingSlides((prev) => new Set(prev).add(index))}
-          >
-            <Image
-              src={item.thumbnail}
-              alt={item.caption || 'Campaign video'}
-              h="100%"
-              fit="contain"
-            />
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              left="50%"
-              style={{ transform: 'translate(-50%, -50%)' }}
-              size="xl"
-              radius="xl"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPlayingSlides((prev) => new Set(prev).add(index));
-              }}
-              aria-label="Play video"
-            >
-              <IconPlayerPlay size={32} fill="currentColor" />
-            </ActionIcon>
-          </div>
-        ) : (
-          <div
-            style={{ width: '100%', height: '100%', cursor: 'zoom-in' }}
-            onClick={openLightbox}
-          >
-            <Image
-              src={item.url}
-              alt={item.caption || 'Campaign image'}
-              fit="contain"
-              h="100%"
-            />
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Darken overlay for unfocused slides */}
-        {showDarken && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: `rgba(0, 0, 0, ${settings.carouselDarkenOpacity})`,
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
-        )}
+          {/* Darken overlay for unfocused slides */}
+          {showDarken && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: `rgba(0, 0, 0, ${settings.carouselDarkenOpacity})`,
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+          )}
+        </div>
       </div>
     );
   };
@@ -438,8 +544,8 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
   const isCurrentVideo = currentItem?.type === 'video';
   const testId = isCurrentVideo ? 'video-player-frame' : 'image-viewer-frame';
   const ariaLabel = isCurrentVideo
-    ? `Video ${selectedIndex + 1} of ${media.length}: ${currentItem.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`
-    : `View image ${selectedIndex + 1} of ${media.length}`;
+    ? `Video ${focusedIndex + 1} of ${media.length}: ${currentItem.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`
+    : `View image ${focusedIndex + 1} of ${media.length}`;
 
   // Edge fade mask
   const edgeFadeMask = settings.carouselEdgeFade
@@ -496,11 +602,12 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
           <div
             style={{
               display: 'flex',
-              gap: `${gap}px`,
+              touchAction: 'pan-y pinch-zoom',
+              marginInlineStart: gap > 0 ? `-${slideSpacing}` : undefined,
               height: '100%',
             }}
           >
-            {media.map((item, index) => renderSlide(item, index))}
+            {renderedSlides.map((slide, index) => renderSlide(slide, index))}
           </div>
         </div>
 
@@ -534,7 +641,7 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
         {settings.dotNavPosition !== 'below' && (
           <DotNavigator
             total={media.length}
-            currentIndex={selectedIndex}
+            currentIndex={focusedIndex}
             onSelect={handleDotSelect}
             settings={settings}
           />
@@ -550,7 +657,7 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
       {settings.dotNavPosition === 'below' && (
         <DotNavigator
           total={media.length}
-          currentIndex={selectedIndex}
+          currentIndex={focusedIndex}
           onSelect={handleDotSelect}
           settings={settings}
         />

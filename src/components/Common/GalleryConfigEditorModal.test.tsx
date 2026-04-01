@@ -235,6 +235,73 @@ describe('GalleryConfigEditorModal', () => {
     );
   });
 
+  it('keeps adapter-specific controls hidden until the active breakpoint has an explicit adapter override', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: {},
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByText('This breakpoint is currently inheriting its adapter choice. Pick an explicit adapter above to expose adapter-specific settings here.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Visible Cards')).not.toBeInTheDocument();
+  });
+
+  it('preserves explicit classic carousel visible-card counts before saving', async () => {
+    const onSave = vi.fn();
+
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: {
+                adapterId: 'classic',
+                adapterSettings: {
+                  carouselVisibleCards: 1,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    const input = await screen.findByLabelText('Visible Cards');
+    fireEvent.change(input, { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            unified: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                carouselVisibleCards: 4,
+              }),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
   it('emits undefined draft changes when clearMode is draft-backed', async () => {
     const onChange = vi.fn();
 

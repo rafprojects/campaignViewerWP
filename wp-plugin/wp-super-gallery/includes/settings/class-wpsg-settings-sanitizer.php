@@ -48,7 +48,7 @@ class WPSG_Settings_Sanitizer {
      * @param string $scope Gallery scope.
      * @return array<string, string>
      */
-    private static function get_nested_common_field_map_for_scope($scope) {
+    public static function get_nested_common_field_map_for_scope($scope) {
         $map = self::$nested_common_field_map;
 
         if ($scope === 'unified') {
@@ -69,6 +69,15 @@ class WPSG_Settings_Sanitizer {
         }
 
         return $map;
+    }
+
+    /**
+     * Return the shared nested common-setting map.
+     *
+     * @return array<string, string>
+     */
+    public static function get_nested_common_field_map() {
+        return self::$nested_common_field_map;
     }
 
     /**
@@ -138,6 +147,15 @@ class WPSG_Settings_Sanitizer {
         'videoShadowPreset' => 'video_shadow_preset',
         'videoShadowCustom' => 'video_shadow_custom',
     ];
+
+    /**
+     * Return the nested adapter-setting map.
+     *
+     * @return array<string, string>
+     */
+    public static function get_nested_adapter_field_map() {
+        return self::$nested_adapter_field_map;
+    }
 
     /**
      * Return the flat gallery setting keys retained only for legacy

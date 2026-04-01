@@ -3516,7 +3516,7 @@ class WPSG_REST {
         self::bump_cache_version();
 
         return new WP_REST_Response(
-            WPSG_Settings::to_js($merged, true),
+            WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
             200
         );
     }
