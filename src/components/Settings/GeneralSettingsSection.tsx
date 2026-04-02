@@ -2,6 +2,7 @@ import { Accordion, ColorInput, NumberInput, Stack, Switch, TextInput } from '@m
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
 
 import { ThemeSelector } from '../Admin/ThemeSelector';
@@ -21,12 +22,15 @@ interface GeneralSettingsSectionProps {
 }
 
 export function GeneralSettingsSection({ settings, updateSetting, onThemeChange }: GeneralSettingsSectionProps) {
+  const { mounted, onChange } = useLazyAccordion('gen-theme');
+
   return (
-    <Accordion variant="separated" defaultValue="gen-theme">
+    <Accordion variant="separated" defaultValue="gen-theme" onChange={onChange}>
       <Accordion.Item value="gen-theme">
         <Accordion.Control>Theme &amp; Layout</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('gen-theme') ? (
+            <Stack gap="md">
             <ThemeSelector
               description="Choose a color theme. Preview applies instantly; saved when you click Save."
               value={settings.theme}
@@ -54,14 +58,16 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
               max={100}
               step={1}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="gen-container">
         <Accordion.Control>Page Container</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('gen-container') ? (
+            <Stack gap="md">
             <NumberInput
               label="App Max Width (px)"
               description="Maximum width of the gallery container. Set to 0 for full-width (edge-to-edge). Default 1200px."
@@ -102,14 +108,16 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
               checked={settings.wpFullBleedMobile}
               onChange={(event) => updateSetting('wpFullBleedMobile', event.currentTarget.checked)}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="gen-header">
         <Accordion.Control>Page Header</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('gen-header') ? (
+            <Stack gap="md">
             <Switch
               label="Show Gallery Title"
               description='Show the "Campaign Gallery" heading.'
@@ -152,14 +160,16 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
               checked={settings.showSearchBox}
               onChange={(event) => updateSetting('showSearchBox', event.currentTarget.checked)}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="gen-background">
         <Accordion.Control>Page Background</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('gen-background') ? (
+            <Stack gap="md">
             <ModalSelect
               label="Page Background Type"
               description="Gallery container background style"
@@ -192,14 +202,16 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
               checked={settings.showViewerBorder ?? true}
               onChange={(event) => updateSetting('showViewerBorder', event.currentTarget.checked)}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="gen-authbar">
         <Accordion.Control>Auth Bar</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('gen-authbar') ? (
+            <Stack gap="md">
             <ModalSelect
               label="Auth Bar Display Mode"
               description="How the authentication bar appears on the page."
@@ -239,14 +251,16 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
               min={320}
               max={1280}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="gen-security">
         <Accordion.Control>Security &amp; Login</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('gen-security') ? (
+            <Stack gap="md">
             <NumberInput
               label="Session Idle Timeout (minutes)"
               description="Automatically sign out users after this many minutes of inactivity. Set to 0 to disable."
@@ -269,7 +283,8 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
               checked={settings.showSettingsTooltips}
               onChange={(event) => updateSetting('showSettingsTooltips', event.currentTarget.checked)}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
     </Accordion>

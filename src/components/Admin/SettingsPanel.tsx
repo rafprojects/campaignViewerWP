@@ -309,7 +309,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         <>
         <Box style={{ flex: 1, overflowY: 'auto', padding: 'var(--mantine-spacing-md)' }}>
         <Stack gap="md">
-          <Tabs value={activeTab} onChange={setActiveTab}>
+          <Tabs value={activeTab} onChange={setActiveTab} keepMounted={false}>
             <Tabs.List grow>
               <Tabs.Tab value="page-theme" leftSection={<IconSettings size={16} />}>
                 Page & Theme

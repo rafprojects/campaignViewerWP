@@ -29,6 +29,7 @@
 | P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
 | P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
 | P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | Completed ✅ | Large (3-5 days) |
+| P25-V | Stabilize heavyweight Vitest suites by reducing hidden DOM work and documenting worker timeout failure modes | Completed ✅ | Medium (0.5-1 day) |
 
 ---
 
@@ -646,6 +647,120 @@ All planned relocations complete across two commits (Phase 3a + 3b).
 - General and Campaign Viewer use accordion structure consistent with all other tabs.
 - Inline adapter quick-selectors show a read-only summary with click-to-open editor.
 - All existing tests pass. Build succeeds. Settings round-trip correctly through save/load.
+
+## Track P25-V - Heavy Test Suite Stability and Render-Cost Audit
+
+### Problem
+
+`git push` was intermittently blocked by the pre-push hook, but the underlying failure was not Git or GitHub. The hook runs `npm run test`, and the default parallel Vitest path was stalling inside the heaviest jsdom suites until Vitest threw `Error: [vitest-worker]: Timeout calling "onTaskUpdate"`.
+
+The failure clustered around four suites:
+
+1. `src/components/Common/GalleryConfigEditorModal.test.tsx`
+2. `src/components/Admin/SettingsPanel.test.tsx`
+3. `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+4. `src/components/Admin/AdminPanel.test.tsx`
+
+The last two were partially improved earlier in the session, but the first two were still heavy enough to destabilize the full parallel run.
+
+### Observed failure mode
+
+- `npm run test:silent` could appear to hang for minutes while the reporter spinner cycled inside `GalleryConfigEditorModal.test.tsx` and `SettingsPanel.test.tsx`.
+- A full parallel run eventually failed with repeated worker RPC errors: `Error: [vitest-worker]: Timeout calling "onTaskUpdate"`.
+- `npm run test:quieter-triage` completed successfully because it disables file parallelism and avoids the most expensive worker-reporting path.
+- `git push --no-verify` succeeded after a clean serial validation run, which confirmed the branch itself was sound and the unstable piece was the default parallel test path.
+
+### Root causes discovered
+
+#### 1. `GalleryConfigEditorModal` was still mounting too much hidden DOM per render
+
+The shared gallery editor remained expensive even after the earlier accordion restructure because it still did most of its work eagerly on first render:
+
+- the outer accordion defaulted to every shared section being open,
+- Mantine accordion panels keep their children mounted unless the app gates them explicitly,
+- breakpoint tabs rendered all desktop / tablet / mobile panel trees rather than only the active one,
+- the adapter-specific area can render multiple nested groups of `NumberInput`, `ColorInput`, `TextInput`, and select controls.
+
+That meant one test render could eagerly create most of the responsive editor even when the test only cared about one subsection.
+
+#### 2. `SettingsPanel` remained heavy by test volume even after the gallery-editor modal mock
+
+`SettingsPanel.test.tsx` already mocks `GalleryConfigEditorModal`, which removed the worst nested modal cost, but the suite still has 43 tests that repeatedly mount the settings drawer, wait for tabs, switch tabs, and exercise dense form sections.
+
+The suite is not dominated by one broken assertion. It is dominated by repeated deep renders across a large number of tests.
+
+#### 3. Vitest parallel worker pressure was the real failure boundary
+
+The heaviest suites did not always fail by a normal test timeout. Instead they starved Vitest's worker bookkeeping badly enough that the runner itself timed out while trying to publish task progress back to the parent process.
+
+That is why the recurring fatal signature was `onTaskUpdate`, not a normal assertion or a per-test timeout.
+
+#### 4. Earlier mitigations helped, but did not fully clear the last hotspots
+
+Before P25-V started, two mitigations were already in place:
+
+- `vite.config.ts` caps the Vitest forks pool instead of letting the runner use the full CPU count.
+- `UnifiedCampaignModal.test.tsx` no longer uses an async mock factory for the gallery-config modal.
+
+Those changes materially improved `UnifiedCampaignModal` and `AdminPanel`, but `GalleryConfigEditorModal` and `SettingsPanel` were still heavy enough to trigger worker-RPC failures during parallel runs.
+
+### Implementation notes in this pass
+
+#### Gallery editor render-cost reductions
+
+This pass reduces work in the real component rather than only papering over the tests:
+
+1. The outer gallery-editor accordion now defaults to the two highest-value sections:
+	- `Breakpoint Adapters`
+	- `Adapter-Specific Settings`
+2. The remaining shared sections are lazily mounted on first expansion via `useLazyAccordion`, so hidden sections do not pay their render cost up front.
+3. Breakpoint tabs inside `GalleryConfigEditorModal` now use `keepMounted={false}`, so inactive desktop / tablet / mobile panels no longer stay mounted.
+
+This is both a runtime UX improvement and a test performance improvement. The drawer is less visually overwhelming on open, and the DOM footprint is materially smaller.
+
+#### Settings panel hardening
+
+`SettingsPanel` already conditionally gated most tab content behind `activeTab === ...`, but the Mantine tab container now also uses `keepMounted={false}` so inactive panels are not retained at the framework layer.
+
+That is a smaller win than the gallery-editor changes, but it aligns the implementation with the intended progressive-disclosure model.
+
+The follow-up pass went one level deeper inside the heaviest settings sections:
+
+1. `GeneralSettingsSection` now lazily mounts its accordion panels after first expansion.
+2. `CampaignViewerSettingsSection` now does the same for viewer-specific controls.
+3. `AdvancedSettingsSection` now defers its dense system / maintenance forms until the relevant accordion section is opened.
+
+That reduced the default `Page & Theme` render cost that shows up in most `SettingsPanel.test.tsx` cases without changing persisted behavior.
+
+#### Test-suite updates
+
+`GalleryConfigEditorModal.test.tsx` now explicitly opens the shared accordion section it is exercising before asserting on those fields. That keeps the test intent intact while matching the lighter-weight default UI state.
+
+`SettingsPanel.test.tsx` now also explicitly opens lazily mounted accordion sections before asserting on controls that are intentionally hidden until expansion.
+
+### Validation outcome
+
+- `CI=1 npm run test:silent -- src/components/Admin/SettingsPanel.test.tsx` passed after the second pass with 43/43 tests green and a lower isolated runtime than the prior baseline.
+- `npm run test` now completes successfully again on the default parallel path with 91/91 test files and 1253/1253 tests passing, which clears the original pre-push reliability concern.
+
+### Stable validation guidance
+
+If this class of issue resurfaces, validate in this order:
+
+1. Run `npm run test:silent` to see whether the parallel path is healthy.
+2. If the failure signature is `Error: [vitest-worker]: Timeout calling "onTaskUpdate"`, treat it as worker-pressure / suite-weight instability rather than as a Git problem.
+3. Run `npm run test:quieter-triage` to get a stable serial verdict on the branch.
+4. Check the heaviest suites first:
+	- `src/components/Common/GalleryConfigEditorModal.test.tsx`
+	- `src/components/Admin/SettingsPanel.test.tsx`
+	- `src/components/Campaign/UnifiedCampaignModal.test.tsx`
+	- `src/components/Admin/AdminPanel.test.tsx`
+
+### Remaining follow-up candidates
+
+- Consider splitting the heaviest `GalleryConfigEditorModal` assertions into narrower logical groups if the suite still dominates parallel runs after the render-path reductions.
+- Consider extracting more `SettingsPanel` assertions downward into section-level tests where a full drawer mount is not required.
+- If Vitest worker-RPC failures persist even after suite-cost reductions, lower parallelism again or move the pre-push hook to the known-stable serial command until the suite weight is further reduced.
 
 ## Current Implementation Notes
 

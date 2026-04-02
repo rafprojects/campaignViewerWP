@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Accordion, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 
+import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import type { GalleryBehaviorSettings } from '@/types';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
@@ -13,31 +14,36 @@ interface AdvancedSettingsSectionProps {
 }
 
 export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel }: AdvancedSettingsSectionProps) {
+  const { mounted, onChange } = useLazyAccordion();
+
   return (
     <>
       <Text size="sm" c="dimmed" mb="md">
         Fine-grained controls for power users. These settings override internal defaults
         across all gallery components. Change with care.
       </Text>
-      <Accordion variant="separated">
+      <Accordion variant="separated" onChange={onChange}>
         <Accordion.Item value="adv-drawer">
           <Accordion.Control>Settings Drawer</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {mounted.has('adv-drawer') ? (
+              <Stack gap="md">
               <Switch
                 label={tooltipLabel('Settings Drawer Backdrop Blur', 'settingsDrawerBlurEnabled')}
                 description="When enabled, content behind open settings drawers is blurred."
                 checked={settings.settingsDrawerBlurEnabled ?? true}
                 onChange={(event) => updateSetting('settingsDrawerBlurEnabled', event.currentTarget.checked)}
               />
-            </Stack>
+              </Stack>
+            ) : null}
           </Accordion.Panel>
         </Accordion.Item>
 
         <Accordion.Item value="adv-upload">
           <Accordion.Control>Upload / Media</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {mounted.has('adv-upload') ? (
+              <Stack gap="md">
               <NumberInput
                 label={tooltipLabel('Upload Max Size (MB)', 'uploadMaxSizeMb')}
                 value={settings.uploadMaxSizeMb}
@@ -156,14 +162,16 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
                 min={0}
                 max={604800}
               />
-            </Stack>
+              </Stack>
+            ) : null}
           </Accordion.Panel>
         </Accordion.Item>
 
         <Accordion.Item value="adv-tile">
           <Accordion.Control>Tile / Adapter</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {mounted.has('adv-tile') ? (
+              <Stack gap="md">
               <Text size="sm" fw={500}>{tooltipLabel('Hover Overlay Opacity', 'tileHoverOverlayOpacity')}</Text>
               <Slider value={settings.tileHoverOverlayOpacity} onChange={(value) => updateSetting('tileHoverOverlayOpacity', value)} min={0} max={1} step={0.05} />
               <Text size="sm" fw={500}>{tooltipLabel('Bounce Scale (Hover)', 'tileBounceScaleHover')}</Text>
@@ -185,14 +193,16 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
               <TextInput label={tooltipLabel('Grid Card Default Shadow', 'gridCardDefaultShadow')} value={settings.gridCardDefaultShadow} onChange={(event) => updateSetting('gridCardDefaultShadow', event.currentTarget.value)} />
               <Text size="sm" fw={500}>{tooltipLabel('Grid Card Hover Scale', 'gridCardHoverScale')}</Text>
               <Slider value={settings.gridCardHoverScale} onChange={(value) => updateSetting('gridCardHoverScale', value)} min={1} max={1.2} step={0.01} />
-            </Stack>
+              </Stack>
+            ) : null}
           </Accordion.Panel>
         </Accordion.Item>
 
         <Accordion.Item value="adv-lightbox">
           <Accordion.Control>Lightbox</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {mounted.has('adv-lightbox') ? (
+              <Stack gap="md">
               <NumberInput label={tooltipLabel('Transition Duration (ms)', 'lightboxTransitionMs')} value={settings.lightboxTransitionMs} onChange={(value) => updateSetting('lightboxTransitionMs', typeof value === 'number' ? value : 250)} min={0} max={1000} />
               <TextInput label={tooltipLabel('Backdrop Color', 'lightboxBackdropColor')} value={settings.lightboxBackdropColor} onChange={(event) => updateSetting('lightboxBackdropColor', event.currentTarget.value)} />
               <Text size="sm" fw={500}>{tooltipLabel('Entry Scale', 'lightboxEntryScale')}</Text>
@@ -201,14 +211,16 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
               <NumberInput label={tooltipLabel('Video Height (px)', 'lightboxVideoHeight')} value={settings.lightboxVideoHeight} onChange={(value) => updateSetting('lightboxVideoHeight', typeof value === 'number' ? value : 506)} min={200} max={1080} />
               <TextInput label={tooltipLabel('Media Max Height', 'lightboxMediaMaxHeight')} description="CSS value, e.g. 85vh" value={settings.lightboxMediaMaxHeight} onChange={(event) => updateSetting('lightboxMediaMaxHeight', event.currentTarget.value)} />
               <NumberInput label={tooltipLabel('Z-Index', 'lightboxZIndex')} value={settings.lightboxZIndex} onChange={(value) => updateSetting('lightboxZIndex', typeof value === 'number' ? value : 1000)} min={1} max={10000} />
-            </Stack>
+              </Stack>
+            ) : null}
           </Accordion.Panel>
         </Accordion.Item>
 
         <Accordion.Item value="adv-nav">
           <Accordion.Control>Navigation</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {mounted.has('adv-nav') ? (
+              <Stack gap="md">
               <NumberInput label={tooltipLabel('Max Visible Dots', 'dotNavMaxVisibleDots')} value={settings.dotNavMaxVisibleDots} onChange={(value) => updateSetting('dotNavMaxVisibleDots', typeof value === 'number' ? value : 7)} min={3} max={20} />
               <NumberInput label={tooltipLabel('Arrow Edge Inset (px)', 'navArrowEdgeInset')} value={settings.navArrowEdgeInset} onChange={(value) => updateSetting('navArrowEdgeInset', typeof value === 'number' ? value : 8)} min={0} max={48} />
               <NumberInput label={tooltipLabel('Arrow Min Hit Target (px)', 'navArrowMinHitTarget')} value={settings.navArrowMinHitTarget} onChange={(value) => updateSetting('navArrowMinHitTarget', typeof value === 'number' ? value : 44)} min={24} max={80} />
@@ -220,27 +232,31 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
               <Slider value={settings.viewportHeightTabletRatio} onChange={(value) => updateSetting('viewportHeightTabletRatio', value)} min={0.3} max={1} step={0.05} />
               <NumberInput label={tooltipLabel('Search Input Min Width (px)', 'searchInputMinWidth')} value={settings.searchInputMinWidth} onChange={(value) => updateSetting('searchInputMinWidth', typeof value === 'number' ? value : 200)} min={100} max={400} />
               <NumberInput label={tooltipLabel('Search Input Max Width (px)', 'searchInputMaxWidth')} value={settings.searchInputMaxWidth} onChange={(value) => updateSetting('searchInputMaxWidth', typeof value === 'number' ? value : 280)} min={150} max={600} />
-            </Stack>
+              </Stack>
+            ) : null}
           </Accordion.Panel>
         </Accordion.Item>
 
         <Accordion.Item value="adv-system">
           <Accordion.Control>System</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {mounted.has('adv-system') ? (
+              <Stack gap="md">
               <NumberInput label={tooltipLabel('Expiry Warning Threshold (ms)', 'expiryWarningThresholdMs')} description="How early to show token-expiry warnings." value={settings.expiryWarningThresholdMs} onChange={(value) => updateSetting('expiryWarningThresholdMs', typeof value === 'number' ? value : 300000)} min={0} max={600000} />
               <NumberInput label={tooltipLabel('Admin Search Debounce (ms)', 'adminSearchDebounceMs')} value={settings.adminSearchDebounceMs} onChange={(value) => updateSetting('adminSearchDebounceMs', typeof value === 'number' ? value : 300)} min={0} max={2000} />
               <NumberInput label={tooltipLabel('Min Password Length', 'loginMinPasswordLength')} value={settings.loginMinPasswordLength} onChange={(value) => updateSetting('loginMinPasswordLength', typeof value === 'number' ? value : 1)} min={1} max={32} />
               <NumberInput label={tooltipLabel('Login Form Max Width (px)', 'loginFormMaxWidth')} value={settings.loginFormMaxWidth} onChange={(value) => updateSetting('loginFormMaxWidth', typeof value === 'number' ? value : 400)} min={200} max={800} />
 
-            </Stack>
+              </Stack>
+            ) : null}
           </Accordion.Panel>
         </Accordion.Item>
 
         <Accordion.Item value="maintenance">
           <Accordion.Control>Data Maintenance</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {mounted.has('maintenance') ? (
+              <Stack gap="md">
               <NumberInput
                 label={tooltipLabel('Archive Purge After (days)', 'archivePurgeDays')}
                 description="Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging."
@@ -271,7 +287,8 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
                 checked={settings.preserveDataOnUninstall ?? false}
                 onChange={(event) => updateSetting('preserveDataOnUninstall', event.currentTarget.checked)}
               />
-            </Stack>
+              </Stack>
+            ) : null}
           </Accordion.Panel>
         </Accordion.Item>
       </Accordion>

@@ -5,6 +5,10 @@ import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapter
 
 import { GalleryConfigEditorModal } from './GalleryConfigEditorModal';
 
+function openAccordionSection(name: string) {
+  fireEvent.click(screen.getByRole('button', { name }));
+}
+
 describe('GalleryConfigEditorModal', () => {
   it('renders the first schema-driven adapter-specific field for masonry selections', async () => {
     render(
@@ -190,9 +194,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    const unifiedAdapterInputs = await screen.findAllByLabelText('Unified Gallery Adapter', { selector: 'input' });
-
-    expect(unifiedAdapterInputs[0]).toBeInTheDocument();
+    expect(await screen.findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('3')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
@@ -200,7 +202,7 @@ describe('GalleryConfigEditorModal', () => {
     expect(await screen.findByText('Editing breakpoint-specific unified settings for the tablet layout.')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2')).toBeInTheDocument();
     fireEvent.change(screen.getByDisplayValue('2'), { target: { value: '4' } });
-    fireEvent.click(screen.getAllByLabelText('Unified Gallery Adapter', { selector: 'input' })[1]);
+    fireEvent.click(screen.getByLabelText('Unified Gallery Adapter', { selector: 'input' }));
     fireEvent.click(screen.getByRole('option', { name: tabletAdapterLabel ?? 'Justified' }));
     fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
 
@@ -367,6 +369,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Section Spacing');
     expect(await screen.findByLabelText('Section Padding (px)')).toHaveValue('16');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
@@ -432,6 +435,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Viewport Backgrounds');
     expect(await screen.findByLabelText('Image Gallery Background Color')).toHaveValue('#112233');
 
     fireEvent.change(screen.getByLabelText('Image Gallery Background Color'), { target: { value: '#445566' } });
@@ -590,6 +594,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Adapter Sizing');
     expect(await screen.findByDisplayValue('20')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Space Between')).toBeInTheDocument();
   });
@@ -622,6 +627,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Section Sizing');
     expect(await screen.findByDisplayValue('1200')).toBeInTheDocument();
     expect(screen.getByDisplayValue('350')).toBeInTheDocument();
     expect(screen.getByLabelText('Section Height Mode', { selector: 'input' })).toHaveValue(
@@ -657,6 +663,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Adapter Sizing');
     expect(await screen.findByDisplayValue('Manual (custom %)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('85')).toBeInTheDocument();
     expect(screen.getByDisplayValue('90')).toBeInTheDocument();
@@ -686,7 +693,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByText('Shared Gallery Height')).toBeInTheDocument();
+    openAccordionSection('Shared Gallery Height');
     expect(screen.getByLabelText('Height Constraint', { selector: 'input' })).toHaveValue('Manually control height');
     expect(screen.getByLabelText('Manual Gallery Height')).toHaveValue('75vh');
   });
@@ -718,6 +725,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Gallery Presentation');
     expect(await screen.findByDisplayValue('Photos')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Clips')).toBeInTheDocument();
     expect(screen.getByLabelText('Gallery Label Justification', { selector: 'input' })).toHaveValue('Center');
@@ -756,7 +764,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByText('Viewport Backgrounds')).toBeInTheDocument();
+    openAccordionSection('Viewport Backgrounds');
     expect(screen.getByLabelText('Image Gallery Background', { selector: 'input' })).toHaveValue('Solid Color');
     expect(screen.getByLabelText('Image Gallery Background Color')).toHaveValue('#112233');
     expect(screen.getByLabelText('Video Gallery Background', { selector: 'input' })).toHaveValue('Gradient');

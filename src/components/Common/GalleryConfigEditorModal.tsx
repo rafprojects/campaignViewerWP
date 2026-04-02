@@ -20,6 +20,7 @@ import {
   type GalleryConfigMode,
   type GalleryConfigScope,
 } from '@/types';
+import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { cloneGalleryConfig, getLegacyViewportBackgroundFieldMap } from '@/utils/galleryConfig';
 
 const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
@@ -539,14 +540,9 @@ export function GalleryConfigEditorModal({
   const unifiedAdapterHelpText = `${unifiedAdapterDescription ?? 'Adapter applied when images and videos render together.'} Each breakpoint tab controls its own unified adapter and responsive settings.`;
   const defaultAccordionSections = [
     'breakpoint-adapters',
-    'shared-section-sizing',
-    'shared-section-spacing',
-    'shared-adapter-sizing',
-    'shared-gallery-height',
-    'shared-gallery-presentation',
-    'viewport-backgrounds',
     'adapter-specific-settings',
   ];
+  const { mounted: mountedAccordionSections, onChange: handleAccordionChange } = useLazyAccordion(defaultAccordionSections);
 
   useEffect(() => {
     if (!opened) {
@@ -617,12 +613,22 @@ export function GalleryConfigEditorModal({
             </Text>
           )
         ) : null}
-        <Accordion variant="separated" multiple defaultValue={defaultAccordionSections} chevronPosition="left">
+        <Accordion
+          variant="separated"
+          multiple
+          defaultValue={defaultAccordionSections}
+          onChange={handleAccordionChange}
+          chevronPosition="left"
+        >
           <Accordion.Item value="breakpoint-adapters">
             <Accordion.Control>Breakpoint Adapters</Accordion.Control>
             <Accordion.Panel>
               <Stack gap="md">
-                <Tabs value={activeBreakpoint} onChange={(value) => value && setActiveBreakpoint(value as GalleryConfigBreakpoint)}>
+                <Tabs
+                  value={activeBreakpoint}
+                  onChange={(value) => value && setActiveBreakpoint(value as GalleryConfigBreakpoint)}
+                  keepMounted={false}
+                >
                   <Tabs.List grow>
                     {GALLERY_BREAKPOINTS.map((breakpoint) => (
                       <Tabs.Tab key={breakpoint} value={breakpoint}>
@@ -703,7 +709,8 @@ export function GalleryConfigEditorModal({
           <Accordion.Item value="shared-section-sizing">
             <Accordion.Control>Shared Section Sizing</Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="md">
+              {mountedAccordionSections.has('shared-section-sizing') ? (
+                <Stack gap="md">
                 <NumberInput
                   label="Gallery Section Max Width (px)"
                   description="Maximum width for each gallery section. 0 keeps the section fully responsive."
@@ -771,13 +778,15 @@ export function GalleryConfigEditorModal({
                   allowDeselect={false}
                 />
               </Stack>
+              ) : null}
             </Accordion.Panel>
           </Accordion.Item>
 
           <Accordion.Item value="shared-section-spacing">
             <Accordion.Control>Shared Section Spacing</Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="md">
+              {mountedAccordionSections.has('shared-section-spacing') ? (
+                <Stack gap="md">
                 <NumberInput
                   label="Section Padding (px)"
                   description="Applies the same inner section padding across the currently edited gallery mode surface."
@@ -798,13 +807,15 @@ export function GalleryConfigEditorModal({
                   step={4}
                 />
               </Stack>
+              ) : null}
             </Accordion.Panel>
           </Accordion.Item>
 
           <Accordion.Item value="shared-adapter-sizing">
             <Accordion.Control>Shared Adapter Sizing</Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="md">
+              {mountedAccordionSections.has('shared-adapter-sizing') ? (
+                <Stack gap="md">
                 <Select
                   label="Adapter Sizing Mode"
                   description="How adapters fill their gallery section. Fill uses the full section; Manual lets you cap width and height percentages."
@@ -867,13 +878,15 @@ export function GalleryConfigEditorModal({
                   allowDeselect={false}
                 />
               </Stack>
+              ) : null}
             </Accordion.Panel>
           </Accordion.Item>
 
           <Accordion.Item value="shared-gallery-height">
             <Accordion.Control>Shared Gallery Height</Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="md">
+              {mountedAccordionSections.has('shared-gallery-height') ? (
+                <Stack gap="md">
                 <Select
                   label="Height Constraint"
                   description="Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
@@ -897,13 +910,15 @@ export function GalleryConfigEditorModal({
                   />
                 )}
               </Stack>
+              ) : null}
             </Accordion.Panel>
           </Accordion.Item>
 
           <Accordion.Item value="shared-gallery-presentation">
             <Accordion.Control>Shared Gallery Presentation</Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="md">
+              {mountedAccordionSections.has('shared-gallery-presentation') ? (
+                <Stack gap="md">
                 <TextInput
                   label="Image Gallery Label"
                   description="Shared heading text for image gallery sections when labels are enabled."
@@ -955,13 +970,15 @@ export function GalleryConfigEditorModal({
                   allowDeselect={false}
                 />
               </Stack>
+              ) : null}
             </Accordion.Panel>
           </Accordion.Item>
 
           <Accordion.Item value="viewport-backgrounds">
             <Accordion.Control>Viewport Backgrounds</Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="md">
+              {mountedAccordionSections.has('viewport-backgrounds') ? (
+                <Stack gap="md">
                 {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => {
                   const scopeLabel = formatScopeLabel(scope);
                   const defaults = getScopeViewportBackgroundFallbacks(scope);
@@ -1030,6 +1047,7 @@ export function GalleryConfigEditorModal({
                   );
                 })}
               </Stack>
+              ) : null}
             </Accordion.Panel>
           </Accordion.Item>
 

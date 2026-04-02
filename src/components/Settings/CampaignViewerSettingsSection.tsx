@@ -2,6 +2,7 @@ import { Accordion, Box, ColorInput, NumberInput, Slider, Stack, Switch, Text, T
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import type { GalleryBehaviorSettings } from '@/types';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
@@ -12,12 +13,15 @@ interface CampaignViewerSettingsSectionProps {
 }
 
 export function CampaignViewerSettingsSection({ settings, updateSetting }: CampaignViewerSettingsSectionProps) {
+  const { mounted, onChange } = useLazyAccordion('cv-open-mode');
+
   return (
-    <Accordion variant="separated" defaultValue="cv-open-mode">
+    <Accordion variant="separated" defaultValue="cv-open-mode" onChange={onChange}>
       <Accordion.Item value="cv-open-mode">
         <Accordion.Control>Open Mode &amp; Sizing</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('cv-open-mode') ? (
+            <Stack gap="md">
             <Switch
               label="Fullscreen Campaign Modal"
               description="Open campaign viewer in fullscreen mode instead of the default modal."
@@ -80,14 +84,16 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
               max={48}
               step={4}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="cv-appearance">
         <Accordion.Control>Modal Appearance</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('cv-appearance') ? (
+            <Stack gap="md">
             <NumberInput
               label="Cover Image Height (px)"
               description="Height of the cover image in the campaign modal"
@@ -128,14 +134,16 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
               disabled={!!settings.campaignModalFullscreen}
               style={settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="cv-visibility">
         <Accordion.Control>Content Visibility</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('cv-visibility') ? (
+            <Stack gap="md">
             <Box style={settings.campaignOpenMode === 'galleries-only' ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
               <Stack gap="md">
                 <Switch
@@ -215,14 +223,16 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
               checked={settings.showCampaignGalleryLabels ?? true}
               onChange={(event) => updateSetting('showCampaignGalleryLabels', event.currentTarget.checked)}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="cv-labels">
         <Accordion.Control>Gallery Labels</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('cv-labels') ? (
+            <Stack gap="md">
             <TextInput
               label="Image Gallery Label"
               description="Custom label for image gallery sections. Count is appended automatically."
@@ -252,14 +262,16 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
               checked={settings.showGalleryLabelIcon ?? false}
               onChange={(event) => updateSetting('showGalleryLabelIcon', event.currentTarget.checked)}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="cv-modal-bg">
         <Accordion.Control>Modal Background</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('cv-modal-bg') ? (
+            <Stack gap="md">
             <ModalSelect
               label="Modal Background Type"
               description="Background style for the fullscreen campaign modal"
@@ -286,14 +298,16 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 onChange={(value) => updateSetting('modalBgGradient', value)}
               />
             )}
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="cv-cover">
         <Accordion.Control>Cover Image &amp; Responsive</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('cv-cover') ? (
+            <Stack gap="md">
             <Text size="sm" fw={500}>Cover Mobile Ratio</Text>
             <Slider
               value={settings.modalCoverMobileRatio}
@@ -339,7 +353,8 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
               max={3}
               step={0.1}
             />
-          </Stack>
+            </Stack>
+          ) : null}
         </Accordion.Panel>
       </Accordion.Item>
     </Accordion>

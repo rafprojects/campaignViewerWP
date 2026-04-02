@@ -797,6 +797,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
+    fireEvent.click(screen.getByRole('button', { name: /Page Header/i }));
 
     // Toggle representative named switches on the Page & Theme tab.
     // These all map to (e) => updateSetting(key, e.currentTarget.checked) lambdas.
@@ -1548,6 +1549,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
+    fireEvent.click(screen.getByRole('button', { name: /Security & Login/i }));
 
     // Advanced Settings Enabled switch is on the Page & Theme tab.
     // It controls visibility of the System & Admin tab.
