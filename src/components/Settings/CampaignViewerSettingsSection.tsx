@@ -1,4 +1,4 @@
-import { Box, ColorInput, Divider, NumberInput, Slider, Stack, Switch, Text } from '@mantine/core';
+import { Box, ColorInput, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalSelect } from '@/components/Common/ModalSelect';
@@ -145,6 +145,13 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
             description='Show the "About this Campaign" heading and description.'
             checked={settings.showCampaignAbout ?? true}
             onChange={(event) => updateSetting('showCampaignAbout', event.currentTarget.checked)}
+            disabled={settings.campaignOpenMode === 'galleries-only'}
+          />
+          <TextInput
+            label="About Section Heading"
+            description='Heading for the campaign description section (default "About").'
+            value={settings.campaignAboutHeadingText}
+            onChange={(event) => updateSetting('campaignAboutHeadingText', event.currentTarget.value)}
             disabled={settings.campaignOpenMode === 'galleries-only'}
           />
           <Switch

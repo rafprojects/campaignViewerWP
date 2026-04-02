@@ -1,4 +1,4 @@
-import { ColorInput, Divider, NumberInput, Stack, Switch } from '@mantine/core';
+import { ColorInput, Divider, NumberInput, Stack, Switch, TextInput } from '@mantine/core';
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalSelect } from '@/components/Common/ModalSelect';
@@ -102,11 +102,23 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
         checked={settings.showGalleryTitle}
         onChange={(event) => updateSetting('showGalleryTitle', event.currentTarget.checked)}
       />
+      <TextInput
+        label="Gallery Title Text"
+        description="Main heading text shown above the gallery."
+        value={settings.galleryTitleText}
+        onChange={(event) => updateSetting('galleryTitleText', event.currentTarget.value)}
+      />
       <Switch
         label="Show Gallery Subtitle"
         description="Show the subtitle text beneath the title."
         checked={settings.showGallerySubtitle}
         onChange={(event) => updateSetting('showGallerySubtitle', event.currentTarget.checked)}
+      />
+      <TextInput
+        label="Gallery Subtitle Text"
+        description="Subtitle text shown beneath the title."
+        value={settings.gallerySubtitleText}
+        onChange={(event) => updateSetting('gallerySubtitleText', event.currentTarget.value)}
       />
       <Switch
         label="Show Access Mode"

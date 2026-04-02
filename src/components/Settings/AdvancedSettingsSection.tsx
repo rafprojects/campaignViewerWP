@@ -102,32 +102,6 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
           </Accordion.Panel>
         </Accordion.Item>
 
-        <Accordion.Item value="adv-text">
-          <Accordion.Control>Gallery Text</Accordion.Control>
-          <Accordion.Panel>
-            <Stack gap="md">
-              <TextInput
-                label={tooltipLabel('Gallery Title', 'galleryTitleText')}
-                description="Main heading text shown above the gallery."
-                value={settings.galleryTitleText}
-                onChange={(event) => updateSetting('galleryTitleText', event.currentTarget.value)}
-              />
-              <TextInput
-                label={tooltipLabel('Gallery Subtitle', 'gallerySubtitleText')}
-                description="Subtitle text shown beneath the title."
-                value={settings.gallerySubtitleText}
-                onChange={(event) => updateSetting('gallerySubtitleText', event.currentTarget.value)}
-              />
-              <TextInput
-                label={tooltipLabel('Campaign About Heading', 'campaignAboutHeadingText')}
-                description='Heading for the campaign description section (default "About").'
-                value={settings.campaignAboutHeadingText}
-                onChange={(event) => updateSetting('campaignAboutHeadingText', event.currentTarget.value)}
-              />
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
-
         <Accordion.Item value="adv-modal">
           <Accordion.Control>Modal / Viewer</Accordion.Control>
           <Accordion.Panel>
@@ -136,13 +110,6 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
                 label={tooltipLabel('Close Button Background', 'modalCloseButtonBgColor')}
                 value={settings.modalCloseButtonBgColor}
                 onChange={(event) => updateSetting('modalCloseButtonBgColor', event.currentTarget.value)}
-              />
-              <NumberInput
-                label={tooltipLabel('Content Max Width (px)', 'modalContentMaxWidth')}
-                value={settings.modalContentMaxWidth}
-                onChange={(value) => updateSetting('modalContentMaxWidth', typeof value === 'number' ? value : 900)}
-                min={400}
-                max={2000}
               />
               <NumberInput
                 label={tooltipLabel('Mobile Breakpoint (px)', 'modalMobileBreakpoint')}

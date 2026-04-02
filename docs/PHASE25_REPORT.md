@@ -574,11 +574,18 @@ Execute the regrouping proposal from P25-P Pass 2 with the Drawer conversion fro
 
 #### Phase 3: Control relocations (~25 controls)
 
+Partially complete — text co-location and duplicate deletion done first as a quick win.
+
+**Done:**
+- `galleryTitleText`, `gallerySubtitleText` moved to General > Viewer Header Visibility (next to their show/hide toggles)
+- `campaignAboutHeadingText` moved to Campaign Viewer > Visibility (next to `showCampaignAbout` toggle)
+- `modalContentMaxWidth` duplicate deleted from Advanced > Modal / Viewer (single owner remains in Campaign Viewer)
+- "Gallery Text" accordion removed from Advanced (now empty)
+
+**Remaining:**
+
 | Setting(s) | From | To | Reason |
 |---|---|---|---|
-| `galleryTitleText`, `gallerySubtitleText` | Advanced > Gallery Text | Page & Theme > Page Header | Next to `showGalleryTitle`/`showGallerySubtitle` toggles |
-| `campaignAboutHeadingText` | Advanced > Gallery Text | Campaign Viewer > Content Visibility | Next to `showCampaignAbout` toggle |
-| `modalContentMaxWidth` (Advanced copy) | Advanced > Modal / Viewer | **Deleted** | Duplicate — single owner in Campaign Viewer |
 | `modalCloseButtonBgColor`, `modalMobileBreakpoint` | Advanced > Modal / Viewer | Campaign Viewer > Modal Appearance | Modal visual chrome |
 | `galleryImageLabel`, `galleryVideoLabel`, `galleryLabelJustification`, `showGalleryLabelIcon` | Gallery Layout > Gallery Labels | Campaign Viewer > Gallery Labels | Labels are a campaign viewer feature |
 | `authBarBackdropBlur`, `authBarMobileBreakpoint` | Advanced > System | Page & Theme > Auth Bar | Auth bar visual properties |
