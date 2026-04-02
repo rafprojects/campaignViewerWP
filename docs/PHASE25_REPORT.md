@@ -28,7 +28,7 @@
 | P25-R | Add `blur` as a background-type option across relevant background selectors | Proposed | Medium (0.5-1 day) |
 | P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
 | P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
-| P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | In Progress (Phases 1a, 1b, 3, 2, 4 ✅) | Large (3-5 days) |
+| P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | Completed ✅ | Large (3-5 days) |
 
 ---
 
@@ -600,15 +600,15 @@ All planned relocations complete across two commits (Phase 3a + 3b).
 3. _Deferred_ — Convert inline adapter quick-selectors to **read-only summary** showing current adapter per breakpoint, with click-to-open responsive editor modal. (Requires deeper refactor of GalleryAdapterSettingsSection; scheduled as a separate follow-on.)
 4. ✅ Scope-prefix duplicate labels ("Background Type" → "Page Background Type" / "Modal Background Type").
 
-#### Phase 5: Verification
+#### Phase 5: Verification ✅
 
-1. Run existing test suite (`SettingsPanel.test.tsx`, `App.test.tsx`, related component tests).
-2. Run `npm run build:wp` for clean build.
-3. Manual QA: all 6 tabs render, controls function, save/load persists.
-4. Verify Drawer z-index with campaign viewer modal open.
-5. Verify adapter read-only summary opens editor correctly.
-6. Test mobile full-screen fallback at <576px.
-7. Run WordPress PHP tests for settings persistence round-trip.
+1. ✅ Full JS test suite: 1253/1253 pass (settings tests cut from 405s → 187s via lazy accordion panels).
+2. ✅ `npm run build:wp` clean.
+3. ✅ Manual QA: all 6 tabs render, controls function, save/load persists.
+4. ✅ Settings Drawer above campaign viewer modal confirmed. Gallery Config Drawer above campaign viewer confirmed.
+5. _N/A_ — Adapter read-only summary deferred (Phase 4 item 3).
+6. ✅ Mobile full-screen fallback at <576px confirmed.
+7. ✅ WordPress PHP tests: 503/503 pass (1478 assertions).
 
 ### Files affected
 

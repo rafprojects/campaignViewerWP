@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { Accordion, ColorInput, Divider, Group, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 
 import {
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
@@ -29,8 +30,10 @@ interface MediaDisplaySettingsSectionProps {
 }
 
 export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLabel }: MediaDisplaySettingsSectionProps) {
+  const { mounted, onChange } = useLazyAccordion('viewport');
+
   return (
-    <Accordion variant="separated" defaultValue="viewport">
+    <Accordion variant="separated" defaultValue="viewport" onChange={onChange}>
       <Accordion.Item value="viewport">
         <Accordion.Control>Viewport &amp; Layout</Accordion.Control>
         <Accordion.Panel>
@@ -149,7 +152,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
       <Accordion.Item value="tile-appearance">
         <Accordion.Control>Tile Appearance</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('tile-appearance') && <Stack gap="md">
             <Group grow>
               <NumberInput
                 label="Gap X (px)"
@@ -223,14 +226,14 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 />
               </Group>
             )}
-          </Stack>
+          </Stack>}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="thumbnail-strip">
         <Accordion.Control>Thumbnail Strip</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('thumbnail-strip') && <Stack gap="md">
             <Group grow>
               <NumberInput
                 label="Video Thumb Width (px)"
@@ -303,14 +306,14 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               checked={settings.thumbnailScrollButtonsVisible}
               onChange={(event) => updateSetting('thumbnailScrollButtonsVisible', event.currentTarget.checked)}
             />
-          </Stack>
+          </Stack>}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="transitions">
         <Accordion.Control>Transitions</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('transitions') && <Stack gap="md">
             <Switch
               label="Transition Fade"
               description="Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
@@ -364,14 +367,14 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 { value: 'ease-in-out', label: 'Ease In Out' },
               ]}
             />
-          </Stack>
+          </Stack>}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="navigation">
         <Accordion.Control>Navigation</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {mounted.has('navigation') && <Stack gap="md">
             <NumberInput
               label="Thumbnail Scroll Speed"
               description="Multiplier for thumbnail-strip wheel scroll speed."
@@ -540,7 +543,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 />
               </>
             )}
-          </Stack>
+          </Stack>}
         </Accordion.Panel>
       </Accordion.Item>
     </Accordion>

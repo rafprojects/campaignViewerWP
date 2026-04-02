@@ -8,13 +8,14 @@ import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 interface GalleryLayoutDetailSectionsProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
+  mountedPanels?: Set<string>;
 }
 
 function usesCarouselSettings(settings: GalleryBehaviorSettings): boolean {
   return anyAdapterUsesSettingGroup(getLegacyActiveAdapterIds(settings), 'carousel');
 }
 
-export function GalleryLayoutDetailSections({ settings, updateSetting }: GalleryLayoutDetailSectionsProps) {
+export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPanels }: GalleryLayoutDetailSectionsProps) {
   const showCarouselSettings = usesCarouselSettings(settings);
 
   return (
@@ -23,7 +24,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
         <Accordion.Item value="carousel-settings">
           <Accordion.Control>Carousel Settings</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            {(!mountedPanels || mountedPanels.has('carousel-settings')) && <Stack gap="md">
               <NumberInput
                 label="Visible Cards"
                 description="Number of slides visible at once in the carousel."
@@ -115,7 +116,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
                 checked={settings.carouselEdgeFade}
                 onChange={(e) => updateSetting('carouselEdgeFade', e.currentTarget.checked)}
               />
-            </Stack>
+            </Stack>}
           </Accordion.Panel>
         </Accordion.Item>
       )}
@@ -123,7 +124,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
       <Accordion.Item value="section-sizing">
         <Accordion.Control>Section Sizing &amp; Spacing</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {(!mountedPanels || mountedPanels.has('section-sizing')) && <Stack gap="md">
             <NumberInput
               label="Gallery Section Max Width (px)"
               description="Maximum width for each gallery section. 0 = fill available space."
@@ -236,14 +237,14 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
               max={120}
               step={4}
             />
-          </Stack>
+          </Stack>}
         </Accordion.Panel>
       </Accordion.Item>
 
       <Accordion.Item value="adapter-sizing">
         <Accordion.Control>Adapter Sizing</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {(!mountedPanels || mountedPanels.has('adapter-sizing')) && <Stack gap="md">
             <ModalSelect
               label="Adapter Sizing Mode"
               description="How adapters fill their gallery section. Fill = 100% of section, Manual = custom percentage."
@@ -299,7 +300,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
               value={settings.adapterJustifyContent ?? 'center'}
               onChange={(value) => updateSetting('adapterJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['adapterJustifyContent'])}
             />
-          </Stack>
+          </Stack>}
         </Accordion.Panel>
       </Accordion.Item>
     </>

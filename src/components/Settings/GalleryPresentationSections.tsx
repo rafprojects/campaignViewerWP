@@ -75,15 +75,16 @@ function GalleryBackgroundFields({
 interface GalleryPresentationSectionsProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
+  mountedPanels?: Set<string>;
 }
 
-export function GalleryPresentationSections({ settings, updateSetting }: GalleryPresentationSectionsProps) {
+export function GalleryPresentationSections({ settings, updateSetting, mountedPanels }: GalleryPresentationSectionsProps) {
   return (
     <>
       <Accordion.Item value="backgrounds">
         <Accordion.Control>Viewport Backgrounds</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="md">
+          {(!mountedPanels || mountedPanels.has('backgrounds')) && <Stack gap="md">
             <GalleryBackgroundFields
               label="Image Gallery Background"
               description="Background applied behind image gallery viewports"
@@ -122,7 +123,7 @@ export function GalleryPresentationSections({ settings, updateSetting }: Gallery
               onBgGradientChange={(value) => updateSetting('unifiedBgGradient', value)}
               onBgImageChange={(value) => updateSetting('unifiedBgImageUrl', value)}
             />
-          </Stack>
+          </Stack>}
         </Accordion.Panel>
       </Accordion.Item>
     </>
