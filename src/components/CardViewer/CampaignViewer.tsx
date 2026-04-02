@@ -458,6 +458,7 @@ export function CampaignViewer({
             clearMode="draft"
             unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
             zIndex={500}
+            blurEnabled={s.settingsDrawerBlurEnabled}
           />
         </Suspense>
       )}

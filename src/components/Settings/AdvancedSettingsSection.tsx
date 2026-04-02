@@ -151,6 +151,12 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
                 min={320}
                 max={1280}
               />
+              <Switch
+                label={tooltipLabel('Settings Drawer Backdrop Blur', 'settingsDrawerBlurEnabled')}
+                description="When enabled, content behind open settings drawers is blurred."
+                checked={settings.settingsDrawerBlurEnabled ?? true}
+                onChange={(event) => updateSetting('settingsDrawerBlurEnabled', event.currentTarget.checked)}
+              />
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>

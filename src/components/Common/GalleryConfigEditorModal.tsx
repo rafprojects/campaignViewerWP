@@ -1,4 +1,4 @@
-import { Accordion, Button, ColorInput, Group, Modal, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
+import { Accordion, Button, ColorInput, Drawer, Group, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
 import {
@@ -40,6 +40,7 @@ interface GalleryConfigEditorModalProps {
   unifiedAdapterEnabled?: boolean;
   unifiedAdapterDescription?: string;
   zIndex?: number;
+  blurEnabled?: boolean;
 }
 
 type SharedCommonSettingKey = keyof Pick<
@@ -519,6 +520,7 @@ export function GalleryConfigEditorModal({
   unifiedAdapterEnabled = true,
   unifiedAdapterDescription,
   zIndex,
+  blurEnabled,
 }: GalleryConfigEditorModalProps) {
   const [draft, setDraft] = useState<GalleryConfig | undefined>(undefined);
   const [baseline, setBaseline] = useState<GalleryConfig | undefined>(undefined);
@@ -568,7 +570,16 @@ export function GalleryConfigEditorModal({
   }, [draft, onChange, opened]);
 
   return (
-    <Modal opened={opened} onClose={onClose} title={title} size="lg" centered zIndex={zIndex}>
+    <Drawer
+      opened={opened}
+      onClose={onClose}
+      title={title}
+      position="right"
+      size="lg"
+      zIndex={zIndex}
+      transitionProps={{ transition: 'slide-left', duration: 200 }}
+      overlayProps={{ backgroundOpacity: 0.6, blur: blurEnabled !== false ? 4 : 0 }}
+    >
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.
@@ -1193,6 +1204,6 @@ export function GalleryConfigEditorModal({
           </Group>
         </Group>
       </Stack>
-    </Modal>
+    </Drawer>
   );
 }

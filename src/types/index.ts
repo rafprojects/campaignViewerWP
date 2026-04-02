@@ -859,6 +859,8 @@ export interface GalleryBehaviorSettings {
   carouselEdgeFade: boolean;
   carouselLoop: boolean;
   carouselGap: number;
+  // P25-U Phase 1b: Drawer backdrop blur toggle
+  settingsDrawerBlurEnabled: boolean;
 }
 
 const DEFAULT_GALLERY_COMMON_SETTINGS: GalleryCommonSettings = {
@@ -1217,4 +1219,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   carouselEdgeFade: false,
   carouselLoop: true,
   carouselGap: 16,
+  // P25-U Phase 1b: Drawer backdrop blur toggle
+  settingsDrawerBlurEnabled: true,
 };

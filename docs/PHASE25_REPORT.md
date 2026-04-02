@@ -548,12 +548,21 @@ Execute the regrouping proposal from P25-P Pass 2 with the Drawer conversion fro
 
 ### Implementation phases
 
-#### Phase 1: Container conversion (Modal → Drawer)
+#### Phase 1a: Settings container conversion (Modal → Drawer) ✅
 
 1. Replace `<Modal>` with `<Drawer position="right" size="lg">` in `SettingsPanel.tsx`.
 2. Preserve footer (Save/Reset), scroll area, `hasChanges`, and `revertThemePreview` logic.
 3. Full-screen fallback at <576px via Mantine responsive prop.
 4. Verify z-index layering with campaign viewer modal stack (currently z-450).
+
+#### Phase 1b: Gallery Config Editor conversion (Modal → Drawer) + backdrop blur toggle
+
+1. Replace `<Modal>` with `<Drawer position="right" size="lg">` in `GalleryConfigEditorModal.tsx` (rename to `GalleryConfigEditorDrawer`).
+2. Add `settingsDrawerBlurEnabled` boolean to `GalleryBehaviorSettings` (default: `true`).
+3. Wire the new setting into `overlayProps.blur` for both the Settings Drawer and the Gallery Config Editor Drawer.
+4. Expose the toggle in the Settings UI (Advanced / System & Admin section).
+5. Add the new field to the PHP settings registry defaults.
+6. Update test selectors from `.mantine-Modal-*` to `.mantine-Drawer-*` where applicable.
 
 #### Phase 2: Tab restructure (7 → 6 tabs)
 
@@ -597,7 +606,10 @@ Execute the regrouping proposal from P25-P Pass 2 with the Drawer conversion fro
 
 | File | Change |
 |---|---|
-| `src/components/Admin/SettingsPanel.tsx` | Modal→Drawer swap, 6-tab list, updated imports |
+| `src/components/Admin/SettingsPanel.tsx` | Modal→Drawer swap, 6-tab list, updated imports, blur toggle wiring |
+| `src/components/Common/GalleryConfigEditorModal.tsx` | Modal→Drawer swap, accept blur prop |
+| `src/types/index.ts` | Add `settingsDrawerBlurEnabled` to `GalleryBehaviorSettings` and defaults |
+| `wp-plugin/.../class-wpsg-settings-registry.php` | Add `settings_drawer_blur_enabled` default |
 | `src/components/Settings/GeneralSettingsSection.tsx` | Rename to `PageThemeSettingsSection.tsx`, add accordions, gain text/auth controls |
 | `src/components/Settings/CampaignCardSettingsSection.tsx` | Gain Card Internals accordion from Advanced |
 | `src/components/Settings/CampaignViewerSettingsSection.tsx` | Add accordions, gain Gallery Labels + about heading + modal chrome controls |
@@ -617,6 +629,8 @@ Execute the regrouping proposal from P25-P Pass 2 with the Drawer conversion fro
 ### Acceptance criteria
 
 - Settings opens as a right-side Drawer instead of a centered modal.
+- Gallery Config Editor opens as a right-side Drawer instead of a centered modal.
+- Backdrop blur can be toggled off via the `settingsDrawerBlurEnabled` setting.
 - 6 tabs with scope-accurate names replace the current 7-tab layout.
 - Campaign viewer configuration can be fully configured without leaving Campaign Viewer + Typography (down from 6 tabs).
 - Gallery labels, text content, and their visibility toggles are co-located with their primary owner.

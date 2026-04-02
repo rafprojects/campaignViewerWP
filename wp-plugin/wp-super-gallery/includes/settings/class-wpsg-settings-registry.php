@@ -294,6 +294,7 @@ class WPSG_Settings_Registry {
         'carousel_edge_fade'             => false,
         'carousel_loop'                  => true,
         'carousel_gap'                   => 16,
+        'settings_drawer_blur_enabled'   => true,
     ];
 
     /**

@@ -296,7 +296,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
       transitionProps={{ transition: 'slide-left', duration: 200 }}
-      overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
+      overlayProps={{ backgroundOpacity: 0.6, blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0 }}
       scrollAreaComponent={NativeScrollArea}
       styles={{
         body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
@@ -438,6 +438,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                   handleGalleryConfigEditorSave(galleryConfig);
                 }}
                 zIndex={500}
+                blurEnabled={settings.settingsDrawerBlurEnabled}
               />
             </Suspense>
           )}
