@@ -1,4 +1,5 @@
-import { Accordion, ColorInput, Select, Stack, Switch, TextInput } from '@mantine/core';
+import { Accordion, ColorInput, Stack, Switch, TextInput } from '@mantine/core';
+import { ModalSelect } from '@/components/Common/ModalSelect';
 
 import type { GalleryBehaviorSettings, ViewportBgType } from '@/types';
 
@@ -31,7 +32,7 @@ function GalleryBackgroundFields({
 }: GalleryBackgroundFieldsProps) {
   return (
     <>
-      <Select
+      <ModalSelect
         label={label}
         description={description}
         value={bgType}
@@ -141,7 +142,7 @@ export function GalleryPresentationSections({ settings, updateSetting }: Gallery
               value={settings.galleryVideoLabel ?? 'Videos'}
               onChange={(event) => updateSetting('galleryVideoLabel', event.currentTarget.value)}
             />
-            <Select
+            <ModalSelect
               label="Label Justification"
               description="Horizontal alignment for gallery section labels"
               data={[

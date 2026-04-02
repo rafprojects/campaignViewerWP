@@ -159,9 +159,8 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
      * Test sanitize_settings handles boolean fields.
      */
     public function test_sanitize_settings_handles_booleans() {
-        // Absent keys must not appear in the sanitized output — callers that
-        // merge $sanitized over existing settings rely on this to avoid
-        // inadvertently resetting values (e.g. the REST partial-update path).
+        // With no stored option, absent keys should not be synthesized into the
+        // sanitized output.
         $input = [];
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $this->assertArrayNotHasKey('enable_lightbox',   $sanitized);
@@ -184,6 +183,58 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $this->assertFalse($sanitized['enable_lightbox']);
         $this->assertFalse($sanitized['enable_animations']);
+    }
+
+    /**
+     * Test partial classic admin saves preserve the stored nested gallery config.
+     */
+    public function test_sanitize_settings_preserves_gallery_config_on_partial_admin_save() {
+        update_option(WPSG_Settings::OPTION_NAME, [
+            'theme' => 'default-dark',
+            'gallery_config' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'masonry',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $sanitized = WPSG_Settings::sanitize_settings([
+            'theme' => 'nord',
+        ]);
+
+        $this->assertEquals('nord', $sanitized['theme']);
+        $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
+        $this->assertEquals('masonry', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
+    }
+
+    /**
+     * Test explicit hidden checkbox values persist false in the classic admin flow.
+     */
+    public function test_sanitize_settings_persists_false_for_classic_checkbox_hidden_inputs() {
+        update_option(WPSG_Settings::OPTION_NAME, [
+            'enable_lightbox' => true,
+            'enable_animations' => true,
+            'allow_user_theme_override' => true,
+            'gallery_config' => [
+                'mode' => 'unified',
+            ],
+        ]);
+
+        $sanitized = WPSG_Settings::sanitize_settings([
+            'enable_lightbox' => '0',
+            'enable_animations' => '0',
+            'allow_user_theme_override' => '0',
+        ]);
+
+        $this->assertFalse($sanitized['enable_lightbox']);
+        $this->assertFalse($sanitized['enable_animations']);
+        $this->assertFalse($sanitized['allow_user_theme_override']);
+        $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
     }
 
     /**

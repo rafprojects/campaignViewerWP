@@ -1,4 +1,5 @@
-import { Accordion, Divider, NumberInput, Select, Stack, Switch } from '@mantine/core';
+import { Accordion, Divider, NumberInput, Stack, Switch } from '@mantine/core';
+import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
 import { anyAdapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
 import { getLegacyActiveAdapterIds } from '@/utils/galleryAdapterSelection';
@@ -77,7 +78,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
                     checked={settings.carouselAutoplayPauseOnHover}
                     onChange={(e) => updateSetting('carouselAutoplayPauseOnHover', e.currentTarget.checked)}
                   />
-                  <Select
+                  <ModalSelect
                     label="Autoplay Direction"
                     description="Direction autoplay advances slides."
                     value={settings.carouselAutoplayDirection}
@@ -141,7 +142,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
               max={600}
               step={50}
             />
-            <Select
+            <ModalSelect
               label="Section Height Mode"
               description="How section height is determined. Auto = content-driven (recommended for masonry/justified)."
               data={[
@@ -196,7 +197,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
               max={24}
               step={4}
             />
-            <Select
+            <ModalSelect
               label="Content Vertical Alignment"
               description="Vertical alignment of content within the modal."
               data={[
@@ -243,7 +244,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
         <Accordion.Control>Adapter Sizing</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
-            <Select
+            <ModalSelect
               label="Adapter Sizing Mode"
               description="How adapters fill their gallery section. Fill = 100% of section, Manual = custom percentage."
               data={[
@@ -284,7 +285,7 @@ export function GalleryLayoutDetailSections({ settings, updateSetting }: Gallery
               max={64}
               step={4}
             />
-            <Select
+            <ModalSelect
               label="Adapter Justification"
               description="How adapter items distribute within the container (Compact Grid, Circular)."
               data={[

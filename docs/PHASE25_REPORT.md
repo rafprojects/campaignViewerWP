@@ -8,19 +8,26 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P25-A | Fix broken gallery-config dropdowns inside modal stacks | Implemented, QA confirmed | Small-Medium (0.5 day) |
-| P25-B | Unify campaign media add flows around one shared entry surface | Implemented, QA follow-up tracked in P25-G | Medium-Large (1-2 days) |
-| P25-C | Raise Settings panel above campaign/card modal stacks | Implemented, QA confirmed | Small (0.25 day) |
-| P25-D | Reorganize `FUTURE_TASKS.md` and promote/prune backlog items | Implemented | Medium (0.5-1 day) |
-| P25-E | Add live gallery-config preview with cancel-to-revert and save-to-persist semantics | Implemented, pending QA | Medium (0.5-1 day) |
-| P25-F | Restore true per-breakpoint adapter selection in the shared gallery-config editor | Implemented, pending QA | Medium (0.5 day) |
-| P25-G | Raise the shared Manage Media modal above the campaign viewer stack | Implemented, pending QA | Small (0.25 day) |
-| P25-H | Reorganize Campaign Gallery Config into accordions and only expose adapter settings for explicit overrides | Implemented, pending QA | Medium (0.5 day) |
+| P25-A | Fix broken gallery-config dropdowns inside modal stacks | Completed ✅ | Small-Medium (0.5 day) |
+| P25-B | Unify campaign media add flows around one shared entry surface | Completed ✅ | Medium-Large (1-2 days) |
+| P25-C | Raise Settings panel above campaign/card modal stacks | Completed ✅ | Small (0.25 day) |
+| P25-D | Reorganize `FUTURE_TASKS.md` and promote/prune backlog items | Completed ✅ | Medium (0.5-1 day) |
+| P25-E | Add live gallery-config preview with cancel-to-revert and save-to-persist semantics | Completed ✅ | Medium (0.5-1 day) |
+| P25-F | Restore true per-breakpoint adapter selection in the shared gallery-config editor | Completed ✅ | Medium (0.5 day) |
+| P25-G | Raise the shared Manage Media modal above the campaign viewer stack | Completed ✅ | Small (0.25 day) |
+| P25-H | Reorganize Campaign Gallery Config into accordions and only expose adapter settings for explicit overrides | Completed ✅ | Medium (0.5 day) |
 | P25-I | Add campaign card image-resolution controls for thumbnail imagery | Planned | Medium (0.5-1 day) |
-| P25-J | Stabilize carousel multi-card focus and smooth small-set looping | Implemented, pending QA | Medium (0.5 day) |
+| P25-J | Stabilize carousel multi-card focus and smooth small-set looping | Completed ✅ | Medium (0.5 day) |
 | P25-K | Audit remaining carousel autoplay and advanced loop behavior in modal contexts | Planned | Medium (0.5 day) |
 | P25-L | Add carousel card aspect-ratio and image-fit controls for image slides | Planned | Medium-Large (1-2 days) |
-| P25-M | Fix WordPress settings sync so gallery settings saves no longer reset to defaults | Implemented, pending QA | Medium (0.5-1 day) |
+| P25-M | Fix WordPress `Campaigns > Settings` saves so SPA settings no longer appear reset to defaults | Completed ✅ | Medium (0.5-1 day) |
+| P25-N | Restore campaign card and adapter justification controls for partial rows | Completed ✅ | Small-Medium (0.25-0.5 day) |
+| P25-O | Evaluate live preview for broader visual settings beyond gallery-config editing | Proposed | Medium-Large (1-2 days) |
+| P25-P | Run a three-pass settings IA audit covering redundancy, grouping, and side-panel feasibility | Passes 1-2 complete (GPT-5.4, Claude Opus 4.6); Pass 3 pending | Large (2-3 days) |
+| P25-Q | Evaluate vertical justification of campaign card gallery viewports within their container | Proposed | Small-Medium (0.5 day) |
+| P25-R | Add `blur` as a background-type option across relevant background selectors | Proposed | Medium (0.5-1 day) |
+| P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
+| P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
 
 ---
 
@@ -80,7 +87,41 @@ That issue belongs in the same phase because it blocks safe QA of the newly adde
 
 The destructive reset bug became P25-M. Export/import remains a follow-on candidate once the sync fix is verified in a full WordPress test environment.
 
-## Track P25-E - Live Campaign Gallery Preview
+## Latest QA Follow-On
+
+That QA pass confirmed the modal dropdown repair, but it also showed two important follow-ups at the time:
+
+1. The classic WordPress `Campaigns > Settings` save path still left the SPA looking reset to defaults, so P25-M required a file-level review of the admin-form save path.
+2. Campaign card row-justification controls were no longer visible in normal settings flows, and that regression needed to be fixed before further card-grid QA.
+
+The row-justification regression became P25-N.
+
+## Latest QA Completion Pass
+
+The newest QA round closed the remaining active verification items from the shared gallery-config and WordPress settings work:
+
+1. Classic WordPress `Campaigns > Settings` saves no longer make the SPA appear reset to defaults.
+2. The shared Manage Media modal now reliably opens above the campaign viewer.
+3. Campaign Gallery Config now uses accordions as intended.
+4. Live preview while manipulating campaign gallery config is working.
+5. Per-breakpoint adapter selection is present and functioning in the shared editor.
+
+That completion pass closes P25-E, P25-F, P25-G, P25-H, and P25-M.
+
+## New Follow-On Tracks
+
+The same QA and planning pass surfaced the next tranche of Phase 25 candidate work, and later sizing / positioning feasibility reviews added two more bounded follow-on candidates:
+
+1. Extend live preview behavior to more of the visually obvious settings surface beyond the campaign gallery-config editor.
+2. Run a deeper settings information-architecture review to identify redundant controls, better grouping, and whether Settings should move from a modal to a side-panel interaction model.
+3. Evaluate vertical justification of campaign card gallery viewports within their available container height.
+4. Add `blur` as a new option anywhere background-type selectors currently support visual background treatments.
+5. Add an incremental scale control path for campaign cards and gallery items so sizing can be nudged without manually retuning multiple width and height fields.
+6. Audit and expose vertical-alignment plus fine-positioning controls for the card gallery grid, gallery shell stacks, and adapter-section containers.
+
+Because the settings IA question is larger than a direct implementation tweak, it should begin with three independent analysis passes before code changes are proposed.
+
+## Track P25-E - Live Campaign Gallery Preview COMPLETE
 
 ### Problem
 
@@ -96,7 +137,7 @@ Keep a viewer-local preview copy of the campaign gallery overrides while the res
 - Cancel reverts the viewer back to the last saved campaign state.
 - Save remains the only action that persists responsive gallery changes to the backend.
 
-## Track P25-F - Breakpoint-Specific Unified Adapters
+## Track P25-F - Breakpoint-Specific Unified Adapters COMPLETE
 
 ### Problem
 
@@ -112,7 +153,7 @@ Move unified adapter selection into each breakpoint tab so the editor writes to 
 - Editing one unified breakpoint does not overwrite sibling breakpoints.
 - Runtime resolution continues to use the active breakpoint-specific unified adapter.
 
-## Track P25-G - Manage Media Modal Layering
+## Track P25-G - Manage Media Modal Layering COMPLETE
 
 ### Problem
 
@@ -127,7 +168,7 @@ Pass an explicit high `zIndex` through the campaign Manage Media wrapper so the 
 - Manage Media always opens above the campaign viewer.
 - The admin Media tab can continue using the shared modal without inheriting campaign-viewer-specific stacking assumptions.
 
-## Track P25-H - Campaign Gallery Config UX Cleanup
+## Track P25-H - Campaign Gallery Config UX Cleanup COMPLETE
 
 ### Problem
 
@@ -153,7 +194,7 @@ Card thumbnail tuning still lacks a dedicated image-resolution control path, whi
 
 Add an image-only card-thumbnail resolution selector with common presets plus a custom path, scoped to card imagery rather than videos.
 
-## Track P25-J - Carousel Multi-Card Focus and Small-Set Looping
+## Track P25-J - Carousel Multi-Card Focus and Small-Set Looping COMPLETE
 
 ### Problem
 
@@ -189,21 +230,211 @@ The classic carousel still lacks targeted image-card aspect-ratio and fit contro
 
 Add image-focused aspect-ratio and fit controls so carousel cards can be tuned more like image tiles, without forcing the same constraints onto videos.
 
-## Track P25-M - WordPress Settings Sync / Reset Bug
+## Track P25-M - WordPress Settings Sync / Reset Bug COMPLETE
 
 ### Problem
 
-The WordPress-hosted settings flow was treating nested `gallery_config` as canonical on save, but legacy flat gallery settings were no longer being reconstructed on PHP reads or REST responses. That made subsequent settings loads look like they had snapped back to defaults even though the nested config had been saved.
+The remaining settings reset bug is now isolated to the classic WordPress `Campaigns > Settings` save path. That PHP form only submits the small set of registered admin fields, while `sanitize_settings()` was returning only the keys present in the incoming payload. Any existing non-posted settings, including nested `gallery_config`, were therefore dropped from the stored option on save. On the next load, those missing keys fell back to defaults, which made the SPA look like the full settings state had reset.
+
+Classic checkbox fields also needed an explicit false path because unchecked WordPress checkboxes submit nothing by default.
 
 ### Fix
 
-Keep nested `gallery_config` canonical in storage, continue stripping legacy gallery fields on save, and add a PHP-side bridge that reconstructs the legacy flat gallery settings from `gallery_config` whenever `WPSG_Settings::get_settings()` or the settings REST response is used.
+Keep the earlier PHP-side gallery bridge in place for reads, but harden the classic admin save path by merging partial PHP form submissions over the raw stored option before sanitization so non-posted settings survive. Add hidden `0` inputs for the classic checkbox fields so unchecked saves persist explicit false values instead of silently reusing the old truthy state.
 
 ### Acceptance criteria
 
-- Saving WordPress app settings no longer makes gallery configuration appear to reset to defaults.
-- The stored option keeps nested `gallery_config` as the canonical persisted representation.
-- PHP callers and REST responses still receive legacy flat gallery fields projected from the nested config so existing consumers stay in sync.
+- Saving from the classic WordPress `Campaigns > Settings` page no longer drops nested `gallery_config` or other non-posted settings.
+- Unchecked classic admin checkbox fields persist `false` instead of inheriting the previously saved truthy value.
+- PHP callers and REST responses continue to project legacy flat gallery fields from nested `gallery_config` for compatibility.
+
+## Track P25-O - Visual Settings Live Preview Expansion
+
+### Problem
+
+Live preview currently exists for campaign gallery-config editing, but many other visual settings still require save-close-reopen cycles before their effect can be judged. That slows design iteration and makes visual tuning feel uneven across the Settings surface.
+
+### Proposed direction
+
+Audit which visual settings can safely preview locally without creating destructive or confusing side effects, then define a consistent preview model for those controls so the UX does not mix instant-preview and save-only behavior arbitrarily.
+
+## Track P25-P - Settings Information Architecture Deep Dive
+
+### Problem
+
+The Settings surface has grown broad enough that redundancy, section placement, and interaction model now need a dedicated review rather than incremental tweaks. There is also an open product question about whether Settings should remain modal-first or evolve toward a side-panel interaction.
+
+### Proposed direction
+
+Start with three separate analysis passes by different agents before implementation. Those passes should cover setting redundancy, more optimal grouping and ordering, and the technical plus UX feasibility of converting Settings from a modal into a side-panel surface.
+
+### Required analysis before implementation
+
+- Pass 1: redundancy and overlap audit across settings sections, labels, and controls.
+- Pass 2: organization and grouping proposal focused on task flow, scanability, and progressive disclosure.
+- Pass 3: feasibility study for a side-panel architecture versus the current modal, including modal-stack interactions and responsive constraints.
+
+### Analysis progress
+
+- Pass 1 completed by GPT-5.4: redundancy and overlap audit recorded in `docs/P25P_PASS1_GPT54_SETTINGS_REDUNDANCY_AUDIT.md`.
+- Pass 2 completed by Claude Opus 4.6: regrouping proposal recorded in `docs/P25P_PASS2_CLAUDE_OPUS_46_SETTINGS_REGROUP.md`.
+- Pass 3 pending: evaluate side-panel feasibility using the regrouping proposal as input.
+
+## Track P25-Q - Campaign Card Viewport Vertical Justification Audit
+
+### Problem
+
+Horizontal card justification is now restored, but the gallery viewports themselves may still need better vertical justification within their container when card content, viewport heights, and surrounding layout constraints do not naturally align.
+
+### Proposed direction
+
+Audit how campaign card gallery viewports align vertically in their available container, identify whether the current behavior is fixed, inherited, or accidental, and determine whether an explicit vertical-justification control is warranted.
+
+## Track P25-R - Background Blur Option
+
+### Problem
+
+Background selectors currently expose multiple visual treatment modes, but they do not offer a blur-based option for cases where softened imagery or backdrop treatment would better support foreground readability.
+
+### Proposed direction
+
+Add `blur` as a supported option for the relevant background-type selectors, then define the minimum supporting controls needed to make that mode usable without fragmenting the selector model across different settings sections.
+
+## Track P25-S - Incremental Card / Gallery Item Scale Controls
+
+### Problem
+
+Sizing adjustments are currently possible, but they are fragmented across card max width, thumbnail height, min height, gallery section sizing, adapter manual width percentages, compact-grid card width and height, justified row height, masonry columns, shape tile sizes, and carousel visible-card behavior. That makes simple "make this about 10% larger or smaller" tuning slower than it needs to be and forces users to reason about adapter-specific math.
+
+### Proposed direction
+
+This looks feasible, but it should be implemented as a layout-aware multiplier rather than a raw CSS `transform` applied after layout. A completely flat "expose every sizing knob everywhere" surface is also technically possible, but it would mostly duplicate the size drivers that already exist across cards, gallery sections, and adapter-specific settings. The cleaner approach is a tiered model: keep scale and aspect ratio as the primary sizing surface, then leave the lower-level width, height, row-height, column-count, and tile-size controls in advanced or adapter-specific contexts. Campaign cards can derive scale from the existing card sizing inputs, while gallery-item scale should map onto the active adapter's real size drivers inside nested `galleryConfig.adapterSettings` so runtime spacing, pagination, and hit targets stay coherent. Masonry likely needs a columns-first rule or an explicit exception because its primary sizing lever is column count rather than tile dimensions.
+
+### Recommendation
+
+Do not build one giant "complete sizing" panel. The better model is:
+
+- Primary flow: expose a small number of scale and aspect-ratio controls that cover the most common "make this bigger / smaller" tuning tasks.
+- Secondary flow: keep the existing raw width, height, min-height, section-size, row-height, column-count, and tile-size controls available in advanced or adapter-specific surfaces.
+- Adapter exceptions: treat masonry and other layout-rule-driven adapters as special cases instead of forcing them into a fake universal width/height model.
+
+### Current control owners
+
+- Campaign cards already size through card-thumbnail height, card max width, card aspect ratio, and card min height.
+- Gallery viewports / wrappers already size through modal gallery width and margin, gallery section min/max width and height, gallery height mode, section padding, and adapter manual max width / height percentages.
+- Gallery items already size through adapter-specific fields such as carousel visible cards, compact-grid card width / height, justified row height, masonry columns, and shape tile size.
+
+### Proposed primary-vs-advanced sizing matrix
+
+| Surface | Primary controls | Secondary / advanced controls | Notes |
+|---------|------------------|-------------------------------|-------|
+| Campaign cards | `cardScale`, existing `cardAspectRatio` | existing card thumbnail height, card max width, card min height, card max columns | `cardScale` should feel like the default "bigger / smaller" control for the card as a whole rather than another raw pixel field |
+| Gallery viewports / sections | candidate `sectionScale` | existing modal gallery max width, gallery section min/max width, min/max height, height mode, adapter max width / height percentages | Avoid a universal viewport aspect-ratio control in v1 because section height behavior already varies by adapter and sizing mode |
+| Gallery items | candidate `itemScale`, adapter-specific aspect-ratio only where it makes sense | existing adapter settings such as carousel visible cards, compact-grid width / height, justified row height, masonry columns, shape tile size | Keep one shared scale concept, but resolve it into the adapter's real size driver under the hood |
+
+### Candidate setting names
+
+- `cardScale`: top-level campaign-card sizing multiplier.
+- `sectionScale`: shared gallery section / viewport sizing multiplier, likely living alongside the existing shared gallery common settings.
+- `itemScale`: adapter-facing gallery-item sizing multiplier, persisted in adapter settings or a shared adapter-setting group where supported.
+
+### Recommended v1 scope
+
+1. Add `cardScale` as the primary card-sizing control and keep `cardAspectRatio` as the primary shape control.
+2. Add `sectionScale` for gallery wrappers / viewports, but do not add a universal viewport aspect-ratio field in the same pass.
+3. Add `itemScale` for adapters whose sizing is already driven by width / height / row-height / tile-size logic.
+4. Keep masonry out of the first scale pass unless a clean columns-first mapping is agreed on.
+5. Leave the existing raw sizing controls in place as advanced controls instead of replacing them.
+
+### Proposed implementation slices
+
+1. Inventory the current sizing owners and classify each as primary or advanced rather than adding new controls blindly.
+2. Add `cardScale`, `sectionScale`, and `itemScale` to the settings types, defaults, settings UI, nested gallery-config bridge, and WordPress sanitizer / REST surfaces.
+3. Implement resolver logic that maps `itemScale` into adapter-specific settings without breaking pagination, spacing, or hit targets.
+4. Explicitly document masonry and layout-builder exceptions before UI is exposed.
+5. Add targeted tests for settings persistence plus resolver behavior for compact-grid, justified, carousel, and at least one shape adapter.
+
+### Acceptance criteria
+
+- Campaign card sizing can be nudged larger or smaller from one incremental control instead of retuning multiple card dimensions manually.
+- Supported gallery adapters expose one consistent scale concept even if it resolves to adapter-specific width, height, row-height, or tile-size fields under the hood.
+- Primary settings flows stay concise by treating scale and aspect ratio as the default sizing entry points instead of flattening every raw sizing field into one universal panel.
+- Existing raw sizing controls remain available where they already provide real value, but they are clearly secondary to the new primary scale controls.
+- The implementation keeps layout calculations authoritative instead of relying on post-layout visual scaling that would desync spacing, pagination, or interaction surfaces.
+
+## Track P25-T - Gallery Container / Section Positioning Controls
+
+### Problem
+
+Positioning controls currently exist only in partial form and at mismatched layers. The card gallery grid exposes horizontal row justification, but not vertical positioning within a taller parent. The campaign viewer has one outer `modalContentVerticalAlign` control plus shell width, gap, and edge-margin controls, but the gallery shell stack, per-type section stack, section wrapper, and most adapter root `Stack` containers still default to top/start alignment. That makes vertical centering or fine placement of unified, image, and video gallery blocks inconsistent and often impossible without code changes.
+
+### Proposed direction
+
+Audit the layout at three explicit layers: the card gallery grid container, the campaign viewer gallery shell / per-type section stack, and the adapter root container inside each `GallerySectionWrapper`. Add a minimal shared positioning model first: vertical alignment, horizontal alignment where it is still missing, and bounded offset or inset nudges only where they do not fight the existing layout math. Prefer flex/grid alignment and spacing controls over absolute positioning. Adapters with intrinsic geometric offsets such as diamond, hexagonal, and layout-builder should be treated as explicit exceptions or adapter-specific follow-ons instead of forcing one generic positioning contract onto them.
+
+### Current container map
+
+1. Card gallery grid container: the card-gallery flex wrapper in `CardGallery` already owns horizontal row distribution through `cardJustifyContent`, but it has no companion vertical-positioning model.
+2. Outer campaign viewer content box: `CampaignViewer` already owns whole-modal vertical placement through `modalContentVerticalAlign`.
+3. Gallery shell box: `CampaignViewer` separately owns gallery width, gap, and side margins for the media area, but not shell-level vertical alignment or shell-level nudging.
+4. Per-type section layout container: `PerTypeGallerySection` switches between a `Stack` and `SimpleGrid`, but does not expose explicit alignment controls beyond equal-height stretch behavior.
+5. Gallery section wrapper: `GallerySectionWrapper` centers horizontally with `marginInline: auto` and clamps width / height, but it does not expose content alignment inside the wrapper.
+6. Adapter root block: most adapters render a root `Stack` or `Box` container that can be centered or nudged as a whole, but those roots do not yet share a positioning contract.
+
+### Recommendation
+
+Keep positioning layered and explicit. Reuse the existing `modalContentVerticalAlign` as the sole owner of outer modal-body placement, then add missing controls lower in the tree instead of creating a second competing top-level alignment setting.
+
+### Proposed control owners and candidate setting names
+
+| Layer | Candidate settings | Purpose | Notes |
+|-------|--------------------|---------|-------|
+| Card gallery grid area | `cardGalleryMinHeight`, `cardGalleryVerticalAlign`, optional `cardGalleryOffsetY` | Lets the full card grid sit top / center / bottom when its parent has spare height | Do not add a separate horizontal-placement control here because `cardJustifyContent` already owns row distribution |
+| Campaign viewer gallery shell | `modalGalleryVerticalAlign`, optional `modalGalleryOffsetY` | Aligns the unified / per-type gallery shell within the available viewer content area | Should complement, not replace, the existing shell width / gap / margin controls |
+| Gallery section wrapper content | `gallerySectionContentAlignX`, `gallerySectionContentAlignY`, optional `gallerySectionContentOffsetX`, `gallerySectionContentOffsetY` | Positions the rendered adapter block inside each section wrapper | This is the first shared layer that can support both unified and per-type sections consistently |
+| Adapter root block | `adapterBlockAlignX`, `adapterBlockAlignY`, optional `adapterBlockOffsetX`, `adapterBlockOffsetY` | Fine-tunes the adapter's rendered block when wrapper-level alignment is not enough | Keep this scoped to compatible adapters and avoid using it as a catch-all replacement for shell / section alignment |
+
+### Recommended v1 scope
+
+1. Preserve `modalContentVerticalAlign` as-is and do not duplicate it under a new name.
+2. Add shell-level vertical alignment for the media shell in `CampaignViewer`.
+3. Add shared content alignment inside `GallerySectionWrapper`.
+4. Add card-grid vertical alignment only together with a meaningful min-height or bounded-height companion so the control has visible effect.
+5. Add adapter-root alignment only for adapters that already render as a single centered block without internal absolute-layout assumptions.
+6. Treat layout-builder slot positioning and internal diamond / hexagonal row offsets as out of scope for the first pass.
+
+### Proposed implementation slices
+
+1. Document the current owner of each alignment decision so new controls do not overlap with existing shell, section, and adapter sizing fields.
+2. Add new positioning settings to the shared types, defaults, UI, and nested gallery-config persistence surface.
+3. Update `CampaignViewer`, `PerTypeGallerySection`, and `GallerySectionWrapper` to honor shell and section alignment separately.
+4. Introduce a tiny shared helper for adapter-root positioning so compatible adapters can adopt one contract without copy-paste.
+5. Exclude or explicitly no-op unsupported adapters instead of shipping inconsistent partial behavior.
+6. Add focused tests covering shell alignment, wrapper alignment, and one compatible adapter-root alignment path.
+
+### Acceptance criteria
+
+- The campaign card gallery grid can be centered or otherwise aligned within its parent container when spare vertical space exists.
+- The campaign viewer gallery shell and per-type section stack can vertically center their content instead of always anchoring to the top.
+- Compatible gallery adapters can vertically center or fine-tune their rendered block within the section wrapper without breaking spacing, labels, or hit targets.
+- The control surface stays layered and explicit so shell, section, and adapter positioning do not become three overlapping ways to move the same content.
+- Outer modal-content positioning continues to be owned only by the existing `modalContentVerticalAlign` control rather than being duplicated by the new track.
+
+## Track P25-N - Card / Adapter Justification Controls COMPLETE
+
+### Problem
+
+QA confirmed that campaign card row-justification controls were effectively missing from the normal Settings flow, which removed direct control over how partial rows distribute when the card grid does not fully fill the available width. Compact-grid justification also needed verification because it depends on the same family of layout controls.
+
+### Fix
+
+Restore the visible card-justification control in the Campaign Cards settings section and make the responsive card-grid branch honor `cardJustifyContent` directly, not just the fixed-width fallback branch. Compact-grid adapter justification remains wired through `adapterJustifyContent` and stays covered as part of the same regression pass.
+
+### Acceptance criteria
+
+- Card justification is visible again from the Campaign Cards settings flow.
+- Partial campaign-card rows honor the selected justification even when card max width is not manually constrained.
+- Compact-grid adapter justification remains available and continues to affect supported gallery layouts.
 
 ## Follow-On Candidates After Core QA
 
@@ -217,7 +448,7 @@ These are not active implementation tracks yet, but they were promoted out of th
 | Time-limited access grants | High user value for event-style galleries with a clear implementation path |
 | Admin tab data reuse / SWR cache hardening | Medium user impact with a bounded audit-first implementation path |
 
-## Track P25-A - Gallery Config Dropdown Reliability
+## Track P25-A - Gallery Config Dropdown Reliability COMPLETE
 
 ### Problem
 
@@ -233,7 +464,7 @@ Introduce a shared modal-safe `Select` wrapper and use it for the gallery-config
 - The fix is shared, not duplicated ad hoc across individual controls.
 - Existing settings/theme select behavior remains intact.
 
-## Track P25-B - Shared Add Media Entry
+## Track P25-B - Shared Add Media Entry COMPLETE
 
 ### Problem
 
@@ -249,7 +480,7 @@ Move toward one shared media-entry surface for campaign-level add-media actions,
 - Shared upload and external-add UI/logic is reused instead of copy-pasted.
 - Campaign media add success/error handling stays consistent across entry points.
 
-## Track P25-C - Settings Modal Layering
+## Track P25-C - Settings Modal Layering COMPLETE
 
 ### Problem
 
@@ -264,7 +495,7 @@ Raise the Settings modal layer above the campaign modal layer while preserving t
 - Settings always opens above campaign/card/edit modals.
 - The nested responsive gallery editor still opens above Settings.
 
-## Track P25-D - `FUTURE_TASKS.md` Cleanup
+## Track P25-D - `FUTURE_TASKS.md` Cleanup COMPLETE
 
 ### Problem
 
@@ -292,10 +523,10 @@ Reorganize the backlog into a cleaner schema, identify prune candidates for conf
 - P25-G implementation now raises the campaign Manage Media wrapper above the viewer stack without changing the admin Media tab's default modal layer.
 - P25-H implementation now organizes the campaign gallery editor into accordion sections and only exposes adapter-specific controls for explicit active-breakpoint adapter overrides.
 - P25-J implementation now treats the centered slide as the active multi-card focus, routes arrow/dot navigation through that centered focus, and uses a settle-based synthetic loop fallback for small multi-card sets so last-to-first wraps stay smooth.
-- P25-M implementation now keeps nested `gallery_config` canonical in WordPress storage while reconstructing legacy flat gallery settings on PHP reads and REST responses so settings saves no longer appear to wipe gallery configuration.
+- P25-M implementation now preserves non-posted settings during classic WordPress admin saves by merging partial `Campaigns > Settings` submissions over the stored option before sanitization, while still projecting legacy flat gallery fields from nested `gallery_config` on PHP reads and REST responses.
 - Targeted validation passed for `src/App.test.tsx`, `src/components/Common/ModalSelect.test.tsx`, `src/components/Common/GalleryConfigEditorModal.test.tsx`, `src/components/Campaign/UnifiedCampaignModal.test.tsx`, `src/components/CardViewer/CampaignViewer.test.tsx`, and `src/components/Admin/SettingsPanel.test.tsx`.
 - Additional targeted validation passed for `src/components/Galleries/Adapters/carouselBehavior.test.ts`, `src/components/Galleries/Adapters/MediaCarouselAdapter.test.tsx`, `src/components/Common/GalleryConfigEditorModal.test.tsx`, `src/components/Admin/SettingsPanel.test.tsx`, and `npm run build:wp`.
-- WordPress phpunit coverage was expanded for the P25-M bridge, but it could not be executed in this workspace because the local `wordpress-tests-lib` environment is not installed.
-- Follow-up targeted validation is required for the new preview/revert flow, breakpoint-specific unified adapter edits, Manage Media stacking, the new campaign-editor/carousel quick wins, and in-browser verification of the WordPress settings reset fix.
+- WordPress PHPUnit validation now passed in `wp-env` for `tests/WPSG_Settings_Test.php`, `tests/WPSG_Settings_Extended_Test.php`, and `tests/WPSG_Settings_Rest_Test.php` after adding focused coverage for classic admin partial-save preservation and checkbox false persistence.
+- Manual QA has now confirmed P25-E, P25-F, P25-G, P25-H, and P25-M as complete.
 - `docs/FUTURE_TASKS.md` already has live worktree edits; cleanup there should be patched carefully and remain candidate-based.
 - The existing modal tests are useful for regression coverage, but they do not fully simulate Mantine portal behavior, so this phase should keep at least one explicit test around modal-scoped select props.

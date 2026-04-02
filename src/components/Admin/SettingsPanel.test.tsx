@@ -824,6 +824,9 @@ describe('SettingsPanel', () => {
     // The Campaign Cards tab opens with an accordion; 'Card Appearance' is the first visible item.
     await screen.findByText('Card Appearance');
 
+    fireEvent.click(screen.getByText('Card Grid & Pagination'));
+    await screen.findByText('Card Justification');
+
     // Toggle the first checkbox available on this tab
     const switches = Array.from(
       document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),

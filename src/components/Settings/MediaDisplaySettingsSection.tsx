@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Accordion, ColorInput, Divider, Group, NumberInput, Select, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Accordion, ColorInput, Divider, Group, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 
 import {
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
@@ -13,6 +13,7 @@ import {
   type ScrollTransitionType,
   type ShadowPreset,
 } from '@/types';
+import { ModalSelect } from '@/components/Common/ModalSelect';
 
 interface MediaDisplaySettingsData extends GalleryBehaviorSettings {
   galleryLayout: 'grid' | 'masonry' | 'carousel';
@@ -50,7 +51,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
 
             <Divider label="Viewport Dimensions" labelPosition="center" />
 
-            <Select
+            <ModalSelect
               label={tooltipLabel('Height Constraint', 'gallerySizingMode')}
               description="Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
               data={[
@@ -96,7 +97,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
 
             <Divider label="Shadow & Depth" labelPosition="center" />
 
-            <Select
+            <ModalSelect
               label="Image Shadow Preset"
               description="Box-shadow depth effect for image gallery viewport."
               value={settings.imageShadowPreset}
@@ -119,7 +120,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               />
             )}
 
-            <Select
+            <ModalSelect
               label="Video Shadow Preset"
               description="Box-shadow depth effect for video gallery viewport."
               value={settings.videoShadowPreset}
@@ -317,7 +318,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               onChange={(event) => updateSetting('transitionFadeEnabled', event.currentTarget.checked)}
             />
 
-            <Select
+            <ModalSelect
               label="Transition Type"
               description="How gallery media slides between items: fade only, slide only, or combined slide-fade."
               value={settings.scrollTransitionType}
@@ -329,7 +330,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               ]}
             />
 
-            <Select
+            <ModalSelect
               label="Scroll Animation Style"
               description="Navigation scroll behavior for gallery thumbnail strips."
               value={settings.scrollAnimationStyle}
@@ -350,7 +351,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               step={10}
             />
 
-            <Select
+            <ModalSelect
               label="Animation Easing"
               description="Timing function used for gallery transitions."
               value={settings.scrollAnimationEasing}
@@ -384,7 +385,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
 
             <Divider label="Overlay Arrows" labelPosition="center" />
 
-            <Select
+            <ModalSelect
               label="Arrow Vertical Position"
               description="Vertical alignment of the overlay prev/next arrows."
               value={settings.navArrowPosition}
@@ -466,7 +467,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
 
             {settings.dotNavEnabled && (
               <>
-                <Select
+                <ModalSelect
                   label="Dot Position"
                   description="Where to render the dot navigator relative to the viewport."
                   value={settings.dotNavPosition}
@@ -488,7 +489,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                   step={1}
                 />
 
-                <Select
+                <ModalSelect
                   label="Dot Shape"
                   description="Shape of the navigation dots."
                   value={settings.dotNavShape}

@@ -157,6 +157,9 @@ class WPSG_Settings_Core_Fields {
     public static function render_allow_user_theme_override_field() {
         $value = WPSG_Settings::get_setting('allow_user_theme_override');
         ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[allow_user_theme_override]"
+               value="0">
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[allow_user_theme_override]"
@@ -227,6 +230,9 @@ class WPSG_Settings_Core_Fields {
     public static function render_lightbox_field() {
         $value = WPSG_Settings::get_setting('enable_lightbox');
         ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_lightbox]"
+               value="0">
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_lightbox]"
@@ -246,6 +252,9 @@ class WPSG_Settings_Core_Fields {
     public static function render_animations_field() {
         $value = WPSG_Settings::get_setting('enable_animations');
         ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_animations]"
+               value="0">
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_animations]"

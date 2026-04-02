@@ -158,6 +158,26 @@ describe('CardGallery', () => {
       expect(screen.getByText('Alpha Campaign')).toBeInTheDocument();
     }
   });
+
+  it('applies card justification in the responsive card grid branch', () => {
+    render(
+      <CardGallery
+        campaigns={buildMany(4)}
+        userPermissions={[]}
+        galleryBehaviorSettings={{
+          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+          cardGridColumns: 3,
+          cardMaxWidth: 0,
+          cardJustifyContent: 'space-between',
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('card-gallery-grid')).toHaveStyle({
+      display: 'flex',
+      justifyContent: 'space-between',
+    });
+  });
 });
 
 /* ── P13-F: Card Gallery Pagination tests ──────────────────────── */

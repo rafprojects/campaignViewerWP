@@ -1,6 +1,7 @@
-import { Box, ColorInput, Divider, NumberInput, Select, Slider, Stack, Switch, Text } from '@mantine/core';
+import { Box, ColorInput, Divider, NumberInput, Slider, Stack, Switch, Text } from '@mantine/core';
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
+import { ModalSelect } from '@/components/Common/ModalSelect';
 import type { GalleryBehaviorSettings } from '@/types';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
@@ -21,7 +22,7 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
         checked={settings.campaignModalFullscreen ?? false}
         onChange={(event) => updateSetting('campaignModalFullscreen', event.currentTarget.checked)}
       />
-      <Select
+      <ModalSelect
         label="Campaign Open Mode"
         description="What to show when a campaign is opened."
         data={[
@@ -89,7 +90,7 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
         max={400}
         step={10}
       />
-      <Select
+      <ModalSelect
         label="Modal Transition"
         description="Animation style when opening the campaign modal"
         data={[
@@ -198,7 +199,7 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
 
       <Divider label="Modal Background (Fullscreen)" labelPosition="center" />
 
-      <Select
+      <ModalSelect
         label="Background Type"
         description="Background style for the fullscreen campaign modal"
         data={[

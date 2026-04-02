@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput, Switch, Select, ColorInput } from '@mantine/core';
+import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select, ColorInput } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
@@ -216,6 +216,16 @@ export function CardGallery({
     : undefined;
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
   const containerPaddingStyle = { paddingInline: galleryBehaviorSettings.appPadding };
+  const hasFixedCardWidth = galleryBehaviorSettings.cardMaxWidth > 0;
+  const cardGridJustification = galleryBehaviorSettings.cardJustifyContent || 'center';
+  const responsiveCardWidth = useMemo(() => {
+    if (effectiveColumns <= 1) {
+      return '100%';
+    }
+
+    const totalGapWidth = (effectiveColumns - 1) * galleryBehaviorSettings.cardGapH;
+    return `calc((100% - ${totalGapWidth}px) / ${effectiveColumns})`;
+  }, [effectiveColumns, galleryBehaviorSettings.cardGapH]);
 
   // P21-D: Dynamic viewer background
   const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
@@ -382,51 +392,54 @@ export function CardGallery({
           aria-label={displayMode === 'paginated' ? `Card gallery page ${currentPage + 1} of ${totalPages}` : undefined}
         >
           <div style={slideStyle}>
-            {galleryBehaviorSettings.cardMaxWidth > 0 ? (
-              <Box
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
-                  justifyContent: galleryBehaviorSettings.cardJustifyContent || 'center',
-                  width: '100%',
-                  ...(galleryBehaviorSettings.cardMaxWidthUnit !== '%' ? {
-                    maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,
-                    marginInline: 'auto',
-                  } : {}),
-                }}
-              >
-                {visibleCampaigns.map((campaign) => (
-                  <CampaignCard
+            <Box
+              data-testid="card-gallery-grid"
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
+                justifyContent: cardGridJustification,
+                width: '100%',
+                ...(hasFixedCardWidth && galleryBehaviorSettings.cardMaxWidthUnit !== '%' ? {
+                  maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,
+                  marginInline: 'auto',
+                } : {}),
+              }}
+            >
+              {visibleCampaigns.map((campaign) => {
+                const sharedProps = {
+                  campaign,
+                  hasAccess: hasAccess(campaign.id, campaign.visibility),
+                  onClick: () => setSelectedCampaign(campaign),
+                  settings: galleryBehaviorSettings,
+                  apiClient: !hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined,
+                };
+
+                if (hasFixedCardWidth) {
+                  return (
+                    <CampaignCard
+                      key={campaign.id}
+                      {...sharedProps}
+                      maxWidth={galleryBehaviorSettings.cardMaxWidth}
+                      maxWidthUnit={galleryBehaviorSettings.cardMaxWidthUnit}
+                    />
+                  );
+                }
+
+                return (
+                  <Box
                     key={campaign.id}
-                    campaign={campaign}
-                    hasAccess={hasAccess(campaign.id, campaign.visibility)}
-                    onClick={() => setSelectedCampaign(campaign)}
-                    settings={galleryBehaviorSettings}
-                    apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
-                    maxWidth={galleryBehaviorSettings.cardMaxWidth}
-                    maxWidthUnit={galleryBehaviorSettings.cardMaxWidthUnit}
-                  />
-                ))}
-              </Box>
-            ) : (
-              <SimpleGrid
-                cols={effectiveColumns}
-                spacing={galleryBehaviorSettings.cardGapH}
-                verticalSpacing={galleryBehaviorSettings.cardGapV}
-              >
-                {visibleCampaigns.map((campaign) => (
-                  <CampaignCard
-                    key={campaign.id}
-                    campaign={campaign}
-                    hasAccess={hasAccess(campaign.id, campaign.visibility)}
-                    onClick={() => setSelectedCampaign(campaign)}
-                    settings={galleryBehaviorSettings}
-                    apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
-                  />
-                ))}
-              </SimpleGrid>
-            )}
+                    style={{
+                      flex: `0 0 ${responsiveCardWidth}`,
+                      maxWidth: responsiveCardWidth,
+                      minWidth: 0,
+                    }}
+                  >
+                    <CampaignCard {...sharedProps} />
+                  </Box>
+                );
+              })}
+            </Box>
           </div>
 
           {/* Overlay arrows for paginated mode */}

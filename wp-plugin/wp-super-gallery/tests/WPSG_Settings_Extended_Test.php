@@ -259,6 +259,8 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         WPSG_Settings::render_allow_user_theme_override_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[allow_user_theme_override]', $html);
     }
 
     public function test_render_layout_field_outputs_markup() {
@@ -280,6 +282,8 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         WPSG_Settings::render_lightbox_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[enable_lightbox]', $html);
     }
 
     public function test_render_animations_field_outputs_markup() {
@@ -287,6 +291,8 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         WPSG_Settings::render_animations_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[enable_animations]', $html);
     }
 
     public function test_render_cache_ttl_field_outputs_select() {

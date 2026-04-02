@@ -1,4 +1,5 @@
-import { Accordion, ColorInput, Divider, NumberInput, Select, Stack, Switch } from '@mantine/core';
+import { Accordion, ColorInput, Divider, NumberInput, Stack, Switch } from '@mantine/core';
+import { ModalSelect } from '@/components/Common/ModalSelect';
 
 import type { GalleryBehaviorSettings } from '@/types';
 
@@ -34,7 +35,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               max={8}
               step={1}
             />
-            <Select
+            <ModalSelect
               label="Border Color Mode"
               description="How card accent border colors are determined"
               data={[
@@ -53,7 +54,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
                 onChange={(value) => updateSetting('cardBorderColor', value)}
               />
             )}
-            <Select
+            <ModalSelect
               label="Card Shadow"
               description="Depth effect for campaign cards"
               data={[
@@ -74,7 +75,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               max={400}
               step={10}
             />
-            <Select
+            <ModalSelect
               label="Thumbnail Fit"
               description="How the thumbnail image fills the card"
               data={[
@@ -141,7 +142,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
         <Accordion.Control>Card Grid &amp; Pagination</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
-            <Select
+            <ModalSelect
               label="Cards Per Row"
               description="Number of columns in the card grid (Auto = responsive)"
               data={[
@@ -183,8 +184,21 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               step={10}
               placeholder="0 = unlimited"
             />
+            <ModalSelect
+              label="Card Justification"
+              description="How cards distribute when a row does not fill the full available width."
+              data={[
+                { value: 'start', label: 'Start' },
+                { value: 'center', label: 'Center' },
+                { value: 'end', label: 'End' },
+                { value: 'space-between', label: 'Space Between' },
+                { value: 'space-evenly', label: 'Space Evenly' },
+              ]}
+              value={settings.cardJustifyContent ?? 'center'}
+              onChange={(value) => updateSetting('cardJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['cardJustifyContent'])}
+            />
             {settings.cardMaxWidth > 0 && (
-              <Select
+              <ModalSelect
                 label="Card Max Width Unit"
                 description="Unit for the card max width value"
                 data={[
@@ -193,21 +207,6 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
                 ]}
                 value={settings.cardMaxWidthUnit ?? 'px'}
                 onChange={(value) => updateSetting('cardMaxWidthUnit', (value ?? 'px') as GalleryBehaviorSettings['cardMaxWidthUnit'])}
-              />
-            )}
-            {settings.cardMaxWidth > 0 && (
-              <Select
-                label="Card Justification"
-                description="How cards are distributed in the last (partial) row"
-                data={[
-                  { value: 'start', label: 'Start' },
-                  { value: 'center', label: 'Center' },
-                  { value: 'end', label: 'End' },
-                  { value: 'space-between', label: 'Space Between' },
-                  { value: 'space-evenly', label: 'Space Evenly' },
-                ]}
-                value={settings.cardJustifyContent ?? 'center'}
-                onChange={(value) => updateSetting('cardJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['cardJustifyContent'])}
               />
             )}
             {settings.cardGridColumns === 0 && (
@@ -220,7 +219,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
                 max={8}
               />
             )}
-            <Select
+            <ModalSelect
               label="Card Aspect Ratio"
               description="Lock cards to a fixed aspect ratio"
               data={[
@@ -248,7 +247,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
             />
 
             <Divider label="Pagination" labelPosition="left" />
-            <Select
+            <ModalSelect
               label="Display Mode"
               description="How cards are displayed: all at once, progressively loaded, or paginated with arrows"
               data={[

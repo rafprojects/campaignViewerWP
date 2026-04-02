@@ -275,6 +275,19 @@ class WPSG_Settings_Sanitizer {
      * @return array Sanitized settings.
      */
     public static function sanitize_settings($input, $defaults, $valid_options, $field_ranges) {
+        $input = is_array($input) ? $input : [];
+
+        $current_settings = get_option(WPSG_Settings::OPTION_NAME, []);
+        if (!is_array($current_settings)) {
+            $current_settings = [];
+        }
+
+        // The classic WordPress settings page only submits the registered admin
+        // fields. Merge those partial saves over the raw stored option so
+        // non-posted settings like gallery_config are preserved instead of
+        // collapsing back to defaults on the next read.
+        $input = wp_parse_args($input, $current_settings);
+
         $sanitized = [];
 
         if (isset($input['auth_provider'])) {

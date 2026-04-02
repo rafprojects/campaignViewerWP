@@ -1,6 +1,7 @@
-import { ColorInput, Divider, NumberInput, Select, Stack, Switch } from '@mantine/core';
+import { ColorInput, Divider, NumberInput, Stack, Switch } from '@mantine/core';
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
+import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
 
 import { ThemeSelector } from '../Admin/ThemeSelector';
@@ -28,7 +29,7 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
         onThemeChange={onThemeChange}
       />
 
-      <Select
+      <ModalSelect
         label="Default Layout"
         description="Default layout for displaying gallery items."
         value={settings.galleryLayout}
@@ -128,7 +129,7 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
 
       <Divider label="Viewer Background" labelPosition="center" />
 
-      <Select
+      <ModalSelect
         label="Background Type"
         description="Gallery container background style"
         data={[
@@ -163,7 +164,7 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
 
       <Divider label="Auth Bar" labelPosition="center" />
 
-      <Select
+      <ModalSelect
         label="Auth Bar Display Mode"
         description="How the authentication bar appears on the page."
         data={[

@@ -1,7 +1,8 @@
-import { Box, ColorInput, Group, NumberInput, Select, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Box, ColorInput, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
 import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope } from '@/types';
 import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
+import { ModalSelect } from '@/components/Common/ModalSelect';
 import { buildGalleryConfigFromLegacySettings, cloneGalleryConfig, GALLERY_BREAKPOINTS, mergeGalleryConfig } from '@/utils/galleryConfig';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
@@ -93,7 +94,7 @@ function renderSettingFields(
 
       if (field.control === 'boolean') {
         return (
-          <Select
+          <ModalSelect
             key={`${group}-${String(field.key)}`}
             label={field.label}
             description={field.description}
@@ -133,7 +134,7 @@ function renderSettingFields(
       }
 
       return (
-        <Select
+        <ModalSelect
           key={`${group}-${String(field.key)}`}
           label={field.label}
           description={field.description}
@@ -237,7 +238,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
                 <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
                   {BREAKPOINT_LABELS[breakpoint]}
                 </Text>
-                <Select
+                <ModalSelect
                   size="xs"
                   label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
                   aria-label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
@@ -275,7 +276,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
                 <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
                   {BREAKPOINT_LABELS[breakpoint]}
                 </Text>
-                <Select
+                <ModalSelect
                   size="xs"
                   label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
                   aria-label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
@@ -283,7 +284,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
                   onChange={(value) => updateConfiguredAdapterId(breakpoint, 'image', value ?? 'classic')}
                   data={adapterOptions}
                 />
-                <Select
+                <ModalSelect
                   size="xs"
                   label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
                   aria-label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
