@@ -228,13 +228,13 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Default Layout')).toBeDefined();
   });
 
-  it('calls onClose when modal close button is clicked', async () => {
+  it('calls onClose when drawer close button is clicked', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
-    const closeButton = document.querySelector('.mantine-Modal-close') as HTMLButtonElement;
+    const closeButton = document.querySelector('.mantine-Drawer-close') as HTMLButtonElement;
     expect(closeButton).not.toBeNull();
     fireEvent.click(closeButton);
     expect(onClose).toHaveBeenCalledOnce();
@@ -749,7 +749,7 @@ describe('SettingsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Select Solarized Dark' }));
 
-    const closeButton = document.querySelector('.mantine-Modal-close') as HTMLButtonElement;
+    const closeButton = document.querySelector('.mantine-Drawer-close') as HTMLButtonElement;
     expect(closeButton).not.toBeNull();
     fireEvent.click(closeButton);
 

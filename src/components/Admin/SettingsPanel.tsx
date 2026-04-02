@@ -4,12 +4,12 @@ import {
   Accordion,
   Box,
   Button,
+  Drawer,
   Group,
   Stack,
   Loader,
   Center,
   Title,
-  Modal,
   NativeScrollArea,
   Tabs,
 } from '@mantine/core';
@@ -247,8 +247,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     revertThemePreview();
   };
 
-  const isSmallScreen = useMediaQuery('(max-width: 767px)');
-  const isExtraSmall = useMediaQuery('(max-width: 575px)');
+  const isSmallScreen = useMediaQuery('(max-width: 575px)');
 
   /** Shorthand: wrap a label with an info tooltip when tooltips are enabled. */
   const tt = (label: string, key: string) => (
@@ -281,7 +280,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   };
 
   return (
-    <Modal
+    <Drawer
       opened={opened}
       onClose={() => { revertThemePreview(); onClose(); }}
       title={
@@ -290,14 +289,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           <Title order={3}>Display Settings</Title>
         </Group>
       }
+      position="right"
       size={isSmallScreen ? '100%' : 'lg'}
-      fullScreen={!!isExtraSmall}
-      centered
       zIndex={450}
       withinPortal={false}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
-      transitionProps={{ transition: 'fade', duration: 200 }}
+      transitionProps={{ transition: 'slide-left', duration: 200 }}
       overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
       scrollAreaComponent={NativeScrollArea}
       styles={{
@@ -466,6 +464,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           </Box>
         </>
       )}
-    </Modal>
+    </Drawer>
   );
 }

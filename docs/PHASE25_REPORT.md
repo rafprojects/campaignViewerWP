@@ -23,11 +23,12 @@
 | P25-M | Fix WordPress `Campaigns > Settings` saves so SPA settings no longer appear reset to defaults | Completed ✅ | Medium (0.5-1 day) |
 | P25-N | Restore campaign card and adapter justification controls for partial rows | Completed ✅ | Small-Medium (0.25-0.5 day) |
 | P25-O | Evaluate live preview for broader visual settings beyond gallery-config editing | Proposed | Medium-Large (1-2 days) |
-| P25-P | Run a three-pass settings IA audit covering redundancy, grouping, and side-panel feasibility | Passes 1-2 complete (GPT-5.4, Claude Opus 4.6); Pass 3 pending | Large (2-3 days) |
+| P25-P | Run a three-pass settings IA audit covering redundancy, grouping, and side-panel feasibility | Completed ✅ (3 passes); implementation → P25-U | Large (2-3 days) |
 | P25-Q | Evaluate vertical justification of campaign card gallery viewports within their container | Proposed | Small-Medium (0.5 day) |
 | P25-R | Add `blur` as a background-type option across relevant background selectors | Proposed | Medium (0.5-1 day) |
 | P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
 | P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
+| P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | Planned | Large (3-5 days) |
 
 ---
 
@@ -278,7 +279,30 @@ Start with three separate analysis passes by different agents before implementat
 
 - Pass 1 completed by GPT-5.4: redundancy and overlap audit recorded in `docs/P25P_PASS1_GPT54_SETTINGS_REDUNDANCY_AUDIT.md`.
 - Pass 2 completed by Claude Opus 4.6: regrouping proposal recorded in `docs/P25P_PASS2_CLAUDE_OPUS_46_SETTINGS_REGROUP.md`.
-- Pass 3 pending: evaluate side-panel feasibility using the regrouping proposal as input.
+- Pass 3 completed by Grok: data model redundancy analysis and side-panel feasibility assessment shared via [Grok conversation](https://grok.com/share/bGVnYWN5_85bca226-4ff8-4cf6-99fd-1fb397f00a47).
+
+### Three-pass synthesis
+
+All three passes converge on the same core findings:
+
+1. **~35-40% of `GalleryBehaviorSettings` (~180 fields) is deprecated legacy projection** of `galleryConfig`. The nested model is already canonical; the flat fields inflate the TypeScript interface, defaults object, and PHP sanitizer.
+2. **`modalContentMaxWidth` is a true duplicate** — exposed in both Campaign Viewer and Advanced > Modal / Viewer.
+3. **Campaign viewer configuration is the worst-performing workflow** — 6 tabs touched to fully configure one conceptual object. Text content and styling across 5 tabs is the second worst.
+4. **The Advanced tab conflates power-user visual tuning with system/admin controls** — it should be narrowed to genuine internals.
+5. **Gallery labels, text strings, and their visibility toggles are fragmented** across 2-3 tabs each. Co-locating them with their toggles is the highest-impact IA fix.
+6. **Side-panel (Mantine Drawer) is high-feasibility / low-effort** — the existing modal body, footer, tab structure, and child sections are fully independent of modal semantics. A `<Modal>` → `<Drawer>` swap is nearly drop-in with full-screen fallback at <576px.
+
+### Resolved decisions
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| A | Tab regroup depth | Full 6-tab regroup per Pass 2 task-flow analysis |
+| B | Gallery & Media merge | Yes — merge Media Display + Gallery Layout into one tab with 9 accordions |
+| C | Modal → Drawer | Yes — include in the implementation track (low effort, high UX value) |
+| D | Data model cleanup | Separate follow-on — `CoreSettings` split and legacy bridge removal deferred |
+| E | Inline adapter quick-selectors | Convert to read-only summary with click-to-open-editor |
+
+Implementation proceeds as Track P25-U.
 
 ## Track P25-Q - Campaign Card Viewport Vertical Justification Audit
 
@@ -511,6 +535,95 @@ Reorganize the backlog into a cleaner schema, identify prune candidates for conf
 - Clear prune-candidate marking instead of silent removal.
 - Completed items moved out of the active backlog.
 - High-value items surfaced into active phase planning rather than buried in a catch-all list.
+
+## Track P25-U - Settings IA Overhaul
+
+### Problem
+
+The three-pass P25-P analysis confirmed that the Settings surface suffers from severe workflow fragmentation (campaign viewer config touches 6 tabs), scattered text/label controls, an overloaded Advanced tab, and a modal container that blocks visual context while editing. The current 7-tab structure with flat divider-based sections in General and Campaign Viewer compounds the scanability issues.
+
+### Scope
+
+Execute the regrouping proposal from P25-P Pass 2 with the Drawer conversion from Pass 3. Data model cleanup (`CoreSettings` interface split, legacy flat-field removal) is explicitly deferred to a separate follow-on track.
+
+### Implementation phases
+
+#### Phase 1: Container conversion (Modal → Drawer)
+
+1. Replace `<Modal>` with `<Drawer position="right" size="lg">` in `SettingsPanel.tsx`.
+2. Preserve footer (Save/Reset), scroll area, `hasChanges`, and `revertThemePreview` logic.
+3. Full-screen fallback at <576px via Mantine responsive prop.
+4. Verify z-index layering with campaign viewer modal stack (currently z-450).
+
+#### Phase 2: Tab restructure (7 → 6 tabs)
+
+1. Update `SettingsPanel.tsx` tab list: **Page & Theme**, **Campaign Cards**, **Gallery & Media**, **Campaign Viewer**, **System & Admin**, **Typography**.
+2. Rename `GeneralSettingsSection.tsx` → `PageThemeSettingsSection.tsx`.
+3. Create `GalleryMediaSettingsSection.tsx` composing content from `MediaDisplaySettingsSection`, `GalleryLayoutSettingsSection`, `GalleryAdapterSettingsSection`, `GalleryPresentationSections`, and `GalleryLayoutDetailSections` into 9 accordion sections.
+4. Rename `AdvancedSettingsSection.tsx` → `SystemAdminSettingsSection.tsx`.
+5. Update all `SettingsPanel` imports and conditional tab rendering.
+
+#### Phase 3: Control relocations (~25 controls)
+
+| Setting(s) | From | To | Reason |
+|---|---|---|---|
+| `galleryTitleText`, `gallerySubtitleText` | Advanced > Gallery Text | Page & Theme > Page Header | Next to `showGalleryTitle`/`showGallerySubtitle` toggles |
+| `campaignAboutHeadingText` | Advanced > Gallery Text | Campaign Viewer > Content Visibility | Next to `showCampaignAbout` toggle |
+| `modalContentMaxWidth` (Advanced copy) | Advanced > Modal / Viewer | **Deleted** | Duplicate — single owner in Campaign Viewer |
+| `modalCloseButtonBgColor`, `modalMobileBreakpoint` | Advanced > Modal / Viewer | Campaign Viewer > Modal Appearance | Modal visual chrome |
+| `galleryImageLabel`, `galleryVideoLabel`, `galleryLabelJustification`, `showGalleryLabelIcon` | Gallery Layout > Gallery Labels | Campaign Viewer > Gallery Labels | Labels are a campaign viewer feature |
+| `authBarBackdropBlur`, `authBarMobileBreakpoint` | Advanced > System | Page & Theme > Auth Bar | Auth bar visual properties |
+| Card Appearance group (8 controls) | Advanced > Card Appearance | Campaign Cards > Card Internals | Card tuning stays with cards |
+| `preserveDataOnUninstall` | Advanced > System | System & Admin > Data Maintenance | Admin lifecycle control |
+
+#### Phase 4: Structural improvements
+
+1. Add accordion structure to **Page & Theme** (flat with 6 dividers → 6 accordions: Theme & Layout, Page Container, Page Header, Page Background, Auth Bar, Security & Login).
+2. Add accordion structure to **Campaign Viewer** (flat with 6 dividers → 6 accordions: Open Mode & Sizing, Modal Appearance, Content Visibility, Gallery Labels, Modal Background, Cover Image & Responsive).
+3. Convert inline adapter quick-selectors to **read-only summary** showing current adapter per breakpoint, with click-to-open responsive editor modal.
+4. Scope-prefix duplicate labels ("Background Type" → "Page Background Type" / "Modal Background Type" / "Viewport Background Type").
+
+#### Phase 5: Verification
+
+1. Run existing test suite (`SettingsPanel.test.tsx`, `App.test.tsx`, related component tests).
+2. Run `npm run build:wp` for clean build.
+3. Manual QA: all 6 tabs render, controls function, save/load persists.
+4. Verify Drawer z-index with campaign viewer modal open.
+5. Verify adapter read-only summary opens editor correctly.
+6. Test mobile full-screen fallback at <576px.
+7. Run WordPress PHP tests for settings persistence round-trip.
+
+### Files affected
+
+| File | Change |
+|---|---|
+| `src/components/Admin/SettingsPanel.tsx` | Modal→Drawer swap, 6-tab list, updated imports |
+| `src/components/Settings/GeneralSettingsSection.tsx` | Rename to `PageThemeSettingsSection.tsx`, add accordions, gain text/auth controls |
+| `src/components/Settings/CampaignCardSettingsSection.tsx` | Gain Card Internals accordion from Advanced |
+| `src/components/Settings/CampaignViewerSettingsSection.tsx` | Add accordions, gain Gallery Labels + about heading + modal chrome controls |
+| `src/components/Settings/MediaDisplaySettingsSection.tsx` | Absorb into new `GalleryMediaSettingsSection.tsx` |
+| `src/components/Settings/GalleryLayoutSettingsSection.tsx` | Absorb into `GalleryMediaSettingsSection.tsx` |
+| `src/components/Settings/GalleryAdapterSettingsSection.tsx` | Absorb + convert to read-only summary |
+| `src/components/Settings/GalleryPresentationSections.tsx` | Absorb into `GalleryMediaSettingsSection.tsx` |
+| `src/components/Settings/GalleryLayoutDetailSections.tsx` | Absorb into `GalleryMediaSettingsSection.tsx` |
+| `src/components/Settings/AdvancedSettingsSection.tsx` | Rename to `SystemAdminSettingsSection.tsx`, lose relocated sections |
+| `src/components/Settings/TypographySettingsSection.tsx` | No changes |
+
+### Scope boundaries
+
+- **Included**: Tab regroup, control relocations, Modal→Drawer, accordion restructuring, adapter summary conversion, label disambiguation.
+- **Excluded**: Data model refactor (`CoreSettings` split), legacy bridge removal (`LEGACY_GALLERY_SETTING_KEYS`), new settings controls, typography changes. These remain candidates for a dedicated follow-on track.
+
+### Acceptance criteria
+
+- Settings opens as a right-side Drawer instead of a centered modal.
+- 6 tabs with scope-accurate names replace the current 7-tab layout.
+- Campaign viewer configuration can be fully configured without leaving Campaign Viewer + Typography (down from 6 tabs).
+- Gallery labels, text content, and their visibility toggles are co-located with their primary owner.
+- `modalContentMaxWidth` has a single owner (Campaign Viewer); the Advanced duplicate is removed.
+- General and Campaign Viewer use accordion structure consistent with all other tabs.
+- Inline adapter quick-selectors show a read-only summary with click-to-open editor.
+- All existing tests pass. Build succeeds. Settings round-trip correctly through save/load.
 
 ## Current Implementation Notes
 
