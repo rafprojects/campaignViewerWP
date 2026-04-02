@@ -133,7 +133,7 @@ const seedSettings = {
  * so waiting for it resolves too early and races against getSettings().
  */
 async function waitForTabs() {
-  await screen.findByRole('tab', { name: /General/i });
+  await screen.findByRole('tab', { name: /Page & Theme/i });
 }
 
 /** Navigate to a tab and wait for a piece of panel content to appear. */
@@ -143,12 +143,12 @@ async function clickTabAndWait(name: string, contentText: string) {
 }
 
 /**
- * Navigate to Gallery Layout → click "Edit Responsive Config".
+ * Navigate to Gallery & Media → click "Edit Responsive Config".
  * With `GalleryConfigEditorModal` mocked, the Suspense/lazy overhead is gone.
  * Returns captured `value` and `onSave` from the mock for direct inspection.
  */
 async function openResponsiveConfigEditor() {
-  fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+  fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
   await screen.findByText('Gallery Adapters');
   fireEvent.click(screen.getByRole('button', { name: 'Edit Responsive Config' }));
   await screen.findByTestId('gallery-config-editor-modal');
@@ -190,23 +190,23 @@ describe('SettingsPanel', () => {
 
     await waitForTabs();
 
-    // General tab (default) — settings visible
+    // Page & Theme tab (default) — settings visible
     expect(screen.getByText('Default Layout')).toBeDefined();
     expect(screen.getByText('Items Per Page')).toBeDefined();
 
     // Tab buttons visible
-    expect(screen.getByRole('tab', { name: /General/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Page & Theme/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /Campaign Cards/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Media Display/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Gallery & Media/i })).toBeDefined();
   });
 
-  it('shows gallery tab settings when Media Display tab is clicked', async () => {
+  it('shows gallery tab settings when Gallery & Media tab is clicked', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Display', 'Enable Lightbox');
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
 
     expect(screen.getByText('Enable Lightbox')).toBeDefined();
     expect(screen.getByText('Enable Animations')).toBeDefined();
@@ -256,7 +256,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Display', 'Enable Lightbox');
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
 
     // Toggle "Enable Lightbox" by its label
     toggleSwitchByLabel('Enable Lightbox');
@@ -283,7 +283,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Display', 'Enable Animations');
+    await clickTabAndWait('Gallery & Media', 'Enable Animations');
 
     // Toggle "Enable Animations" by its label, then reset
     toggleSwitchByLabel('Enable Animations');
@@ -637,7 +637,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Display', 'Enable Lightbox');
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
 
     toggleSwitchByLabel('Enable Lightbox');
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
@@ -649,7 +649,7 @@ describe('SettingsPanel', () => {
     });
   });
 
-  it('renders ThemeSelector on the General tab', async () => {
+  it('renders ThemeSelector on the Page & Theme tab', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
@@ -787,18 +787,18 @@ describe('SettingsPanel', () => {
 
     // Should render immediately — no loader, tabs visible synchronously
     expect(screen.getByText('Display Settings')).toBeDefined();
-    expect(screen.getByRole('tab', { name: /General/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Page & Theme/i })).toBeDefined();
     expect(screen.queryByRole('status')).toBeNull(); // no loader spinner
   });
 
-  it('toggles General tab switches to call updateSetting lambdas', async () => {
+  it('toggles Page & Theme tab switches to call updateSetting lambdas', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
 
-    // Toggle representative named switches on the General tab.
+    // Toggle representative named switches on the Page & Theme tab.
     // These all map to (e) => updateSetting(key, e.currentTarget.checked) lambdas.
     toggleSwitchByLabel('Show Gallery Title');
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
@@ -838,13 +838,13 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
-  it('shows the shared responsive gallery editor entry point on the layout tab', async () => {
+  it('shows the shared responsive gallery editor entry point on the Gallery & Media tab', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
-    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
     await screen.findByText('Gallery Adapters');
 
     expect(screen.getByRole('button', { name: 'Edit Responsive Config' })).toBeInTheDocument();
@@ -868,7 +868,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
     await screen.findByText('Gallery Adapters');
 
     expect(screen.queryByText('Gallery Selection Mode')).not.toBeInTheDocument();
@@ -895,7 +895,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
     await screen.findByText('Gallery Adapters');
 
     expect(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
@@ -917,7 +917,7 @@ describe('SettingsPanel', () => {
     );
 
     await waitForTabs();
-    fireEvent.click(screen.getByRole('tab', { name: /Gallery Layout/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
     await screen.findByText('Gallery Adapters');
 
     fireEvent.click(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' }));
@@ -1527,13 +1527,13 @@ describe('SettingsPanel', () => {
     expect(common?.adapterMaxHeightPct).toBe(90);
   });
 
-  it('interacts with Media Display tab controls', async () => {
+  it('interacts with Gallery & Media tab controls', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
-    await clickTabAndWait('Media Display', 'Enable Lightbox');
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
 
     // Toggle named switches
     toggleSwitchByLabel('Enable Lightbox');
@@ -1542,24 +1542,24 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
-  it('enables Advanced tab via advancedSettingsEnabled switch', async () => {
+  it('enables System & Admin tab via advancedSettingsEnabled switch', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
     );
 
     await waitForTabs();
 
-    // Advanced Settings Enabled switch is on the General tab.
-    // It controls visibility of the Advanced tab.
+    // Advanced Settings Enabled switch is on the Page & Theme tab.
+    // It controls visibility of the System & Admin tab.
     toggleSwitchByLabel('Enable Advanced Settings');
 
-    // The Advanced tab should now appear in the tab list.
+    // The System & Admin tab should now appear in the tab list.
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /Advanced/i })).toBeDefined();
+      expect(screen.getByRole('tab', { name: /System & Admin/i })).toBeDefined();
     });
 
     // Navigate to it
-    fireEvent.click(screen.getByRole('tab', { name: /Advanced/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /System & Admin/i }));
 
     // Save button must be enabled (advancedSettingsEnabled changed)
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();

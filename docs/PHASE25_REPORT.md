@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** March 31, 2026
-**Last updated:** April 1, 2026
+**Last updated:** April 2, 2026
 
 ### Tracks
 
@@ -28,7 +28,7 @@
 | P25-R | Add `blur` as a background-type option across relevant background selectors | Proposed | Medium (0.5-1 day) |
 | P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
 | P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
-| P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | Planned | Large (3-5 days) |
+| P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | In Progress (Phases 1a, 1b, 3 ✅) | Large (3-5 days) |
 
 ---
 

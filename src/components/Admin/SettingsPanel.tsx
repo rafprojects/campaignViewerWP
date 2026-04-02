@@ -18,7 +18,6 @@ import {
   IconPhoto,
   IconLayoutGrid,
   IconAdjustments,
-  IconColumns,
   IconTypography,
   IconEye,
 } from '@tabler/icons-react';
@@ -117,7 +116,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<SettingsData>(seedSettings);
-  const [activeTab, setActiveTab] = useState<string | null>('general');
+  const [activeTab, setActiveTab] = useState<string | null>('page-theme');
   const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const hasChangesRef = useRef(false);
@@ -312,24 +311,21 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         <Stack gap="md">
           <Tabs value={activeTab} onChange={setActiveTab}>
             <Tabs.List grow>
-              <Tabs.Tab value="general" leftSection={<IconSettings size={16} />}>
-                General
+              <Tabs.Tab value="page-theme" leftSection={<IconSettings size={16} />}>
+                Page & Theme
               </Tabs.Tab>
               <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
                 Campaign Cards
               </Tabs.Tab>
-              <Tabs.Tab value="gallery" leftSection={<IconPhoto size={16} />}>
-                Media Display
-              </Tabs.Tab>
-              <Tabs.Tab value="layout" leftSection={<IconColumns size={16} />}>
-                Gallery Layout
+              <Tabs.Tab value="gallery-media" leftSection={<IconPhoto size={16} />}>
+                Gallery & Media
               </Tabs.Tab>
               <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
                 Campaign Viewer
               </Tabs.Tab>
               {settings.advancedSettingsEnabled && (
-                <Tabs.Tab value="advanced" leftSection={<IconAdjustments size={16} />}>
-                  Advanced
+                <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
+                  System & Admin
                 </Tabs.Tab>
               )}
               <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
@@ -337,9 +333,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               </Tabs.Tab>
             </Tabs.List>
 
-            {/* ── General Tab ───────────────────────────────────── */}
-            <Tabs.Panel value="general" pt="md">
-              {activeTab === 'general' && (
+            {/* ── Page & Theme Tab ───────────────────────────────────── */}
+            <Tabs.Panel value="page-theme" pt="md">
+              {activeTab === 'page-theme' && (
                 <GeneralSettingsSection
                   settings={settings}
                   updateSetting={updateSetting}
@@ -360,26 +356,21 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               )}
             </Tabs.Panel>
 
-            {/* ── Media Display Tab ─────────────────────────── */}
-            <Tabs.Panel value="gallery" pt="md">
-              {activeTab === 'gallery' && (
-                <MediaDisplaySettingsSection
-                  settings={settings}
-                  updateSetting={updateSetting}
-                  tooltipLabel={tt}
-                />
-              )}
-            </Tabs.Panel>
-
-
-            {/* ── Gallery Layout Tab ────────────────────────── */}
-            <Tabs.Panel value="layout" pt="md">
-              {activeTab === 'layout' && (
-                <GalleryLayoutSettingsSection
-                  settings={settings}
-                  updateSetting={updateGallerySetting}
-                  onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
-                />
+            {/* ── Gallery & Media Tab ───────────────────────── */}
+            <Tabs.Panel value="gallery-media" pt="md">
+              {activeTab === 'gallery-media' && (
+                <Stack gap="lg">
+                  <MediaDisplaySettingsSection
+                    settings={settings}
+                    updateSetting={updateSetting}
+                    tooltipLabel={tt}
+                  />
+                  <GalleryLayoutSettingsSection
+                    settings={settings}
+                    updateSetting={updateGallerySetting}
+                    onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
+                  />
+                </Stack>
               )}
             </Tabs.Panel>
 
@@ -394,8 +385,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             </Tabs.Panel>
 
             {settings.advancedSettingsEnabled && (
-              <Tabs.Panel value="advanced" pt="md">
-                {activeTab === 'advanced' && (
+              <Tabs.Panel value="system-admin" pt="md">
+                {activeTab === 'system-admin' && (
                   <AdvancedSettingsSection
                     settings={settings}
                     updateSetting={updateGallerySetting}
