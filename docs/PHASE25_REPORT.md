@@ -28,7 +28,7 @@
 | P25-R | Add `blur` as a background-type option across relevant background selectors | Proposed | Medium (0.5-1 day) |
 | P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
 | P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
-| P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | In Progress (Phases 1a, 1b, 3 ✅) | Large (3-5 days) |
+| P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | In Progress (Phases 1a, 1b, 3, 2, 4 ✅) | Large (3-5 days) |
 
 ---
 
@@ -593,12 +593,12 @@ All planned relocations complete across two commits (Phase 3a + 3b).
 - "Gallery Labels" accordion removed from GalleryPresentationSections
 - Advanced reduced from 10 to 7 accordion items
 
-#### Phase 4: Structural improvements
+#### Phase 4: Structural improvements ✅ (items 1, 2, 4) / deferred (item 3)
 
-1. Add accordion structure to **Page & Theme** (flat with 6 dividers → 6 accordions: Theme & Layout, Page Container, Page Header, Page Background, Auth Bar, Security & Login).
-2. Add accordion structure to **Campaign Viewer** (flat with 6 dividers → 6 accordions: Open Mode & Sizing, Modal Appearance, Content Visibility, Gallery Labels, Modal Background, Cover Image & Responsive).
-3. Convert inline adapter quick-selectors to **read-only summary** showing current adapter per breakpoint, with click-to-open responsive editor modal.
-4. Scope-prefix duplicate labels ("Background Type" → "Page Background Type" / "Modal Background Type" / "Viewport Background Type").
+1. ✅ Add accordion structure to **Page & Theme** (flat with 6 dividers → 6 accordions: Theme & Layout, Page Container, Page Header, Page Background, Auth Bar, Security & Login).
+2. ✅ Add accordion structure to **Campaign Viewer** (flat with 7 dividers → 6 accordions: Open Mode & Sizing, Modal Appearance, Content Visibility, Gallery Labels, Modal Background, Cover Image & Responsive).
+3. _Deferred_ — Convert inline adapter quick-selectors to **read-only summary** showing current adapter per breakpoint, with click-to-open responsive editor modal. (Requires deeper refactor of GalleryAdapterSettingsSection; scheduled as a separate follow-on.)
+4. ✅ Scope-prefix duplicate labels ("Background Type" → "Page Background Type" / "Modal Background Type").
 
 #### Phase 5: Verification
 
