@@ -20,104 +20,10 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
         across all gallery components. Change with care.
       </Text>
       <Accordion variant="separated">
-        <Accordion.Item value="adv-card">
-          <Accordion.Control>Card Appearance</Accordion.Control>
+        <Accordion.Item value="adv-drawer">
+          <Accordion.Control>Settings Drawer</Accordion.Control>
           <Accordion.Panel>
             <Stack gap="md">
-              <Text size="sm" fw={500}>{tooltipLabel('Locked Card Opacity', 'cardLockedOpacity')}</Text>
-              <Slider
-                value={settings.cardLockedOpacity}
-                onChange={(value) => updateSetting('cardLockedOpacity', value)}
-                min={0}
-                max={1}
-                step={0.05}
-                marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
-              />
-              <Text size="sm" fw={500}>{tooltipLabel('Gradient Start Opacity', 'cardGradientStartOpacity')}</Text>
-              <Slider
-                value={settings.cardGradientStartOpacity}
-                onChange={(value) => updateSetting('cardGradientStartOpacity', value)}
-                min={0}
-                max={1}
-                step={0.05}
-              />
-              <Text size="sm" fw={500}>{tooltipLabel('Gradient End Opacity', 'cardGradientEndOpacity')}</Text>
-              <Slider
-                value={settings.cardGradientEndOpacity}
-                onChange={(value) => updateSetting('cardGradientEndOpacity', value)}
-                min={0}
-                max={1}
-                step={0.05}
-              />
-              <NumberInput
-                label={tooltipLabel('Lock Icon Size (px)', 'cardLockIconSize')}
-                value={settings.cardLockIconSize}
-                onChange={(value) => updateSetting('cardLockIconSize', typeof value === 'number' ? value : 32)}
-                min={12}
-                max={64}
-              />
-              <NumberInput
-                label={tooltipLabel('Access Icon Size (px)', 'cardAccessIconSize')}
-                value={settings.cardAccessIconSize}
-                onChange={(value) => updateSetting('cardAccessIconSize', typeof value === 'number' ? value : 14)}
-                min={8}
-                max={32}
-              />
-              <NumberInput
-                label={tooltipLabel('Badge Offset Y (px)', 'cardBadgeOffsetY')}
-                value={settings.cardBadgeOffsetY}
-                onChange={(value) => updateSetting('cardBadgeOffsetY', typeof value === 'number' ? value : 8)}
-                min={0}
-                max={32}
-              />
-              <NumberInput
-                label={tooltipLabel('Company Badge Max Width (px)', 'cardCompanyBadgeMaxWidth')}
-                value={settings.cardCompanyBadgeMaxWidth}
-                onChange={(value) => updateSetting('cardCompanyBadgeMaxWidth', typeof value === 'number' ? value : 160)}
-                min={60}
-                max={400}
-              />
-              <NumberInput
-                label={tooltipLabel('Thumbnail Hover Transition (ms)', 'cardThumbnailHoverTransitionMs')}
-                value={settings.cardThumbnailHoverTransitionMs}
-                onChange={(value) => updateSetting('cardThumbnailHoverTransitionMs', typeof value === 'number' ? value : 300)}
-                min={0}
-                max={1000}
-              />
-              <Text size="sm" fw={500}>{tooltipLabel('Page Transition Opacity', 'cardPageTransitionOpacity')}</Text>
-              <Slider
-                value={settings.cardPageTransitionOpacity}
-                onChange={(value) => updateSetting('cardPageTransitionOpacity', value)}
-                min={0}
-                max={1}
-                step={0.05}
-              />
-              <TextInput
-                label={tooltipLabel('Auto Columns Breakpoints', 'cardAutoColumnsBreakpoints')}
-                description="Format: 480:1,768:2,1024:3,1280:4"
-                value={settings.cardAutoColumnsBreakpoints}
-                onChange={(event) => updateSetting('cardAutoColumnsBreakpoints', event.currentTarget.value)}
-              />
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
-
-        <Accordion.Item value="adv-modal">
-          <Accordion.Control>Modal / Viewer</Accordion.Control>
-          <Accordion.Panel>
-            <Stack gap="md">
-              <TextInput
-                label={tooltipLabel('Close Button Background', 'modalCloseButtonBgColor')}
-                value={settings.modalCloseButtonBgColor}
-                onChange={(event) => updateSetting('modalCloseButtonBgColor', event.currentTarget.value)}
-              />
-              <NumberInput
-                label={tooltipLabel('Mobile Breakpoint (px)', 'modalMobileBreakpoint')}
-                value={settings.modalMobileBreakpoint}
-                onChange={(value) => updateSetting('modalMobileBreakpoint', typeof value === 'number' ? value : 768)}
-                min={320}
-                max={1280}
-              />
               <Switch
                 label={tooltipLabel('Settings Drawer Backdrop Blur', 'settingsDrawerBlurEnabled')}
                 description="When enabled, content behind open settings drawers is blurred."
@@ -326,14 +232,7 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
               <NumberInput label={tooltipLabel('Admin Search Debounce (ms)', 'adminSearchDebounceMs')} value={settings.adminSearchDebounceMs} onChange={(value) => updateSetting('adminSearchDebounceMs', typeof value === 'number' ? value : 300)} min={0} max={2000} />
               <NumberInput label={tooltipLabel('Min Password Length', 'loginMinPasswordLength')} value={settings.loginMinPasswordLength} onChange={(value) => updateSetting('loginMinPasswordLength', typeof value === 'number' ? value : 1)} min={1} max={32} />
               <NumberInput label={tooltipLabel('Login Form Max Width (px)', 'loginFormMaxWidth')} value={settings.loginFormMaxWidth} onChange={(value) => updateSetting('loginFormMaxWidth', typeof value === 'number' ? value : 400)} min={200} max={800} />
-              <NumberInput label={tooltipLabel('Auth Bar Backdrop Blur (px)', 'authBarBackdropBlur')} value={settings.authBarBackdropBlur} onChange={(value) => updateSetting('authBarBackdropBlur', typeof value === 'number' ? value : 8)} min={0} max={24} />
-              <NumberInput label={tooltipLabel('Auth Bar Mobile Breakpoint (px)', 'authBarMobileBreakpoint')} value={settings.authBarMobileBreakpoint} onChange={(value) => updateSetting('authBarMobileBreakpoint', typeof value === 'number' ? value : 768)} min={320} max={1280} />
-              <Switch
-                label={tooltipLabel('Preserve data on plugin removal', 'preserveDataOnUninstall')}
-                description="When enabled, all campaigns, templates, analytics, and uploaded files are kept if you uninstall the plugin."
-                checked={settings.preserveDataOnUninstall ?? false}
-                onChange={(event) => updateSetting('preserveDataOnUninstall', event.currentTarget.checked)}
-              />
+
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>
@@ -365,6 +264,12 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
                 onChange={(value) => updateSetting('analyticsRetentionDays', typeof value === 'number' ? value : 0)}
                 min={0}
                 max={730}
+              />
+              <Switch
+                label={tooltipLabel('Preserve data on plugin removal', 'preserveDataOnUninstall')}
+                description="When enabled, all campaigns, templates, analytics, and uploaded files are kept if you uninstall the plugin."
+                checked={settings.preserveDataOnUninstall ?? false}
+                onChange={(event) => updateSetting('preserveDataOnUninstall', event.currentTarget.checked)}
               />
             </Stack>
           </Accordion.Panel>

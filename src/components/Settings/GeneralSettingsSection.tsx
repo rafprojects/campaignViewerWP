@@ -199,6 +199,22 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
           max={64}
         />
       )}
+      <NumberInput
+        label="Auth Bar Backdrop Blur (px)"
+        description="Blur intensity for the auth bar backdrop."
+        value={settings.authBarBackdropBlur}
+        onChange={(value) => updateSetting('authBarBackdropBlur', typeof value === 'number' ? value : 8)}
+        min={0}
+        max={24}
+      />
+      <NumberInput
+        label="Auth Bar Mobile Breakpoint (px)"
+        description="Viewport width below which the auth bar uses mobile layout."
+        value={settings.authBarMobileBreakpoint}
+        onChange={(value) => updateSetting('authBarMobileBreakpoint', typeof value === 'number' ? value : 768)}
+        min={320}
+        max={1280}
+      />
 
       <Divider label="Security" labelPosition="center" />
 

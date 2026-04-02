@@ -1,4 +1,4 @@
-import { Accordion, ColorInput, Stack, Switch, TextInput } from '@mantine/core';
+import { Accordion, ColorInput, Stack, TextInput } from '@mantine/core';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 
 import type { GalleryBehaviorSettings, ViewportBgType } from '@/types';
@@ -121,43 +121,6 @@ export function GalleryPresentationSections({ settings, updateSetting }: Gallery
               onBgColorChange={(value) => updateSetting('unifiedBgColor', value)}
               onBgGradientChange={(value) => updateSetting('unifiedBgGradient', value)}
               onBgImageChange={(value) => updateSetting('unifiedBgImageUrl', value)}
-            />
-          </Stack>
-        </Accordion.Panel>
-      </Accordion.Item>
-
-      <Accordion.Item value="gallery-labels">
-        <Accordion.Control>Gallery Labels</Accordion.Control>
-        <Accordion.Panel>
-          <Stack gap="md">
-            <TextInput
-              label="Image Gallery Label"
-              description="Custom label for image gallery sections. Count is appended automatically."
-              value={settings.galleryImageLabel ?? 'Images'}
-              onChange={(event) => updateSetting('galleryImageLabel', event.currentTarget.value)}
-            />
-            <TextInput
-              label="Video Gallery Label"
-              description="Custom label for video gallery sections. Count is appended automatically."
-              value={settings.galleryVideoLabel ?? 'Videos'}
-              onChange={(event) => updateSetting('galleryVideoLabel', event.currentTarget.value)}
-            />
-            <ModalSelect
-              label="Label Justification"
-              description="Horizontal alignment for gallery section labels"
-              data={[
-                { value: 'left', label: 'Left' },
-                { value: 'center', label: 'Center' },
-                { value: 'right', label: 'Right' },
-              ]}
-              value={settings.galleryLabelJustification ?? 'left'}
-              onChange={(value) => updateSetting('galleryLabelJustification', (value ?? 'left') as GalleryBehaviorSettings['galleryLabelJustification'])}
-            />
-            <Switch
-              label="Show Gallery Label Icon"
-              description="Display an icon prefix before each gallery section label"
-              checked={settings.showGalleryLabelIcon ?? false}
-              onChange={(event) => updateSetting('showGalleryLabelIcon', event.currentTarget.checked)}
             />
           </Stack>
         </Accordion.Panel>

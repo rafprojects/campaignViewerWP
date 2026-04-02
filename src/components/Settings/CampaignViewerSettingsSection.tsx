@@ -204,6 +204,38 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
         onChange={(event) => updateSetting('showCampaignGalleryLabels', event.currentTarget.checked)}
       />
 
+      <Divider label="Gallery Labels" labelPosition="center" />
+
+      <TextInput
+        label="Image Gallery Label"
+        description="Custom label for image gallery sections. Count is appended automatically."
+        value={settings.galleryImageLabel ?? 'Images'}
+        onChange={(event) => updateSetting('galleryImageLabel', event.currentTarget.value)}
+      />
+      <TextInput
+        label="Video Gallery Label"
+        description="Custom label for video gallery sections. Count is appended automatically."
+        value={settings.galleryVideoLabel ?? 'Videos'}
+        onChange={(event) => updateSetting('galleryVideoLabel', event.currentTarget.value)}
+      />
+      <ModalSelect
+        label="Label Justification"
+        description="Horizontal alignment for gallery section labels"
+        data={[
+          { value: 'left', label: 'Left' },
+          { value: 'center', label: 'Center' },
+          { value: 'right', label: 'Right' },
+        ]}
+        value={settings.galleryLabelJustification ?? 'left'}
+        onChange={(value) => updateSetting('galleryLabelJustification', (value ?? 'left') as GalleryBehaviorSettings['galleryLabelJustification'])}
+      />
+      <Switch
+        label="Show Gallery Label Icon"
+        description="Display an icon prefix before each gallery section label"
+        checked={settings.showGalleryLabelIcon ?? false}
+        onChange={(event) => updateSetting('showGalleryLabelIcon', event.currentTarget.checked)}
+      />
+
       <Divider label="Modal Background (Fullscreen)" labelPosition="center" />
 
       <ModalSelect
@@ -260,6 +292,20 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
         onChange={(value) => updateSetting('modalCloseButtonSize', typeof value === 'number' ? value : 36)}
         min={20}
         max={64}
+      />
+      <TextInput
+        label="Close Button Background"
+        description="CSS color for the close button background (e.g. rgba(0,0,0,0.5))."
+        value={settings.modalCloseButtonBgColor}
+        onChange={(event) => updateSetting('modalCloseButtonBgColor', event.currentTarget.value)}
+      />
+      <NumberInput
+        label="Mobile Breakpoint (px)"
+        description="Viewport width below which the campaign viewer switches to mobile layout."
+        value={settings.modalMobileBreakpoint}
+        onChange={(value) => updateSetting('modalMobileBreakpoint', typeof value === 'number' ? value : 768)}
+        min={320}
+        max={1280}
       />
       <Text size="sm" fw={500}>Description Line Height</Text>
       <Slider

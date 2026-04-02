@@ -1,4 +1,4 @@
-import { Accordion, ColorInput, Divider, NumberInput, Stack, Switch } from '@mantine/core';
+import { Accordion, ColorInput, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 
 import type { GalleryBehaviorSettings } from '@/types';
@@ -286,6 +286,88 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
                 />
               </>
             )}
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+
+      <Accordion.Item value="card-internals">
+        <Accordion.Control>Card Internals</Accordion.Control>
+        <Accordion.Panel>
+          <Stack gap="md">
+            <Text size="sm" fw={500}>Locked Card Opacity</Text>
+            <Slider
+              value={settings.cardLockedOpacity}
+              onChange={(value) => updateSetting('cardLockedOpacity', value)}
+              min={0}
+              max={1}
+              step={0.05}
+              marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
+            />
+            <Text size="sm" fw={500}>Gradient Start Opacity</Text>
+            <Slider
+              value={settings.cardGradientStartOpacity}
+              onChange={(value) => updateSetting('cardGradientStartOpacity', value)}
+              min={0}
+              max={1}
+              step={0.05}
+            />
+            <Text size="sm" fw={500}>Gradient End Opacity</Text>
+            <Slider
+              value={settings.cardGradientEndOpacity}
+              onChange={(value) => updateSetting('cardGradientEndOpacity', value)}
+              min={0}
+              max={1}
+              step={0.05}
+            />
+            <NumberInput
+              label="Lock Icon Size (px)"
+              value={settings.cardLockIconSize}
+              onChange={(value) => updateSetting('cardLockIconSize', typeof value === 'number' ? value : 32)}
+              min={12}
+              max={64}
+            />
+            <NumberInput
+              label="Access Icon Size (px)"
+              value={settings.cardAccessIconSize}
+              onChange={(value) => updateSetting('cardAccessIconSize', typeof value === 'number' ? value : 14)}
+              min={8}
+              max={32}
+            />
+            <NumberInput
+              label="Badge Offset Y (px)"
+              value={settings.cardBadgeOffsetY}
+              onChange={(value) => updateSetting('cardBadgeOffsetY', typeof value === 'number' ? value : 8)}
+              min={0}
+              max={32}
+            />
+            <NumberInput
+              label="Company Badge Max Width (px)"
+              value={settings.cardCompanyBadgeMaxWidth}
+              onChange={(value) => updateSetting('cardCompanyBadgeMaxWidth', typeof value === 'number' ? value : 160)}
+              min={60}
+              max={400}
+            />
+            <NumberInput
+              label="Thumbnail Hover Transition (ms)"
+              value={settings.cardThumbnailHoverTransitionMs}
+              onChange={(value) => updateSetting('cardThumbnailHoverTransitionMs', typeof value === 'number' ? value : 300)}
+              min={0}
+              max={1000}
+            />
+            <Text size="sm" fw={500}>Page Transition Opacity</Text>
+            <Slider
+              value={settings.cardPageTransitionOpacity}
+              onChange={(value) => updateSetting('cardPageTransitionOpacity', value)}
+              min={0}
+              max={1}
+              step={0.05}
+            />
+            <TextInput
+              label="Auto Columns Breakpoints"
+              description="Format: 480:1,768:2,1024:3,1280:4"
+              value={settings.cardAutoColumnsBreakpoints}
+              onChange={(event) => updateSetting('cardAutoColumnsBreakpoints', event.currentTarget.value)}
+            />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>

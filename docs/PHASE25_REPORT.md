@@ -572,25 +572,26 @@ Execute the regrouping proposal from P25-P Pass 2 with the Drawer conversion fro
 4. Rename `AdvancedSettingsSection.tsx` → `SystemAdminSettingsSection.tsx`.
 5. Update all `SettingsPanel` imports and conditional tab rendering.
 
-#### Phase 3: Control relocations (~25 controls)
+#### Phase 3: Control relocations (~25 controls) ✅
 
-Partially complete — text co-location and duplicate deletion done first as a quick win.
+All planned relocations complete across two commits (Phase 3a + 3b).
 
-**Done:**
+**Phase 3a (d4cd855):**
 - `galleryTitleText`, `gallerySubtitleText` moved to General > Viewer Header Visibility (next to their show/hide toggles)
 - `campaignAboutHeadingText` moved to Campaign Viewer > Visibility (next to `showCampaignAbout` toggle)
 - `modalContentMaxWidth` duplicate deleted from Advanced > Modal / Viewer (single owner remains in Campaign Viewer)
 - "Gallery Text" accordion removed from Advanced (now empty)
 
-**Remaining:**
-
-| Setting(s) | From | To | Reason |
-|---|---|---|---|
-| `modalCloseButtonBgColor`, `modalMobileBreakpoint` | Advanced > Modal / Viewer | Campaign Viewer > Modal Appearance | Modal visual chrome |
-| `galleryImageLabel`, `galleryVideoLabel`, `galleryLabelJustification`, `showGalleryLabelIcon` | Gallery Layout > Gallery Labels | Campaign Viewer > Gallery Labels | Labels are a campaign viewer feature |
-| `authBarBackdropBlur`, `authBarMobileBreakpoint` | Advanced > System | Page & Theme > Auth Bar | Auth bar visual properties |
-| Card Appearance group (8 controls) | Advanced > Card Appearance | Campaign Cards > Card Internals | Card tuning stays with cards |
-| `preserveDataOnUninstall` | Advanced > System | System & Admin > Data Maintenance | Admin lifecycle control |
+**Phase 3b:**
+- `modalCloseButtonBgColor`, `modalMobileBreakpoint` moved from Advanced > Modal / Viewer to Campaign Viewer > Modal Controls
+- `galleryImageLabel`, `galleryVideoLabel`, `galleryLabelJustification`, `showGalleryLabelIcon` moved from Gallery Layout > Gallery Labels to Campaign Viewer > Gallery Labels (new divider section)
+- `authBarBackdropBlur`, `authBarMobileBreakpoint` moved from Advanced > System to General > Auth Bar
+- Card Appearance group (10 controls: cardLockedOpacity, cardGradientStartOpacity, cardGradientEndOpacity, cardLockIconSize, cardAccessIconSize, cardBadgeOffsetY, cardCompanyBadgeMaxWidth, cardThumbnailHoverTransitionMs, cardPageTransitionOpacity, cardAutoColumnsBreakpoints) moved from Advanced > Card Appearance to Campaign Cards > Card Internals (new accordion item)
+- `preserveDataOnUninstall` moved from Advanced > System to Advanced > Data Maintenance
+- "Card Appearance" accordion removed from Advanced (now empty)
+- "Modal / Viewer" accordion renamed to "Settings Drawer" (only `settingsDrawerBlurEnabled` remains)
+- "Gallery Labels" accordion removed from GalleryPresentationSections
+- Advanced reduced from 10 to 7 accordion items
 
 #### Phase 4: Structural improvements
 
