@@ -46,6 +46,16 @@ export default defineConfig({
     exclude: ['e2e/**', 'node_modules/**'],
     testTimeout: 60000,
     hookTimeout: 60000,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        // Cap concurrent workers to avoid OOM/hang when heavyweight jsdom
+        // test files (GalleryConfigEditorModal, SettingsPanel, AdminPanel)
+        // all run in parallel on the default 8-CPU thread count.
+        minForks: 2,
+        maxForks: 4,
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
