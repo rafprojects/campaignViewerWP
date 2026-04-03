@@ -269,6 +269,37 @@ class WPSG_Settings_Sanitizer {
         return preg_match('/^[a-zA-Z-]+$/', $value) === 1;
     }
 
+    // ------------------------------------------------------------------
+    // CSS unit validation
+    // ------------------------------------------------------------------
+
+    /** @var string[] Allowed width units. */
+    private static $width_units = ['px', '%', 'vw', 'em', 'rem'];
+
+    /** @var string[] Allowed height units (includes dynamic viewport). */
+    private static $height_units = ['px', '%', 'vh', 'dvh', 'svh', 'lvh', 'em', 'rem'];
+
+    /** @var string[] Allowed spacing units. */
+    private static $spacing_units = ['px', 'em', 'rem', '%'];
+
+    /** @var string[] Allowed offset units. */
+    private static $offset_units = ['px', 'em', 'rem', '%', 'vw', 'vh'];
+
+    /** @var string[] Allowed border-radius units. */
+    private static $border_radius_units = ['px', '%', 'em', 'rem'];
+
+    /**
+     * Sanitize a CSS unit value against an allowed list.
+     *
+     * @param mixed    $value         Raw unit string.
+     * @param string[] $allowed_units Allowlist (e.g. self::$width_units).
+     * @return string Validated unit, defaults to 'px' if invalid.
+     */
+    private static function sanitize_css_unit($value, $allowed_units) {
+        $value = is_string($value) ? strtolower(trim($value)) : '';
+        return in_array($value, $allowed_units, true) ? $value : 'px';
+    }
+
     /**
      * Sanitize settings before saving.
      *
