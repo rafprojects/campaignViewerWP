@@ -218,6 +218,8 @@ export function CardGallery({
   const containerPaddingStyle = { paddingInline: galleryBehaviorSettings.appPadding };
   const hasFixedCardWidth = galleryBehaviorSettings.cardMaxWidth > 0;
   const cardGridJustification = galleryBehaviorSettings.cardJustifyContent || 'center';
+  const cardGridVerticalAlign = galleryBehaviorSettings.cardGalleryVerticalAlign || 'start';
+  const cardGridMinHeight = galleryBehaviorSettings.cardGalleryMinHeight || 0;
   const responsiveCardWidth = useMemo(() => {
     if (effectiveColumns <= 1) {
       return '100%';
@@ -399,6 +401,8 @@ export function CardGallery({
                 flexWrap: 'wrap',
                 gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
                 justifyContent: cardGridJustification,
+                alignContent: cardGridVerticalAlign,
+                ...(cardGridMinHeight > 0 ? { minHeight: cardGridMinHeight } : {}),
                 width: '100%',
                 ...(hasFixedCardWidth && galleryBehaviorSettings.cardMaxWidthUnit !== '%' ? {
                   maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,

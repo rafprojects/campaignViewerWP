@@ -844,6 +844,9 @@ export interface GalleryBehaviorSettings {
   // P22-P7: Card width responsive unit & last-row justification
   cardMaxWidthUnit: 'px' | '%';
   cardJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
+  // P25-Q: Card gallery vertical justification
+  cardGalleryVerticalAlign: 'start' | 'center' | 'end';
+  cardGalleryMinHeight: number;
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: number;
   adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
@@ -1204,6 +1207,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P22-P7: Card width responsive unit & last-row justification
   cardMaxWidthUnit: 'px',
   cardJustifyContent: 'center',
+  // P25-Q: Card gallery vertical justification
+  cardGalleryVerticalAlign: 'start',
+  cardGalleryMinHeight: 0,
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: 16,
   adapterJustifyContent: 'center',

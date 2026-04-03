@@ -197,6 +197,27 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               value={settings.cardJustifyContent ?? 'center'}
               onChange={(value) => updateSetting('cardJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['cardJustifyContent'])}
             />
+            <ModalSelect
+              label="Vertical Alignment"
+              description="How the card grid aligns vertically when minimum height exceeds content height."
+              data={[
+                { value: 'start', label: 'Top' },
+                { value: 'center', label: 'Center' },
+                { value: 'end', label: 'Bottom' },
+              ]}
+              value={settings.cardGalleryVerticalAlign ?? 'start'}
+              onChange={(value) => updateSetting('cardGalleryVerticalAlign', (value ?? 'start') as GalleryBehaviorSettings['cardGalleryVerticalAlign'])}
+            />
+            <NumberInput
+              label="Grid Minimum Height (px)"
+              description="Minimum height for the card grid container. Vertical alignment only takes effect when the grid is taller than its content."
+              value={settings.cardGalleryMinHeight}
+              onChange={(value) => updateSetting('cardGalleryMinHeight', typeof value === 'number' ? value : 0)}
+              min={0}
+              max={1200}
+              step={50}
+              placeholder="0 = no minimum"
+            />
             {settings.cardMaxWidth > 0 && (
               <ModalSelect
                 label="Card Max Width Unit"

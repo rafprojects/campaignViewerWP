@@ -16,20 +16,21 @@
 | P25-F | Restore true per-breakpoint adapter selection in the shared gallery-config editor | Completed ✅ | Medium (0.5 day) |
 | P25-G | Raise the shared Manage Media modal above the campaign viewer stack | Completed ✅ | Small (0.25 day) |
 | P25-H | Reorganize Campaign Gallery Config into accordions and only expose adapter settings for explicit overrides | Completed ✅ | Medium (0.5 day) |
-| P25-I | Add campaign card image-resolution controls for thumbnail imagery | Planned | Medium (0.5-1 day) |
+| P25-I | Add campaign card image-resolution controls with srcset for WP media sizes | Planned | Medium (0.5-1 day) |
 | P25-J | Stabilize carousel multi-card focus and smooth small-set looping | Completed ✅ | Medium (0.5 day) |
-| P25-K | Audit remaining carousel autoplay and advanced loop behavior in modal contexts | Planned | Medium (0.5 day) |
-| P25-L | Add carousel card aspect-ratio and image-fit controls for image slides | Planned | Medium-Large (1-2 days) |
+| P25-K | Fix carousel autoplay lifecycle: lightbox pause, synthetic-loop conflict, test coverage | Planned | Medium (0.5 day) |
+| P25-L | Add carousel image-fit and aspect-ratio controls for both image and video slides | Planned | Medium-Large (1-2 days) |
 | P25-M | Fix WordPress `Campaigns > Settings` saves so SPA settings no longer appear reset to defaults | Completed ✅ | Medium (0.5-1 day) |
 | P25-N | Restore campaign card and adapter justification controls for partial rows | Completed ✅ | Small-Medium (0.25-0.5 day) |
 | P25-O | Evaluate live preview for broader visual settings beyond gallery-config editing | Proposed | Medium-Large (1-2 days) |
 | P25-P | Run a three-pass settings IA audit covering redundancy, grouping, and side-panel feasibility | Completed ✅ (3 passes); implementation → P25-U | Large (2-3 days) |
-| P25-Q | Evaluate vertical justification of campaign card gallery viewports within their container | Proposed | Small-Medium (0.5 day) |
-| P25-R | Add `blur` as a background-type option across relevant background selectors | Proposed | Medium (0.5-1 day) |
+| P25-Q | Add vertical justification controls for campaign card gallery grid | Completed ✅ | Small-Medium (0.25-0.5 day) |
+| P25-R | Add `blur` as a background-type option with backdrop-blur and image-blur modes | Planned | Medium (0.5-1 day) |
 | P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
 | P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
 | P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | Completed ✅ | Large (3-5 days) |
 | P25-V | Stabilize heavyweight Vitest suites by reducing hidden DOM work and documenting worker timeout failure modes | Completed ✅ | Medium (0.5-1 day) |
+| P25-W | Add batch media upload with parallel file handling and per-file progress | Planned | Medium-Large (1-2 days) |
 
 ---
 
@@ -190,11 +191,33 @@ Reorganize the shared campaign gallery editor into accordion sections and only e
 
 ### Problem
 
-Card thumbnail tuning still lacks a dedicated image-resolution control path, which makes it harder to intentionally trade off fidelity against payload size for image-heavy galleries.
+Card thumbnail tuning still lacks a dedicated image-resolution control path, which makes it harder to intentionally trade off fidelity against payload size for image-heavy galleries. The REST API currently returns a single `thumbnail` URL via `wp_get_attachment_url()`, and `CampaignCard` renders it as a plain `<Image src={url}>` with no `srcset` or resolution awareness.
 
-### Proposed direction
+### Current state
 
-Add an image-only card-thumbnail resolution selector with common presets plus a custom path, scoped to card imagery rather than videos.
+WordPress already generates multiple image sizes for uploaded attachments, including two custom registered sizes (`wpsg_gallery` 400×400, `wpsg_thumb` 400×400) plus the standard `thumbnail`, `medium`, `large`, and `full` sizes. The campaign REST response only returns one URL, so the browser has no opportunity to pick an appropriate resolution.
+
+### Planned implementation
+
+1. **Extend REST API**: Modify `format_campaign()` in `class-wpsg-rest.php` to return a `thumbnails` map alongside the existing `thumbnail` field. Use `wp_get_attachment_image_src()` for each registered WP size (`thumbnail`, `medium`, `large`, `full`) and include dimensions. The existing `thumbnail` field stays for backward compatibility.
+2. **Update Campaign type**: Add optional `thumbnails?: Record<string, { url: string; width: number; height: number }>` to the TypeScript `Campaign` interface.
+3. **Add setting**: `cardThumbnailResolution: 'auto' | 'thumbnail' | 'medium' | 'large' | 'full'` (default: `'auto'`). Named sizes map directly to WP sizes. The `'auto'` mode uses `srcset` (see below).
+4. **Generate `srcset`**: In `CampaignCard.tsx`, when `cardThumbnailResolution === 'auto'` and `campaign.thumbnails` is available, build an HTML `srcset` attribute from the available sizes so the browser natively picks the best match for the rendered card dimensions. Also set a `sizes` attribute based on the card's rendered width. When a specific size is selected, use that URL directly without `srcset`.
+5. **Fallback**: Campaigns with external URLs or older API responses that lack `thumbnails` fall back gracefully to the existing `campaign.thumbnail` field with no `srcset`.
+6. **Settings UI**: Add a resolution selector in `CampaignCardSettingsSection.tsx` under the Card Appearance accordion.
+7. **PHP chain**: Add `card_thumbnail_resolution` to the settings registry defaults and sanitizer.
+
+### Risk assessment for srcset
+
+Adding `srcset` to Mantine's `<Image>` is safe: the attribute passes through to the underlying `<img>` element via spread props. The `thumbnails` object is purely additive to the REST response. Browsers that do not support `srcset` ignore it and use `src` as normal. External-URL campaigns are unaffected because `srcset` is only generated when WP size variants are present. No breakage risk.
+
+### Acceptance criteria
+
+- REST API returns `thumbnails` map with available WP size variants and their dimensions.
+- `auto` mode generates `srcset` + `sizes` so the browser picks the optimal resolution.
+- Named size modes (`thumbnail`, `medium`, `large`, `full`) use the corresponding URL directly.
+- External-URL campaigns fall back to the existing single `thumbnail` field.
+- Settings persist and round-trip through save/load and REST API.
 
 ## Track P25-J - Carousel Multi-Card Focus and Small-Set Looping COMPLETE
 
@@ -212,25 +235,75 @@ Treat the centered slide as the active item in multi-card mode, keep arrow/dot n
 - Small multi-card sets can still wrap cleanly without exposing empty trailing frames.
 - The synthetic last-to-first wrap completes with a smooth visible transition before the invisible recenter occurs.
 
-## Track P25-K - Carousel Autoplay Audit
+## Track P25-K - Carousel Autoplay Audit and Fixes
 
 ### Problem
 
 QA still reports autoplay inconsistency in some modal/tablet contexts, which needs an isolated pass now that breakpoint resolution and basic multi-card guardrails are in better shape.
 
-### Proposed direction
+### Audit findings
 
-Audit Embla autoplay behavior with the current modal viewer lifecycle, hover handling, and drag interaction settings before making additional runtime changes.
+Pre-implementation analysis identified three concrete issues:
 
-## Track P25-L - Carousel Image Fit / Aspect Ratio Controls
+1. **No lightbox pause/resume**: The carousel autoplay plugin keeps ticking when a lightbox modal opens over the carousel. `isLightboxOpen` state exists but is only used for lightbox visibility, not autoplay lifecycle.
+2. **Synthetic loop + autoplay conflict**: The settle-based invisible recenter used for small multi-card sets can fire while autoplay is advancing, causing a visual jump.
+3. **No autoplay test coverage**: Neither `carouselBehavior.test.ts` nor `MediaCarouselAdapter.test.tsx` test autoplay plugin inclusion, pause/resume, or interaction behavior.
+
+Additionally, `stopOnInteraction: true` is hardcoded in the Embla autoplay plugin config. This is the correct UX default (autoplay should stop permanently after user drag/click, not resume) and does not need to be exposed as a setting.
+
+### Planned implementation
+
+1. **Lightbox pause/resume**: Add an effect in `MediaCarouselAdapter.tsx` that watches `isLightboxOpen` and calls `emblaApi.plugins().autoplay?.stop()` on open, `emblaApi.plugins().autoplay?.play()` on close (only if autoplay was previously active).
+2. **Synthetic loop guard**: In the settle-based recenter callback in `carouselBehavior.ts`, stop autoplay before the invisible recenter and restart it after, so the autoplay timer does not fire during the jump.
+3. **Test coverage**: Add tests for autoplay plugin inclusion/exclusion, lightbox pause/resume, and settle-recenter autoplay guard.
+
+### Acceptance criteria
+
+- Opening the lightbox pauses carousel autoplay; closing resumes it (if autoplay was running).
+- Synthetic loop last→first wrap does not cause autoplay to fire during the invisible recenter.
+- `stopOnInteraction: true` remains hardcoded with a code comment explaining the UX rationale.
+- New autoplay tests pass in the test suite.
+- No regressions in existing carousel navigation or multi-card behavior.
+
+## Track P25-L - Carousel Image and Video Fit / Aspect Ratio Controls
 
 ### Problem
 
-The classic carousel still lacks targeted image-card aspect-ratio and fit controls, which limits visual polish for image-dominant campaigns.
+The classic carousel still uses hardcoded `fit="contain"` for all slides and hardcoded aspect ratios (`3/2` for images, `16/9` for videos). That limits visual polish for image-dominant campaigns and prevents intentional aspect-ratio choices for video-heavy layouts.
 
-### Proposed direction
+### Current state
 
-Add image-focused aspect-ratio and fit controls so carousel cards can be tuned more like image tiles, without forcing the same constraints onto videos.
+Constants at the top of `MediaCarouselAdapter.tsx`:
+- `IMAGE_ASPECT_RATIO = '3 / 2'` and `IMAGE_ASPECT_RATIO_MULTIPLIER = 1.5`
+- `VIDEO_ASPECT_RATIO = '16 / 9'` and `VIDEO_ASPECT_RATIO_MULTIPLIER = 16 / 9`
+- `fit="contain"` hardcoded on `<Image>` and `objectFit: 'contain'` on `<video>`
+
+Height-constraint modes (`auto`, `viewport`, `manual`) interact with aspect ratio: manual mode ignores aspect ratio entirely.
+
+### Planned implementation
+
+1. **Add settings to types** (`GalleryBehaviorSettings` in `src/types/index.ts`):
+   - `carouselImageFit: 'contain' | 'cover' | 'fill' | 'scale-down'` (default: `'contain'`)
+   - `carouselVideoFit: 'contain' | 'cover' | 'fill' | 'scale-down'` (default: `'contain'`)
+   - `carouselImageAspectRatio: 'auto' | '1/1' | '4/3' | '3/2' | '16/9' | '21/9' | 'custom'` (default: `'3/2'`)
+   - `carouselVideoAspectRatio: 'auto' | '1/1' | '4/3' | '3/2' | '16/9' | '21/9' | 'custom'` (default: `'16/9'`)
+   - `carouselImageAspectRatioCustom: string` (default: `''`) — freeform ratio string for custom mode
+   - `carouselVideoAspectRatioCustom: string` (default: `''`) — freeform ratio string for custom mode
+2. **Add settings to PHP chain**: registry defaults + sanitizer with allowlist validation.
+3. **Update adapter settings schema** in `adapterRegistry.ts`: add field definitions to the carousel adapter's settings groups so they appear in the gallery-config editor.
+4. **Replace hardcoded constants** in `MediaCarouselAdapter.tsx`: resolve fit and aspect ratio from settings, falling back to the current hardcoded values as defaults so the change is non-breaking.
+5. **Per-breakpoint support**: These settings flow through `galleryConfig.adapterSettings` so they can differ across breakpoints via the responsive editor.
+6. **Height-constraint interaction**: Manual height mode continues to ignore aspect ratio. `auto` and `viewport` modes use the setting-driven aspect ratio.
+
+### Acceptance criteria
+
+- Image slides respect `carouselImageFit` and `carouselImageAspectRatio` settings.
+- Video slides respect `carouselVideoFit` and `carouselVideoAspectRatio` settings.
+- Defaults produce identical behavior to current hardcoded values (non-breaking).
+- Custom aspect ratio accepts freeform ratio strings (e.g., `5/4`).
+- Per-breakpoint overrides work through the responsive editor.
+- Manual height-constraint mode still ignores aspect ratio.
+- Settings persist through save/load and REST API.
 
 ## Track P25-M - WordPress Settings Sync / Reset Bug COMPLETE
 
@@ -305,25 +378,60 @@ All three passes converge on the same core findings:
 
 Implementation proceeds as Track P25-U.
 
-## Track P25-Q - Campaign Card Viewport Vertical Justification Audit
+## Track P25-Q - Campaign Card Gallery Vertical Justification COMPLETE
 
 ### Problem
 
-Horizontal card justification is now restored, but the gallery viewports themselves may still need better vertical justification within their container when card content, viewport heights, and surrounding layout constraints do not naturally align.
+Horizontal card justification is now restored, but the card gallery grid container has no vertical alignment control. The grid uses `display: flex; flex-wrap: wrap` with `justifyContent` for horizontal distribution, but no `align-content` or `min-height`. When the grid has fewer cards than fill the viewport (first page load, filtered results, small campaigns), the grid simply collapses to content height and anchors to the top.
 
-### Proposed direction
+### Planned implementation
 
-Audit how campaign card gallery viewports align vertically in their available container, identify whether the current behavior is fixed, inherited, or accidental, and determine whether an explicit vertical-justification control is warranted.
+1. **Add `cardGalleryVerticalAlign`** (`'start' | 'center' | 'end'`, default: `'start'`) to `GalleryBehaviorSettings` in `src/types/index.ts`, PHP registry, and PHP sanitizer.
+2. **Add `cardGalleryMinHeight`** (number, default: `0`, min: 0, max: 1200) to the same chain. Vertical alignment only has a visible effect when the container has spare height, so a min-height companion is required.
+3. **Expose both controls** in `CampaignCardSettingsSection.tsx` under the Card Grid & Pagination accordion.
+4. **Wire into `CardGallery.tsx`**: Apply `alignContent` and `minHeight` to the existing flex grid container style object.
+
+### Acceptance criteria
+
+- Card grid with fewer items centers vertically when `cardGalleryMinHeight` exceeds content height and `cardGalleryVerticalAlign` is `'center'`.
+- Default `'start'` with `minHeight: 0` retains current top-anchored behavior (non-breaking).
+- Settings persist and round-trip through save/load and REST API.
 
 ## Track P25-R - Background Blur Option
 
 ### Problem
 
-Background selectors currently expose multiple visual treatment modes, but they do not offer a blur-based option for cases where softened imagery or backdrop treatment would better support foreground readability.
+Background selectors currently expose multiple visual treatment modes (`none`, `solid`, `gradient`, `image`), but they do not offer a blur-based option. Five background-type selectors exist across the settings surface: image viewport, video viewport, unified viewport, viewer/modal, and page. Backdrop blur is already used for the settings drawer overlay toggle (`settingsDrawerBlurEnabled`), so the visual pattern has precedent in the app.
 
-### Proposed direction
+### Planned implementation
 
-Add `blur` as a supported option for the relevant background-type selectors, then define the minimum supporting controls needed to make that mode usable without fragmenting the selector model across different settings sections.
+Support two blur modes: **backdrop blur** (CSS `backdrop-filter` that blurs content behind the section) and **image blur** (a background image rendered with a blur filter).
+
+1. **Extend `ViewportBgType`** in `src/types/index.ts`: add `'blur'` to the union.
+2. **Add per-scope blur settings** (for each of the 5 background scopes: image, video, unified, viewer, modal):
+   - `*BgBlurMode: 'backdrop' | 'image'` (default: `'backdrop'`)
+   - `*BgBlurAmount: number` (default: `8`, min: 1, max: 50) — blur radius in px
+   - Reuse existing `*BgImageUrl` fields for the image-blur source where those fields already exist.
+3. **Update `resolveBackground()`** in `GallerySectionWrapper.tsx`:
+   - Backdrop mode: return `{ backdropFilter: 'blur(Npx)', WebkitBackdropFilter: 'blur(Npx)' }` (webkit prefix for Safari).
+   - Image mode: return styles for a `::before` pseudo-element approach — the background image + `filter: blur()` must be on a positioned pseudo-element so section children are not blurred. Add a CSS class with the pseudo-element in the component's style layer.
+4. **Update modal/viewer background** in `CampaignViewer.tsx`: add blur case to `modalBgStyle` logic.
+5. **Update selector UI** in `GalleryPresentationSections.tsx` (`GalleryBackgroundFields`): add `{ value: 'blur', label: 'Blur' }` to the dropdown. Conditionally show blur-mode selector and blur-amount slider when `type === 'blur'`. Show image-URL input when blur mode is `'image'`.
+6. **Update gallery-config editor** background selectors in `GalleryConfigEditorModal.tsx`.
+7. **PHP chain**: Add all new fields to the settings registry defaults and sanitizer.
+
+### Image-blur rendering approach
+
+CSS `filter` on the element itself would blur all children. The recommended approach is a `::before` pseudo-element with `position: absolute; inset: 0; z-index: 0` carrying the `background-image` + `filter: blur()`, with section content at `position: relative; z-index: 1`. This keeps the existing `GallerySectionWrapper` pattern clean and avoids adding extra DOM nodes.
+
+### Acceptance criteria
+
+- Backdrop blur mode visually blurs content behind the gallery section.
+- Image blur mode renders a blurred background image without blurring section children.
+- Blur amount slider adjusts the effect intensity.
+- Default `'none'` retains current behavior (non-breaking).
+- All 5 background-type selectors show the new blur option.
+- Settings persist through save/load and REST API.
 
 ## Track P25-S - Incremental Card / Gallery Item Scale Controls
 
@@ -460,6 +568,52 @@ Restore the visible card-justification control in the Campaign Cards settings se
 - Card justification is visible again from the Campaign Cards settings flow.
 - Partial campaign-card rows honor the selected justification even when card max width is not manually constrained.
 - Compact-grid adapter justification remains available and continues to affect supported gallery layouts.
+
+## Track P25-W - Batch Media Upload
+
+### Problem
+
+The current media upload flow in `MediaAddModal` only handles single-file selection and upload. The `FileButton` component accepts one file, `useXhrUpload` posts one file to `/media/upload`, and a separate POST to `/campaigns/{id}/media` associates that single file. For campaigns with many media items, this forces repetitive one-at-a-time upload cycles.
+
+### Current architecture
+
+1. **UI**: `MediaAddModal.tsx` renders a `FileButton` (single file) + drag-and-drop `Paper` zone + external URL input.
+2. **Upload**: `useXhrUpload.ts` wraps XMLHttpRequest with FormData and per-file progress tracking. Posts to `POST /wp-super-gallery/v1/media/upload`.
+3. **Association**: After upload returns `{ attachmentId, url, thumbnail }`, a separate `POST /campaigns/{id}/media` adds the item to the campaign's `media_items` post_meta array.
+4. **PHP handler**: `upload_media()` uses `media_handle_upload()` for one `$_FILES['file']` entry. Runs image optimizer if enabled.
+
+### Planned implementation
+
+1. **Multi-file UI**: Convert `FileButton` to accept `multiple` and update the drag-and-drop zone to accept multiple files. Show a file queue with per-file progress bars and status indicators (pending, uploading, complete, failed).
+2. **Parallel upload with concurrency limit**: Upload files in parallel using the existing `useXhrUpload` hook, but cap concurrency at 3 simultaneous uploads to avoid overwhelming the server. Queue remaining files and start the next upload as each completes.
+3. **Batch campaign association**: After each individual file upload succeeds, immediately associate it with the campaign via the existing `POST /campaigns/{id}/media` endpoint (one call per file, same as today). This avoids needing a new batch endpoint and keeps partial-failure semantics simple — each file either fully succeeds or fully fails independently.
+4. **Per-file error handling**: Files that fail upload show an error state in the queue with a retry button. Successfully uploaded files are not rolled back if a sibling fails. The modal stays open until the user explicitly closes it, so they can retry failures.
+5. **Progress aggregation**: Show both per-file progress and an overall progress summary (e.g., "3 of 7 uploaded").
+6. **Max file count**: Enforce a reasonable client-side limit (20 files per batch) to prevent accidental bulk operations that overwhelm the server or confuse the user. Show a warning if the user selects more.
+
+### Decisions resolved
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| A | Upload strategy | Parallel with concurrency cap (3), not sequential — sequential is too slow for 10+ files |
+| B | Campaign association | Individual POST per file after its upload completes — no new batch PHP endpoint needed |
+| C | Partial failure handling | Per-file: failed files can be retried, successful files persist. No all-or-nothing rollback |
+| D | PHP changes | None required — existing single-file `/media/upload` and `/campaigns/{id}/media` endpoints work as-is when called per file |
+| E | Max batch size | 20 files client-side limit with user-facing warning |
+| F | Non-media file handling | Auto-prune: filter dropped/selected files to `image/*` and `video/*` MIME types client-side before queuing. `FileButton` with `accept="image/*,video/*"` handles the file-picker path natively. Drag-and-drop gets an explicit `file.type.startsWith('image/') \|\| file.type.startsWith('video/')` filter with a brief notification when files are pruned (e.g., "2 non-media files skipped") |
+
+### Acceptance criteria
+
+- Users can select or drag-drop multiple files at once.
+- Files upload in parallel (max 3 concurrent) with per-file progress tracking.
+- Each successfully uploaded file is immediately added to the campaign.
+- Failed uploads show per-file error state with retry option.
+- Successfully uploaded files are not affected by sibling failures.
+- Overall progress summary visible during batch operation.
+- Client-side limit of 20 files per batch with warning on exceeded selection.
+- External URL add flow is unaffected.
+- No PHP endpoint changes required.
+- Non-media files are silently filtered from drag-and-drop selections with a notification showing how many were skipped.
 
 ## Follow-On Candidates After Core QA
 
