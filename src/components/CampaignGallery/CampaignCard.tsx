@@ -16,7 +16,7 @@ interface CampaignCardProps {
   settings?: GalleryBehaviorSettings;
   apiClient?: ApiClient;
   maxWidth?: number;
-  maxWidthUnit?: 'px' | '%';
+  maxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(

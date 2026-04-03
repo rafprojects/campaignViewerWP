@@ -671,7 +671,7 @@ export interface SettingsResponse {
   adapterMaxWidthPct?: number;
   adapterMaxHeightPct?: number;
   // P22-P7: Card width unit, justification, adapter gap & justification
-  cardMaxWidthUnit?: 'px' | '%';
+  cardMaxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
   cardJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
   adapterItemGap?: number;
   adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
