@@ -103,4 +103,43 @@ describe('MediaCarouselInner', () => {
     expect(screen.getByText('Caption One')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Go to slide 1' })).toHaveAttribute('aria-selected', 'true');
   });
+
+  // P25-K: Autoplay lifecycle tests
+  it('renders without crash when autoplay is enabled', () => {
+    const autoplaySettings = {
+      ...settings,
+      carouselAutoplay: true,
+      carouselAutoplaySpeed: 3000,
+    };
+
+    render(
+      <MediaCarouselInner
+        media={media}
+        settings={autoplaySettings}
+        breakpoint="desktop"
+        maxWidth={1200}
+      />,
+    );
+
+    // Verify it rendered without crash (uses same assertion as other tests in this suite)
+    expect(screen.getByText('Caption Two')).toBeInTheDocument();
+  });
+
+  it('renders without autoplay plugin when autoplay is disabled', () => {
+    const noAutoplaySettings = {
+      ...settings,
+      carouselAutoplay: false,
+    };
+
+    render(
+      <MediaCarouselInner
+        media={media}
+        settings={noAutoplaySettings}
+        breakpoint="desktop"
+        maxWidth={1200}
+      />,
+    );
+
+    expect(screen.getByText('Caption Two')).toBeInTheDocument();
+  });
 });

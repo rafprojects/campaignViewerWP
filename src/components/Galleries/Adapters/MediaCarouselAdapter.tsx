@@ -181,6 +181,8 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
     return [
       Autoplay({
         delay: settings.carouselAutoplaySpeed,
+        // P25-K: stopOnInteraction stays true — autoplay should stop permanently after
+        // user drag/click rather than resuming, which would fight manual navigation.
         stopOnInteraction: true,
         stopOnMouseEnter: settings.carouselAutoplayPauseOnHover,
       }),
@@ -258,7 +260,15 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
       }
 
       pendingSyntheticRecenterRef.current = null;
+      // P25-K: Stop autoplay during invisible recenter so its timer does not
+      // fire mid-jump and cause a visual glitch.
+      const autoplay = typeof emblaApi.plugins === 'function'
+        ? emblaApi.plugins()?.autoplay as { isPlaying?: () => boolean; stop?: () => void; play?: () => void } | undefined
+        : undefined;
+      const wasPlaying = autoplay?.isPlaying?.() ?? false;
+      if (wasPlaying) autoplay?.stop?.();
       emblaApi.scrollTo(recenteredIndex, true);
+      if (wasPlaying) autoplay?.play?.();
     };
 
     emblaApi.on('select', onSelect);
@@ -303,6 +313,21 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
     onPrev: scrollPrev,
     onNext: scrollNext,
   });
+
+  // P25-K: Pause autoplay when lightbox opens, resume on close (only if it was running)
+  const autoplayWasRunningRef = useRef(false);
+  useEffect(() => {
+    if (!emblaApi || typeof emblaApi.plugins !== 'function') return;
+    const autoplay = emblaApi.plugins()?.autoplay as { isPlaying?: () => boolean; stop?: () => void; play?: () => void } | undefined;
+    if (!autoplay) return;
+    if (isLightboxOpen) {
+      autoplayWasRunningRef.current = autoplay.isPlaying?.() ?? false;
+      autoplay.stop?.();
+    } else if (autoplayWasRunningRef.current) {
+      autoplay.play?.();
+      autoplayWasRunningRef.current = false;
+    }
+  }, [emblaApi, isLightboxOpen]);
 
   // ── Media type analysis ──────────────────────────────────────────
 

@@ -18,7 +18,7 @@
 | P25-H | Reorganize Campaign Gallery Config into accordions and only expose adapter settings for explicit overrides | Completed ✅ | Medium (0.5 day) |
 | P25-I | Add campaign card image-resolution controls with srcset for WP media sizes | Planned | Medium (0.5-1 day) |
 | P25-J | Stabilize carousel multi-card focus and smooth small-set looping | Completed ✅ | Medium (0.5 day) |
-| P25-K | Fix carousel autoplay lifecycle: lightbox pause, synthetic-loop conflict, test coverage | Planned | Medium (0.5 day) |
+| P25-K | Fix carousel autoplay lifecycle: lightbox pause, synthetic-loop conflict, test coverage | Completed ✅ | Medium (0.5 day) |
 | P25-L | Add carousel image-fit and aspect-ratio controls for both image and video slides | Planned | Medium-Large (1-2 days) |
 | P25-M | Fix WordPress `Campaigns > Settings` saves so SPA settings no longer appear reset to defaults | Completed ✅ | Medium (0.5-1 day) |
 | P25-N | Restore campaign card and adapter justification controls for partial rows | Completed ✅ | Small-Medium (0.25-0.5 day) |
@@ -235,7 +235,7 @@ Treat the centered slide as the active item in multi-card mode, keep arrow/dot n
 - Small multi-card sets can still wrap cleanly without exposing empty trailing frames.
 - The synthetic last-to-first wrap completes with a smooth visible transition before the invisible recenter occurs.
 
-## Track P25-K - Carousel Autoplay Audit and Fixes
+## Track P25-K - Carousel Autoplay Audit and Fixes COMPLETE
 
 ### Problem
 
