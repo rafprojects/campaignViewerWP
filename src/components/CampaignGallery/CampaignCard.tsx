@@ -33,6 +33,10 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     }
     const thumbHeight = settings?.cardThumbnailHeight ?? 200;
     const thumbFit = (settings?.cardThumbnailFit ?? 'cover') as 'cover' | 'contain';
+    const scale = settings?.cardScale ?? 1;
+    const scaledThumbHeight = Math.round(thumbHeight * scale);
+    const scaledMaxWidth = maxWidth && scale !== 1 ? Math.round(maxWidth * scale) : maxWidth;
+    const scaledMinHeight = settings?.cardMinHeight ? Math.round(settings.cardMinHeight * scale) : settings?.cardMinHeight;
     const shadow = settings?.cardShadowPreset ?? 'subtle';
     const shadowMap: Record<string, string> = {
       none: 'none',
@@ -60,7 +64,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,
           width: '100%',
-          ...(maxWidth ? { maxWidth: `${maxWidth}${maxWidthUnit}` } : {}),
+          ...(scaledMaxWidth ? { maxWidth: `${scaledMaxWidth}${maxWidthUnit}` } : {}),
         }}
       >
         <Card
@@ -75,20 +79,20 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             ...(showBorder ? { borderLeft: `${borderWidth}px solid ${resolvedBorderColor}` } : {}),
             boxShadow: cardShadow,
             ...(settings?.cardAspectRatio && settings.cardAspectRatio !== 'auto' ? { aspectRatio: settings.cardAspectRatio.replace(':', ' / ') } : {}),
-            ...(settings?.cardMinHeight ? { minHeight: `${settings.cardMinHeight}px` } : {}),
+            ...(scaledMinHeight ? { minHeight: `${scaledMinHeight}px` } : {}),
           }}
         >
           {/* Thumbnail Section */}
           <Card.Section
             pos="relative"
-            h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : undefined}
+            h={showInfo ? { base: Math.round(scaledThumbHeight * 0.8), sm: scaledThumbHeight } : undefined}
             style={!showInfo ? { flex: 1, overflow: 'hidden' } : undefined}
             component="div"
           >
             <Image 
               src={campaign.thumbnail} 
               alt={campaign.title}
-              h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : '100%'}
+              h={showInfo ? { base: Math.round(scaledThumbHeight * 0.8), sm: scaledThumbHeight } : '100%'}
               fit={thumbFit}
               loading="lazy"
               style={{ 

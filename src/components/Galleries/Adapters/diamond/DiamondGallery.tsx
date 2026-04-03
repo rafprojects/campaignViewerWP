@@ -55,7 +55,7 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const tSize = settings.tileSize ?? 150;
+  const tSize = Math.round((settings.tileSize ?? 150) * (settings.itemScale ?? 1));
   const gapX = settings.tileGapX ?? 8;
   const gapY = settings.tileGapY ?? 8;
   const border = settings.tileBorderWidth

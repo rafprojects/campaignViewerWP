@@ -64,12 +64,18 @@ export function GallerySectionWrapper({
   }, []);
 
   const availableWidth = measuredWidth > 0 ? measuredWidth : 0;
-  const effectiveMinWidth = Math.max(0, Math.min(s.gallerySectionMinWidth, s.gallerySectionMaxWidth || s.gallerySectionMinWidth));
+  const sc = s.sectionScale ?? 1;
+  const scaledMinWidth = Math.round((s.gallerySectionMinWidth ?? 0) * sc);
+  const scaledMaxWidth = Math.round((s.gallerySectionMaxWidth ?? 0) * sc);
+  const scaledMinHeight = Math.round((s.gallerySectionMinHeight ?? 0) * sc);
+  const scaledMaxHeight = Math.round((s.gallerySectionMaxHeight ?? 0) * sc);
+  const scaledPadding = Math.round(Math.max(0, Math.min(32, s.gallerySectionPadding)) * sc);
+  const effectiveMinWidth = Math.max(0, Math.min(scaledMinWidth, scaledMaxWidth || scaledMinWidth));
 
   // Clamp user settings to measured available space
   const effectiveMaxWidth = availableWidth > 0
     ? clampDimension(
-        s.gallerySectionMaxWidth,
+        scaledMaxWidth,
         effectiveMinWidth,
         2000,
         availableWidth,
@@ -77,15 +83,15 @@ export function GallerySectionWrapper({
     : 0;
 
   const resolvedMaxHeight =
-    s.gallerySectionHeightMode === 'manual' && s.gallerySectionMaxHeight > 0
-      ? `${clampDimension(s.gallerySectionMaxHeight, s.gallerySectionMinHeight, 2000, Infinity)}px`
+    s.gallerySectionHeightMode === 'manual' && scaledMaxHeight > 0
+      ? `${clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity)}px`
       : s.gallerySectionHeightMode === 'viewport'
         ? '80dvh'
         : undefined; // 'auto' — no max height constraint
 
   const effectiveMaxHeight =
-    s.gallerySectionHeightMode === 'manual' && s.gallerySectionMaxHeight > 0
-      ? clampDimension(s.gallerySectionMaxHeight, s.gallerySectionMinHeight, 2000, Infinity)
+    s.gallerySectionHeightMode === 'manual' && scaledMaxHeight > 0
+      ? clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity)
       : measuredHeight > 0 ? measuredHeight : 0;
 
   const containerDimensions: ContainerDimensions = {
@@ -96,25 +102,41 @@ export function GallerySectionWrapper({
   const hasBg = bgType !== 'none' && bgType !== 'theme';
   const backgroundStyles = hasBg ? resolveBackground(bgType, bgColor, bgGradient, bgImageUrl) : {};
 
+  const alignX = s.gallerySectionContentAlignX || 'center';
+  const alignY = s.gallerySectionContentAlignY || 'start';
+  const hasContentOffset = s.gallerySectionContentOffsetX !== 0 || s.gallerySectionContentOffsetY !== 0;
+
   const wrapperStyle: CSSProperties = {
     width: '100%',
-    maxWidth: s.gallerySectionMaxWidth > 0
-      ? `min(100%, ${Math.max(effectiveMinWidth, s.gallerySectionMaxWidth)}px)`
+    maxWidth: scaledMaxWidth > 0
+      ? `min(100%, ${Math.max(effectiveMinWidth, scaledMaxWidth)}px)`
       : '100%',
     minWidth: effectiveMinWidth > 0 ? `min(100%, ${effectiveMinWidth}px)` : undefined,
     maxHeight: resolvedMaxHeight,
-    minHeight: `${s.gallerySectionMinHeight}px`,
-    padding: `${Math.max(0, Math.min(32, s.gallerySectionPadding))}px`,
+    minHeight: `${scaledMinHeight}px`,
+    padding: `${scaledPadding}px`,
     marginInline: 'auto',
     overflow: resolvedMaxHeight ? 'hidden' : undefined,
     borderRadius: borderRadius != null ? `${borderRadius}px` : undefined,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: alignX === 'center' ? 'center' : alignX === 'end' ? 'flex-end' : 'flex-start',
+    justifyContent: alignY === 'center' ? 'center' : alignY === 'end' ? 'flex-end' : 'flex-start',
     ...backgroundStyles,
     ...externalStyle,
   };
 
+  const contentStyle: CSSProperties | undefined = hasContentOffset
+    ? { width: '100%', transform: `translate(${s.gallerySectionContentOffsetX}px, ${s.gallerySectionContentOffsetY}px)` }
+    : undefined;
+
   return (
     <Box ref={sectionRef} style={wrapperStyle}>
-      {children(containerDimensions)}
+      {hasContentOffset ? (
+        <div style={contentStyle}>{children(containerDimensions)}</div>
+      ) : (
+        children(containerDimensions)
+      )}
     </Box>
   );
 }

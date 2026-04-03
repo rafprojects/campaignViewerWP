@@ -38,8 +38,9 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
 
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
 
-  const cardWidth = settings.gridCardWidth;
-  const cardHeight = settings.gridCardHeight;
+  const itemSc = settings.itemScale ?? 1;
+  const cardWidth = Math.round((settings.gridCardWidth ?? 220) * itemSc);
+  const cardHeight = Math.round((settings.gridCardHeight ?? 180) * itemSc);
   const borderRadius = settings.imageBorderRadius;
   const gap = settings.adapterItemGap ?? 16;
 

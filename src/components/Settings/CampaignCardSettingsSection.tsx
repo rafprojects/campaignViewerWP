@@ -184,6 +184,16 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               step={10}
               placeholder="0 = unlimited"
             />
+            <NumberInput
+              label="Card Scale"
+              description="Primary sizing multiplier for cards. Scales thumbnail height, max width, and min height proportionally. 1 = default size."
+              value={settings.cardScale ?? 1}
+              onChange={(value) => updateSetting('cardScale', typeof value === 'number' ? value : 1)}
+              min={0.5}
+              max={2}
+              step={0.05}
+              decimalScale={2}
+            />
             <ModalSelect
               label="Card Justification"
               description="How cards distribute when a row does not fill the full available width."
@@ -217,6 +227,34 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               max={1200}
               step={50}
               placeholder="0 = no minimum"
+            />
+            <NumberInput
+              label="Grid Maximum Height (px)"
+              description="Maximum height for the card grid area. Content will scroll when exceeded. 0 = no limit."
+              value={settings.cardGalleryMaxHeight}
+              onChange={(value) => updateSetting('cardGalleryMaxHeight', typeof value === 'number' ? value : 0)}
+              min={0}
+              max={2000}
+              step={50}
+              placeholder="0 = no maximum"
+            />
+            <NumberInput
+              label="Grid Horizontal Offset (px)"
+              description="Fine-tune horizontal position of the card grid. Negative = left, positive = right."
+              value={settings.cardGalleryOffsetX ?? 0}
+              onChange={(value) => updateSetting('cardGalleryOffsetX', typeof value === 'number' ? value : 0)}
+              min={-200}
+              max={200}
+              step={4}
+            />
+            <NumberInput
+              label="Grid Vertical Offset (px)"
+              description="Fine-tune vertical position of the card grid. Negative = up, positive = down."
+              value={settings.cardGalleryOffsetY ?? 0}
+              onChange={(value) => updateSetting('cardGalleryOffsetY', typeof value === 'number' ? value : 0)}
+              min={-200}
+              max={200}
+              step={4}
             />
             {settings.cardMaxWidth > 0 && (
               <ModalSelect

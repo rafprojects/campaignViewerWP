@@ -376,6 +376,11 @@ export function CampaignViewer({
             marginInline: 'auto',
             paddingLeft: galleryShellLayout.paddingLeft,
             paddingRight: galleryShellLayout.paddingRight,
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column' as const,
+            justifyContent: s.modalGalleryVerticalAlign === 'center' ? 'center' : s.modalGalleryVerticalAlign === 'end' ? 'flex-end' : undefined,
+            transform: s.modalGalleryOffsetY ? `translateY(${s.modalGalleryOffsetY}px)` : undefined,
           }}>
             <Suspense fallback={
               <Center py="xl" mih={200}>

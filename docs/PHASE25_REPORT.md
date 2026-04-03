@@ -26,11 +26,12 @@
 | P25-P | Run a three-pass settings IA audit covering redundancy, grouping, and side-panel feasibility | Completed ✅ (3 passes); implementation → P25-U | Large (2-3 days) |
 | P25-Q | Add vertical justification controls for campaign card gallery grid | Completed ✅ | Small-Medium (0.25-0.5 day) |
 | P25-R | Add `blur` as a background-type option with backdrop-blur and image-blur modes | Planned | Medium (0.5-1 day) |
-| P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Proposed | Medium-Large (1-2 days) |
-| P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Proposed | Medium-Large (1-2 days) |
+| P25-S | Define primary scale / aspect-ratio sizing controls plus advanced raw overrides for cards and gallery items | Completed ✅ | Medium-Large (1-2 days) |
+| P25-T | Map and expose layered positioning controls for card grids, gallery shells, sections, and adapter blocks | Completed ✅ | Medium-Large (1-2 days) |
 | P25-U | Execute settings IA overhaul: 6-tab regroup, Modal→Drawer conversion, control relocations, accordion restructuring | Completed ✅ | Large (3-5 days) |
 | P25-V | Stabilize heavyweight Vitest suites by reducing hidden DOM work and documenting worker timeout failure modes | Completed ✅ | Medium (0.5-1 day) |
 | P25-W | Add batch media upload with parallel file handling and per-file progress | Planned | Medium-Large (1-2 days) |
+| P25-X | Multi-unit CSS dimension support + campaign card breakpoint overrides | In Progress | Large (3-5 days) |
 
 ---
 
@@ -433,7 +434,7 @@ CSS `filter` on the element itself would blur all children. The recommended appr
 - All 5 background-type selectors show the new blur option.
 - Settings persist through save/load and REST API.
 
-## Track P25-S - Incremental Card / Gallery Item Scale Controls
+## Track P25-S - Incremental Card / Gallery Item Scale Controls COMPLETE
 
 ### Problem
 
@@ -495,7 +496,17 @@ Do not build one giant "complete sizing" panel. The better model is:
 - Existing raw sizing controls remain available where they already provide real value, but they are clearly secondary to the new primary scale controls.
 - The implementation keeps layout calculations authoritative instead of relying on post-layout visual scaling that would desync spacing, pagination, or interaction surfaces.
 
-## Track P25-T - Gallery Container / Section Positioning Controls
+### Implementation
+
+Added three tiered scale multipliers: `cardScale` (0.5–2.0, default 1), `sectionScale` (0.5–2.0, default 1), and `itemScale` (0.5–2.0, default 1).
+
+- **`cardScale`** multiplies `cardThumbnailHeight`, `cardMaxWidth`, and `cardMinHeight` inside `CampaignCard.tsx`. Exposed in CampaignCardSettingsSection under the Layout accordion.
+- **`sectionScale`** multiplies `gallerySectionMinWidth`, `gallerySectionMaxWidth`, `gallerySectionMinHeight`, `gallerySectionMaxHeight`, and `gallerySectionPadding` inside `GallerySectionWrapper.tsx`. Exposed in GalleryLayoutDetailSections under Section Sizing.
+- **`itemScale`** multiplies `gridCardWidth`/`gridCardHeight` (Compact Grid), `mosaicTargetRowHeight` (Justified), and `tileSize` (Hexagonal, Circular, Diamond). Carousel is excluded — its sizing is driven by integer `carouselVisibleCards`, not pixel dimensions. Exposed in GalleryLayoutDetailSections under Adapter Sizing.
+- Settings added to TS types + defaults, PHP registry defaults/enums/ranges, PHP sanitizer nested common-field map.
+- All 1255 tests pass (91 files), no regressions.
+
+## Track P25-T - Gallery Container / Section Positioning Controls COMPLETE
 
 ### Problem
 
@@ -552,6 +563,32 @@ Keep positioning layered and explicit. Reuse the existing `modalContentVerticalA
 - Compatible gallery adapters can vertically center or fine-tune their rendered block within the section wrapper without breaking spacing, labels, or hit targets.
 - The control surface stays layered and explicit so shell, section, and adapter positioning do not become three overlapping ways to move the same content.
 - Outer modal-content positioning continues to be owned only by the existing `modalContentVerticalAlign` control rather than being duplicated by the new track.
+
+### Implementation
+
+Added layered positioning controls across four container levels:
+
+**Card gallery grid** (CardGallery.tsx):
+- `cardGalleryVerticalAlign` and `cardGalleryMinHeight` were added in P25-Q.
+- Added `cardGalleryMaxHeight` (0–2000, default 0 = no limit) — enables scroll when content exceeds height.
+- Added `cardGalleryOffsetX` (−200 to 200, default 0) and `cardGalleryOffsetY` (−200 to 200, default 0) — translate nudges on the flex grid.
+- All exposed in CampaignCardSettingsSection under the Layout accordion.
+
+**Gallery shell** (CampaignViewer.tsx):
+- Added `modalGalleryVerticalAlign` (`start`/`center`/`end`, default `start`) — flex justify on the gallery shell box.
+- Added `modalGalleryOffsetY` (−200 to 200, default 0) — translateY nudge on the shell.
+- Exposed in GalleryLayoutDetailSections under Gallery Spacing.
+
+**Gallery section wrapper** (GallerySectionWrapper.tsx):
+- Added `gallerySectionContentAlignX` (`start`/`center`/`end`, default `center`) — flex align-items on the wrapper.
+- Added `gallerySectionContentAlignY` (`start`/`center`/`end`, default `start`) — flex justify-content on the wrapper.
+- Added `gallerySectionContentOffsetX` and `gallerySectionContentOffsetY` (−200 to 200, default 0) — translate nudges via inner div wrapper.
+- Exposed in GalleryLayoutDetailSections under Section Content Alignment.
+
+**Adapter-root alignment**: Deferred per scope decision — `adapterJustifyContent` already provides horizontal alignment for compatible adapters.
+
+- Settings added to TS types + defaults, PHP registry defaults/enums/ranges, PHP sanitizer nested common-field map.
+- All 1255 tests pass (91 files), no regressions.
 
 ## Track P25-N - Card / Adapter Justification Controls COMPLETE
 
@@ -614,6 +651,118 @@ The current media upload flow in `MediaAddModal` only handles single-file select
 - External URL add flow is unaffected.
 - No PHP endpoint changes required.
 - Non-media files are silently filtered from drag-and-drop selections with a notification showing how many were skipped.
+
+## Track P25-X - Multi-Unit CSS Dimensions + Card Breakpoint Overrides
+
+### Problem
+
+Almost all dimension settings (widths, heights, padding, gaps, offsets) are currently stored as bare integers and rendered as `px`. That locks users into pixel-based layouts and prevents responsive patterns like percentage widths, viewport-relative heights, or em-based spacing. Separately, campaign card layout settings have no breakpoint awareness — the same grid columns, gaps, thumbnail heights, and card widths apply identically across desktop, tablet, and mobile, unlike the gallery adapter settings which already support full 3-breakpoint overrides.
+
+### Feature 1: Multi-Unit CSS Support
+
+Add context-dependent CSS unit selectors to **44 dimension settings** using a reusable `DimensionInput` component (NumberInput + SegmentedControl for compact unit switching).
+
+#### Unit groups (context-dependent)
+
+| Unit Group | Units | Use For |
+|---|---|---|
+| **CssWidthUnit** | px, %, vw, em, rem | Max/min widths, container widths |
+| **CssHeightUnit** | px, %, vh, dvh, svh, lvh, em, rem | Heights, viewport heights |
+| **CssSpacingUnit** | px, em, rem, % | Padding, gap, margin |
+| **CssOffsetUnit** | px, em, rem, %, vw, vh | Translate offsets |
+| **CssBorderRadiusUnit** | px, %, em, rem | Border radii (% for circles) |
+
+#### Exhaustive settings inventory
+
+**Flat settings on `GalleryBehaviorSettings`** (22 new + 1 expanded):
+- **Container**: `appMaxWidth` (width), `appPadding` (spacing)
+- **Card grid**: `cardMaxWidthUnit` *(expand from px/% to full width set)*, `cardGapH`/`cardGapV` (spacing), `cardThumbnailHeight` (height), `cardMinHeight` (height), `cardBorderRadius` (border-radius)
+- **Card grid container**: `cardGalleryMinHeight`/`MaxHeight` (height), `cardGalleryOffsetX` (offset), `cardGalleryOffsetY` (offset)
+- **Modal/Viewer**: `modalMaxWidth`, `modalContentMaxWidth`, `modalGalleryMaxWidth`, `fullscreenContentMaxWidth` (width); `modalCoverHeight` (height); `modalInnerPadding`, `modalGalleryGap`, `modalGalleryMargin` (spacing); `modalGalleryOffsetY` (offset)
+- **Lightbox**: `lightboxVideoMaxWidth` (width), `lightboxVideoHeight` (height)
+
+**Per-breakpoint `GalleryCommonSettings`** (9 new):
+- `sectionMaxWidth`/`MinWidth` (width), `sectionMaxHeight`/`MinHeight` (height), `sectionPadding` (spacing), `sectionContentOffsetX`/`Y` (offset), `adapterContentPadding` (spacing), `adapterItemGap` (spacing)
+
+**Per-breakpoint adapter settings** (13 new):
+- `imageViewportHeight`/`videoViewportHeight` (height), `carouselGap` (spacing), `tileSize`/`imageTileSize`/`videoTileSize` (width), `tileGapX`/`Y` (spacing), `gridCardWidth` (width), `gridCardHeight` (height), `mosaicTargetRowHeight`/`photoNormalizeHeight` (height), `imageBorderRadius`/`videoBorderRadius` (border-radius)
+
+**Deliberately excluded** (px-only): border widths, icon sizes, hit targets, badge cosmetics, admin-internal UI, image processing dimensions, auth UI, dot/arrow nav cosmetics, percentage-specific fields, string CSS values, scale multipliers, ratios, thumbnail strip.
+
+### Feature 2: Card Breakpoint Overrides
+
+Mirror the existing gallery breakpoint pattern (`galleryConfig.breakpoints[bp][scope]`) with a new `cardConfig` field:
+
+```
+cardConfig: {
+  breakpoints: {
+    desktop: { ...CardBreakpointOverrides },   // base values
+    tablet:  { ...CardBreakpointOverrides },   // overrides (cascade from desktop)
+    mobile:  { ...CardBreakpointOverrides },   // overrides (cascade from tablet)
+  }
+}
+```
+
+**Fields that vary per breakpoint**: `cardGridColumns`, `cardMaxColumns`, `cardMaxWidth`/unit, `cardGapH`/unit, `cardGapV`/unit, `cardScale`, `cardJustifyContent`, `cardGalleryVerticalAlign`, `cardAspectRatio`, `cardThumbnailHeight`/unit, `cardMinHeight`/unit, `cardBorderRadius`/unit, `cardGalleryMinHeight`/unit, `cardGalleryMaxHeight`/unit, `cardGalleryOffsetX`/unit, `cardGalleryOffsetY`/unit, `cardDisplayMode`, `cardRowsPerPage`.
+
+**Not breakpoint-varied** (visual consistency): border style/color/shadow, show/hide toggles, card internals, auto-columns breakpoints.
+
+**Cascade resolution**: mobile inherits tablet, tablet inherits desktop. Flat `GalleryBehaviorSettings` fields serve as fallback for unset desktop values.
+
+**UI pattern**: Breakpoint SegmentedControl (Desktop / Tablet / Mobile) at top of Card Grid & Pagination accordion. Desktop shows all controls. Tablet/Mobile show inherited-value placeholders with clear button to reset.
+
+### Decisions resolved
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| A | Unit selector UX | SegmentedControl for unit switching inline with NumberInput |
+| B | Unit options | Context-dependent per setting group, including dynamic viewport units (dvh/svh/lvh) for height settings |
+| C | Card breakpoint cascade | mobile ← tablet ← desktop |
+| D | `cardMaxWidthUnit` expansion | Expand from px/% to full CssWidthUnit (px, %, vw, em, rem) |
+| E | `galleryManualHeight` / `lightboxMediaMaxHeight` | Keep as CSS strings (already support arbitrary units) |
+| F | `cardAutoColumnsBreakpoints` | Keep as advanced auto-columns engine; breakpoint `cardGridColumns` takes priority when explicitly set |
+| G | Scale × units interaction | Scale multiplies numeric value, unit preserved (200px × 1.5 = 300px; 50% × 1.5 = 75%) |
+| H | Backward compatibility | No migration — absent `*Unit` fields default to 'px', preserving all existing saved settings |
+| I | Dynamic min/max on unit switch | Yes — clamp value when user switches units (e.g., 3000px → 100vw) |
+
+### Implementation phases
+
+1. **Infrastructure**: CSS unit types in TS, `toCss()` utility, `DimensionInput` component, PHP `sanitize_css_unit()` helper
+2. **Unit types & defaults**: 44 companion `*Unit` fields across TS types, expand `cardMaxWidthUnit`, PHP registry defaults
+3. **Settings UI**: Replace NumberInput → DimensionInput across 6 Settings sections
+4. **Rendering**: Update ~12 rendering components to use `toCss()` instead of `${value}px`
+5. **Card breakpoints — types & resolution**: `CardBreakpointOverrides` interface, `cardConfig` field, `resolveCardBreakpointSettings()` cascade utility
+6. **Card breakpoints — PHP**: Register + sanitize `card_config` as nested JSON
+7. **Card breakpoints — UI**: Breakpoint SegmentedControl in CampaignCardSettingsSection
+8. **Card breakpoints — rendering**: Integrate `useBreakpoint()` → resolved card settings in CardGallery
+9. **Verification**: Unit tests for utilities + component, full suite pass, manual QA
+
+### New files
+
+- `src/utils/cssUnits.ts` — toCss helper + unit constants
+- `src/components/Settings/DimensionInput.tsx` — Reusable dimension input component
+- `src/utils/resolveCardSettings.ts` — Card breakpoint resolution utility
+
+### Key files affected
+
+| Category | Files |
+|---|---|
+| Types & defaults | `src/types/index.ts` |
+| PHP settings | `class-wpsg-settings-registry.php`, `class-wpsg-settings-sanitizer.php` |
+| Settings UI | `GeneralSettingsSection.tsx` (Page & Theme), `CampaignCardSettingsSection.tsx`, `GalleryAdapterSettingsSection.tsx`, `MediaDisplaySettingsSection.tsx` (Gallery & Media), `AdvancedSettingsSection.tsx` (System), CampaignViewer settings, `adapterRegistry.ts` |
+| Rendering | `CardGallery.tsx`, `CampaignCard.tsx`, `CampaignViewer.tsx`, `GallerySectionWrapper.tsx`, `CompactGridGallery.tsx`, `HexagonalGallery.tsx`, `DiamondGallery.tsx`, `CircularGallery.tsx`, `MediaCarouselAdapter.tsx`, Lightbox, mosaic/photo adapters |
+
+### Acceptance criteria
+
+- All 44 dimension settings support context-appropriate CSS unit selection via the `DimensionInput` component.
+- Unit selection persists through save/load and REST API round-trip.
+- Rendering components correctly apply the selected unit (not hardcoded px).
+- Existing saved settings with no `*Unit` field default to 'px' (zero-migration backward compatibility).
+- Campaign card settings can be overridden per breakpoint (desktop / tablet / mobile).
+- Breakpoint cascade works correctly: mobile inherits tablet, tablet inherits desktop, desktop falls back to flat fields.
+- Breakpoint switcher UI shows inherited-value placeholders with reset-to-inherited button.
+- All existing tests continue to pass. New utility and component tests added.
+- DimensionInput clamps values when unit changes (e.g., 3000px → 100vw).
 
 ## Follow-On Candidates After Core QA
 

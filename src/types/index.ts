@@ -825,6 +825,9 @@ export interface GalleryBehaviorSettings {
   modalGalleryMargin: number;
   // P22-P8: Vertical alignment of modal content
   modalContentVerticalAlign: 'top' | 'center' | 'bottom';
+  // P25-T: Gallery shell vertical alignment + offset
+  modalGalleryVerticalAlign: 'start' | 'center' | 'end';
+  modalGalleryOffsetY: number;
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto' | 'viewport' | 'manual';
   galleryManualHeight: string;
@@ -834,6 +837,13 @@ export interface GalleryBehaviorSettings {
   gallerySectionHeightMode: 'auto' | 'manual' | 'viewport';
   gallerySectionMinWidth: number;
   gallerySectionMinHeight: number;
+  // P25-T: Section content alignment + offset
+  gallerySectionContentAlignX: 'start' | 'center' | 'end';
+  gallerySectionContentAlignY: 'start' | 'center' | 'end';
+  gallerySectionContentOffsetX: number;
+  gallerySectionContentOffsetY: number;
+  // P25-S: Primary gallery section scale multiplier
+  sectionScale: number;
   perTypeSectionEqualHeight: boolean;
   modalInnerPadding: number;
   gallerySectionPadding: number;
@@ -844,12 +854,20 @@ export interface GalleryBehaviorSettings {
   // P22-P7: Card width responsive unit & last-row justification
   cardMaxWidthUnit: 'px' | '%';
   cardJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
+  // P25-S: Primary card scale multiplier
+  cardScale: number;
   // P25-Q: Card gallery vertical justification
   cardGalleryVerticalAlign: 'start' | 'center' | 'end';
   cardGalleryMinHeight: number;
+  cardGalleryMaxHeight: number;
+  // P25-T: Card gallery offset nudges
+  cardGalleryOffsetX: number;
+  cardGalleryOffsetY: number;
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: number;
   adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
+  // P25-S: Primary gallery item scale multiplier (applies to adapter sizing)
+  itemScale: number;
   // P22-P8d: Embla carousel settings
   carouselVisibleCards: number;
   carouselAutoplay: boolean;
@@ -1188,6 +1206,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   modalGalleryGap: 32,
   modalGalleryMargin: 0,
   modalContentVerticalAlign: 'top',
+  // P25-T: Gallery shell vertical alignment + offset
+  modalGalleryVerticalAlign: 'start',
+  modalGalleryOffsetY: 0,
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto',
   galleryManualHeight: '420px',
@@ -1197,6 +1218,13 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   gallerySectionHeightMode: 'auto',
   gallerySectionMinWidth: 300,
   gallerySectionMinHeight: 150,
+  // P25-T: Section content alignment + offset
+  gallerySectionContentAlignX: 'center',
+  gallerySectionContentAlignY: 'start',
+  gallerySectionContentOffsetX: 0,
+  gallerySectionContentOffsetY: 0,
+  // P25-S: Primary gallery section scale multiplier
+  sectionScale: 1,
   perTypeSectionEqualHeight: false,
   modalInnerPadding: 16,
   gallerySectionPadding: 16,
@@ -1207,12 +1235,20 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P22-P7: Card width responsive unit & last-row justification
   cardMaxWidthUnit: 'px',
   cardJustifyContent: 'center',
+  // P25-S: Primary card scale multiplier
+  cardScale: 1,
   // P25-Q: Card gallery vertical justification
   cardGalleryVerticalAlign: 'start',
   cardGalleryMinHeight: 0,
+  cardGalleryMaxHeight: 0,
+  // P25-T: Card gallery offset nudges
+  cardGalleryOffsetX: 0,
+  cardGalleryOffsetY: 0,
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: 16,
   adapterJustifyContent: 'center',
+  // P25-S: Primary gallery item scale multiplier
+  itemScale: 1,
   // P22-P8d: Embla carousel settings
   carouselVisibleCards: 1,
   carouselAutoplay: false,

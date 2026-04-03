@@ -52,7 +52,8 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
   const close = useCallback(() => setLightboxOpen(false), []);
 
   const gap = settings.thumbnailGap ?? 6;
-  const targetRowHeight = settings.mosaicTargetRowHeight ?? 200;
+  const itemSc = settings.itemScale ?? 1;
+  const targetRowHeight = Math.round((settings.mosaicTargetRowHeight ?? 200) * itemSc);
 
   // Normalize all photos to a consistent reference height so large-resolution
   // images don't dominate the layout. react-photo-album uses width/height

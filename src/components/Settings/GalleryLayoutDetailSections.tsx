@@ -174,6 +174,57 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               max={400}
               step={50}
             />
+            <NumberInput
+              label="Section Scale"
+              description="Primary sizing multiplier for gallery sections. Scales min/max width, min/max height, and padding proportionally. 1 = default size."
+              value={settings.sectionScale ?? 1}
+              onChange={(value) => updateSetting('sectionScale', typeof value === 'number' ? value : 1)}
+              min={0.5}
+              max={2}
+              step={0.05}
+              decimalScale={2}
+            />
+            <Divider label="Section Content Alignment" labelPosition="center" />
+            <ModalSelect
+              label="Content Horizontal Alignment"
+              description="Horizontal alignment of adapter content within each gallery section."
+              data={[
+                { value: 'start', label: 'Left' },
+                { value: 'center', label: 'Center' },
+                { value: 'end', label: 'Right' },
+              ]}
+              value={settings.gallerySectionContentAlignX || 'center'}
+              onChange={(value) => updateSetting('gallerySectionContentAlignX', (value || 'center') as GalleryBehaviorSettings['gallerySectionContentAlignX'])}
+            />
+            <ModalSelect
+              label="Content Vertical Alignment"
+              description="Vertical alignment of adapter content within each gallery section."
+              data={[
+                { value: 'start', label: 'Top' },
+                { value: 'center', label: 'Center' },
+                { value: 'end', label: 'Bottom' },
+              ]}
+              value={settings.gallerySectionContentAlignY || 'start'}
+              onChange={(value) => updateSetting('gallerySectionContentAlignY', (value || 'start') as GalleryBehaviorSettings['gallerySectionContentAlignY'])}
+            />
+            <NumberInput
+              label="Content Horizontal Offset (px)"
+              description="Fine-tune horizontal position of section content. Negative = left, positive = right."
+              value={settings.gallerySectionContentOffsetX ?? 0}
+              onChange={(value) => updateSetting('gallerySectionContentOffsetX', typeof value === 'number' ? value : 0)}
+              min={-200}
+              max={200}
+              step={4}
+            />
+            <NumberInput
+              label="Content Vertical Offset (px)"
+              description="Fine-tune vertical position of section content. Negative = up, positive = down."
+              value={settings.gallerySectionContentOffsetY ?? 0}
+              onChange={(value) => updateSetting('gallerySectionContentOffsetY', typeof value === 'number' ? value : 0)}
+              min={-200}
+              max={200}
+              step={4}
+            />
             <Switch
               label="Equal Height Sections (Per-Type)"
               description="When using per-type galleries, display image and video sections side-by-side at equal height on tablet+ viewports."
@@ -210,6 +261,26 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               onChange={(value) => updateSetting('modalContentVerticalAlign', (value || 'top') as GalleryBehaviorSettings['modalContentVerticalAlign'])}
             />
             <Divider label="Gallery Spacing" labelPosition="center" />
+            <ModalSelect
+              label="Gallery Shell Vertical Alignment"
+              description="Vertical alignment of the gallery sections within the viewer shell."
+              data={[
+                { value: 'start', label: 'Top' },
+                { value: 'center', label: 'Center' },
+                { value: 'end', label: 'Bottom' },
+              ]}
+              value={settings.modalGalleryVerticalAlign || 'start'}
+              onChange={(value) => updateSetting('modalGalleryVerticalAlign', (value || 'start') as GalleryBehaviorSettings['modalGalleryVerticalAlign'])}
+            />
+            <NumberInput
+              label="Gallery Shell Vertical Offset (px)"
+              description="Fine-tune vertical position of the gallery sections. Negative = up, positive = down."
+              value={settings.modalGalleryOffsetY ?? 0}
+              onChange={(value) => updateSetting('modalGalleryOffsetY', typeof value === 'number' ? value : 0)}
+              min={-200}
+              max={200}
+              step={4}
+            />
             <NumberInput
               label="Gallery Max Width (px)"
               description="Maximum width of the gallery container. 0 = full responsive width."
@@ -299,6 +370,16 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               ]}
               value={settings.adapterJustifyContent ?? 'center'}
               onChange={(value) => updateSetting('adapterJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['adapterJustifyContent'])}
+            />
+            <NumberInput
+              label="Item Scale"
+              description="Primary sizing multiplier for gallery items. Scales card width/height (Compact Grid), row height (Justified), and tile size (Shape adapters) proportionally. 1 = default size. Does not apply to Carousel."
+              value={settings.itemScale ?? 1}
+              onChange={(value) => updateSetting('itemScale', typeof value === 'number' ? value : 1)}
+              min={0.5}
+              max={2}
+              step={0.05}
+              decimalScale={2}
             />
           </Stack>}
         </Accordion.Panel>

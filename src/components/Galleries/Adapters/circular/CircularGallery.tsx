@@ -34,7 +34,7 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const tSize = settings.tileSize ?? 150;
+  const tSize = Math.round((settings.tileSize ?? 150) * (settings.itemScale ?? 1));
   const gapX = settings.tileGapX ?? 8;
   const gapY = settings.tileGapY ?? 8;
   // Circular tiles use outline for border (respects border-radius: 50%)
