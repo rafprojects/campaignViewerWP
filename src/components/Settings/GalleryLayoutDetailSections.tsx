@@ -1,6 +1,8 @@
 import { Accordion, Divider, NumberInput, Stack, Switch } from '@mantine/core';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+import { CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 import { anyAdapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
 import { getLegacyActiveAdapterIds } from '@/utils/galleryAdapterSelection';
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
@@ -34,12 +36,14 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
                 max={10}
                 step={1}
               />
-              <NumberInput
-                label="Slide Gap (px)"
+              <DimensionInput
+                label="Slide Gap"
                 description="Space between carousel slides."
                 value={settings.carouselGap}
-                onChange={(value) => updateSetting('carouselGap', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselGap)}
-                min={0}
+                unit={settings.carouselGapUnit ?? 'px'}
+                onValueChange={(value) => updateSetting('carouselGap', value)}
+                onUnitChange={(unit) => updateSetting('carouselGapUnit', unit as GalleryBehaviorSettings['carouselGapUnit'])}
+                allowedUnits={CSS_SPACING_UNITS}
                 max={64}
                 step={4}
               />
@@ -125,21 +129,25 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
         <Accordion.Control>Section Sizing &amp; Spacing</Accordion.Control>
         <Accordion.Panel>
           {(!mountedPanels || mountedPanels.has('section-sizing')) && <Stack gap="md">
-            <NumberInput
-              label="Gallery Section Max Width (px)"
+            <DimensionInput
+              label="Gallery Section Max Width"
               description="Maximum width for each gallery section. 0 = fill available space."
               value={settings.gallerySectionMaxWidth ?? 0}
-              onChange={(value) => updateSetting('gallerySectionMaxWidth', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.gallerySectionMaxWidthUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('gallerySectionMaxWidth', value)}
+              onUnitChange={(unit) => updateSetting('gallerySectionMaxWidthUnit', unit as GalleryBehaviorSettings['gallerySectionMaxWidthUnit'])}
+              allowedUnits={CSS_WIDTH_UNITS}
               max={2000}
               step={50}
             />
-            <NumberInput
-              label="Gallery Section Min Width (px)"
+            <DimensionInput
+              label="Gallery Section Min Width"
               description="Minimum width floor for gallery sections."
               value={settings.gallerySectionMinWidth ?? 300}
-              onChange={(value) => updateSetting('gallerySectionMinWidth', typeof value === 'number' ? value : 300)}
-              min={200}
+              unit={settings.gallerySectionMinWidthUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('gallerySectionMinWidth', value)}
+              onUnitChange={(unit) => updateSetting('gallerySectionMinWidthUnit', unit as GalleryBehaviorSettings['gallerySectionMinWidthUnit'])}
+              allowedUnits={CSS_WIDTH_UNITS}
               max={600}
               step={50}
             />
@@ -155,22 +163,26 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               onChange={(value) => updateSetting('gallerySectionHeightMode', (value ?? 'auto') as GalleryBehaviorSettings['gallerySectionHeightMode'])}
             />
             {settings.gallerySectionHeightMode === 'manual' && (
-              <NumberInput
-                label="Gallery Section Max Height (px)"
+              <DimensionInput
+                label="Gallery Section Max Height"
                 description="Maximum height for gallery sections in manual mode."
                 value={settings.gallerySectionMaxHeight ?? 0}
-                onChange={(value) => updateSetting('gallerySectionMaxHeight', typeof value === 'number' ? value : 0)}
-                min={0}
+                unit={settings.gallerySectionMaxHeightUnit ?? 'px'}
+                onValueChange={(value) => updateSetting('gallerySectionMaxHeight', value)}
+                onUnitChange={(unit) => updateSetting('gallerySectionMaxHeightUnit', unit as GalleryBehaviorSettings['gallerySectionMaxHeightUnit'])}
+                allowedUnits={CSS_HEIGHT_UNITS}
                 max={2000}
                 step={50}
               />
             )}
-            <NumberInput
-              label="Gallery Section Min Height (px)"
+            <DimensionInput
+              label="Gallery Section Min Height"
               description="Minimum height floor for gallery sections."
               value={settings.gallerySectionMinHeight ?? 150}
-              onChange={(value) => updateSetting('gallerySectionMinHeight', typeof value === 'number' ? value : 150)}
-              min={100}
+              unit={settings.gallerySectionMinHeightUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('gallerySectionMinHeight', value)}
+              onUnitChange={(unit) => updateSetting('gallerySectionMinHeightUnit', unit as GalleryBehaviorSettings['gallerySectionMinHeightUnit'])}
+              allowedUnits={CSS_HEIGHT_UNITS}
               max={400}
               step={50}
             />
@@ -207,23 +219,29 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               value={settings.gallerySectionContentAlignY || 'start'}
               onChange={(value) => updateSetting('gallerySectionContentAlignY', (value || 'start') as GalleryBehaviorSettings['gallerySectionContentAlignY'])}
             />
-            <NumberInput
-              label="Content Horizontal Offset (px)"
+            <DimensionInput
+              label="Content Horizontal Offset"
               description="Fine-tune horizontal position of section content. Negative = left, positive = right."
               value={settings.gallerySectionContentOffsetX ?? 0}
-              onChange={(value) => updateSetting('gallerySectionContentOffsetX', typeof value === 'number' ? value : 0)}
-              min={-200}
+              unit={settings.gallerySectionContentOffsetXUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('gallerySectionContentOffsetX', value)}
+              onUnitChange={(unit) => updateSetting('gallerySectionContentOffsetXUnit', unit as GalleryBehaviorSettings['gallerySectionContentOffsetXUnit'])}
+              allowedUnits={CSS_OFFSET_UNITS}
               max={200}
               step={4}
+              allowNegative
             />
-            <NumberInput
-              label="Content Vertical Offset (px)"
+            <DimensionInput
+              label="Content Vertical Offset"
               description="Fine-tune vertical position of section content. Negative = up, positive = down."
               value={settings.gallerySectionContentOffsetY ?? 0}
-              onChange={(value) => updateSetting('gallerySectionContentOffsetY', typeof value === 'number' ? value : 0)}
-              min={-200}
+              unit={settings.gallerySectionContentOffsetYUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('gallerySectionContentOffsetY', value)}
+              onUnitChange={(unit) => updateSetting('gallerySectionContentOffsetYUnit', unit as GalleryBehaviorSettings['gallerySectionContentOffsetYUnit'])}
+              allowedUnits={CSS_OFFSET_UNITS}
               max={200}
               step={4}
+              allowNegative
             />
             <Switch
               label="Equal Height Sections (Per-Type)"
@@ -231,21 +249,25 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               checked={settings.perTypeSectionEqualHeight ?? false}
               onChange={(e) => updateSetting('perTypeSectionEqualHeight', e.currentTarget.checked)}
             />
-            <NumberInput
-              label="Gallery Section Padding (px)"
+            <DimensionInput
+              label="Gallery Section Padding"
               description="Inner padding within each gallery section wrapper."
               value={settings.gallerySectionPadding ?? 16}
-              onChange={(value) => updateSetting('gallerySectionPadding', typeof value === 'number' ? value : 16)}
-              min={0}
+              unit={settings.gallerySectionPaddingUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('gallerySectionPadding', value)}
+              onUnitChange={(unit) => updateSetting('gallerySectionPaddingUnit', unit as GalleryBehaviorSettings['gallerySectionPaddingUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={32}
               step={4}
             />
-            <NumberInput
-              label="Adapter Content Padding (px)"
+            <DimensionInput
+              label="Adapter Content Padding"
               description="Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
               value={settings.adapterContentPadding ?? 0}
-              onChange={(value) => updateSetting('adapterContentPadding', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.adapterContentPaddingUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('adapterContentPadding', value)}
+              onUnitChange={(unit) => updateSetting('adapterContentPaddingUnit', unit as GalleryBehaviorSettings['adapterContentPaddingUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={24}
               step={4}
             />
@@ -272,39 +294,48 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               value={settings.modalGalleryVerticalAlign || 'start'}
               onChange={(value) => updateSetting('modalGalleryVerticalAlign', (value || 'start') as GalleryBehaviorSettings['modalGalleryVerticalAlign'])}
             />
-            <NumberInput
-              label="Gallery Shell Vertical Offset (px)"
+            <DimensionInput
+              label="Gallery Shell Vertical Offset"
               description="Fine-tune vertical position of the gallery sections. Negative = up, positive = down."
               value={settings.modalGalleryOffsetY ?? 0}
-              onChange={(value) => updateSetting('modalGalleryOffsetY', typeof value === 'number' ? value : 0)}
-              min={-200}
+              unit={settings.modalGalleryOffsetYUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('modalGalleryOffsetY', value)}
+              onUnitChange={(unit) => updateSetting('modalGalleryOffsetYUnit', unit as GalleryBehaviorSettings['modalGalleryOffsetYUnit'])}
+              allowedUnits={CSS_OFFSET_UNITS}
               max={200}
               step={4}
+              allowNegative
             />
-            <NumberInput
-              label="Gallery Max Width (px)"
+            <DimensionInput
+              label="Gallery Max Width"
               description="Maximum width of the gallery container. 0 = full responsive width."
               value={settings.modalGalleryMaxWidth}
-              onChange={(value) => updateSetting('modalGalleryMaxWidth', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.modalGalleryMaxWidthUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('modalGalleryMaxWidth', value)}
+              onUnitChange={(unit) => updateSetting('modalGalleryMaxWidthUnit', unit as GalleryBehaviorSettings['modalGalleryMaxWidthUnit'])}
+              allowedUnits={CSS_WIDTH_UNITS}
               max={3000}
               step={50}
             />
-            <NumberInput
-              label="Gallery Section Gap (px)"
+            <DimensionInput
+              label="Gallery Section Gap"
               description="Vertical gap between gallery sections."
               value={settings.modalGalleryGap}
-              onChange={(value) => updateSetting('modalGalleryGap', typeof value === 'number' ? value : 32)}
-              min={0}
+              unit={settings.modalGalleryGapUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('modalGalleryGap', value)}
+              onUnitChange={(unit) => updateSetting('modalGalleryGapUnit', unit as GalleryBehaviorSettings['modalGalleryGapUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={64}
               step={8}
             />
-            <NumberInput
-              label="Gallery Edge Margin (px)"
+            <DimensionInput
+              label="Gallery Edge Margin"
               description="Horizontal margin on gallery edges."
               value={settings.modalGalleryMargin}
-              onChange={(value) => updateSetting('modalGalleryMargin', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.modalGalleryMarginUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('modalGalleryMargin', value)}
+              onUnitChange={(unit) => updateSetting('modalGalleryMarginUnit', unit as GalleryBehaviorSettings['modalGalleryMarginUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={120}
               step={4}
             />
@@ -348,12 +379,14 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
                 />
               </>
             )}
-            <NumberInput
-              label="Adapter Item Gap (px)"
+            <DimensionInput
+              label="Adapter Item Gap"
               description="Spacing between items in grid adapters (Compact Grid). 0 = no gap."
               value={settings.adapterItemGap ?? 16}
-              onChange={(value) => updateSetting('adapterItemGap', typeof value === 'number' ? value : 16)}
-              min={0}
+              unit={settings.adapterItemGapUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('adapterItemGap', value)}
+              onUnitChange={(unit) => updateSetting('adapterItemGapUnit', unit as GalleryBehaviorSettings['adapterItemGapUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={64}
               step={4}
             />

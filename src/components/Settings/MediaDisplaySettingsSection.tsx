@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Accordion, ColorInput, Divider, Group, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import { DimensionInput } from '@/components/Settings/DimensionInput';
 
 import {
   DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
@@ -15,6 +16,7 @@ import {
   type ShadowPreset,
 } from '@/types';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { CSS_BORDER_RADIUS_UNITS, CSS_SPACING_UNITS } from '@/utils/cssUnits';
 
 interface MediaDisplaySettingsData extends GalleryBehaviorSettings {
   galleryLayout: 'grid' | 'masonry' | 'carousel';
@@ -78,22 +80,26 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
 
             <Divider label="Border Radius" labelPosition="center" />
 
-            <NumberInput
-              label="Image Border Radius (px)"
+            <DimensionInput
+              label="Image Border Radius"
               description="Corner rounding for image gallery viewport and thumbnails."
               value={settings.imageBorderRadius}
-              onChange={(value) => updateSetting('imageBorderRadius', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius)}
-              min={0}
+              unit={settings.imageBorderRadiusUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('imageBorderRadius', value)}
+              onUnitChange={(unit) => updateSetting('imageBorderRadiusUnit', unit as GalleryBehaviorSettings['imageBorderRadiusUnit'])}
+              allowedUnits={CSS_BORDER_RADIUS_UNITS}
               max={48}
               step={1}
             />
 
-            <NumberInput
-              label="Video Border Radius (px)"
+            <DimensionInput
+              label="Video Border Radius"
               description="Corner rounding for video gallery viewport and thumbnails."
               value={settings.videoBorderRadius}
-              onChange={(value) => updateSetting('videoBorderRadius', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius)}
-              min={0}
+              unit={settings.videoBorderRadiusUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('videoBorderRadius', value)}
+              onUnitChange={(unit) => updateSetting('videoBorderRadiusUnit', unit as GalleryBehaviorSettings['videoBorderRadiusUnit'])}
+              allowedUnits={CSS_BORDER_RADIUS_UNITS}
               max={48}
               step={1}
             />
@@ -154,21 +160,25 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
         <Accordion.Panel>
           {mounted.has('tile-appearance') && <Stack gap="md">
             <Group grow>
-              <NumberInput
-                label="Gap X (px)"
+              <DimensionInput
+                label="Gap X"
                 description="Horizontal gap between tiles."
                 value={settings.tileGapX}
-                onChange={(value) => updateSetting('tileGapX', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapX)}
-                min={0}
+                unit={settings.tileGapXUnit ?? 'px'}
+                onValueChange={(value) => updateSetting('tileGapX', value)}
+                onUnitChange={(unit) => updateSetting('tileGapXUnit', unit as GalleryBehaviorSettings['tileGapXUnit'])}
+                allowedUnits={CSS_SPACING_UNITS}
                 max={60}
                 step={1}
               />
-              <NumberInput
-                label="Gap Y (px)"
+              <DimensionInput
+                label="Gap Y"
                 description="Vertical gap between tile rows."
                 value={settings.tileGapY}
-                onChange={(value) => updateSetting('tileGapY', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapY)}
-                min={0}
+                unit={settings.tileGapYUnit ?? 'px'}
+                onValueChange={(value) => updateSetting('tileGapY', value)}
+                onUnitChange={(unit) => updateSetting('tileGapYUnit', unit as GalleryBehaviorSettings['tileGapYUnit'])}
+                allowedUnits={CSS_SPACING_UNITS}
                 max={60}
                 step={1}
               />

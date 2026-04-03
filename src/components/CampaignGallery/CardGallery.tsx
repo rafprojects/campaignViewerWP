@@ -13,6 +13,7 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/CardViewer/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -212,10 +213,10 @@ export function CardGallery({
   } : {};
 
   const containerSize = galleryBehaviorSettings.appMaxWidth > 0
-    ? galleryBehaviorSettings.appMaxWidth
+    ? toCssOrNumber(galleryBehaviorSettings.appMaxWidth, galleryBehaviorSettings.appMaxWidthUnit)
     : undefined;
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
-  const containerPaddingStyle = { paddingInline: galleryBehaviorSettings.appPadding };
+  const containerPaddingStyle = { paddingInline: toCssOrNumber(galleryBehaviorSettings.appPadding, galleryBehaviorSettings.appPaddingUnit) };
   const hasFixedCardWidth = galleryBehaviorSettings.cardMaxWidth > 0;
   const cardGridJustification = galleryBehaviorSettings.cardJustifyContent || 'center';
   const cardGridVerticalAlign = galleryBehaviorSettings.cardGalleryVerticalAlign || 'start';
@@ -223,14 +224,16 @@ export function CardGallery({
   const cardGridMaxHeight = galleryBehaviorSettings.cardGalleryMaxHeight || 0;
   const cardGridOffsetX = galleryBehaviorSettings.cardGalleryOffsetX || 0;
   const cardGridOffsetY = galleryBehaviorSettings.cardGalleryOffsetY || 0;
+  const cardGapHUnit = galleryBehaviorSettings.cardGapHUnit ?? 'px';
+  const cardGapVUnit = galleryBehaviorSettings.cardGapVUnit ?? 'px';
   const responsiveCardWidth = useMemo(() => {
     if (effectiveColumns <= 1) {
       return '100%';
     }
 
-    const totalGapWidth = (effectiveColumns - 1) * galleryBehaviorSettings.cardGapH;
-    return `calc((100% - ${totalGapWidth}px) / ${effectiveColumns})`;
-  }, [effectiveColumns, galleryBehaviorSettings.cardGapH]);
+    const totalGap = toCss((effectiveColumns - 1) * galleryBehaviorSettings.cardGapH, cardGapHUnit);
+    return `calc((100% - ${totalGap}) / ${effectiveColumns})`;
+  }, [effectiveColumns, galleryBehaviorSettings.cardGapH, cardGapHUnit]);
 
   // P21-D: Dynamic viewer background
   const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
@@ -402,15 +405,15 @@ export function CardGallery({
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
+                gap: `${toCss(galleryBehaviorSettings.cardGapV, cardGapVUnit)} ${toCss(galleryBehaviorSettings.cardGapH, cardGapHUnit)}`,
                 justifyContent: cardGridJustification,
                 alignContent: cardGridVerticalAlign,
-                ...(cardGridMinHeight > 0 ? { minHeight: cardGridMinHeight } : {}),
-                ...(cardGridMaxHeight > 0 ? { maxHeight: cardGridMaxHeight, overflow: 'auto' as const } : {}),
-                ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${cardGridOffsetX}px, ${cardGridOffsetY}px)` } : {}),
+                ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, galleryBehaviorSettings.cardGalleryMinHeightUnit) } : {}),
+                ...(cardGridMaxHeight > 0 ? { maxHeight: toCssOrNumber(cardGridMaxHeight, galleryBehaviorSettings.cardGalleryMaxHeightUnit), overflow: 'auto' as const } : {}),
+                ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, galleryBehaviorSettings.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, galleryBehaviorSettings.cardGalleryOffsetYUnit)})` } : {}),
                 width: '100%',
                 ...(hasFixedCardWidth && galleryBehaviorSettings.cardMaxWidthUnit !== '%' ? {
-                  maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,
+                  maxWidth: `calc(${toCss(maxCols * galleryBehaviorSettings.cardMaxWidth, galleryBehaviorSettings.cardMaxWidthUnit)} + ${toCss((maxCols - 1) * galleryBehaviorSettings.cardGapH, cardGapHUnit)})`,
                   marginInline: 'auto',
                 } : {}),
               }}

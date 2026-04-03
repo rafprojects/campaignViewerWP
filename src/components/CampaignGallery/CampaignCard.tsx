@@ -5,6 +5,7 @@ import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { RequestAccessForm } from './RequestAccessForm';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import styles from './CampaignCard.module.scss';
@@ -22,6 +23,7 @@ interface CampaignCardProps {
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth, maxWidthUnit = 'px' }, ref) => {
     const borderRadius = settings?.cardBorderRadius ?? 8;
+    const borderRadiusUnit = settings?.cardBorderRadiusUnit ?? 'px';
     const borderWidth = settings?.cardBorderWidth ?? 4;
     const borderMode = settings?.cardBorderMode ?? 'auto';
     // Resolve border color based on mode
@@ -32,11 +34,13 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
       resolvedBorderColor = campaign.borderColor;
     }
     const thumbHeight = settings?.cardThumbnailHeight ?? 200;
+    const thumbHeightUnit = settings?.cardThumbnailHeightUnit ?? 'px';
     const thumbFit = (settings?.cardThumbnailFit ?? 'cover') as 'cover' | 'contain';
     const scale = settings?.cardScale ?? 1;
     const scaledThumbHeight = Math.round(thumbHeight * scale);
     const scaledMaxWidth = maxWidth && scale !== 1 ? Math.round(maxWidth * scale) : maxWidth;
     const scaledMinHeight = settings?.cardMinHeight ? Math.round(settings.cardMinHeight * scale) : settings?.cardMinHeight;
+    const minHeightUnit = settings?.cardMinHeightUnit ?? 'px';
     const shadow = settings?.cardShadowPreset ?? 'subtle';
     const shadowMap: Record<string, string> = {
       none: 'none',
@@ -64,12 +68,12 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,
           width: '100%',
-          ...(scaledMaxWidth ? { maxWidth: `${scaledMaxWidth}${maxWidthUnit}` } : {}),
+          ...(scaledMaxWidth ? { maxWidth: toCss(scaledMaxWidth, maxWidthUnit) } : {}),
         }}
       >
         <Card
           padding={0}
-          radius={borderRadius}
+          radius={toCssOrNumber(borderRadius, borderRadiusUnit)}
           withBorder={showBorder}
           style={{
             position: 'relative',
@@ -79,20 +83,20 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             ...(showBorder ? { borderLeft: `${borderWidth}px solid ${resolvedBorderColor}` } : {}),
             boxShadow: cardShadow,
             ...(settings?.cardAspectRatio && settings.cardAspectRatio !== 'auto' ? { aspectRatio: settings.cardAspectRatio.replace(':', ' / ') } : {}),
-            ...(scaledMinHeight ? { minHeight: `${scaledMinHeight}px` } : {}),
+            ...(scaledMinHeight ? { minHeight: toCss(scaledMinHeight, minHeightUnit) } : {}),
           }}
         >
           {/* Thumbnail Section */}
           <Card.Section
             pos="relative"
-            h={showInfo ? { base: Math.round(scaledThumbHeight * 0.8), sm: scaledThumbHeight } : undefined}
+            h={showInfo ? { base: toCssOrNumber(Math.round(scaledThumbHeight * 0.8), thumbHeightUnit), sm: toCssOrNumber(scaledThumbHeight, thumbHeightUnit) } : undefined}
             style={!showInfo ? { flex: 1, overflow: 'hidden' } : undefined}
             component="div"
           >
             <Image 
               src={campaign.thumbnail} 
               alt={campaign.title}
-              h={showInfo ? { base: Math.round(scaledThumbHeight * 0.8), sm: scaledThumbHeight } : '100%'}
+              h={showInfo ? { base: toCssOrNumber(Math.round(scaledThumbHeight * 0.8), thumbHeightUnit), sm: toCssOrNumber(scaledThumbHeight, thumbHeightUnit) } : '100%'}
               fit={thumbFit}
               loading="lazy"
               style={{ 

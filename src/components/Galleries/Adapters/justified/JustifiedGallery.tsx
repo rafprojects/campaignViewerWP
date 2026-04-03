@@ -22,6 +22,7 @@ import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { toCssOrNumber } from '@/utils/cssUnits';
 
 const SCOPE = 'justified';
 
@@ -72,12 +73,13 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
   });
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
   const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
     ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
     : {};
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {settings.showCampaignGalleryLabels !== false && (
         <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
@@ -99,7 +101,11 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
           // ⚠ CRITICAL: never set display here — it breaks the flex-row layout.
           // Only set overflow/radius/position which do not affect the layout flow.
           button({ style, className, ...props }, { photo }) {
-            const borderRadius = (photo as RpaPhoto).item.type === 'video' ? settings.videoBorderRadius : settings.imageBorderRadius;
+            const isVideo = (photo as RpaPhoto).item.type === 'video';
+            const borderRadius = toCssOrNumber(
+              isVideo ? settings.videoBorderRadius : settings.imageBorderRadius,
+              (isVideo ? settings.videoBorderRadiusUnit : settings.imageBorderRadiusUnit) ?? 'px',
+            );
 
             return (
               <button
@@ -124,7 +130,10 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;
             const isVideo = p.item.type === 'video';
-            const borderRadius = isVideo ? settings.videoBorderRadius : settings.imageBorderRadius;
+            const borderRadius = toCssOrNumber(
+              isVideo ? settings.videoBorderRadius : settings.imageBorderRadius,
+              (isVideo ? settings.videoBorderRadiusUnit : settings.imageBorderRadiusUnit) ?? 'px',
+            );
             const iconSize = Math.max(20, Math.min(width, height) * 0.2);
             return (
               <Box

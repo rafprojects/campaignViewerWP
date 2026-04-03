@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { Box } from '@mantine/core';
 import type { ContainerDimensions, GalleryBehaviorSettings } from '@/types';
 import { clampDimension } from '@/utils/clampDimension';
+import { toCss } from '@/utils/cssUnits';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 
 interface GallerySectionWrapperProps {
@@ -70,6 +71,13 @@ export function GallerySectionWrapper({
   const scaledMinHeight = Math.round((s.gallerySectionMinHeight ?? 0) * sc);
   const scaledMaxHeight = Math.round((s.gallerySectionMaxHeight ?? 0) * sc);
   const scaledPadding = Math.round(Math.max(0, Math.min(32, s.gallerySectionPadding)) * sc);
+  const widthUnit = s.gallerySectionMaxWidthUnit ?? 'px';
+  const minWidthUnit = s.gallerySectionMinWidthUnit ?? 'px';
+  const heightUnit = s.gallerySectionMaxHeightUnit ?? 'px';
+  const minHeightUnit = s.gallerySectionMinHeightUnit ?? 'px';
+  const paddingUnit = s.gallerySectionPaddingUnit ?? 'px';
+  const offsetXUnit = s.gallerySectionContentOffsetXUnit ?? 'px';
+  const offsetYUnit = s.gallerySectionContentOffsetYUnit ?? 'px';
   const effectiveMinWidth = Math.max(0, Math.min(scaledMinWidth, scaledMaxWidth || scaledMinWidth));
 
   // Clamp user settings to measured available space
@@ -84,7 +92,7 @@ export function GallerySectionWrapper({
 
   const resolvedMaxHeight =
     s.gallerySectionHeightMode === 'manual' && scaledMaxHeight > 0
-      ? `${clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity)}px`
+      ? toCss(clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity), heightUnit)
       : s.gallerySectionHeightMode === 'viewport'
         ? '80dvh'
         : undefined; // 'auto' — no max height constraint
@@ -109,12 +117,12 @@ export function GallerySectionWrapper({
   const wrapperStyle: CSSProperties = {
     width: '100%',
     maxWidth: scaledMaxWidth > 0
-      ? `min(100%, ${Math.max(effectiveMinWidth, scaledMaxWidth)}px)`
+      ? `min(100%, ${toCss(Math.max(effectiveMinWidth, scaledMaxWidth), widthUnit)})`
       : '100%',
-    minWidth: effectiveMinWidth > 0 ? `min(100%, ${effectiveMinWidth}px)` : undefined,
+    minWidth: effectiveMinWidth > 0 ? `min(100%, ${toCss(effectiveMinWidth, minWidthUnit)})` : undefined,
     maxHeight: resolvedMaxHeight,
-    minHeight: `${scaledMinHeight}px`,
-    padding: `${scaledPadding}px`,
+    minHeight: toCss(scaledMinHeight, minHeightUnit),
+    padding: toCss(scaledPadding, paddingUnit),
     marginInline: 'auto',
     overflow: resolvedMaxHeight ? 'hidden' : undefined,
     borderRadius: borderRadius != null ? `${borderRadius}px` : undefined,
@@ -127,7 +135,7 @@ export function GallerySectionWrapper({
   };
 
   const contentStyle: CSSProperties | undefined = hasContentOffset
-    ? { width: '100%', transform: `translate(${s.gallerySectionContentOffsetX}px, ${s.gallerySectionContentOffsetY}px)` }
+    ? { width: '100%', transform: `translate(${toCss(s.gallerySectionContentOffsetX, offsetXUnit)}, ${toCss(s.gallerySectionContentOffsetY, offsetYUnit)})` }
     : undefined;
 
   return (

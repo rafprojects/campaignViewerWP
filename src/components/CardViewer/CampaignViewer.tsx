@@ -11,6 +11,7 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { buildGradientCss } from '@/utils/gradientCss';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
@@ -174,6 +175,7 @@ export function CampaignViewer({
   const campaignStatsValueStyle = useTypographyStyle('campaignStatsValue', s);
   const campaignStatsLabelStyle = useTypographyStyle('campaignStatsLabel', s);
   const coverH = s.modalCoverHeight;
+  const coverHUnit = s.modalCoverHeightUnit ?? 'px';
   const coverHBase = Math.round(coverH * 0.67);
   const coverHSm = Math.round(coverH * 0.83);
   const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
@@ -198,11 +200,12 @@ export function CampaignViewer({
   const MODAL_MAX_HEIGHT_DVH = 95;
   const clampedWidth = Math.max(MODAL_MIN_WIDTH, Math.min(MODAL_MAX_WIDTH, s.modalMaxWidth || 1200));
   const clampedMaxHeight = Math.max(MODAL_MIN_HEIGHT_DVH, Math.min(MODAL_MAX_HEIGHT_DVH, s.modalMaxHeight));
-  const modalSize = useFullscreen ? '100%' : `${clampedWidth}px`;
+  const modalSize = useFullscreen ? '100%' : toCss(clampedWidth, s.modalMaxWidthUnit ?? 'px');
   const clampedInnerPadding = Math.max(0, Math.min(48, s.modalInnerPadding));
+  const innerPaddingUnit = s.modalInnerPaddingUnit ?? 'px';
   const contentMaxWidth = useFullscreen
-    ? (s.fullscreenContentMaxWidth > 0 ? `${s.fullscreenContentMaxWidth}px` : '100%')
-    : (s.modalContentMaxWidth > 0 ? `${s.modalContentMaxWidth}px` : '100%');
+    ? (s.fullscreenContentMaxWidth > 0 ? toCss(s.fullscreenContentMaxWidth, s.fullscreenContentMaxWidthUnit ?? 'px') : '100%')
+    : (s.modalContentMaxWidth > 0 ? toCss(s.modalContentMaxWidth, s.modalContentMaxWidthUnit ?? 'px') : '100%');
   // P22-K3: Modal background style (only applied in fullscreen)
   const modalBgStyle = useMemo<React.CSSProperties | undefined>(() => {
     if (!useFullscreen) return undefined;
@@ -238,7 +241,7 @@ export function CampaignViewer({
     >
       {/* Cover Image Header — hidden in galleries-only mode or when cover image disabled */}
       {!galleriesOnly && s.showCampaignCoverImage !== false && (
-      <Box pos="relative" h={{ base: coverHBase, sm: coverHSm, md: coverH }} component="div">
+      <Box pos="relative" h={{ base: toCssOrNumber(coverHBase, coverHUnit), sm: toCssOrNumber(coverHSm, coverHUnit), md: toCssOrNumber(coverH, coverHUnit) }} component="div">
         <InContextEditor
           visible={isAdmin && s.showInContextEditors}
           position="top-left"
@@ -262,7 +265,7 @@ export function CampaignViewer({
         <Image
           src={displayedCampaign.coverImage}
           alt={displayedCampaign.title}
-          h={{ base: coverHBase, sm: coverHSm, md: coverH }}
+          h={{ base: toCssOrNumber(coverHBase, coverHUnit), sm: toCssOrNumber(coverHSm, coverHUnit), md: toCssOrNumber(coverH, coverHUnit) }}
           fit="cover"
           loading="lazy"
         />
@@ -325,7 +328,7 @@ export function CampaignViewer({
       )}
 
       {/* Content */}
-      <Box ref={containerRef} style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : clampedInnerPadding, display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}>
+      <Box ref={containerRef} style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : toCssOrNumber(clampedInnerPadding, innerPaddingUnit), display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}>
         <Stack gap="lg" style={{ width: '100%' }}>
           {/* Description — hidden in galleries-only mode */}
           {!galleriesOnly && s.showCampaignAbout !== false && (
@@ -380,7 +383,7 @@ export function CampaignViewer({
             display: 'flex',
             flexDirection: 'column' as const,
             justifyContent: s.modalGalleryVerticalAlign === 'center' ? 'center' : s.modalGalleryVerticalAlign === 'end' ? 'flex-end' : undefined,
-            transform: s.modalGalleryOffsetY ? `translateY(${s.modalGalleryOffsetY}px)` : undefined,
+            transform: s.modalGalleryOffsetY ? `translateY(${toCss(s.modalGalleryOffsetY, s.modalGalleryOffsetYUnit ?? 'px')})` : undefined,
           }}>
             <Suspense fallback={
               <Center py="xl" mih={200}>

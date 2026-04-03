@@ -15,6 +15,7 @@ import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconDiamond, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -56,8 +57,11 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
   const close = useCallback(() => setLightboxOpen(false), []);
 
   const tSize = Math.round((settings.tileSize ?? 150) * (settings.itemScale ?? 1));
+  const tileSizeUnit = settings.tileSizeUnit ?? 'px';
   const gapX = settings.tileGapX ?? 8;
+  const gapXUnit = settings.tileGapXUnit ?? 'px';
   const gapY = settings.tileGapY ?? 8;
+  const gapYUnit = settings.tileGapYUnit ?? 'px';
   const border = settings.tileBorderWidth
     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
     : 'none';
@@ -72,12 +76,13 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
   }
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
   const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
     ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
     : {};
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {settings.showCampaignGalleryLabels !== false && (
         <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
@@ -97,9 +102,9 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
               key={rowIdx}
               style={{
                 display: 'flex',
-                gap: gapX,
-                marginTop: rowIdx === 0 ? 0 : -tSize * V_OVERLAP + gapY,
-                paddingLeft: isOffset ? (tSize + gapX) / 2 : 0,
+                gap: toCssOrNumber(gapX, gapXUnit),
+                marginTop: rowIdx === 0 ? 0 : `calc(-${toCss(tSize * V_OVERLAP, tileSizeUnit)} + ${toCss(gapY, gapYUnit)})`,
+                paddingLeft: isOffset ? `calc((${toCss(tSize, tileSizeUnit)} + ${toCss(gapX, gapXUnit)}) / 2)` : 0,
               }}
             >
               {row.map((item, itemIdx) => {
@@ -117,8 +122,8 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
                     className={`wpsg-tile-${SCOPE}`}
                     style={{
                       flexShrink: 0,
-                      width: tSize,
-                      height: tSize,
+                      width: toCssOrNumber(tSize, tileSizeUnit),
+                      height: toCssOrNumber(tSize, tileSizeUnit),
                       clipPath: DIAMOND_CLIP,
                       border,
                       position: 'relative',

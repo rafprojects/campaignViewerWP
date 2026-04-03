@@ -107,7 +107,11 @@ const LEGACY_ADAPTER_SETTING_KEYS = Array.from(
   new Set(
     getRegisteredAdapters().flatMap((adapter) => (
       adapter.settingGroups.flatMap((group) => (
-        getSettingGroupDefinition(group)?.fields.map((field) => field.key) ?? []
+        getSettingGroupDefinition(group)?.fields.flatMap((field) => {
+          const keys: Array<keyof GalleryBehaviorSettings> = [field.key];
+          if (field.control === 'dimension') keys.push(field.unitKey);
+          return keys;
+        }) ?? []
       ))
     )),
   ),

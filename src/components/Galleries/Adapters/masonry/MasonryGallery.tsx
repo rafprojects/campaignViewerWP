@@ -24,6 +24,7 @@ import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { toCssOrNumber } from '@/utils/cssUnits';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 
 const SCOPE = 'masonry';
@@ -80,12 +81,13 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
   });
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
   const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
     ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
     : {};
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {settings.showCampaignGalleryLabels !== false && (
         <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
           <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
@@ -104,7 +106,11 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
         onClick={({ index }) => openAt(index)}
         render={{
           button({ style, className, ...props }, { photo }) {
-            const borderRadius = (photo as RpaPhoto).item.type === 'video' ? settings.videoBorderRadius : settings.imageBorderRadius;
+            const isVideo = (photo as RpaPhoto).item.type === 'video';
+            const borderRadius = toCssOrNumber(
+              isVideo ? settings.videoBorderRadius : settings.imageBorderRadius,
+              (isVideo ? settings.videoBorderRadiusUnit : settings.imageBorderRadiusUnit) ?? 'px',
+            );
 
             return (
               <button
@@ -133,7 +139,10 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;
             const isVideo = p.item.type === 'video';
-            const borderRadius = isVideo ? settings.videoBorderRadius : settings.imageBorderRadius;
+            const borderRadius = toCssOrNumber(
+              isVideo ? settings.videoBorderRadius : settings.imageBorderRadius,
+              (isVideo ? settings.videoBorderRadiusUnit : settings.imageBorderRadiusUnit) ?? 'px',
+            );
             const iconSize = Math.max(22, Math.min(width, height) * 0.2);
             return (
               <Box

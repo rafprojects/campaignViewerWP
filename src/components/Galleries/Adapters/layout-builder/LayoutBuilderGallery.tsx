@@ -31,6 +31,7 @@ import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEff
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { toCssOrNumber } from '@/utils/cssUnits';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
 
@@ -559,12 +560,13 @@ function LayoutBuilderGalleryInner({
   const hasMismatch = slotCount !== mediaCount;
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
   const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
     ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
     : {};
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {/* Hover styles injected into DOM */}
       <style>{hoverStylesCss}</style>
 
@@ -661,7 +663,7 @@ function LayoutBuilderGalleryInner({
                   ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
                   : undefined,
               overflow: 'hidden',
-              borderRadius: settings.imageBorderRadius || 0,
+              borderRadius: toCssOrNumber(settings.imageBorderRadius || 0, settings.imageBorderRadiusUnit ?? 'px'),
               margin: '0 auto',
             }}
             role="img"

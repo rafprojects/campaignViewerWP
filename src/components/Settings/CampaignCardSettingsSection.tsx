@@ -1,7 +1,9 @@
 import { Accordion, ColorInput, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { DimensionInput } from '@/components/Settings/DimensionInput';
 
 import type { GalleryBehaviorSettings } from '@/types';
+import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
@@ -17,12 +19,14 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
         <Accordion.Control>Card Appearance</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
-            <NumberInput
-              label="Border Radius (px)"
+            <DimensionInput
+              label="Border Radius"
               description="Corner rounding for campaign cards"
               value={settings.cardBorderRadius}
-              onChange={(value) => updateSetting('cardBorderRadius', typeof value === 'number' ? value : 8)}
-              min={0}
+              unit={settings.cardBorderRadiusUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardBorderRadius', value)}
+              onUnitChange={(unit) => updateSetting('cardBorderRadiusUnit', unit as GalleryBehaviorSettings['cardBorderRadiusUnit'])}
+              allowedUnits={CSS_BORDER_RADIUS_UNITS}
               max={24}
               step={1}
             />
@@ -66,12 +70,14 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               value={settings.cardShadowPreset}
               onChange={(value) => updateSetting('cardShadowPreset', value ?? 'subtle')}
             />
-            <NumberInput
-              label="Thumbnail Height (px)"
+            <DimensionInput
+              label="Thumbnail Height"
               description="Height of the card thumbnail area"
               value={settings.cardThumbnailHeight}
-              onChange={(value) => updateSetting('cardThumbnailHeight', typeof value === 'number' ? value : 200)}
-              min={100}
+              unit={settings.cardThumbnailHeightUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardThumbnailHeight', value)}
+              onUnitChange={(unit) => updateSetting('cardThumbnailHeightUnit', unit as GalleryBehaviorSettings['cardThumbnailHeightUnit'])}
+              allowedUnits={CSS_HEIGHT_UNITS}
               max={400}
               step={10}
             />
@@ -156,30 +162,36 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               value={String(settings.cardGridColumns)}
               onChange={(value) => updateSetting('cardGridColumns', parseInt(value ?? '0', 10))}
             />
-            <NumberInput
-              label="Horizontal Gap (px)"
+            <DimensionInput
+              label="Horizontal Gap"
               description="Horizontal spacing between campaign cards"
               value={settings.cardGapH}
-              onChange={(value) => updateSetting('cardGapH', typeof value === 'number' ? value : 16)}
-              min={0}
+              unit={settings.cardGapHUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardGapH', value)}
+              onUnitChange={(unit) => updateSetting('cardGapHUnit', unit as GalleryBehaviorSettings['cardGapHUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={48}
               step={2}
             />
-            <NumberInput
-              label="Vertical Gap (px)"
+            <DimensionInput
+              label="Vertical Gap"
               description="Vertical spacing between campaign card rows"
               value={settings.cardGapV}
-              onChange={(value) => updateSetting('cardGapV', typeof value === 'number' ? value : 16)}
-              min={0}
+              unit={settings.cardGapVUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardGapV', value)}
+              onUnitChange={(unit) => updateSetting('cardGapVUnit', unit as GalleryBehaviorSettings['cardGapVUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={48}
               step={2}
             />
-            <NumberInput
-              label="Card Max Width (px)"
+            <DimensionInput
+              label="Card Max Width"
               description="Limit individual card width. 0 = no limit (fill column)."
               value={settings.cardMaxWidth}
-              onChange={(value) => updateSetting('cardMaxWidth', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.cardMaxWidthUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardMaxWidth', value)}
+              onUnitChange={(unit) => updateSetting('cardMaxWidthUnit', unit as GalleryBehaviorSettings['cardMaxWidthUnit'])}
+              allowedUnits={CSS_WIDTH_UNITS}
               max={800}
               step={10}
               placeholder="0 = unlimited"
@@ -218,56 +230,54 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               value={settings.cardGalleryVerticalAlign ?? 'start'}
               onChange={(value) => updateSetting('cardGalleryVerticalAlign', (value ?? 'start') as GalleryBehaviorSettings['cardGalleryVerticalAlign'])}
             />
-            <NumberInput
-              label="Grid Minimum Height (px)"
+            <DimensionInput
+              label="Grid Minimum Height"
               description="Minimum height for the card grid container. Vertical alignment only takes effect when the grid is taller than its content."
               value={settings.cardGalleryMinHeight}
-              onChange={(value) => updateSetting('cardGalleryMinHeight', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.cardGalleryMinHeightUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardGalleryMinHeight', value)}
+              onUnitChange={(unit) => updateSetting('cardGalleryMinHeightUnit', unit as GalleryBehaviorSettings['cardGalleryMinHeightUnit'])}
+              allowedUnits={CSS_HEIGHT_UNITS}
               max={1200}
               step={50}
               placeholder="0 = no minimum"
             />
-            <NumberInput
-              label="Grid Maximum Height (px)"
+            <DimensionInput
+              label="Grid Maximum Height"
               description="Maximum height for the card grid area. Content will scroll when exceeded. 0 = no limit."
               value={settings.cardGalleryMaxHeight}
-              onChange={(value) => updateSetting('cardGalleryMaxHeight', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.cardGalleryMaxHeightUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardGalleryMaxHeight', value)}
+              onUnitChange={(unit) => updateSetting('cardGalleryMaxHeightUnit', unit as GalleryBehaviorSettings['cardGalleryMaxHeightUnit'])}
+              allowedUnits={CSS_HEIGHT_UNITS}
               max={2000}
               step={50}
               placeholder="0 = no maximum"
             />
-            <NumberInput
-              label="Grid Horizontal Offset (px)"
+            <DimensionInput
+              label="Grid Horizontal Offset"
               description="Fine-tune horizontal position of the card grid. Negative = left, positive = right."
               value={settings.cardGalleryOffsetX ?? 0}
-              onChange={(value) => updateSetting('cardGalleryOffsetX', typeof value === 'number' ? value : 0)}
-              min={-200}
+              unit={settings.cardGalleryOffsetXUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardGalleryOffsetX', value)}
+              onUnitChange={(unit) => updateSetting('cardGalleryOffsetXUnit', unit as GalleryBehaviorSettings['cardGalleryOffsetXUnit'])}
+              allowedUnits={CSS_OFFSET_UNITS}
               max={200}
               step={4}
+              allowNegative
             />
-            <NumberInput
-              label="Grid Vertical Offset (px)"
+            <DimensionInput
+              label="Grid Vertical Offset"
               description="Fine-tune vertical position of the card grid. Negative = up, positive = down."
               value={settings.cardGalleryOffsetY ?? 0}
-              onChange={(value) => updateSetting('cardGalleryOffsetY', typeof value === 'number' ? value : 0)}
-              min={-200}
+              unit={settings.cardGalleryOffsetYUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardGalleryOffsetY', value)}
+              onUnitChange={(unit) => updateSetting('cardGalleryOffsetYUnit', unit as GalleryBehaviorSettings['cardGalleryOffsetYUnit'])}
+              allowedUnits={CSS_OFFSET_UNITS}
               max={200}
               step={4}
+              allowNegative
             />
-            {settings.cardMaxWidth > 0 && (
-              <ModalSelect
-                label="Card Max Width Unit"
-                description="Unit for the card max width value"
-                data={[
-                  { value: 'px', label: 'Pixels (px)' },
-                  { value: '%', label: 'Percent (%)' },
-                ]}
-                value={settings.cardMaxWidthUnit ?? 'px'}
-                onChange={(value) => updateSetting('cardMaxWidthUnit', (value ?? 'px') as GalleryBehaviorSettings['cardMaxWidthUnit'])}
-              />
-            )}
             {settings.cardGridColumns === 0 && (
               <NumberInput
                 label="Max Columns (auto mode)"
@@ -295,12 +305,14 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
               value={settings.cardAspectRatio ?? 'auto'}
               onChange={(value) => updateSetting('cardAspectRatio', (value ?? 'auto') as GalleryBehaviorSettings['cardAspectRatio'])}
             />
-            <NumberInput
-              label="Card Min Height (px)"
+            <DimensionInput
+              label="Card Min Height"
               description="Minimum height for each card. 0 = no minimum."
               value={settings.cardMinHeight}
-              onChange={(value) => updateSetting('cardMinHeight', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.cardMinHeightUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('cardMinHeight', value)}
+              onUnitChange={(unit) => updateSetting('cardMinHeightUnit', unit as GalleryBehaviorSettings['cardMinHeightUnit'])}
+              allowedUnits={CSS_HEIGHT_UNITS}
               max={600}
               step={10}
             />

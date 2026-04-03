@@ -2,8 +2,10 @@ import { Accordion, Box, ColorInput, NumberInput, Slider, Stack, Switch, Text, T
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import type { GalleryBehaviorSettings } from '@/types';
+import { CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
@@ -38,49 +40,56 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
               value={settings.campaignOpenMode ?? 'full'}
               onChange={(value) => updateSetting('campaignOpenMode', (value ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
             />
-            <NumberInput
-              label="Fullscreen Content Max Width (px)"
+            <DimensionInput
+              label="Fullscreen Content Max Width"
               description="Limit content width in fullscreen mode. 0 = full responsive width."
               value={settings.fullscreenContentMaxWidth ?? 0}
-              onChange={(value) => updateSetting('fullscreenContentMaxWidth', typeof value === 'number' ? value : 0)}
-              min={0}
+              unit={settings.fullscreenContentMaxWidthUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('fullscreenContentMaxWidth', value)}
+              onUnitChange={(unit) => updateSetting('fullscreenContentMaxWidthUnit', unit as GalleryBehaviorSettings['fullscreenContentMaxWidthUnit'])}
+              allowedUnits={CSS_WIDTH_UNITS}
               max={3000}
               step={50}
               placeholder="0 = full width"
-              disabled={!settings.campaignModalFullscreen}
-              style={!settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined}
+              numberInputProps={{ disabled: !settings.campaignModalFullscreen, style: !settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined }}
             />
             <Box style={settings.campaignModalFullscreen ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
               <Stack gap="md">
-                <NumberInput
-                  label="Modal Max Width (px)"
+                <DimensionInput
+                  label="Modal Max Width"
                   description="Maximum width of the campaign modal when not fullscreen (clamped 600-1600)."
                   value={settings.modalMaxWidth ?? 1200}
-                  onChange={(value) => updateSetting('modalMaxWidth', typeof value === 'number' ? value : 1200)}
-                  min={600}
+                  unit={settings.modalMaxWidthUnit ?? 'px'}
+                  onValueChange={(value) => updateSetting('modalMaxWidth', value)}
+                  onUnitChange={(unit) => updateSetting('modalMaxWidthUnit', unit as GalleryBehaviorSettings['modalMaxWidthUnit'])}
+                  allowedUnits={CSS_WIDTH_UNITS}
                   max={1600}
                   step={50}
                   placeholder="1200"
-                  disabled={!!settings.campaignModalFullscreen}
+                  numberInputProps={{ disabled: !!settings.campaignModalFullscreen }}
                 />
               </Stack>
             </Box>
-            <NumberInput
-              label="Content Max Width (px)"
+            <DimensionInput
+              label="Content Max Width"
               description="Maximum width of the content area inside the modal. 0 = full width."
               value={settings.modalContentMaxWidth ?? 900}
-              onChange={(value) => updateSetting('modalContentMaxWidth', typeof value === 'number' ? value : 900)}
-              min={0}
+              unit={settings.modalContentMaxWidthUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('modalContentMaxWidth', value)}
+              onUnitChange={(unit) => updateSetting('modalContentMaxWidthUnit', unit as GalleryBehaviorSettings['modalContentMaxWidthUnit'])}
+              allowedUnits={CSS_WIDTH_UNITS}
               max={2000}
               step={50}
               placeholder="900"
             />
-            <NumberInput
-              label="Modal Inner Padding (px)"
+            <DimensionInput
+              label="Modal Inner Padding"
               description="Padding inside the modal content area (clamped 0-48)."
               value={settings.modalInnerPadding ?? 16}
-              onChange={(value) => updateSetting('modalInnerPadding', typeof value === 'number' ? value : 16)}
-              min={0}
+              unit={settings.modalInnerPaddingUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('modalInnerPadding', value)}
+              onUnitChange={(unit) => updateSetting('modalInnerPaddingUnit', unit as GalleryBehaviorSettings['modalInnerPaddingUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={48}
               step={4}
             />
@@ -94,12 +103,14 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
         <Accordion.Panel>
           {mounted.has('cv-appearance') ? (
             <Stack gap="md">
-            <NumberInput
-              label="Cover Image Height (px)"
+            <DimensionInput
+              label="Cover Image Height"
               description="Height of the cover image in the campaign modal"
               value={settings.modalCoverHeight}
-              onChange={(value) => updateSetting('modalCoverHeight', typeof value === 'number' ? value : 240)}
-              min={100}
+              unit={settings.modalCoverHeightUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('modalCoverHeight', value)}
+              onUnitChange={(unit) => updateSetting('modalCoverHeightUnit', unit as GalleryBehaviorSettings['modalCoverHeightUnit'])}
+              allowedUnits={CSS_HEIGHT_UNITS}
               max={400}
               step={10}
             />

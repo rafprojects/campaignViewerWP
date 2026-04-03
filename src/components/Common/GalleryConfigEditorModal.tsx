@@ -7,6 +7,7 @@ import {
   getAdapterSelectOptions,
 } from '@/components/Galleries/Adapters/adapterRegistry';
 import { ModalSelect as Select } from '@/components/Common/ModalSelect';
+import { DimensionInput } from '@/components/Settings/DimensionInput';
 import type {
   AdapterSettingFieldDefinition,
   AdapterSettingGroupDefinition,
@@ -175,7 +176,7 @@ function getRepresentativeAdapterSettingValue(
 
     const value = scopeConfig?.adapterSettings?.[field.key];
     if (
-      (field.control === 'number' && typeof value === 'number')
+      ((field.control === 'number' || field.control === 'dimension') && typeof value === 'number')
       || ((field.control === 'select' || field.control === 'text' || field.control === 'color') && typeof value === 'string')
       || (field.control === 'boolean' && typeof value === 'boolean')
     ) {
@@ -1079,6 +1080,36 @@ export function GalleryConfigEditorModal({
                                     typeof value === 'number' ? value : field.fallback,
                                   ))}
                                   min={field.min}
+                                  max={field.max}
+                                  step={field.step}
+                                />
+                              );
+                            }
+
+                            if (field.control === 'dimension') {
+                              const unitValue = getRepresentativeAdapterSettingValue(resolvedDraft, activeBreakpoint, group, { ...field, key: field.unitKey, control: 'select' as const, options: [], fallback: 'px' } as AdapterSettingFieldDefinition);
+                              return (
+                                <DimensionInput
+                                  key={String(field.key)}
+                                  label={field.label}
+                                  description={field.description}
+                                  value={typeof representativeValue === 'number' ? representativeValue : field.fallback}
+                                  unit={typeof unitValue === 'string' ? unitValue : 'px'}
+                                  onValueChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
+                                    current,
+                                    activeBreakpoint,
+                                    group,
+                                    field,
+                                    typeof value === 'number' ? value : field.fallback,
+                                  ))}
+                                  onUnitChange={(unit) => updateDraft((current) => setAdapterSettingForMatchingScopes(
+                                    current,
+                                    activeBreakpoint,
+                                    group,
+                                    { ...field, key: field.unitKey } as unknown as AdapterSettingFieldDefinition,
+                                    unit,
+                                  ))}
+                                  allowedUnits={field.allowedUnits}
                                   max={field.max}
                                   step={field.step}
                                 />

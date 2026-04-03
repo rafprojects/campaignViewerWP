@@ -14,6 +14,7 @@ import { Box, Group, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -40,11 +41,14 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
 
   const itemSc = settings.itemScale ?? 1;
   const cardWidth = Math.round((settings.gridCardWidth ?? 220) * itemSc);
+  const cardWidthUnit = settings.gridCardWidthUnit ?? 'px';
   const cardHeight = Math.round((settings.gridCardHeight ?? 180) * itemSc);
-  const borderRadius = settings.imageBorderRadius;
+  const borderRadius = toCssOrNumber(settings.imageBorderRadius, settings.imageBorderRadiusUnit);
   const gap = settings.adapterItemGap ?? 16;
+  const gapUnit = settings.adapterItemGapUnit ?? 'px';
 
   const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
+  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
   // Adapter sizing: fill = no maxWidth restriction; manual = percentage of parent
   const isManual = settings.adapterSizingMode === 'manual';
   const adapterSizing: React.CSSProperties = isManual
@@ -52,7 +56,7 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
     : {};
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
+    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {settings.showCampaignGalleryLabels !== false && (
         <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
@@ -67,8 +71,8 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
         style={{
           display: 'grid',
           width: '100%',
-          gridTemplateColumns: `repeat(auto-fit, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), ${cardWidth}px))`,
-          gap: `${gap}px`,
+          gridTemplateColumns: `repeat(auto-fit, minmax(min(${toCss(cardWidth, cardWidthUnit)}, calc(50% - ${toCss(gap / 2, gapUnit)})), ${toCss(cardWidth, cardWidthUnit)}))`,
+          gap: toCss(gap, gapUnit),
           justifyContent: settings.adapterJustifyContent || 'center',
         }}
       >
@@ -79,7 +83,7 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
             index={index}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
-            borderRadius={item.type === 'video' ? settings.videoBorderRadius : borderRadius}
+            borderRadius={item.type === 'video' ? toCssOrNumber(settings.videoBorderRadius, settings.videoBorderRadiusUnit) : borderRadius}
             onOpen={openAt}
           />
         ))}
@@ -104,7 +108,7 @@ interface GridCardProps {
   index: number;
   cardWidth: number;
   cardHeight: number;
-  borderRadius: number;
+  borderRadius: number | string;
   onOpen: (index: number) => void;
 }
 
@@ -135,7 +139,7 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
         padding: 0,
         cursor: 'pointer',
         /* Card appearance */
-        borderRadius: `${borderRadius}px`,
+        borderRadius,
         overflow: 'hidden',
         position: 'relative',
         background: 'var(--wpsg-color-surface, #1a1a2e)',

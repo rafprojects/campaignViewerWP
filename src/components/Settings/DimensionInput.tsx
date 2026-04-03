@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { Group, NumberInput, SegmentedControl, type NumberInputProps } from '@mantine/core';
 import { UNIT_MAX_DEFAULTS } from '@/utils/cssUnits';
 
@@ -13,7 +14,7 @@ export interface DimensionInputProps {
   /** Allowed unit options (e.g. CSS_WIDTH_UNITS). If single-element, the SegmentedControl is hidden. */
   allowedUnits: readonly string[];
   /** Label for the NumberInput */
-  label?: string;
+  label?: ReactNode;
   /** Description text below the label */
   description?: string;
   /** Explicit minimum (default 0) */

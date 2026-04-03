@@ -4,6 +4,9 @@ import { Accordion, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput
 
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import type { GalleryBehaviorSettings } from '@/types';
+import { CSS_HEIGHT_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
+
+import { DimensionInput } from './DimensionInput';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
@@ -207,8 +210,8 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
               <TextInput label={tooltipLabel('Backdrop Color', 'lightboxBackdropColor')} value={settings.lightboxBackdropColor} onChange={(event) => updateSetting('lightboxBackdropColor', event.currentTarget.value)} />
               <Text size="sm" fw={500}>{tooltipLabel('Entry Scale', 'lightboxEntryScale')}</Text>
               <Slider value={settings.lightboxEntryScale} onChange={(value) => updateSetting('lightboxEntryScale', value)} min={0.5} max={1} step={0.01} />
-              <NumberInput label={tooltipLabel('Video Max Width (px)', 'lightboxVideoMaxWidth')} value={settings.lightboxVideoMaxWidth} onChange={(value) => updateSetting('lightboxVideoMaxWidth', typeof value === 'number' ? value : 900)} min={300} max={1920} />
-              <NumberInput label={tooltipLabel('Video Height (px)', 'lightboxVideoHeight')} value={settings.lightboxVideoHeight} onChange={(value) => updateSetting('lightboxVideoHeight', typeof value === 'number' ? value : 506)} min={200} max={1080} />
+              <DimensionInput label={tooltipLabel('Video Max Width', 'lightboxVideoMaxWidth')} value={settings.lightboxVideoMaxWidth} unit={settings.lightboxVideoMaxWidthUnit ?? 'px'} onValueChange={(value) => updateSetting('lightboxVideoMaxWidth', value)} onUnitChange={(unit) => updateSetting('lightboxVideoMaxWidthUnit', unit as GalleryBehaviorSettings['lightboxVideoMaxWidthUnit'])} allowedUnits={CSS_WIDTH_UNITS} max={1920} />
+              <DimensionInput label={tooltipLabel('Video Height', 'lightboxVideoHeight')} value={settings.lightboxVideoHeight} unit={settings.lightboxVideoHeightUnit ?? 'px'} onValueChange={(value) => updateSetting('lightboxVideoHeight', value)} onUnitChange={(unit) => updateSetting('lightboxVideoHeightUnit', unit as GalleryBehaviorSettings['lightboxVideoHeightUnit'])} allowedUnits={CSS_HEIGHT_UNITS} max={1080} />
               <TextInput label={tooltipLabel('Media Max Height', 'lightboxMediaMaxHeight')} description="CSS value, e.g. 85vh" value={settings.lightboxMediaMaxHeight} onChange={(event) => updateSetting('lightboxMediaMaxHeight', event.currentTarget.value)} />
               <NumberInput label={tooltipLabel('Z-Index', 'lightboxZIndex')} value={settings.lightboxZIndex} onChange={(value) => updateSetting('lightboxZIndex', typeof value === 'number' ? value : 1000)} min={1} max={10000} />
               </Stack>

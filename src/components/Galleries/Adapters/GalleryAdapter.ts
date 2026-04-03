@@ -66,6 +66,19 @@ export interface AdapterNumberSettingField {
   fallback: number;
 }
 
+export interface AdapterDimensionSettingField {
+  control: 'dimension';
+  key: keyof GalleryBehaviorSettings;
+  unitKey: keyof GalleryBehaviorSettings;
+  label: string;
+  description: string;
+  appliesTo?: AdapterSettingFieldAppliesTo;
+  allowedUnits: readonly string[];
+  max: number;
+  step: number;
+  fallback: number;
+}
+
 export interface AdapterSelectSettingField {
   control: 'select';
   key: keyof GalleryBehaviorSettings;
@@ -110,6 +123,7 @@ export interface AdapterColorSettingField {
 
 export type AdapterSettingFieldDefinition =
   | AdapterNumberSettingField
+  | AdapterDimensionSettingField
   | AdapterSelectSettingField
   | AdapterBooleanSettingField
   | AdapterTextSettingField

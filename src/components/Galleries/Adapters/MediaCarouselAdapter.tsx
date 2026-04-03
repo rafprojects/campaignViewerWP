@@ -12,6 +12,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import type { GalleryAdapterProps } from './GalleryAdapter';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
+import { toCss } from '@/utils/cssUnits';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { useLightbox } from '@/hooks/useLightbox';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
@@ -148,6 +149,7 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
 
   const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
   const gap = settings.carouselGap;
+  const gapUnit = settings.carouselGapUnit ?? 'px';
   const requestedLoopEnabled = shouldLoopCarousel(settings.carouselLoop, media.length, visibleCards);
   const [forceSyntheticLoop, setForceSyntheticLoop] = useState(false);
   const syntheticLoopEnabled = shouldUseSyntheticCarouselLoop(settings.carouselLoop, media.length, visibleCards)
@@ -354,10 +356,11 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
   const heightConstraint = settings.gallerySizingMode ?? 'auto';
 
   const baseHeight = dominantType === 'image' ? settings.imageViewportHeight : settings.videoViewportHeight;
+  const baseHeightUnit = dominantType === 'image' ? (settings.imageViewportHeightUnit ?? 'px') : (settings.videoViewportHeightUnit ?? 'px');
   const standardHeight = useMemo(() => {
     const base = Math.max(180, Math.min(900, baseHeight));
-    return `${Math.round(base * heightMultiplier)}px`;
-  }, [baseHeight, heightMultiplier]);
+    return toCss(Math.round(base * heightMultiplier), baseHeightUnit);
+  }, [baseHeight, heightMultiplier, baseHeightUnit]);
 
   const manualHeight = useMemo(
     () => resolveManualHeight(settings.galleryManualHeight, standardHeight),
@@ -380,8 +383,8 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
   // ── Style based on dominant type ─────────────────────────────────
 
   const borderRadius = dominantType === 'image'
-    ? `${settings.imageBorderRadius}px`
-    : `${settings.videoBorderRadius}px`;
+    ? toCss(settings.imageBorderRadius, settings.imageBorderRadiusUnit ?? 'px')
+    : toCss(settings.videoBorderRadius, settings.videoBorderRadiusUnit ?? 'px');
   const boxShadow = dominantType === 'image'
     ? resolveBoxShadow(settings.imageShadowPreset, settings.imageShadowCustom)
     : resolveBoxShadow(settings.videoShadowPreset, settings.videoShadowCustom);
@@ -405,7 +408,7 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
     if (visibleCards <= 1) return '100%';
     return `calc(100% / ${visibleCards})`;
   }, [visibleCards]);
-  const slideSpacing = `${gap}px`;
+  const slideSpacing = toCss(gap, gapUnit);
 
   // ── Keyboard nav ─────────────────────────────────────────────────
 

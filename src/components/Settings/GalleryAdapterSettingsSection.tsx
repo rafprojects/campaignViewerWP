@@ -4,6 +4,7 @@ import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from
 import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { buildGalleryConfigFromLegacySettings, cloneGalleryConfig, GALLERY_BREAKPOINTS, mergeGalleryConfig } from '@/utils/galleryConfig';
+import { DimensionInput } from './DimensionInput';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
   key: K,
@@ -86,6 +87,23 @@ function renderSettingFields(
             value={settings[field.key] as number | undefined}
             onChange={(value) => updateSetting(field.key, (typeof value === 'number' ? value : field.fallback) as GalleryBehaviorSettings[typeof field.key])}
             min={field.min}
+            max={field.max}
+            step={field.step}
+          />
+        );
+      }
+
+      if (field.control === 'dimension') {
+        return (
+          <DimensionInput
+            key={`${group}-${String(field.key)}`}
+            label={field.label}
+            description={field.description}
+            value={(settings[field.key] as number | undefined) ?? field.fallback}
+            unit={(settings[field.unitKey] as string | undefined) ?? 'px'}
+            onValueChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
+            onUnitChange={(unit) => updateSetting(field.unitKey, unit as GalleryBehaviorSettings[typeof field.unitKey])}
+            allowedUnits={field.allowedUnits}
             max={field.max}
             step={field.step}
           />

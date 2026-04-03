@@ -2,8 +2,10 @@ import { Accordion, ColorInput, NumberInput, Stack, Switch, TextInput } from '@m
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+import { type GalleryBehaviorSettings } from '@/types';
+import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@/utils/cssUnits';
 
 import { ThemeSelector } from '../Admin/ThemeSelector';
 
@@ -68,23 +70,27 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
         <Accordion.Panel>
           {mounted.has('gen-container') ? (
             <Stack gap="md">
-            <NumberInput
-              label="App Max Width (px)"
+            <DimensionInput
+              label="App Max Width"
               description="Maximum width of the gallery container. Set to 0 for full-width (edge-to-edge). Default 1200px."
               value={settings.appMaxWidth}
-              onChange={(value) => updateSetting('appMaxWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appMaxWidth)}
-              min={0}
+              unit={settings.appMaxWidthUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('appMaxWidth', value)}
+              onUnitChange={(unit) => updateSetting('appMaxWidthUnit', unit as GalleryBehaviorSettings['appMaxWidthUnit'])}
+              allowedUnits={CSS_WIDTH_UNITS}
               max={3000}
               step={50}
               placeholder="0 = full width"
             />
 
-            <NumberInput
-              label="Container Padding (px)"
+            <DimensionInput
+              label="Container Padding"
               description="Horizontal padding inside the container. Set to 0 for true edge-to-edge content. Default 16px."
               value={settings.appPadding}
-              onChange={(value) => updateSetting('appPadding', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.appPadding)}
-              min={0}
+              unit={settings.appPaddingUnit ?? 'px'}
+              onValueChange={(value) => updateSetting('appPadding', value)}
+              onUnitChange={(unit) => updateSetting('appPaddingUnit', unit as GalleryBehaviorSettings['appPaddingUnit'])}
+              allowedUnits={CSS_SPACING_UNITS}
               max={100}
               step={4}
               placeholder="16"
