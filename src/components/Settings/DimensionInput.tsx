@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Group, NumberInput, SegmentedControl, type NumberInputProps } from '@mantine/core';
+import { Group, NumberInput, Select, type NumberInputProps } from '@mantine/core';
 import { UNIT_MAX_DEFAULTS } from '@/utils/cssUnits';
 
 export interface DimensionInputProps {
@@ -84,12 +84,15 @@ export function DimensionInput({
         {...numberInputProps}
       />
       {showUnitSelector && (
-        <SegmentedControl
+        <Select
           size="xs"
           data={allowedUnits.map((u) => ({ label: u, value: u }))}
           value={unit}
-          onChange={handleUnitChange}
-          styles={{ root: { flexShrink: 0 } }}
+          onChange={(v) => v && handleUnitChange(v)}
+          allowDeselect={false}
+          withCheckIcon={false}
+          styles={{ root: { flexShrink: 0, width: 72 } }}
+          aria-label="Unit"
         />
       )}
     </Group>

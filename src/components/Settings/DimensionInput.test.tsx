@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import { DimensionInput } from './DimensionInput';
 import { CSS_WIDTH_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS } from '@/utils/cssUnits';
@@ -19,7 +20,7 @@ describe('DimensionInput', () => {
     expect(screen.getByLabelText('Max Width')).toHaveValue('1200');
   });
 
-  it('renders unit segments when multiple units available', () => {
+  it('renders unit dropdown when multiple units available', () => {
     render(
       <DimensionInput
         value={100}
@@ -29,10 +30,10 @@ describe('DimensionInput', () => {
         allowedUnits={CSS_WIDTH_UNITS}
       />,
     );
-    // SegmentedControl renders radio inputs for each option
-    for (const u of CSS_WIDTH_UNITS) {
-      expect(screen.getByText(u)).toBeInTheDocument();
-    }
+    // Select renders a combobox showing the current unit
+    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    expect(unitSelect).toBeInTheDocument();
+    expect(unitSelect).toHaveValue('px');
   });
 
   it('hides unit selector when only one unit is allowed', () => {
@@ -45,11 +46,12 @@ describe('DimensionInput', () => {
         allowedUnits={['px']}
       />,
     );
-    // Should not render a SegmentedControl
-    expect(screen.queryByText('px')).not.toBeInTheDocument();
+    // Should not render a unit Select
+    expect(screen.queryByRole('textbox', { name: 'Unit' })).not.toBeInTheDocument();
   });
 
-  it('calls onUnitChange when a different unit is clicked', () => {
+  it('calls onUnitChange when a different unit is selected', async () => {
+    const user = userEvent.setup();
     const onUnitChange = vi.fn();
     const onValueChange = vi.fn();
     render(
@@ -61,11 +63,14 @@ describe('DimensionInput', () => {
         allowedUnits={CSS_SPACING_UNITS}
       />,
     );
-    fireEvent.click(screen.getByText('em'));
+    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    await user.click(unitSelect);
+    fireEvent.click(screen.getByRole('option', { name: 'em' }));
     expect(onUnitChange).toHaveBeenCalledWith('em');
   });
 
-  it('clamps value when switching to a unit with lower max', () => {
+  it('clamps value when switching to a unit with lower max', async () => {
+    const user = userEvent.setup();
     const onValueChange = vi.fn();
     const onUnitChange = vi.fn();
     render(
@@ -79,12 +84,15 @@ describe('DimensionInput', () => {
       />,
     );
     // Switch to vw — max is 100
-    fireEvent.click(screen.getByText('vw'));
+    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    await user.click(unitSelect);
+    fireEvent.click(screen.getByRole('option', { name: 'vw' }));
     expect(onValueChange).toHaveBeenCalledWith(100);
     expect(onUnitChange).toHaveBeenCalledWith('vw');
   });
 
-  it('does not clamp when value already fits new unit range', () => {
+  it('does not clamp when value already fits new unit range', async () => {
+    const user = userEvent.setup();
     const onValueChange = vi.fn();
     const onUnitChange = vi.fn();
     render(
@@ -96,13 +104,16 @@ describe('DimensionInput', () => {
         allowedUnits={CSS_WIDTH_UNITS}
       />,
     );
-    fireEvent.click(screen.getByText('%'));
+    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    await user.click(unitSelect);
+    fireEvent.click(screen.getByRole('option', { name: '%' }));
     // 50 fits within 0–100, so onValueChange should NOT be called
     expect(onValueChange).not.toHaveBeenCalled();
     expect(onUnitChange).toHaveBeenCalledWith('%');
   });
 
-  it('renders all height units including dynamic viewport units', () => {
+  it('renders all height units in dropdown', async () => {
+    const user = userEvent.setup();
     render(
       <DimensionInput
         value={80}
@@ -112,8 +123,12 @@ describe('DimensionInput', () => {
         allowedUnits={CSS_HEIGHT_UNITS}
       />,
     );
+    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    expect(unitSelect).toHaveValue('vh');
+    // Open dropdown and verify all options
+    await user.click(unitSelect);
     for (const u of CSS_HEIGHT_UNITS) {
-      expect(screen.getByText(u)).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: u })).toBeInTheDocument();
     }
   });
 });
