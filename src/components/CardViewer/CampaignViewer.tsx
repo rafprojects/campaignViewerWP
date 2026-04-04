@@ -187,7 +187,7 @@ export function CampaignViewer({
   // The campaign viewer is intentionally width-clamped, so container width
   // tends to collapse desktop screens into the tablet breakpoint. Use the
   // viewport here so desktop/tablet/mobile map to the actual device size.
-  const breakpoint = useBreakpoint(containerRef, { source: 'viewport' });
+  const { breakpoint } = useBreakpoint(containerRef, { source: 'viewport' });
   const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(galleryBehaviorSettings, displayedCampaign.galleryOverrides);
   // P21-F: Fullscreen and conditional rendering
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;

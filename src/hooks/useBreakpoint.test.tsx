@@ -93,21 +93,22 @@ describe('useBreakpoint', () => {
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
     // Initial measurement from el.clientWidth
-    expect(result.current).toBe('mobile');
+    expect(result.current.breakpoint).toBe('mobile');
+    expect(result.current.width).toBe(600);
   });
 
   it('returns tablet when container width >= 768 and < 1200', () => {
     const ref = makeContainerRef(900);
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
-    expect(result.current).toBe('tablet');
+    expect(result.current.breakpoint).toBe('tablet');
   });
 
   it('returns desktop when container width >= 1200', () => {
     const ref = makeContainerRef(1400);
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
-    expect(result.current).toBe('desktop');
+    expect(result.current.breakpoint).toBe('desktop');
   });
 
   it('returns desktop for initial state before ref mounts', () => {
@@ -115,26 +116,28 @@ describe('useBreakpoint', () => {
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
     // No element → stays at default ('desktop')
-    expect(result.current).toBe('desktop');
+    expect(result.current.breakpoint).toBe('desktop');
+    expect(result.current.width).toBe(0);
   });
 
   it('updates breakpoint when ResizeObserver fires', () => {
     const ref = makeContainerRef(1400);
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
-    expect(result.current).toBe('desktop');
+    expect(result.current.breakpoint).toBe('desktop');
 
     // Simulate resize to mobile width
     act(() => triggerResize(500));
-    expect(result.current).toBe('mobile');
+    expect(result.current.breakpoint).toBe('mobile');
+    expect(result.current.width).toBe(500);
 
     // Simulate resize to tablet width
     act(() => triggerResize(1000));
-    expect(result.current).toBe('tablet');
+    expect(result.current.breakpoint).toBe('tablet');
 
     // Back to desktop
     act(() => triggerResize(1500));
-    expect(result.current).toBe('desktop');
+    expect(result.current.breakpoint).toBe('desktop');
   });
 
   it('uses contentRect.width fallback when contentBoxSize is unavailable', () => {
@@ -142,7 +145,7 @@ describe('useBreakpoint', () => {
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
     act(() => triggerResizeContentRectOnly(500));
-    expect(result.current).toBe('mobile');
+    expect(result.current.breakpoint).toBe('mobile');
   });
 
   it('handles exact boundary at 768px (returns tablet, not mobile)', () => {
@@ -150,7 +153,7 @@ describe('useBreakpoint', () => {
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
     // 768 is NOT less than 768, so it's tablet
-    expect(result.current).toBe('tablet');
+    expect(result.current.breakpoint).toBe('tablet');
   });
 
   it('handles exact boundary at 1200px (returns desktop, not tablet)', () => {
@@ -158,14 +161,14 @@ describe('useBreakpoint', () => {
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
     // 1200 is NOT less than 1200, so it's desktop
-    expect(result.current).toBe('desktop');
+    expect(result.current.breakpoint).toBe('desktop');
   });
 
   it('handles width of 0 as mobile', () => {
     const ref = makeContainerRef(0);
     const { result } = renderHook(() => useBreakpoint(ref), { wrapper: Wrapper });
 
-    expect(result.current).toBe('mobile');
+    expect(result.current.breakpoint).toBe('mobile');
   });
 
   it('disconnects observer on unmount', () => {
@@ -183,7 +186,7 @@ describe('useBreakpoint', () => {
 
     const { result } = renderHook(() => useBreakpoint(ref, { source: 'viewport' }), { wrapper: Wrapper });
 
-    expect(result.current).toBe('desktop');
+    expect(result.current.breakpoint).toBe('desktop');
   });
 
   it('updates viewport-sourced breakpoints on window resize', () => {
@@ -192,18 +195,18 @@ describe('useBreakpoint', () => {
 
     const { result } = renderHook(() => useBreakpoint(ref, { source: 'viewport' }), { wrapper: Wrapper });
 
-    expect(result.current).toBe('desktop');
+    expect(result.current.breakpoint).toBe('desktop');
 
     act(() => {
       Object.defineProperty(window, 'innerWidth', { value: 980, configurable: true, writable: true });
       window.dispatchEvent(new Event('resize'));
     });
-    expect(result.current).toBe('tablet');
+    expect(result.current.breakpoint).toBe('tablet');
 
     act(() => {
       Object.defineProperty(window, 'innerWidth', { value: 640, configurable: true, writable: true });
       window.dispatchEvent(new Event('resize'));
     });
-    expect(result.current).toBe('mobile');
+    expect(result.current.breakpoint).toBe('mobile');
   });
 });

@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select, ColorInput } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
@@ -9,11 +8,14 @@ import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useInContextSave } from '@/hooks/useInContextSave';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
+import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/CardViewer/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -69,31 +71,35 @@ export function CardGallery({
   const [isAnimating, setIsAnimating] = useState(false);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  const displayMode = galleryBehaviorSettings.cardDisplayMode ?? 'load-more';
+  // Container-based breakpoint resolution → resolved card settings
+  const { breakpoint, width: containerWidth } = useBreakpoint(gridContainerRef);
+  const s = useMemo(
+    () => resolveCardBreakpointSettings(galleryBehaviorSettings, breakpoint),
+    [galleryBehaviorSettings, breakpoint],
+  );
 
-  /** Resolve effective column count based on settings + current breakpoint. */
-  const isXxl = useMediaQuery('(min-width: 1800px)');
-  const isXl = useMediaQuery('(min-width: 1400px)');
-  const isLg = useMediaQuery('(min-width: 1200px)');
-  const isSm = useMediaQuery('(min-width: 768px)');
+  const displayMode = s.cardDisplayMode ?? 'load-more';
+
+  /** Resolve effective column count from resolved settings + container width. */
   const effectiveColumns = useMemo((): number => {
-    const cols = galleryBehaviorSettings.cardGridColumns;
-    const max = galleryBehaviorSettings.cardMaxColumns || 0;
+    const cols = s.cardGridColumns;
+    const max = s.cardMaxColumns || 0;
     if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
-    // Responsive auto: base:1 sm:2 lg:3 xl:4 xxl:5
-    const auto = isXxl ? 5 : isXl ? 4 : isLg ? 3 : isSm ? 2 : 1;
+    // Auto mode: use container width + cardAutoColumnsBreakpoints when available
+    const auto = containerWidth > 0
+      ? resolveColumnsFromWidth(containerWidth, 0, galleryBehaviorSettings.cardAutoColumnsBreakpoints)
+      : 1;
     return max > 0 ? Math.min(auto, max) : auto;
-  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isXxl, isXl, isLg, isSm]);
+  }, [s.cardGridColumns, s.cardMaxColumns, containerWidth, galleryBehaviorSettings.cardAutoColumnsBreakpoints]);
 
   /** Max columns for fixed-width (flex) branch — used to compute row maxWidth. */
   const maxCols = useMemo((): number => {
-    const cols = galleryBehaviorSettings.cardGridColumns;
-    const max = galleryBehaviorSettings.cardMaxColumns || 0;
+    const cols = s.cardGridColumns;
+    const max = s.cardMaxColumns || 0;
     if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
     if (max > 0) return max;
-    // Same breakpoint ladder as effectiveColumns (no hardcoded cap)
-    return isXxl ? 5 : isXl ? 4 : isLg ? 3 : isSm ? 2 : 1;
-  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isXxl, isXl, isLg, isSm]);
+    return effectiveColumns;
+  }, [s.cardGridColumns, s.cardMaxColumns, effectiveColumns]);
 
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
@@ -125,7 +131,7 @@ export function CardGallery({
   const showHiddenNotice = useMemo(() => accessMode === 'hide' && filter === 'all' && hiddenCount > 0, [accessMode, filter, hiddenCount]);
 
   // Pagination math
-  const rowsPerPage = galleryBehaviorSettings.cardRowsPerPage ?? 3;
+  const rowsPerPage = s.cardRowsPerPage ?? 3;
   const cardsPerPage = rowsPerPage * effectiveColumns;
   const totalPages = displayMode === 'paginated' && cardsPerPage > 0
     ? Math.ceil(filteredCampaigns.length / cardsPerPage)
@@ -138,6 +144,11 @@ export function CardGallery({
     setSlideDirection(null);
     setIsAnimating(false);
   }, [filter, searchQuery, accessMode, displayMode]);
+
+  // Reset page when breakpoint changes (layout shifts column count)
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [breakpoint]);
 
   // Clamp currentPage if totalPages shrinks (e.g. resize or filter change)
   useEffect(() => {
@@ -176,14 +187,14 @@ export function CardGallery({
     setIsAnimating(true);
     // Clear any prior pending transition before starting a new one.
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-    const duration = galleryBehaviorSettings.cardPageTransitionMs ?? 300;
+    const duration = s.cardPageTransitionMs ?? 300;
     transitionTimerRef.current = setTimeout(() => {
       transitionTimerRef.current = null;
       setCurrentPage(page);
       setSlideDirection(null);
       setIsAnimating(false);
     }, duration);
-  }, [currentPage, galleryBehaviorSettings.cardPageTransitionMs, isAnimating, totalPages]);
+  }, [currentPage, s.cardPageTransitionMs, isAnimating, totalPages]);
 
   const goPrev = useCallback(() => goToPage(currentPage - 1), [currentPage, goToPage]);
   const goNext = useCallback(() => goToPage(currentPage + 1), [currentPage, goToPage]);
@@ -201,7 +212,7 @@ export function CardGallery({
   }, [displayMode, totalPages, goPrev, goNext]);
 
   // Slide animation styles
-  const transitionMs = galleryBehaviorSettings.cardPageTransitionMs ?? 300;
+  const transitionMs = s.cardPageTransitionMs ?? 300;
   const slideStyle: React.CSSProperties = displayMode === 'paginated' ? {
     transform: slideDirection === 'left'
       ? 'translateX(-100%)'
@@ -217,23 +228,23 @@ export function CardGallery({
     : undefined;
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
   const containerPaddingStyle = { paddingInline: toCssOrNumber(galleryBehaviorSettings.appPadding, galleryBehaviorSettings.appPaddingUnit) };
-  const hasFixedCardWidth = galleryBehaviorSettings.cardMaxWidth > 0;
-  const cardGridJustification = galleryBehaviorSettings.cardJustifyContent || 'center';
-  const cardGridVerticalAlign = galleryBehaviorSettings.cardGalleryVerticalAlign || 'start';
-  const cardGridMinHeight = galleryBehaviorSettings.cardGalleryMinHeight || 0;
-  const cardGridMaxHeight = galleryBehaviorSettings.cardGalleryMaxHeight || 0;
-  const cardGridOffsetX = galleryBehaviorSettings.cardGalleryOffsetX || 0;
-  const cardGridOffsetY = galleryBehaviorSettings.cardGalleryOffsetY || 0;
-  const cardGapHUnit = galleryBehaviorSettings.cardGapHUnit ?? 'px';
-  const cardGapVUnit = galleryBehaviorSettings.cardGapVUnit ?? 'px';
+  const hasFixedCardWidth = s.cardMaxWidth > 0;
+  const cardGridJustification = s.cardJustifyContent || 'center';
+  const cardGridVerticalAlign = s.cardGalleryVerticalAlign || 'start';
+  const cardGridMinHeight = s.cardGalleryMinHeight || 0;
+  const cardGridMaxHeight = s.cardGalleryMaxHeight || 0;
+  const cardGridOffsetX = s.cardGalleryOffsetX || 0;
+  const cardGridOffsetY = s.cardGalleryOffsetY || 0;
+  const cardGapHUnit = s.cardGapHUnit ?? 'px';
+  const cardGapVUnit = s.cardGapVUnit ?? 'px';
   const responsiveCardWidth = useMemo(() => {
     if (effectiveColumns <= 1) {
       return '100%';
     }
 
-    const totalGap = toCss((effectiveColumns - 1) * galleryBehaviorSettings.cardGapH, cardGapHUnit);
+    const totalGap = toCss((effectiveColumns - 1) * s.cardGapH, cardGapHUnit);
     return `calc((100% - ${totalGap}) / ${effectiveColumns})`;
-  }, [effectiveColumns, galleryBehaviorSettings.cardGapH, cardGapHUnit]);
+  }, [effectiveColumns, s.cardGapH, cardGapHUnit]);
 
   // P21-D: Dynamic viewer background
   const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
@@ -405,15 +416,15 @@ export function CardGallery({
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: `${toCss(galleryBehaviorSettings.cardGapV, cardGapVUnit)} ${toCss(galleryBehaviorSettings.cardGapH, cardGapHUnit)}`,
+                gap: `${toCss(s.cardGapV, cardGapVUnit)} ${toCss(s.cardGapH, cardGapHUnit)}`,
                 justifyContent: cardGridJustification,
                 alignContent: cardGridVerticalAlign,
-                ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, galleryBehaviorSettings.cardGalleryMinHeightUnit) } : {}),
-                ...(cardGridMaxHeight > 0 ? { maxHeight: toCssOrNumber(cardGridMaxHeight, galleryBehaviorSettings.cardGalleryMaxHeightUnit), overflow: 'auto' as const } : {}),
-                ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, galleryBehaviorSettings.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, galleryBehaviorSettings.cardGalleryOffsetYUnit)})` } : {}),
+                ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, s.cardGalleryMinHeightUnit) } : {}),
+                ...(cardGridMaxHeight > 0 ? { maxHeight: toCssOrNumber(cardGridMaxHeight, s.cardGalleryMaxHeightUnit), overflow: 'auto' as const } : {}),
+                ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, s.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, s.cardGalleryOffsetYUnit)})` } : {}),
                 width: '100%',
-                ...(hasFixedCardWidth && galleryBehaviorSettings.cardMaxWidthUnit !== '%' ? {
-                  maxWidth: `calc(${toCss(maxCols * galleryBehaviorSettings.cardMaxWidth, galleryBehaviorSettings.cardMaxWidthUnit)} + ${toCss((maxCols - 1) * galleryBehaviorSettings.cardGapH, cardGapHUnit)})`,
+                ...(hasFixedCardWidth && s.cardMaxWidthUnit !== '%' ? {
+                  maxWidth: `calc(${toCss(maxCols * s.cardMaxWidth, s.cardMaxWidthUnit)} + ${toCss((maxCols - 1) * s.cardGapH, cardGapHUnit)})`,
                   marginInline: 'auto',
                 } : {}),
               }}
@@ -423,7 +434,7 @@ export function CardGallery({
                   campaign,
                   hasAccess: hasAccess(campaign.id, campaign.visibility),
                   onClick: () => setSelectedCampaign(campaign),
-                  settings: galleryBehaviorSettings,
+                  settings: s,
                   apiClient: !hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined,
                 };
 
@@ -432,8 +443,8 @@ export function CardGallery({
                     <CampaignCard
                       key={campaign.id}
                       {...sharedProps}
-                      maxWidth={galleryBehaviorSettings.cardMaxWidth}
-                      maxWidthUnit={galleryBehaviorSettings.cardMaxWidthUnit}
+                      maxWidth={s.cardMaxWidth}
+                      maxWidthUnit={s.cardMaxWidthUnit}
                     />
                   );
                 }
@@ -460,7 +471,7 @@ export function CardGallery({
               onPrev={goPrev}
               onNext={goNext}
               total={totalPages}
-              settings={galleryBehaviorSettings}
+              settings={s}
               previousLabel="Previous page"
               nextLabel="Next page"
             />
@@ -470,12 +481,12 @@ export function CardGallery({
         {/* Dot navigator + page indicator for paginated mode */}
         {displayMode === 'paginated' && totalPages > 1 && (
           <Stack align="center" gap={4} mt="sm">
-            {galleryBehaviorSettings.cardPageDotNav && (
+            {s.cardPageDotNav && (
               <DotNavigator
                 total={totalPages}
                 currentIndex={currentPage}
                 onSelect={(page) => goToPage(page)}
-                settings={galleryBehaviorSettings}
+                settings={s}
               />
             )}
             <Text size="xs" c="dimmed">

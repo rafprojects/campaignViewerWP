@@ -25,6 +25,11 @@ function emToPx(em: string): number {
 const FALLBACK_MOBILE_MAX = 768;
 const FALLBACK_TABLET_MAX = 1200;
 
+export interface UseBreakpointResult {
+  breakpoint: Breakpoint;
+  width: number;
+}
+
 /**
  * Determines the current {@link Breakpoint} based on either container width or viewport width.
  *
@@ -39,12 +44,12 @@ const FALLBACK_TABLET_MAX = 1200;
  *
  * @param containerRef - React ref to the DOM element to observe.
  * @param options - Controls whether breakpoint resolution uses the container or viewport width.
- * @returns The current `Breakpoint` value (`'desktop' | 'tablet' | 'mobile'`).
+ * @returns Object with `breakpoint` label and raw `width` in pixels.
  */
 export function useBreakpoint(
   containerRef: React.RefObject<HTMLElement | null>,
   options: UseBreakpointOptions = {},
-): Breakpoint {
+): UseBreakpointResult {
   const theme = useMantineTheme();
   const source = options.source ?? 'container';
 
@@ -66,6 +71,7 @@ export function useBreakpoint(
   );
 
   const [breakpoint, setBreakpoint] = useState<Breakpoint>('desktop');
+  const [width, setWidth] = useState<number>(0);
 
   // Keep a ref to avoid stale closures inside the ResizeObserver callback.
   const resolveRef = useRef(resolve);
@@ -74,7 +80,9 @@ export function useBreakpoint(
   useEffect(() => {
     if (source === 'viewport') {
       const updateFromViewport = () => {
-        setBreakpoint(resolveRef.current(window.innerWidth));
+        const w = window.innerWidth;
+        setWidth(w);
+        setBreakpoint(resolveRef.current(w));
       };
 
       updateFromViewport();
@@ -89,13 +97,16 @@ export function useBreakpoint(
     if (!el) return;
 
     // Set initial value
-    setBreakpoint(resolveRef.current(el.clientWidth));
+    const initialWidth = el.clientWidth;
+    setWidth(initialWidth);
+    setBreakpoint(resolveRef.current(initialWidth));
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const width =
+        const w =
           entry.contentBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
-        setBreakpoint(resolveRef.current(width));
+        setWidth(w);
+        setBreakpoint(resolveRef.current(w));
       }
     });
 
@@ -103,5 +114,5 @@ export function useBreakpoint(
     return () => observer.disconnect();
   }, [containerRef, source]);
 
-  return breakpoint;
+  return { breakpoint, width };
 }
