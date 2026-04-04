@@ -287,7 +287,7 @@ class WPSG_Settings_Registry {
         'adapter_max_height_pct'         => 100,
         'card_max_width_unit'            => 'px',
         'card_justify_content'           => 'center',
-        'card_scale'                     => 1,
+        'card_scale'                     => 1.0,
         'card_gallery_vertical_align'    => 'start',
         'card_gallery_min_height'        => 0,
         'card_gallery_max_height'        => 0,
