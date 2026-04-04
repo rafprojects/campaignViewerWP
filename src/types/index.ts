@@ -5,7 +5,11 @@ export interface Company {
   brandColor: string;
 }
 
-export type GalleryConfigBreakpoint = 'desktop' | 'tablet' | 'mobile';
+/** Shared breakpoint label used across gallery, card, and hook code. */
+export type ResponsiveBreakpoint = 'desktop' | 'tablet' | 'mobile';
+
+export type GalleryConfigBreakpoint = ResponsiveBreakpoint;
+export type CardConfigBreakpoint = ResponsiveBreakpoint;
 
 export type GalleryConfigScope = 'unified' | 'image' | 'video';
 
@@ -934,6 +938,55 @@ export interface GalleryBehaviorSettings {
   carouselGapUnit: import('@/utils/cssUnits').CssSpacingUnit;
   // P25-U Phase 1b: Drawer backdrop blur toggle
   settingsDrawerBlurEnabled: boolean;
+  // P25-X Phase 5: Card breakpoint overrides
+  cardConfig: CardConfig;
+}
+
+// ── Card breakpoint override model ───────────────────────────────────────────
+
+/**
+ * Explicit list of card fields that may be overridden per breakpoint.
+ * Used to derive the override type and to drive UI / pruning logic.
+ */
+export const CARD_BREAKPOINT_OVERRIDE_KEYS = [
+  'cardGridColumns',
+  'cardMaxColumns',
+  'cardMaxWidth',
+  'cardMaxWidthUnit',
+  'cardGapH',
+  'cardGapHUnit',
+  'cardGapV',
+  'cardGapVUnit',
+  'cardScale',
+  'cardJustifyContent',
+  'cardGalleryVerticalAlign',
+  'cardAspectRatio',
+  'cardThumbnailHeight',
+  'cardThumbnailHeightUnit',
+  'cardMinHeight',
+  'cardMinHeightUnit',
+  'cardBorderRadius',
+  'cardBorderRadiusUnit',
+  'cardGalleryMinHeight',
+  'cardGalleryMinHeightUnit',
+  'cardGalleryMaxHeight',
+  'cardGalleryMaxHeightUnit',
+  'cardGalleryOffsetX',
+  'cardGalleryOffsetXUnit',
+  'cardGalleryOffsetY',
+  'cardGalleryOffsetYUnit',
+  'cardDisplayMode',
+  'cardRowsPerPage',
+] as const;
+
+type CardBreakpointOverrideKey = (typeof CARD_BREAKPOINT_OVERRIDE_KEYS)[number];
+
+/** Sparse set of card setting overrides for a single breakpoint. */
+export type CardBreakpointOverrides = Partial<Pick<GalleryBehaviorSettings, CardBreakpointOverrideKey>>;
+
+/** Per-breakpoint card configuration container. */
+export interface CardConfig {
+  breakpoints?: Partial<Record<CardConfigBreakpoint, CardBreakpointOverrides>>;
 }
 
 const DEFAULT_GALLERY_COMMON_SETTINGS: GalleryCommonSettings = {
@@ -1367,4 +1420,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   carouselGapUnit: 'px',
   // P25-U Phase 1b: Drawer backdrop blur toggle
   settingsDrawerBlurEnabled: true,
+  // P25-X Phase 5: Card breakpoint overrides
+  cardConfig: { breakpoints: {} },
 };

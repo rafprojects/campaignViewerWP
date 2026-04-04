@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMantineTheme } from '@mantine/core';
+import type { ResponsiveBreakpoint } from '@/types';
 
 /**
- * Breakpoint label used for per-breakpoint adapter resolution.
+ * Breakpoint label — re-exported alias of the shared {@link ResponsiveBreakpoint} union
+ * so existing import sites keep working without churn.
  */
-export type Breakpoint = 'desktop' | 'tablet' | 'mobile';
+export type Breakpoint = ResponsiveBreakpoint;
 
 interface UseBreakpointOptions {
   source?: 'container' | 'viewport';
