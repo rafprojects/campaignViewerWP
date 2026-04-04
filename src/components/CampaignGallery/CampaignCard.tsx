@@ -38,7 +38,6 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     const thumbFit = (settings?.cardThumbnailFit ?? 'cover') as 'cover' | 'contain';
     const scale = settings?.cardScale ?? 1;
     const scaledThumbHeight = Math.round(thumbHeight * scale);
-    const scaledMaxWidth = maxWidth && scale !== 1 ? Math.round(maxWidth * scale) : maxWidth;
     const scaledMinHeight = settings?.cardMinHeight ? Math.round(settings.cardMinHeight * scale) : settings?.cardMinHeight;
     const minHeightUnit = settings?.cardMinHeightUnit ?? 'px';
     const shadow = settings?.cardShadowPreset ?? 'subtle';
@@ -68,7 +67,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : 0.75,
           width: '100%',
-          ...(scaledMaxWidth ? { maxWidth: toCss(scaledMaxWidth, maxWidthUnit) } : {}),
+          ...(maxWidth ? { maxWidth: toCss(maxWidth, maxWidthUnit) } : {}),
         }}
       >
         <Card

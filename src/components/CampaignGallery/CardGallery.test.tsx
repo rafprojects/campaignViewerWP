@@ -35,6 +35,25 @@ const buildCampaign = (id: string, title: string, visibility: 'public' | 'privat
   updatedAt: '2026-01-02T00:00:00.000Z',
 });
 
+async function withMockedClientWidth<T>(width: number, callback: () => Promise<T> | T): Promise<T> {
+  const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+    configurable: true,
+    get: () => width,
+  });
+
+  try {
+    return await callback();
+  } finally {
+    if (originalClientWidth) {
+      Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidth);
+    } else {
+      delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+    }
+  }
+}
+
 describe('CardGallery', () => {
   it('renders campaigns in lock mode by default', () => {
     render(
@@ -176,6 +195,35 @@ describe('CardGallery', () => {
     expect(screen.getByTestId('card-gallery-grid')).toHaveStyle({
       display: 'flex',
       justifyContent: 'space-between',
+    });
+  });
+
+  it('resolves percentage fixed card widths against the container when capping auto columns', async () => {
+    await withMockedClientWidth(1200, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(6)}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            cardGridColumns: 0,
+            cardMaxColumns: 3,
+            cardAutoColumnsBreakpoints: '0:5',
+            cardMaxWidth: 10,
+            cardMaxWidthUnit: '%',
+            cardScale: 1.5,
+            cardGapH: 2,
+            cardGapHUnit: '%',
+          }}
+        />,
+      );
+
+      const grid = screen.getByTestId('card-gallery-grid');
+
+      await waitFor(() => {
+        expect(grid.style.maxWidth).toBe('calc(540px + 4%)');
+        expect(screen.getByLabelText('Open campaign Campaign 1')).toHaveStyle({ maxWidth: '180px' });
+      });
     });
   });
 });
@@ -386,5 +434,89 @@ describe('CardGallery pagination', () => {
     const container2 = screen.getByLabelText(/Card gallery page 2/);
     fireEvent.keyDown(container2, { key: 'ArrowLeft' });
     await waitFor(() => expect(screen.getByText('Page 1 of 2')).toBeInTheDocument());
+  });
+});
+
+/* ── Narrow-breakpoint card width guard tests ──────────────────── */
+
+describe('CardGallery narrow-breakpoint fixed-width guard', () => {
+  it('falls back to responsive branch when percent-based width resolves below 120px', async () => {
+    // Live-like settings: 10% width × 1.5 scale = 15% → on 375px container = 56px → below 120px floor
+    await withMockedClientWidth(375, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(4)}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            cardMaxWidth: 10,
+            cardMaxWidthUnit: '%',
+            cardScale: 1.5,
+            cardGapH: 2,
+            cardGapHUnit: '%',
+            cardGridColumns: 0,
+            cardMaxColumns: 2,
+          }}
+        />,
+      );
+
+      // In responsive mode, cards do NOT get an inline maxWidth — they use the wrapper's flex sizing
+      const card = screen.getByLabelText('Open campaign Campaign 1');
+      await waitFor(() => {
+        expect(card.style.maxWidth).toBe('');
+      });
+    });
+  });
+
+  it('keeps fixed-width branch on wide containers where resolved width exceeds floor', async () => {
+    // Same settings on 1200px container: 15% = 180px → above 120px floor
+    await withMockedClientWidth(1200, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(4)}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            cardMaxWidth: 10,
+            cardMaxWidthUnit: '%',
+            cardScale: 1.5,
+            cardGapH: 2,
+            cardGapHUnit: '%',
+            cardGridColumns: 0,
+            cardMaxColumns: 3,
+            cardAutoColumnsBreakpoints: '0:5',
+          }}
+        />,
+      );
+
+      const card = screen.getByLabelText('Open campaign Campaign 1');
+      await waitFor(() => {
+        expect(card.style.maxWidth).toBe('180px');
+      });
+    });
+  });
+
+  it('applies minimum 4px horizontal gap when percent gap resolves below threshold', async () => {
+    // 2% gap on 150px container = 3px → below 4px → should clamp to 4px
+    await withMockedClientWidth(150, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(2)}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            cardGapH: 2,
+            cardGapHUnit: '%',
+            cardGapV: 8,
+            cardGapVUnit: 'px',
+          }}
+        />,
+      );
+
+      const grid = screen.getByTestId('card-gallery-grid');
+      await waitFor(() => {
+        expect(grid.style.gap).toContain('4px');
+      });
+    });
   });
 });

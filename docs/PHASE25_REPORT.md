@@ -658,6 +658,8 @@ The current media upload flow in `MediaAddModal` only handles single-file select
 
 - Phase 1-4 implementation review: [P25X_GPT54_IMPLEMENTATION_REVIEW.md](./P25X_GPT54_IMPLEMENTATION_REVIEW.md)
 - Phase 5-8 deep planning review: [P25X_GPT54_PHASES5_8_DEEP_PLAN.md](./P25X_GPT54_PHASES5_8_DEEP_PLAN.md)
+- Settings and card-grid regression audit: [P25X_GPT54_SETTINGS_AND_CARD_GRID_REGRESSION_AUDIT.md](./P25X_GPT54_SETTINGS_AND_CARD_GRID_REGRESSION_AUDIT.md)
+- Tablet/mobile card row overlap audit: [P25X_GPT54_TABLET_MOBILE_CARD_ROW_OVERLAP_AUDIT.md](./P25X_GPT54_TABLET_MOBILE_CARD_ROW_OVERLAP_AUDIT.md)
 
 ### Problem
 

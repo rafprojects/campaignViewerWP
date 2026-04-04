@@ -14,7 +14,7 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
-import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 import styles from './CardGallery.module.scss';
@@ -229,6 +229,8 @@ export function CardGallery({
     : undefined;
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
   const containerPaddingStyle = { paddingInline: toCssOrNumber(galleryBehaviorSettings.appPadding, galleryBehaviorSettings.appPaddingUnit) };
+  /** Below this resolved pixel width, fixed-width cards fall back to the responsive branch. */
+  const MIN_FIXED_CARD_WIDTH_PX = 120;
   const hasFixedCardWidth = s.cardMaxWidth > 0;
   const cardGridJustification = s.cardJustifyContent || 'center';
   const cardGridVerticalAlign = s.cardGalleryVerticalAlign || 'start';
@@ -246,6 +248,28 @@ export function CardGallery({
     const totalGap = toCss((effectiveColumns - 1) * s.cardGapH, cardGapHUnit);
     return `calc((100% - ${totalGap}) / ${effectiveColumns})`;
   }, [effectiveColumns, s.cardGapH, cardGapHUnit]);
+
+  const fixedCardWidth = useMemo<{ value: number; unit: CssWidthUnit } | null>(() => {
+    if (!hasFixedCardWidth) return null;
+
+    const scale = s.cardScale ?? 1;
+    const scaledValue = scale !== 1 ? Math.round(s.cardMaxWidth * scale) : s.cardMaxWidth;
+
+    if (s.cardMaxWidthUnit === '%' && containerWidth > 0) {
+      const resolved = Math.round((containerWidth * scaledValue) / 100);
+      // Fall back to responsive branch when resolved width is too small
+      if (resolved < MIN_FIXED_CARD_WIDTH_PX) return null;
+      return { value: resolved, unit: 'px' };
+    }
+
+    // For absolute units, check against the floor when we can resolve to px
+    if (s.cardMaxWidthUnit === 'px' && scaledValue < MIN_FIXED_CARD_WIDTH_PX) return null;
+
+    return {
+      value: scaledValue,
+      unit: s.cardMaxWidthUnit,
+    };
+  }, [hasFixedCardWidth, s.cardMaxWidth, s.cardMaxWidthUnit, s.cardScale, containerWidth]);
 
   // P21-D: Dynamic viewer background
   const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
@@ -417,15 +441,15 @@ export function CardGallery({
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: `${toCss(s.cardGapV, cardGapVUnit)} ${toCss(s.cardGapH, cardGapHUnit)}`,
+                gap: `${toCss(s.cardGapV, cardGapVUnit)} ${cardGapHUnit === '%' && containerWidth > 0 && (containerWidth * s.cardGapH / 100) < 4 ? '4px' : toCss(s.cardGapH, cardGapHUnit)}`,
                 justifyContent: cardGridJustification,
                 alignContent: cardGridVerticalAlign,
                 ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, s.cardGalleryMinHeightUnit) } : {}),
                 ...(cardGridMaxHeight > 0 ? { maxHeight: toCssOrNumber(cardGridMaxHeight, s.cardGalleryMaxHeightUnit), overflow: 'auto' as const } : {}),
                 ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, s.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, s.cardGalleryOffsetYUnit)})` } : {}),
                 width: '100%',
-                ...(hasFixedCardWidth && s.cardMaxWidthUnit !== '%' ? {
-                  maxWidth: `calc(${toCss(maxCols * s.cardMaxWidth, s.cardMaxWidthUnit)} + ${toCss((maxCols - 1) * s.cardGapH, cardGapHUnit)})`,
+                ...(fixedCardWidth ? {
+                  maxWidth: `calc(${toCss(maxCols * fixedCardWidth.value, fixedCardWidth.unit)} + ${toCss((maxCols - 1) * s.cardGapH, cardGapHUnit)})`,
                   marginInline: 'auto',
                 } : {}),
               }}
@@ -444,8 +468,8 @@ export function CardGallery({
                     <CampaignCard
                       key={campaign.id}
                       {...sharedProps}
-                      maxWidth={s.cardMaxWidth}
-                      maxWidthUnit={s.cardMaxWidthUnit}
+                      maxWidth={fixedCardWidth?.value}
+                      maxWidthUnit={fixedCardWidth?.unit}
                     />
                   );
                 }
