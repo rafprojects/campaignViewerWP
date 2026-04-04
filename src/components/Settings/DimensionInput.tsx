@@ -91,6 +91,7 @@ export function DimensionInput({
           onChange={(v) => v && handleUnitChange(v)}
           allowDeselect={false}
           withCheckIcon={false}
+          comboboxProps={{ withinPortal: false }}
           styles={{ root: { flexShrink: 0, width: 72 } }}
           aria-label="Unit"
         />
