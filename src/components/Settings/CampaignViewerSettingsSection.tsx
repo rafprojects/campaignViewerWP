@@ -1,6 +1,7 @@
-import { Accordion, Box, ColorInput, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Accordion, Box, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';

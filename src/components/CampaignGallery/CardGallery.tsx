@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select, ColorInput } from '@mantine/core';
+import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
@@ -83,9 +84,9 @@ export function CardGallery({
   /** Resolve effective column count from resolved settings + container width. */
   const effectiveColumns = useMemo((): number => {
     const cols = s.cardGridColumns;
-    const max = s.cardMaxColumns || 0;
-    if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
+    if (cols > 0) return cols;
     // Auto mode: use container width + cardAutoColumnsBreakpoints when available
+    const max = s.cardMaxColumns || 0;
     const auto = containerWidth > 0
       ? resolveColumnsFromWidth(containerWidth, 0, galleryBehaviorSettings.cardAutoColumnsBreakpoints)
       : 1;
@@ -95,8 +96,8 @@ export function CardGallery({
   /** Max columns for fixed-width (flex) branch — used to compute row maxWidth. */
   const maxCols = useMemo((): number => {
     const cols = s.cardGridColumns;
+    if (cols > 0) return cols;
     const max = s.cardMaxColumns || 0;
-    if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
     if (max > 0) return max;
     return effectiveColumns;
   }, [s.cardGridColumns, s.cardMaxColumns, effectiveColumns]);

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { Accordion, ColorInput, Divider, Group, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Accordion, Divider, Group, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 

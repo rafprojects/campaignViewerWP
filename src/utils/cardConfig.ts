@@ -23,13 +23,14 @@ import { CARD_BREAKPOINT_OVERRIDE_KEYS } from '@/types';
  * sparse overrides onto the canonical flat settings.
  *
  * Cascade order (later wins):
- *   1. Base flat settings (the incoming `settings` object).
- *   2. `cardConfig.breakpoints.desktop` overrides (if present).
- *   3. `cardConfig.breakpoints.tablet` overrides (when breakpoint is `tablet` or `mobile`).
- *   4. `cardConfig.breakpoints.mobile` overrides (when breakpoint is `mobile`).
+ *   1. Base flat settings (the incoming `settings` object) — canonical for desktop.
+ *   2. `cardConfig.breakpoints.tablet` overrides (when breakpoint is `tablet` or `mobile`).
+ *   3. `cardConfig.breakpoints.mobile` overrides (when breakpoint is `mobile`).
  *
- * Returns a shallow clone of the full settings object with overrides applied,
- * so downstream code (CardGallery, CampaignCard) keeps receiving the same shape.
+ * NOTE: Desktop overrides (`cardConfig.breakpoints.desktop`) are intentionally
+ * NOT applied.  Flat top-level card fields are the sole desktop source of truth.
+ * Applying nested desktop overrides would create a split model where stale
+ * persisted values can silently mask settings UI edits.
  */
 export function resolveCardBreakpointSettings(
   settings: GalleryBehaviorSettings,
@@ -38,8 +39,6 @@ export function resolveCardBreakpointSettings(
   const resolved = { ...settings };
   const bp = settings.cardConfig?.breakpoints;
   if (!bp) return resolved;
-
-  applyOverrides(resolved, bp.desktop);
 
   if (breakpoint === 'tablet' || breakpoint === 'mobile') {
     applyOverrides(resolved, bp.tablet);

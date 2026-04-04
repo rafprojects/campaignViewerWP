@@ -1,4 +1,5 @@
-import { Accordion, ColorInput, Stack, TextInput } from '@mantine/core';
+import { Accordion, Stack, TextInput } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 
 import type { GalleryBehaviorSettings, ViewportBgType } from '@/types';

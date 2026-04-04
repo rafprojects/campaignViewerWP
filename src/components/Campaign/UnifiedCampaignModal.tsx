@@ -1,10 +1,11 @@
 import { Suspense, lazy, useState } from 'react';
 import {
-  ActionIcon, Badge, Box, Button, Card, Center, ColorInput, FileButton, Group, Image, Loader,
+  ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect as Select } from '@/components/Common/ModalSelect';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type LayoutTemplate, type MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';

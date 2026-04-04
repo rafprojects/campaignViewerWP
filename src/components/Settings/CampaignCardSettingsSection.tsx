@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Accordion, ColorInput, Divider, NumberInput, SegmentedControl, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Accordion, Divider, NumberInput, SegmentedControl, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 
@@ -279,6 +280,20 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
             />
             <ResetLink fieldKey="cardGridColumns" />
 
+            {resolved.cardGridColumns === 0 && (
+              <>
+                <NumberInput
+                  label="Max Columns (auto mode)"
+                  description={desc('Cap the number of columns when using Auto layout. 0 = unlimited.', 'cardMaxColumns')}
+                  value={resolved.cardMaxColumns}
+                  onChange={(value) => writeField('cardMaxColumns', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={8}
+                />
+                <ResetLink fieldKey="cardMaxColumns" />
+              </>
+            )}
+
             <DimensionInput
               label="Horizontal Gap"
               description={desc('Horizontal spacing between campaign cards', 'cardGapH')}
@@ -415,19 +430,6 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
             />
             <ResetLink fieldKey="cardGalleryOffsetY" unitKey="cardGalleryOffsetYUnit" />
 
-            {resolved.cardGridColumns === 0 && (
-              <>
-                <NumberInput
-                  label="Max Columns (auto mode)"
-                  description={desc('Cap the number of columns when using Auto layout. 0 = unlimited.', 'cardMaxColumns')}
-                  value={resolved.cardMaxColumns}
-                  onChange={(value) => writeField('cardMaxColumns', typeof value === 'number' ? value : 0)}
-                  min={0}
-                  max={8}
-                />
-                <ResetLink fieldKey="cardMaxColumns" />
-              </>
-            )}
             <ModalSelect
               label="Card Aspect Ratio"
               description={desc('Lock cards to a fixed aspect ratio', 'cardAspectRatio')}

@@ -1,4 +1,5 @@
-import { Box, ColorInput, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Box, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope } from '@/types';
 import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';

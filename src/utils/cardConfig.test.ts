@@ -28,7 +28,7 @@ describe('resolveCardBreakpointSettings', () => {
     expect(resolved).not.toBe(settings); // shallow clone
   });
 
-  it('applies desktop overrides for desktop breakpoint', () => {
+  it('ignores desktop overrides for desktop breakpoint (flat fields are canonical)', () => {
     const settings = makeSettings({
       cardGridColumns: 3,
       cardConfig: {
@@ -37,10 +37,11 @@ describe('resolveCardBreakpointSettings', () => {
         },
       },
     });
-    expect(resolveCardBreakpointSettings(settings, 'desktop').cardGridColumns).toBe(4);
+    // Desktop nested override should NOT win over flat base
+    expect(resolveCardBreakpointSettings(settings, 'desktop').cardGridColumns).toBe(3);
   });
 
-  it('cascades desktop → tablet for tablet breakpoint', () => {
+  it('applies tablet override for tablet breakpoint (desktop overrides ignored)', () => {
     const settings = makeSettings({
       cardGapH: 16,
       cardConfig: {
@@ -50,12 +51,12 @@ describe('resolveCardBreakpointSettings', () => {
         },
       },
     });
-    // tablet gets desktop overlay, then tablet overlay on top
+    // tablet gets tablet overlay only; desktop nested override is skipped
     const resolved = resolveCardBreakpointSettings(settings, 'tablet');
     expect(resolved.cardGapH).toBe(12);
   });
 
-  it('cascades desktop → tablet → mobile for mobile breakpoint', () => {
+  it('cascades tablet → mobile for mobile breakpoint (desktop overrides ignored)', () => {
     const settings = makeSettings({
       cardGapH: 16,
       cardConfig: {
@@ -81,7 +82,7 @@ describe('resolveCardBreakpointSettings', () => {
     expect(resolveCardBreakpointSettings(settings, 'mobile').cardGapH).toBe(12);
   });
 
-  it('inherits from desktop when no tablet/mobile overrides exist', () => {
+  it('ignores desktop overrides for mobile when no tablet override exists', () => {
     const settings = makeSettings({
       cardMaxWidth: 300,
       cardConfig: {
@@ -90,7 +91,8 @@ describe('resolveCardBreakpointSettings', () => {
         },
       },
     });
-    expect(resolveCardBreakpointSettings(settings, 'mobile').cardMaxWidth).toBe(400);
+    // Desktop nested override is ignored — mobile falls through to flat base
+    expect(resolveCardBreakpointSettings(settings, 'mobile').cardMaxWidth).toBe(300);
   });
 
   it('preserves explicit zero as an override (not treated as unset)', () => {
@@ -180,11 +182,11 @@ describe('resolveCardBreakpointSettings', () => {
       cardGridColumns: 3,
       cardConfig: {
         breakpoints: {
-          desktop: { cardGridColumns: 5 },
+          tablet: { cardGridColumns: 5 },
         },
       },
     });
-    resolveCardBreakpointSettings(settings, 'desktop');
+    resolveCardBreakpointSettings(settings, 'tablet');
     expect(settings.cardGridColumns).toBe(3); // original unchanged
   });
 });

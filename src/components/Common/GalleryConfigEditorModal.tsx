@@ -1,5 +1,6 @@
-import { Accordion, Button, ColorInput, Drawer, Group, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
+import { Accordion, Button, Drawer, Group, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 
 import {
   adapterUsesSettingGroup,

@@ -4,7 +4,6 @@ import {
   Text,
   NumberInput,
   Select,
-  ColorInput,
   Group,
   SegmentedControl,
   TextInput,
@@ -13,6 +12,7 @@ import {
   Box,
   Slider,
 } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import {
   IconArrowBigUpLine,
   IconArrowBigDownLine,
