@@ -171,4 +171,104 @@ describe('Lightbox', () => {
     );
     await waitFor(() => expect(document.querySelector('iframe')).toBeInTheDocument());
   });
+
+  // ── Lightbox sizing settings ────────────────────────────────────────────
+
+  it('applies custom videoMaxWidth to embedded video iframe', async () => {
+    render(
+      <Lightbox
+        isOpen={true}
+        media={[videoEmbed('yt2')]}
+        currentIndex={0}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        onClose={vi.fn()}
+        videoMaxWidth={800}
+        videoMaxWidthUnit="px"
+      />,
+    );
+    await waitFor(() => {
+      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+      expect(iframe).toBeInTheDocument();
+      expect(iframe.style.maxWidth).toBe('800px');
+    });
+  });
+
+  it('applies custom videoHeight to embedded video iframe', async () => {
+    render(
+      <Lightbox
+        isOpen={true}
+        media={[videoEmbed('yt3')]}
+        currentIndex={0}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        onClose={vi.fn()}
+        videoHeight={60}
+        videoHeightUnit="vh"
+      />,
+    );
+    await waitFor(() => {
+      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+      expect(iframe).toBeInTheDocument();
+      expect(iframe.style.height).toBe('60vh');
+    });
+  });
+
+  it('applies custom videoMaxWidth to native video element', async () => {
+    render(
+      <Lightbox
+        isOpen={true}
+        media={[video('v2')]}
+        currentIndex={0}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        onClose={vi.fn()}
+        videoMaxWidth={700}
+        videoMaxWidthUnit="px"
+      />,
+    );
+    await waitFor(() => {
+      const vid = document.querySelector('video') as HTMLVideoElement;
+      expect(vid).toBeInTheDocument();
+      expect(vid.style.maxWidth).toBe('700px');
+    });
+  });
+
+  it('applies custom mediaMaxHeight to image', async () => {
+    render(
+      <Lightbox
+        isOpen={true}
+        media={MEDIA}
+        currentIndex={0}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        onClose={vi.fn()}
+        mediaMaxHeight="75vh"
+      />,
+    );
+    await waitFor(() => {
+      const img = document.querySelector('img') as HTMLImageElement;
+      expect(img).toBeInTheDocument();
+      expect(img.style.maxHeight).toBe('75vh');
+    });
+  });
+
+  it('uses hardcoded defaults when no sizing props provided', async () => {
+    render(
+      <Lightbox
+        isOpen={true}
+        media={[videoEmbed('yt4')]}
+        currentIndex={0}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+      expect(iframe).toBeInTheDocument();
+      expect(iframe.style.maxWidth).toBe('1100px');
+      expect(iframe.style.height).toBe('70dvh');
+    });
+  });
 });

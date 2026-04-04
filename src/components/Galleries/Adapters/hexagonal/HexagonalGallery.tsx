@@ -193,7 +193,10 @@ export function HexagonalGallery({ media, settings, containerDimensions: _contai
       `}</style>
 
       <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
-        onPrev={prev} onNext={next} onClose={close} />
+        onPrev={prev} onNext={next} onClose={close}
+        videoMaxWidth={settings.lightboxVideoMaxWidth} videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight} videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight} />
     </Stack>
   );
 }

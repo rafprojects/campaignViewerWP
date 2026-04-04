@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** March 31, 2026
-**Last updated:** April 2, 2026
+**Last updated:** April 3, 2026
 
 ### Tracks
 
@@ -653,6 +653,11 @@ The current media upload flow in `MediaAddModal` only handles single-file select
 - Non-media files are silently filtered from drag-and-drop selections with a notification showing how many were skipped.
 
 ## Track P25-X - Multi-Unit CSS Dimensions + Card Breakpoint Overrides
+
+### Related review notes
+
+- Phase 1-4 implementation review: [P25X_GPT54_IMPLEMENTATION_REVIEW.md](./P25X_GPT54_IMPLEMENTATION_REVIEW.md)
+- Phase 5-8 deep planning review: [P25X_GPT54_PHASES5_8_DEEP_PLAN.md](./P25X_GPT54_PHASES5_8_DEEP_PLAN.md)
 
 ### Problem
 

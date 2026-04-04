@@ -96,6 +96,11 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
         onPrev={prev}
         onNext={next}
         onClose={closeLightbox}
+        videoMaxWidth={settings.lightboxVideoMaxWidth}
+        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight}
+        videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight}
       />
     </Stack>
   );

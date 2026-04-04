@@ -78,33 +78,39 @@ export function GallerySectionWrapper({
   const paddingUnit = s.gallerySectionPaddingUnit ?? 'px';
   const offsetXUnit = s.gallerySectionContentOffsetXUnit ?? 'px';
   const offsetYUnit = s.gallerySectionContentOffsetYUnit ?? 'px';
+
+  // ── CSS emission: for px units, clamp against measured space; for relative
+  //    units, emit the raw configured value and let CSS resolve it. ──────────
+  const isPxWidth = widthUnit === 'px';
+  const isPxHeight = heightUnit === 'px';
+
   const effectiveMinWidth = Math.max(0, Math.min(scaledMinWidth, scaledMaxWidth || scaledMinWidth));
 
-  // Clamp user settings to measured available space
-  const effectiveMaxWidth = availableWidth > 0
+  // Clamp user settings to measured available space (px only)
+  const effectiveMaxWidth = isPxWidth && availableWidth > 0
     ? clampDimension(
         scaledMaxWidth,
         effectiveMinWidth,
         2000,
         availableWidth,
       )
-    : 0;
+    : scaledMaxWidth;
 
   const resolvedMaxHeight =
     s.gallerySectionHeightMode === 'manual' && scaledMaxHeight > 0
-      ? toCss(clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity), heightUnit)
+      ? (isPxHeight
+          ? toCss(clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity), heightUnit)
+          : toCss(scaledMaxHeight, heightUnit))
       : s.gallerySectionHeightMode === 'viewport'
         ? '80dvh'
         : undefined; // 'auto' — no max height constraint
 
-  const effectiveMaxHeight =
-    s.gallerySectionHeightMode === 'manual' && scaledMaxHeight > 0
-      ? clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity)
-      : measuredHeight > 0 ? measuredHeight : 0;
-
+  // ── containerDimensions: always measured pixel values from ResizeObserver,
+  //    NOT from config numbers. This is the single source of truth for child
+  //    adapters that do pixel-space layout math. ─────────────────────────────
   const containerDimensions: ContainerDimensions = {
-    width: effectiveMaxWidth,
-    height: effectiveMaxHeight,
+    width: availableWidth > 0 ? availableWidth : 0,
+    height: measuredHeight > 0 ? measuredHeight : 0,
   };
 
   const hasBg = bgType !== 'none' && bgType !== 'theme';
@@ -117,7 +123,9 @@ export function GallerySectionWrapper({
   const wrapperStyle: CSSProperties = {
     width: '100%',
     maxWidth: scaledMaxWidth > 0
-      ? `min(100%, ${toCss(Math.max(effectiveMinWidth, scaledMaxWidth), widthUnit)})`
+      ? (isPxWidth
+          ? `min(100%, ${toCss(Math.max(effectiveMinWidth, effectiveMaxWidth), widthUnit)})`
+          : toCss(scaledMaxWidth, widthUnit))
       : '100%',
     minWidth: effectiveMinWidth > 0 ? `min(100%, ${toCss(effectiveMinWidth, minWidthUnit)})` : undefined,
     maxHeight: resolvedMaxHeight,

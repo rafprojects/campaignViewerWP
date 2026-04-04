@@ -761,6 +761,11 @@ function LayoutBuilderGalleryInner({
         onPrev={onPrev}
         onNext={onNext}
         onClose={onCloseLightbox}
+        videoMaxWidth={settings.lightboxVideoMaxWidth}
+        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight}
+        videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight}
       />
     </Stack>
   );

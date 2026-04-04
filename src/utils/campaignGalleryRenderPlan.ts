@@ -76,6 +76,7 @@ function applyScopeSpecificSettings(
     return {
       ...settings,
       tileSize: settings.imageTileSize ?? settings.tileSize,
+      tileSizeUnit: settings.imageTileSizeUnit ?? settings.tileSizeUnit,
     };
   }
 
@@ -83,6 +84,7 @@ function applyScopeSpecificSettings(
     return {
       ...settings,
       tileSize: settings.videoTileSize ?? settings.tileSize,
+      tileSizeUnit: settings.videoTileSizeUnit ?? settings.tileSizeUnit,
     };
   }
 

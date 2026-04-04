@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
+import { toCss } from '@/utils/cssUnits';
 import { useSwipe } from '@/hooks/useSwipe';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 
@@ -24,10 +25,29 @@ export interface LightboxProps {
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+  /** Max width for video iframes/elements (default 1100px) */
+  videoMaxWidth?: number;
+  /** Unit for videoMaxWidth (default 'px') */
+  videoMaxWidthUnit?: string;
+  /** Height for embedded video iframes (default '70dvh') */
+  videoHeight?: number;
+  /** Unit for videoHeight (default 'px') */
+  videoHeightUnit?: string;
+  /** CSS max-height for all media (default '85dvh') */
+  mediaMaxHeight?: string;
 }
 
-export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose }: LightboxProps) {
+export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose, videoMaxWidth, videoMaxWidthUnit, videoHeight, videoHeightUnit, mediaMaxHeight }: LightboxProps) {
   const current = media[currentIndex];
+
+  // Resolve lightbox sizing — settings → props → hardcoded defaults
+  const resolvedVideoMaxWidth = videoMaxWidth != null
+    ? toCss(videoMaxWidth, videoMaxWidthUnit ?? 'px')
+    : '1100px';
+  const resolvedVideoHeight = videoHeight != null
+    ? toCss(videoHeight, videoHeightUnit ?? 'px')
+    : '70dvh';
+  const resolvedMediaMaxHeight = mediaMaxHeight || '85dvh';
 
   // Animation state: 'closed' → 'entering' → 'open' → 'exiting' → 'closed'
   const [phase, setPhase] = useState<'closed' | 'entering' | 'open' | 'exiting'>('closed');
@@ -139,8 +159,8 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   width: '90vw',
-                  maxWidth: 1100,
-                  height: '70dvh',
+                  maxWidth: resolvedVideoMaxWidth,
+                  height: resolvedVideoHeight,
                   border: 'none',
                   borderRadius: 4,
                   display: 'block',
@@ -154,8 +174,8 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
                 autoPlay
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                  maxWidth: '90vw',
-                  maxHeight: '85dvh',
+                  maxWidth: resolvedVideoMaxWidth,
+                  maxHeight: resolvedMediaMaxHeight,
                   borderRadius: 4,
                   display: 'block',
                 }}
@@ -169,7 +189,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose 
               onClick={(e) => e.stopPropagation()}
               style={{
                 maxWidth: '90vw',
-                maxHeight: '85dvh',
+                maxHeight: resolvedMediaMaxHeight,
                 objectFit: 'contain',
                 borderRadius: 4,
                 display: 'block',

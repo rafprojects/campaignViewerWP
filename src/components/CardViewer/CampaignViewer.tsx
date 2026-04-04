@@ -193,16 +193,23 @@ export function CampaignViewer({
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
   const galleriesOnly = s.campaignOpenMode === 'galleries-only';
   const showStats = (s.showCampaignStats !== false) && (!s.campaignStatsAdminOnly || isAdmin);
-  // P22-P4: Modal dimension clamping
+  // P22-P4: Modal dimension clamping — only apply pixel clamps for px units;
+  // relative units (%, vw, etc.) are emitted raw and let CSS resolve them.
   const MODAL_MIN_WIDTH = 600;
   const MODAL_MAX_WIDTH = 1600;
   const MODAL_MIN_HEIGHT_DVH = 50;
   const MODAL_MAX_HEIGHT_DVH = 95;
-  const clampedWidth = Math.max(MODAL_MIN_WIDTH, Math.min(MODAL_MAX_WIDTH, s.modalMaxWidth || 1200));
+  const modalMaxWidthUnit = s.modalMaxWidthUnit ?? 'px';
+  const rawModalWidth = s.modalMaxWidth || 1200;
+  const modalWidthValue = modalMaxWidthUnit === 'px'
+    ? Math.max(MODAL_MIN_WIDTH, Math.min(MODAL_MAX_WIDTH, rawModalWidth))
+    : rawModalWidth;
   const clampedMaxHeight = Math.max(MODAL_MIN_HEIGHT_DVH, Math.min(MODAL_MAX_HEIGHT_DVH, s.modalMaxHeight));
-  const modalSize = useFullscreen ? '100%' : toCss(clampedWidth, s.modalMaxWidthUnit ?? 'px');
-  const clampedInnerPadding = Math.max(0, Math.min(48, s.modalInnerPadding));
+  const modalSize = useFullscreen ? '100%' : toCss(modalWidthValue, modalMaxWidthUnit);
   const innerPaddingUnit = s.modalInnerPaddingUnit ?? 'px';
+  const clampedInnerPadding = innerPaddingUnit === 'px'
+    ? Math.max(0, Math.min(48, s.modalInnerPadding))
+    : s.modalInnerPadding;
   const contentMaxWidth = useFullscreen
     ? (s.fullscreenContentMaxWidth > 0 ? toCss(s.fullscreenContentMaxWidth, s.fullscreenContentMaxWidthUnit ?? 'px') : '100%')
     : (s.modalContentMaxWidth > 0 ? toCss(s.modalContentMaxWidth, s.modalContentMaxWidthUnit ?? 'px') : '100%');

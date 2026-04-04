@@ -358,7 +358,10 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
   const baseHeight = dominantType === 'image' ? settings.imageViewportHeight : settings.videoViewportHeight;
   const baseHeightUnit = dominantType === 'image' ? (settings.imageViewportHeightUnit ?? 'px') : (settings.videoViewportHeightUnit ?? 'px');
   const standardHeight = useMemo(() => {
-    const base = Math.max(180, Math.min(900, baseHeight));
+    // Px-only clamp: relative units (vh, %, etc.) are emitted raw for CSS to resolve.
+    const base = baseHeightUnit === 'px'
+      ? Math.max(180, Math.min(900, baseHeight))
+      : baseHeight;
     return toCss(Math.round(base * heightMultiplier), baseHeightUnit);
   }, [baseHeight, heightMultiplier, baseHeightUnit]);
 
@@ -701,6 +704,11 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
             onPrev={scrollPrev}
             onNext={scrollNext}
             onClose={closeLightbox}
+            videoMaxWidth={settings.lightboxVideoMaxWidth}
+            videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+            videoHeight={settings.lightboxVideoHeight}
+            videoHeightUnit={settings.lightboxVideoHeightUnit}
+            mediaMaxHeight={settings.lightboxMediaMaxHeight}
           />
         </Suspense>
       )}
