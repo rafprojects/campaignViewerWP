@@ -700,6 +700,10 @@ class WPSG_Settings_Registry {
             $defaults['gallery_config'] = self::create_default_gallery_config();
         }
 
+        if (!array_key_exists('card_config', $defaults)) {
+            $defaults['card_config'] = ['breakpoints' => []];
+        }
+
         return $defaults;
     }
 

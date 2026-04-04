@@ -544,6 +544,13 @@ class WPSG_Settings_Sanitizer {
             );
         }
 
+        if (isset($input['card_config'])) {
+            $sanitized['card_config'] = self::sanitize_card_config_payload(
+                $input['card_config'],
+                $defaults['card_config'] ?? []
+            );
+        }
+
         foreach ($input as $key => $value) {
             if (isset($sanitized[$key])) {
                 continue;
@@ -1145,5 +1152,142 @@ class WPSG_Settings_Sanitizer {
         }
 
         return empty($clean_grad) ? (object) [] : $clean_grad;
+    }
+
+    // ── Card config sanitization ──────────────────────────────────────────────
+
+    /**
+     * Explicit camelCase → snake_case map for card breakpoint override fields.
+     *
+     * Only keys listed here are allowed inside cardConfig.breakpoints.<bp>.
+     * The mapped snake_case key is used to look up defaults, valid options,
+     * and field ranges from the flat settings registry.
+     *
+     * @var array<string, string>
+     */
+    private static $nested_card_field_map = [
+        'cardGridColumns'          => 'card_grid_columns',
+        'cardMaxColumns'           => 'card_max_columns',
+        'cardMaxWidth'             => 'card_max_width',
+        'cardMaxWidthUnit'         => 'card_max_width_unit',
+        'cardGapH'                 => 'card_gap_h',
+        'cardGapHUnit'             => 'card_gap_h_unit',
+        'cardGapV'                 => 'card_gap_v',
+        'cardGapVUnit'             => 'card_gap_v_unit',
+        'cardScale'                => 'card_scale',
+        'cardJustifyContent'       => 'card_justify_content',
+        'cardGalleryVerticalAlign'  => 'card_gallery_vertical_align',
+        'cardAspectRatio'          => 'card_aspect_ratio',
+        'cardThumbnailHeight'      => 'card_thumbnail_height',
+        'cardThumbnailHeightUnit'  => 'card_thumbnail_height_unit',
+        'cardMinHeight'            => 'card_min_height',
+        'cardMinHeightUnit'        => 'card_min_height_unit',
+        'cardBorderRadius'         => 'card_border_radius',
+        'cardBorderRadiusUnit'     => 'card_border_radius_unit',
+        'cardGalleryMinHeight'     => 'card_gallery_min_height',
+        'cardGalleryMinHeightUnit' => 'card_gallery_min_height_unit',
+        'cardGalleryMaxHeight'     => 'card_gallery_max_height',
+        'cardGalleryMaxHeightUnit' => 'card_gallery_max_height_unit',
+        'cardGalleryOffsetX'       => 'card_gallery_offset_x',
+        'cardGalleryOffsetXUnit'   => 'card_gallery_offset_x_unit',
+        'cardGalleryOffsetY'       => 'card_gallery_offset_y',
+        'cardGalleryOffsetYUnit'   => 'card_gallery_offset_y_unit',
+        'cardDisplayMode'          => 'card_display_mode',
+        'cardRowsPerPage'          => 'card_rows_per_page',
+    ];
+
+    /**
+     * Dimension pairs for unit-only override rejection in card config.
+     * Each entry is [valueKey, unitKey] in camelCase.
+     *
+     * @var array<array{0: string, 1: string}>
+     */
+    private static $card_dimension_pairs = [
+        ['cardMaxWidth',         'cardMaxWidthUnit'],
+        ['cardGapH',             'cardGapHUnit'],
+        ['cardGapV',             'cardGapVUnit'],
+        ['cardThumbnailHeight',  'cardThumbnailHeightUnit'],
+        ['cardMinHeight',        'cardMinHeightUnit'],
+        ['cardBorderRadius',     'cardBorderRadiusUnit'],
+        ['cardGalleryMinHeight', 'cardGalleryMinHeightUnit'],
+        ['cardGalleryMaxHeight', 'cardGalleryMaxHeightUnit'],
+        ['cardGalleryOffsetX',   'cardGalleryOffsetXUnit'],
+        ['cardGalleryOffsetY',   'cardGalleryOffsetYUnit'],
+    ];
+
+    /**
+     * Sanitize a card_config payload.
+     *
+     * Accepts JSON string or array. Only allows known breakpoints and known
+     * override keys. Reuses the flat settings registry metadata for type
+     * checking, range clamping, and enum validation. Rejects orphaned unit
+     * overrides (unit without matching value).
+     *
+     * @param mixed $raw  Raw card_config input (JSON string or array).
+     * @param array $default Default card_config from registry.
+     * @return array Sanitized card_config.
+     */
+    public static function sanitize_card_config_payload($raw, $default = []) {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                return is_array($default) ? $default : ['breakpoints' => []];
+            }
+        } elseif (is_array($raw)) {
+            $decoded = $raw;
+        } else {
+            return is_array($default) ? $default : ['breakpoints' => []];
+        }
+
+        $defaults      = WPSG_Settings_Registry::get_defaults();
+        $valid_options = WPSG_Settings_Registry::get_valid_options();
+        $field_ranges  = WPSG_Settings_Registry::get_field_ranges();
+        $sanitized     = ['breakpoints' => []];
+
+        if (empty($decoded['breakpoints']) || !is_array($decoded['breakpoints'])) {
+            return $sanitized;
+        }
+
+        foreach (['desktop', 'tablet', 'mobile'] as $breakpoint) {
+            if (empty($decoded['breakpoints'][$breakpoint]) || !is_array($decoded['breakpoints'][$breakpoint])) {
+                continue;
+            }
+
+            $layer = $decoded['breakpoints'][$breakpoint];
+            $clean_layer = [];
+
+            foreach ($layer as $camel_key => $value) {
+                if (!isset(self::$nested_card_field_map[$camel_key])) {
+                    continue; // unknown key — drop it
+                }
+
+                $flat_key = self::$nested_card_field_map[$camel_key];
+                $result   = self::sanitize_nested_gallery_setting(
+                    $flat_key,
+                    $value,
+                    $defaults,
+                    $valid_options,
+                    $field_ranges,
+                    false // do NOT fall back to defaults — undefined means "inherit"
+                );
+
+                if ($result['accepted']) {
+                    $clean_layer[$camel_key] = $result['value'];
+                }
+            }
+
+            // Reject unit-only overrides: strip unit keys whose numeric partner is absent.
+            foreach (self::$card_dimension_pairs as [$val_key, $unit_key]) {
+                if (array_key_exists($unit_key, $clean_layer) && !array_key_exists($val_key, $clean_layer)) {
+                    unset($clean_layer[$unit_key]);
+                }
+            }
+
+            if (!empty($clean_layer)) {
+                $sanitized['breakpoints'][$breakpoint] = $clean_layer;
+            }
+        }
+
+        return $sanitized;
     }
 }
