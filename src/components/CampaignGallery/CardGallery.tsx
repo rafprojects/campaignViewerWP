@@ -240,6 +240,10 @@ export function CardGallery({
   const cardGridOffsetY = s.cardGalleryOffsetY || 0;
   const cardGapHUnit = s.cardGapHUnit ?? 'px';
   const cardGapVUnit = s.cardGapVUnit ?? 'px';
+  // Clamp percentage-based horizontal gaps to a minimum visible pixel value
+  const effectiveGapH = cardGapHUnit === '%' && containerWidth > 0 && (containerWidth * s.cardGapH / 100) < 4
+    ? '4px'
+    : toCss(s.cardGapH, cardGapHUnit);
   const responsiveCardWidth = useMemo(() => {
     if (effectiveColumns <= 1) {
       return '100%';
@@ -441,7 +445,7 @@ export function CardGallery({
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: `${toCss(s.cardGapV, cardGapVUnit)} ${cardGapHUnit === '%' && containerWidth > 0 && (containerWidth * s.cardGapH / 100) < 4 ? '4px' : toCss(s.cardGapH, cardGapHUnit)}`,
+                gap: `${toCss(s.cardGapV, cardGapVUnit)} ${effectiveGapH}`,
                 justifyContent: cardGridJustification,
                 alignContent: cardGridVerticalAlign,
                 ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, s.cardGalleryMinHeightUnit) } : {}),
@@ -449,7 +453,7 @@ export function CardGallery({
                 ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, s.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, s.cardGalleryOffsetYUnit)})` } : {}),
                 width: '100%',
                 ...(fixedCardWidth ? {
-                  maxWidth: `calc(${toCss(maxCols * fixedCardWidth.value, fixedCardWidth.unit)} + ${toCss((maxCols - 1) * s.cardGapH, cardGapHUnit)})`,
+                  maxWidth: `calc(${toCss(maxCols * fixedCardWidth.value, fixedCardWidth.unit)} + ${(maxCols - 1)} * ${effectiveGapH})`,
                   marginInline: 'auto',
                 } : {}),
               }}
@@ -463,13 +467,13 @@ export function CardGallery({
                   apiClient: !hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined,
                 };
 
-                if (hasFixedCardWidth) {
+                if (fixedCardWidth) {
                   return (
                     <CampaignCard
                       key={campaign.id}
                       {...sharedProps}
-                      maxWidth={fixedCardWidth?.value}
-                      maxWidthUnit={fixedCardWidth?.unit}
+                      maxWidth={fixedCardWidth.value}
+                      maxWidthUnit={fixedCardWidth.unit}
                     />
                   );
                 }
@@ -477,6 +481,7 @@ export function CardGallery({
                 return (
                   <Box
                     key={campaign.id}
+                    data-testid="card-responsive-wrapper"
                     style={{
                       flex: `0 0 ${responsiveCardWidth}`,
                       maxWidth: responsiveCardWidth,

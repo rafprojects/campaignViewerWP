@@ -221,7 +221,7 @@ describe('CardGallery', () => {
       const grid = screen.getByTestId('card-gallery-grid');
 
       await waitFor(() => {
-        expect(grid.style.maxWidth).toBe('calc(540px + 4%)');
+        expect(grid.style.maxWidth).toBe('calc(540px + 2 * 2%)');
         expect(screen.getByLabelText('Open campaign Campaign 1')).toHaveStyle({ maxWidth: '180px' });
       });
     });
@@ -460,10 +460,11 @@ describe('CardGallery narrow-breakpoint fixed-width guard', () => {
         />,
       );
 
-      // In responsive mode, cards do NOT get an inline maxWidth — they use the wrapper's flex sizing
+      // Cards should be in responsive wrappers, not the fixed-width branch
       const card = screen.getByLabelText('Open campaign Campaign 1');
       await waitFor(() => {
         expect(card.style.maxWidth).toBe('');
+        expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeInTheDocument();
       });
     });
   });
@@ -492,6 +493,65 @@ describe('CardGallery narrow-breakpoint fixed-width guard', () => {
       const card = screen.getByLabelText('Open campaign Campaign 1');
       await waitFor(() => {
         expect(card.style.maxWidth).toBe('180px');
+        expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeNull();
+      });
+    });
+  });
+
+  it('keeps fixed-width branch at 900px tablet width when resolved width exceeds floor', async () => {
+    // 15% of 900px = 135px → above 120px floor → stays in fixed-width branch
+    await withMockedClientWidth(900, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(4)}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            cardMaxWidth: 10,
+            cardMaxWidthUnit: '%',
+            cardScale: 1.5,
+            cardGapH: 2,
+            cardGapHUnit: '%',
+            cardGridColumns: 0,
+            cardMaxColumns: 3,
+            cardAutoColumnsBreakpoints: '0:5',
+          }}
+        />,
+      );
+
+      const card = screen.getByLabelText('Open campaign Campaign 1');
+      await waitFor(() => {
+        // 15% of 900 = 135px
+        expect(card.style.maxWidth).toBe('135px');
+        expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeNull();
+      });
+    });
+  });
+
+  it('falls back to responsive branch at 780px tablet-edge width', async () => {
+    // 15% of 780px = 117px → below 120px floor → should fall back
+    await withMockedClientWidth(780, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(4)}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+            cardMaxWidth: 10,
+            cardMaxWidthUnit: '%',
+            cardScale: 1.5,
+            cardGapH: 2,
+            cardGapHUnit: '%',
+            cardGridColumns: 0,
+            cardMaxColumns: 3,
+          }}
+        />,
+      );
+
+      const card = screen.getByLabelText('Open campaign Campaign 1');
+      await waitFor(() => {
+        expect(card.style.maxWidth).toBe('');
+        expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeInTheDocument();
       });
     });
   });
