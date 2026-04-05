@@ -1,5 +1,10 @@
-const CACHE_VERSION = 'wpsg-v1';
+const CACHE_VERSION = 'wpsg-v2';
 const RUNTIME_CACHE = `wpsg-runtime-${CACHE_VERSION}`;
+
+// Vite-hashed asset filenames contain a content hash (e.g. index-DxTet_7o.js).
+// These should NOT be SW-cached because the hash already busts browser cache,
+// and SW cache-first would serve stale bundles after a deploy.
+const HASHED_ASSET_RE = /\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.(js|css)$/;
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -29,6 +34,11 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/wp-admin/') || url.pathname.startsWith('/wp-json/')) return;
   if (url.pathname.includes('/wp-login.php')) return;
 
+  // Never cache Vite hashed assets — the content hash in the filename
+  // already provides perfect cache busting. SW caching these causes
+  // stale bundles after deploy.
+  if (HASHED_ASSET_RE.test(url.pathname)) return;
+
   event.respondWith(
     (async () => {
       const cache = await caches.open(RUNTIME_CACHE);
@@ -48,7 +58,7 @@ self.addEventListener('fetch', (event) => {
           cache.put(request, response.clone());
         }
         return response;
-      } catch (err) {
+      } catch {
         return cached ?? Response.error();
       }
     })(),

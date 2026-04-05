@@ -580,3 +580,78 @@ describe('CardGallery narrow-breakpoint fixed-width guard', () => {
     });
   });
 });
+
+/* ── Live-settings responsive mode regression tests ────────────── */
+
+// Live settings as of 2026-04-04: responsive mode, no fixed card width
+const liveResponsiveSettings: GalleryBehaviorSettings = {
+  ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+  cardGridColumns: 0,
+  cardMaxColumns: 4,
+  cardMaxWidth: 0,        // responsive mode — no fixed width
+  cardMaxWidthUnit: 'px',
+  cardGapH: 2,
+  cardGapHUnit: '%',
+  cardGapV: 48,
+  cardGapVUnit: 'px',
+  cardScale: 1.5,
+  cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
+};
+
+describe('CardGallery live responsive mode at tablet/mobile widths', () => {
+  it('uses responsive wrappers at 768px (2 columns)', async () => {
+    await withMockedClientWidth(768, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(4)}
+          userPermissions={[]}
+          galleryBehaviorSettings={liveResponsiveSettings}
+        />,
+      );
+
+      const card = screen.getByLabelText('Open campaign Campaign 1');
+      await waitFor(() => {
+        // Should be in responsive wrapper, not fixed-width branch
+        expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeInTheDocument();
+        // No inline maxWidth — width comes from flex sizing
+        expect(card.style.maxWidth).toBe('');
+      });
+    });
+  });
+
+  it('uses responsive wrappers at 1024px (3 columns)', async () => {
+    await withMockedClientWidth(1024, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(6)}
+          userPermissions={[]}
+          galleryBehaviorSettings={liveResponsiveSettings}
+        />,
+      );
+
+      const card = screen.getByLabelText('Open campaign Campaign 1');
+      await waitFor(() => {
+        expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeInTheDocument();
+        expect(card.style.maxWidth).toBe('');
+      });
+    });
+  });
+
+  it('uses responsive wrappers at 375px mobile (1 column)', async () => {
+    await withMockedClientWidth(375, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(4)}
+          userPermissions={[]}
+          galleryBehaviorSettings={liveResponsiveSettings}
+        />,
+      );
+
+      const card = screen.getByLabelText('Open campaign Campaign 1');
+      await waitFor(() => {
+        expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeInTheDocument();
+        expect(card.style.maxWidth).toBe('');
+      });
+    });
+  });
+});
