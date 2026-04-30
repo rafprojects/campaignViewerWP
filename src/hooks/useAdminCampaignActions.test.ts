@@ -31,8 +31,6 @@ const mockCampaign: AdminCampaign = {
   publishAt: '',
   unpublishAt: '',
   layoutTemplateId: '',
-  imageAdapterId: '',
-  videoAdapterId: '',
   categories: [],
 };
 
@@ -79,6 +77,21 @@ describe('useAdminCampaignActions', () => {
     );
   });
 
+  it('archiveCampaign notifies failure when archive request rejects', async () => {
+    const post = vi.fn().mockRejectedValue(new Error('Archive failed'));
+    const onNotify = vi.fn();
+    const apiClient = makeApiClient({ post });
+    const { result } = renderHook(() =>
+      useAdminCampaignActions({ apiClient, ...baseOptions, onNotify }),
+    );
+
+    await act(async () => { await result.current.archiveCampaign(mockCampaign); });
+
+    expect(onNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'error', text: 'Archive failed' }),
+    );
+  });
+
   it('restoreCampaign posts to restore endpoint', async () => {
     const post = vi.fn().mockResolvedValue({});
     const apiClient = makeApiClient({ post });
@@ -89,6 +102,20 @@ describe('useAdminCampaignActions', () => {
     expect(post).toHaveBeenCalledWith(
       '/wp-json/wp-super-gallery/v1/campaigns/1/restore',
       {},
+    );
+  });
+
+  it('restoreCampaign notifies success after restore', async () => {
+    const onNotify = vi.fn();
+    const apiClient = makeApiClient();
+    const { result } = renderHook(() =>
+      useAdminCampaignActions({ apiClient, ...baseOptions, onNotify }),
+    );
+
+    await act(async () => { await result.current.restoreCampaign(mockCampaign); });
+
+    expect(onNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'success', text: 'Campaign restored.' }),
     );
   });
 

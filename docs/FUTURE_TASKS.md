@@ -11,6 +11,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 | Item | Disposition |
 |------|-------------|
 | Modal-safe gallery-config selectors, shared manage-media entry, settings stacking fix, backlog cleanup | Active in [PHASE25_REPORT.md](PHASE25_REPORT.md) |
+| Settings system refactor, nested-only settings/campaign overrides, Zod foundation, settings-only TanStack Query | Active in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md) |
 | Bulk actions, campaign duplication, keyboard shortcuts, analytics dashboard, media usage tracking, campaign categories, access request workflow | Keep in [PHASE18_REPORT.md](PHASE18_REPORT.md); do not duplicate here |
 | Theme live preview, gallery config accessibility, per-breakpoint adapter parity, deferred review cleanup | Keep in [PHASE24_REPORT.md](PHASE24_REPORT.md); do not duplicate here |
 | Settings panel as a modal overlay | Already implemented; only the stacking bug moved to Phase 25 |
@@ -20,7 +21,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 | Candidate | Why it was surfaced now | Impact | Effort |
 |-----------|-------------------------|--------|--------|
-| Final legacy gallery bridge removal | Phase 24 intentionally deferred full flat-field read-path removal to the next phase; legacy adapter fields still exist in types, resolver helpers, and tests | Medium-High | Medium |
+| App-wide TanStack Query migration / SWR retirement | Phase 25 now handles settings-only Query adoption; broader admin and campaign fetch/mutation migration remains follow-on work | Medium-High | Medium-High |
 | Builder template deep clone | Solves a real duplication surprise with relatively contained scope | Medium | Low |
 | Time-limited access grants | Strong user value for event-style galleries; clear implementation path | High | Low-Medium |
 | Admin tab data reuse / SWR cache hardening | Noticeable admin UX gain with moderate scope if the cache audit stays disciplined | Medium | Low-Medium |

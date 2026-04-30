@@ -1,7 +1,13 @@
 import { lazy } from 'react';
 
 import { resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
-import type { Campaign, ContainerDimensions, GalleryBehaviorSettings, MediaItem } from '@/types';
+import type {
+  Campaign,
+  ContainerDimensions,
+  GalleryBehaviorSettings,
+  MediaItem,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 
 const LayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((module) => ({
@@ -13,6 +19,7 @@ interface CampaignGalleryAdapterRendererProps {
   adapterId: string;
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime: ResolvedGallerySectionRuntime;
   containerDimensions: ContainerDimensions;
   campaign: Campaign;
   isAdmin: boolean;
@@ -22,6 +29,7 @@ export function CampaignGalleryAdapterRenderer({
   adapterId,
   media,
   settings,
+  runtime,
   containerDimensions,
   campaign,
   isAdmin,
@@ -31,6 +39,7 @@ export function CampaignGalleryAdapterRenderer({
       <LayoutBuilderGallery
         media={media}
         settings={settings}
+        runtime={runtime}
         templateId={campaign.layoutTemplateId}
         isAdmin={isAdmin}
         containerDimensions={containerDimensions}
@@ -39,5 +48,5 @@ export function CampaignGalleryAdapterRenderer({
   }
 
   const Adapter = resolveAdapter(adapterId);
-  return <Adapter media={media} settings={settings} containerDimensions={containerDimensions} />;
+  return <Adapter media={media} settings={settings} runtime={runtime} containerDimensions={containerDimensions} />;
 }

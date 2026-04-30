@@ -1,6 +1,7 @@
 import { Accordion, Stack, TextInput } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
+import { getScopeGalleryCommonSetting, resolveGalleryConfig, setScopeGalleryCommonSetting } from '@/utils/galleryConfig';
 
 import type { GalleryBehaviorSettings, ViewportBgType } from '@/types';
 
@@ -80,6 +81,16 @@ interface GalleryPresentationSectionsProps {
 }
 
 export function GalleryPresentationSections({ settings, updateSetting, mountedPanels }: GalleryPresentationSectionsProps) {
+  const resolvedGalleryConfig = resolveGalleryConfig(settings);
+
+  const updateScopeBackground = (
+    scope: 'image' | 'video' | 'unified',
+    key: 'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl',
+    value: string,
+  ) => {
+    updateSetting('galleryConfig', setScopeGalleryCommonSetting(resolvedGalleryConfig, scope, key, value));
+  };
+
   return (
     <>
       <Accordion.Item value="backgrounds">
@@ -89,40 +100,40 @@ export function GalleryPresentationSections({ settings, updateSetting, mountedPa
             <GalleryBackgroundFields
               label="Image Gallery Background"
               description="Background applied behind image gallery viewports"
-              bgType={settings.imageBgType}
-              bgColor={settings.imageBgColor}
-              bgGradient={settings.imageBgGradient}
-              bgImageUrl={settings.imageBgImageUrl}
-              onBgTypeChange={(value) => updateSetting('imageBgType', value)}
-              onBgColorChange={(value) => updateSetting('imageBgColor', value)}
-              onBgGradientChange={(value) => updateSetting('imageBgGradient', value)}
-              onBgImageChange={(value) => updateSetting('imageBgImageUrl', value)}
+              bgType={(getScopeGalleryCommonSetting(resolvedGalleryConfig, 'image', 'viewportBgType') as ViewportBgType | undefined) ?? settings.imageBgType}
+              bgColor={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'image', 'viewportBgColor') ?? settings.imageBgColor}
+              bgGradient={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'image', 'viewportBgGradient') ?? settings.imageBgGradient}
+              bgImageUrl={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'image', 'viewportBgImageUrl') ?? settings.imageBgImageUrl}
+              onBgTypeChange={(value) => updateScopeBackground('image', 'viewportBgType', value)}
+              onBgColorChange={(value) => updateScopeBackground('image', 'viewportBgColor', value)}
+              onBgGradientChange={(value) => updateScopeBackground('image', 'viewportBgGradient', value)}
+              onBgImageChange={(value) => updateScopeBackground('image', 'viewportBgImageUrl', value)}
             />
 
             <GalleryBackgroundFields
               label="Video Gallery Background"
               description="Background applied behind video gallery viewports"
-              bgType={settings.videoBgType}
-              bgColor={settings.videoBgColor}
-              bgGradient={settings.videoBgGradient}
-              bgImageUrl={settings.videoBgImageUrl}
-              onBgTypeChange={(value) => updateSetting('videoBgType', value)}
-              onBgColorChange={(value) => updateSetting('videoBgColor', value)}
-              onBgGradientChange={(value) => updateSetting('videoBgGradient', value)}
-              onBgImageChange={(value) => updateSetting('videoBgImageUrl', value)}
+              bgType={(getScopeGalleryCommonSetting(resolvedGalleryConfig, 'video', 'viewportBgType') as ViewportBgType | undefined) ?? settings.videoBgType}
+              bgColor={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'video', 'viewportBgColor') ?? settings.videoBgColor}
+              bgGradient={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'video', 'viewportBgGradient') ?? settings.videoBgGradient}
+              bgImageUrl={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'video', 'viewportBgImageUrl') ?? settings.videoBgImageUrl}
+              onBgTypeChange={(value) => updateScopeBackground('video', 'viewportBgType', value)}
+              onBgColorChange={(value) => updateScopeBackground('video', 'viewportBgColor', value)}
+              onBgGradientChange={(value) => updateScopeBackground('video', 'viewportBgGradient', value)}
+              onBgImageChange={(value) => updateScopeBackground('video', 'viewportBgImageUrl', value)}
             />
 
             <GalleryBackgroundFields
               label="Unified Gallery Background"
               description="Background applied when unified gallery mode is active"
-              bgType={settings.unifiedBgType}
-              bgColor={settings.unifiedBgColor}
-              bgGradient={settings.unifiedBgGradient}
-              bgImageUrl={settings.unifiedBgImageUrl}
-              onBgTypeChange={(value) => updateSetting('unifiedBgType', value)}
-              onBgColorChange={(value) => updateSetting('unifiedBgColor', value)}
-              onBgGradientChange={(value) => updateSetting('unifiedBgGradient', value)}
-              onBgImageChange={(value) => updateSetting('unifiedBgImageUrl', value)}
+              bgType={(getScopeGalleryCommonSetting(resolvedGalleryConfig, 'unified', 'viewportBgType') as ViewportBgType | undefined) ?? settings.unifiedBgType}
+              bgColor={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'unified', 'viewportBgColor') ?? settings.unifiedBgColor}
+              bgGradient={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'unified', 'viewportBgGradient') ?? settings.unifiedBgGradient}
+              bgImageUrl={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'unified', 'viewportBgImageUrl') ?? settings.unifiedBgImageUrl}
+              onBgTypeChange={(value) => updateScopeBackground('unified', 'viewportBgType', value)}
+              onBgColorChange={(value) => updateScopeBackground('unified', 'viewportBgColor', value)}
+              onBgGradientChange={(value) => updateScopeBackground('unified', 'viewportBgGradient', value)}
+              onBgImageChange={(value) => updateScopeBackground('unified', 'viewportBgImageUrl', value)}
             />
           </Stack>}
         </Accordion.Panel>

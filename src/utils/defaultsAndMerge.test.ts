@@ -47,28 +47,22 @@ describe('DEFAULT_LAYOUT_SLOT', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// DEFAULT_GALLERY_BEHAVIOR_SETTINGS – Phase 15 fields
+// DEFAULT_GALLERY_BEHAVIOR_SETTINGS – nested gallery config
 // ═══════════════════════════════════════════════════════════════
 
-describe('DEFAULT_GALLERY_BEHAVIOR_SETTINGS – P15 fields', () => {
-  it('defaults gallerySelectionMode to unified', () => {
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gallerySelectionMode).toBe('unified');
-  });
-
-  it('defaults all per-breakpoint adapters to classic', () => {
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.desktopImageAdapterId).toBe('classic');
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.desktopVideoAdapterId).toBe('classic');
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tabletImageAdapterId).toBe('classic');
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tabletVideoAdapterId).toBe('classic');
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mobileImageAdapterId).toBe('classic');
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.mobileVideoAdapterId).toBe('classic');
+describe('DEFAULT_GALLERY_BEHAVIOR_SETTINGS – nested gallery config', () => {
+  it('defaults nested adapter selection to per-type classic with compact-grid unified', () => {
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.mode).toBe('per-type');
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.video?.adapterId).toBe('classic');
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.unified?.adapterId).toBe('compact-grid');
   });
 
   it('defaults layoutBuilderScope to full', () => {
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.layoutBuilderScope).toBe('full');
   });
 
-  it('hydrates default nested galleryConfig compatibility data', () => {
+  it('hydrates the default nested galleryConfig data', () => {
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.mode).toBe('per-type');
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.unified?.adapterId).toBe('compact-grid');
@@ -98,13 +92,11 @@ describe('mergeSettingsWithDefaults', () => {
 
   it('overrides specified fields from partial', () => {
     const merged = mergeSettingsWithDefaults({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'masonry',
+      layoutBuilderScope: 'viewport',
+      imageBorderRadius: 12,
     });
-    expect(merged.gallerySelectionMode).toBe('per-breakpoint');
-    expect(merged.desktopImageAdapterId).toBe('masonry');
-    // Legacy compatibility values are rehydrated from nested galleryConfig.
-    expect(merged.imageGalleryAdapterId).toBe('masonry');
+    expect(merged.layoutBuilderScope).toBe('viewport');
+    expect(merged.imageBorderRadius).toBe(12);
   });
 
   it('preserves falsy value 0 (does not replace with default)', () => {
@@ -130,22 +122,22 @@ describe('mergeSettingsWithDefaults', () => {
 
   it('replaces null with default', () => {
     const merged = mergeSettingsWithDefaults({
-      gallerySelectionMode: null as unknown as 'unified',
+      layoutBuilderScope: null as unknown as 'full',
     });
-    expect(merged.gallerySelectionMode).toBe('unified');
+    expect(merged.layoutBuilderScope).toBe('full');
   });
 
   it('replaces undefined with default', () => {
     const merged = mergeSettingsWithDefaults({
-      gallerySelectionMode: undefined,
+      layoutBuilderScope: undefined,
     });
-    expect(merged.gallerySelectionMode).toBe('unified');
+    expect(merged.layoutBuilderScope).toBe('full');
   });
 
   it('does not mutate the default object', () => {
-    const originalMode = DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gallerySelectionMode;
-    mergeSettingsWithDefaults({ gallerySelectionMode: 'per-breakpoint' });
-    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gallerySelectionMode).toBe(originalMode);
+    const originalScope = DEFAULT_GALLERY_BEHAVIOR_SETTINGS.layoutBuilderScope;
+    mergeSettingsWithDefaults({ layoutBuilderScope: 'viewport' });
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.layoutBuilderScope).toBe(originalScope);
   });
 
   it('ignores keys not in the defaults (extra API fields)', () => {
@@ -162,65 +154,75 @@ describe('mergeSettingsWithDefaults', () => {
     expect(a).toEqual(b);
   });
 
-  it('handles all P15 fields correctly in one merge', () => {
+  it('merges nested adapter selections and layout builder scope in one pass', () => {
     const merged = mergeSettingsWithDefaults({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'justified',
-      desktopVideoAdapterId: 'masonry',
-      tabletImageAdapterId: 'hexagonal',
-      tabletVideoAdapterId: 'compact-grid',
-      mobileImageAdapterId: 'circular',
-      mobileVideoAdapterId: 'diamond',
       layoutBuilderScope: 'viewport',
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: { adapterId: 'justified' },
+            video: { adapterId: 'masonry' },
+          },
+          tablet: {
+            image: { adapterId: 'hexagonal' },
+            video: { adapterId: 'compact-grid' },
+          },
+          mobile: {
+            image: { adapterId: 'circular' },
+            video: { adapterId: 'diamond' },
+          },
+        },
+      },
     });
 
-    expect(merged.gallerySelectionMode).toBe('per-breakpoint');
-    expect(merged.desktopImageAdapterId).toBe('justified');
-    expect(merged.desktopVideoAdapterId).toBe('masonry');
-    expect(merged.tabletImageAdapterId).toBe('hexagonal');
-    expect(merged.tabletVideoAdapterId).toBe('compact-grid');
-    expect(merged.mobileImageAdapterId).toBe('circular');
-    expect(merged.mobileVideoAdapterId).toBe('diamond');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('justified');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.video?.adapterId).toBe('masonry');
+    expect(merged.galleryConfig?.breakpoints?.tablet?.image?.adapterId).toBe('hexagonal');
+    expect(merged.galleryConfig?.breakpoints?.tablet?.video?.adapterId).toBe('compact-grid');
+    expect(merged.galleryConfig?.breakpoints?.mobile?.image?.adapterId).toBe('circular');
+    expect(merged.galleryConfig?.breakpoints?.mobile?.video?.adapterId).toBe('diamond');
     expect(merged.layoutBuilderScope).toBe('viewport');
   });
 
-  it('derives nested galleryConfig from legacy flat settings', () => {
+  it('does not derive nested common settings from flat gallery fields', () => {
     const merged = mergeSettingsWithDefaults({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'masonry',
-      tabletImageAdapterId: 'justified',
-      mobileImageAdapterId: 'compact-grid',
       gallerySectionPadding: 24,
+      imageBgType: 'solid',
+      imageBgColor: '#112233',
     });
 
     expect(merged.galleryConfig?.mode).toBe('per-type');
-    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
-    expect(merged.galleryConfig?.breakpoints?.tablet?.image?.adapterId).toBe('justified');
-    expect(merged.galleryConfig?.breakpoints?.mobile?.image?.adapterId).toBe('compact-grid');
-    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(24);
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.image?.common?.sectionPadding);
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.viewportBgType).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.image?.common?.viewportBgType);
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.viewportBgColor).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.image?.common?.viewportBgColor);
   });
 
-  it('merges explicit nested galleryConfig over the legacy-derived bridge', () => {
+  it('merges explicit nested galleryConfig over the default base', () => {
     const nested: GalleryConfig = {
       mode: 'unified',
       breakpoints: {
         desktop: {
           image: {
             adapterId: 'diamond',
+            common: {
+              sectionPadding: 8,
+            },
           },
         },
       },
     };
 
     const merged = mergeSettingsWithDefaults({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'masonry',
+      gallerySectionPadding: 24,
       galleryConfig: nested,
     });
 
     expect(merged.galleryConfig?.mode).toBe('unified');
     expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('diamond');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(8);
     expect(merged.galleryConfig?.breakpoints?.tablet?.image?.adapterId).toBe('classic');
+    expect(merged.galleryConfig?.breakpoints?.tablet?.image?.common?.sectionPadding).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.tablet?.image?.common?.sectionPadding);
   });
 
   it('parses galleryConfig when it arrives as JSON', () => {
@@ -240,5 +242,116 @@ describe('mergeSettingsWithDefaults', () => {
     expect(merged.galleryConfig?.mode).toBe('unified');
     expect(merged.galleryConfig?.breakpoints?.mobile?.unified?.adapterId).toBe('masonry');
     expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
+  });
+
+  it('keeps migrated common and viewport settings nested-only when they arrive via galleryConfig', () => {
+    const merged = mergeSettingsWithDefaults({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                sectionMaxWidth: 73,
+                sectionMaxWidthUnit: '%',
+                adapterSizingMode: 'manual',
+                adapterMaxWidthPct: 82,
+                viewportBgType: 'image',
+                viewportBgImageUrl: 'https://example.com/nested-bg.jpg',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.sectionMaxWidth).toBe(73);
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.adapterSizingMode).toBe('manual');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.viewportBgType).toBe('image');
+    expect(merged.gallerySectionMaxWidth).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gallerySectionMaxWidth);
+    expect(merged.adapterSizingMode).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.adapterSizingMode);
+    expect(merged.imageBgType).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType);
+    expect(merged.imageBgImageUrl).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgImageUrl);
+  });
+
+  it('keeps viewer/common presentation settings nested-only when they arrive via galleryConfig', () => {
+    const merged = mergeSettingsWithDefaults({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                gallerySizingMode: 'manual',
+                galleryManualHeight: '75vh',
+                galleryImageLabel: 'Photos',
+                galleryVideoLabel: 'Clips',
+                galleryLabelJustification: 'center',
+                showGalleryLabelIcon: true,
+                showCampaignGalleryLabels: false,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.gallerySizingMode).toBe('manual');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.galleryManualHeight).toBe('75vh');
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.common?.galleryImageLabel).toBe('Photos');
+    expect(merged.gallerySizingMode).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.gallerySizingMode);
+    expect(merged.galleryManualHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryManualHeight);
+    expect(merged.galleryImageLabel).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryImageLabel);
+    expect(merged.galleryVideoLabel).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryVideoLabel);
+    expect(merged.galleryLabelJustification).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryLabelJustification);
+    expect(merged.showGalleryLabelIcon).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showGalleryLabelIcon);
+    expect(merged.showCampaignGalleryLabels).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.showCampaignGalleryLabels);
+  });
+
+  it('keeps adapter settings nested-only when they arrive via galleryConfig', () => {
+    const merged = mergeSettingsWithDefaults({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'classic',
+              adapterSettings: {
+                imageBorderRadius: 14,
+                carouselVisibleCards: 4,
+                navArrowPosition: 'bottom',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(14);
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterSettings?.carouselVisibleCards).toBe(4);
+    expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterSettings?.navArrowPosition).toBe('bottom');
+    expect(merged.imageBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius);
+    expect(merged.carouselVisibleCards).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselVisibleCards);
+    expect(merged.navArrowPosition).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition);
+  });
+
+  it('does not reconstruct removed flat adapter-selection fields from galleryConfig', () => {
+    const merged = mergeSettingsWithDefaults({
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: {
+            unified: { adapterId: 'masonry' },
+          },
+          tablet: {
+            unified: { adapterId: 'compact-grid' },
+          },
+        },
+      },
+    });
+
+    expect((merged as Record<string, unknown>).unifiedGalleryEnabled).toBeUndefined();
+    expect((merged as Record<string, unknown>).unifiedGalleryAdapterId).toBeUndefined();
+    expect((merged as Record<string, unknown>).gallerySelectionMode).toBeUndefined();
   });
 });

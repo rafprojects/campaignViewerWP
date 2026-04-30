@@ -1,10 +1,15 @@
 import { Accordion, Divider, NumberInput, Stack, Switch } from '@mantine/core';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type GalleryCommonSettings } from '@/types';
 import { CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 import { anyAdapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
-import { getLegacyActiveAdapterIds } from '@/utils/galleryAdapterSelection';
+import {
+  getActiveGalleryConfigAdapterIds,
+  getRepresentativeGalleryCommonSetting,
+  resolveGalleryConfig,
+  setRepresentativeGalleryCommonSetting,
+} from '@/utils/galleryConfig';
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
 interface GalleryLayoutDetailSectionsProps {
@@ -14,11 +19,44 @@ interface GalleryLayoutDetailSectionsProps {
 }
 
 function usesCarouselSettings(settings: GalleryBehaviorSettings): boolean {
-  return anyAdapterUsesSettingGroup(getLegacyActiveAdapterIds(settings), 'carousel');
+  return anyAdapterUsesSettingGroup(getActiveGalleryConfigAdapterIds(resolveGalleryConfig(settings)), 'carousel');
 }
 
 export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPanels }: GalleryLayoutDetailSectionsProps) {
+  const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const showCarouselSettings = usesCarouselSettings(settings);
+
+  const updateRepresentativeCommonSetting = (
+    key: Exclude<keyof GalleryCommonSettings, 'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl'>,
+    value: string | number | boolean | undefined,
+  ) => {
+    updateSetting('galleryConfig', setRepresentativeGalleryCommonSetting(
+      resolvedGalleryConfig,
+      key,
+      value as GalleryCommonSettings[typeof key],
+    ));
+  };
+
+  const gallerySectionMaxWidth = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMaxWidth') as number | undefined;
+  const gallerySectionMaxWidthUnit = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMaxWidthUnit') as GalleryBehaviorSettings['gallerySectionMaxWidthUnit'] | undefined;
+  const gallerySectionMinWidth = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMinWidth') as number | undefined;
+  const gallerySectionMinWidthUnit = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMinWidthUnit') as GalleryBehaviorSettings['gallerySectionMinWidthUnit'] | undefined;
+  const gallerySectionHeightMode = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionHeightMode') as GalleryBehaviorSettings['gallerySectionHeightMode'] | undefined;
+  const gallerySectionMaxHeight = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMaxHeight') as number | undefined;
+  const gallerySectionMaxHeightUnit = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMaxHeightUnit') as GalleryBehaviorSettings['gallerySectionMaxHeightUnit'] | undefined;
+  const gallerySectionMinHeight = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMinHeight') as number | undefined;
+  const gallerySectionMinHeightUnit = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMinHeightUnit') as GalleryBehaviorSettings['gallerySectionMinHeightUnit'] | undefined;
+  const perTypeSectionEqualHeight = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'perTypeSectionEqualHeight') as boolean | undefined;
+  const gallerySectionPadding = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionPadding') as number | undefined;
+  const gallerySectionPaddingUnit = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionPaddingUnit') as GalleryBehaviorSettings['gallerySectionPaddingUnit'] | undefined;
+  const adapterContentPadding = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterContentPadding') as number | undefined;
+  const adapterContentPaddingUnit = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterContentPaddingUnit') as GalleryBehaviorSettings['adapterContentPaddingUnit'] | undefined;
+  const adapterSizingMode = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterSizingMode') as GalleryBehaviorSettings['adapterSizingMode'] | undefined;
+  const adapterMaxWidthPct = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterMaxWidthPct') as number | undefined;
+  const adapterMaxHeightPct = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterMaxHeightPct') as number | undefined;
+  const adapterItemGap = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterItemGap') as number | undefined;
+  const adapterItemGapUnit = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterItemGapUnit') as GalleryBehaviorSettings['adapterItemGapUnit'] | undefined;
+  const adapterJustifyContent = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'adapterJustifyContent') as GalleryBehaviorSettings['adapterJustifyContent'] | undefined;
 
   return (
     <>
@@ -132,10 +170,10 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
             <DimensionInput
               label="Gallery Section Max Width"
               description="Maximum width for each gallery section. 0 = fill available space."
-              value={settings.gallerySectionMaxWidth ?? 0}
-              unit={settings.gallerySectionMaxWidthUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('gallerySectionMaxWidth', value)}
-              onUnitChange={(unit) => updateSetting('gallerySectionMaxWidthUnit', unit as GalleryBehaviorSettings['gallerySectionMaxWidthUnit'])}
+              value={gallerySectionMaxWidth ?? 0}
+              unit={gallerySectionMaxWidthUnit ?? 'px'}
+              onValueChange={(value) => updateRepresentativeCommonSetting('sectionMaxWidth', value)}
+              onUnitChange={(unit) => updateRepresentativeCommonSetting('sectionMaxWidthUnit', unit as GalleryBehaviorSettings['gallerySectionMaxWidthUnit'])}
               allowedUnits={CSS_WIDTH_UNITS}
               max={2000}
               step={50}
@@ -143,10 +181,10 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
             <DimensionInput
               label="Gallery Section Min Width"
               description="Minimum width floor for gallery sections."
-              value={settings.gallerySectionMinWidth ?? 300}
-              unit={settings.gallerySectionMinWidthUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('gallerySectionMinWidth', value)}
-              onUnitChange={(unit) => updateSetting('gallerySectionMinWidthUnit', unit as GalleryBehaviorSettings['gallerySectionMinWidthUnit'])}
+              value={gallerySectionMinWidth ?? 300}
+              unit={gallerySectionMinWidthUnit ?? 'px'}
+              onValueChange={(value) => updateRepresentativeCommonSetting('sectionMinWidth', value)}
+              onUnitChange={(unit) => updateRepresentativeCommonSetting('sectionMinWidthUnit', unit as GalleryBehaviorSettings['gallerySectionMinWidthUnit'])}
               allowedUnits={CSS_WIDTH_UNITS}
               max={600}
               step={50}
@@ -159,17 +197,17 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
                 { value: 'manual', label: 'Manual (fixed max height)' },
                 { value: 'viewport', label: 'Viewport (% of screen)' },
               ]}
-              value={settings.gallerySectionHeightMode ?? 'auto'}
-              onChange={(value) => updateSetting('gallerySectionHeightMode', (value ?? 'auto') as GalleryBehaviorSettings['gallerySectionHeightMode'])}
+              value={gallerySectionHeightMode ?? 'auto'}
+              onChange={(value) => updateRepresentativeCommonSetting('sectionHeightMode', (value ?? 'auto') as GalleryBehaviorSettings['gallerySectionHeightMode'])}
             />
-            {settings.gallerySectionHeightMode === 'manual' && (
+            {gallerySectionHeightMode === 'manual' && (
               <DimensionInput
                 label="Gallery Section Max Height"
                 description="Maximum height for gallery sections in manual mode."
-                value={settings.gallerySectionMaxHeight ?? 0}
-                unit={settings.gallerySectionMaxHeightUnit ?? 'px'}
-                onValueChange={(value) => updateSetting('gallerySectionMaxHeight', value)}
-                onUnitChange={(unit) => updateSetting('gallerySectionMaxHeightUnit', unit as GalleryBehaviorSettings['gallerySectionMaxHeightUnit'])}
+                value={gallerySectionMaxHeight ?? 0}
+                unit={gallerySectionMaxHeightUnit ?? 'px'}
+                onValueChange={(value) => updateRepresentativeCommonSetting('sectionMaxHeight', value)}
+                onUnitChange={(unit) => updateRepresentativeCommonSetting('sectionMaxHeightUnit', unit as GalleryBehaviorSettings['gallerySectionMaxHeightUnit'])}
                 allowedUnits={CSS_HEIGHT_UNITS}
                 max={2000}
                 step={50}
@@ -178,10 +216,10 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
             <DimensionInput
               label="Gallery Section Min Height"
               description="Minimum height floor for gallery sections."
-              value={settings.gallerySectionMinHeight ?? 150}
-              unit={settings.gallerySectionMinHeightUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('gallerySectionMinHeight', value)}
-              onUnitChange={(unit) => updateSetting('gallerySectionMinHeightUnit', unit as GalleryBehaviorSettings['gallerySectionMinHeightUnit'])}
+              value={gallerySectionMinHeight ?? 150}
+              unit={gallerySectionMinHeightUnit ?? 'px'}
+              onValueChange={(value) => updateRepresentativeCommonSetting('sectionMinHeight', value)}
+              onUnitChange={(unit) => updateRepresentativeCommonSetting('sectionMinHeightUnit', unit as GalleryBehaviorSettings['gallerySectionMinHeightUnit'])}
               allowedUnits={CSS_HEIGHT_UNITS}
               max={400}
               step={50}
@@ -246,16 +284,16 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
             <Switch
               label="Equal Height Sections (Per-Type)"
               description="When using per-type galleries, display image and video sections side-by-side at equal height on tablet+ viewports."
-              checked={settings.perTypeSectionEqualHeight ?? false}
-              onChange={(e) => updateSetting('perTypeSectionEqualHeight', e.currentTarget.checked)}
+              checked={perTypeSectionEqualHeight ?? false}
+              onChange={(e) => updateRepresentativeCommonSetting('perTypeSectionEqualHeight', e.currentTarget.checked)}
             />
             <DimensionInput
               label="Gallery Section Padding"
               description="Inner padding within each gallery section wrapper."
-              value={settings.gallerySectionPadding ?? 16}
-              unit={settings.gallerySectionPaddingUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('gallerySectionPadding', value)}
-              onUnitChange={(unit) => updateSetting('gallerySectionPaddingUnit', unit as GalleryBehaviorSettings['gallerySectionPaddingUnit'])}
+              value={gallerySectionPadding ?? 16}
+              unit={gallerySectionPaddingUnit ?? 'px'}
+              onValueChange={(value) => updateRepresentativeCommonSetting('sectionPadding', value)}
+              onUnitChange={(unit) => updateRepresentativeCommonSetting('sectionPaddingUnit', unit as GalleryBehaviorSettings['gallerySectionPaddingUnit'])}
               allowedUnits={CSS_SPACING_UNITS}
               max={32}
               step={4}
@@ -263,10 +301,10 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
             <DimensionInput
               label="Adapter Content Padding"
               description="Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
-              value={settings.adapterContentPadding ?? 0}
-              unit={settings.adapterContentPaddingUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('adapterContentPadding', value)}
-              onUnitChange={(unit) => updateSetting('adapterContentPaddingUnit', unit as GalleryBehaviorSettings['adapterContentPaddingUnit'])}
+              value={adapterContentPadding ?? 0}
+              unit={adapterContentPaddingUnit ?? 'px'}
+              onValueChange={(value) => updateRepresentativeCommonSetting('adapterContentPadding', value)}
+              onUnitChange={(unit) => updateRepresentativeCommonSetting('adapterContentPaddingUnit', unit as GalleryBehaviorSettings['adapterContentPaddingUnit'])}
               allowedUnits={CSS_SPACING_UNITS}
               max={24}
               step={4}
@@ -354,16 +392,16 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
                 { value: 'fill', label: 'Fill (100%)' },
                 { value: 'manual', label: 'Manual (custom %)' },
               ]}
-              value={settings.adapterSizingMode ?? 'fill'}
-              onChange={(value) => updateSetting('adapterSizingMode', (value ?? 'fill') as GalleryBehaviorSettings['adapterSizingMode'])}
+              value={adapterSizingMode ?? 'fill'}
+              onChange={(value) => updateRepresentativeCommonSetting('adapterSizingMode', (value ?? 'fill') as GalleryBehaviorSettings['adapterSizingMode'])}
             />
-            {settings.adapterSizingMode === 'manual' && (
+            {adapterSizingMode === 'manual' && (
               <>
                 <NumberInput
                   label="Adapter Max Width (%)"
                   description="Adapter width as percentage of its gallery section."
-                  value={settings.adapterMaxWidthPct ?? 100}
-                  onChange={(value) => updateSetting('adapterMaxWidthPct', typeof value === 'number' ? value : 100)}
+                  value={adapterMaxWidthPct ?? 100}
+                  onChange={(value) => updateRepresentativeCommonSetting('adapterMaxWidthPct', typeof value === 'number' ? value : 100)}
                   min={50}
                   max={100}
                   step={5}
@@ -371,8 +409,8 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
                 <NumberInput
                   label="Adapter Max Height (%)"
                   description="Adapter height as percentage of its gallery section."
-                  value={settings.adapterMaxHeightPct ?? 100}
-                  onChange={(value) => updateSetting('adapterMaxHeightPct', typeof value === 'number' ? value : 100)}
+                  value={adapterMaxHeightPct ?? 100}
+                  onChange={(value) => updateRepresentativeCommonSetting('adapterMaxHeightPct', typeof value === 'number' ? value : 100)}
                   min={50}
                   max={100}
                   step={5}
@@ -382,10 +420,10 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
             <DimensionInput
               label="Adapter Item Gap"
               description="Spacing between items in grid adapters (Compact Grid). 0 = no gap."
-              value={settings.adapterItemGap ?? 16}
-              unit={settings.adapterItemGapUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('adapterItemGap', value)}
-              onUnitChange={(unit) => updateSetting('adapterItemGapUnit', unit as GalleryBehaviorSettings['adapterItemGapUnit'])}
+              value={adapterItemGap ?? 16}
+              unit={adapterItemGapUnit ?? 'px'}
+              onValueChange={(value) => updateRepresentativeCommonSetting('adapterItemGap', value)}
+              onUnitChange={(unit) => updateRepresentativeCommonSetting('adapterItemGapUnit', unit as GalleryBehaviorSettings['adapterItemGapUnit'])}
               allowedUnits={CSS_SPACING_UNITS}
               max={64}
               step={4}
@@ -401,8 +439,8 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
                 { value: 'space-evenly', label: 'Space Evenly' },
                 { value: 'stretch', label: 'Stretch' },
               ]}
-              value={settings.adapterJustifyContent ?? 'center'}
-              onChange={(value) => updateSetting('adapterJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['adapterJustifyContent'])}
+              value={adapterJustifyContent ?? 'center'}
+              onChange={(value) => updateRepresentativeCommonSetting('adapterJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['adapterJustifyContent'])}
             />
             <NumberInput
               label="Item Scale"

@@ -10,7 +10,6 @@ import {
   getUniformCampaignScopeAdapterId,
   hasCampaignGalleryOverrides,
   hasCampaignScopeOverrides,
-  normalizeCampaignLegacyAdapterOverrides,
   syncCampaignGalleryOverrideMode,
   syncCampaignScopeAdapterOverride,
 } from './campaignGalleryOverrides';
@@ -151,24 +150,28 @@ describe('campaignGalleryOverrides', () => {
     expect(syncCampaignGalleryOverrideMode({ mode: 'unified' }, '')).toBeUndefined();
   });
 
-  it('builds editor state from flat campaign adapter overrides when nested overrides are absent', () => {
+  it('builds editor state from nested campaign overrides only', () => {
     expect(buildCampaignGalleryOverrideEditorValue(makeCampaign({
-      imageAdapterId: 'masonry',
-      videoAdapterId: 'diamond',
+      galleryOverrides: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: { adapterId: 'masonry' },
+            video: {},
+          },
+          tablet: {},
+          mobile: {
+            image: {
+              common: {},
+            },
+          },
+        },
+      },
     }))).toEqual({
       mode: 'per-type',
       breakpoints: {
         desktop: {
           image: { adapterId: 'masonry' },
-          video: { adapterId: 'diamond' },
-        },
-        tablet: {
-          image: { adapterId: 'masonry' },
-          video: { adapterId: 'diamond' },
-        },
-        mobile: {
-          image: { adapterId: 'masonry' },
-          video: { adapterId: 'diamond' },
         },
       },
     });
@@ -176,8 +179,6 @@ describe('campaignGalleryOverrides', () => {
 
   it('clears campaign gallery overrides back to inherited defaults', () => {
     expect(clearCampaignGalleryOverrides()).toEqual({
-      imageAdapterId: '',
-      videoAdapterId: '',
       galleryOverrides: undefined,
     });
   });
@@ -241,41 +242,5 @@ describe('campaignGalleryOverrides', () => {
     expect(describeCampaignGalleryOverrides(campaign)).toEqual([
       'Responsive settings: customized',
     ]);
-  });
-
-  it('normalizes legacy adapter ids from unified nested overrides for save compatibility', () => {
-    expect(normalizeCampaignLegacyAdapterOverrides(makeCampaign({
-      imageAdapterId: 'masonry',
-      videoAdapterId: 'diamond',
-      galleryOverrides: {
-        mode: 'unified',
-        breakpoints: {
-          desktop: { unified: { adapterId: 'classic' } },
-          tablet: { unified: { adapterId: 'classic' } },
-          mobile: { unified: { adapterId: 'classic' } },
-        },
-      },
-    }))).toEqual({
-      imageAdapterId: 'classic',
-      videoAdapterId: 'classic',
-    });
-  });
-
-  it('clears stale legacy adapter ids when nested per-type overrides are breakpoint-specific', () => {
-    expect(normalizeCampaignLegacyAdapterOverrides(makeCampaign({
-      imageAdapterId: 'masonry',
-      videoAdapterId: 'diamond',
-      galleryOverrides: {
-        mode: 'per-type',
-        breakpoints: {
-          desktop: { image: { adapterId: 'masonry' } },
-          tablet: { image: { adapterId: 'justified' } },
-          mobile: { video: { adapterId: 'diamond' } },
-        },
-      },
-    }))).toEqual({
-      imageAdapterId: '',
-      videoAdapterId: '',
-    });
   });
 });

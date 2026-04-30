@@ -1,12 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
+  DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+  type GalleryBehaviorSettings,
+  type GalleryConfig,
+} from '@/types';
+import {
+  applyResolvedGalleryAdapterSettings,
   resolveAdapterId,
-  resolveEffectiveGallerySettings,
   resolveGalleryCommonSettings,
+  resolveGallerySectionRuntime,
   resolveGalleryMode,
   resolveUnifiedAdapterId,
 } from './resolveAdapterId';
-import type { GalleryBehaviorSettings, GalleryConfig } from '@/types';
 import { mergeSettingsWithDefaults } from './mergeSettingsWithDefaults';
 
 /**
@@ -16,49 +21,9 @@ function makeSettings(overrides: Partial<GalleryBehaviorSettings> = {}): Gallery
   return mergeSettingsWithDefaults(overrides);
 }
 
-function makeLegacyOnlySettings(overrides: Partial<GalleryBehaviorSettings> = {}): GalleryBehaviorSettings {
-  return mergeSettingsWithDefaults({
-    ...overrides,
-    galleryConfig: undefined,
-  });
-}
-
-// ── Unified mode ─────────────────────────────────────────────
-
-describe('resolveAdapterId – unified mode', () => {
-  it('returns imageGalleryAdapterId for image type', () => {
-    const s = makeLegacyOnlySettings({ gallerySelectionMode: 'unified', imageGalleryAdapterId: 'justified' });
-    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('justified');
-    expect(resolveAdapterId(s, 'image', 'tablet')).toBe('justified');
-    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('justified');
-  });
-
-  it('returns videoGalleryAdapterId for video type', () => {
-    const s = makeLegacyOnlySettings({ gallerySelectionMode: 'unified', videoGalleryAdapterId: 'masonry' });
-    expect(resolveAdapterId(s, 'video', 'desktop')).toBe('masonry');
-    expect(resolveAdapterId(s, 'video', 'tablet')).toBe('masonry');
-    expect(resolveAdapterId(s, 'video', 'mobile')).toBe('masonry');
-  });
-
-  it('ignores per-breakpoint settings even if they are set', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'unified',
-      imageGalleryAdapterId: 'classic',
-      desktopImageAdapterId: 'masonry',
-      tabletImageAdapterId: 'justified',
-      mobileImageAdapterId: 'hexagonal',
-    });
-    // Should always return unified adapter regardless of breakpoint-specific settings
-    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('classic');
-    expect(resolveAdapterId(s, 'image', 'tablet')).toBe('classic');
-    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('classic');
-  });
-});
-
 describe('resolveGalleryMode', () => {
-  it('prefers nested galleryConfig.mode over legacy unifiedGalleryEnabled', () => {
+  it('reads gallery mode from nested galleryConfig', () => {
     const s = makeSettings({
-      unifiedGalleryEnabled: false,
       galleryConfig: {
         mode: 'unified',
       },
@@ -67,14 +32,12 @@ describe('resolveGalleryMode', () => {
     expect(resolveGalleryMode(s)).toBe('unified');
   });
 
-  it('hydrates nested mode from legacy unifiedGalleryEnabled when galleryConfig is absent', () => {
-    expect(resolveGalleryMode(makeLegacyOnlySettings({ unifiedGalleryEnabled: true }))).toBe('unified');
-    expect(resolveGalleryMode(makeLegacyOnlySettings({ unifiedGalleryEnabled: false }))).toBe('per-type');
+  it('defaults to per-type when no nested mode is available', () => {
+    expect(resolveGalleryMode({ ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS, galleryConfig: undefined })).toBe('per-type');
   });
 
   it('accepts campaign nested overrides for mode resolution', () => {
     const s = makeSettings({
-      unifiedGalleryEnabled: false,
       galleryConfig: {
         mode: 'per-type',
       },
@@ -86,13 +49,23 @@ describe('resolveGalleryMode', () => {
 
 // ── Per-breakpoint mode ──────────────────────────────────────
 
-describe('resolveAdapterId – per-breakpoint mode', () => {
+describe('resolveAdapterId – nested per-type mode', () => {
   it('returns the correct image adapter for each breakpoint', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'masonry',
-      tabletImageAdapterId: 'justified',
-      mobileImageAdapterId: 'compact-grid',
+    const s = makeSettings({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: { adapterId: 'masonry' },
+          },
+          tablet: {
+            image: { adapterId: 'justified' },
+          },
+          mobile: {
+            image: { adapterId: 'compact-grid' },
+          },
+        },
+      },
     });
     expect(resolveAdapterId(s, 'image', 'desktop')).toBe('masonry');
     expect(resolveAdapterId(s, 'image', 'tablet')).toBe('justified');
@@ -100,65 +73,63 @@ describe('resolveAdapterId – per-breakpoint mode', () => {
   });
 
   it('returns the correct video adapter for each breakpoint', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopVideoAdapterId: 'classic',
-      tabletVideoAdapterId: 'hexagonal',
-      mobileVideoAdapterId: 'masonry',
+    const s = makeSettings({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            video: { adapterId: 'classic' },
+          },
+          tablet: {
+            video: { adapterId: 'hexagonal' },
+          },
+          mobile: {
+            video: { adapterId: 'masonry' },
+          },
+        },
+      },
     });
     expect(resolveAdapterId(s, 'video', 'desktop')).toBe('classic');
     expect(resolveAdapterId(s, 'video', 'tablet')).toBe('hexagonal');
     expect(resolveAdapterId(s, 'video', 'mobile')).toBe('masonry');
   });
 
-  it('falls back to unified imageGalleryAdapterId when per-breakpoint value is empty', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: '',
-      imageGalleryAdapterId: 'justified',
-    });
-    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('justified');
-  });
-
-  it('falls back to unified videoGalleryAdapterId when per-breakpoint value is empty', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'per-breakpoint',
-      tabletVideoAdapterId: '',
-      videoGalleryAdapterId: 'masonry',
-    });
-    expect(resolveAdapterId(s, 'video', 'tablet')).toBe('masonry');
-  });
-
-  it('uses per-breakpoint value when set, unified fallback only when falsy', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'per-breakpoint',
-      imageGalleryAdapterId: 'fallback-adapter',
-      desktopImageAdapterId: 'desktop-specific',
-      tabletImageAdapterId: '',    // empty → falls back
-      mobileImageAdapterId: 'mobile-specific',
-    });
-    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('desktop-specific');
-    expect(resolveAdapterId(s, 'image', 'tablet')).toBe('fallback-adapter');
-    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('mobile-specific');
-  });
-
-  it('prefers nested galleryConfig per-breakpoint scope adapters over legacy flat fields', () => {
+  it('prefers campaign nested scope adapters over the global config', () => {
     const s = makeSettings({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'masonry',
       galleryConfig: {
         mode: 'per-type',
         breakpoints: {
           desktop: {
-            image: {
-              adapterId: 'diamond',
-            },
+            image: { adapterId: 'masonry' },
           },
         },
       },
     });
 
-    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('diamond');
+    expect(resolveAdapterId(s, 'image', 'desktop', {
+      galleryOverrides: {
+        breakpoints: {
+          desktop: {
+            image: { adapterId: 'diamond' },
+          },
+        },
+      },
+    })).toBe('diamond');
+  });
+
+  it('falls back to classic when a scope has no configured adapter', () => {
+    const s = makeSettings({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {},
+          },
+        },
+      },
+    });
+
+    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('classic');
   });
 });
 
@@ -166,7 +137,7 @@ describe('resolveAdapterId – per-breakpoint mode', () => {
 
 describe('resolveAdapterId – with defaults', () => {
   it('default migrated settings resolve classic for both types', () => {
-    const s = makeLegacyOnlySettings();
+    const s = makeSettings();
     expect(resolveAdapterId(s, 'image', 'desktop')).toBe('classic');
     expect(resolveAdapterId(s, 'video', 'mobile')).toBe('classic');
   });
@@ -175,61 +146,54 @@ describe('resolveAdapterId – with defaults', () => {
 // ── Layout-builder mobile guard ──────────────────────────────
 
 describe('resolveAdapterId – layout-builder mobile fallback', () => {
-  it('falls back to unified image adapter when layout-builder is resolved on mobile', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'layout-builder',
-      tabletImageAdapterId: 'layout-builder',
-      mobileImageAdapterId: 'layout-builder',
-      imageGalleryAdapterId: 'masonry',
-    });
-    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('layout-builder');
-    expect(resolveAdapterId(s, 'image', 'tablet')).toBe('layout-builder');
-    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('masonry');
-  });
-
-  it('falls back to unified video adapter when layout-builder is resolved on mobile', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'per-breakpoint',
-      mobileVideoAdapterId: 'layout-builder',
-      videoGalleryAdapterId: 'justified',
-    });
-    expect(resolveAdapterId(s, 'video', 'mobile')).toBe('justified');
-  });
-
-  it('falls back to classic when unified adapter is also layout-builder on mobile', () => {
-    const s = makeLegacyOnlySettings({
-      gallerySelectionMode: 'unified',
-      imageGalleryAdapterId: 'layout-builder',
-    });
-    // Unified mode returns 'layout-builder', mobile guard kicks in,
-    // fallback is also 'layout-builder' → returns 'classic'.
-    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('classic');
-  });
-
-  it('falls back from nested mobile layout-builder to the legacy flat adapter when unsupported', () => {
+  it('falls back to another configured nested scope adapter when layout-builder is unsupported on mobile', () => {
     const s = makeSettings({
-      imageGalleryAdapterId: 'masonry',
       galleryConfig: {
         mode: 'per-type',
         breakpoints: {
+          desktop: {
+            image: { adapterId: 'masonry' },
+          },
+          tablet: {
+            image: { adapterId: 'layout-builder' },
+          },
           mobile: {
-            image: {
-              adapterId: 'layout-builder',
-            },
+            image: { adapterId: 'layout-builder' },
           },
         },
       },
     });
 
+    expect(resolveAdapterId(s, 'image', 'desktop')).toBe('masonry');
+    expect(resolveAdapterId(s, 'image', 'tablet')).toBe('layout-builder');
     expect(resolveAdapterId(s, 'image', 'mobile')).toBe('masonry');
+  });
+
+  it('falls back to classic when no supported nested image adapter exists on mobile', () => {
+    const s = makeSettings({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: { adapterId: 'layout-builder' },
+          },
+          tablet: {
+            image: { adapterId: 'layout-builder' },
+          },
+          mobile: {
+            image: { adapterId: 'layout-builder' },
+          },
+        },
+      },
+    });
+
+    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('classic');
   });
 });
 
 describe('resolveUnifiedAdapterId', () => {
   it('prefers nested unified adapter for the current breakpoint', () => {
     const s = makeSettings({
-      unifiedGalleryAdapterId: 'compact-grid',
       galleryConfig: {
         mode: 'unified',
         breakpoints: {
@@ -247,7 +211,6 @@ describe('resolveUnifiedAdapterId', () => {
 
   it('falls back to the global nested unified adapter when campaign overrides only change common settings', () => {
     const s = makeSettings({
-      unifiedGalleryAdapterId: 'compact-grid',
       galleryConfig: {
         mode: 'unified',
         breakpoints: {
@@ -272,10 +235,10 @@ describe('resolveUnifiedAdapterId', () => {
       },
     };
 
-    expect(resolveUnifiedAdapterId(s, 'desktop', { galleryOverrides: campaignOverrides, legacyOverrideId: 'diamond' })).toBe('justified');
+    expect(resolveUnifiedAdapterId(s, 'desktop', { galleryOverrides: campaignOverrides })).toBe('justified');
   });
 
-  it('prefers campaign nested unified adapter overrides ahead of legacy campaign overrides', () => {
+  it('prefers campaign nested unified adapter overrides ahead of global unified config', () => {
     const campaignOverrides: Partial<GalleryConfig> = {
       breakpoints: {
         desktop: {
@@ -287,7 +250,6 @@ describe('resolveUnifiedAdapterId', () => {
     };
 
     const s = makeSettings({
-      unifiedGalleryAdapterId: 'compact-grid',
       galleryConfig: {
         mode: 'unified',
         breakpoints: {
@@ -302,16 +264,24 @@ describe('resolveUnifiedAdapterId', () => {
 
     expect(resolveUnifiedAdapterId(s, 'desktop', {
       galleryOverrides: campaignOverrides,
-      legacyOverrideId: 'justified',
     })).toBe('diamond');
   });
 
   it('falls back to classic when unified nested adapter is unsupported on mobile', () => {
     const s = makeSettings({
-      unifiedGalleryAdapterId: 'layout-builder',
       galleryConfig: {
         mode: 'unified',
         breakpoints: {
+          desktop: {
+            unified: {
+              adapterId: 'layout-builder',
+            },
+          },
+          tablet: {
+            unified: {
+              adapterId: 'layout-builder',
+            },
+          },
           mobile: {
             unified: {
               adapterId: 'layout-builder',
@@ -322,28 +292,6 @@ describe('resolveUnifiedAdapterId', () => {
     });
 
     expect(resolveUnifiedAdapterId(s, 'mobile')).toBe('classic');
-  });
-});
-
-describe('resolveAdapterId – campaign precedence', () => {
-  it('falls back from unsupported campaign legacy override to global nested config', () => {
-    const s = makeSettings({
-      imageGalleryAdapterId: 'classic',
-      galleryConfig: {
-        mode: 'per-type',
-        breakpoints: {
-          mobile: {
-            image: {
-              adapterId: 'masonry',
-            },
-          },
-        },
-      },
-    });
-
-    expect(resolveAdapterId(s, 'image', 'mobile', {
-      legacyOverrideId: 'layout-builder',
-    })).toBe('masonry');
   });
 });
 
@@ -419,8 +367,41 @@ describe('resolveGalleryCommonSettings', () => {
   });
 });
 
-describe('resolveEffectiveGallerySettings', () => {
-  it('projects resolved common settings back onto legacy runtime fields', () => {
+describe('resolveGallerySectionRuntime', () => {
+  it('exposes resolved common and background data explicitly for the active scope', () => {
+    const s = makeSettings({
+      videoBgType: 'none',
+      videoBgGradient: 'linear-gradient(90deg, #000000 0%, #111111 100%)',
+      galleryVideoLabel: 'Videos',
+      galleryConfig: {
+        breakpoints: {
+          tablet: {
+            video: {
+              common: {
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #112233 0%, #334455 100%)',
+                galleryVideoLabel: 'Clips',
+                showCampaignGalleryLabels: false,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const runtime = resolveGallerySectionRuntime(s, 'tablet', 'video');
+
+    expect(runtime.scope).toBe('video');
+    expect(runtime.breakpoint).toBe('tablet');
+    expect(runtime.common.galleryVideoLabel).toBe('Clips');
+    expect(runtime.common.showCampaignGalleryLabels).toBe(false);
+    expect(runtime.background.type).toBe('gradient');
+    expect(runtime.background.gradient).toBe('linear-gradient(135deg, #112233 0%, #334455 100%)');
+  });
+});
+
+describe('applyResolvedGalleryAdapterSettings', () => {
+  it('keeps resolved common settings nested-only', () => {
     const s = makeSettings({
       gallerySectionPadding: 16,
       adapterItemGap: 12,
@@ -448,15 +429,24 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'tablet', 'video');
+    const runtime = resolveGallerySectionRuntime(s, 'tablet', 'video');
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
-    expect(resolved.gallerySectionPadding).toBe(28);
-    expect(resolved.adapterItemGap).toBe(6);
-    expect(resolved.videoBgType).toBe('gradient');
-    expect(resolved.videoBgGradient).toBe('linear-gradient(135deg, #112233 0%, #334455 100%)');
-    expect(resolved.galleryVideoLabel).toBe('Clips');
-    expect(resolved.galleryLabelJustification).toBe('right');
-    expect(resolved.showCampaignGalleryLabels).toBe(false);
+    expect(runtime.common.sectionPadding).toBe(28);
+    expect(runtime.common.adapterItemGap).toBe(6);
+    expect(runtime.common.viewportBgType).toBe('gradient');
+    expect(runtime.common.viewportBgGradient).toBe('linear-gradient(135deg, #112233 0%, #334455 100%)');
+    expect(runtime.common.galleryVideoLabel).toBe('Clips');
+    expect(runtime.common.galleryLabelJustification).toBe('right');
+    expect(runtime.common.showCampaignGalleryLabels).toBe(false);
+
+    expect(resolved.gallerySectionPadding).toBe(16);
+    expect(resolved.adapterItemGap).toBe(12);
+    expect(resolved.videoBgType).toBe('none');
+    expect(resolved.videoBgGradient).toBe('linear-gradient(90deg, #000000 0%, #111111 100%)');
+    expect(resolved.galleryVideoLabel).toBe('Videos');
+    expect(resolved.galleryLabelJustification).toBe('left');
+    expect(resolved.showCampaignGalleryLabels).toBe(true);
   });
 
   it('projects nested adapter settings back onto legacy runtime fields', () => {
@@ -476,7 +466,8 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+    const runtime = resolveGallerySectionRuntime(s, 'desktop', 'image');
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
     expect(resolved.gridCardWidth).toBe(220);
   });
@@ -502,7 +493,8 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image') as GalleryBehaviorSettings & Record<string, unknown>;
+    const runtime = resolveGallerySectionRuntime(s, 'desktop', 'image');
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime) as GalleryBehaviorSettings & Record<string, unknown>;
 
     expect(resolved.gridCardWidth).toBe(220);
     expect(resolved.polluted).toBeUndefined();
@@ -527,7 +519,8 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+    const runtime = resolveGallerySectionRuntime(s, 'desktop', 'image');
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
     expect(resolved.thumbnailGap).toBe(14);
   });
@@ -563,7 +556,8 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+    const runtime = resolveGallerySectionRuntime(s, 'desktop', 'image');
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
     expect(resolved.tileBorderWidth).toBe(2);
     expect(resolved.tileBorderColor).toBe('#ff0000');
@@ -596,7 +590,8 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image');
+    const runtime = resolveGallerySectionRuntime(s, 'desktop', 'image');
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
     expect(resolved.layoutBuilderScope).toBe('viewport');
     expect(resolved.tileGlowColor).toBe('#00ffaa');
@@ -613,8 +608,6 @@ describe('resolveEffectiveGallerySettings', () => {
       imageShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
       videoShadowPreset: 'subtle',
       videoShadowCustom: '0 2px 8px rgba(0,0,0,0.15)',
-      unifiedGalleryEnabled: true,
-      unifiedGalleryAdapterId: 'classic',
       galleryConfig: {
         mode: 'unified',
         breakpoints: {
@@ -637,7 +630,8 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'unified');
+    const runtime = resolveGallerySectionRuntime(s, 'desktop', 'unified');
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
     expect(resolved.imageBorderRadius).toBe(14);
     expect(resolved.videoBorderRadius).toBe(18);
@@ -666,7 +660,7 @@ describe('resolveEffectiveGallerySettings', () => {
       },
     });
 
-    const resolved = resolveEffectiveGallerySettings(s, 'desktop', 'image', {
+    const runtime = resolveGallerySectionRuntime(s, 'desktop', 'image', {
       breakpoints: {
         desktop: {
           image: {
@@ -677,6 +671,7 @@ describe('resolveEffectiveGallerySettings', () => {
         },
       },
     });
+    const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
     expect(resolved.gridCardWidth).toBe(260);
   });

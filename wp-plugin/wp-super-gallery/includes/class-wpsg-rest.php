@@ -1057,8 +1057,6 @@ class WPSG_REST {
             'visibility',
             'tags',
             'cover_image',
-            '_wpsg_image_adapter_id',
-            '_wpsg_video_adapter_id',
             '_wpsg_gallery_overrides',
             '_wpsg_layout_binding_template_id',
             '_wpsg_layout_binding',
@@ -1203,8 +1201,6 @@ class WPSG_REST {
             'coverImage'   => 'cover_image',
             'publishAt'    => 'publish_at',
             'unpublishAt'  => 'unpublish_at',
-            'imageAdapterId' => '_wpsg_image_adapter_id',
-            'videoAdapterId' => '_wpsg_video_adapter_id',
         ];
         update_post_meta($post_id, 'status', 'draft');
         foreach ($meta_map as $src_key => $meta_key) {
@@ -1217,11 +1213,9 @@ class WPSG_REST {
             }
         }
 
-        if (array_key_exists('galleryOverrides', $src)) {
-            $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($src['galleryOverrides']);
-            if (!empty($gallery_overrides)) {
-                update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
-            }
+        $gallery_overrides = self::promote_campaign_gallery_overrides($src['galleryOverrides'] ?? null);
+        if (!empty($gallery_overrides)) {
+            update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
         }
 
         // Embed layout binding by value if provided.
@@ -3506,12 +3500,6 @@ class WPSG_REST {
         $current = WPSG_Settings::get_settings();
         $merged = array_merge($current, $sanitized);
 
-        if (array_key_exists('gallery_config', $input)) {
-            foreach (WPSG_Settings_Sanitizer::get_legacy_gallery_setting_keys() as $legacy_key) {
-                unset($merged[$legacy_key]);
-            }
-        }
-
         update_option(WPSG_Settings::OPTION_NAME, $merged);
         self::bump_cache_version();
 
@@ -3827,30 +3815,29 @@ class WPSG_REST {
             'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
             'layoutTemplateId' => get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: null,
             'layoutBinding' => get_post_meta($post->ID, '_wpsg_layout_binding', true) ?: null,
-            'imageAdapterId' => get_post_meta($post->ID, '_wpsg_image_adapter_id', true) ?: null,
-            'videoAdapterId' => get_post_meta($post->ID, '_wpsg_video_adapter_id', true) ?: null,
             'galleryOverrides' => self::get_campaign_gallery_overrides($post->ID),
             'createdAt' => get_post_time('c', true, $post),
             'updatedAt' => get_post_modified_time('c', true, $post),
         ];
     }
 
+    public static function promote_campaign_gallery_overrides($gallery_overrides) {
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($gallery_overrides);
+        return !empty($sanitized) ? $sanitized : null;
+    }
+
     private static function get_campaign_gallery_overrides($post_id) {
         $raw = get_post_meta($post_id, '_wpsg_gallery_overrides', true);
-        if (empty($raw)) {
-            return null;
-        }
+        $decoded = null;
 
         if (is_array($raw)) {
-            return $raw;
+            $decoded = $raw;
+        } elseif (is_string($raw) && $raw !== '') {
+            $candidate = json_decode($raw, true);
+            $decoded = is_array($candidate) ? $candidate : null;
         }
 
-        if (!is_string($raw)) {
-            return null;
-        }
-
-        $decoded = json_decode($raw, true);
-        return is_array($decoded) ? $decoded : null;
+        return self::promote_campaign_gallery_overrides($decoded);
     }
 
     private static function apply_campaign_meta($post_id, $request) {
@@ -3937,9 +3924,8 @@ class WPSG_REST {
             }
         }
         if ($request->has_param('galleryOverrides')) {
-            foreach (WPSG_CPT::LEGACY_CAMPAIGN_ADAPTER_META_KEYS as $meta_key) {
-                delete_post_meta($post_id, $meta_key);
-            }
+            delete_post_meta($post_id, '_wpsg_image_adapter_id');
+            delete_post_meta($post_id, '_wpsg_video_adapter_id');
 
             $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($request->get_param('galleryOverrides'));
             if (empty($gallery_overrides)) {

@@ -16,8 +16,6 @@ const mockSource: AdminCampaign = {
   publishAt: '',
   unpublishAt: '',
   layoutTemplateId: '',
-  imageAdapterId: '',
-  videoAdapterId: '',
   categories: [],
 };
 

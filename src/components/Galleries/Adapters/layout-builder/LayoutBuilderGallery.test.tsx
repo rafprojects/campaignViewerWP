@@ -338,8 +338,6 @@ describe('UnifiedCampaignModal layout selector', () => {
     publishAt: '',
     unpublishAt: '',
     layoutTemplateId: '',
-    imageAdapterId: '',
-    videoAdapterId: '',
     categories: [] as string[],
   };
 

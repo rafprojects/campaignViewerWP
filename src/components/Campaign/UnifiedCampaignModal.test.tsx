@@ -76,10 +76,10 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
               mode,
               breakpoints: mode === 'unified'
                 ? {
-                    desktop: { unified: { adapterId: adapterId || 'classic' } },
-                    tablet: { unified: { adapterId: adapterId || 'classic' } },
-                    mobile: { unified: { adapterId: adapterId || 'classic' } },
-                  }
+                  desktop: { unified: { adapterId: adapterId || 'classic' } },
+                  tablet: { unified: { adapterId: adapterId || 'classic' } },
+                  mobile: { unified: { adapterId: adapterId || 'classic' } },
+                }
                 : {},
             });
           }}
@@ -112,8 +112,6 @@ function makeMockModal(overrides: Partial<UnifiedCampaignModalHandle> = {}): Uni
       publishAt: '',
       unpublishAt: '',
       layoutTemplateId: '',
-      imageAdapterId: '',
-      videoAdapterId: '',
       categories: [],
     },
     updateForm: vi.fn(),
@@ -282,8 +280,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: { mode: 'unified' },
         categories: [],
       },
@@ -301,7 +297,6 @@ describe('UnifiedCampaignModal', () => {
   it('uses the effective global unified mode to choose the quick override controls when no explicit campaign mode override exists', () => {
     const galleryBehaviorSettings: GalleryBehaviorSettings = {
       ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-      unifiedGalleryEnabled: true,
       galleryConfig: {
         ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig,
         mode: 'unified',
@@ -321,8 +316,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: undefined,
         categories: [],
       },
@@ -353,8 +346,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: 'masonry',
-        videoAdapterId: 'diamond',
         galleryOverrides: { mode: 'unified' },
         categories: [],
       },
@@ -368,8 +359,6 @@ describe('UnifiedCampaignModal', () => {
     fireEvent.click(screen.getByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
 
     expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-      imageAdapterId: '',
-      videoAdapterId: '',
       galleryOverrides: expect.objectContaining({
         mode: 'unified',
         breakpoints: expect.objectContaining({
@@ -395,8 +384,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
           breakpoints: {
@@ -445,8 +432,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
         },
@@ -460,8 +445,6 @@ describe('UnifiedCampaignModal', () => {
     fireEvent.click(screen.getByRole('option', { name: perTypeAdapterLabel ?? 'Masonry' }));
 
     expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-      imageAdapterId: '',
-      videoAdapterId: '',
       galleryOverrides: expect.objectContaining({
         mode: 'per-type',
         breakpoints: expect.objectContaining({
@@ -499,10 +482,13 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: 'masonry',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: { adapterId: 'masonry' },
+            },
+          },
         },
         categories: [],
       },
@@ -530,8 +516,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
           breakpoints: {
@@ -561,8 +545,6 @@ describe('UnifiedCampaignModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use Inherited Gallery Settings' }));
 
     expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-      imageAdapterId: '',
-      videoAdapterId: '',
       galleryOverrides: undefined,
     }));
   });
@@ -584,8 +566,6 @@ describe('UnifiedCampaignModal', () => {
 
     await waitFor(() => {
       expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-        imageAdapterId: 'classic',
-        videoAdapterId: 'classic',
         galleryOverrides: expect.objectContaining({
           mode: 'unified',
           breakpoints: expect.objectContaining({

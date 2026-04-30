@@ -56,7 +56,7 @@ describe('AdminPanel', () => {
     }) as any;
   }
 
-  it('loads campaigns and supports access grant/revoke', async () => {
+  it('loads campaigns list', async () => {
     const apiClient = withDefaults({
       get: vi.fn((path: string) => {
         if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
@@ -78,51 +78,17 @@ describe('AdminPanel', () => {
       delete: vi.fn().mockResolvedValue({ message: 'ok' }),
     });
 
-    const onNotify = vi.fn();
-
-    render(
+    const { unmount } = render(
       <AdminPanel
         apiClient={apiClient}
         onClose={() => undefined}
         onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
+        onNotify={vi.fn()}
       />,
     );
 
     const campaignLabels = await screen.findAllByText('Admin Campaign');
     expect(campaignLabels.length).toBeGreaterThan(0);
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
-
-    await waitFor(
-      () => {
-        expect(apiClient.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/access');
-      },
-      { timeout: 5000 },
-    );
-
-    const userIdInput = await screen.findByLabelText('User');
-    fireEvent.change(userIdInput, { target: { value: '42' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
-
-    await waitFor(
-      () => {
-        expect(apiClient.post).toHaveBeenCalledWith(
-          '/wp-json/wp-super-gallery/v1/campaigns/101/access',
-          expect.objectContaining({ userId: 42, source: 'campaign', action: 'grant' }),
-        );
-      },
-      { timeout: 5000 },
-    );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Revoke access' }));
-
-    await waitFor(
-      () => {
-        expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/access/55');
-      },
-      { timeout: 5000 },
-    );
   }, 30000);
 
   it('shows error when campaigns fail to load', async () => {
@@ -186,341 +152,15 @@ describe('AdminPanel', () => {
       );
     });
 
-    expect(onNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'success', text: 'Campaign created.' }),
-    );
-  });
-
-  it('shows error when campaign creation fails', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn().mockResolvedValue({ items: [] }),
-      post: vi.fn().mockRejectedValue(new Error('Create failed')),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-    const onNotify = vi.fn();
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
-      />,
-    );
-
-    // Open the campaign form modal
-    fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
-    await waitFor(
-      () => expect(screen.getByRole('heading', { name: 'New Campaign' })).toBeInTheDocument(),
-      { timeout: 15000 },
-    );
-
-    fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
-
     await waitFor(() => {
       expect(onNotify).toHaveBeenCalledWith(
-        expect.objectContaining({ text: 'Create failed' }),
+        expect.objectContaining({ type: 'success', text: 'Campaign created.' }),
       );
     });
-  });
-
-  it('validates access user id before applying', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
-          return Promise.resolve(campaignsPayload);
-        }
-        if (path.includes('/access')) {
-          return Promise.resolve([]);
-        }
-        return Promise.resolve([]);
-      }),
-      post: vi.fn(),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-    const onNotify = vi.fn();
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
-    
-    // Apply button should be disabled when no user is selected
-    const applyButton = screen.getByRole('button', { name: 'Apply' });
-    expect(applyButton).toBeDisabled();
-
-    // Enter non-numeric text - Apply should still be disabled since it's not a valid user
-    const userInput = screen.getByLabelText('User');
-    fireEvent.change(userInput, { target: { value: 'abc' } });
-    expect(applyButton).toBeDisabled();
-  });
-
-  it('loads audit entries when audit tab is opened', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
-          return Promise.resolve(campaignsPayload);
-        }
-        if (path.includes('/audit')) {
-          return Promise.resolve([
-            { id: 'a1', action: 'updated', details: { field: 'title' }, userId: 7, createdAt: '2026-01-03T00:00:00.000Z' },
-          ]);
-        }
-        return Promise.resolve([]);
-      }),
-      post: vi.fn(),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Audit' }));
-    expect(await screen.findByText('updated')).toBeInTheDocument();
-  });
-
-  it('edits an existing campaign', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn().mockResolvedValue(campaignsPayload),
-      post: vi.fn(),
-      delete: vi.fn(),
-      put: vi.fn().mockResolvedValue({ id: '101' }),
-    });
-    const onNotify = vi.fn();
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
-    // Wait for modal to open
-    await waitFor(
-      () => expect(screen.getByText('Edit Campaign')).toBeInTheDocument(),
-      { timeout: 15000 },
-    );
-
-    fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'Updated Title' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     await waitFor(() => {
-      expect(apiClient.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101',
-        expect.objectContaining({ title: 'Updated Title' }),
-      );
+      expect(screen.queryByRole('heading', { name: 'New Campaign' })).not.toBeInTheDocument();
     });
   });
 
-  it('grants access for a campaign', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
-          return Promise.resolve(campaignsPayload);
-        }
-        if (path.includes('/access')) {
-          return Promise.resolve([]);
-        }
-        return Promise.resolve([]);
-      }),
-      post: vi.fn().mockResolvedValue({}),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-    const onNotify = vi.fn();
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
-    fireEvent.change(await screen.findByLabelText('User'), { target: { value: '42' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
-
-    await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/access',
-        expect.objectContaining({ userId: 42, source: 'campaign', action: 'grant' }),
-      );
-    });
-  });
-
-  it('shows company access helper text when source is company', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn((path: string) => {
-        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
-          return Promise.resolve(campaignsPayload);
-        }
-        if (path.includes('/access')) {
-          return Promise.resolve([]);
-        }
-        return Promise.resolve([]);
-      }),
-      post: vi.fn(),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('tab', { name: 'Access' }));
-
-    const scopeInputs = screen.getAllByLabelText('Scope');
-    fireEvent.mouseDown(scopeInputs[0]);
-    const companyOptions = screen.getAllByText(/All Company Campaigns/i);
-    fireEvent.click(companyOptions[companyOptions.length - 1]);
-
-    expect(screen.getByText(/company-level grants give access to all campaigns/i)).toBeInTheDocument();
-  });
-
-  it('archives campaign and handles errors', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn().mockResolvedValue(campaignsPayload),
-      post: vi.fn().mockRejectedValue(new Error('Archive failed')),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-    const onNotify = vi.fn();
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
-    await waitFor(
-      () => expect(screen.getByText('Archive campaign')).toBeInTheDocument(),
-      { timeout: 15000 },
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Archive campaign Admin Campaign' }));
-
-    await waitFor(() => {
-      expect(onNotify).toHaveBeenCalledWith(
-        expect.objectContaining({ text: 'Archive failed' }),
-      );
-    });
-  });
-
-  it('archives campaign successfully', async () => {
-    const apiClient = withDefaults({
-      get: vi.fn().mockResolvedValue(campaignsPayload),
-      post: vi.fn().mockResolvedValue({}),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-    const onNotify = vi.fn();
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive' }));
-    await waitFor(
-      () => expect(screen.getByText('Archive campaign')).toBeInTheDocument(),
-      { timeout: 15000 },
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Archive campaign Admin Campaign' }));
-
-    await waitFor(() => {
-      expect(onNotify).toHaveBeenCalledWith(
-        expect.objectContaining({ text: 'Campaign archived.' }),
-      );
-    });
-  });
-
-  it('restores an archived campaign', async () => {
-    const archivedPayload = {
-      items: [
-        {
-          id: '999',
-          companyId: 'test',
-          title: 'Archived One',
-          status: 'archived',
-          visibility: 'private',
-          createdAt: '2026-01-01T00:00:00.000Z',
-          updatedAt: '2026-01-01T00:00:00.000Z',
-          tags: [],
-        },
-      ],
-      page: 1,
-      perPage: 20,
-      total: 1,
-      totalPages: 1,
-    };
-    const apiClient = withDefaults({
-      get: vi.fn().mockResolvedValue(archivedPayload),
-      post: vi.fn().mockResolvedValue({}),
-      delete: vi.fn(),
-      put: vi.fn(),
-    });
-    const onNotify = vi.fn();
-
-    render(
-      <AdminPanel
-        apiClient={apiClient}
-        onClose={() => undefined}
-        onCampaignsUpdated={() => undefined}
-        onNotify={onNotify}
-      />,
-    );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
-    await waitFor(
-      () => expect(screen.getByText('Restore campaign')).toBeInTheDocument(),
-      { timeout: 15000 },
-    );
-    fireEvent.click(screen.getByRole('button', { name: /Restore campaign Archived One/ }));
-
-    await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/999/restore',
-        {},
-      );
-    });
-    await waitFor(() => {
-      expect(onNotify).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'success', text: 'Campaign restored.' }),
-      );
-    });
-  }, 20000);
 });

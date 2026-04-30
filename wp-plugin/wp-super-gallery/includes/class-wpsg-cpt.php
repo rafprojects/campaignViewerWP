@@ -40,15 +40,6 @@ class WPSG_CPT {
         'layout-builder',
     ];
 
-    /**
-     * @deprecated Phase 24 legacy campaign adapter meta remains readable for one
-     * release cycle. New writes must use `_wpsg_gallery_overrides` instead.
-     */
-    const LEGACY_CAMPAIGN_ADAPTER_META_KEYS = [
-        '_wpsg_image_adapter_id',
-        '_wpsg_video_adapter_id',
-    ];
-
     public static function register() {
         register_post_type(self::POST_TYPE, [
             'label' => __('Campaigns', 'wp-super-gallery'),

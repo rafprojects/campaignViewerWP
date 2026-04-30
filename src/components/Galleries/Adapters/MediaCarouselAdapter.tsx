@@ -19,6 +19,7 @@ import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { resolveBoxShadow } from '@/utils/shadowPresets';
 import { combineMaxWidthConstraints, resolveBreakpointValue } from '@/utils/resolveBreakpointValue';
+import { resolveGalleryComponentCommonSettings } from './_shared/runtimeCommon';
 import {
   getCarouselAlign,
   getClosestSyntheticFocusIndex,
@@ -34,6 +35,8 @@ import {
 const Lightbox = lazy(() =>
   import('@/components/Galleries/Shared/Lightbox').then((m) => ({ default: m.Lightbox })),
 );
+
+type GalleryRuntimeCommonSettings = ReturnType<typeof resolveGalleryComponentCommonSettings>;
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -121,14 +124,18 @@ interface RenderedSlide {
 export function MediaCarouselAdapter({
   media,
   settings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+  runtime,
   containerDimensions,
 }: GalleryAdapterProps) {
   if (media.length === 0) return null;
+
+  const commonSettings = resolveGalleryComponentCommonSettings(settings, runtime);
 
   return (
     <MediaCarouselInner
       media={media}
       settings={settings}
+      commonSettings={commonSettings}
       breakpoint={deriveBreakpoint(containerDimensions?.width)}
       maxWidth={containerDimensions?.width ?? 0}
     />
@@ -139,12 +146,13 @@ export function MediaCarouselAdapter({
 export interface MediaCarouselInnerProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  commonSettings: GalleryRuntimeCommonSettings;
   breakpoint: Breakpoint;
   maxWidth: number;
 }
 
 /** @internal Exported for backward-compat wrappers — prefer MediaCarouselAdapter. */
-export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: MediaCarouselInnerProps) {
+export function MediaCarouselInner({ media, settings, commonSettings, breakpoint, maxWidth }: MediaCarouselInnerProps) {
   // ── Embla setup ──────────────────────────────────────────────────
 
   const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
@@ -346,14 +354,14 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
   const sectionLabel = isMixed
     ? `Media (${media.length})`
     : videos.length > 0
-      ? `${settings.galleryVideoLabel || 'Videos'} (${videos.length})`
-      : `${settings.galleryImageLabel || 'Images'} (${images.length})`;
+      ? `${commonSettings.galleryVideoLabel || 'Videos'} (${videos.length})`
+      : `${commonSettings.galleryImageLabel || 'Images'} (${images.length})`;
   const LabelIcon = videos.length > 0 && images.length === 0 ? IconPlayerPlay : IconPhoto;
 
   // ── Height calculation ───────────────────────────────────────────
 
   const heightMultiplier = breakpoint === 'mobile' ? 0.55 : breakpoint === 'tablet' ? 0.75 : 1.0;
-  const heightConstraint = settings.gallerySizingMode ?? 'auto';
+  const heightConstraint = commonSettings.gallerySizingMode ?? 'auto';
 
   const baseHeight = dominantType === 'image' ? settings.imageViewportHeight : settings.videoViewportHeight;
   const baseHeightUnit = dominantType === 'image' ? (settings.imageViewportHeightUnit ?? 'px') : (settings.videoViewportHeightUnit ?? 'px');
@@ -366,8 +374,8 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
   }, [baseHeight, heightMultiplier, baseHeightUnit]);
 
   const manualHeight = useMemo(
-    () => resolveManualHeight(settings.galleryManualHeight, standardHeight),
-    [settings.galleryManualHeight, standardHeight],
+    () => resolveManualHeight(commonSettings.galleryManualHeight, standardHeight),
+    [commonSettings.galleryManualHeight, standardHeight],
   );
 
   const viewportMaxHeight = resolveViewportMaxHeight(breakpoint, settings);
@@ -585,10 +593,10 @@ export function MediaCarouselInner({ media, settings, breakpoint, maxWidth }: Me
 
   return (
     <Stack gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <LabelIcon size={18} />}
+      {commonSettings.showCampaignGalleryLabels !== false && (
+        <Title order={3} size="h5" ta={commonSettings.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={commonSettings.galleryLabelJustification || 'left'}>
+            {commonSettings.showGalleryLabelIcon && <LabelIcon size={18} />}
             {sectionLabel}
           </Group>
         </Title>

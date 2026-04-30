@@ -5,6 +5,7 @@
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { MediaCarouselInner } from '@/components/Galleries/Adapters/MediaCarouselAdapter';
+import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
 
 interface ImageCarouselProps {
   images: MediaItem[];
@@ -19,6 +20,7 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
     <MediaCarouselInner
       media={images}
       settings={settings}
+      commonSettings={resolveGalleryComponentCommonSettings(settings)}
       breakpoint={breakpoint}
       maxWidth={maxWidth}
     />

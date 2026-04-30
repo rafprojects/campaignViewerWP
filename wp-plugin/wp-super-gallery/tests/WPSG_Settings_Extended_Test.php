@@ -125,12 +125,22 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         $settings = WPSG_Settings::get_settings();
 
         $defaults = WPSG_Settings::get_defaults();
+        $nested_only_keys = array_fill_keys(
+            WPSG_Settings_Sanitizer::get_nested_only_gallery_setting_keys(),
+            true
+        );
+
         foreach ($defaults as $key => $val) {
+            if (isset($nested_only_keys[$key])) {
+                $this->assertArrayNotHasKey($key, $settings, "Nested-only gallery key should be omitted: $key");
+                continue;
+            }
+
             $this->assertArrayHasKey($key, $settings, "Missing default key: $key");
         }
     }
 
-    public function test_get_settings_bridges_gallery_config_back_to_legacy_fields() {
+    public function test_get_settings_omits_legacy_gallery_adapter_fields_when_gallery_config_exists() {
         update_option('wpsg_settings', [
             'gallery_config' => [
                 'mode' => 'unified',
@@ -143,6 +153,9 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
                                 'viewportBgType' => 'solid',
                                 'viewportBgColor' => '#112233',
                             ],
+                            'adapterSettings' => [
+                                'masonryColumns' => 5,
+                            ],
                         ],
                     ],
                 ],
@@ -151,12 +164,16 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
         $settings = WPSG_Settings::get_settings();
 
-        $this->assertTrue($settings['unified_gallery_enabled'] ?? false);
-        $this->assertEquals('masonry', $settings['unified_gallery_adapter_id'] ?? null);
-        $this->assertEquals('unified', $settings['gallery_selection_mode'] ?? null);
-        $this->assertEquals(24, $settings['gallery_section_padding'] ?? null);
-        $this->assertEquals('solid', $settings['unified_bg_type'] ?? null);
-        $this->assertEquals('#112233', $settings['unified_bg_color'] ?? null);
+        $this->assertArrayNotHasKey('unified_gallery_enabled', $settings);
+        $this->assertArrayNotHasKey('unified_gallery_adapter_id', $settings);
+        $this->assertArrayNotHasKey('gallery_selection_mode', $settings);
+        $this->assertArrayNotHasKey('gallery_section_padding', $settings);
+        $this->assertArrayNotHasKey('unified_bg_type', $settings);
+        $this->assertArrayNotHasKey('unified_bg_color', $settings);
+        $this->assertArrayNotHasKey('masonry_columns', $settings);
+
+        $js = WPSG_Settings::to_js($settings, true);
+        $this->assertArrayNotHasKey('masonryColumns', $js);
     }
 
     // ── sanitize_settings ──────────────────────────────────────────────────

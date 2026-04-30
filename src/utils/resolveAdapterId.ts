@@ -3,6 +3,7 @@ import type {
   GalleryCommonSettings,
   GalleryConfig,
   GalleryConfigScope,
+  ResolvedGallerySectionRuntime,
 } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { isAdapterSupportedAtBreakpoint, normalizeAdapterId } from '@/components/Galleries/Adapters/adapterRegistry';
@@ -17,7 +18,6 @@ type GalleryMode = 'unified' | 'per-type';
 
 interface GalleryResolutionOptions {
   galleryOverrides?: Partial<GalleryConfig>;
-  legacyOverrideId?: string;
 }
 
 type CommonSettingKey = keyof GalleryCommonSettings;
@@ -106,7 +106,7 @@ export function resolveGalleryMode(
   s: GalleryBehaviorSettings,
   galleryOverrides?: Partial<GalleryConfig>,
 ): GalleryMode {
-  return resolveEffectiveGalleryConfig(s, galleryOverrides).mode ?? (s.unifiedGalleryEnabled ? 'unified' : 'per-type');
+  return resolveEffectiveGalleryConfig(s, galleryOverrides).mode ?? 'per-type';
 }
 
 export function resolveUnifiedAdapterId(
@@ -133,23 +133,14 @@ export function resolveGalleryCommonSettings(
   galleryOverrides?: Partial<GalleryConfig>,
 ): GalleryCommonSettings {
   const effectiveConfig = resolveEffectiveGalleryConfig(s, galleryOverrides);
-
-  return resolveScopeConfig(effectiveConfig, breakpoint, scope)?.common ?? {};
-}
-
-export function applyResolvedGalleryCommonSettings(
-  s: GalleryBehaviorSettings,
-  commonSettings: GalleryCommonSettings,
-  scope: GalleryConfigScope,
-): GalleryBehaviorSettings {
-  const resolvedSettings = { ...s };
+  const resolvedSettings: GalleryCommonSettings = {};
 
   for (const [commonKey, settingKey] of Object.entries(COMMON_SETTING_FIELD_MAP) as Array<
     [SharedCommonSettingKey, keyof GalleryBehaviorSettings]
   >) {
-    const value = commonSettings[commonKey];
+    const value = s[settingKey];
     if (value !== undefined) {
-      (resolvedSettings as Record<string, unknown>)[settingKey] = value;
+      (resolvedSettings as Record<string, unknown>)[commonKey] = value;
     }
   }
 
@@ -157,27 +148,50 @@ export function applyResolvedGalleryCommonSettings(
   for (const [commonKey, settingKey] of Object.entries(viewportFieldMap) as Array<
     [ScopeSpecificCommonSettingKey, keyof GalleryBehaviorSettings]
   >) {
-    const value = commonSettings[commonKey];
+    const value = s[settingKey];
     if (value !== undefined) {
-      (resolvedSettings as Record<string, unknown>)[settingKey] = value;
+      (resolvedSettings as Record<string, unknown>)[commonKey] = value;
     }
   }
 
-  return resolvedSettings;
+  return {
+    ...resolvedSettings,
+    ...(resolveScopeConfig(effectiveConfig, breakpoint, scope)?.common ?? {}),
+  };
 }
 
-export function resolveEffectiveGallerySettings(
+export function resolveGallerySectionRuntime(
   s: GalleryBehaviorSettings,
   breakpoint: Breakpoint,
   scope: GalleryConfigScope,
   galleryOverrides?: Partial<GalleryConfig>,
+): ResolvedGallerySectionRuntime {
+  const effectiveConfig = resolveEffectiveGalleryConfig(s, galleryOverrides);
+  const scopeConfig = resolveScopeConfig(effectiveConfig, breakpoint, scope);
+  const common = resolveGalleryCommonSettings(s, breakpoint, scope, galleryOverrides);
+
+  return {
+    breakpoint,
+    scope,
+    common,
+    background: {
+      type: common.viewportBgType ?? 'none',
+      color: common.viewportBgColor ?? '',
+      gradient: common.viewportBgGradient ?? '',
+      imageUrl: common.viewportBgImageUrl ?? '',
+    },
+    adapterSettings: { ...(scopeConfig?.adapterSettings ?? {}) },
+  };
+}
+
+export function applyResolvedGalleryAdapterSettings(
+  s: GalleryBehaviorSettings,
+  runtime: Pick<ResolvedGallerySectionRuntime, 'adapterSettings'>,
 ): GalleryBehaviorSettings {
-  const resolvedCommonSettings = resolveGalleryCommonSettings(s, breakpoint, scope, galleryOverrides);
-  const resolvedAdapterSettings = resolveEffectiveGalleryConfig(s, galleryOverrides).breakpoints?.[breakpoint]?.[scope]?.adapterSettings ?? {};
-  const resolvedSettings = applyResolvedGalleryCommonSettings(s, resolvedCommonSettings, scope);
+  const resolvedSettings = { ...s };
   const resolvedSettingsRecord = resolvedSettings as unknown as Record<string, unknown>;
 
-  for (const [key, value] of Object.entries(resolvedAdapterSettings)) {
+  for (const [key, value] of Object.entries(runtime.adapterSettings ?? {})) {
     if (value === undefined || BLOCKED_ADAPTER_SETTING_KEYS.has(key)) {
       continue;
     }
@@ -195,8 +209,7 @@ export function resolveEffectiveGallerySettings(
 /**
  * Resolve the adapter ID to use for a given media type and breakpoint.
  *
- * When `gallerySelectionMode` is `'per-breakpoint'`, selects from the 6
- * per-breakpoint adapter settings. Otherwise returns the unified setting.
+ * Resolves the adapter for one media scope directly from nested galleryConfig.
  */
 export function resolveAdapterId(
   s: GalleryBehaviorSettings,
@@ -205,12 +218,10 @@ export function resolveAdapterId(
   options: GalleryResolutionOptions = {},
 ): string {
   const globalConfig = resolveBaseGalleryConfig(s);
-  const legacyOverrideId = options.galleryOverrides ? undefined : options.legacyOverrideId;
 
   return resolveSupportedAdapterChain(
     [
       resolveOverrideScopeConfig(options.galleryOverrides, breakpoint, mediaType)?.adapterId,
-      legacyOverrideId,
       resolveScopeConfig(globalConfig, breakpoint, mediaType)?.adapterId,
       getRepresentativeScopeAdapterId(globalConfig, mediaType),
     ],

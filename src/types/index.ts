@@ -62,6 +62,21 @@ export interface GalleryConfig {
   breakpoints?: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>>;
 }
 
+export interface ResolvedGallerySectionBackground {
+  type: ViewportBgType;
+  color: string;
+  gradient: string;
+  imageUrl: string;
+}
+
+export interface ResolvedGallerySectionRuntime {
+  breakpoint: ResponsiveBreakpoint;
+  scope: GalleryConfigScope;
+  common: GalleryCommonSettings;
+  background: ResolvedGallerySectionBackground;
+  adapterSettings: Record<string, unknown>;
+}
+
 export interface Campaign {
   id: string;
   companyId: string;
@@ -85,10 +100,6 @@ export interface Campaign {
   unpublishAt?: string;
   /** P15-B: Optional layout template reference. */
   layoutTemplateId?: string;
-  /** @deprecated Legacy flat campaign override compatibility only. Persist galleryOverrides instead. */
-  imageAdapterId?: string;
-  /** @deprecated Legacy flat campaign override compatibility only. Persist galleryOverrides instead. */
-  videoAdapterId?: string;
   /** Phase 23 nested campaign gallery override surface. */
   galleryOverrides?: Partial<GalleryConfig>;
   /** P18-H: Category names assigned to this campaign. */
@@ -561,15 +572,6 @@ export interface GalleryBehaviorSettings {
   thumbnailWheelScrollEnabled: boolean;
   thumbnailDragScrollEnabled: boolean;
   thumbnailScrollButtonsVisible: boolean;
-  // P12-C: Pluggable Gallery Adapters
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.image.adapterId instead. */
-  imageGalleryAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.video.adapterId instead. */
-  videoGalleryAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.mode instead. */
-  unifiedGalleryEnabled: boolean;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.unified.adapterId instead. */
-  unifiedGalleryAdapterId: string;
   gridCardWidth: number;
   gridCardWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   gridCardHeight: number;
@@ -776,24 +778,9 @@ export interface GalleryBehaviorSettings {
   cardAutoColumnsBreakpoints: string;
   // P20-K: Session idle timeout (minutes). 0 = disabled.
   sessionIdleTimeoutMinutes: number;
-  // P15-A: Per-breakpoint gallery selection
-  /** @deprecated Legacy flat-field compatibility only. Active UI writes nested galleryConfig. */
-  gallerySelectionMode: 'unified' | 'per-breakpoint';
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.desktop.image.adapterId instead. */
-  desktopImageAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.desktop.video.adapterId instead. */
-  desktopVideoAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.tablet.image.adapterId instead. */
-  tabletImageAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.tablet.video.adapterId instead. */
-  tabletVideoAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.mobile.image.adapterId instead. */
-  mobileImageAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.mobile.video.adapterId instead. */
-  mobileVideoAdapterId: string;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
-  // P23-D: Nested responsive gallery config compatibility bridge.
+  // P23-D: Canonical responsive gallery configuration surface.
   galleryConfig?: GalleryConfig;
   // P20-E: Uninstall data preservation
   preserveDataOnUninstall: boolean;
@@ -1243,14 +1230,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
   // P20-K: Session idle timeout
   sessionIdleTimeoutMinutes: 0,
-  // P15-A: Legacy per-breakpoint gallery selection compatibility
-  gallerySelectionMode: 'unified',
-  desktopImageAdapterId: 'classic',
-  desktopVideoAdapterId: 'classic',
-  tabletImageAdapterId: 'classic',
-  tabletVideoAdapterId: 'classic',
-  mobileImageAdapterId: 'classic',
-  mobileVideoAdapterId: 'classic',
   layoutBuilderScope: 'full',
   galleryConfig: createDefaultGalleryConfig(),
   // P20-E: Uninstall data preservation
@@ -1260,11 +1239,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   archivePurgeGraceDays: 30,
   // D-20: Analytics data retention
   analyticsRetentionDays: 0,
-  // P12-C defaults
-  imageGalleryAdapterId: 'classic',
-  videoGalleryAdapterId: 'classic',
-  unifiedGalleryEnabled: false,
-  unifiedGalleryAdapterId: 'compact-grid',
   gridCardWidth: 160,
   gridCardWidthUnit: 'px',
   gridCardHeight: 224,

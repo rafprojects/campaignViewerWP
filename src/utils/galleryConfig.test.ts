@@ -2,84 +2,40 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import {
-  buildGalleryConfigFromLegacySettings,
   collectGalleryAdapterSettingValues,
   mergeGalleryConfig,
   parseGalleryConfig,
+  resolveGalleryConfig,
   syncLegacyGallerySettingToConfig,
 } from './galleryConfig';
 
 describe('galleryConfig helpers', () => {
-  it('builds a nested gallery config from legacy settings', () => {
-    const config = buildGalleryConfigFromLegacySettings({
+  it('resolves explicit nested config over the default gallery config only', () => {
+    const config = resolveGalleryConfig({
       ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-      unifiedGalleryEnabled: true,
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'masonry',
-      tabletVideoAdapterId: 'diamond',
+      gallerySectionPadding: 24,
+      imageBgType: 'solid',
+      imageBgColor: '#112233',
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: {
+            unified: {
+              adapterId: 'masonry',
+              common: {
+                sectionPadding: 8,
+              },
+            },
+          },
+        },
+      },
     });
 
     expect(config.mode).toBe('unified');
-    expect(config.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
-    expect(config.breakpoints?.tablet?.video?.adapterId).toBe('diamond');
-    expect(config.breakpoints?.mobile?.unified?.adapterId).toBe('compact-grid');
-    expect(config.breakpoints?.desktop?.image?.common?.viewportBgType).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBgType);
-    expect(config.breakpoints?.desktop?.video?.common?.viewportBgColor).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBgColor);
-    expect(config.breakpoints?.desktop?.unified?.common?.viewportBgGradient).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.unifiedBgGradient);
-    expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoViewportHeight);
-    expect(config.breakpoints?.mobile?.image?.adapterSettings?.imageViewportHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageViewportHeight);
-    expect(config.breakpoints?.mobile?.image?.adapterSettings?.imageShadowPreset).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset);
-    expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowCustom);
-    expect(config.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageBorderRadius);
-    expect(config.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoBorderRadius);
-    expect(config.breakpoints?.desktop?.image?.adapterSettings?.thumbnailGap).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap);
-    expect(config.breakpoints?.desktop?.image?.adapterSettings?.tileBorderWidth).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth);
-    expect(config.breakpoints?.tablet?.video?.adapterSettings?.tileGlowEnabled).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowEnabled);
-    expect(config.breakpoints?.tablet?.video?.adapterSettings?.tileHoverBounce).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileHoverBounce);
-    expect(config.breakpoints?.tablet?.video?.adapterSettings?.tileGapX).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapX);
-    expect(config.breakpoints?.tablet?.video?.adapterSettings?.tileGapY).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGapY);
-  });
-
-  it('seeds unified classic adapter settings with both viewport heights', () => {
-    const config = buildGalleryConfigFromLegacySettings({
-      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-      unifiedGalleryEnabled: true,
-      unifiedGalleryAdapterId: 'classic',
-      imageViewportHeight: 560,
-      videoViewportHeight: 500,
-      imageBorderRadius: 14,
-      videoBorderRadius: 18,
-      imageShadowPreset: 'custom',
-      imageShadowCustom: '0 8px 24px rgba(0,0,0,0.35)',
-      videoShadowPreset: 'strong',
-      videoShadowCustom: '0 6px 18px rgba(0,0,0,0.3)',
-    });
-
-    expect(config.breakpoints?.desktop?.unified?.adapterId).toBe('classic');
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageViewportHeight).toBe(560);
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoViewportHeight).toBe(500);
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageBorderRadius).toBe(14);
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoBorderRadius).toBe(18);
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageShadowPreset).toBe('custom');
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.imageShadowCustom).toBe('0 8px 24px rgba(0,0,0,0.35)');
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoShadowPreset).toBe('strong');
-    expect(config.breakpoints?.desktop?.unified?.adapterSettings?.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
-  });
-
-  it('seeds layout-builder adapter defaults from legacy settings', () => {
-    const config = buildGalleryConfigFromLegacySettings({
-      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-      gallerySelectionMode: 'per-breakpoint',
-      desktopImageAdapterId: 'layout-builder',
-      layoutBuilderScope: 'viewport',
-      tileGlowColor: '#00ffaa',
-      tileGlowSpread: 18,
-    });
-
-    expect(config.breakpoints?.desktop?.image?.adapterId).toBe('layout-builder');
-    expect(config.breakpoints?.desktop?.image?.adapterSettings?.layoutBuilderScope).toBe('viewport');
-    expect(config.breakpoints?.desktop?.image?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
-    expect(config.breakpoints?.desktop?.image?.adapterSettings?.tileGlowSpread).toBe(18);
+    expect(config.breakpoints?.desktop?.unified?.adapterId).toBe('masonry');
+    expect(config.breakpoints?.desktop?.unified?.common?.sectionPadding).toBe(8);
+    expect(config.breakpoints?.desktop?.image?.common?.viewportBgType).not.toBe('solid');
+    expect(config.breakpoints?.desktop?.image?.common?.viewportBgColor).not.toBe('#112233');
   });
 
   it('parses nested config from JSON and rejects invalid values', () => {
@@ -88,8 +44,8 @@ describe('galleryConfig helpers', () => {
     expect(parseGalleryConfig([])).toBeUndefined();
   });
 
-  it('merges nested overrides onto a legacy-derived base', () => {
-    const base = buildGalleryConfigFromLegacySettings(DEFAULT_GALLERY_BEHAVIOR_SETTINGS);
+  it('merges nested overrides onto the default gallery config', () => {
+    const base = resolveGalleryConfig(DEFAULT_GALLERY_BEHAVIOR_SETTINGS);
     const merged = mergeGalleryConfig(base, {
       breakpoints: {
         desktop: {
@@ -138,11 +94,6 @@ describe('galleryConfig helpers', () => {
   });
 
   it('syncs inline legacy gallery settings back into nested config', () => {
-    const settings = {
-      ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-      adapterItemGap: 20,
-    };
-
     const synced = syncLegacyGallerySettingToConfig(
       {
         mode: 'per-type',
@@ -171,7 +122,6 @@ describe('galleryConfig helpers', () => {
           },
         },
       },
-      settings,
       'adapterItemGap',
       20,
     );
@@ -180,5 +130,55 @@ describe('galleryConfig helpers', () => {
     expect(synced?.breakpoints?.desktop?.video?.common?.adapterItemGap).toBe(20);
     expect(synced?.breakpoints?.tablet?.image?.common?.adapterItemGap).toBe(20);
     expect(synced?.breakpoints?.tablet?.video?.common?.adapterItemGap).toBe(20);
+  });
+
+  it('syncs common setting units into nested config', () => {
+    const synced = syncLegacyGallerySettingToConfig(
+      {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: {
+            image: {
+              adapterId: 'classic',
+              common: {
+                sectionPaddingUnit: 'px',
+                adapterItemGapUnit: 'px',
+              },
+            },
+            video: {
+              adapterId: 'classic',
+              common: {
+                sectionPaddingUnit: 'px',
+                adapterItemGapUnit: 'px',
+              },
+            },
+          },
+        },
+      },
+      'gallerySectionPaddingUnit',
+      'rem',
+    );
+
+    const gapUnitSynced = syncLegacyGallerySettingToConfig(
+      synced,
+      'adapterItemGapUnit',
+      '%',
+    );
+
+    expect(gapUnitSynced?.breakpoints?.desktop?.image?.common?.sectionPaddingUnit).toBe('rem');
+    expect(gapUnitSynced?.breakpoints?.desktop?.video?.common?.sectionPaddingUnit).toBe('rem');
+    expect(gapUnitSynced?.breakpoints?.desktop?.image?.common?.adapterItemGapUnit).toBe('%');
+    expect(gapUnitSynced?.breakpoints?.desktop?.video?.common?.adapterItemGapUnit).toBe('%');
+  });
+
+  it('starts from the default gallery config when syncing without an existing config', () => {
+    const synced = syncLegacyGallerySettingToConfig(undefined, 'gallerySectionPaddingUnit', 'rem');
+
+    expect(synced?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
+    expect(synced?.breakpoints?.desktop?.video?.adapterId).toBe('classic');
+    expect(synced?.breakpoints?.desktop?.unified?.adapterId).toBe('compact-grid');
+    expect(synced?.breakpoints?.desktop?.image?.common?.sectionPaddingUnit).toBe('rem');
+    expect(synced?.breakpoints?.desktop?.video?.common?.sectionPaddingUnit).toBe('rem');
+    expect(synced?.breakpoints?.desktop?.unified?.common?.sectionPaddingUnit).toBe('rem');
   });
 });

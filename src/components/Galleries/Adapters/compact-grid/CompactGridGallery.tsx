@@ -13,21 +13,29 @@ import { useState, useCallback } from 'react';
 import { Box, Group, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
 
 interface CompactGridGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function CompactGridGallery({ media, settings, containerDimensions: _containerDimensions }: CompactGridGalleryProps) {
+export function CompactGridGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: CompactGridGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   const openAt = useCallback(
     (index: number) => {
@@ -44,23 +52,19 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
   const cardWidthUnit = settings.gridCardWidthUnit ?? 'px';
   const cardHeight = Math.round((settings.gridCardHeight ?? 180) * itemSc);
   const borderRadius = toCssOrNumber(settings.imageBorderRadius, settings.imageBorderRadiusUnit);
-  const gap = settings.adapterItemGap ?? 16;
-  const gapUnit = settings.adapterItemGapUnit ?? 'px';
+  const gap = common.adapterItemGap ?? 16;
+  const gapUnit = common.adapterItemGapUnit ?? 'px';
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
-  // Adapter sizing: fill = no maxWidth restriction; manual = percentage of parent
-  const isManual = settings.adapterSizingMode === 'manual';
-  const adapterSizing: React.CSSProperties = isManual
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
+      {common.showCampaignGalleryLabels !== false && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
             Gallery ({media.length})
           </Group>
         </Title>
@@ -73,7 +77,7 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
           width: '100%',
           gridTemplateColumns: `repeat(auto-fit, minmax(min(${toCss(cardWidth, cardWidthUnit)}, calc(50% - ${toCss(gap / 2, gapUnit)})), ${toCss(cardWidth, cardWidthUnit)}))`,
           gap: toCss(gap, gapUnit),
-          justifyContent: settings.adapterJustifyContent || 'center',
+          justifyContent: common.adapterJustifyContent || 'center',
         }}
       >
         {media.map((item, index) => (

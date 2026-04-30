@@ -7,6 +7,7 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         // Reset db version so maybe_upgrade runs fresh.
         delete_option('wpsg_db_version');
         delete_option('wpsg_media_refs_backfilled');
+        delete_option(WPSG_Settings::OPTION_NAME);
     }
 
     public function tearDown(): void {
@@ -18,6 +19,7 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         delete_option('wpsg_db_version');
         delete_option('wpsg_media_refs_backfilled');
         delete_option('wpsg_access_requests_migrated');
+        delete_option(WPSG_Settings::OPTION_NAME);
         parent::tearDown();
     }
 

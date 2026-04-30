@@ -31,6 +31,7 @@
     "@mantine/notifications": "^7.17.8",
     "@sentry/react": "^8.49.0",
     "@tabler/icons-react": "^3.36.1",
+    "@tanstack/react-query": "^5.100.6",
     "chroma-js": "^3.2.0",
     "dayjs": "^1.11.19",
     "dockview": "^5.0.0",
@@ -45,7 +46,9 @@
     "react-window": "^1.8.10",
     "react-zoom-pan-pinch": "^3.7.0",
     "recharts": "^3.7.0",
-    "swr": "^2.4.0"
+    "swr": "^2.4.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

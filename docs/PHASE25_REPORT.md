@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** March 31, 2026
-**Last updated:** April 3, 2026
+**Last updated:** April 30, 2026
 
 ### Tracks
 
@@ -322,7 +322,7 @@ Keep the earlier PHP-side gallery bridge in place for reads, but harden the clas
 
 - Saving from the classic WordPress `Campaigns > Settings` page no longer drops nested `gallery_config` or other non-posted settings.
 - Unchecked classic admin checkbox fields persist `false` instead of inheriting the previously saved truthy value.
-- PHP callers and REST responses continue to project legacy flat gallery fields from nested `gallery_config` for compatibility.
+- At that point in Phase 25, PHP callers and REST responses still projected legacy flat gallery fields from nested `gallery_config` for compatibility. That follow-on bridge was removed later in the dedicated settings-refactor work.
 
 ## Track P25-O - Visual Settings Live Preview Expansion
 
@@ -376,6 +376,8 @@ All three passes converge on the same core findings:
 | C | Modal → Drawer | Yes — include in the implementation track (low effort, high UX value) |
 | D | Data model cleanup | Separate follow-on — `CoreSettings` split and legacy bridge removal deferred |
 | E | Inline adapter quick-selectors | Convert to read-only summary with click-to-open-editor |
+
+Follow-up note (2026-04-30): the deferred data-model cleanup track was later promoted into [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md), and the legacy gallery bridge removal portion of that follow-on is now complete. This report remains the historical record of the P25-U UI work and the deferral that existed at that time.
 
 Implementation proceeds as Track P25-U.
 
@@ -777,7 +779,7 @@ These are not active implementation tracks yet, but they were promoted out of th
 
 | Candidate | Why it was surfaced |
 |-----------|---------------------|
-| Final legacy gallery bridge removal | Explicit carryover from Phase 24; legacy flat-field reads and bridge helpers still exist in the current codebase |
+| Final legacy gallery bridge removal | Completed later in the dedicated settings-refactor follow-on documented in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md) |
 | Builder template deep clone | Solves a real duplication surprise with contained scope |
 | Global settings export/import | Adds a recovery path for destructive config regressions and makes settings migration safer across environments |
 | Time-limited access grants | High user value for event-style galleries with a clear implementation path |
@@ -943,7 +945,7 @@ All planned relocations complete across two commits (Phase 3a + 3b).
 ### Scope boundaries
 
 - **Included**: Tab regroup, control relocations, Modal→Drawer, accordion restructuring, adapter summary conversion, label disambiguation.
-- **Excluded**: Data model refactor (`CoreSettings` split), legacy bridge removal (`LEGACY_GALLERY_SETTING_KEYS`), new settings controls, typography changes. These remain candidates for a dedicated follow-on track.
+- **Excluded at the time**: Data model refactor (`CoreSettings` split), legacy bridge removal (`LEGACY_GALLERY_SETTING_KEYS`), new settings controls, typography changes. The legacy bridge removal follow-on was later completed in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md).
 
 ### Acceptance criteria
 
@@ -1083,7 +1085,7 @@ If this class of issue resurfaces, validate in this order:
 - P25-G implementation now raises the campaign Manage Media wrapper above the viewer stack without changing the admin Media tab's default modal layer.
 - P25-H implementation now organizes the campaign gallery editor into accordion sections and only exposes adapter-specific controls for explicit active-breakpoint adapter overrides.
 - P25-J implementation now treats the centered slide as the active multi-card focus, routes arrow/dot navigation through that centered focus, and uses a settle-based synthetic loop fallback for small multi-card sets so last-to-first wraps stay smooth.
-- P25-M implementation now preserves non-posted settings during classic WordPress admin saves by merging partial `Campaigns > Settings` submissions over the stored option before sanitization, while still projecting legacy flat gallery fields from nested `gallery_config` on PHP reads and REST responses.
+- P25-M implementation now preserves non-posted settings during classic WordPress admin saves by merging partial `Campaigns > Settings` submissions over the stored option before sanitization. At the time of that phase, PHP still projected legacy flat gallery fields from nested `gallery_config` on reads and REST responses; the later settings-refactor follow-on removed that bridge.
 - Targeted validation passed for `src/App.test.tsx`, `src/components/Common/ModalSelect.test.tsx`, `src/components/Common/GalleryConfigEditorModal.test.tsx`, `src/components/Campaign/UnifiedCampaignModal.test.tsx`, `src/components/CardViewer/CampaignViewer.test.tsx`, and `src/components/Admin/SettingsPanel.test.tsx`.
 - Additional targeted validation passed for `src/components/Galleries/Adapters/carouselBehavior.test.ts`, `src/components/Galleries/Adapters/MediaCarouselAdapter.test.tsx`, `src/components/Common/GalleryConfigEditorModal.test.tsx`, `src/components/Admin/SettingsPanel.test.tsx`, and `npm run build:wp`.
 - WordPress PHPUnit validation now passed in `wp-env` for `tests/WPSG_Settings_Test.php`, `tests/WPSG_Settings_Extended_Test.php`, and `tests/WPSG_Settings_Rest_Test.php` after adding focused coverage for classic admin partial-save preservation and checkbox false persistence.

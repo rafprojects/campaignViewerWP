@@ -148,15 +148,30 @@ describe('campaignGalleryRenderPlan', () => {
     expect(plan?.wrapper.borderRadius).toBe(20);
   });
 
-  it('does not reuse legacy per-type image overrides as unified adapter fallbacks', () => {
+  it('does not reuse per-type campaign overrides as unified adapter fallbacks', () => {
     const plan = resolveUnifiedCampaignGalleryRenderPlan(
       makeCampaign({
-        imageAdapterId: 'masonry',
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'masonry',
+              },
+            },
+          },
+        },
       }),
       makeSettings({
-        unifiedGalleryAdapterId: 'compact-grid',
         galleryConfig: {
           mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: {
+                adapterId: 'compact-grid',
+              },
+            },
+          },
         },
       }),
       'desktop',
@@ -165,13 +180,75 @@ describe('campaignGalleryRenderPlan', () => {
     expect(plan?.adapterId).toBe('compact-grid');
   });
 
+  it('resolves nested per-type campaign overrides before global config', () => {
+    const plan = resolvePerTypeCampaignGalleryRenderPlan(
+      makeCampaign({
+        videos: [],
+        images: [image],
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'masonry',
+              },
+            },
+          },
+        },
+      }),
+      makeSettings({
+        galleryConfig: {
+          mode: 'per-type',
+        },
+      }),
+      'desktop',
+      'image',
+    );
+
+    expect(plan?.adapterId).toBe('masonry');
+  });
+
+  it('falls back from unsupported nested campaign adapters to global nested config', () => {
+    const plan = resolvePerTypeCampaignGalleryRenderPlan(
+      makeCampaign({
+        videos: [],
+        images: [image],
+        galleryOverrides: {
+          mode: 'per-type',
+          breakpoints: {
+            mobile: {
+              image: {
+                adapterId: 'layout-builder',
+              },
+            },
+          },
+        },
+      }),
+      makeSettings({
+        galleryConfig: {
+          mode: 'per-type',
+          breakpoints: {
+            mobile: {
+              image: {
+                adapterId: 'masonry',
+              },
+            },
+          },
+        },
+      }),
+      'mobile',
+      'image',
+    );
+
+    expect(plan?.adapterId).toBe('masonry');
+  });
+
   it('resolves per-type plans with tile-size projection and adapter fallback', () => {
     const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(
       makeCampaign({ videos: [], images: [image] }),
       makeSettings({
         tileSize: 120,
         imageTileSize: 180,
-        imageGalleryAdapterId: 'classic',
         galleryConfig: {
           mode: 'per-type',
           breakpoints: {

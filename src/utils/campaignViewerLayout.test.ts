@@ -23,7 +23,6 @@ describe('campaignViewerLayout', () => {
     const layout = resolveCampaignViewerGalleryShellLayout(
       {
         ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-        unifiedGalleryEnabled: false,
       },
       {
         mode: 'unified',

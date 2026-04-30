@@ -25,6 +25,7 @@ export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdm
   return (
     <GallerySectionWrapper
       settings={plan.settings}
+      runtime={plan.runtime}
       bgType={plan.wrapper.bgType}
       bgColor={plan.wrapper.bgColor}
       bgGradient={plan.wrapper.bgGradient}
@@ -36,6 +37,7 @@ export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdm
           adapterId={plan.adapterId}
           media={plan.media}
           settings={plan.settings}
+          runtime={plan.runtime}
           campaign={campaign}
           isAdmin={isAdmin}
           containerDimensions={containerDimensions}

@@ -47,10 +47,6 @@ export interface AdminCampaign {
   unpublishAt?: string;
   /** P15-B: Optional layout template reference. */
   layoutTemplateId?: string;
-  /** Per-campaign image gallery adapter override. */
-  imageAdapterId?: string;
-  /** Per-campaign video gallery adapter override. */
-  videoAdapterId?: string;
   /** Phase 23 nested campaign gallery override surface. */
   galleryOverrides?: Partial<GalleryConfig>;
   /** P18-H: Category names assigned to this campaign. */
@@ -323,12 +319,13 @@ function staggeredPrefetch(
 export function prefetchAllCampaignAccess(
   apiClient: ApiClient,
   campaignIds: string[],
+  mutateFn: typeof globalMutate = globalMutate,
 ): () => void {
   return staggeredPrefetch(
     campaignIds,
     (id) => {
       const key = ['admin-access', 'campaign', id];
-      return globalMutate(
+      return mutateFn(
         key,
         async () => {
           const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
@@ -354,12 +351,13 @@ export function prefetchAllCampaignAccess(
 export function prefetchAllCampaignAudit(
   apiClient: ApiClient,
   campaignIds: string[],
+  mutateFn: typeof globalMutate = globalMutate,
 ): () => void {
   return staggeredPrefetch(
     campaignIds,
     (id) => {
       const key = ['admin-audit', id];
-      return globalMutate(
+      return mutateFn(
         key,
         async () => {
           const response = await apiClient.get<ListResponse<AuditEntry>>(
@@ -423,13 +421,14 @@ export function useMediaItems(apiClient: ApiClient, campaignId: string) {
 export function prefetchAllCampaignMedia(
   apiClient: ApiClient,
   campaignIds: string[],
+  mutateFn: typeof globalMutate = globalMutate,
 ): () => void {
   return staggeredPrefetch(
     campaignIds,
     (id) => {
       const key = mediaItemsKey(id);
       if (!key) return Promise.resolve();
-      return globalMutate(
+      return mutateFn(
         key,
         async () => {
           const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(

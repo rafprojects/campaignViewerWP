@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/CampaignGallery/CardGallery';
@@ -13,12 +14,10 @@ import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './types';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from './types';
+import type { Campaign, Company, MediaItem } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
-import { mergeSettingsWithDefaults } from './utils/mergeSettingsWithDefaults';
 import { sortByOrder } from './utils/sortByOrder';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
@@ -26,6 +25,11 @@ import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
+import {
+  DEFAULT_RESOLVED_SETTINGS,
+  setSettingsQueryData,
+  useGetSettings,
+} from './services/settingsQuery';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
 import useSWR from 'swr';
 
@@ -124,6 +128,7 @@ function AppContent({
     (message: { type: 'error' | 'success'; text: string }) => setActionMessage(message),
     [],
   );
+  const queryClient = useQueryClient();
 
   const fetchCampaigns = useCallback(async () => {
     setCampaignLoadProgress({ total: 0, completed: 0 });
@@ -143,8 +148,10 @@ function AppContent({
       const orderedMedia = sortedMedia.map((m) => ({
         ...m, thumbnail: m.thumbnail || (m.type === 'image' ? m.url : thumbnail), caption: m.caption || 'Campaign media',
       }));
-      return { ...item, companyId: item.companyId, company: buildCompany(item.companyId), thumbnail, coverImage, galleryOverrides,
-        videos: orderedMedia.filter((m) => m.type === 'video'), images: orderedMedia.filter((m) => m.type === 'image') } as Campaign;
+      return {
+        ...item, companyId: item.companyId, company: buildCompany(item.companyId), thumbnail, coverImage, galleryOverrides,
+        videos: orderedMedia.filter((m) => m.type === 'video'), images: orderedMedia.filter((m) => m.type === 'image')
+      } as Campaign;
     });
     setCampaignLoadProgress({ total: items.length, completed: items.length });
     return mapped;
@@ -156,11 +163,7 @@ function AppContent({
   });
   const error = campaignsError ? (campaignsError instanceof Error ? campaignsError.message : 'Failed to load campaigns') : null;
 
-  const { data: galleryBehaviorSettings, mutate: mutateGalleryBehaviorSettings } = useSWR<GalleryBehaviorSettings>(
-    'gallery-behavior-settings',
-    async () => mergeSettingsWithDefaults((await apiClient.getSettings()) as Partial<GalleryBehaviorSettings>),
-    { revalidateOnFocus: false, revalidateOnReconnect: false, shouldRetryOnError: false, fallbackData: DEFAULT_GALLERY_BEHAVIOR_SETTINGS },
-  );
+  const { data: settingsResponse } = useGetSettings(apiClient);
 
   useEffect(() => { if (isOnline && isReady) void mutateCampaigns(); }, [isOnline, isReady, mutateCampaigns]);
 
@@ -170,7 +173,7 @@ function AppContent({
   const archiveModal = useArchiveModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
   const externalMediaModal = useExternalMediaModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
 
-  const resolvedSettings = galleryBehaviorSettings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
+  const resolvedSettings = settingsResponse ?? DEFAULT_RESOLVED_SETTINGS;
   const appContainerSize = resolvedSettings.appMaxWidth > 0 ? resolvedSettings.appMaxWidth : undefined;
   const appContainerFluid = resolvedSettings.appMaxWidth === 0;
   const appContainerPaddingStyle = { paddingInline: resolvedSettings.appPadding };
@@ -188,136 +191,136 @@ function AppContent({
       onArchiveCampaign={archiveModal.handleArchiveCampaign}
       onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
     >
-    <div
-      className="wp-super-gallery"
-      style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
-    >
-      {!isAuthenticated && isReady && (
-        <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
-          <LoginForm onSubmit={handleLogin} compact />
-        </Modal>
-      )}
-      {isReady && (
-        <AuthBar
-          email={user?.email ?? ''}
-          isAdmin={isAdmin}
-          isAuthenticated={isAuthenticated}
-          appMaxWidth={resolvedSettings.appMaxWidth}
-          appPadding={resolvedSettings.appPadding}
-          displayMode={resolvedSettings.authBarDisplayMode}
-          dragMargin={resolvedSettings.authBarDragMargin}
-          onOpenAdminPanel={openAdminPanel}
-          onOpenSettings={openSettings}
-          onOpenSignIn={openSignIn}
-          onLogout={() => void logout()}
-        />
-      )}
-      {actionMessage && (
-        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
-          <Alert color={actionMessage.type === 'error' ? 'red' : 'green'}
-            role={actionMessage.type === 'error' ? 'alert' : 'status'}
-            aria-live={actionMessage.type === 'error' ? 'assertive' : 'polite'}>
-            {actionMessage.text}
-          </Alert>
-        </Container>
-      )}
-      {!isOnline && (
-        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
-          <Alert color="orange" role="alert" aria-live="assertive">You appear to be offline. Some features are unavailable.</Alert>
-        </Container>
-      )}
-      {error && (
-        <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
-          <Alert color="red" role="alert" aria-live="assertive">{error}</Alert>
-        </Container>
-      )}
-      {isSettingsOpen && (
-        <ErrorBoundary onReset={closeSettings}>
-          <Suspense fallback={null}>
-            <SettingsPanel
-              opened={isSettingsOpen}
-              apiClient={apiClient}
-              onClose={closeSettings}
-              onNotify={handleAdminNotify}
-              initialSettings={galleryBehaviorSettings}
-              onSettingsSaved={(saved) => void mutateGalleryBehaviorSettings(mergeSettingsWithDefaults(saved), false)}
-            />
-          </Suspense>
-        </ErrorBoundary>
-      )}
-      {isAdminPanelOpen ? (
-        <Container size={appContainerSize} py="xl" style={appContainerPaddingStyle}>
-          <ErrorBoundary onReset={closeAdminPanel}>
-            <Suspense fallback={<Center py={120}><Loader /></Center>}>
-              <AdminPanel
+      <div
+        className="wp-super-gallery"
+        style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
+      >
+        {!isAuthenticated && isReady && (
+          <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
+            <LoginForm onSubmit={handleLogin} compact />
+          </Modal>
+        )}
+        {isReady && (
+          <AuthBar
+            email={user?.email ?? ''}
+            isAdmin={isAdmin}
+            isAuthenticated={isAuthenticated}
+            appMaxWidth={resolvedSettings.appMaxWidth}
+            appPadding={resolvedSettings.appPadding}
+            displayMode={resolvedSettings.authBarDisplayMode}
+            dragMargin={resolvedSettings.authBarDragMargin}
+            onOpenAdminPanel={openAdminPanel}
+            onOpenSettings={openSettings}
+            onOpenSignIn={openSignIn}
+            onLogout={() => void logout()}
+          />
+        )}
+        {actionMessage && (
+          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
+            <Alert color={actionMessage.type === 'error' ? 'red' : 'green'}
+              role={actionMessage.type === 'error' ? 'alert' : 'status'}
+              aria-live={actionMessage.type === 'error' ? 'assertive' : 'polite'}>
+              {actionMessage.text}
+            </Alert>
+          </Container>
+        )}
+        {!isOnline && (
+          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
+            <Alert color="orange" role="alert" aria-live="assertive">You appear to be offline. Some features are unavailable.</Alert>
+          </Container>
+        )}
+        {error && (
+          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
+            <Alert color="red" role="alert" aria-live="assertive">{error}</Alert>
+          </Container>
+        )}
+        {isSettingsOpen && (
+          <ErrorBoundary onReset={closeSettings}>
+            <Suspense fallback={null}>
+              <SettingsPanel
+                opened={isSettingsOpen}
                 apiClient={apiClient}
-                onClose={closeAdminPanel}
-                onCampaignsUpdated={() => void mutateCampaigns()}
+                onClose={closeSettings}
                 onNotify={handleAdminNotify}
+                initialSettings={settingsResponse}
+                onSettingsSaved={(saved) => setSettingsQueryData(queryClient, apiClient, saved)}
               />
             </Suspense>
           </ErrorBoundary>
-        </Container>
-      ) : isLoading ? (
-        <Center py={120}>
-          <Stack align="center">
-            <Loader />
-            <Stack gap={2} align="center">
-              <Container size="sm" px={0}>
-                <Alert color="blue" variant="light" role="status" aria-live="polite">
-                  Loading campaigns...{campaignLoadProgress.total > 0 ? ` (${campaignLoadProgress.completed}/${campaignLoadProgress.total} processed)` : ''}
-                </Alert>
-              </Container>
+        )}
+        {isAdminPanelOpen ? (
+          <Container size={appContainerSize} py="xl" style={appContainerPaddingStyle}>
+            <ErrorBoundary onReset={closeAdminPanel}>
+              <Suspense fallback={<Center py={120}><Loader /></Center>}>
+                <AdminPanel
+                  apiClient={apiClient}
+                  onClose={closeAdminPanel}
+                  onCampaignsUpdated={() => void mutateCampaigns()}
+                  onNotify={handleAdminNotify}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          </Container>
+        ) : isLoading ? (
+          <Center py={120}>
+            <Stack align="center">
+              <Loader />
+              <Stack gap={2} align="center">
+                <Container size="sm" px={0}>
+                  <Alert color="blue" variant="light" role="status" aria-live="polite">
+                    Loading campaigns...{campaignLoadProgress.total > 0 ? ` (${campaignLoadProgress.completed}/${campaignLoadProgress.total} processed)` : ''}
+                  </Alert>
+                </Container>
+              </Stack>
             </Stack>
-          </Stack>
-        </Center>
-      ) : (
-        <CardGallery
-          campaigns={campaigns || []}
-          userPermissions={permissions}
-          accessMode={localAccessMode}
-          galleryBehaviorSettings={galleryBehaviorSettings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
-          isAdmin={isAdmin}
-          isAuthenticated={isAuthenticated}
-          onAccessModeChange={setLocalAccessMode}
-          onCampaignsUpdated={campaignsMutator}
-          onNotify={handleAdminNotify}
-          apiClient={apiClient}
+          </Center>
+        ) : (
+          <CardGallery
+            campaigns={campaigns || []}
+            userPermissions={permissions}
+            accessMode={localAccessMode}
+            galleryBehaviorSettings={resolvedSettings}
+            isAdmin={isAdmin}
+            isAuthenticated={isAuthenticated}
+            onAccessModeChange={setLocalAccessMode}
+            onCampaignsUpdated={campaignsMutator}
+            onNotify={handleAdminNotify}
+            apiClient={apiClient}
+          />
+        )}
+
+        <UnifiedCampaignModal modal={editModal} galleryBehaviorSettings={resolvedSettings} />
+
+        <ArchiveCampaignModal
+          opened={!!archiveModal.archiveModalCampaign}
+          campaign={archiveModal.archiveModalCampaign}
+          onClose={() => archiveModal.setArchiveModalCampaign(null)}
+          onConfirm={archiveModal.confirmArchiveCampaign}
         />
-      )}
 
-      <UnifiedCampaignModal modal={editModal} galleryBehaviorSettings={resolvedSettings} />
-
-      <ArchiveCampaignModal
-        opened={!!archiveModal.archiveModalCampaign}
-        campaign={archiveModal.archiveModalCampaign}
-        onClose={() => archiveModal.setArchiveModalCampaign(null)}
-        onConfirm={archiveModal.confirmArchiveCampaign}
-      />
-
-      <AddExternalMediaModal
-        opened={!!externalMediaModal.externalMediaCampaign}
-        dropRef={externalMediaModal.dropRef}
-        selectedFile={externalMediaModal.selectedFile}
-        onSelectFile={externalMediaModal.setSelectedFile}
-        previewUrl={externalMediaModal.previewUrl}
-        uploadTitle={externalMediaModal.uploadTitle}
-        onUploadTitleChange={externalMediaModal.setUploadTitle}
-        uploadCaption={externalMediaModal.uploadCaption}
-        onUploadCaptionChange={externalMediaModal.setUploadCaption}
-        uploadProgress={externalMediaModal.uploadProgress}
-        uploading={externalMediaModal.uploading}
-        onUpload={externalMediaModal.confirmUploadMedia}
-        externalUrl={externalMediaModal.externalMediaUrl}
-        onExternalUrlChange={externalMediaModal.setExternalMediaUrl}
-        externalError={externalMediaModal.externalMediaError}
-        onFetchOEmbed={externalMediaModal.fetchExternalPreview}
-        externalLoading={externalMediaModal.externalMediaLoading}
-        onAddExternal={externalMediaModal.confirmAddExternalMedia}
-        externalPreview={externalMediaModal.externalMediaPreview}
-        onClose={externalMediaModal.closeExternalMediaModal}
-      />
-    </div>
+        <AddExternalMediaModal
+          opened={!!externalMediaModal.externalMediaCampaign}
+          dropRef={externalMediaModal.dropRef}
+          selectedFile={externalMediaModal.selectedFile}
+          onSelectFile={externalMediaModal.setSelectedFile}
+          previewUrl={externalMediaModal.previewUrl}
+          uploadTitle={externalMediaModal.uploadTitle}
+          onUploadTitleChange={externalMediaModal.setUploadTitle}
+          uploadCaption={externalMediaModal.uploadCaption}
+          onUploadCaptionChange={externalMediaModal.setUploadCaption}
+          uploadProgress={externalMediaModal.uploadProgress}
+          uploading={externalMediaModal.uploading}
+          onUpload={externalMediaModal.confirmUploadMedia}
+          externalUrl={externalMediaModal.externalMediaUrl}
+          onExternalUrlChange={externalMediaModal.setExternalMediaUrl}
+          externalError={externalMediaModal.externalMediaError}
+          onFetchOEmbed={externalMediaModal.fetchExternalPreview}
+          externalLoading={externalMediaModal.externalMediaLoading}
+          onAddExternal={externalMediaModal.confirmAddExternalMedia}
+          externalPreview={externalMediaModal.externalMediaPreview}
+          onClose={externalMediaModal.closeExternalMediaModal}
+        />
+      </div>
     </CampaignContextProvider>
   );
 }

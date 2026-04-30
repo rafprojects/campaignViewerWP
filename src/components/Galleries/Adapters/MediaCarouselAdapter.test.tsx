@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from '@/test/test-utils';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem } from '@/types';
 
 import { MediaCarouselInner } from './MediaCarouselAdapter';
+import { resolveGalleryComponentCommonSettings } from './_shared/runtimeCommon';
 
 vi.mock('@/components/Galleries/Shared/Lightbox', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="lightbox-open" /> : null),
@@ -39,12 +40,14 @@ describe('MediaCarouselInner', () => {
     dotNavEnabled: true,
     dotNavPosition: 'below' as const,
   };
+  const commonSettings = resolveGalleryComponentCommonSettings(settings);
 
   it('treats the centered multi-card slide as the active item', () => {
     render(
       <MediaCarouselInner
         media={media}
         settings={settings}
+        commonSettings={commonSettings}
         breakpoint="desktop"
         maxWidth={1200}
       />,
@@ -59,6 +62,7 @@ describe('MediaCarouselInner', () => {
       <MediaCarouselInner
         media={media}
         settings={settings}
+        commonSettings={commonSettings}
         breakpoint="desktop"
         maxWidth={1200}
       />,
@@ -75,6 +79,7 @@ describe('MediaCarouselInner', () => {
       <MediaCarouselInner
         media={media}
         settings={settings}
+        commonSettings={commonSettings}
         breakpoint="desktop"
         maxWidth={1200}
       />,
@@ -91,6 +96,7 @@ describe('MediaCarouselInner', () => {
       <MediaCarouselInner
         media={media}
         settings={settings}
+        commonSettings={commonSettings}
         breakpoint="desktop"
         maxWidth={1200}
       />,
@@ -116,6 +122,7 @@ describe('MediaCarouselInner', () => {
       <MediaCarouselInner
         media={media}
         settings={autoplaySettings}
+        commonSettings={resolveGalleryComponentCommonSettings(autoplaySettings)}
         breakpoint="desktop"
         maxWidth={1200}
       />,
@@ -135,6 +142,7 @@ describe('MediaCarouselInner', () => {
       <MediaCarouselInner
         media={media}
         settings={noAutoplaySettings}
+        commonSettings={resolveGalleryComponentCommonSettings(noAutoplaySettings)}
         breakpoint="desktop"
         maxWidth={1200}
       />,

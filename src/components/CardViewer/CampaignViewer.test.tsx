@@ -316,7 +316,6 @@ describe('CampaignViewer', () => {
           hasAccess
           galleryBehaviorSettings={{
             ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-            unifiedGalleryEnabled: false,
             galleryConfig: {
               mode: 'per-type',
               breakpoints: {},
@@ -344,7 +343,6 @@ describe('CampaignViewer', () => {
           hasAccess
           galleryBehaviorSettings={{
             ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-            unifiedGalleryEnabled: true,
             galleryConfig: {
               mode: 'unified',
               breakpoints: {},

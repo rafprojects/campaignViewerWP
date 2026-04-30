@@ -3,13 +3,19 @@ import type {
   GalleryBehaviorSettings,
   GalleryConfigScope,
   MediaItem,
+  ResolvedGallerySectionRuntime,
 } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { normalizeAdapterId } from '@/components/Galleries/Adapters/adapterRegistry';
 
 import {
+  buildCampaignGalleryOverrideEditorValue,
+} from './campaignGalleryOverrides';
+
+import {
+  applyResolvedGalleryAdapterSettings,
   resolveAdapterId,
-  resolveEffectiveGallerySettings,
+  resolveGallerySectionRuntime,
   resolveUnifiedAdapterId,
 } from './resolveAdapterId';
 
@@ -28,6 +34,7 @@ export interface CampaignGallerySectionRenderPlan {
   media: MediaItem[];
   adapterId: string;
   settings: GalleryBehaviorSettings;
+  runtime: ResolvedGallerySectionRuntime;
   wrapper: CampaignGalleryWrapperPlan;
 }
 
@@ -35,36 +42,25 @@ function sortCampaignMedia(media: MediaItem[]): MediaItem[] {
   return [...media].sort((left, right) => left.order - right.order);
 }
 
+function resolveCampaignGalleryOverrides(campaign: Campaign) {
+  return buildCampaignGalleryOverrideEditorValue(campaign);
+}
+
 function buildWrapperPlan(
   scope: CampaignGalleryRenderScope,
   settings: GalleryBehaviorSettings,
+  runtime: ResolvedGallerySectionRuntime,
 ): CampaignGalleryWrapperPlan {
-  if (scope === 'unified') {
-    return {
-      bgType: settings.unifiedBgType,
-      bgColor: settings.unifiedBgColor,
-      bgGradient: settings.unifiedBgGradient,
-      bgImageUrl: settings.unifiedBgImageUrl,
-      borderRadius: Math.max(settings.imageBorderRadius ?? 0, settings.videoBorderRadius ?? 0),
-    };
-  }
-
-  if (scope === 'image') {
-    return {
-      bgType: settings.imageBgType,
-      bgColor: settings.imageBgColor,
-      bgGradient: settings.imageBgGradient,
-      bgImageUrl: settings.imageBgImageUrl,
-      borderRadius: settings.imageBorderRadius ?? 0,
-    };
-  }
-
   return {
-    bgType: settings.videoBgType,
-    bgColor: settings.videoBgColor,
-    bgGradient: settings.videoBgGradient,
-    bgImageUrl: settings.videoBgImageUrl,
-    borderRadius: settings.videoBorderRadius ?? 0,
+    bgType: runtime.background.type,
+    bgColor: runtime.background.color,
+    bgGradient: runtime.background.gradient,
+    bgImageUrl: runtime.background.imageUrl,
+    borderRadius: scope === 'unified'
+      ? Math.max(settings.imageBorderRadius ?? 0, settings.videoBorderRadius ?? 0)
+      : scope === 'image'
+        ? settings.imageBorderRadius ?? 0
+        : settings.videoBorderRadius ?? 0,
   };
 }
 
@@ -97,22 +93,25 @@ export function resolveUnifiedCampaignGalleryRenderPlan(
   breakpoint: Breakpoint,
 ): CampaignGallerySectionRenderPlan | null {
   const media = sortCampaignMedia([...campaign.videos, ...campaign.images]);
+  const galleryOverrides = resolveCampaignGalleryOverrides(campaign);
   if (!media.length) {
     return null;
   }
 
-  const resolvedSettings = resolveEffectiveGallerySettings(settings, breakpoint, 'unified', campaign.galleryOverrides);
+  const runtime = resolveGallerySectionRuntime(settings, breakpoint, 'unified', galleryOverrides);
+  const resolvedSettings = applyResolvedGalleryAdapterSettings(settings, runtime);
 
   return {
     scope: 'unified',
     media,
     adapterId: normalizeAdapterId(
       resolveUnifiedAdapterId(settings, breakpoint, {
-        galleryOverrides: campaign.galleryOverrides,
+        galleryOverrides,
       }),
     ),
     settings: resolvedSettings,
-    wrapper: buildWrapperPlan('unified', resolvedSettings),
+    runtime,
+    wrapper: buildWrapperPlan('unified', resolvedSettings, runtime),
   };
 }
 
@@ -123,13 +122,15 @@ export function resolvePerTypeCampaignGalleryRenderPlan(
   scope: Extract<CampaignGalleryRenderScope, 'image' | 'video'>,
 ): CampaignGallerySectionRenderPlan | null {
   const media = sortCampaignMedia(scope === 'image' ? campaign.images : campaign.videos);
+  const galleryOverrides = resolveCampaignGalleryOverrides(campaign);
   if (!media.length) {
     return null;
   }
 
+  const runtime = resolveGallerySectionRuntime(settings, breakpoint, scope, galleryOverrides);
   const resolvedSettings = applyScopeSpecificSettings(
     scope,
-    resolveEffectiveGallerySettings(settings, breakpoint, scope, campaign.galleryOverrides),
+    applyResolvedGalleryAdapterSettings(settings, runtime),
   );
 
   return {
@@ -137,17 +138,17 @@ export function resolvePerTypeCampaignGalleryRenderPlan(
     media,
     adapterId: normalizeAdapterId(
       resolveAdapterId(settings, scope, breakpoint, {
-        galleryOverrides: campaign.galleryOverrides,
-        legacyOverrideId: scope === 'image' ? campaign.imageAdapterId : campaign.videoAdapterId,
+        galleryOverrides,
       }),
     ),
     settings: resolvedSettings,
-    wrapper: buildWrapperPlan(scope, resolvedSettings),
+    runtime,
+    wrapper: buildWrapperPlan(scope, resolvedSettings, runtime),
   };
 }
 
 export function shouldUseEqualHeightPerTypeLayout(
   ...plans: Array<CampaignGallerySectionRenderPlan | null>
 ): boolean {
-  return plans.some((plan) => Boolean(plan?.settings.perTypeSectionEqualHeight));
+  return plans.some((plan) => Boolean(plan?.runtime.common.perTypeSectionEqualHeight));
 }

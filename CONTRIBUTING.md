@@ -20,7 +20,7 @@ Three hooks are managed by [husky](https://typicode.github.io/husky):
 |------|------|-----------|
 | `pre-commit` | `lint-staged` | ESLint errors, TypeScript errors (project-wide) |
 | `commit-msg` | `commitlint` | Non-conventional commit message format |
-| `pre-push` | `vitest run` | Any failing test |
+| `pre-push` | `vitest run` | Any failing Vitest test |
 
 ### Bypassing hooks
 
@@ -102,21 +102,42 @@ npx tsc --noEmit --skipLibCheck
 
 ## Running Tests
 
+The fastest reliable broad validation sweep is:
+
 ```bash
-# Run all unit tests once
-npm test
-
-# Run in watch mode during development
-npm run test:watch
-
-# Run with coverage report
-npm run test:coverage
-
-# Run end-to-end tests (requires running WP instance)
+npm run build:wp
+npm run test:silent
 npm run test:e2e
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
-The `pre-push` hook runs `npx vitest run` automatically before every `git push`.
+If the default Vitest runner is noisy or looks hung, switch to the serial triage commands before assuming a product regression:
+
+```bash
+npm run test:quieter-triage
+npm run test:triage
+```
+
+For PHPUnit from a fresh checkout:
+
+```bash
+npm install
+cd wp-plugin/wp-super-gallery
+composer install
+cd ../..
+npx wp-env start
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ls vendor/bin/phpunit phpunit.xml.dist tests/bootstrap.php"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+```
+
+Key points:
+
+- Run `npx wp-env ...` from the repo root because `.wp-env.json` lives there.
+- Run `composer ...` from `wp-plugin/wp-super-gallery` because that is where `composer.json` and `vendor/` live.
+- Docker must be running before `npx wp-env start`.
+- The `pre-push` hook only runs `npx vitest run`; it does not cover Playwright or PHPUnit.
+
+For the full troubleshooting runbook, use `docs/testing/TESTING_QUICKSTART.md`.
 
 ---
 
@@ -134,5 +155,5 @@ chore/<short-description>             # maintenance
 
 - TypeScript strict mode is enabled — no `any` without an explanatory comment
 - Mantine v7 for all UI components — do not introduce parallel UI libraries
-- SWR for server state — do not use React Query or similar
+- Follow the existing data-fetching pattern for the feature you are editing: SWR remains in older app flows, while the settings refactor uses TanStack Query for settings-scoped server state
 - No `console.log` in committed code (ESLint `no-console` rule is active)

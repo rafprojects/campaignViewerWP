@@ -143,7 +143,6 @@ describe('UnifiedGallerySection', () => {
 
   it('falls back to the shared adapter resolver output when layout-builder is unsupported on mobile', () => {
     const settings = makeSettings({
-      unifiedGalleryAdapterId: 'layout-builder',
       galleryConfig: {
         mode: 'unified',
         breakpoints: {
@@ -320,7 +319,6 @@ describe('PerTypeGallerySection', () => {
 
   it('falls back from unsupported mobile layout-builder selections to classic for per-type sections', () => {
     const settings = makeSettings({
-      imageGalleryAdapterId: 'classic',
       galleryConfig: {
         mode: 'per-type',
         breakpoints: {

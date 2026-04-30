@@ -4,7 +4,7 @@ import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, G
 import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
 import { ModalSelect } from '@/components/Common/ModalSelect';
-import { buildGalleryConfigFromLegacySettings, cloneGalleryConfig, GALLERY_BREAKPOINTS, mergeGalleryConfig } from '@/utils/galleryConfig';
+import { cloneGalleryConfig, collectGalleryAdapterSettingValues, GALLERY_BREAKPOINTS, getGalleryConfigScopeAdapterIds, resolveGalleryConfig } from '@/utils/galleryConfig';
 import { DimensionInput } from './DimensionInput';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
@@ -22,11 +22,6 @@ const BREAKPOINT_LABELS: Record<GalleryConfigBreakpoint, string> = {
   tablet: 'Tablet',
   mobile: 'Mobile',
 };
-
-function buildResolvedGalleryConfig(settings: GalleryBehaviorSettings): GalleryConfig {
-  const seed = buildGalleryConfigFromLegacySettings(settings);
-  return settings.galleryConfig ? mergeGalleryConfig(seed, settings.galleryConfig) : seed;
-}
 
 function getConfiguredAdapterId(
   galleryConfig: GalleryConfig,
@@ -60,13 +55,20 @@ function getConfiguredScopeAdapterIds(
   galleryConfig: GalleryConfig,
   scope: Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>,
 ): string[] {
-  return GALLERY_BREAKPOINTS
-    .map((breakpoint) => getConfiguredAdapterId(galleryConfig, breakpoint, scope))
-    .filter((adapterId) => adapterId.length > 0);
+  return getGalleryConfigScopeAdapterIds(galleryConfig, scope);
+}
+
+function getResolvedAdapterFieldValue<K extends keyof GalleryBehaviorSettings>(
+  resolvedAdapterSettings: Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>>,
+  settings: GalleryBehaviorSettings,
+  key: K,
+): GalleryBehaviorSettings[K] {
+  return (resolvedAdapterSettings[key] as GalleryBehaviorSettings[K] | undefined) ?? settings[key];
 }
 
 function renderSettingFields(
   groupDefinition: AdapterSettingGroupDefinition,
+  resolvedAdapterSettings: Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>>,
   settings: GalleryBehaviorSettings,
   updateSetting: UpdateGallerySetting,
   options?: {
@@ -85,7 +87,7 @@ function renderSettingFields(
             key={`${group}-${String(field.key)}`}
             label={field.label}
             description={field.description}
-            value={settings[field.key] as number | undefined}
+            value={getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined}
             onChange={(value) => updateSetting(field.key, (typeof value === 'number' ? value : field.fallback) as GalleryBehaviorSettings[typeof field.key])}
             min={field.min}
             max={field.max}
@@ -100,8 +102,8 @@ function renderSettingFields(
             key={`${group}-${String(field.key)}`}
             label={field.label}
             description={field.description}
-            value={(settings[field.key] as number | undefined) ?? field.fallback}
-            unit={(settings[field.unitKey] as string | undefined) ?? 'px'}
+            value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined) ?? field.fallback}
+            unit={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.unitKey) as string | undefined) ?? 'px'}
             onValueChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
             onUnitChange={(unit) => updateSetting(field.unitKey, unit as GalleryBehaviorSettings[typeof field.unitKey])}
             allowedUnits={field.allowedUnits}
@@ -117,7 +119,7 @@ function renderSettingFields(
             key={`${group}-${String(field.key)}`}
             label={field.label}
             description={field.description}
-            value={String(settings[field.key] as boolean | undefined ?? field.fallback)}
+            value={String((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as boolean | undefined) ?? field.fallback)}
             onChange={(value) => updateSetting(field.key, ((value ?? String(field.fallback)) === 'true') as GalleryBehaviorSettings[typeof field.key])}
             data={[
               { value: 'true', label: 'On' },
@@ -133,7 +135,7 @@ function renderSettingFields(
             key={`${group}-${String(field.key)}`}
             label={field.label}
             description={field.description}
-            value={(settings[field.key] as string | undefined) ?? field.fallback}
+            value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) ?? field.fallback}
             placeholder={field.placeholder}
             onChange={(event) => updateSetting(field.key, event.currentTarget.value as GalleryBehaviorSettings[typeof field.key])}
           />
@@ -146,7 +148,7 @@ function renderSettingFields(
             key={`${group}-${String(field.key)}`}
             label={field.label}
             description={field.description}
-            value={(settings[field.key] as string | undefined) ?? field.fallback}
+            value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) ?? field.fallback}
             onChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
           />
         );
@@ -158,7 +160,7 @@ function renderSettingFields(
           label={field.label}
           description={field.description}
           size={field.size}
-          value={settings[field.key] as string | undefined}
+          value={getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined}
           onChange={(value) => updateSetting(field.key, (value ?? field.fallback) as GalleryBehaviorSettings[typeof field.key])}
           data={field.options}
         />
@@ -168,6 +170,7 @@ function renderSettingFields(
 
 function renderSettingGroup(
   groupDefinition: AdapterSettingGroupDefinition,
+  resolvedAdapterSettings: Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>>,
   settings: GalleryBehaviorSettings,
   updateSetting: UpdateGallerySetting,
   imageAdapterIds: string[],
@@ -176,22 +179,22 @@ function renderSettingGroup(
 ) {
   if (groupDefinition.scopeMode === 'contextual') {
     if (isUnifiedMode) {
-      return renderSettingFields(groupDefinition, settings, updateSetting, { includeAppliesTo: ['unified'] });
+      return renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['unified'] });
     }
 
     return (
       <Group key={groupDefinition.group} grow>
         {anyAdapterUsesSettingGroup(imageAdapterIds, groupDefinition.group)
-          ? renderSettingFields(groupDefinition, settings, updateSetting, { includeAppliesTo: ['image'] })
+          ? renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['image'] })
           : null}
         {anyAdapterUsesSettingGroup(videoAdapterIds, groupDefinition.group)
-          ? renderSettingFields(groupDefinition, settings, updateSetting, { includeAppliesTo: ['video'] })
+          ? renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['video'] })
           : null}
       </Group>
     );
   }
 
-  const fields = renderSettingFields(groupDefinition, settings, updateSetting);
+  const fields = renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting);
 
   if (fields.length === 0) {
     return null;
@@ -209,7 +212,8 @@ function renderSettingGroup(
 }
 
 export function GalleryAdapterSettingsSection({ settings, updateSetting }: GalleryAdapterSettingsSectionProps) {
-  const resolvedGalleryConfig = buildResolvedGalleryConfig(settings);
+  const resolvedGalleryConfig = resolveGalleryConfig(settings);
+  const resolvedAdapterSettings = collectGalleryAdapterSettingValues(resolvedGalleryConfig);
   const isUnifiedMode = resolvedGalleryConfig.mode === 'unified';
   const unifiedAdapterIds = getConfiguredScopeAdapterIds(resolvedGalleryConfig, 'unified');
   const imageAdapterIds = getConfiguredScopeAdapterIds(resolvedGalleryConfig, 'image');
@@ -233,7 +237,10 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
         label="Unified Gallery Mode"
         description="When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
         checked={isUnifiedMode}
-        onChange={(e) => updateSetting('unifiedGalleryEnabled', e.currentTarget.checked)}
+        onChange={(e) => updateSetting('galleryConfig', {
+          ...resolvedGalleryConfig,
+          mode: e.currentTarget.checked ? 'unified' : 'per-type',
+        })}
       />
 
       {isUnifiedMode ? (
@@ -265,7 +272,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
                   onChange={(value) => updateConfiguredAdapterId(
                     breakpoint,
                     'unified',
-                    value ?? settings.unifiedGalleryAdapterId ?? 'compact-grid',
+                    value ?? (getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'unified') || 'compact-grid'),
                   )}
                   data={adapterOptions}
                 />
@@ -317,9 +324,9 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
         </Box>
       )}
 
-      {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+      {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
 
-      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
     </Stack>
   );
 }

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { createPortal } from 'react-dom'
+import { QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import { shadowStyles } from './shadowStyles'
 import { MantineProvider } from '@mantine/core'
@@ -11,6 +12,7 @@ import '@mantine/notifications/styles.css'
 import 'dockview/dist/styles/dockview.css'
 import { startWebVitalsMonitoring } from './services/monitoring/webVitals'
 import { initSentry } from './services/monitoring/sentry'
+import { createAppQueryClient } from './services/queryClient'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { useTheme } from './hooks/useTheme'
 import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/themeScope'
@@ -121,21 +123,24 @@ const renderApp = (
 ) => {
   const isShadow = !!shadowRootEl
   const themeScopeSelector = shadowRootEl ? undefined : ensureThemeScopeSelector(hostElement)
+  const queryClient = createAppQueryClient()
 
   createRoot(mountNode).render(
     <StrictMode>
-      <ThemeProvider
-        shadowRoot={shadowRootEl ?? null}
-        hostElement={hostElement}
-        themeScopeSelector={themeScopeSelector}
-        allowPersistence={allowThemePersistence}
-      >
-        <ThemedApp
-          props={props}
-          isShadowDom={isShadow}
-          shadowRootEl={shadowRootEl}
-        />
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider
+          shadowRoot={shadowRootEl ?? null}
+          hostElement={hostElement}
+          themeScopeSelector={themeScopeSelector}
+          allowPersistence={allowThemePersistence}
+        >
+          <ThemedApp
+            props={props}
+            isShadowDom={isShadow}
+            shadowRootEl={shadowRootEl}
+          />
+        </ThemeProvider>
+      </QueryClientProvider>
     </StrictMode>,
   )
 }
@@ -146,9 +151,9 @@ const mountWithShadow = (host: HTMLElement, props: MountProps) => {
     return
   }
   host.setAttribute('data-wpsg-mounted', 'true')
-  
+
   const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
-  
+
   if (!shadowRoot.querySelector('style[data-wpsg]')) {
     const styleTag = document.createElement('style')
     styleTag.setAttribute('data-wpsg', 'true')
@@ -174,12 +179,13 @@ const mountDefault = (host: HTMLElement, props: MountProps) => {
 /**
  * I-6: Mount multiple shortcodes via a single React root using portals.
  * Galleries rendered through portals share the same React tree, which means:
- *   • SWR request deduplication — identical keys are fetched only once.
+ *   • shared query/cache deduplication for settings and SWR-backed campaign data.
  *   • Reduced provider overhead — one StrictMode boundary for all galleries.
  * Each gallery still gets its own ThemeProvider + MantineProvider so shadow
  * DOM CSS variable scoping and per-instance config continue to work.
  */
 const sharedRootMap = new WeakMap<HTMLElement, Root>();
+const sharedQueryClientMap = new WeakMap<HTMLElement, ReturnType<typeof createAppQueryClient>>();
 
 const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
   interface MountInstance {
@@ -247,26 +253,34 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
     sharedRootMap.set(container, root);
   }
 
+  let queryClient = sharedQueryClientMap.get(container)
+  if (!queryClient) {
+    queryClient = createAppQueryClient()
+    sharedQueryClientMap.set(container, queryClient)
+  }
+
   root.render(
     <StrictMode>
-      {instances.map((inst, i) =>
-        createPortal(
-          <ThemeProvider
-            shadowRoot={inst.shadowRoot ?? null}
-            hostElement={inst.hostElement}
-            themeScopeSelector={inst.themeScopeSelector}
-            allowPersistence={i === 0 && allowThemePersistence}
-          >
-            <ThemedApp
-              props={inst.props}
-              isShadowDom={!!inst.shadowRoot}
-              shadowRootEl={inst.shadowRoot}
-            />
-          </ThemeProvider>,
-          inst.mountPoint,
-          inst.portalKey,
-        ),
-      )}
+      <QueryClientProvider client={queryClient}>
+        {instances.map((inst, i) =>
+          createPortal(
+            <ThemeProvider
+              shadowRoot={inst.shadowRoot ?? null}
+              hostElement={inst.hostElement}
+              themeScopeSelector={inst.themeScopeSelector}
+              allowPersistence={i === 0 && allowThemePersistence}
+            >
+              <ThemedApp
+                props={inst.props}
+                isShadowDom={!!inst.shadowRoot}
+                shadowRootEl={inst.shadowRoot}
+              />
+            </ThemeProvider>,
+            inst.mountPoint,
+            inst.portalKey,
+          ),
+        )}
+      </QueryClientProvider>
     </StrictMode>,
   )
 }

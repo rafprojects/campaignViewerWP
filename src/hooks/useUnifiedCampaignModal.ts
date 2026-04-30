@@ -18,7 +18,6 @@ import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 import {
   buildCampaignGalleryOverrideEditorValue,
-  normalizeCampaignLegacyAdapterOverrides,
 } from '@/utils/campaignGalleryOverrides';
 import { useXhrUpload } from './useXhrUpload';
 import type { GalleryConfig } from '@/types';
@@ -35,8 +34,6 @@ export interface UnifiedCampaignFormState {
   publishAt: string;
   unpublishAt: string;
   layoutTemplateId: string;
-  imageAdapterId: string;
-  videoAdapterId: string;
   galleryOverrides?: Partial<GalleryConfig>;
   categories: string[];
 }
@@ -52,8 +49,6 @@ const emptyForm: UnifiedCampaignFormState = {
   publishAt: '',
   unpublishAt: '',
   layoutTemplateId: '',
-  imageAdapterId: '',
-  videoAdapterId: '',
   galleryOverrides: undefined,
   categories: [],
 };
@@ -115,14 +110,7 @@ export function useUnifiedCampaignModal({
     setMode('edit');
     setEditingCampaignId(String(c.id));
     const galleryOverrides = buildCampaignGalleryOverrideEditorValue({
-      imageAdapterId: c.imageAdapterId ?? '',
-      videoAdapterId: c.videoAdapterId ?? '',
       galleryOverrides: cloneGalleryConfig(c.galleryOverrides),
-    });
-    const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
-      imageAdapterId: c.imageAdapterId ?? '',
-      videoAdapterId: c.videoAdapterId ?? '',
-      galleryOverrides,
     });
     setFormState({
       title: c.title ?? '',
@@ -138,8 +126,6 @@ export function useUnifiedCampaignModal({
       publishAt: c.publishAt ?? '',
       unpublishAt: c.unpublishAt ?? '',
       layoutTemplateId: c.layoutTemplateId ?? '',
-      imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
-      videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
       galleryOverrides,
       categories: c.categories ?? [],
       borderColor: (c as Campaign).borderColor,

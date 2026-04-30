@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, render, screen, waitFor, fireEvent } from '@/test/test-utils';
 import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
-import type { GalleryConfig } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryConfig } from '@/types';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 const { setThemeSpy, setPreviewThemeSpy } = vi.hoisted(() => ({
@@ -125,6 +125,8 @@ const seedSettings = {
   scrollAnimationDurationMs: 180,
   scrollAnimationEasing: 'ease' as const,
 };
+
+const defaultResponsiveConfig = DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig;
 
 /**
  * Wait until the SettingsPanel loading spinner has cleared and the tab bar
@@ -441,7 +443,7 @@ describe('SettingsPanel', () => {
     });
   });
 
-  it('seeds shared editor viewport background fields from flat settings', async () => {
+  it('does not seed shared editor viewport background fields from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -463,14 +465,24 @@ describe('SettingsPanel', () => {
     await waitForTabs();
     const { value } = await openResponsiveConfigEditor();
 
-    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgType).toBe('solid');
-    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgColor).toBe('#112233');
-    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgType).toBe('gradient');
-    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgGradient).toBe(
-      'linear-gradient(135deg, #123456 0%, #654321 100%)',
+    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgType).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.viewportBgType,
     );
-    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgType).toBe('image');
-    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgImageUrl).toBe('https://example.com/unified-bg.jpg');
+    expect(value?.breakpoints?.desktop?.image?.common?.viewportBgColor).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.viewportBgColor,
+    );
+    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgType).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.video?.common?.viewportBgType,
+    );
+    expect(value?.breakpoints?.desktop?.video?.common?.viewportBgGradient).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.video?.common?.viewportBgGradient,
+    );
+    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgType).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.unified?.common?.viewportBgType,
+    );
+    expect(value?.breakpoints?.desktop?.unified?.common?.viewportBgImageUrl).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.unified?.common?.viewportBgImageUrl,
+    );
   });
 
   it('prefers explicit nested gallery config values when seeding the shared editor', async () => {
@@ -600,7 +612,7 @@ describe('SettingsPanel', () => {
     });
   });
 
-  it('shows shared gallery height controls for flat gallery sizing settings', async () => {
+  it('does not seed shared gallery height controls from flat gallery sizing settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -618,13 +630,15 @@ describe('SettingsPanel', () => {
     await waitForTabs();
     const { value } = await openResponsiveConfigEditor();
 
-    // The seed should propagate gallerySizingMode and galleryManualHeight
-    // into the common settings for at least one breakpoint scope.
     const desktopImage = value?.breakpoints?.desktop?.image?.common;
     const desktopVideo = value?.breakpoints?.desktop?.video?.common;
     const anyScope = desktopImage ?? desktopVideo;
-    expect(anyScope?.gallerySizingMode).toBe('manual');
-    expect(anyScope?.galleryManualHeight).toBe('75vh');
+    expect(anyScope?.gallerySizingMode).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.gallerySizingMode,
+    );
+    expect(anyScope?.galleryManualHeight).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.galleryManualHeight,
+    );
   });
 
   it('shows error notification when save fails', async () => {
@@ -878,6 +892,56 @@ describe('SettingsPanel', () => {
     expect(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
   });
 
+  it('updates carousel settings visibility from nested gallery config adapter changes', async () => {
+    const masonryLabel = getAdapterSelectOptions({ context: 'unified-gallery', breakpoint: 'desktop' })
+      .find((option) => option.value === 'masonry')?.label;
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          galleryConfig: {
+            mode: 'unified',
+            breakpoints: {
+              desktop: {
+                unified: { adapterId: 'classic' },
+              },
+              tablet: {
+                unified: { adapterId: 'classic' },
+              },
+              mobile: {
+                unified: { adapterId: 'classic' },
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
+    await screen.findByText('Gallery Adapters');
+
+    expect(screen.getByText('Carousel Settings')).toBeInTheDocument();
+
+    for (const label of [
+      'Desktop Unified Gallery Adapter',
+      'Tablet Unified Gallery Adapter',
+      'Mobile Unified Gallery Adapter',
+    ]) {
+      fireEvent.click(screen.getByLabelText(label, { selector: 'input' }));
+      fireEvent.click(screen.getByRole('option', { name: masonryLabel ?? 'Masonry' }));
+    }
+
+    await waitFor(() => {
+      expect(screen.queryByText('Carousel Settings')).toBeNull();
+    });
+  });
+
   it('writes unified breakpoint adapter selections directly to nested gallery config', async () => {
     const unifiedClassicLabel = getAdapterSelectOptions({ context: 'unified-gallery', breakpoint: 'desktop' })
       .find((option) => option.value === 'classic')?.label;
@@ -890,7 +954,9 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
-          unifiedGalleryEnabled: true,
+          galleryConfig: {
+            mode: 'unified',
+          },
         }}
       />
     );
@@ -929,7 +995,7 @@ describe('SettingsPanel', () => {
     expect(value?.breakpoints?.mobile?.image?.adapterId).toBe('masonry');
   });
 
-  it('seeds shared editor adapter-specific values from flat settings', async () => {
+  it('does not seed shared editor adapter-specific values from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -938,8 +1004,14 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
-          gallerySelectionMode: 'per-breakpoint',
-          desktopImageAdapterId: 'masonry',
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: { adapterId: 'masonry' },
+              },
+            },
+          },
           masonryColumns: 4,
           masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
         }}
@@ -949,14 +1021,13 @@ describe('SettingsPanel', () => {
     await waitForTabs();
     const { value } = await openResponsiveConfigEditor();
 
-    // The seed should include the masonry adapter with masonryColumns in adapterSettings
     const desktopImage = value?.breakpoints?.desktop?.image;
     expect(desktopImage?.adapterId).toBe('masonry');
-    expect(desktopImage?.adapterSettings?.masonryColumns).toBe(4);
-    expect(desktopImage?.adapterSettings?.masonryAutoColumnBreakpoints).toBe('480:2,768:3,1024:4,1280:5');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('masonryColumns');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('masonryAutoColumnBreakpoints');
   });
 
-  it('seeds shared editor classic carousel values from flat settings', async () => {
+  it('does not seed shared editor classic carousel values from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -1005,36 +1076,13 @@ describe('SettingsPanel', () => {
       value?.breakpoints?.desktop?.video,
       value?.breakpoints?.desktop?.unified,
     ];
-    const adapterSettings = scopes.find(s => s?.adapterSettings?.carouselVisibleCards !== undefined)?.adapterSettings;
-    expect(adapterSettings).toBeDefined();
-    expect(adapterSettings?.carouselVisibleCards).toBe(3);
-    expect(adapterSettings?.carouselLoop).toBe(false);
-    expect(adapterSettings?.navArrowPosition).toBe('bottom');
-    expect(adapterSettings?.navArrowSize).toBe(42);
-    expect(adapterSettings?.navArrowColor).toBe('#ff8800');
-    expect(adapterSettings?.navArrowBgColor).toBe('rgba(1,2,3,0.5)');
-    expect(adapterSettings?.navArrowEdgeInset).toBe(18);
-    expect(adapterSettings?.navArrowMinHitTarget).toBe(56);
-    expect(adapterSettings?.navArrowFadeDurationMs).toBe(320);
-    expect(adapterSettings?.navArrowScaleTransitionMs).toBe(210);
-    expect(adapterSettings?.dotNavEnabled).toBe(false);
-    expect(adapterSettings?.dotNavPosition).toBe('overlay-top');
-    expect(adapterSettings?.dotNavMaxVisibleDots).toBe(9);
-    expect(adapterSettings?.dotNavActiveColor).toBe('#00ffaa');
-    expect(adapterSettings?.dotNavInactiveColor).toBe('rgba(4,5,6,0.25)');
-    expect(adapterSettings?.viewportHeightMobileRatio).toBe(0.7);
-    expect(adapterSettings?.viewportHeightTabletRatio).toBe(0.85);
-    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageBorderRadius).toBe(14);
-    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoBorderRadius).toBe(18);
-    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageViewportHeight).toBe(560);
-    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoViewportHeight).toBe(500);
-    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageShadowPreset).toBe('custom');
-    expect(value?.breakpoints?.desktop?.image?.adapterSettings?.imageShadowCustom).toBe('0 8px 24px rgba(0,0,0,0.35)');
-    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoShadowPreset).toBe('strong');
-    expect(value?.breakpoints?.desktop?.video?.adapterSettings?.videoShadowCustom).toBe('0 6px 18px rgba(0,0,0,0.3)');
+    expect(scopes.some((scope) => scope?.adapterSettings?.carouselVisibleCards !== undefined)).toBe(false);
+    expect(scopes.some((scope) => scope?.adapterSettings?.navArrowPosition !== undefined)).toBe(false);
+    expect(value?.breakpoints?.desktop?.image?.adapterSettings).not.toHaveProperty('imageBorderRadius');
+    expect(value?.breakpoints?.desktop?.video?.adapterSettings).not.toHaveProperty('videoBorderRadius');
   });
 
-  it('seeds shared editor photo-grid values from flat settings', async () => {
+  it('does not seed shared editor photo-grid values from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -1043,8 +1091,14 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
-          gallerySelectionMode: 'per-breakpoint',
-          desktopImageAdapterId: 'justified',
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: { adapterId: 'justified' },
+              },
+            },
+          },
           thumbnailGap: 12,
           mosaicTargetRowHeight: 240,
         }}
@@ -1056,11 +1110,11 @@ describe('SettingsPanel', () => {
 
     const desktopImage = value?.breakpoints?.desktop?.image;
     expect(desktopImage?.adapterId).toBe('justified');
-    expect(desktopImage?.adapterSettings?.thumbnailGap).toBe(12);
-    expect(desktopImage?.adapterSettings?.mosaicTargetRowHeight).toBe(240);
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('thumbnailGap');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('mosaicTargetRowHeight');
   });
 
-  it('seeds shared editor shape-specific values from flat settings', async () => {
+  it('does not seed shared editor shape-specific values from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -1069,8 +1123,14 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
-          gallerySelectionMode: 'per-breakpoint',
-          desktopImageAdapterId: 'hexagonal',
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: { adapterId: 'hexagonal' },
+              },
+            },
+          },
           tileBorderWidth: 2,
           tileBorderColor: '#ff0000',
           tileHoverBounce: false,
@@ -1088,17 +1148,12 @@ describe('SettingsPanel', () => {
 
     const desktopImage = value?.breakpoints?.desktop?.image;
     expect(desktopImage?.adapterId).toBe('hexagonal');
-    expect(desktopImage?.adapterSettings?.tileBorderWidth).toBe(2);
-    expect(desktopImage?.adapterSettings?.tileBorderColor).toBe('#ff0000');
-    expect(desktopImage?.adapterSettings?.tileHoverBounce).toBe(false);
-    expect(desktopImage?.adapterSettings?.tileGlowEnabled).toBe(true);
-    expect(desktopImage?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
-    expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
-    expect(desktopImage?.adapterSettings?.tileGapX).toBe(12);
-    expect(desktopImage?.adapterSettings?.tileGapY).toBe(10);
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('tileBorderWidth');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('tileGlowColor');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('tileGapX');
   });
 
-  it('seeds shared editor layout-builder defaults from flat settings', async () => {
+  it('does not seed shared editor layout-builder defaults from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -1107,8 +1162,14 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
-          gallerySelectionMode: 'per-breakpoint',
-          desktopImageAdapterId: 'layout-builder',
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: { adapterId: 'layout-builder' },
+              },
+            },
+          },
           layoutBuilderScope: 'viewport',
           tileGlowColor: '#00ffaa',
           tileGlowSpread: 18,
@@ -1121,9 +1182,9 @@ describe('SettingsPanel', () => {
 
     const desktopImage = value?.breakpoints?.desktop?.image;
     expect(desktopImage?.adapterId).toBe('layout-builder');
-    expect(desktopImage?.adapterSettings?.layoutBuilderScope).toBe('viewport');
-    expect(desktopImage?.adapterSettings?.tileGlowColor).toBe('#00ffaa');
-    expect(desktopImage?.adapterSettings?.tileGlowSpread).toBe(18);
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('layoutBuilderScope');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('tileGlowColor');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('tileGlowSpread');
   });
 
   it('stores shared editor carousel adapter fields only in nested galleryConfig', async () => {
@@ -1443,7 +1504,7 @@ describe('SettingsPanel', () => {
     });
   });
 
-  it('seeds additional registry-driven adapter values from flat settings', async () => {
+  it('does not seed additional registry-driven adapter values from flat settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -1452,8 +1513,14 @@ describe('SettingsPanel', () => {
         onNotify={onNotify}
         initialSettings={{
           ...seedSettings,
-          gallerySelectionMode: 'per-breakpoint',
-          desktopImageAdapterId: 'compact-grid',
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: { adapterId: 'compact-grid' },
+              },
+            },
+          },
           gridCardWidth: 210,
           gridCardHeight: 260,
         }}
@@ -1463,14 +1530,13 @@ describe('SettingsPanel', () => {
     await waitForTabs();
     const { value } = await openResponsiveConfigEditor();
 
-    // The compact-grid adapter settings should be seeded
     const desktopImage = value?.breakpoints?.desktop?.image;
     expect(desktopImage?.adapterId).toBe('compact-grid');
-    expect(desktopImage?.adapterSettings?.gridCardWidth).toBe(210);
-    expect(desktopImage?.adapterSettings?.gridCardHeight).toBe(260);
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('gridCardWidth');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('gridCardHeight');
   });
 
-  it('shows shared section sizing controls for flat section sizing settings', async () => {
+  it('does not seed shared section sizing controls from flat section sizing settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -1494,15 +1560,27 @@ describe('SettingsPanel', () => {
 
     const common = value?.breakpoints?.desktop?.image?.common
       ?? value?.breakpoints?.desktop?.video?.common;
-    expect(common?.sectionMaxWidth).toBe(1100);
-    expect(common?.sectionMinWidth).toBe(360);
-    expect(common?.sectionHeightMode).toBe('manual');
-    expect(common?.sectionMaxHeight).toBe(620);
-    expect(common?.sectionMinHeight).toBe(260);
-    expect(common?.perTypeSectionEqualHeight).toBe(true);
+    expect(common?.sectionMaxWidth).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.sectionMaxWidth,
+    );
+    expect(common?.sectionMinWidth).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.sectionMinWidth,
+    );
+    expect(common?.sectionHeightMode).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.sectionHeightMode,
+    );
+    expect(common?.sectionMaxHeight).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.sectionMaxHeight,
+    );
+    expect(common?.sectionMinHeight).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.sectionMinHeight,
+    );
+    expect(common?.perTypeSectionEqualHeight).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.perTypeSectionEqualHeight,
+    );
   });
 
-  it('shows shared adapter sizing controls for flat adapter sizing settings', async () => {
+  it('does not seed shared adapter sizing controls from flat adapter sizing settings', async () => {
     render(
       <SettingsPanel
         opened={true}
@@ -1523,9 +1601,305 @@ describe('SettingsPanel', () => {
 
     const common = value?.breakpoints?.desktop?.image?.common
       ?? value?.breakpoints?.desktop?.video?.common;
-    expect(common?.adapterSizingMode).toBe('manual');
-    expect(common?.adapterMaxWidthPct).toBe(85);
-    expect(common?.adapterMaxHeightPct).toBe(90);
+    expect(common?.adapterSizingMode).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.adapterSizingMode,
+    );
+    expect(common?.adapterMaxWidthPct).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.adapterMaxWidthPct,
+    );
+    expect(common?.adapterMaxHeightPct).toBe(
+      defaultResponsiveConfig?.breakpoints?.desktop?.image?.common?.adapterMaxHeightPct,
+    );
+  });
+
+  it('reads nested gallery common settings in the Gallery & Media panels', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: {
+                  common: {
+                    sectionMaxWidth: 70,
+                    sectionMaxWidthUnit: '%',
+                    sectionHeightMode: 'manual',
+                    sectionMaxHeight: 60,
+                    sectionMaxHeightUnit: 'vh',
+                    adapterSizingMode: 'manual',
+                    adapterMaxWidthPct: 85,
+                    adapterMaxHeightPct: 90,
+                  },
+                },
+              },
+            },
+          },
+        }}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
+    await screen.findByText('Gallery Adapters');
+
+    fireEvent.click(screen.getByText('Section Sizing & Spacing'));
+    expect(await screen.findByLabelText('Gallery Section Max Width')).toHaveValue('70');
+    expect(screen.getByLabelText('Gallery Section Max Height')).toHaveValue('60');
+
+    fireEvent.click(screen.getByText('Adapter Sizing'));
+    expect(await screen.findByText('Adapter Max Width (%)')).toBeInTheDocument();
+    expect(screen.getByText('Adapter Max Height (%)')).toBeInTheDocument();
+  });
+
+  it('reads nested viewer common settings in inline Gallery & Media and Campaign Viewer panels', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: {
+                  common: {
+                    gallerySizingMode: 'manual',
+                    galleryManualHeight: '80vh',
+                    showCampaignGalleryLabels: false,
+                    galleryImageLabel: 'Frames',
+                  },
+                },
+              },
+            },
+          },
+        }}
+      />
+    );
+
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
+    expect(await screen.findByLabelText('Manual Gallery Height', { selector: 'input' })).toHaveValue('80vh');
+
+    fireEvent.click(screen.getByRole('tab', { name: /Campaign Viewer/i }));
+    await screen.findByText('Open Mode & Sizing');
+
+    fireEvent.click(screen.getByText('Gallery Labels'));
+    expect(await screen.findByLabelText('Image Gallery Label')).toHaveValue('Frames');
+  });
+
+  it('reads nested adapter settings in inline Gallery & Media panels', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          imageBorderRadius: 2,
+          videoBorderRadius: 4,
+          navArrowPosition: 'top',
+          galleryConfig: {
+            mode: 'per-type',
+            breakpoints: {
+              desktop: {
+                image: {
+                  adapterId: 'classic',
+                  adapterSettings: {
+                    imageBorderRadius: 14,
+                    navArrowPosition: 'bottom',
+                  },
+                },
+                video: {
+                  adapterId: 'classic',
+                  adapterSettings: {
+                    videoBorderRadius: 18,
+                  },
+                },
+              },
+            },
+          },
+        }}
+      />
+    );
+
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
+    expect(await screen.findByLabelText('Image Border Radius')).toHaveValue('14');
+    expect(screen.getByLabelText('Video Border Radius')).toHaveValue('18');
+
+    fireEvent.click(screen.getByText('Navigation'));
+    const navArrowPositionInputs = await screen.findAllByLabelText('Arrow Vertical Position', { selector: 'input' });
+    expect(navArrowPositionInputs[0]).toHaveValue('Bottom');
+  });
+
+  it('stores inline adapter setting edits only in nested galleryConfig', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(seedSettings);
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={seedSettings}
+      />
+    );
+
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
+    fireEvent.change(await screen.findByLabelText('Image Border Radius'), {
+      target: { value: '14' },
+    });
+
+    fireEvent.click(screen.getByText('Navigation'));
+    const navArrowPositionInputs = await screen.findAllByLabelText('Arrow Vertical Position', { selector: 'input' });
+    fireEvent.click(navArrowPositionInputs[0]);
+    fireEvent.click(screen.getByRole('option', { name: 'Bottom' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageBorderRadius');
+    expect(payload).not.toHaveProperty('navArrowPosition');
+    expect(payload).toMatchObject({
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                imageBorderRadius: 14,
+                navArrowPosition: 'bottom',
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+  });
+
+  it('stores inline viewer common edits only in nested galleryConfig', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(seedSettings);
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={seedSettings}
+      />
+    );
+
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
+    fireEvent.click(screen.getByLabelText('Height Constraint', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Manually control height' }));
+    fireEvent.change(await screen.findByLabelText('Manual Gallery Height', { selector: 'input' }), {
+      target: { value: '80vh' },
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: /Campaign Viewer/i }));
+    await screen.findByText('Open Mode & Sizing');
+
+    fireEvent.click(screen.getByText('Content Visibility'));
+    toggleSwitchByLabel('Show Gallery Labels');
+
+    fireEvent.click(screen.getByText('Gallery Labels'));
+    fireEvent.change(await screen.findByLabelText('Image Gallery Label'), {
+      target: { value: 'Frames' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('gallerySizingMode');
+    expect(payload).not.toHaveProperty('galleryManualHeight');
+    expect(payload).not.toHaveProperty('showCampaignGalleryLabels');
+    expect(payload).not.toHaveProperty('galleryImageLabel');
+    expect(payload).toMatchObject({
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                gallerySizingMode: 'manual',
+                galleryManualHeight: '80vh',
+                showCampaignGalleryLabels: false,
+                galleryImageLabel: 'Frames',
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+  });
+
+  it('stores inline viewport background edits only in nested galleryConfig', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(seedSettings);
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={seedSettings}
+      />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery & Media/i }));
+    await screen.findByText('Gallery Adapters');
+
+    fireEvent.click(screen.getByText('Viewport Backgrounds'));
+
+    fireEvent.click(screen.getByLabelText('Image Gallery Background', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Background Image' }));
+
+    fireEvent.change(await screen.findByLabelText('Background Image URL'), {
+      target: { value: 'https://example.com/panel-bg.jpg' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('imageBgType');
+    expect(payload).not.toHaveProperty('imageBgImageUrl');
+    expect(payload).toMatchObject({
+      galleryConfig: expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            image: expect.objectContaining({
+              common: expect.objectContaining({
+                viewportBgType: 'image',
+                viewportBgImageUrl: 'https://example.com/panel-bg.jpg',
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
   });
 
   it('interacts with Gallery & Media tab controls', async () => {

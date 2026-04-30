@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useSWRConfig } from 'swr';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
-import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
-
-const SWR_KEY = 'gallery-behavior-settings';
+import {
+  normalizeSettingsResponse,
+  getSettingsQueryKey,
+} from '@/services/settingsQuery';
 
 /**
  * Debounced save hook for in-context editors.
@@ -17,7 +18,7 @@ export function useInContextSave(
   settings: GalleryBehaviorSettings,
   delay = 500,
 ) {
-  const { mutate } = useSWRConfig();
+    const queryClient = useQueryClient();
   const pendingRef = useRef<Record<string, unknown>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   // Ref to latest settings avoids stale closure in debounced callback
@@ -28,10 +29,13 @@ export function useInContextSave(
     (key: string, value: unknown) => {
       if (!apiClient) return;
       pendingRef.current[key] = value;
+      const queryKey = getSettingsQueryKey(apiClient);
 
-      // Optimistic SWR update — merge with latest settings via ref
-      const optimistic = { ...settingsRef.current, [key]: value } as GalleryBehaviorSettings;
-      void mutate(SWR_KEY, optimistic, false);
+      queryClient.setQueryData(queryKey, (current: unknown) => normalizeSettingsResponse({
+        ...(current as Record<string, unknown> | undefined),
+        ...settingsRef.current,
+        [key]: value,
+      }));
 
       // Debounced server save
       clearTimeout(timerRef.current);
@@ -40,18 +44,18 @@ export function useInContextSave(
         pendingRef.current = {};
         try {
           const response = await apiClient.updateSettings(batch);
-          void mutate(SWR_KEY, mergeSettingsWithDefaults(response as Partial<GalleryBehaviorSettings>), false);
+          queryClient.setQueryData(queryKey, normalizeSettingsResponse(response));
         } catch (err) {
           console.error('[WPSG] In-context save failed:', err);
           // Revert to server state on failure
           try {
             const fresh = await apiClient.getSettings();
-            void mutate(SWR_KEY, mergeSettingsWithDefaults(fresh as Partial<GalleryBehaviorSettings>), false);
+            queryClient.setQueryData(queryKey, normalizeSettingsResponse(fresh));
           } catch { /* keep optimistic state if refetch also fails */ }
         }
       }, delay);
     },
-    [apiClient, delay, mutate],
+    [apiClient, delay, queryClient],
   );
 
   // Clear pending debounce timer on unmount to prevent stale network calls

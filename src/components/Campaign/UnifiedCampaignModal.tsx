@@ -17,12 +17,10 @@ import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapter
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 import { resolveGalleryMode } from '@/utils/resolveAdapterId';
 import {
-  buildCampaignGalleryOverrideEditorValue,
   clearCampaignGalleryOverrides,
   describeCampaignGalleryOverrides,
   getCampaignGalleryOverrideMode,
   hasCampaignGalleryOverrides,
-  normalizeCampaignLegacyAdapterOverrides,
   setCampaignBreakpointScopeAdapterOverride,
   syncCampaignGalleryOverrideMode,
 } from '@/utils/campaignGalleryOverrides';
@@ -33,12 +31,12 @@ const LazyGalleryConfigEditorModal = lazy(() =>
   })),
 );
 
-  const CAMPAIGN_BREAKPOINTS = ['desktop', 'tablet', 'mobile'] as const;
-  const BREAKPOINT_LABELS = {
-    desktop: 'Desktop',
-    tablet: 'Tablet',
-    mobile: 'Mobile',
-  } as const;
+const CAMPAIGN_BREAKPOINTS = ['desktop', 'tablet', 'mobile'] as const;
+const BREAKPOINT_LABELS = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+} as const;
 
 /** Convert ISO date string to datetime-local input value. */
 function toLocalInputValue(iso: string): string {
@@ -107,7 +105,7 @@ export function UnifiedCampaignModal({
   const isEdit = mode === 'edit';
   const campaignGalleryOverrideMode = getCampaignGalleryOverrideMode(formState.galleryOverrides);
   const effectiveCampaignGalleryMode = resolveGalleryMode(galleryBehaviorSettings, formState.galleryOverrides);
-  const resolvedCampaignQuickOverrides = buildCampaignGalleryOverrideEditorValue(formState);
+  const resolvedCampaignQuickOverrides = formState.galleryOverrides;
   const hasCustomGalleryOverrides = hasCampaignGalleryOverrides(formState);
   const galleryOverrideSummary = describeCampaignGalleryOverrides(formState);
 
@@ -126,17 +124,9 @@ export function UnifiedCampaignModal({
       adapterId,
     );
 
-    const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
-      imageAdapterId: formState.imageAdapterId,
-      videoAdapterId: formState.videoAdapterId,
-      galleryOverrides: nextGalleryOverrides,
-    });
-
     updateForm({
       ...formState,
       galleryOverrides: nextGalleryOverrides,
-      imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
-      videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
     });
   };
 
@@ -514,7 +504,7 @@ export function UnifiedCampaignModal({
             opened={galleryConfigEditorOpen}
             onClose={() => setGalleryConfigEditorOpen(false)}
             title="Campaign Responsive Gallery Config"
-            value={buildCampaignGalleryOverrideEditorValue(formState)}
+            value={formState.galleryOverrides}
             contextSummary={hasCampaignGalleryOverrides(formState)
               ? 'This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings.'
               : 'This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides.'}
@@ -526,17 +516,9 @@ export function UnifiedCampaignModal({
               setGalleryConfigEditorOpen(false);
             }}
             onSave={(galleryOverrides) => {
-              const normalizedLegacyAdapterOverrides = normalizeCampaignLegacyAdapterOverrides({
-                imageAdapterId: formState.imageAdapterId,
-                videoAdapterId: formState.videoAdapterId,
-                galleryOverrides,
-              });
-
               updateForm({
                 ...formState,
                 galleryOverrides,
-                imageAdapterId: normalizedLegacyAdapterOverrides.imageAdapterId,
-                videoAdapterId: normalizedLegacyAdapterOverrides.videoAdapterId,
               });
               setGalleryConfigEditorOpen(false);
             }}

@@ -14,12 +14,18 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconDiamond, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
 
 const SCOPE = 'diamond';
 /** Diamond clip-path: rhombus with tips at 12, 3, 6, 9 o'clock positions. */
@@ -30,14 +36,16 @@ const V_OVERLAP = 0.5;
 interface DiamondGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function DiamondGallery({ media, settings, containerDimensions: _containerDimensions }: DiamondGalleryProps) {
+export function DiamondGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: DiamondGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -75,18 +83,16 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
     rows.push(media.slice(i, i + tilesPerRow));
   }
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconDiamond size={18} />}
+      {common.showCampaignGalleryLabels !== false && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconDiamond size={18} />}
             Gallery ({media.length})
           </Group>
         </Title>
@@ -153,10 +159,10 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
                     >
                       {isVideo
                         ? <IconPlayerPlay size={tSize * 0.22} color="white"
-                            style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
+                          style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                         : <IconZoomIn size={tSize * 0.2} color="white"
-                            className="wpsg-diamond-zoom"
-                            style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
+                          className="wpsg-diamond-zoom"
+                          style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                       }
                     </Box>
                     {isVideo && (

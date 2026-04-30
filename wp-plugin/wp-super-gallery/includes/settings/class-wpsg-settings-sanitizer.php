@@ -183,26 +183,13 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
-     * Return the flat gallery setting keys retained only for legacy
-     * compatibility. New writes should persist nested `gallery_config` instead.
+     * Return the flat gallery setting keys that exist only as metadata for the
+     * nested gallery sanitizer and are omitted from the public settings contract.
      *
      * @return string[]
      */
-    public static function get_legacy_gallery_setting_keys() {
+    public static function get_nested_only_gallery_setting_keys() {
         return array_values(array_unique(array_merge(
-            [
-                'image_gallery_adapter_id',
-                'video_gallery_adapter_id',
-                'unified_gallery_enabled',
-                'unified_gallery_adapter_id',
-                'gallery_selection_mode',
-                'desktop_image_adapter_id',
-                'desktop_video_adapter_id',
-                'tablet_image_adapter_id',
-                'tablet_video_adapter_id',
-                'mobile_image_adapter_id',
-                'mobile_video_adapter_id',
-            ],
             array_values(self::$nested_common_field_map),
             array_values(self::get_nested_common_field_map_for_scope('image')),
             array_values(self::get_nested_common_field_map_for_scope('video')),
@@ -212,19 +199,20 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
-     * Determine whether a flat setting key is retained only for legacy gallery compatibility.
+     * Determine whether a flat setting key is nested-only and should be ignored
+     * on writes outside `gallery_config`.
      *
      * @param string $key Flat setting key.
      * @return bool
      */
-    private static function is_legacy_gallery_setting_key($key) {
-        static $legacy_gallery_setting_keys = null;
+    private static function is_nested_only_gallery_setting_key($key) {
+        static $nested_only_gallery_setting_keys = null;
 
-        if ($legacy_gallery_setting_keys === null) {
-            $legacy_gallery_setting_keys = array_fill_keys(self::get_legacy_gallery_setting_keys(), true);
+        if ($nested_only_gallery_setting_keys === null) {
+            $nested_only_gallery_setting_keys = array_fill_keys(self::get_nested_only_gallery_setting_keys(), true);
         }
 
-        return isset($legacy_gallery_setting_keys[$key]);
+        return isset($nested_only_gallery_setting_keys[$key]);
     }
 
     /**
@@ -559,19 +547,7 @@ class WPSG_Settings_Sanitizer {
                 continue;
             }
 
-            if (self::is_legacy_gallery_setting_key($key)) {
-                $legacy_setting = self::sanitize_nested_gallery_setting(
-                    $key,
-                    $value,
-                    $defaults,
-                    $valid_options,
-                    $field_ranges,
-                    true
-                );
-
-                if ($legacy_setting['accepted']) {
-                    $sanitized[$key] = $legacy_setting['value'];
-                }
+            if (self::is_nested_only_gallery_setting_key($key)) {
                 continue;
             }
 

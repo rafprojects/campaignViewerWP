@@ -67,7 +67,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByLabelText('Card Min Width (px)')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Card Min Width')).toBeInTheDocument();
     expect(screen.getByLabelText('Card Height (px)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('180')).toBeInTheDocument();
     expect(screen.getByDisplayValue('240')).toBeInTheDocument();
@@ -123,10 +123,10 @@ describe('GalleryConfigEditorModal', () => {
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
     expect(screen.getByText('Media Frame')).toBeInTheDocument();
-    expect(screen.getByLabelText('Image Border Radius (px)')).toHaveValue('14');
-    expect(screen.getByLabelText('Video Border Radius (px)')).toHaveValue('18');
-    expect(screen.getByLabelText('Image Viewport Height (px)')).toHaveValue('560');
-    expect(screen.getByLabelText('Video Viewport Height (px)')).toHaveValue('500');
+    expect(screen.getByLabelText('Image Border Radius')).toHaveValue('14');
+    expect(screen.getByLabelText('Video Border Radius')).toHaveValue('18');
+    expect(screen.getByLabelText('Image Viewport Height')).toHaveValue('560');
+    expect(screen.getByLabelText('Video Viewport Height')).toHaveValue('500');
     expect(screen.getByLabelText('Image Shadow Preset', { selector: 'input' })).toHaveValue('Custom');
     expect(screen.getByLabelText('Image Custom Shadow')).toHaveValue('0 8px 24px rgba(0,0,0,0.35)');
     expect(screen.getByLabelText('Video Shadow Preset', { selector: 'input' })).toHaveValue('Strong');
@@ -527,9 +527,9 @@ describe('GalleryConfigEditorModal', () => {
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
     expect(screen.getByText('Shape Layout')).toBeInTheDocument();
-    expect(screen.getByLabelText('Image Tile Size (px)')).toHaveValue('180');
-    expect(screen.getByLabelText('Gap X (px)')).toHaveValue('12');
-    expect(screen.getByLabelText('Gap Y (px)')).toHaveValue('10');
+    expect(screen.getByLabelText('Image Tile Size')).toHaveValue('180');
+    expect(screen.getByLabelText('Gap X')).toHaveValue('12');
+    expect(screen.getByLabelText('Gap Y')).toHaveValue('10');
     expect(screen.getByText('Tile Appearance')).toBeInTheDocument();
     expect(screen.getByLabelText('Border Width (px)')).toHaveValue('2');
     expect(screen.getByLabelText('Border Color')).toHaveValue('#ff0000');

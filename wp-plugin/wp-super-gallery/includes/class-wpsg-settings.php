@@ -128,11 +128,11 @@ class WPSG_Settings {
         $stored_settings = get_option(self::OPTION_NAME, []);
         $settings = wp_parse_args($stored_settings, self::$defaults);
 
-        if (!array_key_exists('gallery_config', $stored_settings)) {
+        if (!array_key_exists('gallery_config', $settings)) {
             return $settings;
         }
 
-        return WPSG_Settings_Utils::apply_gallery_config_legacy_bridge($settings);
+        return WPSG_Settings_Utils::strip_nested_only_gallery_legacy_fields($settings);
     }
 
     /**

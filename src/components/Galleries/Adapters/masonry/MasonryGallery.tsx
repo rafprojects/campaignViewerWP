@@ -17,7 +17,12 @@ import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { MasonryPhotoAlbum } from 'react-photo-album';
 import { Box, Stack, Title, Group } from '@mantine/core';
 import { IconColumns, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useCarousel } from '@/hooks/useCarousel';
@@ -26,6 +31,7 @@ import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCssOrNumber } from '@/utils/cssUnits';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
 
 const SCOPE = 'masonry';
 
@@ -41,14 +47,16 @@ interface RpaPhoto {
 interface MasonryGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function MasonryGallery({ media, settings, containerDimensions: _containerDimensions }: MasonryGalleryProps) {
+export function MasonryGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: MasonryGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const enriched = useMediaDimensions(media);
   const galleryLabelStyle = useTypographyStyle('galleryLabel', settings);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
@@ -80,18 +88,16 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
     };
   });
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconColumns size={18} />}
+      {common.showCampaignGalleryLabels !== false && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconColumns size={18} />}
             Gallery ({media.length})
           </Group>
         </Title>
@@ -160,11 +166,13 @@ export function MasonryGallery({ media, settings, containerDimensions: _containe
                 >
                   {isVideo
                     ? <IconPlayerPlay size={iconSize} color="white"
-                        style={{ opacity: 0.8, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
+                      style={{ opacity: 0.8, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                     : <IconZoomIn size={iconSize} color="white"
-                        className="wpsg-mas-zoom"
-                        style={{ opacity: 0, transition: 'opacity 0.2s ease',
-                          filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))' }} />
+                      className="wpsg-mas-zoom"
+                      style={{
+                        opacity: 0, transition: 'opacity 0.2s ease',
+                        filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))'
+                      }} />
                   }
                 </Box>
                 {isVideo && (

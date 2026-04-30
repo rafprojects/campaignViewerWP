@@ -222,8 +222,6 @@ class WPSG_CLI {
             'visibility',
             'tags',
             'cover_image',
-            '_wpsg_image_adapter_id',
-            '_wpsg_video_adapter_id',
             '_wpsg_gallery_overrides',
             '_wpsg_layout_binding_template_id',
             '_wpsg_layout_binding',
@@ -383,8 +381,6 @@ class WPSG_CLI {
             'coverImage'      => 'cover_image',
             'publishAt'       => 'publish_at',
             'unpublishAt'     => 'unpublish_at',
-            'imageAdapterId'  => '_wpsg_image_adapter_id',
-            'videoAdapterId'  => '_wpsg_video_adapter_id',
         ];
         update_post_meta( $post_id, 'status', 'draft' );
         foreach ( $meta_map as $src_key => $meta_key ) {
@@ -397,11 +393,9 @@ class WPSG_CLI {
             }
         }
 
-        if ( array_key_exists( 'galleryOverrides', $src ) ) {
-            $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides( $src['galleryOverrides'] );
-            if ( ! empty( $gallery_overrides ) ) {
-                update_post_meta( $post_id, '_wpsg_gallery_overrides', wp_json_encode( $gallery_overrides ) );
-            }
+        $gallery_overrides = WPSG_REST::promote_campaign_gallery_overrides($src['galleryOverrides'] ?? null);
+        if ( ! empty( $gallery_overrides ) ) {
+            update_post_meta( $post_id, '_wpsg_gallery_overrides', wp_json_encode( $gallery_overrides ) );
         }
 
         // Embed layout template by value if provided.
@@ -730,8 +724,9 @@ class WPSG_CLI {
             'publishAt'   => get_post_meta( $post->ID, 'publish_at', true ) ?: '',
             'unpublishAt' => get_post_meta( $post->ID, 'unpublish_at', true ) ?: '',
             'layoutBinding' => get_post_meta( $post->ID, '_wpsg_layout_binding', true ) ?: null,
-            'imageAdapterId' => get_post_meta( $post->ID, '_wpsg_image_adapter_id', true ) ?: '',
-            'videoAdapterId' => get_post_meta( $post->ID, '_wpsg_video_adapter_id', true ) ?: '',
+            'galleryOverrides' => WPSG_REST::promote_campaign_gallery_overrides(
+                get_post_meta( $post->ID, '_wpsg_gallery_overrides', true )
+            ),
             'createdAt'   => $post->post_date,
             'updatedAt'   => $post->post_modified,
         ];

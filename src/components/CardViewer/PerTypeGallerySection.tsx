@@ -33,6 +33,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
   const videoSection = videoPlan && (
     <GallerySectionWrapper
       settings={videoPlan.settings}
+      runtime={videoPlan.runtime}
       bgType={videoPlan.wrapper.bgType}
       bgColor={videoPlan.wrapper.bgColor}
       bgGradient={videoPlan.wrapper.bgGradient}
@@ -45,6 +46,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
           adapterId={videoPlan.adapterId}
           media={videoPlan.media}
           settings={videoPlan.settings}
+          runtime={videoPlan.runtime}
           campaign={campaign}
           isAdmin={isAdmin}
           containerDimensions={dims}
@@ -56,6 +58,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
   const imageSection = imagePlan && (
     <GallerySectionWrapper
       settings={imagePlan.settings}
+      runtime={imagePlan.runtime}
       bgType={imagePlan.wrapper.bgType}
       bgColor={imagePlan.wrapper.bgColor}
       bgGradient={imagePlan.wrapper.bgGradient}
@@ -68,6 +71,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
           adapterId={imagePlan.adapterId}
           media={imagePlan.media}
           settings={imagePlan.settings}
+          runtime={imagePlan.runtime}
           campaign={campaign}
           isAdmin={isAdmin}
           containerDimensions={dims}

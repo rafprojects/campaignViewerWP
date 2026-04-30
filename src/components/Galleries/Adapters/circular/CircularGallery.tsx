@@ -10,24 +10,32 @@ import { useState, useCallback } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconCircles, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
 
 const SCOPE = 'circle';
 
 interface CircularGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function CircularGallery({ media, settings }: CircularGalleryProps) {
+export function CircularGallery({ media, settings, runtime }: CircularGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
@@ -46,18 +54,16 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
     : 'none';
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconCircles size={18} />}
+      {common.showCampaignGalleryLabels !== false && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconCircles size={18} />}
             Gallery ({media.length})
           </Group>
         </Title>
@@ -65,7 +71,7 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
-      <Box style={{ display: 'flex', flexWrap: 'wrap', gap: `${toCss(gapY, gapYUnit)} ${toCss(gapX, gapXUnit)}`, justifyContent: settings.adapterJustifyContent || 'center' }}>
+      <Box style={{ display: 'flex', flexWrap: 'wrap', gap: `${toCss(gapY, gapYUnit)} ${toCss(gapX, gapXUnit)}`, justifyContent: common.adapterJustifyContent || 'center' }}>
         {media.map((item, idx) => {
           const thumbSrc = item.thumbnail || item.url;
           const isVideo = item.type === 'video';
@@ -115,10 +121,10 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
               >
                 {isVideo
                   ? <IconPlayerPlay size={tSize * 0.28} color="white"
-                      style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
+                    style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                   : <IconZoomIn size={tSize * 0.24} color="white"
-                      className="wpsg-circle-zoom"
-                      style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
+                    className="wpsg-circle-zoom"
+                    style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                 }
               </Box>
               {isVideo && (

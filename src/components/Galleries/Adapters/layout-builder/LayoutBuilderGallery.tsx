@@ -18,7 +18,16 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Box, Center, Loader, Text, Stack } from '@mantine/core';
 import { IconLayoutDashboard, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem, LayoutTemplate, CampaignLayoutBinding, SlotTiltEffect, LayoutSlot, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  LayoutTemplate,
+  CampaignLayoutBinding,
+  SlotTiltEffect,
+  LayoutSlot,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
@@ -32,6 +41,7 @@ import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { toCssOrNumber } from '@/utils/cssUnits';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
 
@@ -132,17 +142,17 @@ function GallerySlotView({
   const safeMaskUrl = sanitizeCssUrl(maskUrl);
   const maskStyle: React.CSSProperties = safeMaskUrl
     ? ({
-        WebkitMaskImage: `url(${safeMaskUrl})`,
-        maskImage: `url(${safeMaskUrl})`,
-        WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
-        maskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
-        WebkitMaskPosition: feMaskPos,
-        maskPosition: feMaskPos,
-        WebkitMaskRepeat: 'no-repeat',
-        maskRepeat: 'no-repeat',
-        WebkitMaskMode: resolvedMaskMode,
-        maskMode: resolvedMaskMode,
-      } as React.CSSProperties)
+      WebkitMaskImage: `url(${safeMaskUrl})`,
+      maskImage: `url(${safeMaskUrl})`,
+      WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
+      maskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
+      WebkitMaskPosition: feMaskPos,
+      maskPosition: feMaskPos,
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      WebkitMaskMode: resolvedMaskMode,
+      maskMode: resolvedMaskMode,
+    } as React.CSSProperties)
     : {};
 
   // Slot effects
@@ -212,9 +222,9 @@ function GallerySlotView({
   // Hover handlers for inline glow (only wired when needed)
   const glowHandlers = needsInlineGlow
     ? {
-        onMouseEnter: () => setHovered(true),
-        onMouseLeave: () => setHovered(false),
-      }
+      onMouseEnter: () => setHovered(true),
+      onMouseLeave: () => setHovered(false),
+    }
     : {};
 
   // Media content (shared by clip-path wrapper and rectangle paths)
@@ -269,11 +279,11 @@ function GallerySlotView({
     onClick: isClickable ? () => onOpenAt(lightboxIndex) : undefined,
     onKeyDown: isClickable
       ? (e: React.KeyboardEvent<HTMLDivElement>) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpenAt(lightboxIndex);
-          }
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpenAt(lightboxIndex);
         }
+      }
       : undefined,
   };
 
@@ -399,6 +409,7 @@ function GallerySlotView({
 export interface LayoutBuilderGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   /** Campaign layout template ID (from campaign.layoutTemplateId). */
   templateId: string;
   /** Per-campaign slot overrides (media binding, focal point). */
@@ -414,6 +425,7 @@ export interface LayoutBuilderGalleryProps {
 export function LayoutBuilderGallery({
   media,
   settings,
+  runtime,
   templateId,
   slotOverrides = {},
   isAdmin = false,
@@ -463,6 +475,7 @@ export function LayoutBuilderGallery({
       template={template}
       media={media}
       settings={settings}
+      runtime={runtime}
       slotOverrides={slotOverrides}
       isAdmin={isAdmin}
       lightboxOpen={lightboxOpen}
@@ -481,6 +494,7 @@ interface InnerProps {
   template: LayoutTemplate;
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   slotOverrides: CampaignLayoutBinding['slotOverrides'];
   isAdmin: boolean;
   lightboxOpen: boolean;
@@ -495,6 +509,7 @@ function LayoutBuilderGalleryInner({
   template,
   media,
   settings,
+  runtime,
   slotOverrides,
   isAdmin,
   lightboxOpen,
@@ -507,6 +522,7 @@ function LayoutBuilderGalleryInner({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const viewportHeight = useViewportHeight();
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   // ── Responsive container width via ResizeObserver ──────────────────────────
   useEffect(() => {
@@ -559,11 +575,9 @@ function LayoutBuilderGalleryInner({
   const mediaCount = media.length;
   const hasMismatch = slotCount !== mediaCount;
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterPadUnit = settings.adapterContentPaddingUnit ?? 'px';
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
@@ -571,10 +585,10 @@ function LayoutBuilderGalleryInner({
       <style>{hoverStylesCss}</style>
 
       {/* Header */}
-      {settings.showCampaignGalleryLabels !== false && (
-        <Text size="sm" fw={500} component="div" ta={settings.galleryLabelJustification || 'left'}>
+      {common.showCampaignGalleryLabels !== false && (
+        <Text size="sm" fw={500} component="div" ta={common.galleryLabelJustification || 'left'}>
           <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            {settings.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
+            {common.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
             Gallery ({mediaCount})
           </Box>
         </Text>
@@ -603,7 +617,7 @@ function LayoutBuilderGalleryInner({
       )}
 
       {/* Admin: slot assignment summary */}
-        {isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
+      {isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
         <Box
           style={{
             display: 'flex',

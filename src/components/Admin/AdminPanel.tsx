@@ -10,7 +10,7 @@ import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import type { LayoutTemplate } from '@/types';
 import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
@@ -42,6 +42,7 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
+  const { mutate: swrMutate } = useSWRConfig();
   const [activeTab, setActiveTab] = useLocalStorage<string | null>({
     key: 'wpsg_admin_active_tab',
     defaultValue: 'campaigns',
@@ -126,21 +127,21 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   useEffect(() => {
     if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
-      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)));
+      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)), swrMutate);
     }
-  }, [activeTab, allCampaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient, swrMutate]);
   useEffect(() => {
     if (activeTab === 'access' && allCampaigns.length > 0 && !accessPrefetchedRef.current) {
       accessPrefetchedRef.current = true;
-      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)));
+      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)), swrMutate);
     }
-  }, [activeTab, allCampaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient, swrMutate]);
   useEffect(() => {
     if (activeTab === 'audit' && allCampaigns.length > 0 && !auditPrefetchedRef.current) {
       auditPrefetchedRef.current = true;
-      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)));
+      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)), swrMutate);
     }
-  }, [activeTab, allCampaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient, swrMutate]);
   useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
 
   const campaignSelectData = useMemo(
@@ -273,9 +274,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                   const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
                     '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
                   );
-                  onNotify({ type: 'success', text: result.media_updated > 0
-                    ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
-                    : 'All media types are correct.' });
+                  onNotify({
+                    type: 'success', text: result.media_updated > 0
+                      ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
+                      : 'All media types are correct.'
+                  });
                   onCampaignsUpdated();
                 } catch (err) { onNotify({ type: 'error', text: (err as Error).message }); }
                 finally { setRescanAllLoading(false); }
