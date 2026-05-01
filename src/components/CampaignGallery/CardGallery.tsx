@@ -88,10 +88,10 @@ export function CardGallery({
     // Auto mode: use container width + cardAutoColumnsBreakpoints when available
     const max = s.cardMaxColumns || 0;
     const auto = containerWidth > 0
-      ? resolveColumnsFromWidth(containerWidth, 0, galleryBehaviorSettings.cardAutoColumnsBreakpoints)
+      ? resolveColumnsFromWidth(containerWidth, 0, s.cardAutoColumnsBreakpoints)
       : 1;
     return max > 0 ? Math.min(auto, max) : auto;
-  }, [s.cardGridColumns, s.cardMaxColumns, containerWidth, galleryBehaviorSettings.cardAutoColumnsBreakpoints]);
+  }, [s.cardGridColumns, s.cardMaxColumns, containerWidth, s.cardAutoColumnsBreakpoints]);
 
   /** Max columns for fixed-width (flex) branch — used to compute row maxWidth. */
   const maxCols = useMemo((): number => {
@@ -221,7 +221,7 @@ export function CardGallery({
         ? 'translateX(100%)'
         : 'translateX(0)',
     transition: slideDirection ? `transform ${transitionMs}ms ease` : 'none',
-    opacity: slideDirection ? 0.3 : 1,
+    opacity: slideDirection ? (s.cardPageTransitionOpacity ?? 0.3) : 1,
   } : {};
 
   const containerSize = galleryBehaviorSettings.appMaxWidth > 0
@@ -363,61 +363,61 @@ export function CardGallery({
           <Stack gap="lg">
             {/* Title and subtitle */}
             {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
-            <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-              {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
-              <Stack gap={0}>
-                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
-                {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
-              </Stack>
-              )}
+              <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+                {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
+                  <Stack gap={0}>
+                    {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
+                    {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
+                  </Stack>
+                )}
 
-              {/* Admin controls */}
-              {isAdmin && galleryBehaviorSettings.showAccessMode && (
-                <Group gap="sm" align="center">
-                  <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
-                  <SegmentedControl
-                    value={accessMode}
-                    onChange={(v) => onAccessModeChange?.(v as 'lock' | 'hide')}
-                    data={[
-                      { label: 'Lock', value: 'lock' },
-                      { label: 'Hide', value: 'hide' },
-                    ]}
-                    size="xs"
-                    aria-label="Access mode"
-                  />
-                </Group>
-              )}
-            </Group>
+                {/* Admin controls */}
+                {isAdmin && galleryBehaviorSettings.showAccessMode && (
+                  <Group gap="sm" align="center">
+                    <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
+                    <SegmentedControl
+                      value={accessMode}
+                      onChange={(v) => onAccessModeChange?.(v as 'lock' | 'hide')}
+                      data={[
+                        { label: 'Lock', value: 'lock' },
+                        { label: 'Hide', value: 'hide' },
+                      ]}
+                      size="xs"
+                      aria-label="Access mode"
+                    />
+                  </Group>
+                )}
+              </Group>
             )}
 
             {/* Filter tabs */}
             {(galleryBehaviorSettings.showFilterTabs || galleryBehaviorSettings.showSearchBox) && (
-            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md" style={{ overflow: 'hidden' }}>
-              {galleryBehaviorSettings.showFilterTabs && (
-              <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
-                <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-                  <Tabs.Tab value="all">All</Tabs.Tab>
-                  <Tabs.Tab value="accessible">My Access</Tabs.Tab>
-                  {companies.map((company) => (
-                    <Tabs.Tab key={company} value={company}>
-                      {company}
-                    </Tabs.Tab>
-                  ))}
-                </Tabs.List>
-              </Tabs>
-              )}
-              {galleryBehaviorSettings.showSearchBox && (
-              <TextInput
-                placeholder="Search campaigns..."
-                leftSection={<IconSearch size={16} />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                style={{ minWidth: 'min(200px, 100%)', maxWidth: 280 }}
-                size="sm"
-                aria-label="Search campaigns by title, description, or tags"
-              />
-              )}
-            </Group>
+              <Group justify="space-between" align="flex-end" wrap="wrap" gap="md" style={{ overflow: 'hidden' }}>
+                {galleryBehaviorSettings.showFilterTabs && (
+                  <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
+                    <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+                      <Tabs.Tab value="all">All</Tabs.Tab>
+                      <Tabs.Tab value="accessible">My Access</Tabs.Tab>
+                      {companies.map((company) => (
+                        <Tabs.Tab key={company} value={company}>
+                          {company}
+                        </Tabs.Tab>
+                      ))}
+                    </Tabs.List>
+                  </Tabs>
+                )}
+                {galleryBehaviorSettings.showSearchBox && (
+                  <TextInput
+                    placeholder="Search campaigns..."
+                    leftSection={<IconSearch size={16} />}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                    style={{ minWidth: 'min(200px, 100%)', maxWidth: 280 }}
+                    size="sm"
+                    aria-label="Search campaigns by title, description, or tags"
+                  />
+                )}
+              </Group>
             )}
 
             {/* Hidden notice */}

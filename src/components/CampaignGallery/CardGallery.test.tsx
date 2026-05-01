@@ -364,6 +364,36 @@ describe('CardGallery pagination', () => {
     expect(screen.queryByRole('tablist', { name: /slide navigation/i })).not.toBeInTheDocument();
   });
 
+  it('applies mobile cardConfig overrides to pagination and card rendering', async () => {
+    await withMockedClientWidth(375, async () => {
+      const campaigns = buildMany(10);
+      render(
+        <CardGallery
+          campaigns={campaigns}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...paginatedSettings,
+            showCardInfoPanel: true,
+            cardPageDotNav: false,
+            cardConfig: {
+              breakpoints: {
+                mobile: {
+                  showCardInfoPanel: false,
+                  cardPageDotNav: true,
+                },
+              },
+            },
+          }}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('tablist', { name: /slide navigation/i })).toBeInTheDocument();
+        expect(screen.queryByText('Campaign 1')).not.toBeInTheDocument();
+      });
+    });
+  });
+
   it('no load-more button in paginated mode', () => {
     const campaigns = buildMany(10);
     render(
@@ -651,6 +681,33 @@ describe('CardGallery live responsive mode at tablet/mobile widths', () => {
       await waitFor(() => {
         expect(card.closest('[data-testid="card-responsive-wrapper"]')).toBeInTheDocument();
         expect(card.style.maxWidth).toBe('');
+      });
+    });
+  });
+
+  it('uses breakpoint-specific auto-columns rules from cardConfig', async () => {
+    await withMockedClientWidth(375, async () => {
+      render(
+        <CardGallery
+          campaigns={buildMany(4)}
+          userPermissions={[]}
+          galleryBehaviorSettings={{
+            ...liveResponsiveSettings,
+            cardAutoColumnsBreakpoints: '0:3',
+            cardConfig: {
+              breakpoints: {
+                mobile: {
+                  cardAutoColumnsBreakpoints: '0:1',
+                },
+              },
+            },
+          }}
+        />,
+      );
+
+      const wrapper = screen.getAllByTestId('card-responsive-wrapper')[0];
+      await waitFor(() => {
+        expect(wrapper).toHaveStyle({ maxWidth: '100%' });
       });
     });
   });

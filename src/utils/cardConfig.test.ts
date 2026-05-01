@@ -190,6 +190,25 @@ describe('resolveCardBreakpointSettings', () => {
     resolveCardBreakpointSettings(settings, 'tablet');
     expect(settings.cardGridColumns).toBe(3); // original unchanged
   });
+
+  it('applies boolean and string overrides for non-desktop breakpoints', () => {
+    const settings = makeSettings({
+      showCardInfoPanel: true,
+      cardThumbnailFit: 'cover',
+      cardConfig: {
+        breakpoints: {
+          mobile: {
+            showCardInfoPanel: false,
+            cardThumbnailFit: 'contain',
+          },
+        },
+      },
+    });
+
+    const resolved = resolveCardBreakpointSettings(settings, 'mobile');
+    expect(resolved.showCardInfoPanel).toBe(false);
+    expect(resolved.cardThumbnailFit).toBe('contain');
+  });
 });
 
 // ── Clone / prune / parse tests ──────────────────────────────────────────

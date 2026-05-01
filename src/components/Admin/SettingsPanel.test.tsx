@@ -919,6 +919,82 @@ describe('SettingsPanel', () => {
     });
   });
 
+  it('stores breakpoint-aware card presentation and pagination edits in nested cardConfig', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(seedSettings);
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          cardDisplayMode: 'paginated',
+          showCardInfoPanel: true,
+          cardPageDotNav: false,
+          cardPageTransitionMs: 300,
+          cardAutoColumnsBreakpoints: '480:1,768:2,1024:3',
+          cardConfig: {
+            breakpoints: {
+              tablet: {
+                showCardInfoPanel: false,
+                cardPageDotNav: true,
+                cardPageTransitionMs: 450,
+                cardAutoColumnsBreakpoints: '0:1',
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Campaign Cards/i }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Tablet' }));
+    fireEvent.click(screen.getByText('Card Grid & Pagination'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Dot Navigator')).toBeInTheDocument();
+      expect(screen.getByLabelText('Page Transition Duration (ms)')).toHaveValue('450');
+    });
+
+    toggleSwitchByLabel('Show card info panel');
+    toggleSwitchByLabel('Dot Navigator');
+    fireEvent.change(screen.getByLabelText('Page Transition Duration (ms)'), {
+      target: { value: '200' },
+    });
+    fireEvent.click(screen.getByText('Card Internals'));
+    fireEvent.change(screen.getByLabelText('Auto Columns Breakpoints'), {
+      target: { value: '0:2' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      showCardInfoPanel: true,
+      cardPageDotNav: false,
+      cardPageTransitionMs: 300,
+      cardAutoColumnsBreakpoints: '480:1,768:2,1024:3',
+      cardConfig: {
+        breakpoints: {
+          tablet: expect.objectContaining({
+            showCardInfoPanel: true,
+            cardPageDotNav: false,
+            cardPageTransitionMs: 200,
+            cardAutoColumnsBreakpoints: '0:2',
+          }),
+        },
+      },
+    });
+  });
+
   it('normalizes legacy desktop cardConfig into flat values before full-save', async () => {
     const updateSettings = vi.fn().mockResolvedValue(seedSettings);
     apiClient = createMockApiClient({ updateSettings });

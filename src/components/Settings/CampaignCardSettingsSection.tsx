@@ -29,6 +29,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
     () => resolveCardBreakpointSettings(settings, activeBreakpoint),
     [settings, activeBreakpoint],
   );
+  const resolvedBorderMode = resolved.cardBorderMode ?? 'auto';
 
   // ── Adapter functions for breakpoint-aware read/write ────────────────
 
@@ -135,44 +136,48 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardBorderRadius" unitKey="cardBorderRadiusUnit" />
             <NumberInput
               label="Border Width (px)"
-              description="Left accent border thickness"
-              value={settings.cardBorderWidth}
-              onChange={(value) => updateSetting('cardBorderWidth', typeof value === 'number' ? value : 4)}
+              description={desc('Left accent border thickness', 'cardBorderWidth')}
+              value={resolved.cardBorderWidth}
+              onChange={(value) => writeField('cardBorderWidth', typeof value === 'number' ? value : 4)}
               min={0}
               max={8}
               step={1}
             />
+            <ResetLink fieldKey="cardBorderWidth" />
             <ModalSelect
               label="Border Color Mode"
-              description="How card accent border colors are determined"
+              description={desc('How card accent border colors are determined', 'cardBorderMode')}
               data={[
                 { value: 'auto', label: 'Auto (company brand color)' },
                 { value: 'single', label: 'Single color for all cards' },
                 { value: 'individual', label: 'Per-card color (set in Edit Campaign)' },
               ]}
-              value={settings.cardBorderMode}
-              onChange={(value) => updateSetting('cardBorderMode', (value ?? 'auto') as GalleryBehaviorSettings['cardBorderMode'])}
+              value={resolvedBorderMode}
+              onChange={(value) => writeField('cardBorderMode', (value ?? 'auto') as GalleryBehaviorSettings['cardBorderMode'])}
             />
-            {settings.cardBorderMode === 'single' && (
+            <ResetLink fieldKey="cardBorderMode" />
+            {resolvedBorderMode === 'single' && (
               <ColorInput
                 label="Border Color"
-                description="Accent border color applied to all campaign cards"
-                value={settings.cardBorderColor}
-                onChange={(value) => updateSetting('cardBorderColor', value)}
+                description={desc('Accent border color applied to all campaign cards', 'cardBorderColor')}
+                value={resolved.cardBorderColor}
+                onChange={(value) => writeField('cardBorderColor', value)}
               />
             )}
+            {resolvedBorderMode === 'single' && <ResetLink fieldKey="cardBorderColor" />}
             <ModalSelect
               label="Card Shadow"
-              description="Depth effect for campaign cards"
+              description={desc('Depth effect for campaign cards', 'cardShadowPreset')}
               data={[
                 { value: 'none', label: 'None' },
                 { value: 'subtle', label: 'Subtle' },
                 { value: 'medium', label: 'Medium' },
                 { value: 'dramatic', label: 'Dramatic' },
               ]}
-              value={settings.cardShadowPreset}
-              onChange={(value) => updateSetting('cardShadowPreset', value ?? 'subtle')}
+              value={resolved.cardShadowPreset}
+              onChange={(value) => writeField('cardShadowPreset', value ?? 'subtle')}
             />
+            <ResetLink fieldKey="cardShadowPreset" />
             <DimensionInput
               label="Thumbnail Height"
               description={desc('Height of the card thumbnail area', 'cardThumbnailHeight')}
@@ -187,63 +192,74 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardThumbnailHeight" unitKey="cardThumbnailHeightUnit" />
             <ModalSelect
               label="Thumbnail Fit"
-              description="How the thumbnail image fills the card"
+              description={desc('How the thumbnail image fills the card', 'cardThumbnailFit')}
               data={[
                 { value: 'cover', label: 'Cover (fill)' },
                 { value: 'contain', label: 'Contain (fit)' },
               ]}
-              value={settings.cardThumbnailFit}
-              onChange={(value) => updateSetting('cardThumbnailFit', value ?? 'cover')}
+              value={resolved.cardThumbnailFit}
+              onChange={(value) => writeField('cardThumbnailFit', value ?? 'cover')}
             />
+            <ResetLink fieldKey="cardThumbnailFit" />
 
             <Divider label="Element Visibility" labelPosition="center" />
 
             <Switch
               label="Show company name badge"
-              description="Company badge overlay on card thumbnail"
-              checked={settings.showCardCompanyName ?? true}
-              onChange={(event) => updateSetting('showCardCompanyName', event.currentTarget.checked)}
+              description={desc('Company badge overlay on card thumbnail', 'showCardCompanyName')}
+              checked={resolved.showCardCompanyName ?? true}
+              onChange={(event) => writeField('showCardCompanyName', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardCompanyName" />
             <Switch
               label="Show access badge"
-              description="Green 'Access' badge on accessible cards"
-              checked={settings.showCardAccessBadge ?? true}
-              onChange={(event) => updateSetting('showCardAccessBadge', event.currentTarget.checked)}
+              description={desc("Green 'Access' badge on accessible cards", 'showCardAccessBadge')}
+              checked={resolved.showCardAccessBadge ?? true}
+              onChange={(event) => writeField('showCardAccessBadge', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardAccessBadge" />
             <Switch
               label="Show card title"
-              checked={settings.showCardTitle ?? true}
-              onChange={(event) => updateSetting('showCardTitle', event.currentTarget.checked)}
+              description={desc('Show the campaign title in the card info panel', 'showCardTitle')}
+              checked={resolved.showCardTitle ?? true}
+              onChange={(event) => writeField('showCardTitle', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardTitle" />
             <Switch
               label="Show card description"
-              checked={settings.showCardDescription ?? true}
-              onChange={(event) => updateSetting('showCardDescription', event.currentTarget.checked)}
+              description={desc('Show the campaign description in the card info panel', 'showCardDescription')}
+              checked={resolved.showCardDescription ?? true}
+              onChange={(event) => writeField('showCardDescription', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardDescription" />
             <Switch
               label="Show media counts"
-              description="Video and image count below description"
-              checked={settings.showCardMediaCounts ?? true}
-              onChange={(event) => updateSetting('showCardMediaCounts', event.currentTarget.checked)}
+              description={desc('Video and image count below description', 'showCardMediaCounts')}
+              checked={resolved.showCardMediaCounts ?? true}
+              onChange={(event) => writeField('showCardMediaCounts', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardMediaCounts" />
             <Switch
               label="Show card border"
-              description="Accent border and hover border effect"
-              checked={settings.showCardBorder ?? true}
-              onChange={(event) => updateSetting('showCardBorder', event.currentTarget.checked)}
+              description={desc('Accent border and hover border effect', 'showCardBorder')}
+              checked={resolved.showCardBorder ?? true}
+              onChange={(event) => writeField('showCardBorder', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardBorder" />
             <Switch
               label="Show thumbnail fade"
-              description="Gradient overlay at bottom of thumbnail"
-              checked={settings.showCardThumbnailFade ?? true}
-              onChange={(event) => updateSetting('showCardThumbnailFade', event.currentTarget.checked)}
+              description={desc('Gradient overlay at bottom of thumbnail', 'showCardThumbnailFade')}
+              checked={resolved.showCardThumbnailFade ?? true}
+              onChange={(event) => writeField('showCardThumbnailFade', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardThumbnailFade" />
             <Switch
               label="Show card info panel"
-              description="Show title, description, tags & media counts below thumbnail"
-              checked={settings.showCardInfoPanel ?? true}
-              onChange={(event) => updateSetting('showCardInfoPanel', event.currentTarget.checked)}
+              description={desc('Show title, description, tags & media counts below thumbnail', 'showCardInfoPanel')}
+              checked={resolved.showCardInfoPanel ?? true}
+              onChange={(event) => writeField('showCardInfoPanel', event.currentTarget.checked)}
             />
+            <ResetLink fieldKey="showCardInfoPanel" />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
@@ -478,19 +494,21 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
                 <ResetLink fieldKey="cardRowsPerPage" />
                 <Switch
                   label="Dot Navigator"
-                  description="Show dot navigator below the card grid"
-                  checked={settings.cardPageDotNav}
-                  onChange={(event) => updateSetting('cardPageDotNav', event.currentTarget.checked)}
+                  description={desc('Show dot navigator below the card grid', 'cardPageDotNav')}
+                  checked={resolved.cardPageDotNav}
+                  onChange={(event) => writeField('cardPageDotNav', event.currentTarget.checked)}
                 />
+                <ResetLink fieldKey="cardPageDotNav" />
                 <NumberInput
                   label="Page Transition Duration (ms)"
-                  description="Slide animation speed between pages"
-                  value={settings.cardPageTransitionMs}
-                  onChange={(value) => updateSetting('cardPageTransitionMs', typeof value === 'number' ? value : 300)}
+                  description={desc('Slide animation speed between pages', 'cardPageTransitionMs')}
+                  value={resolved.cardPageTransitionMs}
+                  onChange={(value) => writeField('cardPageTransitionMs', typeof value === 'number' ? value : 300)}
                   min={100}
                   max={800}
                   step={50}
                 />
+                <ResetLink fieldKey="cardPageTransitionMs" />
               </>
             )}
           </Stack>
@@ -503,78 +521,93 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
           <Stack gap="md">
             <Text size="sm" fw={500}>Locked Card Opacity</Text>
             <Slider
-              value={settings.cardLockedOpacity}
-              onChange={(value) => updateSetting('cardLockedOpacity', value)}
+              value={resolved.cardLockedOpacity}
+              onChange={(value) => writeField('cardLockedOpacity', value)}
               min={0}
               max={1}
               step={0.05}
               marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
             />
+            <ResetLink fieldKey="cardLockedOpacity" />
             <Text size="sm" fw={500}>Gradient Start Opacity</Text>
             <Slider
-              value={settings.cardGradientStartOpacity}
-              onChange={(value) => updateSetting('cardGradientStartOpacity', value)}
+              value={resolved.cardGradientStartOpacity}
+              onChange={(value) => writeField('cardGradientStartOpacity', value)}
               min={0}
               max={1}
               step={0.05}
             />
+            <ResetLink fieldKey="cardGradientStartOpacity" />
             <Text size="sm" fw={500}>Gradient End Opacity</Text>
             <Slider
-              value={settings.cardGradientEndOpacity}
-              onChange={(value) => updateSetting('cardGradientEndOpacity', value)}
+              value={resolved.cardGradientEndOpacity}
+              onChange={(value) => writeField('cardGradientEndOpacity', value)}
               min={0}
               max={1}
               step={0.05}
             />
+            <ResetLink fieldKey="cardGradientEndOpacity" />
             <NumberInput
               label="Lock Icon Size (px)"
-              value={settings.cardLockIconSize}
-              onChange={(value) => updateSetting('cardLockIconSize', typeof value === 'number' ? value : 32)}
+              description={desc('Size of the lock icon shown on inaccessible cards', 'cardLockIconSize')}
+              value={resolved.cardLockIconSize}
+              onChange={(value) => writeField('cardLockIconSize', typeof value === 'number' ? value : 32)}
               min={12}
               max={64}
             />
+            <ResetLink fieldKey="cardLockIconSize" />
             <NumberInput
               label="Access Icon Size (px)"
-              value={settings.cardAccessIconSize}
-              onChange={(value) => updateSetting('cardAccessIconSize', typeof value === 'number' ? value : 14)}
+              description={desc('Size of the icon inside the access badge', 'cardAccessIconSize')}
+              value={resolved.cardAccessIconSize}
+              onChange={(value) => writeField('cardAccessIconSize', typeof value === 'number' ? value : 14)}
               min={8}
               max={32}
             />
+            <ResetLink fieldKey="cardAccessIconSize" />
             <NumberInput
               label="Badge Offset Y (px)"
-              value={settings.cardBadgeOffsetY}
-              onChange={(value) => updateSetting('cardBadgeOffsetY', typeof value === 'number' ? value : 8)}
+              description={desc('Vertical offset from the top edge for access and company badges', 'cardBadgeOffsetY')}
+              value={resolved.cardBadgeOffsetY}
+              onChange={(value) => writeField('cardBadgeOffsetY', typeof value === 'number' ? value : 8)}
               min={0}
               max={32}
             />
+            <ResetLink fieldKey="cardBadgeOffsetY" />
             <NumberInput
               label="Company Badge Max Width (px)"
-              value={settings.cardCompanyBadgeMaxWidth}
-              onChange={(value) => updateSetting('cardCompanyBadgeMaxWidth', typeof value === 'number' ? value : 160)}
+              description={desc('Maximum width of the company badge before truncation', 'cardCompanyBadgeMaxWidth')}
+              value={resolved.cardCompanyBadgeMaxWidth}
+              onChange={(value) => writeField('cardCompanyBadgeMaxWidth', typeof value === 'number' ? value : 160)}
               min={60}
               max={400}
             />
+            <ResetLink fieldKey="cardCompanyBadgeMaxWidth" />
             <NumberInput
               label="Thumbnail Hover Transition (ms)"
-              value={settings.cardThumbnailHoverTransitionMs}
-              onChange={(value) => updateSetting('cardThumbnailHoverTransitionMs', typeof value === 'number' ? value : 300)}
+              description={desc('Duration of the thumbnail hover zoom effect', 'cardThumbnailHoverTransitionMs')}
+              value={resolved.cardThumbnailHoverTransitionMs}
+              onChange={(value) => writeField('cardThumbnailHoverTransitionMs', typeof value === 'number' ? value : 300)}
               min={0}
               max={1000}
             />
+            <ResetLink fieldKey="cardThumbnailHoverTransitionMs" />
             <Text size="sm" fw={500}>Page Transition Opacity</Text>
             <Slider
-              value={settings.cardPageTransitionOpacity}
-              onChange={(value) => updateSetting('cardPageTransitionOpacity', value)}
+              value={resolved.cardPageTransitionOpacity}
+              onChange={(value) => writeField('cardPageTransitionOpacity', value)}
               min={0}
               max={1}
               step={0.05}
             />
+            <ResetLink fieldKey="cardPageTransitionOpacity" />
             <TextInput
               label="Auto Columns Breakpoints"
-              description="Format: 480:1,768:2,1024:3,1280:4"
-              value={settings.cardAutoColumnsBreakpoints}
-              onChange={(event) => updateSetting('cardAutoColumnsBreakpoints', event.currentTarget.value)}
+              description={desc('Format: 480:1,768:2,1024:3,1280:4', 'cardAutoColumnsBreakpoints')}
+              value={resolved.cardAutoColumnsBreakpoints}
+              onChange={(event) => writeField('cardAutoColumnsBreakpoints', event.currentTarget.value)}
             />
+            <ResetLink fieldKey="cardAutoColumnsBreakpoints" />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
