@@ -244,6 +244,43 @@ describe('mergeSettingsWithDefaults', () => {
     expect(merged.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
   });
 
+  it('parses cardConfig when it arrives as JSON', () => {
+    const merged = mergeSettingsWithDefaults({
+      cardConfig: JSON.stringify({
+        breakpoints: {
+          tablet: {
+            cardGapH: 12,
+            cardBorderRadius: 14,
+          },
+        },
+      }),
+    } as Record<string, unknown>);
+
+    expect(merged.cardConfig?.breakpoints?.tablet?.cardGapH).toBe(12);
+    expect(merged.cardConfig?.breakpoints?.tablet?.cardBorderRadius).toBe(14);
+  });
+
+  it('keeps card breakpoint overrides nested-only when they arrive via cardConfig', () => {
+    const merged = mergeSettingsWithDefaults({
+      cardConfig: {
+        breakpoints: {
+          tablet: {
+            cardMaxWidth: 320,
+            cardBorderRadius: 14,
+            cardThumbnailHeight: 260,
+          },
+        },
+      },
+    });
+
+    expect(merged.cardConfig?.breakpoints?.tablet?.cardMaxWidth).toBe(320);
+    expect(merged.cardConfig?.breakpoints?.tablet?.cardBorderRadius).toBe(14);
+    expect(merged.cardConfig?.breakpoints?.tablet?.cardThumbnailHeight).toBe(260);
+    expect(merged.cardMaxWidth).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardMaxWidth);
+    expect(merged.cardBorderRadius).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardBorderRadius);
+    expect(merged.cardThumbnailHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailHeight);
+  });
+
   it('keeps migrated common and viewport settings nested-only when they arrive via galleryConfig', () => {
     const merged = mergeSettingsWithDefaults({
       galleryConfig: {

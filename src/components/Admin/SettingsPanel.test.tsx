@@ -853,6 +853,72 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
+  it('stores breakpoint-aware card appearance edits in nested cardConfig', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(seedSettings);
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          cardBorderRadius: 8,
+          cardThumbnailHeight: 200,
+          cardConfig: {
+            breakpoints: {
+              tablet: {
+                cardBorderRadius: 14,
+                cardThumbnailHeight: 260,
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Campaign Cards/i }));
+    expect(await screen.findByLabelText('Border Radius')).toHaveValue('8');
+    expect(screen.getByLabelText('Thumbnail Height')).toHaveValue('200');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Tablet' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Border Radius')).toHaveValue('14');
+      expect(screen.getByLabelText('Thumbnail Height')).toHaveValue('260');
+    });
+
+    fireEvent.change(screen.getByLabelText('Border Radius'), {
+      target: { value: '18' },
+    });
+    fireEvent.change(screen.getByLabelText('Thumbnail Height'), {
+      target: { value: '240' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      cardBorderRadius: 8,
+      cardThumbnailHeight: 200,
+      cardConfig: {
+        breakpoints: {
+          tablet: expect.objectContaining({
+            cardBorderRadius: 18,
+            cardThumbnailHeight: 240,
+          }),
+        },
+      },
+    });
+  });
+
   it('shows the shared responsive gallery editor entry point on the Gallery & Media tab', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

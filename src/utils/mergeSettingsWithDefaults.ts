@@ -7,6 +7,7 @@ import {
   mergeGalleryConfig,
   parseGalleryConfig,
 } from './galleryConfig';
+import { parseCardConfig } from './cardConfig';
 import { parseTypographyOverridesInput } from '@/types/settingsSchemas';
 
 /**
@@ -24,11 +25,14 @@ export function mergeSettingsWithDefaults(
   const result = { ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS };
   const partialRecord = partial as Record<string, unknown>;
   const incomingGalleryConfig = parseGalleryConfig(partialRecord.galleryConfig);
+  const incomingCardConfig = parseCardConfig(
+    partialRecord.cardConfig as GalleryBehaviorSettings['cardConfig'] | string | undefined | null,
+  );
 
   for (const key of Object.keys(DEFAULT_GALLERY_BEHAVIOR_SETTINGS) as Array<
     keyof GalleryBehaviorSettings
   >) {
-    if (key === 'galleryConfig') {
+    if (key === 'galleryConfig' || key === 'cardConfig') {
       continue;
     }
 
@@ -62,6 +66,7 @@ export function mergeSettingsWithDefaults(
   result.galleryConfig = incomingGalleryConfig
     ? mergeGalleryConfig(defaultGalleryConfig, incomingGalleryConfig)
     : defaultGalleryConfig;
+  result.cardConfig = incomingCardConfig;
 
   return result;
 }

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Accordion, Divider, NumberInput, SegmentedControl, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { useMemo } from 'react';
+import { Accordion, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
@@ -15,19 +15,13 @@ import {
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
-const BREAKPOINT_OPTIONS = [
-  { value: 'desktop', label: 'Desktop' },
-  { value: 'tablet', label: 'Tablet' },
-  { value: 'mobile', label: 'Mobile' },
-];
-
 interface CampaignCardSettingsSectionProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
+  activeBreakpoint: CardConfigBreakpoint;
 }
 
-export function CampaignCardSettingsSection({ settings, updateSetting }: CampaignCardSettingsSectionProps) {
-  const [activeBreakpoint, setActiveBreakpoint] = useState<CardConfigBreakpoint>('desktop');
+export function CampaignCardSettingsSection({ settings, updateSetting, activeBreakpoint }: CampaignCardSettingsSectionProps) {
   const isDesktop = activeBreakpoint === 'desktop';
 
   // Resolved settings = flat base + cascaded overrides for the active breakpoint.
@@ -129,15 +123,16 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
           <Stack gap="md">
             <DimensionInput
               label="Border Radius"
-              description="Corner rounding for campaign cards"
-              value={settings.cardBorderRadius}
-              unit={settings.cardBorderRadiusUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('cardBorderRadius', value)}
-              onUnitChange={(unit) => updateSetting('cardBorderRadiusUnit', unit as GalleryBehaviorSettings['cardBorderRadiusUnit'])}
+              description={desc('Corner rounding for campaign cards', 'cardBorderRadius')}
+              value={resolved.cardBorderRadius}
+              unit={resolved.cardBorderRadiusUnit ?? 'px'}
+              onValueChange={(value) => writeField('cardBorderRadius', value)}
+              onUnitChange={(unit) => writeField('cardBorderRadiusUnit', unit as GalleryBehaviorSettings['cardBorderRadiusUnit'])}
               allowedUnits={CSS_BORDER_RADIUS_UNITS}
               max={24}
               step={1}
             />
+            <ResetLink fieldKey="cardBorderRadius" unitKey="cardBorderRadiusUnit" />
             <NumberInput
               label="Border Width (px)"
               description="Left accent border thickness"
@@ -180,15 +175,16 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
             />
             <DimensionInput
               label="Thumbnail Height"
-              description="Height of the card thumbnail area"
-              value={settings.cardThumbnailHeight}
-              unit={settings.cardThumbnailHeightUnit ?? 'px'}
-              onValueChange={(value) => updateSetting('cardThumbnailHeight', value)}
-              onUnitChange={(unit) => updateSetting('cardThumbnailHeightUnit', unit as GalleryBehaviorSettings['cardThumbnailHeightUnit'])}
+              description={desc('Height of the card thumbnail area', 'cardThumbnailHeight')}
+              value={resolved.cardThumbnailHeight}
+              unit={resolved.cardThumbnailHeightUnit ?? 'px'}
+              onValueChange={(value) => writeField('cardThumbnailHeight', value)}
+              onUnitChange={(unit) => writeField('cardThumbnailHeightUnit', unit as GalleryBehaviorSettings['cardThumbnailHeightUnit'])}
               allowedUnits={CSS_HEIGHT_UNITS}
               max={400}
               step={10}
             />
+            <ResetLink fieldKey="cardThumbnailHeight" unitKey="cardThumbnailHeightUnit" />
             <ModalSelect
               label="Thumbnail Fit"
               description="How the thumbnail image fills the card"
@@ -256,14 +252,6 @@ export function CampaignCardSettingsSection({ settings, updateSetting }: Campaig
         <Accordion.Control>Card Grid &amp; Pagination</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
-            <SegmentedControl
-              data={BREAKPOINT_OPTIONS}
-              value={activeBreakpoint}
-              onChange={(value) => setActiveBreakpoint(value as CardConfigBreakpoint)}
-              size="xs"
-              fullWidth
-            />
-
             <ModalSelect
               label="Cards Per Row"
               description={desc('Number of columns in the card grid (Auto = responsive)', 'cardGridColumns')}

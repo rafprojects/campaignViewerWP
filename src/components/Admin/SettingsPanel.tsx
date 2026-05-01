@@ -7,9 +7,11 @@ import {
   Button,
   Drawer,
   Group,
+  SegmentedControl,
   Stack,
   Loader,
   Center,
+  Text,
   Title,
   NativeScrollArea,
   Tabs,
@@ -24,6 +26,7 @@ import {
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
+  type CardConfigBreakpoint,
   type TypographyOverride,
   type GalleryConfig,
 } from '@/types';
@@ -63,6 +66,12 @@ const LazyGalleryConfigEditorModal = lazy(() =>
 function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   return resolveGalleryConfig(settings);
 }
+
+const CARD_SETTINGS_BREAKPOINT_OPTIONS: Array<{ value: CardConfigBreakpoint; label: string }> = [
+  { value: 'desktop', label: 'Desktop' },
+  { value: 'tablet', label: 'Tablet' },
+  { value: 'mobile', label: 'Mobile' },
+];
 
 interface SettingsPanelProps {
   opened: boolean;
@@ -107,6 +116,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       : DEFAULT_SETTINGS_DATA;
   const [settingsStore] = useState(() => createSettingsDraftStore(seedSettings));
   const [activeTab, setActiveTab] = useState<string | null>('page-theme');
+  const [cardSettingsBreakpoint, setCardSettingsBreakpoint] = useState<CardConfigBreakpoint>('desktop');
   const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const sourceSettings = useMemo(
@@ -273,12 +283,28 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 {/* ── Campaign Cards Tab ────────────────────────── */}
                 <Tabs.Panel value="cards" pt="md">
                   {activeTab === 'cards' && (
-                    <Accordion variant="separated" defaultValue="appearance">
-                      <CampaignCardSettingsSection
-                        settings={settings}
-                        updateSetting={updateGallerySetting}
-                      />
-                    </Accordion>
+                    <Stack gap="md">
+                      <Box>
+                        <Text size="sm" c="dimmed" mb="xs">
+                          Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.
+                        </Text>
+                        <SegmentedControl
+                          data={CARD_SETTINGS_BREAKPOINT_OPTIONS}
+                          value={cardSettingsBreakpoint}
+                          onChange={(value) => setCardSettingsBreakpoint(value as CardConfigBreakpoint)}
+                          aria-label="Card settings breakpoint"
+                          size="xs"
+                          fullWidth
+                        />
+                      </Box>
+                      <Accordion variant="separated" defaultValue="appearance">
+                        <CampaignCardSettingsSection
+                          settings={settings}
+                          updateSetting={updateGallerySetting}
+                          activeBreakpoint={cardSettingsBreakpoint}
+                        />
+                      </Accordion>
+                    </Stack>
                   )}
                 </Tabs.Panel>
 
