@@ -4,7 +4,7 @@ import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, G
 import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
 import { ModalSelect } from '@/components/Common/ModalSelect';
-import { cloneGalleryConfig, collectGalleryAdapterSettingValues, GALLERY_BREAKPOINTS, getGalleryConfigScopeAdapterIds, resolveGalleryConfig } from '@/utils/galleryConfig';
+import { cloneGalleryConfig, collectGalleryAdapterSettingValues, GALLERY_BREAKPOINTS, getGalleryConfigScopeAdapterIds, resolveGalleryConfig, setGalleryAdapterSetting } from '@/utils/galleryConfig';
 import { DimensionInput } from './DimensionInput';
 
 export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
@@ -231,6 +231,10 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
     updateSetting('galleryConfig', setConfiguredAdapterId(resolvedGalleryConfig, breakpoint, scope, adapterId));
   };
 
+  const updateConfiguredAdapterSetting: UpdateGallerySetting = (key, value) => {
+    updateSetting('galleryConfig', setGalleryAdapterSetting(resolvedGalleryConfig, key, value));
+  };
+
   return (
     <Stack gap="md">
       <Switch
@@ -324,9 +328,9 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
         </Box>
       )}
 
-      {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+      {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
 
-      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
     </Stack>
   );
 }

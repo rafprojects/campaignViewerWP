@@ -728,7 +728,6 @@ export interface GalleryBehaviorSettings {
   mediaMediumCardHeight: number;
   mediaLargeCardHeight: number;
   mediaListMinWidth: number;
-  swrDedupingIntervalMs: number;
   notificationDismissMs: number;
   // P14-B: Tile / Adapter (advanced)
   tileHoverOverlayOpacity: number;
@@ -1180,7 +1179,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   mediaMediumCardHeight: 240,
   mediaLargeCardHeight: 340,
   mediaListMinWidth: 600,
-  swrDedupingIntervalMs: 5000,
   notificationDismissMs: 4000,
   // P14-B: Tile / Adapter (advanced)
   tileHoverOverlayOpacity: 0.6,

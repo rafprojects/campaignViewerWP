@@ -9,7 +9,6 @@ import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { isAdapterSupportedAtBreakpoint, normalizeAdapterId } from '@/components/Galleries/Adapters/adapterRegistry';
 import {
   getRepresentativeScopeAdapterId,
-  getLegacyViewportBackgroundFieldMap,
   mergeGalleryConfig,
 } from './galleryConfig';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS as DEFAULT_SETTINGS } from '@/types';
@@ -20,44 +19,7 @@ interface GalleryResolutionOptions {
   galleryOverrides?: Partial<GalleryConfig>;
 }
 
-type CommonSettingKey = keyof GalleryCommonSettings;
-type ScopeSpecificCommonSettingKey = Extract<
-  CommonSettingKey,
-  'viewportBgType' | 'viewportBgColor' | 'viewportBgGradient' | 'viewportBgImageUrl'
->;
-type SharedCommonSettingKey = Exclude<CommonSettingKey, ScopeSpecificCommonSettingKey>;
-
 const BLOCKED_ADAPTER_SETTING_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-
-const COMMON_SETTING_FIELD_MAP: Record<SharedCommonSettingKey, keyof GalleryBehaviorSettings> = {
-  sectionMaxWidth: 'gallerySectionMaxWidth',
-  sectionMaxWidthUnit: 'gallerySectionMaxWidthUnit',
-  sectionMaxHeight: 'gallerySectionMaxHeight',
-  sectionMaxHeightUnit: 'gallerySectionMaxHeightUnit',
-  sectionMinWidth: 'gallerySectionMinWidth',
-  sectionMinWidthUnit: 'gallerySectionMinWidthUnit',
-  sectionMinHeight: 'gallerySectionMinHeight',
-  sectionMinHeightUnit: 'gallerySectionMinHeightUnit',
-  sectionHeightMode: 'gallerySectionHeightMode',
-  sectionPadding: 'gallerySectionPadding',
-  sectionPaddingUnit: 'gallerySectionPaddingUnit',
-  adapterContentPadding: 'adapterContentPadding',
-  adapterContentPaddingUnit: 'adapterContentPaddingUnit',
-  adapterSizingMode: 'adapterSizingMode',
-  adapterMaxWidthPct: 'adapterMaxWidthPct',
-  adapterMaxHeightPct: 'adapterMaxHeightPct',
-  adapterItemGap: 'adapterItemGap',
-  adapterItemGapUnit: 'adapterItemGapUnit',
-  adapterJustifyContent: 'adapterJustifyContent',
-  gallerySizingMode: 'gallerySizingMode',
-  galleryManualHeight: 'galleryManualHeight',
-  perTypeSectionEqualHeight: 'perTypeSectionEqualHeight',
-  galleryImageLabel: 'galleryImageLabel',
-  galleryVideoLabel: 'galleryVideoLabel',
-  galleryLabelJustification: 'galleryLabelJustification',
-  showGalleryLabelIcon: 'showGalleryLabelIcon',
-  showCampaignGalleryLabels: 'showCampaignGalleryLabels',
-};
 
 function resolveSupportedAdapterChain(ids: Array<string | undefined>, breakpoint: Breakpoint): string {
   for (const id of ids) {
@@ -75,7 +37,8 @@ function resolveSupportedAdapterChain(ids: Array<string | undefined>, breakpoint
 }
 
 function resolveBaseGalleryConfig(s: GalleryBehaviorSettings): GalleryConfig {
-  return s.galleryConfig ?? DEFAULT_SETTINGS.galleryConfig ?? { mode: 'per-type', breakpoints: {} };
+  const defaultConfig = DEFAULT_SETTINGS.galleryConfig ?? { mode: 'per-type', breakpoints: {} };
+  return s.galleryConfig ? mergeGalleryConfig(defaultConfig, s.galleryConfig) : defaultConfig;
 }
 
 function resolveEffectiveGalleryConfig(
@@ -133,29 +96,7 @@ export function resolveGalleryCommonSettings(
   galleryOverrides?: Partial<GalleryConfig>,
 ): GalleryCommonSettings {
   const effectiveConfig = resolveEffectiveGalleryConfig(s, galleryOverrides);
-  const resolvedSettings: GalleryCommonSettings = {};
-
-  for (const [commonKey, settingKey] of Object.entries(COMMON_SETTING_FIELD_MAP) as Array<
-    [SharedCommonSettingKey, keyof GalleryBehaviorSettings]
-  >) {
-    const value = s[settingKey];
-    if (value !== undefined) {
-      (resolvedSettings as Record<string, unknown>)[commonKey] = value;
-    }
-  }
-
-  const viewportFieldMap = getLegacyViewportBackgroundFieldMap(scope);
-  for (const [commonKey, settingKey] of Object.entries(viewportFieldMap) as Array<
-    [ScopeSpecificCommonSettingKey, keyof GalleryBehaviorSettings]
-  >) {
-    const value = s[settingKey];
-    if (value !== undefined) {
-      (resolvedSettings as Record<string, unknown>)[commonKey] = value;
-    }
-  }
-
   return {
-    ...resolvedSettings,
     ...(resolveScopeConfig(effectiveConfig, breakpoint, scope)?.common ?? {}),
   };
 }

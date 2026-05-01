@@ -20,7 +20,7 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
     <MediaCarouselInner
       media={videos}
       settings={settings}
-      commonSettings={resolveGalleryComponentCommonSettings(settings)}
+      commonSettings={resolveGalleryComponentCommonSettings(settings, undefined, 'video')}
       breakpoint={breakpoint}
       maxWidth={maxWidth}
     />

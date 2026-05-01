@@ -20,7 +20,7 @@ export function ImageCarousel({ images, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
     <MediaCarouselInner
       media={images}
       settings={settings}
-      commonSettings={resolveGalleryComponentCommonSettings(settings)}
+      commonSettings={resolveGalleryComponentCommonSettings(settings, undefined, 'image')}
       breakpoint={breakpoint}
       maxWidth={maxWidth}
     />

@@ -10,13 +10,13 @@ import {
   Divider,
 } from '@mantine/core';
 import { IconCopy } from '@tabler/icons-react';
-import type { AdminCampaign } from '@/hooks/useAdminSWR';
+import type { AdminCampaign } from '@/services/adminQuery';
 
 export interface CampaignDuplicateModalProps {
   /** Source campaign to duplicate; null when modal is closed. */
   source: AdminCampaign | null;
   isSaving: boolean;
-  onConfirm: (name: string, copyMedia: boolean) => void;
+  onConfirm: (name: string, copyMedia: boolean, duplicateLayoutTemplate: boolean) => void;
   onClose: () => void;
 }
 
@@ -28,19 +28,21 @@ export function CampaignDuplicateModal({
 }: CampaignDuplicateModalProps) {
   const [name, setName] = useState('');
   const [copyMedia, setCopyMedia] = useState(true);
+  const [duplicateLayoutTemplate, setDuplicateLayoutTemplate] = useState(false);
 
   // Reset state whenever a new source is shown
   useEffect(() => {
     if (source) {
       setName(`${source.title} (Copy)`);
       setCopyMedia(true);
+      setDuplicateLayoutTemplate(Boolean(source.layoutTemplateId));
     }
   }, [source]);
 
   const handleConfirm = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    onConfirm(trimmed, copyMedia);
+    onConfirm(trimmed, copyMedia, duplicateLayoutTemplate);
   };
 
   return (
@@ -81,6 +83,21 @@ export function CampaignDuplicateModal({
             <Text size="xs" c="dimmed">
               The duplicate will start with an empty media library.
             </Text>
+          )}
+          {source?.layoutTemplateId && (
+            <>
+              <Switch
+                label="Duplicate linked layout template"
+                description="The copied campaign gets its own editable layout instead of sharing the original template."
+                checked={duplicateLayoutTemplate}
+                onChange={(e) => setDuplicateLayoutTemplate(e.currentTarget.checked)}
+              />
+              {!duplicateLayoutTemplate && (
+                <Text size="xs" c="dimmed">
+                  The duplicate will keep pointing at the original layout template.
+                </Text>
+              )}
+            </>
           )}
         </Stack>
 

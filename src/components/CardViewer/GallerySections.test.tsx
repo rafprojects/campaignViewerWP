@@ -164,7 +164,7 @@ describe('UnifiedGallerySection', () => {
       />,
     );
 
-    expect(screen.getByTestId('adapter-classic')).toHaveTextContent('video-1,image-1');
+    expect(screen.getByTestId('adapter-compact-grid')).toHaveTextContent('video-1,image-1');
     expect(screen.queryByTestId('layout-builder-gallery')).not.toBeInTheDocument();
   });
 

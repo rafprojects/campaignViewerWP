@@ -5,7 +5,7 @@
 > The main scope changes are:
 > - legacy bridge removal is now intended in the same phase because the plugin is still unreleased
 > - campaign legacy override cleanup is included with the settings cleanup
-> - TanStack Query is scoped to settings in Phase 25, with app-wide SWR replacement deferred to a later phase
+> - TanStack Query started with settings in Phase 25, and the broader app/admin/layout migration was completed in the follow-on cleanup slice
 
 ## Information Section
 

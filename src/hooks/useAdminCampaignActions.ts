@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
 import type { ApiClient, CampaignExportPayload } from '@/services/apiClient';
-import type { AdminCampaign } from '@/hooks/useAdminSWR';
+import type { AdminCampaign } from '@/services/adminQuery';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface Options {
@@ -132,11 +132,15 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [selectedCampaignIds, apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
-  const handleDuplicateCampaign = useCallback(async (name: string, copyMedia: boolean) => {
+  const handleDuplicateCampaign = useCallback(async (name: string, copyMedia: boolean, duplicateLayoutTemplate: boolean) => {
     if (!duplicateSource) return;
     setIsDuplicating(true);
     try {
-      await apiClient.duplicateCampaign(String(duplicateSource.id), { name, copyMedia });
+      await apiClient.duplicateCampaign(String(duplicateSource.id), {
+        name,
+        copyMedia,
+        duplicateLayoutTemplate,
+      });
       onNotify({ type: 'success', text: `"${name}" created` });
       setDuplicateSource(null);
       await onMutate();

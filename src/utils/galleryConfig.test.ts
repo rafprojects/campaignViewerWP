@@ -6,7 +6,7 @@ import {
   mergeGalleryConfig,
   parseGalleryConfig,
   resolveGalleryConfig,
-  syncLegacyGallerySettingToConfig,
+  setGalleryAdapterSetting,
 } from './galleryConfig';
 
 describe('galleryConfig helpers', () => {
@@ -93,22 +93,22 @@ describe('galleryConfig helpers', () => {
     expect(collected.carouselVisibleCards).toBe(3);
   });
 
-  it('syncs inline legacy gallery settings back into nested config', () => {
-    const synced = syncLegacyGallerySettingToConfig(
+  it('writes adapter settings directly into the configured nested adapter scopes', () => {
+    const synced = setGalleryAdapterSetting(
       {
         mode: 'per-type',
         breakpoints: {
           desktop: {
             image: {
               adapterId: 'classic',
-              common: {
-                adapterItemGap: 12,
+              adapterSettings: {
+                carouselVisibleCards: 1,
               },
             },
             video: {
               adapterId: 'classic',
-              common: {
-                adapterItemGap: 18,
+              adapterSettings: {
+                carouselVisibleCards: 2,
               },
             },
           },
@@ -122,18 +122,18 @@ describe('galleryConfig helpers', () => {
           },
         },
       },
-      'adapterItemGap',
-      20,
+      'carouselVisibleCards',
+      4,
     );
 
-    expect(synced?.breakpoints?.desktop?.image?.common?.adapterItemGap).toBe(20);
-    expect(synced?.breakpoints?.desktop?.video?.common?.adapterItemGap).toBe(20);
-    expect(synced?.breakpoints?.tablet?.image?.common?.adapterItemGap).toBe(20);
-    expect(synced?.breakpoints?.tablet?.video?.common?.adapterItemGap).toBe(20);
+    expect(synced?.breakpoints?.desktop?.image?.adapterSettings?.carouselVisibleCards).toBe(4);
+    expect(synced?.breakpoints?.desktop?.video?.adapterSettings?.carouselVisibleCards).toBe(4);
+    expect(synced?.breakpoints?.tablet?.image?.adapterSettings?.carouselVisibleCards).toBe(4);
+    expect(synced?.breakpoints?.tablet?.video?.adapterSettings?.carouselVisibleCards).toBe(4);
   });
 
-  it('syncs common setting units into nested config', () => {
-    const synced = syncLegacyGallerySettingToConfig(
+  it('writes adapter setting units directly into nested config', () => {
+    const synced = setGalleryAdapterSetting(
       {
         mode: 'per-type',
         breakpoints: {
@@ -142,43 +142,40 @@ describe('galleryConfig helpers', () => {
               adapterId: 'classic',
               common: {
                 sectionPaddingUnit: 'px',
-                adapterItemGapUnit: 'px',
+              },
+              adapterSettings: {
+                carouselGapUnit: 'px',
               },
             },
             video: {
               adapterId: 'classic',
               common: {
                 sectionPaddingUnit: 'px',
-                adapterItemGapUnit: 'px',
+              },
+              adapterSettings: {
+                carouselGapUnit: 'px',
               },
             },
           },
         },
       },
-      'gallerySectionPaddingUnit',
-      'rem',
-    );
-
-    const gapUnitSynced = syncLegacyGallerySettingToConfig(
-      synced,
-      'adapterItemGapUnit',
+      'carouselGapUnit',
       '%',
     );
 
-    expect(gapUnitSynced?.breakpoints?.desktop?.image?.common?.sectionPaddingUnit).toBe('rem');
-    expect(gapUnitSynced?.breakpoints?.desktop?.video?.common?.sectionPaddingUnit).toBe('rem');
-    expect(gapUnitSynced?.breakpoints?.desktop?.image?.common?.adapterItemGapUnit).toBe('%');
-    expect(gapUnitSynced?.breakpoints?.desktop?.video?.common?.adapterItemGapUnit).toBe('%');
+    expect(synced?.breakpoints?.desktop?.image?.common?.sectionPaddingUnit).toBe('px');
+    expect(synced?.breakpoints?.desktop?.video?.common?.sectionPaddingUnit).toBe('px');
+    expect(synced?.breakpoints?.desktop?.image?.adapterSettings?.carouselGapUnit).toBe('%');
+    expect(synced?.breakpoints?.desktop?.video?.adapterSettings?.carouselGapUnit).toBe('%');
   });
 
-  it('starts from the default gallery config when syncing without an existing config', () => {
-    const synced = syncLegacyGallerySettingToConfig(undefined, 'gallerySectionPaddingUnit', 'rem');
+  it('starts from the default gallery config when writing without an existing config', () => {
+    const synced = setGalleryAdapterSetting(undefined, 'carouselVisibleCards', 4);
 
     expect(synced?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
     expect(synced?.breakpoints?.desktop?.video?.adapterId).toBe('classic');
     expect(synced?.breakpoints?.desktop?.unified?.adapterId).toBe('compact-grid');
-    expect(synced?.breakpoints?.desktop?.image?.common?.sectionPaddingUnit).toBe('rem');
-    expect(synced?.breakpoints?.desktop?.video?.common?.sectionPaddingUnit).toBe('rem');
-    expect(synced?.breakpoints?.desktop?.unified?.common?.sectionPaddingUnit).toBe('rem');
+    expect(synced?.breakpoints?.desktop?.image?.adapterSettings?.carouselVisibleCards).toBe(4);
+    expect(synced?.breakpoints?.desktop?.video?.adapterSettings?.carouselVisibleCards).toBe(4);
   });
 });

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAdminCampaignActions } from './useAdminCampaignActions';
 import type { ApiClient } from '@/services/apiClient';
-import type { AdminCampaign } from './useAdminSWR';
+import type { AdminCampaign } from '@/services/adminQuery';
 
 function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
@@ -170,9 +170,13 @@ describe('useAdminCampaignActions', () => {
     );
     act(() => { result.current.setDuplicateSource(mockCampaign); });
     await act(async () => {
-      await result.current.handleDuplicateCampaign('Copy Campaign', true);
+      await result.current.handleDuplicateCampaign('Copy Campaign', true, true);
     });
-    expect(duplicateCampaign).toHaveBeenCalledWith('1', { name: 'Copy Campaign', copyMedia: true });
+    expect(duplicateCampaign).toHaveBeenCalledWith('1', {
+      name: 'Copy Campaign',
+      copyMedia: true,
+      duplicateLayoutTemplate: true,
+    });
     expect(onNotify).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'success', text: '"Copy Campaign" created' }),
     );

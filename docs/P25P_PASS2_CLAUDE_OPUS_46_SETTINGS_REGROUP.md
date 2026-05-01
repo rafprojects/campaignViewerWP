@@ -222,7 +222,6 @@ Several controls in the primary tabs are detailed tuning that most users would n
 | Hex/Diamond Vertical Overlap Ratio | Advanced > Tile / Adapter | Shape-adapter-specific internal |
 | Hex/Diamond Clip Path | Advanced > Tile / Adapter | CSS internals |
 | Viewport Height Mobile/Tablet Ratio | Advanced > Navigation | Responsive internals |
-| SWR Deduping Interval | Advanced > Upload / Media | Framework internals |
 | Notification Dismiss ms | Advanced > Upload / Media | Framework internals |
 
 ### Recommended disclosure tiers
@@ -334,7 +333,7 @@ Replaces the current Advanced tab for non-design administrative controls. Only v
 | Lightbox Internals | Transition ms, backdrop color, entry scale, video dimensions, media max height, z-index | Advanced > Lightbox |
 | Navigation Internals | Max visible dots, arrow edge inset, min hit target, fade/scale durations, viewport height ratios, search input min/max width | Advanced > Navigation |
 | Data Maintenance | Archive purge, trash grace period, analytics retention, preserve data on uninstall | Advanced > Data Maintenance + System |
-| System | SWR deduping, notification dismiss, admin search debounce | Advanced > System (remainder) |
+| System | Notification dismiss, admin search debounce | Advanced > System (remainder) |
 
 What changes:
 - Tab renamed from "Advanced" to "System & Admin" to accurately describe its contents.

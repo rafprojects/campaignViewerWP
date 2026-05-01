@@ -49,15 +49,15 @@ Recommendation:
 
 That means once `cardConfig` is added to the canonical shared type, the API client surface will inherit it automatically. This is good news for phase 5: the type layer no longer needs a separate cleanup pass before card breakpoint work can begin.
 
-### 3. The current settings-panel sync path is gallery-specific
+### 3. The old gallery-specific sync path has now been removed
 
-`SettingsPanel.updateSetting()` currently syncs flat gallery keys into nested `galleryConfig` through `syncLegacyGallerySettingToConfig()`, and save explicitly strips `LEGACY_GALLERY_SETTING_KEYS`.
+`SettingsPanel.updateSetting()` no longer syncs flat gallery keys into nested `galleryConfig`, and the old `syncLegacyGallerySettingToConfig()` helper is gone. Save still strips `LEGACY_GALLERY_SETTING_KEYS` from payloads, but the live editor and runtime now operate on nested gallery state directly.
 
-That behavior should not be copied for cards unless desktop values are moved into nested state. If desktop/base card values stay flat and only breakpoint overrides live in `cardConfig`, then:
+That behavior still should not be copied for cards unless desktop values are moved into nested state. If desktop/base card values stay flat and only breakpoint overrides live in `cardConfig`, then:
 
 - normal card controls can continue updating flat settings directly,
 - breakpoint-specific controls can update `cardConfig` directly,
-- save can persist both without a bridge function.
+- save can persist both without introducing a bridge function.
 
 This is the safest v1 model.
 

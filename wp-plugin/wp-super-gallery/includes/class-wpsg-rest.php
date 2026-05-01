@@ -1038,55 +1038,23 @@ class WPSG_REST {
             $request->get_param('name') ?: ($source->post_title . ' (Copy)')
         );
         $copy_media = (bool) $request->get_param('copyMedia');
+        $duplicate_layout_template = (bool) $request->get_param('duplicateLayoutTemplate');
 
-        $new_id = wp_insert_post([
-            'post_type'    => 'wpsg_campaign',
-            'post_title'   => $new_name,
-            'post_content' => $source->post_content,
-            'post_status'  => 'publish',
-        ], true);
+        $new_id = WPSG_Campaign_Duplicator::duplicate(
+            $source_id,
+            $new_name,
+            $copy_media,
+            $duplicate_layout_template
+        );
 
         if (is_wp_error($new_id)) {
-            return new WP_Error('wpsg_internal_error', $new_id->get_error_message(), ['status' => 500]);
-        }
-
-        // Copy campaign-specific meta keys (settings + bindings), excluding WP internal meta.
-        // NOTE: access_grants are intentionally excluded — cloned campaigns start with
-        // a clean permission slate so the owner can configure access from scratch.
-        $meta_keys = [
-            'visibility',
-            'tags',
-            'cover_image',
-            '_wpsg_gallery_overrides',
-            '_wpsg_layout_binding_template_id',
-            '_wpsg_layout_binding',
-        ];
-        foreach ($meta_keys as $key) {
-            $value = get_post_meta($source_id, $key, true);
-            if ($value !== '' && $value !== false) {
-                update_post_meta($new_id, $key, $value);
-            }
-        }
-        // Clones always start as draft regardless of source status
-        update_post_meta($new_id, 'status', 'draft');
-
-        // Optionally copy media associations
-        if ($copy_media) {
-            $media_items = get_post_meta($source_id, 'media_items', true);
-            if (is_array($media_items)) {
-                update_post_meta($new_id, 'media_items', $media_items);
-            }
-        }
-
-        // Copy company assignment
-        $company_term = self::get_company_term($source_id);
-        if ($company_term) {
-            wp_set_object_terms($new_id, $company_term->term_id, 'wpsg_company');
+            return $new_id;
         }
 
         self::add_audit_entry($new_id, 'campaign.duplicated', [
-            'source_id'  => $source_id,
-            'copyMedia'  => $copy_media,
+            'source_id'               => $source_id,
+            'copyMedia'               => $copy_media,
+            'duplicateLayoutTemplate' => $duplicate_layout_template,
         ]);
         self::clear_accessible_campaigns_cache();
 

@@ -293,5 +293,25 @@ describe('ApiClient', () => {
         expect.objectContaining({}),
       );
     });
+
+    it('duplicateCampaign calls POST /campaigns/:id/duplicate with deep-clone option', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ id: '200', title: 'Copy' }));
+      await client.duplicateCampaign('42', {
+        name: 'Copy',
+        copyMedia: true,
+        duplicateLayoutTemplate: true,
+      });
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns/42/duplicate`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'Copy',
+            copyMedia: true,
+            duplicateLayoutTemplate: true,
+          }),
+        }),
+      );
+    });
   });
 });

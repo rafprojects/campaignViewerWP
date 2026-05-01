@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/CampaignGallery/CardGallery';
@@ -31,7 +31,6 @@ import {
   useGetSettings,
 } from './services/settingsQuery';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
-import useSWR from 'swr';
 
 // Lazy load admin-only components for better initial bundle size
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -157,9 +156,26 @@ function AppContent({
     return mapped;
   }, [apiClient, isAdmin, permissions]);
 
-  const campaignsKey = isReady ? ['campaigns', user?.id ?? 'anon', isAuthenticated, isAdmin ? 'admin' : 'user'] : null;
-  const { data: campaigns, error: campaignsError, isLoading, mutate: mutateCampaigns } = useSWR(campaignsKey, fetchCampaigns, {
-    revalidateOnFocus: false, revalidateOnReconnect: true, dedupingInterval: 5000,
+  const campaignsKey = [
+    'campaigns',
+    apiClient.getBaseUrl(),
+    user?.id ?? 'anon',
+    isAuthenticated,
+    isAdmin ? 'admin' : 'user',
+  ] as const;
+  const {
+    data: campaigns,
+    error: campaignsError,
+    isLoading,
+    refetch: mutateCampaigns,
+  } = useQuery({
+    queryKey: campaignsKey,
+    queryFn: fetchCampaigns,
+    enabled: isReady,
+    staleTime: 5000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
   const error = campaignsError ? (campaignsError instanceof Error ? campaignsError.message : 'Failed to load campaigns') : null;
 

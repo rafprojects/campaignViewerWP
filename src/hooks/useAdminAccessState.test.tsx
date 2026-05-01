@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAdminAccessState } from './useAdminAccessState';
 import type { ApiClient } from '@/services/apiClient';
-import type { CompanyAccessGrant } from './useAdminSWR';
+import type { CompanyAccessGrant } from '@/services/adminQuery';
 
 // Mock @mantine/hooks so useDebouncedValue returns the value immediately
 vi.mock('@mantine/hooks', () => ({

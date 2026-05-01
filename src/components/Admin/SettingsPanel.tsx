@@ -24,8 +24,6 @@ import {
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
-  DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-  type GalleryBehaviorSettings,
   type TypographyOverride,
   type GalleryConfig,
 } from '@/types';
@@ -52,7 +50,6 @@ import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEdit
 import {
   LEGACY_GALLERY_SETTING_KEYS,
   resolveGalleryConfig,
-  syncLegacyGallerySettingToConfig,
 } from '@/utils/galleryConfig';
 import { useGetSettings, useUpdateSettings } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
@@ -65,10 +62,6 @@ const LazyGalleryConfigEditorModal = lazy(() =>
 
 function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   return resolveGalleryConfig(settings);
-}
-
-function isGalleryBehaviorSettingKey(key: keyof SettingsData): key is keyof GalleryBehaviorSettings {
-  return Object.prototype.hasOwnProperty.call(DEFAULT_GALLERY_BEHAVIOR_SETTINGS, key);
 }
 
 interface SettingsPanelProps {
@@ -148,27 +141,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   }, [hydrateFromSource, opened, sourceSettings]);
 
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
-    applySettingsUpdate((prev) => {
-      const next = { ...prev, [key]: value };
-
-      if (isGalleryBehaviorSettingKey(key)) {
-        const syncedGalleryConfig = syncLegacyGallerySettingToConfig(
-          prev.galleryConfig,
-          key,
-          value as GalleryBehaviorSettings[K & keyof GalleryBehaviorSettings],
-        );
-
-        if (syncedGalleryConfig) {
-          next.galleryConfig = syncedGalleryConfig;
-
-          if (LEGACY_GALLERY_SETTING_KEYS.includes(key)) {
-            (next as Record<string, unknown>)[key as string] = prev[key];
-          }
-        }
-      }
-
-      return next;
-    });
+    applySettingsUpdate((prev) => ({ ...prev, [key]: value }));
   };
 
   const updateGallerySetting: UpdateGallerySetting = (key, value) => {

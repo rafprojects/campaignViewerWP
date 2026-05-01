@@ -296,6 +296,33 @@ describe('resolveUnifiedAdapterId', () => {
 });
 
 describe('resolveGalleryCommonSettings', () => {
+  it('resolves common settings from nested gallery config defaults rather than flat fields', () => {
+    const s = makeSettings({
+      gallerySectionPadding: 48,
+      imageBgType: 'solid',
+      imageBgColor: '#112233',
+      galleryConfig: {
+        breakpoints: {
+          desktop: {
+            image: {
+              common: {
+                sectionPadding: 22,
+                viewportBgType: 'gradient',
+                viewportBgGradient: 'linear-gradient(135deg, #000000 0%, #222222 100%)',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    expect(resolveGalleryCommonSettings(s, 'desktop', 'image')).toMatchObject({
+      sectionPadding: 22,
+      viewportBgType: 'gradient',
+      viewportBgGradient: 'linear-gradient(135deg, #000000 0%, #222222 100%)',
+    });
+  });
+
   it('prefers nested common settings for the current breakpoint and scope', () => {
     const s = makeSettings({
       gallerySectionPadding: 16,

@@ -263,6 +263,40 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $this->assertEmpty( $new_media );
     }
 
+    public function test_campaign_duplicate_can_duplicate_layout_template(): void {
+        $id       = $this->create_campaign( 'With Layout Template' );
+        $template = WPSG_Layout_Templates::create( [
+            'name'              => 'CLI Layout',
+            'canvasAspectRatio' => 16 / 9,
+            'slots'             => [
+                [
+                    'id'     => 'slot-1',
+                    'x'      => 0,
+                    'y'      => 0,
+                    'width'  => 50,
+                    'height' => 50,
+                    'zIndex' => 1,
+                    'shape'  => 'rectangle',
+                ],
+            ],
+        ] );
+
+        $this->assertIsArray( $template );
+        update_post_meta( $id, '_wpsg_layout_binding_template_id', $template['id'] );
+        update_post_meta( $id, '_wpsg_layout_binding', 'layout-builder' );
+
+        $this->cli->campaign_duplicate( [ (string) $id ], [ 'duplicate-layout-template' => true ] );
+
+        preg_match( '/New ID: (\d+)/', $this->last_success(), $m );
+        $new_id               = intval( $m[1] ?? 0 );
+        $duplicated_template  = get_post_meta( $new_id, '_wpsg_layout_binding_template_id', true );
+
+        $this->assertNotEquals( $template['id'], $duplicated_template );
+        $cloned_template = WPSG_Layout_Templates::get( $duplicated_template );
+        $this->assertIsArray( $cloned_template );
+        $this->assertStringContainsString( '(Copy)', $cloned_template['name'] );
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // campaign export / import round-trip
     // ─────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from './test/test-utils';
-import { mutate } from 'swr';
 import App from './App';
 
 const campaignResponse = {
@@ -23,7 +22,6 @@ const campaignResponse = {
 
 describe('App', () => {
   beforeEach(() => {
-    mutate(() => true, undefined);
     vi.clearAllMocks();
     localStorage.clear();
     delete (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__;

@@ -2,8 +2,10 @@ import type { CSSProperties } from 'react';
 import type {
   GalleryBehaviorSettings,
   GalleryCommonSettings,
+  GalleryConfigScope,
   ResolvedGallerySectionRuntime,
 } from '@/types';
+import { resolveGalleryCommonSettings } from '@/utils/resolveAdapterId';
 
 type SharedGalleryCommonSettings = Omit<
   GalleryCommonSettings,
@@ -13,35 +15,42 @@ type SharedGalleryCommonSettings = Omit<
 export function resolveGalleryComponentCommonSettings(
   settings: GalleryBehaviorSettings,
   runtime?: ResolvedGallerySectionRuntime,
+  fallbackScope: GalleryConfigScope = 'image',
 ): SharedGalleryCommonSettings {
+  const common = resolveGalleryCommonSettings(
+    settings,
+    runtime?.breakpoint ?? 'desktop',
+    runtime?.scope ?? fallbackScope,
+  );
+
   return {
-    sectionMaxWidth: runtime?.common.sectionMaxWidth ?? settings.gallerySectionMaxWidth,
-    sectionMaxWidthUnit: runtime?.common.sectionMaxWidthUnit ?? settings.gallerySectionMaxWidthUnit,
-    sectionMaxHeight: runtime?.common.sectionMaxHeight ?? settings.gallerySectionMaxHeight,
-    sectionMaxHeightUnit: runtime?.common.sectionMaxHeightUnit ?? settings.gallerySectionMaxHeightUnit,
-    sectionMinWidth: runtime?.common.sectionMinWidth ?? settings.gallerySectionMinWidth,
-    sectionMinWidthUnit: runtime?.common.sectionMinWidthUnit ?? settings.gallerySectionMinWidthUnit,
-    sectionMinHeight: runtime?.common.sectionMinHeight ?? settings.gallerySectionMinHeight,
-    sectionMinHeightUnit: runtime?.common.sectionMinHeightUnit ?? settings.gallerySectionMinHeightUnit,
-    sectionHeightMode: runtime?.common.sectionHeightMode ?? settings.gallerySectionHeightMode,
-    sectionPadding: runtime?.common.sectionPadding ?? settings.gallerySectionPadding,
-    sectionPaddingUnit: runtime?.common.sectionPaddingUnit ?? settings.gallerySectionPaddingUnit,
-    adapterContentPadding: runtime?.common.adapterContentPadding ?? settings.adapterContentPadding,
-    adapterContentPaddingUnit: runtime?.common.adapterContentPaddingUnit ?? settings.adapterContentPaddingUnit,
-    adapterSizingMode: runtime?.common.adapterSizingMode ?? settings.adapterSizingMode,
-    adapterMaxWidthPct: runtime?.common.adapterMaxWidthPct ?? settings.adapterMaxWidthPct,
-    adapterMaxHeightPct: runtime?.common.adapterMaxHeightPct ?? settings.adapterMaxHeightPct,
-    adapterItemGap: runtime?.common.adapterItemGap ?? settings.adapterItemGap,
-    adapterItemGapUnit: runtime?.common.adapterItemGapUnit ?? settings.adapterItemGapUnit,
-    adapterJustifyContent: runtime?.common.adapterJustifyContent ?? settings.adapterJustifyContent,
-    gallerySizingMode: runtime?.common.gallerySizingMode ?? settings.gallerySizingMode,
-    galleryManualHeight: runtime?.common.galleryManualHeight ?? settings.galleryManualHeight,
-    perTypeSectionEqualHeight: runtime?.common.perTypeSectionEqualHeight ?? settings.perTypeSectionEqualHeight,
-    galleryImageLabel: runtime?.common.galleryImageLabel ?? settings.galleryImageLabel,
-    galleryVideoLabel: runtime?.common.galleryVideoLabel ?? settings.galleryVideoLabel,
-    galleryLabelJustification: runtime?.common.galleryLabelJustification ?? settings.galleryLabelJustification,
-    showGalleryLabelIcon: runtime?.common.showGalleryLabelIcon ?? settings.showGalleryLabelIcon,
-    showCampaignGalleryLabels: runtime?.common.showCampaignGalleryLabels ?? settings.showCampaignGalleryLabels,
+    sectionMaxWidth: common.sectionMaxWidth,
+    sectionMaxWidthUnit: common.sectionMaxWidthUnit,
+    sectionMaxHeight: common.sectionMaxHeight,
+    sectionMaxHeightUnit: common.sectionMaxHeightUnit,
+    sectionMinWidth: common.sectionMinWidth,
+    sectionMinWidthUnit: common.sectionMinWidthUnit,
+    sectionMinHeight: common.sectionMinHeight,
+    sectionMinHeightUnit: common.sectionMinHeightUnit,
+    sectionHeightMode: common.sectionHeightMode,
+    sectionPadding: common.sectionPadding,
+    sectionPaddingUnit: common.sectionPaddingUnit,
+    adapterContentPadding: common.adapterContentPadding,
+    adapterContentPaddingUnit: common.adapterContentPaddingUnit,
+    adapterSizingMode: common.adapterSizingMode,
+    adapterMaxWidthPct: common.adapterMaxWidthPct,
+    adapterMaxHeightPct: common.adapterMaxHeightPct,
+    adapterItemGap: common.adapterItemGap,
+    adapterItemGapUnit: common.adapterItemGapUnit,
+    adapterJustifyContent: common.adapterJustifyContent,
+    gallerySizingMode: common.gallerySizingMode,
+    galleryManualHeight: common.galleryManualHeight,
+    perTypeSectionEqualHeight: common.perTypeSectionEqualHeight,
+    galleryImageLabel: common.galleryImageLabel,
+    galleryVideoLabel: common.galleryVideoLabel,
+    galleryLabelJustification: common.galleryLabelJustification,
+    showGalleryLabelIcon: common.showGalleryLabelIcon,
+    showCampaignGalleryLabels: common.showCampaignGalleryLabels,
   };
 }
 

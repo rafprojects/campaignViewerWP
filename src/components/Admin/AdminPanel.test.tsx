@@ -38,7 +38,7 @@ describe('AdminPanel', () => {
     localStorage.clear();
   });
 
-  /** Inject stubs for methods AdminPanel calls via SWR to prevent unhandled
+  /** Inject stubs for methods AdminPanel calls through query-backed loaders to prevent unhandled
    *  errors that delay renders and leak timers across sequential tests. */
   function withDefaults(partial: Record<string, unknown>) {
     const base = {
@@ -78,7 +78,7 @@ describe('AdminPanel', () => {
       delete: vi.fn().mockResolvedValue({ message: 'ok' }),
     });
 
-    const { unmount } = render(
+    render(
       <AdminPanel
         apiClient={apiClient}
         onClose={() => undefined}

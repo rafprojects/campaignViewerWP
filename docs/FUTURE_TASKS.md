@@ -12,6 +12,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 |------|-------------|
 | Modal-safe gallery-config selectors, shared manage-media entry, settings stacking fix, backlog cleanup | Active in [PHASE25_REPORT.md](PHASE25_REPORT.md) |
 | Settings system refactor, nested-only settings/campaign overrides, Zod foundation, settings-only TanStack Query | Active in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md) |
+| App-wide TanStack Query migration / SWR retirement | Completed in the follow-on Phase 25 cleanup slice; keep the implementation record in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md) |
 | Bulk actions, campaign duplication, keyboard shortcuts, analytics dashboard, media usage tracking, campaign categories, access request workflow | Keep in [PHASE18_REPORT.md](PHASE18_REPORT.md); do not duplicate here |
 | Theme live preview, gallery config accessibility, per-breakpoint adapter parity, deferred review cleanup | Keep in [PHASE24_REPORT.md](PHASE24_REPORT.md); do not duplicate here |
 | Settings panel as a modal overlay | Already implemented; only the stacking bug moved to Phase 25 |
@@ -21,10 +22,8 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 | Candidate | Why it was surfaced now | Impact | Effort |
 |-----------|-------------------------|--------|--------|
-| App-wide TanStack Query migration / SWR retirement | Phase 25 now handles settings-only Query adoption; broader admin and campaign fetch/mutation migration remains follow-on work | Medium-High | Medium-High |
-| Builder template deep clone | Solves a real duplication surprise with relatively contained scope | Medium | Low |
 | Time-limited access grants | Strong user value for event-style galleries; clear implementation path | High | Low-Medium |
-| Admin tab data reuse / SWR cache hardening | Noticeable admin UX gain with moderate scope if the cache audit stays disciplined | Medium | Low-Medium |
+| Admin tab data reuse / query cache hardening | Noticeable admin UX gain with moderate scope if the cache audit stays disciplined | Medium | Low-Medium |
 
 ### Prune candidates
 
@@ -100,13 +99,11 @@ The detailed sections below remain as the long-form backlog for builder, access,
 
 ### Builder Template Deep Clone
 
-**Context:** P18-C's campaign duplication shares the layout template by reference. Editing the duplicate's layout changes the original too. A "deep clone" duplicates the template itself and points the new campaign at the copy.
+**Status:** Completed in the Phase 25 follow-on cleanup slice.
 
-**Open questions:**
-- Q1: Should deep clone be an option in the P18-C duplicate modal, or a separate action in the Layout Builder?
-- Q2: Template naming convention for clones: append "(Copy)" to the template name, or prompt for a new name?
+**Result:** Campaign duplication now exposes a modal option to duplicate the linked layout template as well. When enabled, the new campaign gets its own cloned layout template with a `"(Copy)"` suffix instead of sharing the original by reference.
 
-**Effort:** Low (builds on P18-C plumbing) | **Impact:** Medium
+**Notes:** The REST and CLI duplication paths both use the same backend helper so deep-clone behavior stays aligned outside the admin UI too.
 
 ---
 
@@ -442,7 +439,7 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 | Component / surface | Trigger | Note |
 |---------------------|---------|------|
 | `SettingsPanel` tab internals (especially typography tooling) | User opens specific settings tabs | Only worth doing if the panel keeps growing; current root-level lazy load already removes it from first paint |
-| `MediaTab` add/edit/reorder subflows | User opens the media workspace | Data fetch latency is already reduced via SWR; profile bundle cost before splitting UI helpers |
+| `MediaTab` add/edit/reorder subflows | User opens the media workspace | Data fetch latency is already reduced via query caching; profile bundle cost before splitting UI helpers |
 | Layout Builder secondary tooling | User opens builder plus deeper tools | Measure after the builder route-vs-modal decision settles |
 
 **Action:** Profile before adding more chunk boundaries. The obvious wins from the original note are already implemented.
@@ -484,15 +481,15 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ### Reuse Loaded Admin Tab Data Across Tab Switches
 
-**Context:** The admin surface now relies on SWR-backed data sources rather than React Query. There is already deduping and targeted `mutate()` usage in several places, but perceived reload cost can still show up when switching between heavy tabs or reopening campaign-specific panes.
+**Context:** The admin surface now relies on TanStack Query-backed data sources. There is already shared cache reuse and targeted refetch behavior in several places, but perceived reload cost can still show up when switching between heavy tabs or reopening campaign-specific panes.
 
 **What it would take:**
-- Audit SWR keys and `dedupingInterval` / `revalidateOnFocus` / `revalidateOnReconnect` settings across `useAdminSWR`, `AdminPanel`, `LayoutTemplateList`, and related tab loaders.
-- Validate that manual `mutate()` calls are consistently wired after mutations so stale data does not persist after writes.
+- Audit query keys, `staleTime`, and reconnect/window-focus behavior across `adminQuery`, `AdminPanel`, `LayoutTemplateList`, and related tab loaders.
+- Validate that post-mutation refetch or invalidation paths are consistently wired so stale data does not persist after writes.
 - Preserve MediaTab scroll position and filter state across tab switches.
 
 **Open questions:**
-- Q1: Is this already sufficiently mitigated by current SWR deduping and local optimistic state in the heaviest tabs? Measure before expanding scope.
+- Q1: Is this already sufficiently mitigated by current query caching and local optimistic state in the heaviest tabs? Measure before expanding scope.
 - Q2: Should preserved tab state (scroll position, active filters) be in React state (lost on component unmount) or URL params (persistent on refresh)?
 
 **Effort:** Low–Medium | **Impact:** Medium

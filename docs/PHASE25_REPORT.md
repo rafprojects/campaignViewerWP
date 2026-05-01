@@ -780,10 +780,10 @@ These are not active implementation tracks yet, but they were promoted out of th
 | Candidate | Why it was surfaced |
 |-----------|---------------------|
 | Final legacy gallery bridge removal | Completed later in the dedicated settings-refactor follow-on documented in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md) |
-| Builder template deep clone | Solves a real duplication surprise with contained scope |
+| Builder template deep clone | Completed in the follow-on cleanup slice; campaign duplication can now clone linked layout templates instead of sharing by reference |
 | Global settings export/import | Adds a recovery path for destructive config regressions and makes settings migration safer across environments |
 | Time-limited access grants | High user value for event-style galleries with a clear implementation path |
-| Admin tab data reuse / SWR cache hardening | Medium user impact with a bounded audit-first implementation path |
+| Admin tab data reuse / query cache hardening | Medium user impact with a bounded audit-first implementation path |
 
 ## Track P25-A - Gallery Config Dropdown Reliability COMPLETE
 

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
@@ -10,12 +11,11 @@ import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
-import useSWR, { useSWRConfig } from 'swr';
-import type { LayoutTemplate } from '@/types';
 import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
+  useCampaignCategories,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
-} from '@/hooks/useAdminSWR';
+} from '@/services/adminQuery';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
@@ -23,6 +23,7 @@ import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useAccessRows } from '@/hooks/useAccessRows';
 import { useAuditRows } from '@/hooks/useAuditRows';
+import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
@@ -42,7 +43,7 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
-  const { mutate: swrMutate } = useSWRConfig();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useLocalStorage<string | null>({
     key: 'wpsg_admin_active_tab',
     defaultValue: 'campaigns',
@@ -63,17 +64,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const allCampaigns = useAllCampaignOptions(apiClient);
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 
-  const { data: layoutTemplates } = useSWR<LayoutTemplate[]>(
-    'admin-layout-templates-for-form',
-    () => apiClient.getLayoutTemplates(),
-    { revalidateOnFocus: false, dedupingInterval: 60_000 },
-  );
-
-  const { data: campaignCategories = [] } = useSWR(
-    'campaign-categories',
-    () => apiClient.listCampaignCategories(),
-    { revalidateOnFocus: false, dedupingInterval: 60_000 },
-  );
+  const { data: layoutTemplates } = useLayoutTemplates(apiClient);
+  const { campaignCategories } = useCampaignCategories(apiClient);
 
   const accessTargetId = accessViewMode === 'campaign' ? accessCampaignId : selectedCompanyId;
   const { accessEntries, accessLoading, mutateAccess } = useAccessGrants(
@@ -127,21 +119,21 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   useEffect(() => {
     if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
-      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)), swrMutate);
+      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
-  }, [activeTab, allCampaigns, apiClient, swrMutate]);
+  }, [activeTab, allCampaigns, apiClient, queryClient]);
   useEffect(() => {
     if (activeTab === 'access' && allCampaigns.length > 0 && !accessPrefetchedRef.current) {
       accessPrefetchedRef.current = true;
-      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)), swrMutate);
+      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
-  }, [activeTab, allCampaigns, apiClient, swrMutate]);
+  }, [activeTab, allCampaigns, apiClient, queryClient]);
   useEffect(() => {
     if (activeTab === 'audit' && allCampaigns.length > 0 && !auditPrefetchedRef.current) {
       auditPrefetchedRef.current = true;
-      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)), swrMutate);
+      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
-  }, [activeTab, allCampaigns, apiClient, swrMutate]);
+  }, [activeTab, allCampaigns, apiClient, queryClient]);
   useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
 
   const campaignSelectData = useMemo(

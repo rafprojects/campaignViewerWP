@@ -6,6 +6,7 @@
  * delete). Includes import/export JSON functionality.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ActionIcon,
   Badge,
@@ -37,7 +38,6 @@ import {
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react';
-import useSWR from 'swr';
 import type { ApiClient } from '@/services/apiClient';
 import type { LayoutTemplate } from '@/types';
 const LayoutBuilderModal = lazy(() =>
@@ -49,6 +49,10 @@ const PresetGalleryModal = lazy(() =>
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { createEmptyTemplate } from '@/hooks/useLayoutBuilderState';
 import type { LayoutPreset } from '@/data/layoutPresets';
+import {
+  getLayoutTemplatesQueryKey,
+  useLayoutTemplates,
+} from '@/services/layoutTemplateQuery';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -105,6 +109,7 @@ interface LayoutTemplateListProps {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: LayoutTemplateListProps) {
+  const queryClient = useQueryClient();
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,11 +120,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
   const resetRef = useRef<() => void>(null);
 
   // ── Data fetching ─────────────────────────────────────────────────────────
-  const { data: templates, isLoading, mutate } = useSWR<LayoutTemplate[]>(
-    'admin-layout-templates',
-    () => apiClient.getLayoutTemplates(),
-    { revalidateOnFocus: false, dedupingInterval: 30_000 },
-  );
+  const { data: templates, isLoading, refetch: refetchTemplates } = useLayoutTemplates(apiClient);
 
   // ── Open builder for initialTemplateId once data is available ─────────────
   const handledInitialRef = useRef(false);
@@ -172,24 +173,21 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
 
   const handleBuilderSaved = useCallback(
     (saved: LayoutTemplate) => {
-      // Optimistically update the SWR cache so the template list (and any
-      // immediate re-open of the builder) reflect the latest server data
-      // without waiting for a background revalidation round-trip.
-      mutate(
+      queryClient.setQueryData<LayoutTemplate[]>(
+        getLayoutTemplatesQueryKey(apiClient),
         (current) => {
           if (!current) return [saved];
-          const idx = current.findIndex((t) => t.id === saved.id);
-          if (idx >= 0) {
+          const index = current.findIndex((template) => template.id === saved.id);
+          if (index >= 0) {
             const next = [...current];
-            next[idx] = saved;
+            next[index] = saved;
             return next;
           }
           return [...current, saved];
         },
-        { revalidate: false },
       );
     },
-    [mutate],
+    [apiClient, queryClient],
   );
 
   const handleBuilderClose = useCallback(() => {
@@ -202,12 +200,12 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
       try {
         await apiClient.duplicateLayoutTemplate(t.id, `${t.name} (copy)`);
         onNotify({ type: 'success', text: `Duplicated "${t.name}"` });
-        mutate();
+        await refetchTemplates();
       } catch (err) {
         onNotify({ type: 'error', text: (err as Error).message });
       }
     },
-    [apiClient, mutate, onNotify],
+    [apiClient, onNotify, refetchTemplates],
   );
 
   const handleDelete = useCallback(
@@ -217,12 +215,12 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
         await apiClient.deleteLayoutTemplate(confirmDelete.id);
         onNotify({ type: 'success', text: `Deleted "${confirmDelete.name}"` });
         setConfirmDelete(null);
-        mutate();
+        await refetchTemplates();
       } catch (err) {
         onNotify({ type: 'error', text: (err as Error).message });
       }
     },
-    [apiClient, confirmDelete, mutate, onNotify],
+    [apiClient, confirmDelete, onNotify, refetchTemplates],
   );
 
   // ── Export (P15-F.4) ──────────────────────────────────────────────────────
@@ -260,13 +258,13 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
           updatedAt: new Date().toISOString(),
         });
         onNotify({ type: 'success', text: `Imported "${rest.name}"` });
-        mutate();
+        await refetchTemplates();
         resetRef.current?.();
       } catch (err) {
         onNotify({ type: 'error', text: `Import failed: ${(err as Error).message}` });
       }
     },
-    [apiClient, mutate, onNotify],
+    [apiClient, onNotify, refetchTemplates],
   );
 
   // ── Render ────────────────────────────────────────────────────────────────

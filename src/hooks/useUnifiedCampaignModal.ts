@@ -10,8 +10,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
+import type { AdminCampaign } from '@/services/adminQuery';
 import type { Campaign, MediaItem, UploadResponse } from '@/types';
-import type { AdminCampaign } from '@/hooks/useAdminSWR';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { sortByOrder } from '@/utils/sortByOrder';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';

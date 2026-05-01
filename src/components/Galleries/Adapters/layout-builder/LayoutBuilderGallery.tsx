@@ -6,7 +6,7 @@
  * border, and object-fit matching the slot definition.
  *
  * Features:
- * - Uses `useLayoutTemplate()` SWR hook + public endpoint (no auth).
+ * - Uses `useLayoutTemplate()` query hook + public endpoint (no auth).
  * - `assignMediaToSlots()` for media→slot assignment.
  * - Per-slot hover effects via `buildTileStyles()` + `buildBoxShadowStyles()`.
  * - Lightbox integration via `useCarousel` + `<Lightbox>`.

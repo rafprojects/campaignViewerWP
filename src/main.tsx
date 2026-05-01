@@ -179,7 +179,7 @@ const mountDefault = (host: HTMLElement, props: MountProps) => {
 /**
  * I-6: Mount multiple shortcodes via a single React root using portals.
  * Galleries rendered through portals share the same React tree, which means:
- *   • shared query/cache deduplication for settings and SWR-backed campaign data.
+ *   • shared query/cache deduplication for settings and campaign data.
  *   • Reduced provider overhead — one StrictMode boundary for all galleries.
  * Each gallery still gets its own ThemeProvider + MantineProvider so shadow
  * DOM CSS variable scoping and per-instance config continue to work.

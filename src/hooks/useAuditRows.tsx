@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Table, Text } from '@mantine/core';
-import type { AuditEntry } from '@/hooks/useAdminSWR';
+import type { AuditEntry } from '@/services/adminQuery';
 
 export function useAuditRows(auditEntries: AuditEntry[]) {
   return useMemo(() => {

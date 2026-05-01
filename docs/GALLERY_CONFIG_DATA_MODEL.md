@@ -122,7 +122,7 @@ export interface GalleryConfig {
 
 ## Implemented Global Settings Shape
 
-Phase 25 uses `galleryConfig` as the only active gallery-settings contract. `GalleryBehaviorSettings` still includes some legacy flat gallery fields in the broader type/default surface for migration helpers and untouched consumers, but the gallery editor, runtime resolver, and PHP REST contract do not depend on those flat fields when `galleryConfig` is present.
+Phase 25 uses `galleryConfig` as the only active gallery-settings contract. `GalleryBehaviorSettings` still includes some flat gallery fields in the broader type/default surface for defaults and untouched consumers, but the gallery editor, runtime resolver, and PHP REST contract do not depend on those flat fields as an active bridge.
 
 ```ts
 export interface GalleryBehaviorSettings {
@@ -135,7 +135,7 @@ export interface GalleryBehaviorSettings {
 
 ### Current Rule
 
-If `galleryConfig` is present and valid, it is the only gallery-settings contract surfaced to frontend UI, runtime resolution, and REST responses. If stored data contains only older flat fields, migration/read helpers may promote them into `galleryConfig`, but the promoted nested result is not mirrored back into flat gallery response fields.
+`galleryConfig` is the only gallery-settings contract surfaced to frontend UI, runtime resolution, and REST responses.
 
 ---
 
@@ -153,11 +153,11 @@ export interface Campaign {
 
 The WordPress storage key for the nested campaign override payload is `_wpsg_gallery_overrides`.
 
-Older `_wpsg_image_adapter_id` and `_wpsg_video_adapter_id` post meta may still be promoted into nested overrides during PHP migration/read flows, but they are not exposed as parallel campaign fields in the app contract.
+Older `_wpsg_image_adapter_id` and `_wpsg_video_adapter_id` post meta are no longer exposed as parallel campaign fields in the app contract.
 
 ### Current Rule
 
-Campaign responses and modal/runtime state use only nested `galleryOverrides`. Any legacy flat campaign adapter data is normalized into nested overrides before resolution runs.
+Campaign responses and modal/runtime state use only nested `galleryOverrides`.
 
 ---
 
@@ -167,7 +167,7 @@ Effective gallery behavior must be resolved in one place, in one deterministic o
 
 ### Current order
 
-1. campaign nested override, after any legacy storage promotion into nested form
+1. campaign nested override
 2. global nested `galleryConfig`
 3. hard fallback from default nested config
 
@@ -175,7 +175,7 @@ Effective gallery behavior must be resolved in one place, in one deterministic o
 
 1. New nested config must win when present.
 2. Campaign-level intent must override global intent.
-3. Legacy values are promoted into nested form before resolution instead of being consulted as a parallel runtime source.
+3. Runtime does not consult flat gallery fields as a parallel source.
 4. Runtime behavior stays predictable and testable.
 
 ---
@@ -184,17 +184,14 @@ Effective gallery behavior must be resolved in one place, in one deterministic o
 
 ### Current behavior
 
-1. Older installs may still store only flat global gallery settings or older campaign adapter meta.
-2. DB/read-time promotion utilities may translate those stored values into nested `galleryConfig` or `galleryOverrides`.
-3. Once nested config exists, live frontend runtime, settings panel state, PHP `get_settings()`, and REST responses do not rehydrate flat gallery bridge fields.
-4. Save flows persist nested config and prune obsolete flat fields where that persistence path owns the write.
+1. Live frontend runtime, settings panel state, PHP `get_settings()`, and REST responses use nested gallery data only.
+2. Save flows persist nested config and prune obsolete flat fields where that persistence path owns the write.
 
 ### Practical contract
 
-1. Read nested config first if present.
-2. If nested config is absent, promote legacy flat settings or campaign adapter overrides into nested config during load or DB backfill.
-3. Resolve runtime behavior from nested config only.
-4. Emit nested gallery data only in active settings and campaign contracts.
+1. Read nested config only.
+2. Resolve runtime behavior from nested config plus default nested config.
+3. Emit nested gallery data only in active settings and campaign contracts.
 
 ---
 

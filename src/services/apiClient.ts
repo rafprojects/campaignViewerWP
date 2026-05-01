@@ -280,11 +280,15 @@ export class ApiClient {
 
   async duplicateCampaign(
     id: string,
-    options: { name?: string; copyMedia?: boolean },
+    options: { name?: string; copyMedia?: boolean; duplicateLayoutTemplate?: boolean },
   ): Promise<{ id: string; title: string }> {
     return this.post<{ id: string; title: string }>(
       `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/duplicate`,
-      { name: options.name, copyMedia: options.copyMedia ?? false },
+      {
+        name: options.name,
+        copyMedia: options.copyMedia ?? false,
+        duplicateLayoutTemplate: options.duplicateLayoutTemplate ?? false,
+      },
     );
   }
 

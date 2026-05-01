@@ -11,7 +11,7 @@ import {
  * Debounced save hook for in-context editors.
  *
  * Batches multiple field changes and saves them to the server after a debounce
- * delay.  Optimistically updates the SWR cache so the UI responds instantly.
+ * delay. Optimistically updates the settings query cache so the UI responds instantly.
  */
 export function useInContextSave(
   apiClient: ApiClient | undefined,

@@ -4,7 +4,16 @@
 
 Implementation record updated through 2026-04-30.
 
-Core Phase 25 bridge-removal work is now complete for the active gallery settings contract. Remaining work is limited to cleanup, documentation sync, and broader schema decomposition that was intentionally not required to finish the contract reset.
+Core Phase 25 bridge-removal work is complete for the active gallery settings contract. The remaining follow-up is documentation/reference cleanup and broader schema decomposition that was intentionally not required to finish the contract reset.
+
+### Remaining cleanup triage
+
+As of 2026-04-30, the remaining cleanup is limited to:
+
+1. Sync living reference docs and planning notes that still describe SWR-era internals or the removed flat-field bridge.
+2. Clear the TypeScript 6 deprecation warning triggered by the old `baseUrl` compiler option.
+3. Leave historical phase reports as point-in-time records instead of rewriting their original state descriptions.
+4. Keep broader `GalleryBehaviorSettings` schema decomposition as a separate follow-on, not a blocker for the completed contract reset.
 
 This document promotes the data-model cleanup work that earlier docs deferred and refines the original proposal in `docs/REFACTOR_SETTINGS_ZUSTAND_REACTQUERY_ZOD.md`.
 
@@ -25,7 +34,8 @@ This document promotes the data-model cleanup work that earlier docs deferred an
 - Completed 2026-04-30: remaining migration support has been removed from the active contract. Frontend settings hydration no longer reconstructs nested config from flat gallery fields, campaign helpers no longer promote flat adapter ids, and PHP DB/REST/CLI paths no longer backfill nested settings or overrides from legacy storage.
 - Completed 2026-04-30: deprecated `ImageCarousel` and `VideoCarousel` wrappers now pass resolved common settings explicitly, and `MediaCarouselInner` no longer derives shared common settings through an internal fallback path.
 - Completed 2026-04-30: validation for the completed bridge-removal slice is green across focused Vitest, full Vitest, `npm run build`, focused wp-env settings PHPUnit, and full wp-env PHPUnit.
-- Commentary: the broader SWR layer remains intentionally in place for campaigns/admin data during this phase. Query migration is currently limited to settings so the canonical-model cleanup can proceed without coupling it to a full admin data rewrite.
+- Completed 2026-04-30: the broader frontend data layer now uses TanStack Query as well. App campaigns, admin tab resources, layout-template flows, public layout-template loading, and the shared test providers have been migrated off SWR, and the `swr` dependency has been removed.
+- Completed 2026-04-30: the remaining live flat-field bridge inside the settings UI and gallery runtime has been removed. Adapter-specific settings now write straight into nested `galleryConfig.adapterSettings`, and common runtime resolution now derives defaults from nested `galleryConfig` instead of rebuilding them from flat gallery fields.
 - Commentary: `SettingsPanel` still owns view-local UI state such as tabs, custom-font editor wiring, and the responsive-config modal open state. W5 is complete for draft lifecycle state, and the remaining Phase 25 work is now cleanup/docs rather than bridge removal.
 
 ---
@@ -50,7 +60,7 @@ The original proposal identified the right problems, but a few scope decisions n
 | Monolithic `GalleryBehaviorSettings` | Accurate | The interface and defaults surface are too large and mix unrelated domains. |
 | Legacy flat-to-nested bridge | Accurate | The bridge is real maintenance debt across frontend, PHP, and tests. |
 | Manual `SettingsPanel` state | Accurate | Local draft/original/dirty/load/save state is hand-rolled and difficult to test. |
-| Direct API calls / no caching | Partially accurate | The app already uses SWR broadly, but settings do not use a clean, dedicated query abstraction and rely on manual cache workarounds. |
+| Direct API calls / no caching | Partially accurate | At the time of the proposal, the app already used SWR broadly, but settings did not have a clean, dedicated query abstraction and relied on manual cache workarounds. That broader layer has now been migrated to TanStack Query as part of the follow-on cleanup slice. |
 | Fragile coercion in `mergeSettingsWithDefaults()` | Accurate | JSON parsing and coercion are manual, narrow, and hard to observe or test. |
 
 ### Net conclusion
@@ -59,7 +69,7 @@ The proposed direction is valid, with these refinements:
 
 1. **Remove the bridge in this phase**, not later. Pre-release status removes the main argument for carrying legacy reads forward.
 2. **Include campaign legacy override cleanup in the same phase** so the data model becomes consistently nested-only.
-3. **Adopt TanStack Query for settings in this phase**, but defer the broader app-wide SWR replacement to Phase 26.
+3. **Adopt TanStack Query for settings first**, then extend the same query model through the broader app/admin/layout data layer once the canonical contract cleanup is stable.
 
 ---
 
@@ -71,7 +81,7 @@ The proposed direction is valid, with these refinements:
 | B | Campaign override model | `galleryOverrides` becomes the only supported campaign gallery override representation. |
 | C | Legacy read compatibility | Remove it in this phase. No transitional bridge window is required for unreleased installs. |
 | D | Runtime validation | Add Zod at the settings boundary and expand from there. |
-| E | Query layer scope | Migrate settings to TanStack Query now; defer app-wide SWR retirement to Phase 26. |
+| E | Query layer scope | Migrate settings to TanStack Query first, then complete the broader SWR retirement slice once the nested-only contract is stable. |
 | F | Draft state scope | Use Zustand for settings draft/original/dirty lifecycle after the query boundary is in place. |
 | G | Campaign cleanup timing | Bundle campaign legacy adapter cleanup with the global bridge removal. |
 
@@ -90,7 +100,7 @@ The proposed direction is valid, with these refinements:
 
 ## Non-Goals
 
-1. Full app-wide SWR to TanStack Query migration in this phase.
+1. Full app-wide SWR to TanStack Query migration in the initial settings-only slice.
 2. Large-scale viewer/auth/query/store refactors outside what is required by the settings contract cleanup.
 3. Carrying forward flat global gallery fields or flat campaign adapter overrides as a runtime compatibility layer.
 
@@ -182,16 +192,16 @@ Status update: the frontend campaign editor and runtime now treat `galleryOverri
 
 ### W4. Settings Query Migration
 
-Adopt TanStack Query for settings only.
+Adopt TanStack Query starting with settings.
 
 Tasks:
 
 1. Add `QueryClientProvider` to the app root.
 2. Create dedicated settings query/mutation hooks.
 3. Migrate the root settings fetch path and in-context save workflow away from the SWR settings key.
-4. Keep the broader SWR admin and campaign layer intact for this phase.
+4. Keep the broader admin and campaign layer stable during the initial settings migration, then remove SWR in a dedicated follow-on slice once the contract reset is green.
 
-Status update: tasks 1-4 are complete for the current settings slice. The root provider, settings query hooks, root settings fetch path, SettingsPanel fallback load/save path, and in-context save cache flow are on TanStack Query. `SettingsPanel` still uses local component state for draft/original/dirty handling, which remains the W5 integration task.
+Status update: the initial settings slice is complete, and the follow-on broader migration is now complete as well. The root provider, settings query hooks, root settings fetch path, SettingsPanel fallback load/save path, in-context save cache flow, app campaign loading, admin tab resources, layout-template flows, and public layout-template loading are all on TanStack Query. `SettingsPanel` still uses local component state for draft/original/dirty handling, which remains the W5 integration task.
 
 Primary files:
 
@@ -226,9 +236,9 @@ Tasks:
 
 1. Update tests and fixtures that expect flat gallery bridge hydration.
 2. Update architecture docs to describe the bridge as current-state legacy behavior only, not a long-term direction.
-3. Record the Phase 26 follow-up for app-wide query migration.
+3. Keep the implementation docs aligned now that the broader query migration is complete.
 
-Status update: W6 is in the final cleanup/documentation stage. Tests and fixtures covering the active settings contract have been refreshed away from flat gallery bridge expectations, the architecture docs now describe `galleryConfig` / `galleryOverrides` as the active nested-only contract, and the deprecated shared carousel wrappers now pass resolved common settings explicitly so `MediaCarouselInner` no longer depends on an internal common-settings fallback.
+Status update: W6 is complete for the live implementation surface. Tests and fixtures covering the active settings contract have been refreshed away from flat gallery bridge expectations, the architecture docs now describe `galleryConfig` / `galleryOverrides` as the active nested-only contract, and the deprecated shared carousel wrappers plus settings UI now operate on nested gallery data directly instead of relying on an internal flat-field bridge.
 
 ---
 
@@ -258,11 +268,11 @@ Latest validation: focused adapter-bridge Vitest slice is green at 4 files / 109
 
 ---
 
-## Phase 26 Follow-Up
+## Follow-On Query Cleanup
 
-Phase 25 intentionally stops at settings-only TanStack Query adoption.
+Phase 25 intentionally shipped the settings query slice first.
 
-Phase 26 should evaluate a single-pass replacement of the broader SWR layer, including `useAdminSWR.ts`, admin tab data fetches, modal mutation flows, and shared cache invalidation patterns.
+Completed 2026-04-30: the follow-on cleanup pass migrated the broader app/admin/layout data layer to TanStack Query as well, retired the temporary `useAdminSWR.ts` compatibility surface, and removed the `swr` dependency from the active frontend runtime and shared test harness.
 
 ---
 

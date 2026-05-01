@@ -92,9 +92,13 @@ const LEGACY_SCOPED_COMMON_SETTING_FIELD_MAP = {
   unifiedBgImageUrl: { scope: 'unified', commonKey: 'viewportBgImageUrl' },
 } as const satisfies Partial<Record<keyof GalleryBehaviorSettings, { scope: GalleryConfigScope; commonKey: keyof GalleryCommonSettings }>>;
 
+function getRegisteredAdaptersSafe() {
+  return typeof getRegisteredAdapters === 'function' ? getRegisteredAdapters() : [];
+}
+
 const LEGACY_ADAPTER_SETTING_KEYS = Array.from(
   new Set(
-    getRegisteredAdapters().flatMap((adapter) => (
+    getRegisteredAdaptersSafe().flatMap((adapter) => (
       adapter.settingGroups.flatMap((group) => (
         getSettingGroupDefinition(group)?.fields.flatMap((field) => {
           const keys: Array<keyof GalleryBehaviorSettings> = [field.key];
@@ -194,7 +198,10 @@ function scopeUsesAdapterSettingKey(
       return false;
     }
 
-    return definition.fields.some((field) => field.key === key && isAdapterSettingFieldApplicableToScope(field, scope));
+    return definition.fields.some((field) => (
+      (field.key === key || ('unitKey' in field && field.unitKey === key)) &&
+      isAdapterSettingFieldApplicableToScope(field, scope)
+    ));
   });
 }
 
@@ -313,6 +320,28 @@ export function setScopeGalleryCommonSetting<K extends ScopeSpecificGalleryCommo
   return nextConfig;
 }
 
+export function setGalleryAdapterSetting<K extends keyof GalleryBehaviorSettings>(
+  config: GalleryConfig | undefined,
+  key: K,
+  value: GalleryBehaviorSettings[K],
+): GalleryConfig {
+  const nextConfig = cloneGalleryConfig(config) ?? getDefaultGalleryConfig();
+
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    for (const scope of GALLERY_SCOPES) {
+      const scopeConfig = getOrCreateScopeConfig(nextConfig, breakpoint, scope);
+      if (!scopeUsesAdapterSettingKey(scopeConfig.adapterId, scope, key)) {
+        continue;
+      }
+
+      scopeConfig.adapterSettings ??= {};
+      scopeConfig.adapterSettings[key] = value;
+    }
+  }
+
+  return nextConfig;
+}
+
 export function collectGalleryAdapterSettingValues(
   config: GalleryConfig,
 ): Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>> {
@@ -383,65 +412,6 @@ export function getScopeGalleryCommonSetting(
     ?? config.breakpoints?.mobile?.[scope]?.common?.[key];
 
   return typeof value === 'string' ? value : undefined;
-}
-
-export function syncLegacyGallerySettingToConfig<K extends keyof GalleryBehaviorSettings>(
-  config: GalleryConfig | undefined,
-  key: K,
-  value: GalleryBehaviorSettings[K],
-): GalleryConfig | undefined {
-  const commonKey = LEGACY_COMMON_SETTING_FIELD_MAP[key as keyof typeof LEGACY_COMMON_SETTING_FIELD_MAP];
-  const scopedCommonKey = LEGACY_SCOPED_COMMON_SETTING_FIELD_MAP[key as keyof typeof LEGACY_SCOPED_COMMON_SETTING_FIELD_MAP];
-  const nextConfig = cloneGalleryConfig(config) ?? getDefaultGalleryConfig();
-
-  if (!commonKey && !scopedCommonKey) {
-    let usesAdapterSetting = false;
-    for (const breakpoint of GALLERY_BREAKPOINTS) {
-      for (const scope of GALLERY_SCOPES) {
-        const adapterId = nextConfig.breakpoints?.[breakpoint]?.[scope]?.adapterId;
-        if (scopeUsesAdapterSettingKey(adapterId, scope, key)) {
-          usesAdapterSetting = true;
-          break;
-        }
-      }
-      if (usesAdapterSetting) {
-        break;
-      }
-    }
-
-    if (!usesAdapterSetting) {
-      return undefined;
-    }
-  }
-
-  if (commonKey) {
-    syncSharedCommonSettingAcrossScopes(nextConfig, commonKey, value as GalleryCommonSettings[typeof commonKey]);
-    return nextConfig;
-  }
-
-  if (scopedCommonKey) {
-    syncScopedCommonSettingAcrossBreakpoints(
-      nextConfig,
-      scopedCommonKey.scope,
-      scopedCommonKey.commonKey,
-      value as GalleryCommonSettings[typeof scopedCommonKey.commonKey],
-    );
-    return nextConfig;
-  }
-
-  for (const breakpoint of GALLERY_BREAKPOINTS) {
-    for (const scope of GALLERY_SCOPES) {
-      const scopeConfig = getOrCreateScopeConfig(nextConfig, breakpoint, scope);
-      if (!scopeUsesAdapterSettingKey(scopeConfig.adapterId, scope, key)) {
-        continue;
-      }
-
-      scopeConfig.adapterSettings ??= {};
-      scopeConfig.adapterSettings[key] = value;
-    }
-  }
-
-  return nextConfig;
 }
 
 export function parseGalleryConfig(input: unknown): GalleryConfig | undefined {

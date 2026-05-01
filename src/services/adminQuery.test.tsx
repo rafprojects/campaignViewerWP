@@ -1,10 +1,12 @@
+import { useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { SWRConfig } from 'swr';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ApiClient } from '@/services/apiClient';
+import { createTestQueryClient } from '@/services/queryClient';
 
-import { useAuditEntries } from './useAdminSWR';
+import { useAuditEntries } from './adminQuery';
 
 function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
@@ -18,15 +20,17 @@ function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
 
 function makeWrapper() {
   return function Wrapper({ children }: { children: React.ReactNode }) {
+    const [queryClient] = useState(createTestQueryClient);
+
     return (
-      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false }}>
+      <QueryClientProvider client={queryClient}>
         {children}
-      </SWRConfig>
+      </QueryClientProvider>
     );
   };
 }
 
-describe('useAdminSWR', () => {
+describe('adminQuery', () => {
   it('loads audit entries for the selected campaign', async () => {
     const get = vi.fn().mockResolvedValue([
       { id: 'a1', action: 'updated', details: { field: 'title' }, userId: 7, createdAt: '2026-01-03T00:00:00.000Z' },

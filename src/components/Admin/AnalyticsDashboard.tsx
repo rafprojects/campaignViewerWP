@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react';
-import useSWR from 'swr';
+import { useMemo, useState } from 'react';
 import {
   Stack,
   Group,
@@ -24,7 +23,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import type { ApiClient, CampaignAnalyticsResponse } from '@/services/apiClient';
+import type { ApiClient } from '@/services/apiClient';
+import { useCampaignAnalytics } from '@/services/adminQuery';
 
 interface SelectItem {
   value: string;
@@ -73,19 +73,12 @@ function StatCard({
 export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardProps) {
   const [campaignId, setCampaignId] = useState<string | null>(campaigns[0]?.value ?? null);
   const [preset, setPreset] = useState<RangePreset>('30');
-
-  const fetcher = useCallback(
-    async ([id, p]: [string, RangePreset]): Promise<CampaignAnalyticsResponse> => {
-      const { from, to } = getDateRange(p);
-      return apiClient.getCampaignAnalytics(id, from, to);
-    },
-    [apiClient],
-  );
-
-  const { data, isLoading, error } = useSWR<CampaignAnalyticsResponse>(
-    campaignId ? [campaignId, preset] : null,
-    fetcher,
-    { revalidateOnFocus: false },
+  const dateRange = useMemo(() => getDateRange(preset), [preset]);
+  const { data, isLoading, error } = useCampaignAnalytics(
+    apiClient,
+    campaignId,
+    dateRange.from,
+    dateRange.to,
   );
 
   const chartData = (data?.daily ?? []).map((d) => ({

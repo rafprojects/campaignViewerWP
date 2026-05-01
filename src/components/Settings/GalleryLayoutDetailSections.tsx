@@ -5,10 +5,12 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type G
 import { CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 import { anyAdapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
 import {
+  collectGalleryAdapterSettingValues,
   getActiveGalleryConfigAdapterIds,
   getRepresentativeGalleryCommonSetting,
   resolveGalleryConfig,
   setRepresentativeGalleryCommonSetting,
+  setGalleryAdapterSetting,
 } from '@/utils/galleryConfig';
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
@@ -24,6 +26,7 @@ function usesCarouselSettings(settings: GalleryBehaviorSettings): boolean {
 
 export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPanels }: GalleryLayoutDetailSectionsProps) {
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
+  const resolvedAdapterSettings = collectGalleryAdapterSettingValues(resolvedGalleryConfig);
   const showCarouselSettings = usesCarouselSettings(settings);
 
   const updateRepresentativeCommonSetting = (
@@ -35,6 +38,14 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
       key,
       value as GalleryCommonSettings[typeof key],
     ));
+  };
+
+  const getAdapterSettingValue = <K extends keyof GalleryBehaviorSettings>(key: K): GalleryBehaviorSettings[K] => (
+    (resolvedAdapterSettings[key] as GalleryBehaviorSettings[K] | undefined) ?? settings[key]
+  );
+
+  const updateAdapterSetting = <K extends keyof GalleryBehaviorSettings>(key: K, value: GalleryBehaviorSettings[K]) => {
+    updateSetting('galleryConfig', setGalleryAdapterSetting(resolvedGalleryConfig, key, value));
   };
 
   const gallerySectionMaxWidth = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'sectionMaxWidth') as number | undefined;
@@ -68,8 +79,8 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               <NumberInput
                 label="Visible Cards"
                 description="Number of slides visible at once in the carousel."
-                value={settings.carouselVisibleCards}
-                onChange={(value) => updateSetting('carouselVisibleCards', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselVisibleCards)}
+                value={getAdapterSettingValue('carouselVisibleCards')}
+                onChange={(value) => updateAdapterSetting('carouselVisibleCards', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselVisibleCards)}
                 min={1}
                 max={10}
                 step={1}
@@ -77,10 +88,10 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               <DimensionInput
                 label="Slide Gap"
                 description="Space between carousel slides."
-                value={settings.carouselGap}
-                unit={settings.carouselGapUnit ?? 'px'}
-                onValueChange={(value) => updateSetting('carouselGap', value)}
-                onUnitChange={(unit) => updateSetting('carouselGapUnit', unit as GalleryBehaviorSettings['carouselGapUnit'])}
+                value={getAdapterSettingValue('carouselGap')}
+                unit={getAdapterSettingValue('carouselGapUnit') ?? 'px'}
+                onValueChange={(value) => updateAdapterSetting('carouselGap', value)}
+                onUnitChange={(unit) => updateAdapterSetting('carouselGapUnit', unit as GalleryBehaviorSettings['carouselGapUnit'])}
                 allowedUnits={CSS_SPACING_UNITS}
                 max={64}
                 step={4}
@@ -88,29 +99,29 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               <Switch
                 label="Loop"
                 description="Continuously loop slides when reaching the end."
-                checked={settings.carouselLoop}
-                onChange={(e) => updateSetting('carouselLoop', e.currentTarget.checked)}
+                checked={getAdapterSettingValue('carouselLoop')}
+                onChange={(e) => updateAdapterSetting('carouselLoop', e.currentTarget.checked)}
               />
               <Switch
                 label="Drag Enabled"
                 description="Allow dragging/swiping to navigate slides."
-                checked={settings.carouselDragEnabled}
-                onChange={(e) => updateSetting('carouselDragEnabled', e.currentTarget.checked)}
+                checked={getAdapterSettingValue('carouselDragEnabled')}
+                onChange={(e) => updateAdapterSetting('carouselDragEnabled', e.currentTarget.checked)}
               />
               <Divider label="Autoplay" labelPosition="center" />
               <Switch
                 label="Autoplay"
                 description="Automatically advance slides."
-                checked={settings.carouselAutoplay}
-                onChange={(e) => updateSetting('carouselAutoplay', e.currentTarget.checked)}
+                checked={getAdapterSettingValue('carouselAutoplay')}
+                onChange={(e) => updateAdapterSetting('carouselAutoplay', e.currentTarget.checked)}
               />
-              {settings.carouselAutoplay && (
+              {getAdapterSettingValue('carouselAutoplay') && (
                 <>
                   <NumberInput
                     label="Autoplay Speed (ms)"
                     description="Delay between automatic slide transitions."
-                    value={settings.carouselAutoplaySpeed}
-                    onChange={(value) => updateSetting('carouselAutoplaySpeed', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselAutoplaySpeed)}
+                    value={getAdapterSettingValue('carouselAutoplaySpeed')}
+                    onChange={(value) => updateAdapterSetting('carouselAutoplaySpeed', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselAutoplaySpeed)}
                     min={500}
                     max={15000}
                     step={250}
@@ -118,14 +129,14 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
                   <Switch
                     label="Pause on Hover"
                     description="Pause autoplay when the mouse hovers over the carousel."
-                    checked={settings.carouselAutoplayPauseOnHover}
-                    onChange={(e) => updateSetting('carouselAutoplayPauseOnHover', e.currentTarget.checked)}
+                    checked={getAdapterSettingValue('carouselAutoplayPauseOnHover')}
+                    onChange={(e) => updateAdapterSetting('carouselAutoplayPauseOnHover', e.currentTarget.checked)}
                   />
                   <ModalSelect
                     label="Autoplay Direction"
                     description="Direction autoplay advances slides."
-                    value={settings.carouselAutoplayDirection}
-                    onChange={(value) => updateSetting('carouselAutoplayDirection', (value ?? 'ltr') as GalleryBehaviorSettings['carouselAutoplayDirection'])}
+                    value={getAdapterSettingValue('carouselAutoplayDirection')}
+                    onChange={(value) => updateAdapterSetting('carouselAutoplayDirection', (value ?? 'ltr') as GalleryBehaviorSettings['carouselAutoplayDirection'])}
                     data={[
                       { value: 'ltr', label: 'Left to Right' },
                       { value: 'rtl', label: 'Right to Left' },
@@ -137,15 +148,15 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               <Switch
                 label="Darken Unfocused Slides"
                 description="Apply a dark overlay on slides that are not currently selected."
-                checked={settings.carouselDarkenUnfocused}
-                onChange={(e) => updateSetting('carouselDarkenUnfocused', e.currentTarget.checked)}
+                checked={getAdapterSettingValue('carouselDarkenUnfocused')}
+                onChange={(e) => updateAdapterSetting('carouselDarkenUnfocused', e.currentTarget.checked)}
               />
-              {settings.carouselDarkenUnfocused && (
+              {getAdapterSettingValue('carouselDarkenUnfocused') && (
                 <NumberInput
                   label="Darken Opacity"
                   description="Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
-                  value={settings.carouselDarkenOpacity}
-                  onChange={(value) => updateSetting('carouselDarkenOpacity', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselDarkenOpacity)}
+                  value={getAdapterSettingValue('carouselDarkenOpacity')}
+                  onChange={(value) => updateAdapterSetting('carouselDarkenOpacity', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.carouselDarkenOpacity)}
                   min={0}
                   max={1}
                   step={0.05}
@@ -155,8 +166,8 @@ export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPa
               <Switch
                 label="Edge Fade"
                 description="Fade slides at the edges of the carousel viewport."
-                checked={settings.carouselEdgeFade}
-                onChange={(e) => updateSetting('carouselEdgeFade', e.currentTarget.checked)}
+                checked={getAdapterSettingValue('carouselEdgeFade')}
+                onChange={(e) => updateAdapterSetting('carouselEdgeFade', e.currentTarget.checked)}
               />
             </Stack>}
           </Accordion.Panel>

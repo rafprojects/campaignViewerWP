@@ -24,6 +24,7 @@ import {
   getRepresentativeGalleryCommonSetting,
   resolveGalleryConfig,
   setRepresentativeGalleryCommonSetting,
+  setGalleryAdapterSetting,
 } from '@/utils/galleryConfig';
 
 interface MediaDisplaySettingsData extends GalleryBehaviorSettings {
@@ -49,6 +50,10 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
   const getAdapterSettingValue = <K extends keyof GalleryBehaviorSettings>(key: K): MediaDisplaySettingsData[K] => (
     (resolvedAdapterSettings[key] as MediaDisplaySettingsData[K] | undefined) ?? settings[key]
   );
+
+  const updateAdapterSetting = <K extends keyof GalleryBehaviorSettings>(key: K, value: MediaDisplaySettingsData[K]) => {
+    updateSetting('galleryConfig', setGalleryAdapterSetting(resolvedGalleryConfig, key, value));
+  };
 
   const updateViewerCommonSetting = (
     key: Extract<keyof GalleryCommonSettings, 'gallerySizingMode' | 'galleryManualHeight'>,
@@ -112,8 +117,8 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               description="Corner rounding for image gallery viewport and thumbnails."
               value={getAdapterSettingValue('imageBorderRadius')}
               unit={getAdapterSettingValue('imageBorderRadiusUnit') ?? 'px'}
-              onValueChange={(value) => updateSetting('imageBorderRadius', value)}
-              onUnitChange={(unit) => updateSetting('imageBorderRadiusUnit', unit as GalleryBehaviorSettings['imageBorderRadiusUnit'])}
+              onValueChange={(value) => updateAdapterSetting('imageBorderRadius', value)}
+              onUnitChange={(unit) => updateAdapterSetting('imageBorderRadiusUnit', unit as GalleryBehaviorSettings['imageBorderRadiusUnit'])}
               allowedUnits={CSS_BORDER_RADIUS_UNITS}
               max={48}
               step={1}
@@ -124,8 +129,8 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               description="Corner rounding for video gallery viewport and thumbnails."
               value={getAdapterSettingValue('videoBorderRadius')}
               unit={getAdapterSettingValue('videoBorderRadiusUnit') ?? 'px'}
-              onValueChange={(value) => updateSetting('videoBorderRadius', value)}
-              onUnitChange={(unit) => updateSetting('videoBorderRadiusUnit', unit as GalleryBehaviorSettings['videoBorderRadiusUnit'])}
+              onValueChange={(value) => updateAdapterSetting('videoBorderRadius', value)}
+              onUnitChange={(unit) => updateAdapterSetting('videoBorderRadiusUnit', unit as GalleryBehaviorSettings['videoBorderRadiusUnit'])}
               allowedUnits={CSS_BORDER_RADIUS_UNITS}
               max={48}
               step={1}
@@ -137,7 +142,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Image Shadow Preset"
               description="Box-shadow depth effect for image gallery viewport."
               value={getAdapterSettingValue('imageShadowPreset')}
-              onChange={(value) => updateSetting('imageShadowPreset', (value as ShadowPreset) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset)}
+              onChange={(value) => updateAdapterSetting('imageShadowPreset', (value as ShadowPreset) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageShadowPreset)}
               data={[
                 { value: 'none', label: 'None' },
                 { value: 'subtle', label: 'Subtle' },
@@ -152,7 +157,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 label="Image Custom Shadow"
                 description="CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
                 value={getAdapterSettingValue('imageShadowCustom')}
-                onChange={(event) => updateSetting('imageShadowCustom', event.currentTarget.value)}
+                onChange={(event) => updateAdapterSetting('imageShadowCustom', event.currentTarget.value)}
               />
             )}
 
@@ -160,7 +165,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Video Shadow Preset"
               description="Box-shadow depth effect for video gallery viewport."
               value={getAdapterSettingValue('videoShadowPreset')}
-              onChange={(value) => updateSetting('videoShadowPreset', (value as ShadowPreset) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset)}
+              onChange={(value) => updateAdapterSetting('videoShadowPreset', (value as ShadowPreset) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoShadowPreset)}
               data={[
                 { value: 'none', label: 'None' },
                 { value: 'subtle', label: 'Subtle' },
@@ -175,7 +180,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 label="Video Custom Shadow"
                 description="CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
                 value={getAdapterSettingValue('videoShadowCustom')}
-                onChange={(event) => updateSetting('videoShadowCustom', event.currentTarget.value)}
+                onChange={(event) => updateAdapterSetting('videoShadowCustom', event.currentTarget.value)}
               />
             )}
           </Stack>
@@ -192,8 +197,8 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 description="Horizontal gap between tiles."
                 value={getAdapterSettingValue('tileGapX')}
                 unit={getAdapterSettingValue('tileGapXUnit') ?? 'px'}
-                onValueChange={(value) => updateSetting('tileGapX', value)}
-                onUnitChange={(unit) => updateSetting('tileGapXUnit', unit as GalleryBehaviorSettings['tileGapXUnit'])}
+                onValueChange={(value) => updateAdapterSetting('tileGapX', value)}
+                onUnitChange={(unit) => updateAdapterSetting('tileGapXUnit', unit as GalleryBehaviorSettings['tileGapXUnit'])}
                 allowedUnits={CSS_SPACING_UNITS}
                 max={60}
                 step={1}
@@ -203,8 +208,8 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 description="Vertical gap between tile rows."
                 value={getAdapterSettingValue('tileGapY')}
                 unit={getAdapterSettingValue('tileGapYUnit') ?? 'px'}
-                onValueChange={(value) => updateSetting('tileGapY', value)}
-                onUnitChange={(unit) => updateSetting('tileGapYUnit', unit as GalleryBehaviorSettings['tileGapYUnit'])}
+                onValueChange={(value) => updateAdapterSetting('tileGapY', value)}
+                onUnitChange={(unit) => updateAdapterSetting('tileGapYUnit', unit as GalleryBehaviorSettings['tileGapYUnit'])}
                 allowedUnits={CSS_SPACING_UNITS}
                 max={60}
                 step={1}
@@ -216,7 +221,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 label="Border Width (px)"
                 description="Tile border thickness. 0 = no border."
                 value={getAdapterSettingValue('tileBorderWidth')}
-                onChange={(value) => updateSetting('tileBorderWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth)}
+                onChange={(value) => updateAdapterSetting('tileBorderWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileBorderWidth)}
                 min={0}
                 max={20}
                 step={1}
@@ -225,7 +230,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 <ColorInput
                   label="Border Color"
                   value={getAdapterSettingValue('tileBorderColor')}
-                  onChange={(value) => updateSetting('tileBorderColor', value)}
+                  onChange={(value) => updateAdapterSetting('tileBorderColor', value)}
                   format="hex"
                 />
               )}
@@ -235,28 +240,28 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Hover Bounce"
               description="Scale-up spring animation when hovering over a tile."
               checked={getAdapterSettingValue('tileHoverBounce')}
-              onChange={(event) => updateSetting('tileHoverBounce', event.currentTarget.checked)}
+              onChange={(event) => updateAdapterSetting('tileHoverBounce', event.currentTarget.checked)}
             />
 
             <Switch
               label="Hover Glow"
               description="Drop-shadow glow on hover (works with clip-path shapes)."
               checked={getAdapterSettingValue('tileGlowEnabled')}
-              onChange={(event) => updateSetting('tileGlowEnabled', event.currentTarget.checked)}
+              onChange={(event) => updateAdapterSetting('tileGlowEnabled', event.currentTarget.checked)}
             />
             {getAdapterSettingValue('tileGlowEnabled') && (
               <Group grow>
                 <ColorInput
                   label="Glow Color"
                   value={getAdapterSettingValue('tileGlowColor')}
-                  onChange={(value) => updateSetting('tileGlowColor', value)}
+                  onChange={(value) => updateAdapterSetting('tileGlowColor', value)}
                   format="hex"
                 />
                 <NumberInput
                   label="Glow Spread (px)"
                   description="Radius of the glow effect."
                   value={getAdapterSettingValue('tileGlowSpread')}
-                  onChange={(value) => updateSetting('tileGlowSpread', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread)}
+                  onChange={(value) => updateAdapterSetting('tileGlowSpread', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.tileGlowSpread)}
                   min={2}
                   max={60}
                   step={2}
@@ -276,7 +281,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 label="Video Thumb Width (px)"
                 description="Width of video thumbnail items."
                 value={getAdapterSettingValue('videoThumbnailWidth')}
-                onChange={(value) => updateSetting('videoThumbnailWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailWidth)}
+                onChange={(value) => updateAdapterSetting('videoThumbnailWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailWidth)}
                 min={30}
                 max={200}
                 step={5}
@@ -285,7 +290,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 label="Video Thumb Height (px)"
                 description="Height of video thumbnail items."
                 value={getAdapterSettingValue('videoThumbnailHeight')}
-                onChange={(value) => updateSetting('videoThumbnailHeight', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailHeight)}
+                onChange={(value) => updateAdapterSetting('videoThumbnailHeight', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.videoThumbnailHeight)}
                 min={30}
                 max={200}
                 step={5}
@@ -297,7 +302,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 label="Image Thumb Width (px)"
                 description="Width of image thumbnail items."
                 value={getAdapterSettingValue('imageThumbnailWidth')}
-                onChange={(value) => updateSetting('imageThumbnailWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailWidth)}
+                onChange={(value) => updateAdapterSetting('imageThumbnailWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailWidth)}
                 min={30}
                 max={200}
                 step={5}
@@ -306,7 +311,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 label="Image Thumb Height (px)"
                 description="Height of image thumbnail items."
                 value={getAdapterSettingValue('imageThumbnailHeight')}
-                onChange={(value) => updateSetting('imageThumbnailHeight', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailHeight)}
+                onChange={(value) => updateAdapterSetting('imageThumbnailHeight', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.imageThumbnailHeight)}
                 min={30}
                 max={200}
                 step={5}
@@ -317,7 +322,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Thumbnail Gap (px)"
               description="Spacing between thumbnail items in the strip."
               value={getAdapterSettingValue('thumbnailGap')}
-              onChange={(value) => updateSetting('thumbnailGap', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap)}
+              onChange={(value) => updateAdapterSetting('thumbnailGap', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailGap)}
               min={0}
               max={24}
               step={1}
@@ -327,21 +332,21 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Wheel Scroll"
               description="Allow mouse wheel to scroll the thumbnail strip horizontally."
               checked={getAdapterSettingValue('thumbnailWheelScrollEnabled')}
-              onChange={(event) => updateSetting('thumbnailWheelScrollEnabled', event.currentTarget.checked)}
+              onChange={(event) => updateAdapterSetting('thumbnailWheelScrollEnabled', event.currentTarget.checked)}
             />
 
             <Switch
               label="Drag Scroll"
               description="Allow click-and-drag to scroll the thumbnail strip."
               checked={getAdapterSettingValue('thumbnailDragScrollEnabled')}
-              onChange={(event) => updateSetting('thumbnailDragScrollEnabled', event.currentTarget.checked)}
+              onChange={(event) => updateAdapterSetting('thumbnailDragScrollEnabled', event.currentTarget.checked)}
             />
 
             <Switch
               label="Strip Scroll Buttons"
               description="Show left/right scroll buttons on the thumbnail strip edges."
               checked={getAdapterSettingValue('thumbnailScrollButtonsVisible')}
-              onChange={(event) => updateSetting('thumbnailScrollButtonsVisible', event.currentTarget.checked)}
+              onChange={(event) => updateAdapterSetting('thumbnailScrollButtonsVisible', event.currentTarget.checked)}
             />
           </Stack>}
         </Accordion.Panel>
@@ -355,14 +360,14 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Transition Fade"
               description="Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
               checked={getAdapterSettingValue('transitionFadeEnabled')}
-              onChange={(event) => updateSetting('transitionFadeEnabled', event.currentTarget.checked)}
+              onChange={(event) => updateAdapterSetting('transitionFadeEnabled', event.currentTarget.checked)}
             />
 
             <ModalSelect
               label="Transition Type"
               description="How gallery media slides between items: fade only, slide only, or combined slide-fade."
               value={getAdapterSettingValue('scrollTransitionType')}
-              onChange={(value) => updateSetting('scrollTransitionType', (value as ScrollTransitionType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType)}
+              onChange={(value) => updateAdapterSetting('scrollTransitionType', (value as ScrollTransitionType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType)}
               data={[
                 { value: 'slide-fade', label: 'Slide + Fade' },
                 { value: 'slide', label: 'Slide' },
@@ -374,7 +379,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Scroll Animation Style"
               description="Navigation scroll behavior for gallery thumbnail strips."
               value={getAdapterSettingValue('scrollAnimationStyle')}
-              onChange={(value) => updateSetting('scrollAnimationStyle', (value as ScrollAnimationStyle) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle)}
+              onChange={(value) => updateAdapterSetting('scrollAnimationStyle', (value as ScrollAnimationStyle) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle)}
               data={[
                 { value: 'smooth', label: 'Smooth' },
                 { value: 'instant', label: 'Instant' },
@@ -385,7 +390,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Animation Duration (ms)"
               description="Duration for gallery transition and thumbnail highlight animations."
               value={getAdapterSettingValue('scrollAnimationDurationMs')}
-              onChange={(value) => updateSetting('scrollAnimationDurationMs', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs)}
+              onChange={(value) => updateAdapterSetting('scrollAnimationDurationMs', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs)}
               min={0}
               max={2000}
               step={10}
@@ -395,7 +400,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Animation Easing"
               description="Timing function used for gallery transitions."
               value={getAdapterSettingValue('scrollAnimationEasing')}
-              onChange={(value) => updateSetting('scrollAnimationEasing', (value as ScrollAnimationEasing) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing)}
+              onChange={(value) => updateAdapterSetting('scrollAnimationEasing', (value as ScrollAnimationEasing) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing)}
               data={[
                 { value: 'ease', label: 'Ease' },
                 { value: 'linear', label: 'Linear' },
@@ -416,7 +421,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Thumbnail Scroll Speed"
               description="Multiplier for thumbnail-strip wheel scroll speed."
               value={getAdapterSettingValue('thumbnailScrollSpeed')}
-              onChange={(value) => updateSetting('thumbnailScrollSpeed', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollSpeed)}
+              onChange={(value) => updateAdapterSetting('thumbnailScrollSpeed', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.thumbnailScrollSpeed)}
               min={0.25}
               max={3}
               step={0.25}
@@ -429,7 +434,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Arrow Vertical Position"
               description="Vertical alignment of the overlay prev/next arrows."
               value={getAdapterSettingValue('navArrowPosition')}
-              onChange={(value) => updateSetting('navArrowPosition', (value as NavArrowPosition) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition)}
+              onChange={(value) => updateAdapterSetting('navArrowPosition', (value as NavArrowPosition) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowPosition)}
               data={[
                 { value: 'top', label: 'Top' },
                 { value: 'center', label: 'Center' },
@@ -441,7 +446,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Arrow Size (px)"
               description="Diameter of the overlay navigation arrows."
               value={getAdapterSettingValue('navArrowSize')}
-              onChange={(value) => updateSetting('navArrowSize', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize)}
+              onChange={(value) => updateAdapterSetting('navArrowSize', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowSize)}
               min={20}
               max={64}
               step={2}
@@ -451,7 +456,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Arrow Color"
               description="Icon color for the overlay arrows."
               value={getAdapterSettingValue('navArrowColor')}
-              onChange={(value) => updateSetting('navArrowColor', value)}
+              onChange={(value) => updateAdapterSetting('navArrowColor', value)}
               format="hex"
             />
 
@@ -459,14 +464,14 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Arrow Background Color"
               description="Background color (supports rgba for transparency)."
               value={getAdapterSettingValue('navArrowBgColor')}
-              onChange={(event) => updateSetting('navArrowBgColor', event.currentTarget.value)}
+              onChange={(event) => updateAdapterSetting('navArrowBgColor', event.currentTarget.value)}
             />
 
             <NumberInput
               label="Arrow Border Width (px)"
               description="Border thickness around the arrows (0 = none)."
               value={getAdapterSettingValue('navArrowBorderWidth')}
-              onChange={(value) => updateSetting('navArrowBorderWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBorderWidth)}
+              onChange={(value) => updateAdapterSetting('navArrowBorderWidth', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowBorderWidth)}
               min={0}
               max={6}
               step={1}
@@ -475,7 +480,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
             <Text size="sm" fw={500}>Hover Scale Factor</Text>
             <Slider
               value={getAdapterSettingValue('navArrowHoverScale')}
-              onChange={(value) => updateSetting('navArrowHoverScale', value)}
+              onChange={(value) => updateAdapterSetting('navArrowHoverScale', value)}
               min={1}
               max={1.5}
               step={0.05}
@@ -490,7 +495,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Auto-hide Delay (ms)"
               description="Show arrows on hover/interaction. 0 = always visible."
               value={getAdapterSettingValue('navArrowAutoHideMs')}
-              onChange={(value) => updateSetting('navArrowAutoHideMs', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs)}
+              onChange={(value) => updateAdapterSetting('navArrowAutoHideMs', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.navArrowAutoHideMs)}
               min={0}
               max={10000}
               step={500}
@@ -502,7 +507,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               label="Enable Dot Navigator"
               description="Show a dot-style page indicator."
               checked={getAdapterSettingValue('dotNavEnabled')}
-              onChange={(event) => updateSetting('dotNavEnabled', event.currentTarget.checked)}
+              onChange={(event) => updateAdapterSetting('dotNavEnabled', event.currentTarget.checked)}
             />
 
             {getAdapterSettingValue('dotNavEnabled') && (
@@ -511,7 +516,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                   label="Dot Position"
                   description="Where to render the dot navigator relative to the viewport."
                   value={getAdapterSettingValue('dotNavPosition')}
-                  onChange={(value) => updateSetting('dotNavPosition', (value as DotNavPosition) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavPosition)}
+                  onChange={(value) => updateAdapterSetting('dotNavPosition', (value as DotNavPosition) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavPosition)}
                   data={[
                     { value: 'below', label: 'Below Viewport' },
                     { value: 'overlay-bottom', label: 'Overlay Bottom' },
@@ -523,7 +528,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                   label="Dot Size (px)"
                   description="Diameter of each dot."
                   value={getAdapterSettingValue('dotNavSize')}
-                  onChange={(value) => updateSetting('dotNavSize', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSize)}
+                  onChange={(value) => updateAdapterSetting('dotNavSize', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSize)}
                   min={4}
                   max={24}
                   step={1}
@@ -533,7 +538,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                   label="Dot Shape"
                   description="Shape of the navigation dots."
                   value={getAdapterSettingValue('dotNavShape')}
-                  onChange={(value) => updateSetting('dotNavShape', (value as DotNavShape) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavShape)}
+                  onChange={(value) => updateAdapterSetting('dotNavShape', (value as DotNavShape) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavShape)}
                   data={[
                     { value: 'circle', label: 'Circle' },
                     { value: 'pill', label: 'Pill' },
@@ -545,21 +550,21 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                   label="Active Dot Color"
                   description="Color for the currently active dot (CSS value)."
                   value={getAdapterSettingValue('dotNavActiveColor')}
-                  onChange={(event) => updateSetting('dotNavActiveColor', event.currentTarget.value)}
+                  onChange={(event) => updateAdapterSetting('dotNavActiveColor', event.currentTarget.value)}
                 />
 
                 <TextInput
                   label="Inactive Dot Color"
                   description="Color for inactive dots (CSS value)."
                   value={getAdapterSettingValue('dotNavInactiveColor')}
-                  onChange={(event) => updateSetting('dotNavInactiveColor', event.currentTarget.value)}
+                  onChange={(event) => updateAdapterSetting('dotNavInactiveColor', event.currentTarget.value)}
                 />
 
                 <NumberInput
                   label="Dot Spacing (px)"
                   description="Gap between dots."
                   value={getAdapterSettingValue('dotNavSpacing')}
-                  onChange={(value) => updateSetting('dotNavSpacing', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSpacing)}
+                  onChange={(value) => updateAdapterSetting('dotNavSpacing', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.dotNavSpacing)}
                   min={2}
                   max={20}
                   step={1}
@@ -568,7 +573,7 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
                 <Text size="sm" fw={500}>Active Dot Scale</Text>
                 <Slider
                   value={getAdapterSettingValue('dotNavActiveScale')}
-                  onChange={(value) => updateSetting('dotNavActiveScale', value)}
+                  onChange={(value) => updateAdapterSetting('dotNavActiveScale', value)}
                   min={1}
                   max={2}
                   step={0.1}
