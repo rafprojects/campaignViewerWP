@@ -122,6 +122,59 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('unified_bg_type', $stored);
     }
 
+    public function test_settings_post_round_trips_card_config_for_admin() {
+        $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
+        $user = get_user_by('id', $user_id);
+        $user->add_cap('manage_wpsg');
+        foreach ( WPSG_CPT::CPT_CAPS as $cap ) {
+            $user->add_cap( $cap );
+        }
+        wp_set_current_user($user_id);
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(wp_json_encode([
+            'cardConfig' => [
+                'breakpoints' => [
+                    'tablet' => [
+                        'cardPageDotNav' => true,
+                        'cardPageTransitionOpacity' => 0.45,
+                        'cardBorderMode' => 'single',
+                        'cardBorderColor' => '#112233',
+                        'showCardInfoPanel' => false,
+                        'showCardThumbnailFade' => false,
+                        'cardLockIconSize' => 44,
+                        'cardAutoColumnsBreakpoints' => '0:1,900:2',
+                    ],
+                ],
+            ],
+        ]));
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        $this->assertFalse($data['cardPageDotNav'] ?? true);
+        $this->assertTrue($data['cardConfig']['breakpoints']['tablet']['cardPageDotNav'] ?? false);
+        $this->assertEquals(0.45, $data['cardConfig']['breakpoints']['tablet']['cardPageTransitionOpacity'] ?? null);
+        $this->assertEquals('single', $data['cardConfig']['breakpoints']['tablet']['cardBorderMode'] ?? null);
+        $this->assertEquals('#112233', $data['cardConfig']['breakpoints']['tablet']['cardBorderColor'] ?? null);
+        $this->assertFalse($data['cardConfig']['breakpoints']['tablet']['showCardInfoPanel'] ?? true);
+        $this->assertFalse($data['cardConfig']['breakpoints']['tablet']['showCardThumbnailFade'] ?? true);
+        $this->assertEquals(44, $data['cardConfig']['breakpoints']['tablet']['cardLockIconSize'] ?? null);
+        $this->assertEquals('0:1,900:2', $data['cardConfig']['breakpoints']['tablet']['cardAutoColumnsBreakpoints'] ?? null);
+
+        $stored = get_option(WPSG_Settings::OPTION_NAME, []);
+        $this->assertFalse($stored['card_page_dot_nav'] ?? true);
+        $this->assertTrue($stored['card_config']['breakpoints']['tablet']['cardPageDotNav'] ?? false);
+        $this->assertEquals(0.45, $stored['card_config']['breakpoints']['tablet']['cardPageTransitionOpacity'] ?? null);
+        $this->assertEquals('single', $stored['card_config']['breakpoints']['tablet']['cardBorderMode'] ?? null);
+        $this->assertEquals('#112233', $stored['card_config']['breakpoints']['tablet']['cardBorderColor'] ?? null);
+        $this->assertFalse($stored['card_config']['breakpoints']['tablet']['showCardInfoPanel'] ?? true);
+        $this->assertFalse($stored['card_config']['breakpoints']['tablet']['showCardThumbnailFade'] ?? true);
+        $this->assertEquals(44, $stored['card_config']['breakpoints']['tablet']['cardLockIconSize'] ?? null);
+        $this->assertEquals('0:1,900:2', $stored['card_config']['breakpoints']['tablet']['cardAutoColumnsBreakpoints'] ?? null);
+    }
+
     public function test_settings_post_ignores_flat_nested_only_gallery_fields_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);

@@ -96,6 +96,33 @@ class WPSG_Card_Config_Sanitizer_Test extends WP_UnitTestCase {
         $this->assertEquals(3, $result['breakpoints']['tablet']['cardRowsPerPage']);
     }
 
+    public function test_accepts_extended_presentation_and_visibility_overrides() {
+        $input = [
+            'breakpoints' => [
+                'mobile' => [
+                    'cardPageDotNav' => true,
+                    'cardPageTransitionOpacity' => 0.4,
+                    'cardBorderMode' => 'single',
+                    'cardBorderColor' => '#112233',
+                    'showCardInfoPanel' => false,
+                    'showCardThumbnailFade' => false,
+                    'cardLockIconSize' => 40,
+                    'cardAutoColumnsBreakpoints' => '0:1,768:2',
+                ],
+            ],
+        ];
+        $result = WPSG_Settings_Sanitizer::sanitize_card_config_payload($input);
+
+        $this->assertTrue($result['breakpoints']['mobile']['cardPageDotNav']);
+        $this->assertEquals(0.4, $result['breakpoints']['mobile']['cardPageTransitionOpacity']);
+        $this->assertEquals('single', $result['breakpoints']['mobile']['cardBorderMode']);
+        $this->assertEquals('#112233', $result['breakpoints']['mobile']['cardBorderColor']);
+        $this->assertFalse($result['breakpoints']['mobile']['showCardInfoPanel']);
+        $this->assertFalse($result['breakpoints']['mobile']['showCardThumbnailFade']);
+        $this->assertEquals(40, $result['breakpoints']['mobile']['cardLockIconSize']);
+        $this->assertEquals('0:1,768:2', $result['breakpoints']['mobile']['cardAutoColumnsBreakpoints']);
+    }
+
     // ── Unknown keys / breakpoints ────────────────────────────────────────
 
     public function test_drops_unknown_override_keys() {
@@ -278,6 +305,35 @@ class WPSG_Card_Config_Sanitizer_Test extends WP_UnitTestCase {
         $sanitized = WPSG_Settings::sanitize_settings($input);
 
         $this->assertEquals(2, $sanitized['card_config']['breakpoints']['mobile']['cardRowsPerPage']);
+    }
+
+    public function test_sanitize_settings_preserves_extended_card_config_fields() {
+        $input = [
+            'card_config' => [
+                'breakpoints' => [
+                    'tablet' => [
+                        'cardPageDotNav' => true,
+                        'cardBorderMode' => 'single',
+                        'cardBorderColor' => '#445566',
+                        'showCardInfoPanel' => false,
+                        'cardPageTransitionOpacity' => 0.55,
+                        'cardCompanyBadgeMaxWidth' => 220,
+                        'cardAutoColumnsBreakpoints' => '0:1,900:2',
+                    ],
+                ],
+            ],
+        ];
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+
+        $this->assertArrayHasKey('card_config', $sanitized);
+        $cc = $sanitized['card_config'];
+        $this->assertTrue($cc['breakpoints']['tablet']['cardPageDotNav']);
+        $this->assertEquals('single', $cc['breakpoints']['tablet']['cardBorderMode']);
+        $this->assertEquals('#445566', $cc['breakpoints']['tablet']['cardBorderColor']);
+        $this->assertFalse($cc['breakpoints']['tablet']['showCardInfoPanel']);
+        $this->assertEquals(0.55, $cc['breakpoints']['tablet']['cardPageTransitionOpacity']);
+        $this->assertEquals(220, $cc['breakpoints']['tablet']['cardCompanyBadgeMaxWidth']);
+        $this->assertEquals('0:1,900:2', $cc['breakpoints']['tablet']['cardAutoColumnsBreakpoints']);
     }
 
     public function test_sanitize_settings_without_card_config() {
