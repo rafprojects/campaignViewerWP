@@ -919,6 +919,60 @@ describe('SettingsPanel', () => {
     });
   });
 
+  it('normalizes legacy desktop cardConfig into flat values before full-save', async () => {
+    const updateSettings = vi.fn().mockResolvedValue(seedSettings);
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={{
+          ...seedSettings,
+          cardGridColumns: 3,
+          cardBorderRadius: 8,
+          cardConfig: {
+            breakpoints: {
+              desktop: {
+                cardGridColumns: 4,
+                cardBorderRadius: 12,
+              },
+              tablet: {
+                cardGridColumns: 2,
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitForTabs();
+    await clickTabAndWait('Gallery & Media', 'Enable Lightbox');
+    toggleSwitchByLabel('Enable Lightbox');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      cardGridColumns: 4,
+      cardBorderRadius: 12,
+      cardConfig: {
+        breakpoints: {
+          tablet: {
+            cardGridColumns: 2,
+          },
+        },
+      },
+    });
+    expect((payload.cardConfig as { breakpoints?: Record<string, unknown> }).breakpoints?.desktop).toBeUndefined();
+  });
+
   it('shows the shared responsive gallery editor entry point on the Gallery & Media tab', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

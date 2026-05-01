@@ -281,6 +281,29 @@ describe('mergeSettingsWithDefaults', () => {
     expect(merged.cardThumbnailHeight).toBe(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.cardThumbnailHeight);
   });
 
+  it('normalizes legacy desktop cardConfig into flat card settings when merging', () => {
+    const merged = mergeSettingsWithDefaults({
+      cardGridColumns: 3,
+      cardGapH: 16,
+      cardConfig: {
+        breakpoints: {
+          desktop: {
+            cardGridColumns: 5,
+            cardGapH: 10,
+          },
+          tablet: {
+            cardGridColumns: 2,
+          },
+        },
+      },
+    });
+
+    expect(merged.cardGridColumns).toBe(5);
+    expect(merged.cardGapH).toBe(10);
+    expect(merged.cardConfig?.breakpoints?.desktop).toBeUndefined();
+    expect(merged.cardConfig?.breakpoints?.tablet?.cardGridColumns).toBe(2);
+  });
+
   it('keeps migrated common and viewport settings nested-only when they arrive via galleryConfig', () => {
     const merged = mergeSettingsWithDefaults({
       galleryConfig: {

@@ -6,6 +6,7 @@ import {
   cloneCardConfig,
   pruneCardConfig,
   parseCardConfig,
+  normalizeCardConfigSettings,
   getCardBreakpointOverride,
   setCardBreakpointOverride,
   clearCardBreakpointOverride,
@@ -269,6 +270,55 @@ describe('parseCardConfig', () => {
     const config: CardConfig = { breakpoints: { mobile: { cardScale: 0.9 } } };
     const parsed = parseCardConfig(config);
     expect(parsed.breakpoints!.mobile!.cardScale).toBe(0.9);
+  });
+});
+
+describe('normalizeCardConfigSettings', () => {
+  it('folds desktop overrides into flat settings and strips the desktop node', () => {
+    const settings = makeSettings({
+      cardGridColumns: 3,
+      cardGapH: 16,
+      cardConfig: {
+        breakpoints: {
+          desktop: {
+            cardGridColumns: 4,
+            cardGapH: 12,
+          },
+          tablet: {
+            cardGapH: 8,
+          },
+        },
+      },
+    });
+
+    const normalized = normalizeCardConfigSettings(settings);
+
+    expect(normalized.cardGridColumns).toBe(4);
+    expect(normalized.cardGapH).toBe(12);
+    expect(normalized.cardConfig.breakpoints?.desktop).toBeUndefined();
+    expect(normalized.cardConfig.breakpoints?.tablet?.cardGapH).toBe(8);
+    expect(settings.cardGridColumns).toBe(3);
+    expect(settings.cardConfig?.breakpoints?.desktop?.cardGridColumns).toBe(4);
+  });
+
+  it('preserves legacy desktop unit-only overrides by folding them into the flat settings', () => {
+    const settings = makeSettings({
+      cardMaxWidth: 320,
+      cardMaxWidthUnit: 'px',
+      cardConfig: {
+        breakpoints: {
+          desktop: {
+            cardMaxWidthUnit: '%',
+          },
+        },
+      },
+    });
+
+    const normalized = normalizeCardConfigSettings(settings);
+
+    expect(normalized.cardMaxWidth).toBe(320);
+    expect(normalized.cardMaxWidthUnit).toBe('%');
+    expect(normalized.cardConfig.breakpoints?.desktop).toBeUndefined();
   });
 });
 

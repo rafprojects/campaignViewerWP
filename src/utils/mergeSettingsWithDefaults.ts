@@ -7,7 +7,7 @@ import {
   mergeGalleryConfig,
   parseGalleryConfig,
 } from './galleryConfig';
-import { parseCardConfig } from './cardConfig';
+import { normalizeCardConfigSettings, parseCardConfig } from './cardConfig';
 import { parseTypographyOverridesInput } from '@/types/settingsSchemas';
 
 /**
@@ -68,5 +68,5 @@ export function mergeSettingsWithDefaults(
     : defaultGalleryConfig;
   result.cardConfig = incomingCardConfig;
 
-  return result;
+  return normalizeCardConfigSettings(result);
 }

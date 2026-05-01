@@ -128,6 +128,29 @@ export function parseCardConfig(input: CardConfig | string | undefined | null): 
   return pruneCardConfig(input as CardConfig);
 }
 
+/**
+ * Fold any legacy desktop cardConfig overrides into the flat card settings,
+ * then strip the nested desktop node so desktop has a single source of truth.
+ */
+export function normalizeCardConfigSettings<T extends GalleryBehaviorSettings>(settings: T): T {
+  const nextSettings = { ...settings } as T;
+  const parsedConfig = pruneCardConfig(settings.cardConfig ?? { breakpoints: {} });
+  const desktopOverrides = parsedConfig.breakpoints?.desktop;
+
+  if (desktopOverrides) {
+    applyOverrides(nextSettings, desktopOverrides);
+  }
+
+  const normalizedConfig = cloneCardConfig(parsedConfig);
+  if (normalizedConfig.breakpoints?.desktop) {
+    delete normalizedConfig.breakpoints.desktop;
+  }
+
+  nextSettings.cardConfig = rejectUnitOnlyOverrides(normalizedConfig) as T['cardConfig'];
+
+  return nextSettings;
+}
+
 // ── Field-level accessors ─────────────────────────────────────────────────
 
 /** Read a single override value from a specific breakpoint layer. */

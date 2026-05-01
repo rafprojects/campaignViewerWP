@@ -54,6 +54,7 @@ import {
   LEGACY_GALLERY_SETTING_KEYS,
   resolveGalleryConfig,
 } from '@/utils/galleryConfig';
+import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 
@@ -160,7 +161,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
   const handleSave = async () => {
     try {
-      const payload = { ...settings } as Partial<SettingsData> & Record<string, unknown>;
+      const normalizedSettings = normalizeCardConfigSettings(settings);
+      const payload = { ...normalizedSettings } as Partial<SettingsData> & Record<string, unknown>;
       for (const key of LEGACY_GALLERY_SETTING_KEYS) {
         delete payload[key];
       }
