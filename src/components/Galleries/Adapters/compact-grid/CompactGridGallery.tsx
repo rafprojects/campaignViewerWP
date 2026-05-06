@@ -23,6 +23,7 @@ import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 function resolveCompactGridAspectRatio(settings: GalleryBehaviorSettings, cardWidth: number, itemScale: number): string {
@@ -76,7 +77,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getWpsgDebugProps('CompactGridGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
@@ -88,6 +89,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
 
       {/* auto-fit collapses empty tracks so justify-content can distribute items */}
       <Box
+        {...getWpsgDebugProps('CompactGridGallery', 'grid')}
         style={{
           display: 'grid',
           width: '100%',
@@ -149,6 +151,7 @@ function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }:
 
   return (
     <Box
+      {...getWpsgDebugProps('CompactGridGallery', 'card')}
       component="button"
       onClick={() => onOpen(index)}
       onMouseEnter={() => setHovered(true)}

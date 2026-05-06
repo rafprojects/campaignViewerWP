@@ -17,6 +17,7 @@ import { buildGradientCss } from '@/utils/gradientCss';
 import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/CardViewer/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -359,8 +360,8 @@ export function CardGallery({
             />
           </Stack>
         </InContextEditor>
-        <Container size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
-          <Stack gap="lg">
+        <Container {...getWpsgDebugProps('CardGallery', 'header-shell')} size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
+          <Stack {...getWpsgDebugProps('CardGallery', 'header-stack')} gap="lg">
             {/* Title and subtitle */}
             {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
               <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
@@ -431,9 +432,10 @@ export function CardGallery({
       </Box>
 
       {/* Gallery Grid */}
-      <Container size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
+      <Container {...getWpsgDebugProps('CardGallery')} size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
         {/* Pagination wrapper — relative for overlay arrows */}
         <Box
+          {...getWpsgDebugProps('CardGallery', 'pagination-shell')}
           ref={gridContainerRef}
           style={{ position: 'relative', overflow: 'hidden' }}
           tabIndex={displayMode === 'paginated' ? 0 : undefined}
@@ -441,6 +443,7 @@ export function CardGallery({
         >
           <div style={slideStyle}>
             <Box
+              {...getWpsgDebugProps('CardGallery', 'grid')}
               data-testid="card-gallery-grid"
               style={{
                 display: 'flex',

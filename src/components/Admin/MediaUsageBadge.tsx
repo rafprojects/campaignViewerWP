@@ -10,6 +10,7 @@ import { Badge, Popover, Stack, Text, Anchor, Loader, Alert } from '@mantine/cor
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaUsageCampaignRef } from '@/services/apiClient';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 interface MediaUsageBadgeProps {
   /** Count already known from the batch summary call in MediaTab. */
@@ -50,6 +51,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
 
   return (
     <Popover
+      {...getWpsgDebugProps('MediaUsageBadge')}
       opened={opened}
       onChange={handleOpen}
       withArrow
@@ -59,6 +61,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
     >
       <Popover.Target>
         <Badge
+          {...getWpsgDebugProps('MediaUsageBadge', 'badge')}
           color={color}
           variant="light"
           size="sm"
@@ -70,9 +73,9 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
         </Badge>
       </Popover.Target>
 
-      <Popover.Dropdown>
+      <Popover.Dropdown {...getWpsgDebugProps('MediaUsageBadge', 'dropdown')}>
         {loading && (
-          <Stack align="center" py="xs">
+          <Stack {...getWpsgDebugProps('MediaUsageBadge', 'loading')} align="center" py="xs">
             <Loader size="xs" />
           </Stack>
         )}
@@ -82,7 +85,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
           </Alert>
         )}
         {!loading && !error && detail !== null && (
-          <Stack gap="xs">
+          <Stack {...getWpsgDebugProps('MediaUsageBadge', 'detail')} gap="xs">
             {detail.length === 0 ? (
               <Text size="sm" c="dimmed">
                 Not used in any campaign.

@@ -41,6 +41,7 @@ import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { toCssOrNumber } from '@/utils/cssUnits';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
@@ -581,7 +582,7 @@ function LayoutBuilderGalleryInner({
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getWpsgDebugProps('LayoutBuilderGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {/* Hover styles injected into DOM */}
       <style>{hoverStylesCss}</style>
 
@@ -598,6 +599,7 @@ function LayoutBuilderGalleryInner({
       {/* Mismatch warning */}
       {hasMismatch && (
         <Box
+          {...getWpsgDebugProps('LayoutBuilderGallery', 'mismatch-warning')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -620,6 +622,7 @@ function LayoutBuilderGalleryInner({
       {/* Admin: slot assignment summary */}
       {isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
         <Box
+          {...getWpsgDebugProps('LayoutBuilderGallery', 'assignment-summary')}
           style={{
             display: 'flex',
             gap: 8,
@@ -660,11 +663,13 @@ function LayoutBuilderGalleryInner({
 
       {/* Canvas container */}
       <div
+        {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas-shell')}
         ref={containerRef}
         style={{ width: '100%', maxWidth: maxW || undefined, overflowX: 'auto' }}
       >
         {containerWidth > 0 && (
           <div
+            {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas')}
             style={{
               position: 'relative',
               width: finalCanvasWidth,

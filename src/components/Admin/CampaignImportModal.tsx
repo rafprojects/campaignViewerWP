@@ -11,6 +11,7 @@ import {
 } from '@mantine/core';
 import { IconUpload, IconInfoCircle } from '@tabler/icons-react';
 import type { CampaignExportPayload } from '@/services/apiClient';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 interface CampaignImportModalProps {
   opened: boolean;
@@ -75,8 +76,15 @@ export function CampaignImportModal({
     : null;
 
   return (
-    <Modal opened={opened} onClose={handleClose} title="Import Campaign" size="sm" centered>
-      <Stack gap="md">
+    <Modal
+      {...getWpsgDebugProps('CampaignImportModal')}
+      opened={opened}
+      onClose={handleClose}
+      title="Import Campaign"
+      size="sm"
+      centered
+    >
+      <Stack {...getWpsgDebugProps('CampaignImportModal', 'stack')} gap="md">
         <Text size="sm" c="dimmed">
           Select a <Code>.json</Code> file exported from WP Super Gallery. The campaign will be
           created as a draft — media references and layout template are imported by value.
@@ -110,7 +118,7 @@ export function CampaignImportModal({
           </Alert>
         )}
 
-        <Group justify="flex-end">
+        <Group {...getWpsgDebugProps('CampaignImportModal', 'actions')} justify="flex-end">
           <Button variant="subtle" onClick={handleClose} disabled={isSaving}>
             Cancel
           </Button>

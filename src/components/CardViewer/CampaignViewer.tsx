@@ -22,6 +22,7 @@ import {
   buildCampaignGalleryOverrideEditorValue,
   hasCampaignGalleryOverrides,
 } from '@/utils/campaignGalleryOverrides';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
 
@@ -225,6 +226,7 @@ export function CampaignViewer({
   }, [useFullscreen, s.modalBgType, s.modalBgColor, s.modalBgGradient]);
   return (
     <Modal
+      {...getWpsgDebugProps('CampaignViewer')}
       opened={opened}
       onClose={onClose}
       size={modalSize}
@@ -333,7 +335,11 @@ export function CampaignViewer({
       )}
 
       {/* Content */}
-      <Box ref={containerRef} style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : toCssOrNumber(clampedInnerPadding, innerPaddingUnit), display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}>
+      <Box
+        {...getWpsgDebugProps('CampaignViewer', 'content-shell')}
+        ref={containerRef}
+        style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : toCssOrNumber(clampedInnerPadding, innerPaddingUnit), display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}
+      >
         <Stack gap="lg" style={{ width: '100%' }}>
           {/* Description — hidden in galleries-only mode */}
           {!galleriesOnly && s.showCampaignAbout !== false && (
@@ -378,7 +384,9 @@ export function CampaignViewer({
 
           {/* Media Sections */}
           {hasAccess && (displayedCampaign.videos.length > 0 || displayedCampaign.images.length > 0) && (
-            <Box style={{
+            <Box
+              {...getWpsgDebugProps('CampaignViewer', 'gallery-shell')}
+              style={{
               width: '100%',
               maxWidth: galleryShellLayout.maxWidth,
               marginInline: 'auto',

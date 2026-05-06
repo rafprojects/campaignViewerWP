@@ -1,5 +1,6 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 interface ConfirmModalProps {
   opened: boolean;
@@ -28,11 +29,17 @@ export function ConfirmModal({
   children,
 }: ConfirmModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title={title} padding="md">
-      <Stack>
+    <Modal
+      {...getWpsgDebugProps('ConfirmModal')}
+      opened={opened}
+      onClose={onClose}
+      title={title}
+      padding="md"
+    >
+      <Stack {...getWpsgDebugProps('ConfirmModal', 'stack')}>
         {typeof message === 'string' ? <Text>{message}</Text> : message}
         {children}
-        <Group justify="flex-end">
+        <Group {...getWpsgDebugProps('ConfirmModal', 'actions')} justify="flex-end">
           <Button variant="default" onClick={onClose}>Cancel</Button>
           <Button
             color={confirmColor}

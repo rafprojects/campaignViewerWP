@@ -31,6 +31,7 @@ import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCssOrNumber } from '@/utils/cssUnits';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'masonry';
@@ -94,7 +95,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getWpsgDebugProps('MasonryGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
@@ -122,6 +123,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
             return (
               <button
                 {...props}
+                {...getWpsgDebugProps('MasonryGallery', 'tile')}
                 className={`wpsg-tile-${SCOPE} ${className ?? ''}`}
                 style={{
                   ...style,

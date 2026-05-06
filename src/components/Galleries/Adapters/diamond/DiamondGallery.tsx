@@ -25,6 +25,7 @@ import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'diamond';
@@ -89,7 +90,7 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getWpsgDebugProps('DiamondGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
@@ -101,11 +102,12 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
-      <Box ref={containerRef} style={{ width: '100%', position: 'relative' }}>
+      <Box {...getWpsgDebugProps('DiamondGallery', 'grid')} ref={containerRef} style={{ width: '100%', position: 'relative' }}>
         {rows.map((row, rowIdx) => {
           const isOffset = rowIdx % 2 === 1;
           return (
             <Box
+              {...getWpsgDebugProps('DiamondGallery', 'row')}
               key={rowIdx}
               style={{
                 display: 'flex',

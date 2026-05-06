@@ -28,6 +28,7 @@ import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCssOrNumber } from '@/utils/cssUnits';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'justified';
@@ -86,7 +87,7 @@ export function JustifiedGallery({ media, settings, runtime }: JustifiedGalleryP
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getWpsgDebugProps('JustifiedGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
@@ -117,6 +118,7 @@ export function JustifiedGallery({ media, settings, runtime }: JustifiedGalleryP
             return (
               <button
                 {...props}
+                {...getWpsgDebugProps('JustifiedGallery', 'tile')}
                 className={`wpsg-tile-${SCOPE} ${className ?? ''}`}
                 style={{
                   ...style,

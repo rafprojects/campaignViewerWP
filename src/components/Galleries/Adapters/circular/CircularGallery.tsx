@@ -22,6 +22,7 @@ import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 const SCOPE = 'circle';
 
@@ -60,7 +61,7 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getWpsgDebugProps('CircularGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
@@ -72,13 +73,14 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
-      <Box style={{ display: 'flex', flexWrap: 'wrap', gap: `${toCss(gapY, gapYUnit)} ${toCss(gapX, gapXUnit)}`, justifyContent: common.adapterJustifyContent || 'center' }}>
+      <Box {...getWpsgDebugProps('CircularGallery', 'grid')} style={{ display: 'flex', flexWrap: 'wrap', gap: `${toCss(gapY, gapYUnit)} ${toCss(gapX, gapXUnit)}`, justifyContent: common.adapterJustifyContent || 'center' }}>
         {media.map((item, idx) => {
           const thumbSrc = item.thumbnail || item.url;
           const isVideo = item.type === 'video';
           const label = item.caption || item.title || `${isVideo ? 'Video' : 'Image'} ${idx + 1}`;
           return (
             <Box
+              {...getWpsgDebugProps('CircularGallery', 'card')}
               key={item.id}
               component="button"
               onClick={() => openAt(idx)}

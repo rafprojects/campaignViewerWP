@@ -2,6 +2,7 @@ import { useCallback, type ReactNode } from 'react';
 import { ActionIcon, Popover, ScrollArea, Box } from '@mantine/core';
 import { IconSettings } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 interface InContextEditorProps {
   /** Position relative to the nearest positioned parent. */
@@ -40,8 +41,9 @@ export function InContextEditor({
   if (!visible) return null;
 
   return (
-    <Box style={positionStyles[position]} onKeyDown={handleKeyDown}>
+    <Box {...getWpsgDebugProps('InContextEditor', 'anchor')} style={positionStyles[position]} onKeyDown={handleKeyDown}>
       <Popover
+        {...getWpsgDebugProps('InContextEditor')}
         opened={opened}
         onClose={close}
         position="bottom-end"
@@ -54,6 +56,7 @@ export function InContextEditor({
       >
         <Popover.Target>
           <ActionIcon
+            {...getWpsgDebugProps('InContextEditor', 'toggle')}
             variant="filled"
             color="blue"
             size="sm"
@@ -65,8 +68,8 @@ export function InContextEditor({
             <IconSettings size={14} />
           </ActionIcon>
         </Popover.Target>
-        <Popover.Dropdown>
-          <ScrollArea.Autosize mah={400}>
+        <Popover.Dropdown {...getWpsgDebugProps('InContextEditor', 'dropdown')}>
+          <ScrollArea.Autosize {...getWpsgDebugProps('InContextEditor', 'content')} mah={400}>
             {children}
           </ScrollArea.Autosize>
         </Popover.Dropdown>

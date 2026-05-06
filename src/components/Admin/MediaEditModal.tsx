@@ -1,6 +1,7 @@
 import { Button, Group, Modal, Stack, TextInput, Textarea } from '@mantine/core';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 interface MediaEditModalProps {
   opened: boolean;
@@ -33,8 +34,14 @@ export function MediaEditModal({
 
   return (
     <>
-    <Modal opened={opened} onClose={guardedClose} title="Edit Media" padding="md">
-      <Stack gap="md">
+    <Modal
+      {...getWpsgDebugProps('MediaEditModal')}
+      opened={opened}
+      onClose={guardedClose}
+      title="Edit Media"
+      padding="md"
+    >
+      <Stack {...getWpsgDebugProps('MediaEditModal', 'stack')} gap="md">
         <TextInput
           label="Title"
           placeholder="Enter a title (optional)"
@@ -59,7 +66,7 @@ export function MediaEditModal({
           onChange={(e) => onEditingThumbnailChange(e.currentTarget.value)}
           description="Custom preview image URL (optional)"
         />
-        <Group justify="flex-end" wrap="wrap" gap="sm">
+        <Group {...getWpsgDebugProps('MediaEditModal', 'actions')} justify="flex-end" wrap="wrap" gap="sm">
           <Button variant="default" onClick={guardedClose}>Cancel</Button>
           <Button onClick={onSave}>Save</Button>
         </Group>

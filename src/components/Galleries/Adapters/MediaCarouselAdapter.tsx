@@ -19,6 +19,7 @@ import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { resolveBoxShadow } from '@/utils/shadowPresets';
 import { combineMaxWidthConstraints, resolveBreakpointValue } from '@/utils/resolveBreakpointValue';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { resolveGalleryComponentCommonSettings, resolveGalleryHeading } from './_shared/runtimeCommon';
 import {
   getCarouselAlign,
@@ -584,7 +585,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
     : undefined;
 
   return (
-    <Stack gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
+    <Stack {...getWpsgDebugProps('MediaCarouselAdapter')} gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
       {heading.visible && (
         <Title order={3} size="h5" ta={commonSettings.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={commonSettings.galleryLabelJustification || 'left'}>
@@ -596,6 +597,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
 
       {/* Frame container */}
       <Box
+        {...getWpsgDebugProps('MediaCarouselAdapter', 'frame')}
         pos="relative"
         data-testid={testId}
         role="region"
@@ -619,6 +621,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
       >
         {/* Embla viewport */}
         <div
+          {...getWpsgDebugProps('MediaCarouselAdapter', 'viewport')}
           ref={emblaRef}
           style={{
             overflow: 'hidden',
@@ -631,6 +634,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
         >
           {/* Embla container */}
           <div
+            {...getWpsgDebugProps('MediaCarouselAdapter', 'track')}
             style={{
               display: 'flex',
               touchAction: 'pan-y pinch-zoom',
@@ -680,7 +684,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
       </Box>
 
       {/* Caption */}
-      <Text size="sm" c="dimmed">
+      <Text {...getWpsgDebugProps('MediaCarouselAdapter', 'caption')} size="sm" c="dimmed">
         {currentItem?.caption || (isCurrentVideo ? 'Untitled video' : 'Untitled image')}
       </Text>
 

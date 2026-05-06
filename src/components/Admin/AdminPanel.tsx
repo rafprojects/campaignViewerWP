@@ -24,6 +24,7 @@ import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useAccessRows } from '@/hooks/useAccessRows';
 import { useAuditRows } from '@/hooks/useAuditRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
@@ -172,8 +173,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const auditRows = useAuditRows(auditEntries);
 
   return (
-    <Card shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
-      <Group justify="space-between" wrap="wrap" gap="sm" mb="md">
+    <Card {...getWpsgDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
+      <Group {...getWpsgDebugProps('AdminPanel', 'header')} justify="space-between" wrap="wrap" gap="sm" mb="md">
         <Group>
           <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
             <IconArrowLeft />
@@ -195,8 +196,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Group>
       </Group>
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+      <Tabs {...getWpsgDebugProps('AdminPanel', 'tabs')} value={activeTab} onChange={setActiveTab}>
+        <Tabs.List {...getWpsgDebugProps('AdminPanel', 'tab-list')} style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
           <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
           <Tabs.Tab value="media">Media</Tabs.Tab>
           <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
@@ -205,7 +206,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
         </Tabs.List>
 
-        <Tabs.Panel value="campaigns" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
           {campaignCategories.length > 0 && (
             <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
               <Group gap="xs" mb="sm" wrap="wrap">
@@ -253,7 +254,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           availableCategories={availableCategoryNames}
         />
 
-        <Tabs.Panel value="media" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
             <CampaignSelector data={campaignSelectData} value={mediaCampaignId} onChange={setMediaCampaignId} style={{ minWidth: 200, flex: '1 1 200px' }} />
             <Button
@@ -286,11 +287,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           </ErrorBoundary>
         </Tabs.Panel>
 
-        <Tabs.Panel value="layouts" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
           <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} initialTemplateId={pendingEditLayoutId ?? undefined} />
         </Tabs.Panel>
 
-        <Tabs.Panel value="access" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">
           <AccessTab
             accessViewMode={accessViewMode}
             onAccessViewModeChange={setAccessViewMode}
@@ -331,7 +332,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           />
         </Tabs.Panel>
 
-        <Tabs.Panel value="audit" pt="md" component="section" aria-labelledby="audit-heading">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section" aria-labelledby="audit-heading">
           <AuditTab
             campaignSelectData={campaignSelectData}
             auditCampaignId={auditCampaignId}
@@ -342,7 +343,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           />
         </Tabs.Panel>
 
-        <Tabs.Panel value="analytics" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'analytics-panel')} value="analytics" pt="md">
           <ErrorBoundary>
             <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
               <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} />

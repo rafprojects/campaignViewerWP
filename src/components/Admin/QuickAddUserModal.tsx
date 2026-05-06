@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconUserPlus } from '@tabler/icons-react';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 type AdminCampaign = {
   id: string;
@@ -70,13 +71,14 @@ export function QuickAddUserModal({
 
   return (
     <Modal
+      {...getWpsgDebugProps('QuickAddUserModal')}
       opened={opened}
       onClose={onClose}
       title="Quick Add User"
       size="md"
       padding="md"
     >
-      <Stack gap="md">
+      <Stack {...getWpsgDebugProps('QuickAddUserModal', 'stack')} gap="md">
         {quickAddResult ? (
           <>
             <Alert
@@ -128,7 +130,7 @@ export function QuickAddUserModal({
                 </Box>
               )}
             </Alert>
-            <Group justify="flex-end" wrap="wrap" gap="sm">
+            <Group {...getWpsgDebugProps('QuickAddUserModal', 'success-actions')} justify="flex-end" wrap="wrap" gap="sm">
               <Button onClick={onClose}>Close</Button>
             </Group>
           </>
@@ -185,7 +187,7 @@ export function QuickAddUserModal({
               description="Enable to test the password reset link UI without actually sending email"
             />
 
-            <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
+            <Group {...getWpsgDebugProps('QuickAddUserModal', 'actions')} justify="flex-end" mt="md" wrap="wrap" gap="sm">
               <Button variant="default" onClick={onClose}>Cancel</Button>
               <Button
                 onClick={onSubmit}

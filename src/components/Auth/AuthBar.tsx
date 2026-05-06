@@ -3,6 +3,7 @@ import { Box, Container, Group, Button, Tooltip, ActionIcon, Text, Menu } from '
 import { useMediaQuery } from '@mantine/hooks';
 import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings } from '@/types';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { AuthBarFloating } from './AuthBarFloating';
 import { AuthBarMinimal } from './AuthBarMinimal';
 
@@ -135,6 +136,7 @@ function AuthBarFull({
 
   return (
     <Box
+      {...getWpsgDebugProps('AuthBar')}
       component="nav"
       aria-label="User navigation"
       style={{
@@ -148,8 +150,8 @@ function AuthBarFull({
         transition: 'transform 0.3s ease',
       }}
     >
-    <Container size={containerSize} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
-      <Group justify="space-between" wrap="nowrap" gap="sm">
+    <Container {...getWpsgDebugProps('AuthBar', 'container')} size={containerSize} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
+      <Group {...getWpsgDebugProps('AuthBar', 'content')} justify="space-between" wrap="nowrap" gap="sm">
         {!isAuthenticated ? (
           <>
             <Text size="sm" c="dimmed">Sign in to access private campaigns</Text>
@@ -165,11 +167,11 @@ function AuthBarFull({
           /* ── Mobile: single overflow menu ── */
           <Menu shadow="md" width={200} position="bottom-end" withArrow>
             <Menu.Target>
-              <ActionIcon variant="default" size="lg" aria-label="User menu">
+              <ActionIcon {...getWpsgDebugProps('AuthBar', 'menu-trigger')} variant="default" size="lg" aria-label="User menu">
                 <IconDotsVertical size={18} />
               </ActionIcon>
             </Menu.Target>
-            <Menu.Dropdown>
+            <Menu.Dropdown {...getWpsgDebugProps('AuthBar', 'menu-dropdown')}>
               {isAdmin && (
                 <>
                   <Menu.Item leftSection={<IconDashboard size={16} />} onClick={onOpenAdminPanel}>
@@ -188,7 +190,7 @@ function AuthBarFull({
           </Menu>
         ) : (
           /* ── Desktop: inline controls ── */
-          <Group gap="sm" wrap="nowrap">
+          <Group {...getWpsgDebugProps('AuthBar', 'desktop-actions')} gap="sm" wrap="nowrap">
             {isAdmin && (
               <>
                 <Button

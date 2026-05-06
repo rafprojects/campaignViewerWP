@@ -24,6 +24,7 @@ import {
   setCampaignBreakpointScopeAdapterOverride,
   syncCampaignGalleryOverrideMode,
 } from '@/utils/campaignGalleryOverrides';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 const LazyGalleryConfigEditorModal = lazy(() =>
   import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
@@ -133,6 +134,7 @@ export function UnifiedCampaignModal({
   return (
     <>
       <Modal
+        {...getWpsgDebugProps('UnifiedCampaignModal')}
         opened={opened}
         onClose={guardedClose}
         title={isEdit ? 'Edit Campaign' : 'New Campaign'}
@@ -140,8 +142,8 @@ export function UnifiedCampaignModal({
         fullScreen={!!isExtraSmall}
         zIndex={300}
       >
-        <Tabs value={activeTab} onChange={setActiveTab} aria-label="Campaign modal tabs">
-          <Tabs.List>
+        <Tabs {...getWpsgDebugProps('UnifiedCampaignModal', 'tabs')} value={activeTab} onChange={setActiveTab} aria-label="Campaign modal tabs">
+          <Tabs.List {...getWpsgDebugProps('UnifiedCampaignModal', 'tab-list')}>
             <Tabs.Tab value="details">Details</Tabs.Tab>
             {isEdit && (
               <Tabs.Tab value="media">
@@ -152,8 +154,8 @@ export function UnifiedCampaignModal({
           </Tabs.List>
 
           {/* ── Details Tab ────────────────────────────────────────── */}
-          <Tabs.Panel value="details" pt="md">
-            <Stack gap="md">
+          <Tabs.Panel {...getWpsgDebugProps('UnifiedCampaignModal', 'details-panel')} value="details" pt="md">
+            <Stack {...getWpsgDebugProps('UnifiedCampaignModal', 'details-stack')} gap="md">
               <TextInput
                 label="Title"
                 placeholder="Campaign title"
@@ -231,7 +233,7 @@ export function UnifiedCampaignModal({
 
           {/* ── Media Tab (edit only) ──────────────────────────────── */}
           {isEdit && (
-            <Tabs.Panel value="media" pt="md">
+            <Tabs.Panel {...getWpsgDebugProps('UnifiedCampaignModal', 'media-panel')} value="media" pt="md">
               {mediaLoading ? (
                 <Center py="xl"><Loader /></Center>
               ) : (
@@ -261,7 +263,7 @@ export function UnifiedCampaignModal({
           )}
 
           {/* ── Settings Tab ──────────────────────────────────────── */}
-          <Tabs.Panel value="settings" pt="md">
+          <Tabs.Panel {...getWpsgDebugProps('UnifiedCampaignModal', 'settings-panel')} value="settings" pt="md">
             <Stack gap="md">
               <Group grow wrap="wrap" gap="sm">
                 <Select

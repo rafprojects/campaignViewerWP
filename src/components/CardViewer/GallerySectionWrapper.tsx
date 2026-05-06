@@ -16,6 +16,7 @@ import { clampDimension } from '@/utils/clampDimension';
 import { toCss } from '@/utils/cssUnits';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 interface GallerySectionWrapperProps {
   settings: GalleryBehaviorSettings;
@@ -155,9 +156,9 @@ export function GallerySectionWrapper({
     : undefined;
 
   return (
-    <Box ref={sectionRef} style={wrapperStyle}>
+    <Box {...getWpsgDebugProps('GallerySectionWrapper')} ref={sectionRef} style={wrapperStyle}>
       {hasContentOffset ? (
-        <div style={contentStyle}>{children(containerDimensions)}</div>
+        <div {...getWpsgDebugProps('GallerySectionWrapper', 'offset-content')} style={contentStyle}>{children(containerDimensions)}</div>
       ) : (
         children(containerDimensions)
       )}

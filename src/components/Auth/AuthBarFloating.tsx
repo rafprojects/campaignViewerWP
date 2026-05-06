@@ -3,6 +3,7 @@ import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@manti
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import { useCampaignContext } from '@/contexts/CampaignContext';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
 const ICON_SIZE = 44;
@@ -153,11 +154,12 @@ export function AuthBarFloating({
   if (draggable && pos === null) return null;
 
   return (
-    <Popover opened={popoverOpen} onChange={setPopoverOpen} position="top-end" withArrow shadow="md" width={220}
+    <Popover {...getWpsgDebugProps('AuthBarFloating')} opened={popoverOpen} onChange={setPopoverOpen} position="top-end" withArrow shadow="md" width={220}
       styles={{ dropdown: { backdropFilter: 'blur(8px)' } }}
     >
       <Popover.Target>
         <ActionIcon
+          {...getWpsgDebugProps('AuthBarFloating', 'trigger')}
           size={ICON_SIZE}
           radius="xl"
           variant="filled"
@@ -174,8 +176,8 @@ export function AuthBarFloating({
           {draggable ? <IconGripVertical size={22} /> : <IconMenu2 size={22} />}
         </ActionIcon>
       </Popover.Target>
-      <Popover.Dropdown>
-        <Stack gap="xs">
+      <Popover.Dropdown {...getWpsgDebugProps('AuthBarFloating', 'dropdown')}>
+        <Stack {...getWpsgDebugProps('AuthBarFloating', 'menu')} gap="xs">
           {isAuthenticated ? (
             <>
               <Text size="xs" c="dimmed" truncate>Signed in as {email}</Text>

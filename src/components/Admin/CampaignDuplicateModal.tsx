@@ -11,6 +11,7 @@ import {
 } from '@mantine/core';
 import { IconCopy } from '@tabler/icons-react';
 import type { AdminCampaign } from '@/services/adminQuery';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 export interface CampaignDuplicateModalProps {
   /** Source campaign to duplicate; null when modal is closed. */
@@ -47,13 +48,14 @@ export function CampaignDuplicateModal({
 
   return (
     <Modal
+      {...getWpsgDebugProps('CampaignDuplicateModal')}
       opened={source !== null}
       onClose={onClose}
       title="Duplicate Campaign"
       size="sm"
       aria-label="Duplicate campaign"
     >
-      <Stack gap="md">
+      <Stack {...getWpsgDebugProps('CampaignDuplicateModal', 'stack')} gap="md">
         <div>
           <Text size="sm" c="dimmed" mb={4}>
             Source:
@@ -101,7 +103,7 @@ export function CampaignDuplicateModal({
           )}
         </Stack>
 
-        <Group justify="flex-end" mt="xs">
+        <Group {...getWpsgDebugProps('CampaignDuplicateModal', 'actions')} justify="flex-end" mt="xs">
           <Button variant="subtle" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>

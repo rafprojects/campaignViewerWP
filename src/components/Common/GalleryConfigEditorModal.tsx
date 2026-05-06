@@ -24,6 +24,7 @@ import {
 } from '@/types';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { cloneGalleryConfig, getLegacyViewportBackgroundFieldMap } from '@/utils/galleryConfig';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 
 const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
 type EditableGalleryScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
@@ -569,6 +570,7 @@ export function GalleryConfigEditorModal({
 
   return (
     <Drawer
+      {...getWpsgDebugProps('GalleryConfigEditorModal')}
       opened={opened}
       onClose={onClose}
       title={title}
@@ -578,7 +580,7 @@ export function GalleryConfigEditorModal({
       transitionProps={{ transition: 'slide-left', duration: 200 }}
       overlayProps={{ backgroundOpacity: 0.6, blur: blurEnabled !== false ? 4 : 0 }}
     >
-      <Stack gap="md">
+      <Stack {...getWpsgDebugProps('GalleryConfigEditorModal', 'content-stack')} gap="md">
         <Text size="sm" c="dimmed">
           This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.
         </Text>
@@ -616,6 +618,7 @@ export function GalleryConfigEditorModal({
           )
         ) : null}
         <Accordion
+          {...getWpsgDebugProps('GalleryConfigEditorModal', 'sections')}
           variant="separated"
           multiple
           defaultValue={defaultAccordionSections}
@@ -627,11 +630,12 @@ export function GalleryConfigEditorModal({
             <Accordion.Panel>
               <Stack gap="md">
                 <Tabs
+                  {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tabs')}
                   value={activeBreakpoint}
                   onChange={(value) => value && setActiveBreakpoint(value as GalleryConfigBreakpoint)}
                   keepMounted={false}
                 >
-                  <Tabs.List grow>
+                  <Tabs.List {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tab-list')} grow>
                     {GALLERY_BREAKPOINTS.map((breakpoint) => (
                       <Tabs.Tab key={breakpoint} value={breakpoint}>
                         {breakpoint.charAt(0).toUpperCase() + breakpoint.slice(1)}
