@@ -33,7 +33,9 @@ export function ConfirmModal({
       {...getWpsgDebugProps('ConfirmModal')}
       opened={opened}
       onClose={onClose}
-      title={title}
+      title={<span {...getWpsgDebugProps('ConfirmModal', 'title')}>{title}</span>}
+      closeButtonProps={getWpsgDebugProps('ConfirmModal', 'close')}
+      overlayProps={getWpsgDebugProps('ConfirmModal', 'overlay')}
       padding="md"
     >
       <Stack {...getWpsgDebugProps('ConfirmModal', 'stack')}>

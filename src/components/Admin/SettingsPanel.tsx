@@ -50,6 +50,7 @@ import { TypographySettingsSection } from '../Settings/TypographySettingsSection
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import {
   LEGACY_GALLERY_SETTING_KEYS,
   resolveGalleryConfig,
@@ -218,10 +219,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
   return (
     <Drawer
+      {...getWpsgDebugProps('SettingsPanel')}
       opened={opened}
       onClose={() => { revertThemePreview(); onClose(); }}
       title={
-        <Group gap="sm">
+        <Group {...getWpsgDebugProps('SettingsPanel', 'title')} gap="sm">
           <IconSettings size={22} />
           <Title order={3}>Display Settings</Title>
         </Group>
@@ -232,8 +234,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       withinPortal={false}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
+      closeButtonProps={getWpsgDebugProps('SettingsPanel', 'close')}
       transitionProps={{ transition: 'slide-left', duration: 200 }}
-      overlayProps={{ backgroundOpacity: 0.6, blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0 }}
+      overlayProps={{
+        ...getWpsgDebugProps('SettingsPanel', 'overlay'),
+        backgroundOpacity: 0.6,
+        blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0,
+      }}
       scrollAreaComponent={NativeScrollArea}
       styles={{
         body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },

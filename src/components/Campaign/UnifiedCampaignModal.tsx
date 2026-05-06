@@ -137,10 +137,12 @@ export function UnifiedCampaignModal({
         {...getWpsgDebugProps('UnifiedCampaignModal')}
         opened={opened}
         onClose={guardedClose}
-        title={isEdit ? 'Edit Campaign' : 'New Campaign'}
+        title={<span {...getWpsgDebugProps('UnifiedCampaignModal', 'title')}>{isEdit ? 'Edit Campaign' : 'New Campaign'}</span>}
         size={isExtraSmall ? '100%' : 'xl'}
         fullScreen={!!isExtraSmall}
         zIndex={300}
+        closeButtonProps={getWpsgDebugProps('UnifiedCampaignModal', 'close')}
+        overlayProps={getWpsgDebugProps('UnifiedCampaignModal', 'overlay')}
       >
         <Tabs {...getWpsgDebugProps('UnifiedCampaignModal', 'tabs')} value={activeTab} onChange={setActiveTab} aria-label="Campaign modal tabs">
           <Tabs.List {...getWpsgDebugProps('UnifiedCampaignModal', 'tab-list')}>

@@ -232,7 +232,12 @@ export function CampaignViewer({
       size={modalSize}
       padding={0}
       withCloseButton
-      closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
+      closeButtonProps={{
+        ...getWpsgDebugProps('CampaignViewer', 'close'),
+        'aria-label': 'Close campaign viewer',
+        size: 'lg',
+      }}
+      overlayProps={getWpsgDebugProps('CampaignViewer', 'overlay')}
       transitionProps={{ transition, duration: s.modalTransitionDuration }}
       radius={useFullscreen ? 0 : 'lg'}
       fullScreen={useFullscreen}
@@ -387,17 +392,17 @@ export function CampaignViewer({
             <Box
               {...getWpsgDebugProps('CampaignViewer', 'gallery-shell')}
               style={{
-              width: '100%',
-              maxWidth: galleryShellLayout.maxWidth,
-              marginInline: 'auto',
-              paddingLeft: galleryShellLayout.paddingLeft,
-              paddingRight: galleryShellLayout.paddingRight,
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column' as const,
-              justifyContent: s.modalGalleryVerticalAlign === 'center' ? 'center' : s.modalGalleryVerticalAlign === 'end' ? 'flex-end' : undefined,
-              transform: s.modalGalleryOffsetY ? `translateY(${toCss(s.modalGalleryOffsetY, s.modalGalleryOffsetYUnit ?? 'px')})` : undefined,
-            }}>
+                width: '100%',
+                maxWidth: galleryShellLayout.maxWidth,
+                marginInline: 'auto',
+                paddingLeft: galleryShellLayout.paddingLeft,
+                paddingRight: galleryShellLayout.paddingRight,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column' as const,
+                justifyContent: s.modalGalleryVerticalAlign === 'center' ? 'center' : s.modalGalleryVerticalAlign === 'end' ? 'flex-end' : undefined,
+                transform: s.modalGalleryOffsetY ? `translateY(${toCss(s.modalGalleryOffsetY, s.modalGalleryOffsetYUnit ?? 'px')})` : undefined,
+              }}>
               <Suspense fallback={
                 <Center py="xl" mih={200}>
                   <Stack align="center" gap="xs">

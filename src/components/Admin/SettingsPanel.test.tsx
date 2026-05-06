@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { act, render, screen, waitFor, fireEvent } from '@/test/test-utils';
+import { act, render, screen, waitFor, fireEvent, within } from '@/test/test-utils';
 import { SettingsPanel } from './SettingsPanel';
 import type { ApiClient } from '@/services/apiClient';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryConfig } from '@/types';
@@ -1964,7 +1964,7 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByText('Navigation'));
     const navArrowPositionInputs = await screen.findAllByLabelText('Arrow Vertical Position', { selector: 'input' });
     fireEvent.click(navArrowPositionInputs[0]);
-    fireEvent.click(screen.getByRole('option', { name: 'Bottom' }));
+    fireEvent.click(within(await screen.findByRole('listbox')).getByText('Bottom'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
@@ -2073,7 +2073,7 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByText('Viewport Backgrounds'));
 
     fireEvent.click(screen.getByLabelText('Image Gallery Background', { selector: 'input' }));
-    fireEvent.click(screen.getByRole('option', { name: 'Background Image' }));
+    fireEvent.click(within(await screen.findByRole('listbox')).getByText('Background Image'));
 
     fireEvent.change(await screen.findByLabelText('Background Image URL'), {
       target: { value: 'https://example.com/panel-bg.jpg' },

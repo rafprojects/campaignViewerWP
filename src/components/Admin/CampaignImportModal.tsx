@@ -80,9 +80,11 @@ export function CampaignImportModal({
       {...getWpsgDebugProps('CampaignImportModal')}
       opened={opened}
       onClose={handleClose}
-      title="Import Campaign"
+      title={<span {...getWpsgDebugProps('CampaignImportModal', 'title')}>Import Campaign</span>}
       size="sm"
       centered
+      closeButtonProps={getWpsgDebugProps('CampaignImportModal', 'close')}
+      overlayProps={getWpsgDebugProps('CampaignImportModal', 'overlay')}
     >
       <Stack {...getWpsgDebugProps('CampaignImportModal', 'stack')} gap="md">
         <Text size="sm" c="dimmed">

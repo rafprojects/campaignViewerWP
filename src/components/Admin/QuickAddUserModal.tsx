@@ -74,9 +74,11 @@ export function QuickAddUserModal({
       {...getWpsgDebugProps('QuickAddUserModal')}
       opened={opened}
       onClose={onClose}
-      title="Quick Add User"
+      title={<span {...getWpsgDebugProps('QuickAddUserModal', 'title')}>Quick Add User</span>}
       size="md"
       padding="md"
+      closeButtonProps={getWpsgDebugProps('QuickAddUserModal', 'close')}
+      overlayProps={getWpsgDebugProps('QuickAddUserModal', 'overlay')}
     >
       <Stack {...getWpsgDebugProps('QuickAddUserModal', 'stack')} gap="md">
         {quickAddResult ? (

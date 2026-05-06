@@ -34,54 +34,56 @@ export function MediaEditModal({
 
   return (
     <>
-    <Modal
-      {...getWpsgDebugProps('MediaEditModal')}
-      opened={opened}
-      onClose={guardedClose}
-      title="Edit Media"
-      padding="md"
-    >
-      <Stack {...getWpsgDebugProps('MediaEditModal', 'stack')} gap="md">
-        <TextInput
-          label="Title"
-          placeholder="Enter a title (optional)"
-          value={editingTitle}
-          onChange={(e) => onEditingTitleChange(e.currentTarget.value)}
-          description="Optional display title for this media item"
-        />
-        <Textarea
-          label="Caption"
-          placeholder="Enter a caption or description"
-          value={editingCaption}
-          onChange={(e) => onEditingCaptionChange(e.currentTarget.value)}
-          autosize
-          minRows={2}
-          maxRows={4}
-          description="Descriptive text shown with the media"
-        />
-        <TextInput
-          label="Thumbnail URL"
-          placeholder="https://..."
-          value={editingThumbnail ?? ''}
-          onChange={(e) => onEditingThumbnailChange(e.currentTarget.value)}
-          description="Custom preview image URL (optional)"
-        />
-        <Group {...getWpsgDebugProps('MediaEditModal', 'actions')} justify="flex-end" wrap="wrap" gap="sm">
-          <Button variant="default" onClick={guardedClose}>Cancel</Button>
-          <Button onClick={onSave}>Save</Button>
-        </Group>
-      </Stack>
-    </Modal>
+      <Modal
+        {...getWpsgDebugProps('MediaEditModal')}
+        opened={opened}
+        onClose={guardedClose}
+        title={<span {...getWpsgDebugProps('MediaEditModal', 'title')}>Edit Media</span>}
+        padding="md"
+        closeButtonProps={getWpsgDebugProps('MediaEditModal', 'close')}
+        overlayProps={getWpsgDebugProps('MediaEditModal', 'overlay')}
+      >
+        <Stack {...getWpsgDebugProps('MediaEditModal', 'stack')} gap="md">
+          <TextInput
+            label="Title"
+            placeholder="Enter a title (optional)"
+            value={editingTitle}
+            onChange={(e) => onEditingTitleChange(e.currentTarget.value)}
+            description="Optional display title for this media item"
+          />
+          <Textarea
+            label="Caption"
+            placeholder="Enter a caption or description"
+            value={editingCaption}
+            onChange={(e) => onEditingCaptionChange(e.currentTarget.value)}
+            autosize
+            minRows={2}
+            maxRows={4}
+            description="Descriptive text shown with the media"
+          />
+          <TextInput
+            label="Thumbnail URL"
+            placeholder="https://..."
+            value={editingThumbnail ?? ''}
+            onChange={(e) => onEditingThumbnailChange(e.currentTarget.value)}
+            description="Custom preview image URL (optional)"
+          />
+          <Group {...getWpsgDebugProps('MediaEditModal', 'actions')} justify="flex-end" wrap="wrap" gap="sm">
+            <Button variant="default" onClick={guardedClose}>Cancel</Button>
+            <Button onClick={onSave}>Save</Button>
+          </Group>
+        </Stack>
+      </Modal>
 
-    <ConfirmModal
-      opened={confirmOpen}
-      onClose={cancelDiscard}
-      onConfirm={confirmDiscard}
-      title="Discard changes?"
-      message="You have unsaved changes. Are you sure you want to discard them?"
-      confirmLabel="Discard"
-      confirmColor="red"
-    />
+      <ConfirmModal
+        opened={confirmOpen}
+        onClose={cancelDiscard}
+        onConfirm={confirmDiscard}
+        title="Discard changes?"
+        message="You have unsaved changes. Are you sure you want to discard them?"
+        confirmLabel="Discard"
+        confirmColor="red"
+      />
     </>
   );
 }

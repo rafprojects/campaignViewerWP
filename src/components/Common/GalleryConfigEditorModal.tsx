@@ -573,12 +573,17 @@ export function GalleryConfigEditorModal({
       {...getWpsgDebugProps('GalleryConfigEditorModal')}
       opened={opened}
       onClose={onClose}
-      title={title}
+      title={<span {...getWpsgDebugProps('GalleryConfigEditorModal', 'title')}>{title}</span>}
       position="right"
       size="lg"
       zIndex={zIndex}
+      closeButtonProps={getWpsgDebugProps('GalleryConfigEditorModal', 'close')}
       transitionProps={{ transition: 'slide-left', duration: 200 }}
-      overlayProps={{ backgroundOpacity: 0.6, blur: blurEnabled !== false ? 4 : 0 }}
+      overlayProps={{
+        ...getWpsgDebugProps('GalleryConfigEditorModal', 'overlay'),
+        backgroundOpacity: 0.6,
+        blur: blurEnabled !== false ? 4 : 0,
+      }}
     >
       <Stack {...getWpsgDebugProps('GalleryConfigEditorModal', 'content-stack')} gap="md">
         <Text size="sm" c="dimmed">
@@ -717,73 +722,73 @@ export function GalleryConfigEditorModal({
             <Accordion.Panel>
               {mountedAccordionSections.has('shared-section-sizing') ? (
                 <Stack gap="md">
-                <NumberInput
-                  label="Gallery Section Max Width (px)"
-                  description="Maximum width for each gallery section. 0 keeps the section fully responsive."
-                  value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMaxWidth') ?? 0}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxWidth', typeof value === 'number' ? value : 0))}
-                  min={0}
-                  max={2000}
-                  step={50}
-                />
-
-                <NumberInput
-                  label="Gallery Section Min Width (px)"
-                  description="Minimum width floor for each gallery section."
-                  value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMinWidth') ?? 300}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinWidth', typeof value === 'number' ? value : 300))}
-                  min={200}
-                  max={600}
-                  step={50}
-                />
-
-                <Select
-                  label="Section Height Mode"
-                  description="How section height is determined. Auto is content-driven and remains the safest default for masonry and justified layouts."
-                  data={[
-                    { value: 'auto', label: 'Auto (content-driven)' },
-                    { value: 'manual', label: 'Manual (fixed max height)' },
-                    { value: 'viewport', label: 'Viewport (% of screen)' },
-                  ]}
-                  value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'sectionHeightMode') ?? 'auto'}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionHeightMode', value ?? 'auto'))}
-                  allowDeselect={false}
-                />
-
-                {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'sectionHeightMode') === 'manual' && (
                   <NumberInput
-                    label="Gallery Section Max Height (px)"
-                    description="Maximum height used when section height mode is manual."
-                    value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMaxHeight') ?? 0}
-                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxHeight', typeof value === 'number' ? value : 0))}
+                    label="Gallery Section Max Width (px)"
+                    description="Maximum width for each gallery section. 0 keeps the section fully responsive."
+                    value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMaxWidth') ?? 0}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxWidth', typeof value === 'number' ? value : 0))}
                     min={0}
                     max={2000}
                     step={50}
                   />
-                )}
 
-                <NumberInput
-                  label="Gallery Section Min Height (px)"
-                  description="Minimum height floor for each gallery section."
-                  value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMinHeight') ?? 150}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinHeight', typeof value === 'number' ? value : 150))}
-                  min={100}
-                  max={400}
-                  step={50}
-                />
+                  <NumberInput
+                    label="Gallery Section Min Width (px)"
+                    description="Minimum width floor for each gallery section."
+                    value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMinWidth') ?? 300}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinWidth', typeof value === 'number' ? value : 300))}
+                    min={200}
+                    max={600}
+                    step={50}
+                  />
 
-                <Select
-                  label="Equal Height Sections (Per-Type)"
-                  description="Controls whether image and video sections align to equal height in per-type layouts on wider viewports."
-                  data={[
-                    { value: 'false', label: 'Off' },
-                    { value: 'true', label: 'On' },
-                  ]}
-                  value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'perTypeSectionEqualHeight') ?? false)}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'perTypeSectionEqualHeight', value === 'true'))}
-                  allowDeselect={false}
-                />
-              </Stack>
+                  <Select
+                    label="Section Height Mode"
+                    description="How section height is determined. Auto is content-driven and remains the safest default for masonry and justified layouts."
+                    data={[
+                      { value: 'auto', label: 'Auto (content-driven)' },
+                      { value: 'manual', label: 'Manual (fixed max height)' },
+                      { value: 'viewport', label: 'Viewport (% of screen)' },
+                    ]}
+                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'sectionHeightMode') ?? 'auto'}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionHeightMode', value ?? 'auto'))}
+                    allowDeselect={false}
+                  />
+
+                  {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'sectionHeightMode') === 'manual' && (
+                    <NumberInput
+                      label="Gallery Section Max Height (px)"
+                      description="Maximum height used when section height mode is manual."
+                      value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMaxHeight') ?? 0}
+                      onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMaxHeight', typeof value === 'number' ? value : 0))}
+                      min={0}
+                      max={2000}
+                      step={50}
+                    />
+                  )}
+
+                  <NumberInput
+                    label="Gallery Section Min Height (px)"
+                    description="Minimum height floor for each gallery section."
+                    value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionMinHeight') ?? 150}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionMinHeight', typeof value === 'number' ? value : 150))}
+                    min={100}
+                    max={400}
+                    step={50}
+                  />
+
+                  <Select
+                    label="Equal Height Sections (Per-Type)"
+                    description="Controls whether image and video sections align to equal height in per-type layouts on wider viewports."
+                    data={[
+                      { value: 'false', label: 'Off' },
+                      { value: 'true', label: 'On' },
+                    ]}
+                    value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'perTypeSectionEqualHeight') ?? false)}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'perTypeSectionEqualHeight', value === 'true'))}
+                    allowDeselect={false}
+                  />
+                </Stack>
               ) : null}
             </Accordion.Panel>
           </Accordion.Item>
@@ -793,26 +798,26 @@ export function GalleryConfigEditorModal({
             <Accordion.Panel>
               {mountedAccordionSections.has('shared-section-spacing') ? (
                 <Stack gap="md">
-                <NumberInput
-                  label="Section Padding (px)"
-                  description="Applies the same inner section padding across the currently edited gallery mode surface."
-                  value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionPadding') ?? 16}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionPadding', typeof value === 'number' ? value : 16))}
-                  min={0}
-                  max={32}
-                  step={4}
-                />
+                  <NumberInput
+                    label="Section Padding (px)"
+                    description="Applies the same inner section padding across the currently edited gallery mode surface."
+                    value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'sectionPadding') ?? 16}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'sectionPadding', typeof value === 'number' ? value : 16))}
+                    min={0}
+                    max={32}
+                    step={4}
+                  />
 
-                <NumberInput
-                  label="Adapter Content Padding (px)"
-                  description="Applies the same inner adapter padding across the currently edited gallery mode surface."
-                  value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterContentPadding') ?? 0}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterContentPadding', typeof value === 'number' ? value : 0))}
-                  min={0}
-                  max={24}
-                  step={4}
-                />
-              </Stack>
+                  <NumberInput
+                    label="Adapter Content Padding (px)"
+                    description="Applies the same inner adapter padding across the currently edited gallery mode surface."
+                    value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterContentPadding') ?? 0}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterContentPadding', typeof value === 'number' ? value : 0))}
+                    min={0}
+                    max={24}
+                    step={4}
+                  />
+                </Stack>
               ) : null}
             </Accordion.Panel>
           </Accordion.Item>
@@ -822,68 +827,68 @@ export function GalleryConfigEditorModal({
             <Accordion.Panel>
               {mountedAccordionSections.has('shared-adapter-sizing') ? (
                 <Stack gap="md">
-                <Select
-                  label="Adapter Sizing Mode"
-                  description="How adapters fill their gallery section. Fill uses the full section; Manual lets you cap width and height percentages."
-                  data={[
-                    { value: 'fill', label: 'Fill (100%)' },
-                    { value: 'manual', label: 'Manual (custom %)' },
-                  ]}
-                  value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterSizingMode') ?? 'fill'}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterSizingMode', value ?? 'fill'))}
-                  allowDeselect={false}
-                />
+                  <Select
+                    label="Adapter Sizing Mode"
+                    description="How adapters fill their gallery section. Fill uses the full section; Manual lets you cap width and height percentages."
+                    data={[
+                      { value: 'fill', label: 'Fill (100%)' },
+                      { value: 'manual', label: 'Manual (custom %)' },
+                    ]}
+                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterSizingMode') ?? 'fill'}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterSizingMode', value ?? 'fill'))}
+                    allowDeselect={false}
+                  />
 
-                {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterSizingMode') === 'manual' && (
-                  <>
-                    <NumberInput
-                      label="Adapter Max Width (%)"
-                      description="Maximum adapter width as a percentage of its gallery section."
-                      value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterMaxWidthPct') ?? 100}
-                      onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxWidthPct', typeof value === 'number' ? value : 100))}
-                      min={50}
-                      max={100}
-                      step={5}
-                    />
+                  {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterSizingMode') === 'manual' && (
+                    <>
+                      <NumberInput
+                        label="Adapter Max Width (%)"
+                        description="Maximum adapter width as a percentage of its gallery section."
+                        value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterMaxWidthPct') ?? 100}
+                        onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxWidthPct', typeof value === 'number' ? value : 100))}
+                        min={50}
+                        max={100}
+                        step={5}
+                      />
 
-                    <NumberInput
-                      label="Adapter Max Height (%)"
-                      description="Maximum adapter height as a percentage of its gallery section."
-                      value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterMaxHeightPct') ?? 100}
-                      onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxHeightPct', typeof value === 'number' ? value : 100))}
-                      min={50}
-                      max={100}
-                      step={5}
-                    />
-                  </>
-                )}
+                      <NumberInput
+                        label="Adapter Max Height (%)"
+                        description="Maximum adapter height as a percentage of its gallery section."
+                        value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterMaxHeightPct') ?? 100}
+                        onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterMaxHeightPct', typeof value === 'number' ? value : 100))}
+                        min={50}
+                        max={100}
+                        step={5}
+                      />
+                    </>
+                  )}
 
-                <NumberInput
-                  label="Adapter Item Gap (px)"
-                  description="Applies shared item spacing across the currently edited gallery mode surface."
-                  value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterItemGap') ?? 16}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterItemGap', typeof value === 'number' ? value : 16))}
-                  min={0}
-                  max={64}
-                  step={4}
-                />
+                  <NumberInput
+                    label="Adapter Item Gap (px)"
+                    description="Applies shared item spacing across the currently edited gallery mode surface."
+                    value={getRepresentativeNumberCommonValue(resolvedDraft, activeBreakpoint, 'adapterItemGap') ?? 16}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterItemGap', typeof value === 'number' ? value : 16))}
+                    min={0}
+                    max={64}
+                    step={4}
+                  />
 
-                <Select
-                  label="Adapter Justification"
-                  description="Controls how adapter items distribute inside the section for adapters that support justification."
-                  data={[
-                    { value: 'start', label: 'Start' },
-                    { value: 'center', label: 'Center' },
-                    { value: 'end', label: 'End' },
-                    { value: 'space-between', label: 'Space Between' },
-                    { value: 'space-evenly', label: 'Space Evenly' },
-                    { value: 'stretch', label: 'Stretch' },
-                  ]}
-                  value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterJustifyContent') ?? 'center'}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterJustifyContent', value ?? 'center'))}
-                  allowDeselect={false}
-                />
-              </Stack>
+                  <Select
+                    label="Adapter Justification"
+                    description="Controls how adapter items distribute inside the section for adapters that support justification."
+                    data={[
+                      { value: 'start', label: 'Start' },
+                      { value: 'center', label: 'Center' },
+                      { value: 'end', label: 'End' },
+                      { value: 'space-between', label: 'Space Between' },
+                      { value: 'space-evenly', label: 'Space Evenly' },
+                      { value: 'stretch', label: 'Stretch' },
+                    ]}
+                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'adapterJustifyContent') ?? 'center'}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'adapterJustifyContent', value ?? 'center'))}
+                    allowDeselect={false}
+                  />
+                </Stack>
               ) : null}
             </Accordion.Panel>
           </Accordion.Item>
@@ -893,29 +898,29 @@ export function GalleryConfigEditorModal({
             <Accordion.Panel>
               {mountedAccordionSections.has('shared-gallery-height') ? (
                 <Stack gap="md">
-                <Select
-                  label="Height Constraint"
-                  description="Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
-                  data={[
-                    { value: 'auto', label: 'No restraint' },
-                    { value: 'viewport', label: 'Restrain to view' },
-                    { value: 'manual', label: 'Manually control height' },
-                  ]}
-                  value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'gallerySizingMode') ?? 'auto'}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'gallerySizingMode', value ?? 'auto'))}
-                  allowDeselect={false}
-                />
-
-                {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'gallerySizingMode') === 'manual' && (
-                  <TextInput
-                    label="Manual Gallery Height"
-                    description="Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
-                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryManualHeight') ?? '420px'}
-                    onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryManualHeight', event.currentTarget.value))}
-                    placeholder="420px"
+                  <Select
+                    label="Height Constraint"
+                    description="Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
+                    data={[
+                      { value: 'auto', label: 'No restraint' },
+                      { value: 'viewport', label: 'Restrain to view' },
+                      { value: 'manual', label: 'Manually control height' },
+                    ]}
+                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'gallerySizingMode') ?? 'auto'}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'gallerySizingMode', value ?? 'auto'))}
+                    allowDeselect={false}
                   />
-                )}
-              </Stack>
+
+                  {getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'gallerySizingMode') === 'manual' && (
+                    <TextInput
+                      label="Manual Gallery Height"
+                      description="Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
+                      value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryManualHeight') ?? '420px'}
+                      onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryManualHeight', event.currentTarget.value))}
+                      placeholder="420px"
+                    />
+                  )}
+                </Stack>
               ) : null}
             </Accordion.Panel>
           </Accordion.Item>
@@ -925,57 +930,57 @@ export function GalleryConfigEditorModal({
             <Accordion.Panel>
               {mountedAccordionSections.has('shared-gallery-presentation') ? (
                 <Stack gap="md">
-                <TextInput
-                  label="Image Gallery Label"
-                  description="Shared heading text for image gallery sections when labels are enabled."
-                  value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryImageLabel') ?? 'Images'}
-                  onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryImageLabel', event.currentTarget.value))}
-                />
+                  <TextInput
+                    label="Image Gallery Label"
+                    description="Shared heading text for image gallery sections when labels are enabled."
+                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryImageLabel') ?? 'Images'}
+                    onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryImageLabel', event.currentTarget.value))}
+                  />
 
-                <TextInput
-                  label="Video Gallery Label"
-                  description="Shared heading text for video gallery sections when labels are enabled."
-                  value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryVideoLabel') ?? 'Videos'}
-                  onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryVideoLabel', event.currentTarget.value))}
-                />
+                  <TextInput
+                    label="Video Gallery Label"
+                    description="Shared heading text for video gallery sections when labels are enabled."
+                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryVideoLabel') ?? 'Videos'}
+                    onChange={(event) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryVideoLabel', event.currentTarget.value))}
+                  />
 
-                <Select
-                  label="Gallery Label Justification"
-                  description="Controls how gallery section titles align across the currently edited gallery mode surface."
-                  data={[
-                    { value: 'left', label: 'Left' },
-                    { value: 'center', label: 'Center' },
-                    { value: 'right', label: 'Right' },
-                  ]}
-                  value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryLabelJustification') ?? 'left'}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryLabelJustification', value ?? 'left'))}
-                  allowDeselect={false}
-                />
+                  <Select
+                    label="Gallery Label Justification"
+                    description="Controls how gallery section titles align across the currently edited gallery mode surface."
+                    data={[
+                      { value: 'left', label: 'Left' },
+                      { value: 'center', label: 'Center' },
+                      { value: 'right', label: 'Right' },
+                    ]}
+                    value={getRepresentativeStringCommonValue(resolvedDraft, activeBreakpoint, 'galleryLabelJustification') ?? 'left'}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'galleryLabelJustification', value ?? 'left'))}
+                    allowDeselect={false}
+                  />
 
-                <Select
-                  label="Show Gallery Label Icons"
-                  description="Displays the adapter icon beside gallery section titles."
-                  data={[
-                    { value: 'true', label: 'On' },
-                    { value: 'false', label: 'Off' },
-                  ]}
-                  value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'showGalleryLabelIcon') ?? false)}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showGalleryLabelIcon', value === 'true'))}
-                  allowDeselect={false}
-                />
+                  <Select
+                    label="Show Gallery Label Icons"
+                    description="Displays the adapter icon beside gallery section titles."
+                    data={[
+                      { value: 'true', label: 'On' },
+                      { value: 'false', label: 'Off' },
+                    ]}
+                    value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'showGalleryLabelIcon') ?? false)}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showGalleryLabelIcon', value === 'true'))}
+                    allowDeselect={false}
+                  />
 
-                <Select
-                  label="Show Gallery Section Labels"
-                  description="Controls whether gallery section headings render at all for the currently edited gallery mode surface."
-                  data={[
-                    { value: 'true', label: 'On' },
-                    { value: 'false', label: 'Off' },
-                  ]}
-                  value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'showCampaignGalleryLabels') ?? true)}
-                  onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showCampaignGalleryLabels', value === 'true'))}
-                  allowDeselect={false}
-                />
-              </Stack>
+                  <Select
+                    label="Show Gallery Section Labels"
+                    description="Controls whether gallery section headings render at all for the currently edited gallery mode surface."
+                    data={[
+                      { value: 'true', label: 'On' },
+                      { value: 'false', label: 'Off' },
+                    ]}
+                    value={String(getRepresentativeBooleanCommonValue(resolvedDraft, activeBreakpoint, 'showCampaignGalleryLabels') ?? true)}
+                    onChange={(value) => updateDraft((current) => setCommonSettingForEditableScopes(current, activeBreakpoint, 'showCampaignGalleryLabels', value === 'true'))}
+                    allowDeselect={false}
+                  />
+                </Stack>
               ) : null}
             </Accordion.Panel>
           </Accordion.Item>
@@ -985,74 +990,74 @@ export function GalleryConfigEditorModal({
             <Accordion.Panel>
               {mountedAccordionSections.has('viewport-backgrounds') ? (
                 <Stack gap="md">
-                {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => {
-                  const scopeLabel = formatScopeLabel(scope);
-                  const defaults = getScopeViewportBackgroundFallbacks(scope);
-                  const bgType = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgType') ?? defaults.viewportBgType;
-                  const bgColor = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgColor') ?? defaults.viewportBgColor;
-                  const bgGradient = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgGradient') ?? defaults.viewportBgGradient;
-                  const bgImageUrl = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgImageUrl') ?? defaults.viewportBgImageUrl;
+                  {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => {
+                    const scopeLabel = formatScopeLabel(scope);
+                    const defaults = getScopeViewportBackgroundFallbacks(scope);
+                    const bgType = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgType') ?? defaults.viewportBgType;
+                    const bgColor = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgColor') ?? defaults.viewportBgColor;
+                    const bgGradient = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgGradient') ?? defaults.viewportBgGradient;
+                    const bgImageUrl = getScopeCommonValue(resolvedDraft, activeBreakpoint, scope, 'viewportBgImageUrl') ?? defaults.viewportBgImageUrl;
 
-                  return (
-                    <Stack key={scope} gap="sm">
-                      <Text size="sm" fw={600}>{scopeLabel}</Text>
+                    return (
+                      <Stack key={scope} gap="sm">
+                        <Text size="sm" fw={600}>{scopeLabel}</Text>
 
-                      <Select
-                        label={`${scopeLabel} Background`}
-                        description={`Background applied behind the ${scopeLabel.toLowerCase()} viewport.`}
-                        data={[
-                          { value: 'none', label: 'None' },
-                          { value: 'solid', label: 'Solid Color' },
-                          { value: 'gradient', label: 'Gradient' },
-                          { value: 'image', label: 'Background Image' },
-                        ]}
-                        value={bgType}
-                        onChange={(value) => updateDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgType', value ?? 'none'))}
-                        allowDeselect={false}
-                      />
-
-                      {bgType === 'solid' && (
-                        <ColorInput
-                          label={`${scopeLabel} Background Color`}
-                          description="Solid background color behind the viewport."
-                          value={bgColor}
-                          onChange={(value) => updateDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgColor', value))}
+                        <Select
+                          label={`${scopeLabel} Background`}
+                          description={`Background applied behind the ${scopeLabel.toLowerCase()} viewport.`}
+                          data={[
+                            { value: 'none', label: 'None' },
+                            { value: 'solid', label: 'Solid Color' },
+                            { value: 'gradient', label: 'Gradient' },
+                            { value: 'image', label: 'Background Image' },
+                          ]}
+                          value={bgType}
+                          onChange={(value) => updateDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgType', value ?? 'none'))}
+                          allowDeselect={false}
                         />
-                      )}
 
-                      {bgType === 'gradient' && (
-                        <TextInput
-                          label={`${scopeLabel} Background Gradient`}
-                          description="CSS gradient string used behind the viewport."
-                          value={bgGradient}
-                          onChange={(event) => updateDraft((current) => setCommonSettingForScope(
-                            current,
-                            activeBreakpoint,
-                            scope,
-                            'viewportBgGradient',
-                            event.currentTarget.value,
-                          ))}
-                        />
-                      )}
+                        {bgType === 'solid' && (
+                          <ColorInput
+                            label={`${scopeLabel} Background Color`}
+                            description="Solid background color behind the viewport."
+                            value={bgColor}
+                            onChange={(value) => updateDraft((current) => setCommonSettingForScope(current, activeBreakpoint, scope, 'viewportBgColor', value))}
+                          />
+                        )}
 
-                      {bgType === 'image' && (
-                        <TextInput
-                          label={`${scopeLabel} Background Image URL`}
-                          description="Image shown behind the viewport."
-                          value={bgImageUrl}
-                          onChange={(event) => updateDraft((current) => setCommonSettingForScope(
-                            current,
-                            activeBreakpoint,
-                            scope,
-                            'viewportBgImageUrl',
-                            event.currentTarget.value,
-                          ))}
-                        />
-                      )}
-                    </Stack>
-                  );
-                })}
-              </Stack>
+                        {bgType === 'gradient' && (
+                          <TextInput
+                            label={`${scopeLabel} Background Gradient`}
+                            description="CSS gradient string used behind the viewport."
+                            value={bgGradient}
+                            onChange={(event) => updateDraft((current) => setCommonSettingForScope(
+                              current,
+                              activeBreakpoint,
+                              scope,
+                              'viewportBgGradient',
+                              event.currentTarget.value,
+                            ))}
+                          />
+                        )}
+
+                        {bgType === 'image' && (
+                          <TextInput
+                            label={`${scopeLabel} Background Image URL`}
+                            description="Image shown behind the viewport."
+                            value={bgImageUrl}
+                            onChange={(event) => updateDraft((current) => setCommonSettingForScope(
+                              current,
+                              activeBreakpoint,
+                              scope,
+                              'viewportBgImageUrl',
+                              event.currentTarget.value,
+                            ))}
+                          />
+                        )}
+                      </Stack>
+                    );
+                  })}
+                </Stack>
               ) : null}
             </Accordion.Panel>
           </Accordion.Item>

@@ -51,9 +51,11 @@ export function CampaignDuplicateModal({
       {...getWpsgDebugProps('CampaignDuplicateModal')}
       opened={source !== null}
       onClose={onClose}
-      title="Duplicate Campaign"
+      title={<span {...getWpsgDebugProps('CampaignDuplicateModal', 'title')}>Duplicate Campaign</span>}
       size="sm"
       aria-label="Duplicate campaign"
+      closeButtonProps={getWpsgDebugProps('CampaignDuplicateModal', 'close')}
+      overlayProps={getWpsgDebugProps('CampaignDuplicateModal', 'overlay')}
     >
       <Stack {...getWpsgDebugProps('CampaignDuplicateModal', 'stack')} gap="md">
         <div>
