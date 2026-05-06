@@ -30,6 +30,8 @@ interface Window {
     apiBase?: string;
     /** P20-I-6: When true, multiple shortcodes share one React root via portals. Default: false. */
     sharedRoot?: boolean;
+    /** When true, component markers (data-wpsg-component/slot attributes) are injected into DOM for dev tools inspection. */
+    debugComponentMarkers?: boolean;
   };
   __WPSG_REST_NONCE__?: string;
   __WPSG_SENTRY_DSN__?: string;

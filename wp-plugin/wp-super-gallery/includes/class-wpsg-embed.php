@@ -105,6 +105,9 @@ class WPSG_Embed {
         $gallery_layout = isset($settings['gallery_layout']) ? $settings['gallery_layout'] : 'grid';
         $enable_lightbox = isset($settings['enable_lightbox']) ? $settings['enable_lightbox'] : true;
         $enable_animations = isset($settings['enable_animations']) ? $settings['enable_animations'] : true;
+        $debug_component_markers = defined('WPSG_DEBUG_COMPONENT_MARKERS')
+            ? (bool) WPSG_DEBUG_COMPONENT_MARKERS
+            : true;
 
         // Enqueue Google Fonts server-side so they load even if JS injection is blocked.
         if (class_exists('WPSG_Settings')) {
@@ -163,6 +166,9 @@ class WPSG_Embed {
             'restNonce'               => wp_create_nonce('wp_rest'),
             // P20-K: Gate JWT auth behind server-side constant.
             'enableJwt'               => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
+            // Keep DOM component markers enabled in deployed builds unless a
+            // site-level constant or filter explicitly turns them off.
+            'debugComponentMarkers'   => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
         ];
 
         $config_script = '<script>' .

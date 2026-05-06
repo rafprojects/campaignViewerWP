@@ -1,9 +1,13 @@
 export type WpsgDebugProps = Record<string, string>;
 
+function isWpsgDebugEnabled(enabled?: boolean): boolean {
+  return enabled ?? (import.meta.env.DEV || (window.__WPSG_CONFIG__?.debugComponentMarkers ?? false));
+}
+
 export function getWpsgDebugProps(
   component: string,
   slot?: string,
-  enabled: boolean = import.meta.env.DEV,
+  enabled: boolean = isWpsgDebugEnabled(),
 ): WpsgDebugProps {
   if (!enabled) {
     return {};
@@ -22,7 +26,7 @@ export function getWpsgDebugProps(
 export function getWpsgDebugSlotAttributes<TSlotKey extends string>(
   component: string,
   slotMap: Record<TSlotKey, string>,
-  enabled: boolean = import.meta.env.DEV,
+  enabled: boolean = isWpsgDebugEnabled(),
 ): Partial<Record<TSlotKey, WpsgDebugProps>> | undefined {
   if (!enabled) {
     return undefined;
