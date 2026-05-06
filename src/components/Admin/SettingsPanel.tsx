@@ -85,6 +85,13 @@ interface SettingsPanelProps {
   initialSettings?: SettingsDataInput;
 }
 
+type NamedComponent<Props = Record<string, never>> = ((props: Props) => JSX.Element) & {
+  displayName?: string;
+};
+
+type SettingsPanelUpdateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => void;
+type SettingsPanelTooltipRenderer = (label: string, key: string) => ReturnType<typeof SettingTooltip>;
+
 function mergeCachedAndFetchedSettings(
   preferred?: SettingsDataInput,
   fallback?: SettingsDataInput,
@@ -106,6 +113,215 @@ function mergeCachedAndFetchedSettings(
     enableAnimations: preferred.enableAnimations ?? fallback.enableAnimations,
   };
 }
+
+const SettingsPanelTitle: NamedComponent = () => (
+  <Group {...getWpsgDebugProps('SettingsPanel', 'title')} gap="sm">
+    <IconSettings size={22} />
+    <Title order={3}>Display Settings</Title>
+  </Group>
+);
+
+SettingsPanelTitle.displayName = 'SettingsPanelTitle';
+
+interface SettingsPanelTabsContentProps {
+  activeTab: string | null;
+  setActiveTab: (value: string | null) => void;
+  settings: SettingsData;
+  updateSetting: SettingsPanelUpdateSetting;
+  updateGallerySetting: UpdateGallerySetting;
+  cardSettingsBreakpoint: CardConfigBreakpoint;
+  setCardSettingsBreakpoint: (value: CardConfigBreakpoint) => void;
+  setGalleryConfigEditorOpen: (open: boolean) => void;
+  apiClient: ApiClient;
+  customFonts: CustomFontEntry[];
+  setCustomFonts: (fonts: CustomFontEntry[]) => void;
+  updateTypoOverride: (elementId: string, override: TypographyOverride) => void;
+  tooltipLabel: SettingsPanelTooltipRenderer;
+}
+
+const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = ({
+  activeTab,
+  setActiveTab,
+  settings,
+  updateSetting,
+  updateGallerySetting,
+  cardSettingsBreakpoint,
+  setCardSettingsBreakpoint,
+  setGalleryConfigEditorOpen,
+  apiClient,
+  customFonts,
+  setCustomFonts,
+  updateTypoOverride,
+  tooltipLabel,
+}) => (
+  <Stack gap="md">
+    <Tabs
+      value={activeTab}
+      onChange={setActiveTab}
+      keepMounted={false}
+      styles={{
+        list: {
+          overflowX: 'auto',
+          flexWrap: 'nowrap',
+          scrollbarWidth: 'thin',
+        },
+        tab: {
+          flex: '0 0 auto',
+          whiteSpace: 'nowrap',
+        },
+      }}
+    >
+      <Tabs.List>
+        <Tabs.Tab value="page-theme" leftSection={<IconSettings size={16} />}>
+          Page & Theme
+        </Tabs.Tab>
+        <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
+          Campaign Cards
+        </Tabs.Tab>
+        <Tabs.Tab value="gallery-media" leftSection={<IconPhoto size={16} />}>
+          Gallery & Media
+        </Tabs.Tab>
+        <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
+          Campaign Viewer
+        </Tabs.Tab>
+        {settings.advancedSettingsEnabled && (
+          <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
+            System & Admin
+          </Tabs.Tab>
+        )}
+        <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
+          Typography
+        </Tabs.Tab>
+      </Tabs.List>
+
+      <Tabs.Panel value="page-theme" pt="md">
+        {activeTab === 'page-theme' && (
+          <GeneralSettingsSection
+            settings={settings}
+            updateSetting={updateSetting}
+            onThemeChange={(id) => updateSetting('theme', id)}
+          />
+        )}
+      </Tabs.Panel>
+
+      <Tabs.Panel value="cards" pt="md">
+        {activeTab === 'cards' && (
+          <Stack gap="md">
+            <Box>
+              <Text size="sm" c="dimmed" mb="xs">
+                Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.
+              </Text>
+              <SegmentedControl
+                data={CARD_SETTINGS_BREAKPOINT_OPTIONS}
+                value={cardSettingsBreakpoint}
+                onChange={(value) => setCardSettingsBreakpoint(value as CardConfigBreakpoint)}
+                aria-label="Card settings breakpoint"
+                size="xs"
+                fullWidth
+              />
+            </Box>
+            <Accordion variant="separated" defaultValue="appearance">
+              <CampaignCardSettingsSection
+                settings={settings}
+                updateSetting={updateGallerySetting}
+                activeBreakpoint={cardSettingsBreakpoint}
+              />
+            </Accordion>
+          </Stack>
+        )}
+      </Tabs.Panel>
+
+      <Tabs.Panel value="gallery-media" pt="md">
+        {activeTab === 'gallery-media' && (
+          <Stack gap="lg">
+            <MediaDisplaySettingsSection
+              settings={settings}
+              updateSetting={updateSetting}
+              tooltipLabel={tooltipLabel}
+            />
+            <GalleryLayoutSettingsSection
+              settings={settings}
+              updateSetting={updateGallerySetting}
+              onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
+            />
+          </Stack>
+        )}
+      </Tabs.Panel>
+
+      <Tabs.Panel value="viewer" pt="md">
+        {activeTab === 'viewer' && (
+          <CampaignViewerSettingsSection
+            settings={settings}
+            updateSetting={updateGallerySetting}
+          />
+        )}
+      </Tabs.Panel>
+
+      {settings.advancedSettingsEnabled && (
+        <Tabs.Panel value="system-admin" pt="md">
+          {activeTab === 'system-admin' && (
+            <AdvancedSettingsSection
+              settings={settings}
+              updateSetting={updateGallerySetting}
+              tooltipLabel={tooltipLabel}
+            />
+          )}
+        </Tabs.Panel>
+      )}
+
+      <Tabs.Panel value="typography" pt="md">
+        {activeTab === 'typography' && (
+          <TypographySettingsSection
+            apiClient={apiClient}
+            customFonts={customFonts}
+            typographyOverrides={settings.typographyOverrides}
+            onFontsChange={(fonts) => setCustomFonts(fonts)}
+            onResetAll={() => updateSetting('typographyOverrides', {})}
+            onOverrideChange={updateTypoOverride}
+          />
+        )}
+      </Tabs.Panel>
+    </Tabs>
+  </Stack>
+);
+
+SettingsPanelTabsContent.displayName = 'SettingsPanelTabsContent';
+
+interface SettingsPanelFooterProps {
+  hasChanges: boolean;
+  isSaving: boolean;
+  onReset: () => void;
+  onSave: () => void;
+}
+
+const SettingsPanelFooter: NamedComponent<SettingsPanelFooterProps> = ({
+  hasChanges,
+  isSaving,
+  onReset,
+  onSave,
+}) => (
+  <Box
+    style={{
+      flexShrink: 0,
+      borderTop: '1px solid var(--mantine-color-default-border)',
+      boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
+      padding: 'var(--mantine-spacing-sm) var(--mantine-spacing-md)',
+    }}
+  >
+    <Group justify="flex-end" gap="sm">
+      {hasChanges && (
+        <Button variant="subtle" onClick={onReset} disabled={isSaving}>
+          Reset
+        </Button>
+      )}
+      <Button onClick={onSave} loading={isSaving} disabled={!hasChanges}>
+        Save Changes
+      </Button>
+    </Group>
+  </Box>
+);
+
+SettingsPanelFooter.displayName = 'SettingsPanelFooter';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
@@ -222,12 +438,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       {...getWpsgDebugProps('SettingsPanel')}
       opened={opened}
       onClose={() => { revertThemePreview(); onClose(); }}
-      title={
-        <Group {...getWpsgDebugProps('SettingsPanel', 'title')} gap="sm">
-          <IconSettings size={22} />
-          <Title order={3}>Display Settings</Title>
-        </Group>
-      }
+      title={<SettingsPanelTitle />}
       position="right"
       size={isSmallScreen ? '100%' : 'lg'}
       zIndex={450}
@@ -253,126 +464,21 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       ) : (
         <>
           <Box style={{ flex: 1, overflowY: 'auto', padding: 'var(--mantine-spacing-md)' }}>
-            <Stack gap="md">
-              <Tabs value={activeTab} onChange={setActiveTab} keepMounted={false}>
-                <Tabs.List grow>
-                  <Tabs.Tab value="page-theme" leftSection={<IconSettings size={16} />}>
-                    Page & Theme
-                  </Tabs.Tab>
-                  <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
-                    Campaign Cards
-                  </Tabs.Tab>
-                  <Tabs.Tab value="gallery-media" leftSection={<IconPhoto size={16} />}>
-                    Gallery & Media
-                  </Tabs.Tab>
-                  <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
-                    Campaign Viewer
-                  </Tabs.Tab>
-                  {settings.advancedSettingsEnabled && (
-                    <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
-                      System & Admin
-                    </Tabs.Tab>
-                  )}
-                  <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
-                    Typography
-                  </Tabs.Tab>
-                </Tabs.List>
-
-                {/* ── Page & Theme Tab ───────────────────────────────────── */}
-                <Tabs.Panel value="page-theme" pt="md">
-                  {activeTab === 'page-theme' && (
-                    <GeneralSettingsSection
-                      settings={settings}
-                      updateSetting={updateSetting}
-                      onThemeChange={(id) => updateSetting('theme', id)}
-                    />
-                  )}
-                </Tabs.Panel>
-
-                {/* ── Campaign Cards Tab ────────────────────────── */}
-                <Tabs.Panel value="cards" pt="md">
-                  {activeTab === 'cards' && (
-                    <Stack gap="md">
-                      <Box>
-                        <Text size="sm" c="dimmed" mb="xs">
-                          Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.
-                        </Text>
-                        <SegmentedControl
-                          data={CARD_SETTINGS_BREAKPOINT_OPTIONS}
-                          value={cardSettingsBreakpoint}
-                          onChange={(value) => setCardSettingsBreakpoint(value as CardConfigBreakpoint)}
-                          aria-label="Card settings breakpoint"
-                          size="xs"
-                          fullWidth
-                        />
-                      </Box>
-                      <Accordion variant="separated" defaultValue="appearance">
-                        <CampaignCardSettingsSection
-                          settings={settings}
-                          updateSetting={updateGallerySetting}
-                          activeBreakpoint={cardSettingsBreakpoint}
-                        />
-                      </Accordion>
-                    </Stack>
-                  )}
-                </Tabs.Panel>
-
-                {/* ── Gallery & Media Tab ───────────────────────── */}
-                <Tabs.Panel value="gallery-media" pt="md">
-                  {activeTab === 'gallery-media' && (
-                    <Stack gap="lg">
-                      <MediaDisplaySettingsSection
-                        settings={settings}
-                        updateSetting={updateSetting}
-                        tooltipLabel={tt}
-                      />
-                      <GalleryLayoutSettingsSection
-                        settings={settings}
-                        updateSetting={updateGallerySetting}
-                        onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
-                      />
-                    </Stack>
-                  )}
-                </Tabs.Panel>
-
-                {/* ── Campaign Viewer Tab ──────────────────────────── */}
-                <Tabs.Panel value="viewer" pt="md">
-                  {activeTab === 'viewer' && (
-                    <CampaignViewerSettingsSection
-                      settings={settings}
-                      updateSetting={updateGallerySetting}
-                    />
-                  )}
-                </Tabs.Panel>
-
-                {settings.advancedSettingsEnabled && (
-                  <Tabs.Panel value="system-admin" pt="md">
-                    {activeTab === 'system-admin' && (
-                      <AdvancedSettingsSection
-                        settings={settings}
-                        updateSetting={updateGallerySetting}
-                        tooltipLabel={tt}
-                      />
-                    )}
-                  </Tabs.Panel>
-                )}
-
-                {/* ── Typography Tab ───────────────────────────────── */}
-                <Tabs.Panel value="typography" pt="md">
-                  {activeTab === 'typography' && (
-                    <TypographySettingsSection
-                      apiClient={apiClient}
-                      customFonts={customFonts}
-                      typographyOverrides={settings.typographyOverrides}
-                      onFontsChange={(fonts) => setCustomFonts(fonts)}
-                      onResetAll={() => updateSetting('typographyOverrides', {})}
-                      onOverrideChange={updateTypoOverride}
-                    />
-                  )}
-                </Tabs.Panel>
-
-              </Tabs>
-            </Stack>
+            <SettingsPanelTabsContent
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              settings={settings}
+              updateSetting={updateSetting}
+              updateGallerySetting={updateGallerySetting}
+              cardSettingsBreakpoint={cardSettingsBreakpoint}
+              setCardSettingsBreakpoint={setCardSettingsBreakpoint}
+              setGalleryConfigEditorOpen={setGalleryConfigEditorOpen}
+              apiClient={apiClient}
+              customFonts={customFonts}
+              setCustomFonts={setCustomFonts}
+              updateTypoOverride={updateTypoOverride}
+              tooltipLabel={tt}
+            />
           </Box>
 
           {galleryConfigEditorOpen && (
@@ -395,26 +501,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             </Suspense>
           )}
 
-          {/* ── Footer (fixed outside scroll area) ───────── */}
-          <Box
-            style={{
-              flexShrink: 0,
-              borderTop: '1px solid var(--mantine-color-default-border)',
-              boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
-              padding: 'var(--mantine-spacing-sm) var(--mantine-spacing-md)',
-            }}
-          >
-            <Group justify="flex-end" gap="sm">
-              {hasChanges && (
-                <Button variant="subtle" onClick={handleReset} disabled={isSaving}>
-                  Reset
-                </Button>
-              )}
-              <Button onClick={handleSave} loading={isSaving} disabled={!hasChanges}>
-                Save Changes
-              </Button>
-            </Group>
-          </Box>
+          <SettingsPanelFooter
+            hasChanges={hasChanges}
+            isSaving={isSaving}
+            onReset={handleReset}
+            onSave={handleSave}
+          />
         </>
       )}
     </Drawer>

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'wpsg-v2';
+const CACHE_VERSION = 'wpsg-v3';
 const RUNTIME_CACHE = `wpsg-runtime-${CACHE_VERSION}`;
 
 // Vite-hashed asset filenames contain a content hash (e.g. index-DxTet_7o.js).
@@ -28,6 +28,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+
+  // Never cache document navigations or HTML pages. A stale cached shell can
+  // bootstrap an old entry module that lazy-loads chunk URLs removed by a new
+  // deploy, which shows up as overlays or settings drawers that stop opening.
+  const acceptHeader = request.headers.get('Accept') || '';
+  if (request.mode === 'navigate' || acceptHeader.includes('text/html')) return;
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;

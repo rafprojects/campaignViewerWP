@@ -185,6 +185,19 @@ test('shadow DOM settings drawer and nested gallery editor remain usable', async
   await expect(settingsPanel).toBeVisible();
   await expect(page.locator('[data-wpsg-component="SettingsPanel"][data-wpsg-slot="overlay"]')).toBeVisible();
 
+  const tabMetrics = await settingsPanel.getByRole('tab').evaluateAll((tabs) =>
+    tabs.map((tab) => {
+      const rect = tab.getBoundingClientRect();
+      const style = window.getComputedStyle(tab);
+      return {
+        width: rect.width,
+        flexShrink: style.flexShrink,
+      };
+    }),
+  );
+  expect(tabMetrics.every((tab) => tab.flexShrink === '0')).toBe(true);
+  expect(tabMetrics.some((tab) => tab.width > 90)).toBe(true);
+
   await settingsPanel.getByRole('tab', { name: 'Gallery & Media' }).click();
   await settingsPanel.getByRole('button', { name: 'Viewport Backgrounds' }).click();
 
@@ -248,6 +261,30 @@ test('campaign viewer nested overlays stay usable in shadow DOM', async ({ page 
 
   await page.locator('[data-wpsg-component="CampaignViewer"][data-wpsg-slot="close"]').click();
   await expect(campaignViewer).toBeHidden();
+});
+
+test('in-context typography editor opens nested controls in shadow DOM', async ({ page }) => {
+  await prepareApp(page);
+
+  await page.goto('/');
+
+  await expect.poll(async () => page.evaluate(() => !!document.getElementById('root')?.shadowRoot)).toBe(true);
+  await page.getByRole('button', { name: 'Open campaign Admin Campaign' }).click();
+
+  const campaignViewer = page.locator('[data-wpsg-component="CampaignViewer"][data-wpsg-slot="content-shell"]');
+  await expect(campaignViewer).toBeVisible();
+
+  const typographyToggle = campaignViewer.locator('[data-wpsg-component="InContextEditor"][data-wpsg-slot="toggle"]').first();
+  await expect(typographyToggle).toBeVisible();
+  await typographyToggle.click();
+
+  const fontFamilyInput = page.getByRole('textbox', { name: 'Font Family' }).first();
+  await expect(fontFamilyInput).toBeVisible();
+  await fontFamilyInput.click();
+
+  const listbox = page.getByRole('listbox').last();
+  await expect(listbox).toBeVisible();
+  await expect(listbox.getByRole('option', { name: 'Inter', exact: true })).toBeVisible();
 });
 
 test('non-shadow mount still renders viewer flow', async ({ page }) => {
