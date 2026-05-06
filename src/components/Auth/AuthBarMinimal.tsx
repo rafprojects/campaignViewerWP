@@ -54,37 +54,37 @@ export function AuthBarMinimal({
               </ActionIcon>
             </>
           ) : (
-          <>
-          <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-              <ActionIcon {...getWpsgDebugProps('AuthBarMinimal', 'user-icon')} size={22} variant="transparent" aria-hidden>
-              <IconUser size={14} />
-            </ActionIcon>
-            <Text size="xs" truncate style={{ minWidth: 0, lineHeight: 1 }}>{email}</Text>
-          </Group>
-          <Menu shadow="md" width={200} position="bottom-end" withArrow>
-            <Menu.Target>
-              <ActionIcon {...getWpsgDebugProps('AuthBarMinimal', 'menu-trigger')} variant="subtle" size="sm" aria-label="User menu">
-                <IconChevronDown size={14} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown {...getWpsgDebugProps('AuthBarMinimal', 'menu-dropdown')}>
-              {isAdmin && (
-                <>
-                  <Menu.Item leftSection={<IconDashboard size={14} />} onClick={onOpenAdminPanel}>
-                    Admin Panel
+            <>
+              <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+                <ActionIcon {...getWpsgDebugProps('AuthBarMinimal', 'user-icon')} size={22} variant="transparent" aria-hidden>
+                  <IconUser size={14} />
+                </ActionIcon>
+                <Text size="xs" truncate style={{ minWidth: 0, lineHeight: 1 }}>{email}</Text>
+              </Group>
+              <Menu shadow="md" width={200} position="bottom-end" withArrow>
+                <Menu.Target>
+                  <ActionIcon {...getWpsgDebugProps('AuthBarMinimal', 'menu-trigger')} variant="subtle" size="sm" aria-label="User menu">
+                    <IconChevronDown size={14} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown {...getWpsgDebugProps('AuthBarMinimal', 'menu-dropdown')}>
+                  {isAdmin && (
+                    <>
+                      <Menu.Item leftSection={<IconDashboard size={14} />} onClick={onOpenAdminPanel}>
+                        Admin Panel
+                      </Menu.Item>
+                      <Menu.Item leftSection={<IconSettings size={14} />} onClick={onOpenSettings}>
+                        Settings
+                      </Menu.Item>
+                      <Menu.Divider />
+                    </>
+                  )}
+                  <Menu.Item leftSection={<IconLogout size={14} />} onClick={onLogout} color="red">
+                    Sign out
                   </Menu.Item>
-                  <Menu.Item leftSection={<IconSettings size={14} />} onClick={onOpenSettings}>
-                    Settings
-                  </Menu.Item>
-                  <Menu.Divider />
-                </>
-              )}
-              <Menu.Item leftSection={<IconLogout size={14} />} onClick={onLogout} color="red">
-                Sign out
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-          </>)}
+                </Menu.Dropdown>
+              </Menu>
+            </>)}
         </Group>
       </Container>
     </Box>

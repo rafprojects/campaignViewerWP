@@ -136,19 +136,19 @@ export function AuthBarFloating({
 
   const buttonStyle: React.CSSProperties = draggable
     ? {
-        position: 'fixed',
-        left: pos?.x ?? 0,
-        top: pos?.y ?? 0,
-        zIndex: 9999,
-        cursor: dragging ? 'grabbing' : 'grab',
-        touchAction: 'none',
-      }
+      position: 'fixed',
+      left: pos?.x ?? 0,
+      top: pos?.y ?? 0,
+      zIndex: 9999,
+      cursor: dragging ? 'grabbing' : 'grab',
+      touchAction: 'none',
+    }
     : {
-        position: 'fixed',
-        right: 24,
-        bottom: 24,
-        zIndex: 9999,
-      };
+      position: 'fixed',
+      right: 24,
+      bottom: 24,
+      zIndex: 9999,
+    };
 
   // Don't render until position is computed (prevents flash at wrong location)
   if (draggable && pos === null) return null;
