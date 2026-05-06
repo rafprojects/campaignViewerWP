@@ -25,6 +25,32 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('masonryColumns', $data);
     }
 
+    public function test_settings_get_normalizes_legacy_desktop_card_config() {
+        update_option(WPSG_Settings::OPTION_NAME, [
+            'card_config' => [
+                'breakpoints' => [
+                    'desktop' => [
+                        'cardScale' => 1.4,
+                        'cardPageDotNav' => true,
+                    ],
+                    'mobile' => [
+                        'cardRowsPerPage' => 2,
+                    ],
+                ],
+            ],
+        ]);
+
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals(1.4, $data['cardScale'] ?? null);
+        $this->assertTrue($data['cardPageDotNav'] ?? false);
+        $this->assertArrayNotHasKey('desktop', $data['cardConfig']['breakpoints'] ?? []);
+        $this->assertEquals(2, $data['cardConfig']['breakpoints']['mobile']['cardRowsPerPage'] ?? null);
+    }
+
     public function test_settings_post_requires_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($user_id);
@@ -122,6 +148,57 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('unified_bg_type', $stored);
     }
 
+    public function test_settings_post_validates_compact_grid_adapter_settings_for_admin() {
+        $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
+        $user = get_user_by('id', $user_id);
+        $user->add_cap('manage_wpsg');
+        foreach ( WPSG_CPT::CPT_CAPS as $cap ) {
+            $user->add_cap( $cap );
+        }
+        wp_set_current_user($user_id);
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(wp_json_encode([
+            'galleryConfig' => [
+                'mode' => 'per-type',
+                'breakpoints' => [
+                    'desktop' => [
+                        'image' => [
+                            'adapterId' => 'compact-grid',
+                            'adapterSettings' => [
+                                'gridCardAspectRatio' => 'invalid-ratio',
+                                'gridCardMaxColumns' => 99,
+                                'gridCardMinHeight' => -120,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]));
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        $adapter_settings = $data['galleryConfig']['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+
+        $this->assertArrayNotHasKey('gridCardAspectRatio', $data);
+        $this->assertArrayNotHasKey('gridCardMaxColumns', $data);
+        $this->assertArrayNotHasKey('gridCardMinHeight', $data);
+        $this->assertEquals('auto', $adapter_settings['gridCardAspectRatio'] ?? null);
+        $this->assertEquals(8, $adapter_settings['gridCardMaxColumns'] ?? null);
+        $this->assertEquals(0, $adapter_settings['gridCardMinHeight'] ?? null);
+
+        $stored = get_option(WPSG_Settings::OPTION_NAME, []);
+        $stored_adapter_settings = $stored['gallery_config']['breakpoints']['desktop']['image']['adapterSettings'] ?? [];
+        $this->assertEquals('auto', $stored_adapter_settings['gridCardAspectRatio'] ?? null);
+        $this->assertEquals(8, $stored_adapter_settings['gridCardMaxColumns'] ?? null);
+        $this->assertEquals(0, $stored_adapter_settings['gridCardMinHeight'] ?? null);
+        $this->assertArrayNotHasKey('grid_card_aspect_ratio', $stored);
+        $this->assertArrayNotHasKey('grid_card_max_columns', $stored);
+        $this->assertArrayNotHasKey('grid_card_min_height', $stored);
+    }
+
     public function test_settings_post_round_trips_card_config_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
@@ -173,6 +250,46 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertFalse($stored['card_config']['breakpoints']['tablet']['showCardThumbnailFade'] ?? true);
         $this->assertEquals(44, $stored['card_config']['breakpoints']['tablet']['cardLockIconSize'] ?? null);
         $this->assertEquals('0:1,900:2', $stored['card_config']['breakpoints']['tablet']['cardAutoColumnsBreakpoints'] ?? null);
+    }
+
+    public function test_settings_post_normalizes_legacy_desktop_card_config_for_admin() {
+        $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
+        $user = get_user_by('id', $user_id);
+        $user->add_cap('manage_wpsg');
+        foreach ( WPSG_CPT::CPT_CAPS as $cap ) {
+            $user->add_cap( $cap );
+        }
+        wp_set_current_user($user_id);
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(wp_json_encode([
+            'cardConfig' => [
+                'breakpoints' => [
+                    'desktop' => [
+                        'cardScale' => 1.35,
+                        'cardPageDotNav' => true,
+                    ],
+                    'tablet' => [
+                        'cardRowsPerPage' => 2,
+                    ],
+                ],
+            ],
+        ]));
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals(1.35, $data['cardScale'] ?? null);
+        $this->assertTrue($data['cardPageDotNav'] ?? false);
+        $this->assertArrayNotHasKey('desktop', $data['cardConfig']['breakpoints'] ?? []);
+        $this->assertEquals(2, $data['cardConfig']['breakpoints']['tablet']['cardRowsPerPage'] ?? null);
+
+        $stored = get_option(WPSG_Settings::OPTION_NAME, []);
+        $this->assertEquals(1.35, $stored['card_scale'] ?? null);
+        $this->assertTrue($stored['card_page_dot_nav'] ?? false);
+        $this->assertArrayNotHasKey('desktop', $stored['card_config']['breakpoints'] ?? []);
+        $this->assertEquals(2, $stored['card_config']['breakpoints']['tablet']['cardRowsPerPage'] ?? null);
     }
 
     public function test_settings_post_ignores_flat_nested_only_gallery_fields_for_admin() {

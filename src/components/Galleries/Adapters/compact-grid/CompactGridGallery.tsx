@@ -23,7 +23,16 @@ import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
+
+function resolveCompactGridAspectRatio(settings: GalleryBehaviorSettings, cardWidth: number, itemScale: number): string {
+  if (settings.gridCardAspectRatio && settings.gridCardAspectRatio !== 'auto') {
+    return settings.gridCardAspectRatio.replace(':', ' / ');
+  }
+
+  const legacyCardHeight = Math.max(1, Math.round((settings.gridCardHeight ?? 224) * itemScale));
+  return `${Math.max(1, cardWidth)} / ${legacyCardHeight}`;
+}
 
 interface CompactGridGalleryProps {
   media: MediaItem[];
@@ -36,6 +45,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   const openAt = useCallback(
     (index: number) => {
@@ -48,12 +58,18 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
 
   const itemSc = settings.itemScale ?? 1;
-  const cardWidth = Math.round((settings.gridCardWidth ?? 220) * itemSc);
+  const cardWidth = Math.round((settings.gridCardWidth ?? 160) * itemSc);
   const cardWidthUnit = settings.gridCardWidthUnit ?? 'px';
-  const cardHeight = Math.round((settings.gridCardHeight ?? 180) * itemSc);
+  const aspectRatio = resolveCompactGridAspectRatio(settings, cardWidth, itemSc);
+  const maxColumns = Math.max(0, Math.min(8, settings.gridCardMaxColumns ?? 0));
+  const minCardHeight = Math.max(0, settings.gridCardMinHeight ?? 0);
   const borderRadius = toCssOrNumber(settings.imageBorderRadius, settings.imageBorderRadiusUnit);
   const gap = common.adapterItemGap ?? 16;
   const gapUnit = common.adapterItemGapUnit ?? 'px';
+  const cardWidthCss = toCss(cardWidth, cardWidthUnit);
+  const gridMaxWidth = maxColumns > 0
+    ? `min(100%, calc((${cardWidthCss} * ${maxColumns}) + ${toCss(gap * Math.max(0, maxColumns - 1), gapUnit)}))`
+    : undefined;
 
   const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
   const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
@@ -61,11 +77,11 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {common.showCampaignGalleryLabels !== false && (
+      {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
             {common.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
-            Gallery ({media.length})
+            {heading.label}
           </Group>
         </Title>
       )}
@@ -75,7 +91,9 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
         style={{
           display: 'grid',
           width: '100%',
-          gridTemplateColumns: `repeat(auto-fit, minmax(min(${toCss(cardWidth, cardWidthUnit)}, calc(50% - ${toCss(gap / 2, gapUnit)})), ${toCss(cardWidth, cardWidthUnit)}))`,
+          maxWidth: gridMaxWidth,
+          marginInline: gridMaxWidth ? 'auto' : undefined,
+          gridTemplateColumns: `repeat(auto-fit, minmax(min(${cardWidthCss}, calc(50% - ${toCss(gap / 2, gapUnit)})), ${cardWidthCss}))`,
           gap: toCss(gap, gapUnit),
           justifyContent: common.adapterJustifyContent || 'center',
         }}
@@ -85,8 +103,8 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
             key={item.id}
             item={item}
             index={index}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
+            aspectRatio={aspectRatio}
+            minHeight={minCardHeight > 0 ? toCssOrNumber(minCardHeight, 'px') : undefined}
             borderRadius={item.type === 'video' ? toCssOrNumber(settings.videoBorderRadius, settings.videoBorderRadiusUnit) : borderRadius}
             onOpen={openAt}
           />
@@ -115,13 +133,13 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
 interface GridCardProps {
   item: MediaItem;
   index: number;
-  cardWidth: number;
-  cardHeight: number;
+  aspectRatio: string;
+  minHeight?: number | string;
   borderRadius: number | string;
   onOpen: (index: number) => void;
 }
 
-function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: GridCardProps) {
+function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }: GridCardProps) {
   const [hovered, setHovered] = useState(false);
   const isVideo = item.type === 'video';
   const thumbSrc = item.thumbnail || item.url;
@@ -142,7 +160,8 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
         /* Layout */
         display: 'block',
         width: '100%',
-        aspectRatio: `${cardWidth} / ${cardHeight}`,
+        aspectRatio,
+        minHeight,
         /* Reset button styles */
         border: 'none',
         padding: 0,

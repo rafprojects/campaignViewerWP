@@ -41,7 +41,7 @@ import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { toCssOrNumber } from '@/utils/cssUnits';
-import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
 
@@ -574,6 +574,7 @@ function LayoutBuilderGalleryInner({
   const slotCount = template.slots.length;
   const mediaCount = media.length;
   const hasMismatch = slotCount !== mediaCount;
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
   const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
@@ -585,11 +586,11 @@ function LayoutBuilderGalleryInner({
       <style>{hoverStylesCss}</style>
 
       {/* Header */}
-      {common.showCampaignGalleryLabels !== false && (
+      {heading.visible && (
         <Text size="sm" fw={500} component="div" ta={common.galleryLabelJustification || 'left'}>
           <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {common.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
-            Gallery ({mediaCount})
+            {heading.label}
           </Box>
         </Text>
       )}

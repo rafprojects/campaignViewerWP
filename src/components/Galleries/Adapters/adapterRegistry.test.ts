@@ -84,7 +84,9 @@ describe('adapterRegistry', () => {
     ]));
     expect(getSettingGroupFieldDefinitions('compact-grid').map((field) => field.key)).toEqual([
       'gridCardWidth',
-      'gridCardHeight',
+      'gridCardAspectRatio',
+      'gridCardMaxColumns',
+      'gridCardMinHeight',
     ]);
     expect(getSettingGroupFieldDefinitions('justified').map((field) => field.key)).toEqual([
       'mosaicTargetRowHeight',
@@ -120,7 +122,7 @@ describe('adapterRegistry', () => {
       }),
       expect.objectContaining({
         group: 'compact-grid',
-        layout: 'group',
+        layout: 'stack',
       }),
       expect.objectContaining({
         group: 'shape',

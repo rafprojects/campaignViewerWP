@@ -25,7 +25,7 @@ import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
-import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'diamond';
 /** Diamond clip-path: rhombus with tips at 12, 3, 6, 9 o'clock positions. */
@@ -46,6 +46,7 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -89,11 +90,11 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {common.showCampaignGalleryLabels !== false && (
+      {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
             {common.showGalleryLabelIcon && <IconDiamond size={18} />}
-            Gallery ({media.length})
+            {heading.label}
           </Group>
         </Title>
       )}

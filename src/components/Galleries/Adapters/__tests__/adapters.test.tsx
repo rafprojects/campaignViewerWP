@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
 import '@testing-library/jest-dom/vitest';
 
-import type { MediaItem, GalleryBehaviorSettings } from '@/types';
+import type { MediaItem, GalleryBehaviorSettings, ResolvedGallerySectionRuntime } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 
 // ─── Global Mocks ────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ vi.mock('@/components/CampaignGallery/LazyImage', () => ({
 // Calls render.button when provided (for branch coverage); falls back to
 // a plain <button>. Calls onClick({ index }) on click.
 vi.mock('react-photo-album', () => {
-   
+
   const Album = ({ photos, onClick, render: r }: any) => (
     <div data-testid="rpa-album">
       {(photos as { src: string; key: string; alt?: string }[]).map((p, idx) => {
@@ -72,7 +72,7 @@ vi.mock('react-photo-album', () => {
           return (
             <div key={p.key}>
               {r.button({
-                 
+
                 'aria-label': p.alt ?? p.key,
                 onClick: handleClick,
                 children: defaultContent,
@@ -156,7 +156,26 @@ const { MasonryGallery } = await import('@/components/Galleries/Adapters/masonry
 
 // ─── Component map for parameterised tests ────────────────────────────────────
 
-type AdapterComponent = React.ComponentType<{ media: MediaItem[]; settings: GalleryBehaviorSettings }>;
+type AdapterComponent = React.ComponentType<{
+  media: MediaItem[];
+  settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
+}>;
+
+function makeRuntime(common: Partial<ResolvedGallerySectionRuntime['common']> = {}): ResolvedGallerySectionRuntime {
+  return {
+    breakpoint: 'desktop',
+    scope: 'image',
+    common,
+    background: {
+      type: 'none',
+      color: '',
+      gradient: '',
+      imageUrl: '',
+    },
+    adapterSettings: {},
+  };
+}
 
 const ADAPTERS: [string, AdapterComponent][] = [
   ['CircularGallery', CircularGallery],
@@ -180,7 +199,7 @@ describe.each(ADAPTERS)('%s', (_name, Component) => {
   it('shows the item count in the title', () => {
     render(<Component media={THREE_IMAGES} settings={SETTINGS} />);
     const heading = screen.getByRole('heading', { level: 3 });
-    expect(heading.textContent).toMatch(/gallery.{0,10}3/i);
+    expect(heading).toHaveTextContent('Images (3)');
   });
 
   it('renders the correct number of interactive tiles', () => {
@@ -198,13 +217,13 @@ describe.each(ADAPTERS)('%s', (_name, Component) => {
       <Component media={[]} settings={SETTINGS} />,
     );
     expect(container.firstChild).not.toBeNull();
-    expect(screen.getByRole('heading', { level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Images (0)');
   });
 
   it('renders gracefully with a single item', () => {
     render(<Component media={[makeImage('solo', 0)]} settings={SETTINGS} />);
     const heading = screen.getByRole('heading', { level: 3 });
-    expect(heading.textContent).toMatch(/gallery.{0,10}1/i);
+    expect(heading).toHaveTextContent('Images (1)');
   });
 
   it('clicking the first tile opens the lightbox', () => {
@@ -223,7 +242,31 @@ describe.each(ADAPTERS)('%s', (_name, Component) => {
     );
     expect(container.firstChild).not.toBeNull();
     const heading = screen.getByRole('heading', { level: 3 });
-    expect(heading.textContent).toMatch(/gallery.{0,10}2/i);
+    expect(heading).toHaveTextContent('Media (2)');
+  });
+
+  it('uses runtime common label overrides when provided', () => {
+    render(
+      <Component
+        media={THREE_IMAGES}
+        settings={SETTINGS}
+        runtime={makeRuntime({ galleryImageLabel: 'Photos' })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Photos (3)');
+  });
+
+  it('hides the heading when runtime common disables it', () => {
+    render(
+      <Component
+        media={THREE_IMAGES}
+        settings={SETTINGS}
+        runtime={makeRuntime({ showCampaignGalleryLabels: false })}
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument();
   });
 
   it('all tiles have accessible aria-label attributes', () => {
@@ -351,16 +394,25 @@ describe('MasonryGallery — specific', () => {
 });
 
 describe('CompactGridGallery — specific', () => {
-  it('respects gridCardWidth and gridCardHeight settings', () => {
+  it('respects width, aspect ratio, min-height, and max-column settings', () => {
     const customSettings: GalleryBehaviorSettings = {
       ...SETTINGS,
       gridCardWidth: 200,
-      gridCardHeight: 150,
+      gridCardAspectRatio: '3:4',
+      gridCardMaxColumns: 3,
+      gridCardMinHeight: 220,
     };
     const { container } = render(
       <CompactGridGallery media={THREE_IMAGES} settings={customSettings} />,
     );
+    const grid = container.querySelector('div[style*="grid-template-columns"]') as HTMLDivElement | null;
+    const firstCard = container.querySelector('button') as HTMLButtonElement | null;
+
     expect(container.firstChild).not.toBeNull();
+    expect(grid?.style.maxWidth).toContain('200px');
+    expect(grid?.style.maxWidth).toContain('* 3');
+    expect(firstCard?.style.aspectRatio).toBe('3 / 4');
+    expect(firstCard?.style.minHeight).toBe('220px');
   });
 
   it('uses media-type-specific border radii for mixed media tiles', () => {

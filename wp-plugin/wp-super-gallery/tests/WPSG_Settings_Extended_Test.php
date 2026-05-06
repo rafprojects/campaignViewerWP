@@ -176,6 +176,34 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('masonryColumns', $js);
     }
 
+    public function test_get_settings_normalizes_legacy_card_config_desktop_into_flat_fields() {
+        update_option('wpsg_settings', [
+            'card_config' => [
+                'breakpoints' => [
+                    'desktop' => [
+                        'cardScale' => 1.25,
+                        'cardPageDotNav' => true,
+                    ],
+                    'mobile' => [
+                        'cardRowsPerPage' => 2,
+                    ],
+                ],
+            ],
+        ]);
+
+        $settings = WPSG_Settings::get_settings();
+        $this->assertEquals(1.25, $settings['card_scale'] ?? null);
+        $this->assertTrue($settings['card_page_dot_nav'] ?? false);
+        $this->assertArrayNotHasKey('desktop', $settings['card_config']['breakpoints'] ?? []);
+        $this->assertEquals(2, $settings['card_config']['breakpoints']['mobile']['cardRowsPerPage'] ?? null);
+
+        $js = WPSG_Settings::to_js($settings, true);
+        $this->assertEquals(1.25, $js['cardScale'] ?? null);
+        $this->assertTrue($js['cardPageDotNav'] ?? false);
+        $this->assertArrayNotHasKey('desktop', $js['cardConfig']['breakpoints'] ?? []);
+        $this->assertEquals(2, $js['cardConfig']['breakpoints']['mobile']['cardRowsPerPage'] ?? null);
+    }
+
     // ── sanitize_settings ──────────────────────────────────────────────────
 
     public function test_sanitize_settings_rejects_invalid_auth_provider() {

@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "WP Super Gallery — Cookie Login & Examples",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection demonstrating cookie-based login, capturing the `wp_rest` nonce, and example authenticated requests.\n\nBefore running: set environment variable `baseUrl` to your site (e.g. https://example.com), and `username`/`password`."
+  },
+  "item": [
+    {
+      "name": "Cookie Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Origin", "value": "{{baseUrl}}" },
+          { "key": "Referer", "value": "{{baseUrl}}/" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"{{username}}\", \"password\": \"{{password}}\", \"remember\": true}"
+        },
+        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "var json = {};",
+              "try { json = pm.response.json(); } catch (e) { }",
+              "if (json && json.nonce) {",
+              "  pm.environment.set('wpsg_nonce', json.nonce);",
+              "  pm.test('Saved nonce', function () { pm.expect(json.nonce).to.be.a('string'); });",
+              "} else {",
+              "  pm.test('Nonce present', function () { pm.expect(json.nonce).to.exist; });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Settings (Authenticated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-WP-Nonce", "value": "{{wpsg_nonce}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/settings"
+      }
+    },
+    {
+      "name": "Get Campaigns (Authenticated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-WP-Nonce", "value": "{{wpsg_nonce}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns?include_media=1"
+      }
+    },
+    {
+      "name": "Get Campaigns (Public)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "https://example.com" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "secret" },
+    { "key": "wpsg_nonce", "value": "" }
+  ]
+}

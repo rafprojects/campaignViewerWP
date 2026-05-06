@@ -517,6 +517,7 @@ export type DotNavShape = 'circle' | 'pill' | 'square';
 // P12-J: Shadow types
 export type ShadowPreset = 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
 export type ViewportBgType = 'none' | 'solid' | 'gradient' | 'image';
+export type GridCardAspectRatio = 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2' | '21:9' | '5:7';
 
 // P21-I: Typography override type (Elementor-inspired)
 export interface TypographyOverride {
@@ -574,6 +575,10 @@ export interface GalleryBehaviorSettings {
   thumbnailScrollButtonsVisible: boolean;
   gridCardWidth: number;
   gridCardWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  gridCardAspectRatio: GridCardAspectRatio;
+  gridCardMaxColumns: number;
+  gridCardMinHeight: number;
+  /** Legacy fallback when gridCardAspectRatio remains on 'auto'. */
   gridCardHeight: number;
   gridCardHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   mosaicTargetRowHeight: number;
@@ -1264,6 +1269,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   analyticsRetentionDays: 0,
   gridCardWidth: 160,
   gridCardWidthUnit: 'px',
+  gridCardAspectRatio: 'auto',
+  gridCardMaxColumns: 0,
+  gridCardMinHeight: 0,
   gridCardHeight: 224,
   gridCardHeightUnit: 'px',
   mosaicTargetRowHeight: 200,

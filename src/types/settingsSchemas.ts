@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  CSS_BORDER_RADIUS_UNITS,
   CSS_HEIGHT_UNITS,
   CSS_SPACING_UNITS,
   CSS_WIDTH_UNITS,
@@ -18,6 +19,29 @@ const GALLERY_LABEL_JUSTIFICATIONS = ['left', 'center', 'right'] as const;
 const FONT_STYLES = ['normal', 'italic', 'oblique'] as const;
 const TEXT_TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'] as const;
 const TEXT_DECORATIONS = ['none', 'underline', 'overline', 'line-through'] as const;
+const SHADOW_PRESETS = ['none', 'subtle', 'medium', 'strong', 'custom'] as const;
+const NAV_ARROW_POSITIONS = ['top', 'center', 'bottom'] as const;
+const DOT_NAV_POSITIONS = ['below', 'overlay-bottom', 'overlay-top'] as const;
+const DOT_NAV_SHAPES = ['circle', 'pill', 'square'] as const;
+const CAROUSEL_AUTOPLAY_DIRECTIONS = ['ltr', 'rtl'] as const;
+const LAYOUT_BUILDER_SCOPES = ['full', 'viewport'] as const;
+const GRID_CARD_ASPECT_RATIOS = ['auto', '16:9', '4:3', '1:1', '3:4', '9:16', '2:3', '3:2', '21:9', '5:7'] as const;
+
+const optionalFiniteNumber = z.number().finite().optional().catch(undefined);
+const optionalBoolean = z.boolean().optional().catch(undefined);
+const optionalString = z.string().optional().catch(undefined);
+
+function optionalEnum<T extends string>(values: readonly T[]) {
+  return z.custom<T>(
+    (value): value is T => typeof value === 'string' && values.includes(value as T),
+  ).optional().catch(undefined);
+}
+
+function pruneUndefinedKeys<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, item]) => item !== undefined),
+  ) as T;
+}
 
 export const TypographyOverrideSchema = z.object({
   fontFamily: z.string().optional(),
@@ -78,10 +102,90 @@ export const GalleryCommonSettingsSchema = z.object({
   showCampaignGalleryLabels: z.boolean().optional(),
 }).catchall(z.unknown());
 
+export const GalleryAdapterSettingsSchema = z.object({
+  gridCardWidth: optionalFiniteNumber,
+  gridCardAspectRatio: optionalEnum(GRID_CARD_ASPECT_RATIOS),
+  gridCardMaxColumns: optionalFiniteNumber,
+  gridCardMinHeight: optionalFiniteNumber,
+  gridCardWidthUnit: optionalEnum(CSS_WIDTH_UNITS),
+  gridCardHeight: optionalFiniteNumber,
+  gridCardHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
+  mosaicTargetRowHeight: optionalFiniteNumber,
+  mosaicTargetRowHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
+  photoNormalizeHeight: optionalFiniteNumber,
+  photoNormalizeHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
+  masonryColumns: optionalFiniteNumber,
+  masonryAutoColumnBreakpoints: optionalString,
+  imageViewportHeight: optionalFiniteNumber,
+  imageViewportHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
+  videoViewportHeight: optionalFiniteNumber,
+  videoViewportHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
+  imageBorderRadius: optionalFiniteNumber,
+  imageBorderRadiusUnit: optionalEnum(CSS_BORDER_RADIUS_UNITS),
+  videoBorderRadius: optionalFiniteNumber,
+  videoBorderRadiusUnit: optionalEnum(CSS_BORDER_RADIUS_UNITS),
+  thumbnailGap: optionalFiniteNumber,
+  tileSize: optionalFiniteNumber,
+  tileSizeUnit: optionalEnum(CSS_WIDTH_UNITS),
+  imageTileSize: optionalFiniteNumber,
+  imageTileSizeUnit: optionalEnum(CSS_WIDTH_UNITS),
+  videoTileSize: optionalFiniteNumber,
+  videoTileSizeUnit: optionalEnum(CSS_WIDTH_UNITS),
+  layoutBuilderScope: optionalEnum(LAYOUT_BUILDER_SCOPES),
+  tileGapX: optionalFiniteNumber,
+  tileGapXUnit: optionalEnum(CSS_SPACING_UNITS),
+  tileGapY: optionalFiniteNumber,
+  tileGapYUnit: optionalEnum(CSS_SPACING_UNITS),
+  tileBorderWidth: optionalFiniteNumber,
+  tileBorderColor: optionalString,
+  tileGlowEnabled: optionalBoolean,
+  tileGlowColor: optionalString,
+  tileGlowSpread: optionalFiniteNumber,
+  tileHoverBounce: optionalBoolean,
+  carouselVisibleCards: optionalFiniteNumber,
+  carouselAutoplay: optionalBoolean,
+  carouselAutoplaySpeed: optionalFiniteNumber,
+  carouselAutoplayPauseOnHover: optionalBoolean,
+  carouselAutoplayDirection: optionalEnum(CAROUSEL_AUTOPLAY_DIRECTIONS),
+  carouselDragEnabled: optionalBoolean,
+  carouselDarkenUnfocused: optionalBoolean,
+  carouselDarkenOpacity: optionalFiniteNumber,
+  carouselEdgeFade: optionalBoolean,
+  carouselLoop: optionalBoolean,
+  carouselGap: optionalFiniteNumber,
+  carouselGapUnit: optionalEnum(CSS_SPACING_UNITS),
+  navArrowPosition: optionalEnum(NAV_ARROW_POSITIONS),
+  navArrowSize: optionalFiniteNumber,
+  navArrowColor: optionalString,
+  navArrowBgColor: optionalString,
+  navArrowBorderWidth: optionalFiniteNumber,
+  navArrowHoverScale: optionalFiniteNumber,
+  navArrowAutoHideMs: optionalFiniteNumber,
+  navArrowEdgeInset: optionalFiniteNumber,
+  navArrowMinHitTarget: optionalFiniteNumber,
+  navArrowFadeDurationMs: optionalFiniteNumber,
+  navArrowScaleTransitionMs: optionalFiniteNumber,
+  dotNavEnabled: optionalBoolean,
+  dotNavPosition: optionalEnum(DOT_NAV_POSITIONS),
+  dotNavSize: optionalFiniteNumber,
+  dotNavMaxVisibleDots: optionalFiniteNumber,
+  dotNavActiveColor: optionalString,
+  dotNavInactiveColor: optionalString,
+  dotNavShape: optionalEnum(DOT_NAV_SHAPES),
+  dotNavSpacing: optionalFiniteNumber,
+  dotNavActiveScale: optionalFiniteNumber,
+  viewportHeightMobileRatio: optionalFiniteNumber,
+  viewportHeightTabletRatio: optionalFiniteNumber,
+  imageShadowPreset: optionalEnum(SHADOW_PRESETS),
+  imageShadowCustom: optionalString,
+  videoShadowPreset: optionalEnum(SHADOW_PRESETS),
+  videoShadowCustom: optionalString,
+}).catchall(z.unknown()).transform(pruneUndefinedKeys);
+
 export const GalleryScopeConfigSchema = z.object({
   adapterId: z.string().optional(),
   common: GalleryCommonSettingsSchema.optional(),
-  adapterSettings: z.record(z.string(), z.unknown()).optional(),
+  adapterSettings: GalleryAdapterSettingsSchema.optional(),
 });
 
 export const BreakpointGalleryConfigSchema = z.object({
@@ -102,6 +206,7 @@ export const GalleryConfigSchema = z.object({
 export type ParsedTypographyOverride = z.infer<typeof TypographyOverrideSchema>;
 export type ParsedTypographyOverrides = z.infer<typeof TypographyOverridesSchema>;
 export type ParsedGalleryCommonSettings = z.infer<typeof GalleryCommonSettingsSchema>;
+export type ParsedGalleryAdapterSettings = z.infer<typeof GalleryAdapterSettingsSchema>;
 export type ParsedGalleryScopeConfig = z.infer<typeof GalleryScopeConfigSchema>;
 export type ParsedBreakpointGalleryConfig = z.infer<typeof BreakpointGalleryConfigSchema>;
 export type ParsedGalleryConfig = z.infer<typeof GalleryConfigSchema>;

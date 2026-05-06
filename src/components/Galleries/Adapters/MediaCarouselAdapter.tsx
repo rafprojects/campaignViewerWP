@@ -19,7 +19,7 @@ import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { resolveBoxShadow } from '@/utils/shadowPresets';
 import { combineMaxWidthConstraints, resolveBreakpointValue } from '@/utils/resolveBreakpointValue';
-import { resolveGalleryComponentCommonSettings } from './_shared/runtimeCommon';
+import { resolveGalleryComponentCommonSettings, resolveGalleryHeading } from './_shared/runtimeCommon';
 import {
   getCarouselAlign,
   getClosestSyntheticFocusIndex,
@@ -343,20 +343,12 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
 
   const images = useMemo(() => media.filter((m) => m.type === 'image'), [media]);
   const videos = useMemo(() => media.filter((m) => m.type === 'video'), [media]);
-  const isMixed = images.length > 0 && videos.length > 0;
   const dominantType = images.length >= videos.length ? 'image' : 'video';
+  const heading = useMemo(() => resolveGalleryHeading(commonSettings, media), [commonSettings, media]);
 
   const aspectRatio = dominantType === 'image' ? IMAGE_ASPECT_RATIO : VIDEO_ASPECT_RATIO;
   const aspectMultiplier = dominantType === 'image' ? IMAGE_ASPECT_RATIO_MULTIPLIER : VIDEO_ASPECT_RATIO_MULTIPLIER;
-
-  // ── Section label ────────────────────────────────────────────────
-
-  const sectionLabel = isMixed
-    ? `Media (${media.length})`
-    : videos.length > 0
-      ? `${commonSettings.galleryVideoLabel || 'Videos'} (${videos.length})`
-      : `${commonSettings.galleryImageLabel || 'Images'} (${images.length})`;
-  const LabelIcon = videos.length > 0 && images.length === 0 ? IconPlayerPlay : IconPhoto;
+  const LabelIcon = heading.kind === 'video' ? IconPlayerPlay : IconPhoto;
 
   // ── Height calculation ───────────────────────────────────────────
 
@@ -593,11 +585,11 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
 
   return (
     <Stack gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
-      {commonSettings.showCampaignGalleryLabels !== false && (
+      {heading.visible && (
         <Title order={3} size="h5" ta={commonSettings.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={commonSettings.galleryLabelJustification || 'left'}>
             {commonSettings.showGalleryLabelIcon && <LabelIcon size={18} />}
-            {sectionLabel}
+            {heading.label}
           </Group>
         </Title>
       )}

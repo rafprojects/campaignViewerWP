@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  GalleryAdapterSettingsSchema,
   GalleryConfigSchema,
   parseGalleryConfigInput,
   parseTypographyOverridesInput,
@@ -51,6 +52,44 @@ describe('settingsSchemas', () => {
     expect(parseGalleryConfigInput([])).toBeUndefined();
   });
 
+  it('drops invalid known adapter settings while preserving valid and unknown values', () => {
+    const parsed = parseGalleryConfigInput({
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'compact-grid',
+            adapterSettings: {
+              gridCardWidth: 180,
+              gridCardAspectRatio: 'not-a-ratio',
+              gridCardMaxColumns: '3',
+              gridCardMinHeight: 220,
+              layoutBuilderScope: 'viewport',
+              futureAdapterSetting: { preserve: true },
+            },
+          },
+        },
+      },
+    });
+
+    expect(parsed).toEqual({
+      mode: 'per-type',
+      breakpoints: {
+        desktop: {
+          image: {
+            adapterId: 'compact-grid',
+            adapterSettings: {
+              gridCardWidth: 180,
+              gridCardMinHeight: 220,
+              layoutBuilderScope: 'viewport',
+              futureAdapterSetting: { preserve: true },
+            },
+          },
+        },
+      },
+    });
+  });
+
   it('parses typography overrides from JSON input', () => {
     const parsed = parseTypographyOverridesInput(JSON.stringify({
       heading: {
@@ -90,5 +129,22 @@ describe('settingsSchemas', () => {
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it('exposes a safe adapter settings schema for direct validation', () => {
+    const parsed = GalleryAdapterSettingsSchema.safeParse({
+      gridCardAspectRatio: '5:7',
+      gridCardMaxColumns: 4,
+      gridCardMinHeight: 220,
+      customFutureSetting: ['kept'],
+    });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success ? parsed.data : undefined).toEqual({
+      gridCardAspectRatio: '5:7',
+      gridCardMaxColumns: 4,
+      gridCardMinHeight: 220,
+      customFutureSetting: ['kept'],
+    });
   });
 });

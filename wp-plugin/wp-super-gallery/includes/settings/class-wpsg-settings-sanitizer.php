@@ -98,6 +98,9 @@ class WPSG_Settings_Sanitizer {
      */
     private static $nested_adapter_field_map = [
         'gridCardWidth' => 'grid_card_width',
+        'gridCardAspectRatio' => 'grid_card_aspect_ratio',
+        'gridCardMaxColumns' => 'grid_card_max_columns',
+        'gridCardMinHeight' => 'grid_card_min_height',
         'gridCardWidthUnit' => 'grid_card_width_unit',
         'gridCardHeight' => 'grid_card_height',
         'gridCardHeightUnit' => 'grid_card_height_unit',
@@ -583,7 +586,63 @@ class WPSG_Settings_Sanitizer {
             }
         }
 
-        return $sanitized;
+        return self::normalize_card_config_settings($sanitized);
+    }
+
+    /**
+     * Fold any legacy desktop card_config overrides into flat settings and
+     * strip the desktop breakpoint node.
+     *
+     * @param array $settings Parsed settings array.
+     * @return array
+     */
+    public static function normalize_card_config_settings($settings) {
+        if (!is_array($settings) || !array_key_exists('card_config', $settings)) {
+            return $settings;
+        }
+
+        if (!is_array($settings['card_config'])) {
+            $settings['card_config'] = self::sanitize_card_config_payload(
+                $settings['card_config'],
+                ['breakpoints' => []]
+            );
+        }
+
+        if (!is_array($settings['card_config'])) {
+            return $settings;
+        }
+
+        if (!isset($settings['card_config']['breakpoints']) || !is_array($settings['card_config']['breakpoints'])) {
+            $settings['card_config']['breakpoints'] = [];
+            return $settings;
+        }
+
+        $desktop_layer = $settings['card_config']['breakpoints']['desktop'] ?? null;
+        if (!is_array($desktop_layer) || empty($desktop_layer)) {
+            unset($settings['card_config']['breakpoints']['desktop']);
+            return $settings;
+        }
+
+        foreach (self::$card_dimension_pairs as [$val_key, $unit_key]) {
+            if (array_key_exists($unit_key, $desktop_layer) && !array_key_exists($val_key, $desktop_layer)) {
+                unset($desktop_layer[$unit_key]);
+            }
+        }
+
+        foreach ($desktop_layer as $camel_key => $value) {
+            if (!array_key_exists($camel_key, self::$nested_card_field_map)) {
+                continue;
+            }
+
+            $settings[self::$nested_card_field_map[$camel_key]] = $value;
+        }
+
+        unset($settings['card_config']['breakpoints']['desktop']);
+        if (!is_array($settings['card_config']['breakpoints']) || empty($settings['card_config']['breakpoints'])) {
+            $settings['card_config']['breakpoints'] = [];
+        }
+
+        return $settings;
     }
 
     /**

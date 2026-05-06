@@ -105,6 +105,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     public function test_sanitize_settings_ignores_flat_nested_only_gallery_fields() {
         $input = [
             'grid_card_width' => 999,
+            'grid_card_aspect_ratio' => '5:7',
+            'grid_card_max_columns' => 7,
+            'grid_card_min_height' => 240,
             'tile_glow_color' => '<b>#112233</b>',
             'gallery_manual_height' => 'calc(100vh)',
         ];
@@ -112,6 +115,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $sanitized = WPSG_Settings::sanitize_settings($input);
 
         $this->assertArrayNotHasKey('grid_card_width', $sanitized);
+        $this->assertArrayNotHasKey('grid_card_aspect_ratio', $sanitized);
+        $this->assertArrayNotHasKey('grid_card_max_columns', $sanitized);
+        $this->assertArrayNotHasKey('grid_card_min_height', $sanitized);
         $this->assertArrayNotHasKey('tile_glow_color', $sanitized);
         $this->assertArrayNotHasKey('gallery_manual_height', $sanitized);
     }
@@ -331,6 +337,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                         ],
                         'adapterSettings' => [
                             'masonryColumns' => 99,
+                                'gridCardAspectRatio' => '5:7',
+                                'gridCardMaxColumns' => 99,
+                                'gridCardMinHeight' => -80,
                             'imageViewportHeight' => 9999,
                             'videoBorderRadius' => 99,
                             'thumbnailGap' => 99,
@@ -373,6 +382,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('theme', $common);
         $this->assertEquals('Allowed', $common['headlinescript'] ?? null);
         $this->assertEquals(8, $adapter_settings['masonryColumns'] ?? null);
+        $this->assertEquals('5:7', $adapter_settings['gridCardAspectRatio'] ?? null);
+        $this->assertEquals(8, $adapter_settings['gridCardMaxColumns'] ?? null);
+        $this->assertEquals(0, $adapter_settings['gridCardMinHeight'] ?? null);
         $this->assertEquals(900, $adapter_settings['imageViewportHeight'] ?? null);
         $this->assertEquals(48, $adapter_settings['videoBorderRadius'] ?? null);
         $this->assertEquals(24, $adapter_settings['thumbnailGap'] ?? null);
@@ -406,6 +418,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'viewportBgImageUrl' => ['https://example.com/not-allowed.jpg'],
                         ],
                         'adapterSettings' => [
+                            'gridCardAspectRatio' => 'not-a-ratio',
+                            'gridCardMaxColumns' => ['8'],
+                            'gridCardMinHeight' => ['240'],
                             'tileGlowColor' => 'bad color',
                             'masonryAutoColumnBreakpoints' => ['480:2'],
                         ],
@@ -419,6 +434,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
 
         $this->assertEquals($defaults['image_bg_color'], $common['viewportBgColor'] ?? null);
         $this->assertEquals($defaults['image_bg_image_url'], $common['viewportBgImageUrl'] ?? null);
+        $this->assertEquals($defaults['grid_card_aspect_ratio'], $adapter_settings['gridCardAspectRatio'] ?? null);
+        $this->assertEquals($defaults['grid_card_max_columns'], $adapter_settings['gridCardMaxColumns'] ?? null);
+        $this->assertEquals($defaults['grid_card_min_height'], $adapter_settings['gridCardMinHeight'] ?? null);
         $this->assertEquals($defaults['tile_glow_color'], $adapter_settings['tileGlowColor'] ?? null);
         $this->assertEquals($defaults['masonry_auto_column_breakpoints'], $adapter_settings['masonryAutoColumnBreakpoints'] ?? null);
     }

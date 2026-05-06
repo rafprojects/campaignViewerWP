@@ -28,7 +28,7 @@ import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCssOrNumber } from '@/utils/cssUnits';
-import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'justified';
 
@@ -53,6 +53,7 @@ export function JustifiedGallery({ media, settings, runtime }: JustifiedGalleryP
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const enriched = useMediaDimensions(media);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
@@ -86,11 +87,11 @@ export function JustifiedGallery({ media, settings, runtime }: JustifiedGalleryP
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {common.showCampaignGalleryLabels !== false && (
+      {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
             {common.showGalleryLabelIcon && <IconLayoutRows size={18} />}
-            Gallery ({media.length})
+            {heading.label}
           </Group>
         </Title>
       )}

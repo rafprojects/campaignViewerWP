@@ -336,6 +336,33 @@ class WPSG_Card_Config_Sanitizer_Test extends WP_UnitTestCase {
         $this->assertEquals('0:1,900:2', $cc['breakpoints']['tablet']['cardAutoColumnsBreakpoints']);
     }
 
+    public function test_sanitize_settings_normalizes_legacy_desktop_card_config_into_flat_values() {
+        $input = [
+            'card_grid_columns' => 1,
+            'card_gap_h' => 12,
+            'card_gap_h_unit' => 'px',
+            'card_config' => [
+                'breakpoints' => [
+                    'desktop' => [
+                        'cardGridColumns' => 4,
+                        'cardGapH' => 2,
+                        'cardGapHUnit' => 'rem',
+                    ],
+                    'tablet' => [
+                        'cardRowsPerPage' => 2,
+                    ],
+                ],
+            ],
+        ];
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+
+        $this->assertEquals(4, $sanitized['card_grid_columns']);
+        $this->assertEquals(2, $sanitized['card_gap_h']);
+        $this->assertEquals('rem', $sanitized['card_gap_h_unit']);
+        $this->assertArrayNotHasKey('desktop', $sanitized['card_config']['breakpoints']);
+        $this->assertEquals(2, $sanitized['card_config']['breakpoints']['tablet']['cardRowsPerPage']);
+    }
+
     public function test_sanitize_settings_without_card_config() {
         // sanitize_settings only includes keys present in $input.
         $input = ['theme' => 'default-dark'];

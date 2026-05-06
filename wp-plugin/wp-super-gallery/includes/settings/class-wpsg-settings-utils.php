@@ -63,6 +63,9 @@ class WPSG_Settings_Utils {
      * @return array
      */
     public static function to_js($settings, $defaults, $admin_only_fields = [], $admin = false) {
+        $settings = WPSG_Settings_Sanitizer::normalize_card_config_settings(
+            is_array($settings) ? $settings : []
+        );
         $result = [];
         $omit_nested_only_gallery_fields = array_key_exists('gallery_config', $defaults);
         foreach ($defaults as $snake => $default) {

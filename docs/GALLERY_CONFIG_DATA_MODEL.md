@@ -116,7 +116,7 @@ export interface GalleryConfig {
 }
 ```
 
-`adapterSettings` remains intentionally broad at the top-level TypeScript type, but the live editor, shared adapter registry, runtime resolver, and backend sanitizer now constrain the known Phase 23 adapter fields through one schema-driven contract.
+`adapterSettings` remains intentionally broad at the top-level TypeScript type, but the settings parse boundary in `src/types/settingsSchemas.ts` now validates known adapter-setting leaves while preserving unknown future keys. The live editor, shared adapter registry, runtime resolver, and backend sanitizer all consume that same schema-driven contract.
 
 ---
 
@@ -282,7 +282,10 @@ Examples of adapter-specific settings the new model should absorb:
 ### Compact grid
 
 1. `gridCardWidth`
-2. `gridCardHeight`
+2. `gridCardAspectRatio`
+3. `gridCardMaxColumns`
+4. `gridCardMinHeight`
+5. legacy fallback `gridCardHeight` when aspect ratio is `auto`
 
 ### Justified / mosaic
 

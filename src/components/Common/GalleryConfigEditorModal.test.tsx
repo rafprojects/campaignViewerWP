@@ -56,7 +56,9 @@ describe('GalleryConfigEditorModal', () => {
                 adapterId: 'compact-grid',
                 adapterSettings: {
                   gridCardWidth: 180,
-                  gridCardHeight: 240,
+                  gridCardAspectRatio: '3:4',
+                  gridCardMaxColumns: 3,
+                  gridCardMinHeight: 220,
                 },
               },
             },
@@ -67,10 +69,13 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByLabelText('Card Min Width')).toBeInTheDocument();
-    expect(screen.getByLabelText('Card Height (px)')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Card Width')).toBeInTheDocument();
+    expect(screen.getByLabelText('Card Aspect Ratio', { selector: 'input' })).toHaveValue('3:4 (portrait)');
+    expect(screen.getByLabelText('Max Columns (0 = auto)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Card Min Height (px)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('180')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('240')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('3')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('220')).toBeInTheDocument();
   });
 
   it('renders schema-driven carousel adapter fields for classic selections', async () => {

@@ -1718,6 +1718,9 @@ describe('SettingsPanel', () => {
             },
           },
           gridCardWidth: 210,
+          gridCardAspectRatio: '3:4',
+          gridCardMaxColumns: 4,
+          gridCardMinHeight: 220,
           gridCardHeight: 260,
         }}
       />
@@ -1729,6 +1732,9 @@ describe('SettingsPanel', () => {
     const desktopImage = value?.breakpoints?.desktop?.image;
     expect(desktopImage?.adapterId).toBe('compact-grid');
     expect(desktopImage?.adapterSettings).not.toHaveProperty('gridCardWidth');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('gridCardAspectRatio');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('gridCardMaxColumns');
+    expect(desktopImage?.adapterSettings).not.toHaveProperty('gridCardMinHeight');
     expect(desktopImage?.adapterSettings).not.toHaveProperty('gridCardHeight');
   });
 

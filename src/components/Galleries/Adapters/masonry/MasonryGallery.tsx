@@ -31,7 +31,7 @@ import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCssOrNumber } from '@/utils/cssUnits';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
-import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings } from '../_shared/runtimeCommon';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'masonry';
 
@@ -57,6 +57,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
   const enriched = useMediaDimensions(media);
   const galleryLabelStyle = useTypographyStyle('galleryLabel', settings);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
@@ -94,11 +95,11 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
 
   return (
     <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {common.showCampaignGalleryLabels !== false && (
+      {heading.visible && (
         <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
           <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
             {common.showGalleryLabelIcon && <IconColumns size={18} />}
-            Gallery ({media.length})
+            {heading.label}
           </Group>
         </Title>
       )}

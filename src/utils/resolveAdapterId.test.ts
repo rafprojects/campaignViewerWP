@@ -479,6 +479,9 @@ describe('applyResolvedGalleryAdapterSettings', () => {
   it('projects nested adapter settings back onto legacy runtime fields', () => {
     const s = makeSettings({
       gridCardWidth: 160,
+      gridCardAspectRatio: 'auto',
+      gridCardMaxColumns: 0,
+      gridCardMinHeight: 0,
       galleryConfig: {
         breakpoints: {
           desktop: {
@@ -486,6 +489,9 @@ describe('applyResolvedGalleryAdapterSettings', () => {
               adapterId: 'compact-grid',
               adapterSettings: {
                 gridCardWidth: 220,
+                gridCardAspectRatio: '3:4',
+                gridCardMaxColumns: 3,
+                gridCardMinHeight: 240,
               },
             },
           },
@@ -497,6 +503,9 @@ describe('applyResolvedGalleryAdapterSettings', () => {
     const resolved = applyResolvedGalleryAdapterSettings(s, runtime);
 
     expect(resolved.gridCardWidth).toBe(220);
+    expect(resolved.gridCardAspectRatio).toBe('3:4');
+    expect(resolved.gridCardMaxColumns).toBe(3);
+    expect(resolved.gridCardMinHeight).toBe(240);
   });
 
   it('ignores dangerous adapter setting keys when projecting nested adapter settings', () => {

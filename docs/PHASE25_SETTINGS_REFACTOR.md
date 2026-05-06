@@ -36,6 +36,7 @@ This document promotes the data-model cleanup work that earlier docs deferred an
 - Completed 2026-04-30: validation for the completed bridge-removal slice is green across focused Vitest, full Vitest, `npm run build`, focused wp-env settings PHPUnit, and full wp-env PHPUnit.
 - Completed 2026-04-30: the broader frontend data layer now uses TanStack Query as well. App campaigns, admin tab resources, layout-template flows, public layout-template loading, and the shared test providers have been migrated off SWR, and the `swr` dependency has been removed.
 - Completed 2026-04-30: the remaining live flat-field bridge inside the settings UI and gallery runtime has been removed. Adapter-specific settings now write straight into nested `galleryConfig.adapterSettings`, and common runtime resolution now derives defaults from nested `galleryConfig` instead of rebuilding them from flat gallery fields.
+- Completed 2026-05-05: `src/types/settingsSchemas.ts` now validates the known nested `adapterSettings` leaves at the parse boundary while preserving unknown future adapter keys, closing the last broad `Record<string, unknown>` gap between the frontend settings parser and the backend nested gallery sanitizer.
 - Commentary: `SettingsPanel` still owns view-local UI state such as tabs, custom-font editor wiring, and the responsive-config modal open state. W5 is complete for draft lifecycle state, and the remaining Phase 25 work is now cleanup/docs rather than bridge removal.
 
 ---
