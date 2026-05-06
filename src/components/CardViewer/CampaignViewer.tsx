@@ -44,6 +44,226 @@ interface CampaignViewerProps {
   onClose: () => void;
 }
 
+type CampaignViewerInContextSave = ReturnType<typeof useInContextSave>;
+type CampaignViewerBreakpoint = ReturnType<typeof useBreakpoint>['breakpoint'];
+
+interface CampaignViewerCoverHeaderProps {
+  displayedCampaign: Campaign;
+  settings: GalleryBehaviorSettings;
+  isAdmin: boolean;
+  inContextSave: CampaignViewerInContextSave;
+  campaignTitleStyle: React.CSSProperties | undefined;
+  campaignDateStyle: React.CSSProperties | undefined;
+  coverHeights: { base: string | number; sm: string | number; md: string | number };
+}
+
+function CampaignViewerCoverHeader({
+  displayedCampaign,
+  settings,
+  isAdmin,
+  inContextSave,
+  campaignTitleStyle,
+  campaignDateStyle,
+  coverHeights,
+}: CampaignViewerCoverHeaderProps) {
+  return (
+    <Box pos="relative" h={coverHeights} component="div">
+      <InContextEditor
+        visible={isAdmin && settings.showInContextEditors}
+        position="top-left"
+      >
+        <Stack gap="sm">
+          <Text fw={600} size="xs">Campaign Header</Text>
+          <Switch label="Show Company Name" checked={settings.showCampaignCompanyName !== false} onChange={(e) => inContextSave('showCampaignCompanyName', e.currentTarget.checked)} size="xs" />
+          <Switch label="Show Date" checked={settings.showCampaignDate !== false} onChange={(e) => inContextSave('showCampaignDate', e.currentTarget.checked)} size="xs" />
+          <Text fw={500} size="xs" mt="xs">Title Typography</Text>
+          <TypographyEditor
+            value={settings.typographyOverrides.campaignTitle ?? {}}
+            onChange={(value) => {
+              const overrides = { ...settings.typographyOverrides };
+              if (Object.keys(value).length === 0) delete overrides.campaignTitle;
+              else overrides.campaignTitle = value;
+              inContextSave('typographyOverrides', overrides);
+            }}
+          />
+        </Stack>
+      </InContextEditor>
+      <Image
+        src={displayedCampaign.coverImage}
+        alt={displayedCampaign.title}
+        h={coverHeights}
+        fit="cover"
+        loading="lazy"
+      />
+
+      <Box
+        pos="absolute"
+        inset={0}
+        style={{
+          background: 'linear-gradient(to top, var(--wpsg-color-surface) 0%, color-mix(in srgb, var(--wpsg-color-surface) 60%, transparent) 45%, transparent 80%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {settings.showCampaignCompanyName !== false && (
+        <Badge
+          pos="absolute"
+          top={16}
+          left={16}
+          style={{ backgroundColor: displayedCampaign.company.brandColor }}
+          size="lg"
+        >
+          <Group gap={8}>
+            <CompanyLogo logo={displayedCampaign.company.logo} companyName={displayedCampaign.company.name} />
+            <span>{displayedCampaign.company.name}</span>
+          </Group>
+        </Badge>
+      )}
+
+      <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
+        <Title order={2} size="h3" mb="sm" style={campaignTitleStyle}>
+          {displayedCampaign.title}
+        </Title>
+        {settings.showCampaignDate !== false && (
+          <Group gap="lg" wrap="wrap">
+            <Group gap={4}>
+              <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
+              <Text size="sm" c="dimmed" style={campaignDateStyle}>
+                {new Date(displayedCampaign.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+            </Group>
+            {settings.showCampaignTags !== false && (
+              <Group gap={4}>
+                <IconTag size={16} color="var(--wpsg-color-text-muted)" />
+                <Text size="sm" c="dimmed">
+                  {displayedCampaign.tags.join(', ')}
+                </Text>
+              </Group>
+            )}
+          </Group>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+interface CampaignViewerGalleryContentProps {
+  hasAccess: boolean;
+  displayedCampaign: Campaign;
+  galleryShellLayout: ReturnType<typeof resolveCampaignViewerGalleryShellLayout>;
+  settings: GalleryBehaviorSettings;
+  breakpoint: CampaignViewerBreakpoint;
+  isAdmin: boolean;
+}
+
+function CampaignViewerGalleryContent({
+  hasAccess,
+  displayedCampaign,
+  galleryShellLayout,
+  settings,
+  breakpoint,
+  isAdmin,
+}: CampaignViewerGalleryContentProps) {
+  if (!hasAccess || (displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0)) {
+    return null;
+  }
+
+  return (
+    <Box
+      {...getWpsgDebugProps('CampaignViewer', 'gallery-shell')}
+      style={{
+        width: '100%',
+        maxWidth: galleryShellLayout.maxWidth,
+        marginInline: 'auto',
+        paddingLeft: galleryShellLayout.paddingLeft,
+        paddingRight: galleryShellLayout.paddingRight,
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: settings.modalGalleryVerticalAlign === 'center' ? 'center' : settings.modalGalleryVerticalAlign === 'end' ? 'flex-end' : undefined,
+        transform: settings.modalGalleryOffsetY ? `translateY(${toCss(settings.modalGalleryOffsetY, settings.modalGalleryOffsetYUnit ?? 'px')})` : undefined,
+      }}
+    >
+      <Suspense fallback={
+        <Center py="xl" mih={200}>
+          <Stack align="center" gap="xs">
+            <Loader size="md" />
+            <Text size="sm" c="dimmed">Loading gallery…</Text>
+          </Stack>
+        </Center>
+      }>
+        <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
+          {galleryShellLayout.galleryMode === 'unified' ? (
+            <UnifiedGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} />
+          ) : (
+            <PerTypeGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} />
+          )}
+        </Stack>
+      </Suspense>
+    </Box>
+  );
+}
+
+interface CampaignViewerStatsSectionProps {
+  displayedCampaign: Campaign;
+  settings: GalleryBehaviorSettings;
+  isAdmin: boolean;
+  inContextSave: CampaignViewerInContextSave;
+  campaignStatsValueStyle: React.CSSProperties | undefined;
+  campaignStatsLabelStyle: React.CSSProperties | undefined;
+}
+
+function CampaignViewerStatsSection({
+  displayedCampaign,
+  settings,
+  isAdmin,
+  inContextSave,
+  campaignStatsValueStyle,
+  campaignStatsLabelStyle,
+}: CampaignViewerStatsSectionProps) {
+  return (
+    <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
+      <InContextEditor
+        visible={isAdmin && settings.showInContextEditors}
+        position="top-right"
+      >
+        <Stack gap="sm">
+          <Text fw={600} size="xs">Stats Section</Text>
+          <Switch label="Show Stats" checked={settings.showCampaignStats !== false} onChange={(e) => inContextSave('showCampaignStats', e.currentTarget.checked)} size="xs" />
+          <Switch label="Admin Only" checked={!!settings.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
+        </Stack>
+      </InContextEditor>
+      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Videos</Text>
+        </Paper>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.images.length}</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Images</Text>
+        </Paper>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.tags.length}</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Tags</Text>
+        </Paper>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>
+            {displayedCampaign.visibility === 'public' ? '🌐' : '🔒'}
+          </Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>
+            {displayedCampaign.visibility === 'public' ? 'Public' : 'Private'}
+          </Text>
+        </Paper>
+      </SimpleGrid>
+    </Box>
+  );
+}
+
 export function CampaignViewer({
   campaign,
   opened,
@@ -212,6 +432,11 @@ export function CampaignViewer({
   const contentMaxWidth = useFullscreen
     ? (s.fullscreenContentMaxWidth > 0 ? toCss(s.fullscreenContentMaxWidth, s.fullscreenContentMaxWidthUnit ?? 'px') : '100%')
     : (s.modalContentMaxWidth > 0 ? toCss(s.modalContentMaxWidth, s.modalContentMaxWidthUnit ?? 'px') : '100%');
+  const coverHeights = {
+    base: toCssOrNumber(coverHBase, coverHUnit),
+    sm: toCssOrNumber(coverHSm, coverHUnit),
+    md: toCssOrNumber(coverH, coverHUnit),
+  };
   // P22-K3: Modal background style (only applied in fullscreen)
   const modalBgStyle = useMemo<React.CSSProperties | undefined>(() => {
     if (!useFullscreen) return undefined;
@@ -253,90 +478,15 @@ export function CampaignViewer({
     >
       {/* Cover Image Header — hidden in galleries-only mode or when cover image disabled */}
       {!galleriesOnly && s.showCampaignCoverImage !== false && (
-        <Box pos="relative" h={{ base: toCssOrNumber(coverHBase, coverHUnit), sm: toCssOrNumber(coverHSm, coverHUnit), md: toCssOrNumber(coverH, coverHUnit) }} component="div">
-          <InContextEditor
-            visible={isAdmin && s.showInContextEditors}
-            position="top-left"
-          >
-            <Stack gap="sm">
-              <Text fw={600} size="xs">Campaign Header</Text>
-              <Switch label="Show Company Name" checked={s.showCampaignCompanyName !== false} onChange={(e) => inContextSave('showCampaignCompanyName', e.currentTarget.checked)} size="xs" />
-              <Switch label="Show Date" checked={s.showCampaignDate !== false} onChange={(e) => inContextSave('showCampaignDate', e.currentTarget.checked)} size="xs" />
-              <Text fw={500} size="xs" mt="xs">Title Typography</Text>
-              <TypographyEditor
-                value={s.typographyOverrides['campaignTitle'] ?? {}}
-                onChange={(v) => {
-                  const o = { ...s.typographyOverrides };
-                  if (Object.keys(v).length === 0) delete o['campaignTitle'];
-                  else o['campaignTitle'] = v;
-                  inContextSave('typographyOverrides', o);
-                }}
-              />
-            </Stack>
-          </InContextEditor>
-          <Image
-            src={displayedCampaign.coverImage}
-            alt={displayedCampaign.title}
-            h={{ base: toCssOrNumber(coverHBase, coverHUnit), sm: toCssOrNumber(coverHSm, coverHUnit), md: toCssOrNumber(coverH, coverHUnit) }}
-            fit="cover"
-            loading="lazy"
-          />
-
-          {/* Overlay gradient */}
-          <Box
-            pos="absolute"
-            inset={0}
-            style={{
-              background: 'linear-gradient(to top, var(--wpsg-color-surface) 0%, color-mix(in srgb, var(--wpsg-color-surface) 60%, transparent) 45%, transparent 80%)',
-              pointerEvents: 'none'
-            }}
-          />
-
-          {/* Company badge */}
-          {s.showCampaignCompanyName !== false && (
-            <Badge
-              pos="absolute"
-              top={16}
-              left={16}
-              style={{ backgroundColor: campaign.company.brandColor }}
-              size="lg"
-            >
-              <Group gap={8}>
-                <CompanyLogo logo={displayedCampaign.company.logo} companyName={displayedCampaign.company.name} />
-                <span>{displayedCampaign.company.name}</span>
-              </Group>
-            </Badge>
-          )}
-
-          {/* Title and meta overlay */}
-          <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
-            <Title order={2} size="h3" mb="sm" style={campaignTitleStyle}>
-              {displayedCampaign.title}
-            </Title>
-            {s.showCampaignDate !== false && (
-              <Group gap="lg" wrap="wrap">
-                <Group gap={4}>
-                  <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
-                  <Text size="sm" c="dimmed" style={campaignDateStyle}>
-                    {new Date(displayedCampaign.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </Text>
-                </Group>
-                {s.showCampaignTags !== false && (
-                  <Group gap={4}>
-                    <IconTag size={16} color="var(--wpsg-color-text-muted)" />
-                    <Text size="sm" c="dimmed">
-                      {displayedCampaign.tags.join(', ')}
-                    </Text>
-                  </Group>
-                )}
-              </Group>
-            )}
-          </Box>
-        </Box>
+        <CampaignViewerCoverHeader
+          displayedCampaign={displayedCampaign}
+          settings={s}
+          isAdmin={isAdmin}
+          inContextSave={inContextSave}
+          campaignTitleStyle={campaignTitleStyle}
+          campaignDateStyle={campaignDateStyle}
+          coverHeights={coverHeights}
+        />
       )}
 
       {/* Content */}
@@ -387,40 +537,14 @@ export function CampaignViewer({
             </Paper>
           )}
 
-          {/* Media Sections */}
-          {hasAccess && (displayedCampaign.videos.length > 0 || displayedCampaign.images.length > 0) && (
-            <Box
-              {...getWpsgDebugProps('CampaignViewer', 'gallery-shell')}
-              style={{
-                width: '100%',
-                maxWidth: galleryShellLayout.maxWidth,
-                marginInline: 'auto',
-                paddingLeft: galleryShellLayout.paddingLeft,
-                paddingRight: galleryShellLayout.paddingRight,
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column' as const,
-                justifyContent: s.modalGalleryVerticalAlign === 'center' ? 'center' : s.modalGalleryVerticalAlign === 'end' ? 'flex-end' : undefined,
-                transform: s.modalGalleryOffsetY ? `translateY(${toCss(s.modalGalleryOffsetY, s.modalGalleryOffsetYUnit ?? 'px')})` : undefined,
-              }}>
-              <Suspense fallback={
-                <Center py="xl" mih={200}>
-                  <Stack align="center" gap="xs">
-                    <Loader size="md" />
-                    <Text size="sm" c="dimmed">Loading gallery…</Text>
-                  </Stack>
-                </Center>
-              }>
-                <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
-                  {galleryShellLayout.galleryMode === 'unified' ? (
-                    <UnifiedGallerySection campaign={displayedCampaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
-                  ) : (
-                    <PerTypeGallerySection campaign={displayedCampaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
-                  )}
-                </Stack>
-              </Suspense>
-            </Box>
-          )}
+          <CampaignViewerGalleryContent
+            hasAccess={hasAccess}
+            displayedCampaign={displayedCampaign}
+            galleryShellLayout={galleryShellLayout}
+            settings={galleryBehaviorSettings}
+            breakpoint={breakpoint}
+            isAdmin={isAdmin}
+          />
 
           {hasAccess && displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0 && (
             <Text c="dimmed" ta="center" py="xl">No media available for this campaign.</Text>
@@ -428,41 +552,14 @@ export function CampaignViewer({
 
           {/* Campaign Stats — conditional */}
           {!galleriesOnly && showStats && (
-            <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
-              <InContextEditor
-                visible={isAdmin && s.showInContextEditors}
-                position="top-right"
-              >
-                <Stack gap="sm">
-                  <Text fw={600} size="xs">Stats Section</Text>
-                  <Switch label="Show Stats" checked={s.showCampaignStats !== false} onChange={(e) => inContextSave('showCampaignStats', e.currentTarget.checked)} size="xs" />
-                  <Switch label="Admin Only" checked={!!s.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
-                </Stack>
-              </InContextEditor>
-              <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
-              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
-                <Paper p="md" radius="md" withBorder ta="center">
-                  <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
-                  <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Videos</Text>
-                </Paper>
-                <Paper p="md" radius="md" withBorder ta="center">
-                  <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.images.length}</Text>
-                  <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Images</Text>
-                </Paper>
-                <Paper p="md" radius="md" withBorder ta="center">
-                  <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.tags.length}</Text>
-                  <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Tags</Text>
-                </Paper>
-                <Paper p="md" radius="md" withBorder ta="center">
-                  <Text size="xl" fw={700} style={campaignStatsValueStyle}>
-                    {displayedCampaign.visibility === 'public' ? '🌐' : '🔒'}
-                  </Text>
-                  <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>
-                    {displayedCampaign.visibility === 'public' ? 'Public' : 'Private'}
-                  </Text>
-                </Paper>
-              </SimpleGrid>
-            </Box>
+            <CampaignViewerStatsSection
+              displayedCampaign={displayedCampaign}
+              settings={s}
+              isAdmin={isAdmin}
+              inContextSave={inContextSave}
+              campaignStatsValueStyle={campaignStatsValueStyle}
+              campaignStatsLabelStyle={campaignStatsLabelStyle}
+            />
           )}
         </Stack>
       </Box>

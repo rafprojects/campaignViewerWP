@@ -509,6 +509,251 @@ function resetScopeToBaseline(
   });
 }
 
+type NamedComponent<Props = Record<string, never>> = ((props: Props) => JSX.Element) & {
+  displayName?: string;
+};
+
+type GalleryConfigDraftUpdater = (updater: (current: GalleryConfig) => GalleryConfig) => void;
+
+interface GalleryConfigEditorIntroProps {
+  contextSummary?: string;
+  resolvedDraft: GalleryConfig;
+  unifiedAdapterEnabled: boolean;
+  unifiedAdapterHelpText: string;
+  updateDraft: GalleryConfigDraftUpdater;
+}
+
+const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = ({
+  contextSummary,
+  resolvedDraft,
+  unifiedAdapterEnabled,
+  unifiedAdapterHelpText,
+  updateDraft,
+}) => (
+  <>
+    <Text size="sm" c="dimmed">
+      This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.
+    </Text>
+
+    {contextSummary && (
+      <Text size="sm" fw={500} c="blue">
+        {contextSummary}
+      </Text>
+    )}
+
+    <Select
+      label="Gallery Mode"
+      description="Choose whether this config resolves a unified gallery or separate image and video galleries."
+      data={[
+        { value: 'unified', label: 'Unified' },
+        { value: 'per-type', label: 'Per-Type' },
+      ]}
+      value={resolvedDraft.mode ?? 'per-type'}
+      onChange={(nextMode) => {
+        if (nextMode === 'unified' || nextMode === 'per-type') {
+          updateDraft((current) => setConfigMode(current, nextMode));
+        }
+      }}
+    />
+
+    {resolvedDraft.mode === 'unified' ? (
+      unifiedAdapterEnabled ? (
+        <Text size="sm" c="dimmed">
+          {unifiedAdapterHelpText}
+        </Text>
+      ) : (
+        <Text size="sm" c="dimmed">
+          Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice.
+        </Text>
+      )
+    ) : null}
+  </>
+);
+
+GalleryConfigEditorIntro.displayName = 'GalleryConfigEditorIntro';
+
+interface GalleryConfigBreakpointAdaptersSectionProps {
+  resolvedDraft: GalleryConfig;
+  activeBreakpoint: GalleryConfigBreakpoint;
+  setActiveBreakpoint: (value: GalleryConfigBreakpoint) => void;
+  unifiedAdapterEnabled: boolean;
+  updateDraft: GalleryConfigDraftUpdater;
+}
+
+const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakpointAdaptersSectionProps> = ({
+  resolvedDraft,
+  activeBreakpoint,
+  setActiveBreakpoint,
+  unifiedAdapterEnabled,
+  updateDraft,
+}) => (
+  <Accordion.Item value="breakpoint-adapters">
+    <Accordion.Control>Breakpoint Adapters</Accordion.Control>
+    <Accordion.Panel>
+      <Stack gap="md">
+        <Tabs
+          {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tabs')}
+          value={activeBreakpoint}
+          onChange={(value) => value && setActiveBreakpoint(value as GalleryConfigBreakpoint)}
+          keepMounted={false}
+        >
+          <Tabs.List {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tab-list')} grow>
+            {GALLERY_BREAKPOINTS.map((breakpoint) => (
+              <Tabs.Tab key={breakpoint} value={breakpoint}>
+                {breakpoint.charAt(0).toUpperCase() + breakpoint.slice(1)}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+
+          {GALLERY_BREAKPOINTS.map((breakpoint) => {
+            if (resolvedDraft.mode === 'unified') {
+              return (
+                <Tabs.Panel key={breakpoint} value={breakpoint} pt="md">
+                  <Stack gap="md">
+                    <Text size="sm" c="dimmed">
+                      Editing breakpoint-specific unified settings for the {breakpoint} layout.
+                    </Text>
+                    {unifiedAdapterEnabled ? (
+                      <Select
+                        label="Unified Gallery Adapter"
+                        description={`Unified gallery adapter for the ${breakpoint} breakpoint.`}
+                        data={getAdapterSelectOptions({ context: 'unified-gallery', breakpoint })}
+                        value={getScopeAdapterId(resolvedDraft, breakpoint, 'unified') || null}
+                        onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'unified', adapterId ?? ''))}
+                        clearable
+                        placeholder="Default adapter"
+                      />
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        Unified adapter overrides remain inherited in this slice.
+                      </Text>
+                    )}
+                  </Stack>
+                </Tabs.Panel>
+              );
+            }
+
+            const adapterOptions = getAdapterSelectOptions({
+              context: 'per-breakpoint-gallery',
+              breakpoint,
+            });
+
+            return (
+              <Tabs.Panel key={breakpoint} value={breakpoint} pt="md">
+                <Stack gap="md">
+                  <Select
+                    label="Image Adapter"
+                    description={`Image gallery adapter for the ${breakpoint} breakpoint.`}
+                    data={adapterOptions}
+                    value={getScopeAdapterId(resolvedDraft, breakpoint, 'image') || null}
+                    onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'image', adapterId ?? ''))}
+                    clearable
+                    placeholder="Default adapter"
+                  />
+                  <Select
+                    label="Video Adapter"
+                    description={`Video gallery adapter for the ${breakpoint} breakpoint.`}
+                    data={adapterOptions}
+                    value={getScopeAdapterId(resolvedDraft, breakpoint, 'video') || null}
+                    onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'video', adapterId ?? ''))}
+                    clearable
+                    placeholder="Default adapter"
+                  />
+                </Stack>
+              </Tabs.Panel>
+            );
+          })}
+        </Tabs>
+
+        <Text size="xs" c="dimmed">
+          Settings below apply to the {activeBreakpoint} breakpoint {resolvedDraft.mode === 'unified'
+            ? 'for the unified gallery surface.'
+            : 'for the current per-type gallery surface.'}
+        </Text>
+      </Stack>
+    </Accordion.Panel>
+  </Accordion.Item>
+);
+
+GalleryConfigBreakpointAdaptersSection.displayName = 'GalleryConfigBreakpointAdaptersSection';
+
+interface GalleryConfigEditorFooterActionsProps {
+  resolvedDraft: GalleryConfig;
+  resolvedBaseline: GalleryConfig;
+  activeBreakpoint: GalleryConfigBreakpoint;
+  clearMode: 'external' | 'draft';
+  clearLabel: string;
+  onClear?: () => void;
+  onClearDraft: () => void;
+  updateDraft: GalleryConfigDraftUpdater;
+  onResetAllChanges: () => void;
+  onClose: () => void;
+  onSave: () => void;
+  saveLabel: string;
+}
+
+const GalleryConfigEditorFooterActions: NamedComponent<GalleryConfigEditorFooterActionsProps> = ({
+  resolvedDraft,
+  resolvedBaseline,
+  activeBreakpoint,
+  clearMode,
+  clearLabel,
+  onClear,
+  onClearDraft,
+  updateDraft,
+  onResetAllChanges,
+  onClose,
+  onSave,
+  saveLabel,
+}) => (
+  <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+    <Group gap="sm">
+      {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => (
+        <Button
+          key={scope}
+          variant="subtle"
+          color="gray"
+          onClick={() => updateDraft((current) => resetScopeToBaseline(current, resolvedBaseline, scope))}
+        >
+          Reset {formatScopeLabel(scope)}
+        </Button>
+      ))}
+      <Button
+        variant="subtle"
+        color="gray"
+        onClick={() => updateDraft((current) => resetBreakpointToBaseline(current, resolvedBaseline, activeBreakpoint))}
+      >
+        Reset {activeBreakpoint}
+      </Button>
+      <Button variant="subtle" color="gray" onClick={onResetAllChanges}>
+        Reset All Changes
+      </Button>
+      {(clearMode === 'draft' || onClear) && (
+        <Button
+          variant="subtle"
+          color="red"
+          onClick={() => {
+            if (clearMode === 'draft') {
+              onClearDraft();
+              return;
+            }
+
+            onClear?.();
+          }}
+        >
+          {clearLabel}
+        </Button>
+      )}
+    </Group>
+    <Group gap="sm">
+      <Button variant="default" onClick={onClose}>Cancel</Button>
+      <Button onClick={onSave}>{saveLabel}</Button>
+    </Group>
+  </Group>
+);
+
+GalleryConfigEditorFooterActions.displayName = 'GalleryConfigEditorFooterActions';
+
 export function GalleryConfigEditorModal({
   opened,
   title,
@@ -546,6 +791,15 @@ export function GalleryConfigEditorModal({
     'adapter-specific-settings',
   ];
   const { mounted: mountedAccordionSections, onChange: handleAccordionChange } = useLazyAccordion(defaultAccordionSections);
+  const handleClearDraft = () => {
+    setDraft(undefined);
+  };
+  const handleResetAllChanges = () => {
+    setDraft(baseline);
+  };
+  const handleSaveDraft = () => {
+    onSave(draft ? pruneConfig(draft) : undefined);
+  };
 
   useEffect(() => {
     if (!opened) {
@@ -586,42 +840,13 @@ export function GalleryConfigEditorModal({
       }}
     >
       <Stack {...getWpsgDebugProps('GalleryConfigEditorModal', 'content-stack')} gap="md">
-        <Text size="sm" c="dimmed">
-          This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.
-        </Text>
-
-        {contextSummary && (
-          <Text size="sm" fw={500} c="blue">
-            {contextSummary}
-          </Text>
-        )}
-
-        <Select
-          label="Gallery Mode"
-          description="Choose whether this config resolves a unified gallery or separate image and video galleries."
-          data={[
-            { value: 'unified', label: 'Unified' },
-            { value: 'per-type', label: 'Per-Type' },
-          ]}
-          value={resolvedDraft.mode ?? 'per-type'}
-          onChange={(nextMode) => {
-            if (nextMode === 'unified' || nextMode === 'per-type') {
-              updateDraft((current) => setConfigMode(current, nextMode));
-            }
-          }}
+        <GalleryConfigEditorIntro
+          contextSummary={contextSummary}
+          resolvedDraft={resolvedDraft}
+          unifiedAdapterEnabled={unifiedAdapterEnabled}
+          unifiedAdapterHelpText={unifiedAdapterHelpText}
+          updateDraft={updateDraft}
         />
-
-        {resolvedDraft.mode === 'unified' ? (
-          unifiedAdapterEnabled ? (
-            <Text size="sm" c="dimmed">
-              {unifiedAdapterHelpText}
-            </Text>
-          ) : (
-            <Text size="sm" c="dimmed">
-              Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice.
-            </Text>
-          )
-        ) : null}
         <Accordion
           {...getWpsgDebugProps('GalleryConfigEditorModal', 'sections')}
           variant="separated"
@@ -630,92 +855,13 @@ export function GalleryConfigEditorModal({
           onChange={handleAccordionChange}
           chevronPosition="left"
         >
-          <Accordion.Item value="breakpoint-adapters">
-            <Accordion.Control>Breakpoint Adapters</Accordion.Control>
-            <Accordion.Panel>
-              <Stack gap="md">
-                <Tabs
-                  {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tabs')}
-                  value={activeBreakpoint}
-                  onChange={(value) => value && setActiveBreakpoint(value as GalleryConfigBreakpoint)}
-                  keepMounted={false}
-                >
-                  <Tabs.List {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tab-list')} grow>
-                    {GALLERY_BREAKPOINTS.map((breakpoint) => (
-                      <Tabs.Tab key={breakpoint} value={breakpoint}>
-                        {breakpoint.charAt(0).toUpperCase() + breakpoint.slice(1)}
-                      </Tabs.Tab>
-                    ))}
-                  </Tabs.List>
-
-                  {GALLERY_BREAKPOINTS.map((breakpoint) => {
-                    if (resolvedDraft.mode === 'unified') {
-                      return (
-                        <Tabs.Panel key={breakpoint} value={breakpoint} pt="md">
-                          <Stack gap="md">
-                            <Text size="sm" c="dimmed">
-                              Editing breakpoint-specific unified settings for the {breakpoint} layout.
-                            </Text>
-                            {unifiedAdapterEnabled ? (
-                              <Select
-                                label="Unified Gallery Adapter"
-                                description={`Unified gallery adapter for the ${breakpoint} breakpoint.`}
-                                data={getAdapterSelectOptions({ context: 'unified-gallery', breakpoint })}
-                                value={getScopeAdapterId(resolvedDraft, breakpoint, 'unified') || null}
-                                onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'unified', adapterId ?? ''))}
-                                clearable
-                                placeholder="Default adapter"
-                              />
-                            ) : (
-                              <Text size="sm" c="dimmed">
-                                Unified adapter overrides remain inherited in this slice.
-                              </Text>
-                            )}
-                          </Stack>
-                        </Tabs.Panel>
-                      );
-                    }
-
-                    const adapterOptions = getAdapterSelectOptions({
-                      context: 'per-breakpoint-gallery',
-                      breakpoint,
-                    });
-
-                    return (
-                      <Tabs.Panel key={breakpoint} value={breakpoint} pt="md">
-                        <Stack gap="md">
-                          <Select
-                            label="Image Adapter"
-                            description={`Image gallery adapter for the ${breakpoint} breakpoint.`}
-                            data={adapterOptions}
-                            value={getScopeAdapterId(resolvedDraft, breakpoint, 'image') || null}
-                            onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'image', adapterId ?? ''))}
-                            clearable
-                            placeholder="Default adapter"
-                          />
-                          <Select
-                            label="Video Adapter"
-                            description={`Video gallery adapter for the ${breakpoint} breakpoint.`}
-                            data={adapterOptions}
-                            value={getScopeAdapterId(resolvedDraft, breakpoint, 'video') || null}
-                            onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'video', adapterId ?? ''))}
-                            clearable
-                            placeholder="Default adapter"
-                          />
-                        </Stack>
-                      </Tabs.Panel>
-                    );
-                  })}
-                </Tabs>
-
-                <Text size="xs" c="dimmed">
-                  Settings below apply to the {activeBreakpoint} breakpoint {resolvedDraft.mode === 'unified'
-                    ? 'for the unified gallery surface.'
-                    : 'for the current per-type gallery surface.'}
-                </Text>
-              </Stack>
-            </Accordion.Panel>
-          </Accordion.Item>
+          <GalleryConfigBreakpointAdaptersSection
+            resolvedDraft={resolvedDraft}
+            activeBreakpoint={activeBreakpoint}
+            setActiveBreakpoint={setActiveBreakpoint}
+            unifiedAdapterEnabled={unifiedAdapterEnabled}
+            updateDraft={updateDraft}
+          />
 
           <Accordion.Item value="shared-section-sizing">
             <Accordion.Control>Shared Section Sizing</Accordion.Control>
@@ -1218,50 +1364,20 @@ export function GalleryConfigEditorModal({
           </Accordion.Item>
         </Accordion>
 
-        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-          <Group gap="sm">
-            {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => (
-              <Button
-                key={scope}
-                variant="subtle"
-                color="gray"
-                onClick={() => updateDraft((current) => resetScopeToBaseline(current, resolvedBaseline, scope))}
-              >
-                Reset {formatScopeLabel(scope)}
-              </Button>
-            ))}
-            <Button
-              variant="subtle"
-              color="gray"
-              onClick={() => updateDraft((current) => resetBreakpointToBaseline(current, resolvedBaseline, activeBreakpoint))}
-            >
-              Reset {activeBreakpoint}
-            </Button>
-            <Button variant="subtle" color="gray" onClick={() => setDraft(baseline)}>
-              Reset All Changes
-            </Button>
-            {(clearMode === 'draft' || onClear) && (
-              <Button
-                variant="subtle"
-                color="red"
-                onClick={() => {
-                  if (clearMode === 'draft') {
-                    setDraft(undefined);
-                    return;
-                  }
-
-                  onClear?.();
-                }}
-              >
-                {clearLabel}
-              </Button>
-            )}
-          </Group>
-          <Group gap="sm">
-            <Button variant="default" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => onSave(draft ? pruneConfig(draft) : undefined)}>{saveLabel}</Button>
-          </Group>
-        </Group>
+        <GalleryConfigEditorFooterActions
+          resolvedDraft={resolvedDraft}
+          resolvedBaseline={resolvedBaseline}
+          activeBreakpoint={activeBreakpoint}
+          clearMode={clearMode}
+          clearLabel={clearLabel}
+          onClear={onClear}
+          onClearDraft={handleClearDraft}
+          updateDraft={updateDraft}
+          onResetAllChanges={handleResetAllChanges}
+          onClose={onClose}
+          onSave={handleSaveDraft}
+          saveLabel={saveLabel}
+        />
       </Stack>
     </Drawer>
   );

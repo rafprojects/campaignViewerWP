@@ -16,6 +16,46 @@ interface ConfirmModalProps {
   children?: ReactNode;
 }
 
+interface ConfirmModalContentProps {
+  message: ReactNode;
+  children?: ReactNode;
+  onClose: () => void;
+  onConfirm: () => void;
+  confirmLabel: string;
+  confirmColor: string;
+  confirmAriaLabel?: string;
+  loading: boolean;
+}
+
+function ConfirmModalContent({
+  message,
+  children,
+  onClose,
+  onConfirm,
+  confirmLabel,
+  confirmColor,
+  confirmAriaLabel,
+  loading,
+}: ConfirmModalContentProps) {
+  return (
+    <Stack {...getWpsgDebugProps('ConfirmModal', 'stack')}>
+      {typeof message === 'string' ? <Text>{message}</Text> : message}
+      {children}
+      <Group {...getWpsgDebugProps('ConfirmModal', 'actions')} justify="flex-end">
+        <Button variant="default" onClick={onClose}>Cancel</Button>
+        <Button
+          color={confirmColor}
+          onClick={onConfirm}
+          loading={loading}
+          aria-label={confirmAriaLabel}
+        >
+          {confirmLabel}
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
 export function ConfirmModal({
   opened,
   onClose,
@@ -38,21 +78,16 @@ export function ConfirmModal({
       overlayProps={getWpsgDebugProps('ConfirmModal', 'overlay')}
       padding="md"
     >
-      <Stack {...getWpsgDebugProps('ConfirmModal', 'stack')}>
-        {typeof message === 'string' ? <Text>{message}</Text> : message}
-        {children}
-        <Group {...getWpsgDebugProps('ConfirmModal', 'actions')} justify="flex-end">
-          <Button variant="default" onClick={onClose}>Cancel</Button>
-          <Button
-            color={confirmColor}
-            onClick={onConfirm}
-            loading={loading}
-            aria-label={confirmAriaLabel}
-          >
-            {confirmLabel}
-          </Button>
-        </Group>
-      </Stack>
+      <ConfirmModalContent
+        message={message}
+        children={children}
+        onClose={onClose}
+        onConfirm={onConfirm}
+        confirmLabel={confirmLabel}
+        confirmColor={confirmColor}
+        confirmAriaLabel={confirmAriaLabel}
+        loading={loading}
+      />
     </Modal>
   );
 }

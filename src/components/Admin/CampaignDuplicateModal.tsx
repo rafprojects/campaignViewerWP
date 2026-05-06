@@ -21,6 +21,97 @@ export interface CampaignDuplicateModalProps {
   onClose: () => void;
 }
 
+interface CampaignDuplicateModalOptionsProps {
+  source: AdminCampaign | null;
+  name: string;
+  setName: (value: string) => void;
+  copyMedia: boolean;
+  setCopyMedia: (value: boolean) => void;
+  duplicateLayoutTemplate: boolean;
+  setDuplicateLayoutTemplate: (value: boolean) => void;
+  onClose: () => void;
+  onConfirm: () => void;
+  isSaving: boolean;
+}
+
+function CampaignDuplicateModalOptions({
+  source,
+  name,
+  setName,
+  copyMedia,
+  setCopyMedia,
+  duplicateLayoutTemplate,
+  setDuplicateLayoutTemplate,
+  onClose,
+  onConfirm,
+  isSaving,
+}: CampaignDuplicateModalOptionsProps) {
+  return (
+    <Stack {...getWpsgDebugProps('CampaignDuplicateModal', 'stack')} gap="md">
+      <div>
+        <Text size="sm" c="dimmed" mb={4}>
+          Source:
+        </Text>
+        <Text fw={600}>{source?.title}</Text>
+      </div>
+
+      <TextInput
+        label="New name"
+        value={name}
+        onChange={(e) => setName(e.currentTarget.value)}
+        placeholder="Campaign name"
+        data-autofocus
+        required
+      />
+
+      <Divider />
+
+      <Stack gap="xs">
+        <Switch
+          label="Copy media associations"
+          description="Media items will appear in both campaigns"
+          checked={copyMedia}
+          onChange={(e) => setCopyMedia(e.currentTarget.checked)}
+        />
+        {!copyMedia && (
+          <Text size="xs" c="dimmed">
+            The duplicate will start with an empty media library.
+          </Text>
+        )}
+        {source?.layoutTemplateId && (
+          <>
+            <Switch
+              label="Duplicate linked layout template"
+              description="The copied campaign gets its own editable layout instead of sharing the original template."
+              checked={duplicateLayoutTemplate}
+              onChange={(e) => setDuplicateLayoutTemplate(e.currentTarget.checked)}
+            />
+            {!duplicateLayoutTemplate && (
+              <Text size="xs" c="dimmed">
+                The duplicate will keep pointing at the original layout template.
+              </Text>
+            )}
+          </>
+        )}
+      </Stack>
+
+      <Group {...getWpsgDebugProps('CampaignDuplicateModal', 'actions')} justify="flex-end" mt="xs">
+        <Button variant="subtle" onClick={onClose} disabled={isSaving}>
+          Cancel
+        </Button>
+        <Button
+          leftSection={<IconCopy size={16} />}
+          onClick={onConfirm}
+          loading={isSaving}
+          disabled={!name.trim()}
+        >
+          Duplicate
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
 export function CampaignDuplicateModal({
   source,
   isSaving,
@@ -57,68 +148,18 @@ export function CampaignDuplicateModal({
       closeButtonProps={getWpsgDebugProps('CampaignDuplicateModal', 'close')}
       overlayProps={getWpsgDebugProps('CampaignDuplicateModal', 'overlay')}
     >
-      <Stack {...getWpsgDebugProps('CampaignDuplicateModal', 'stack')} gap="md">
-        <div>
-          <Text size="sm" c="dimmed" mb={4}>
-            Source:
-          </Text>
-          <Text fw={600}>{source?.title}</Text>
-        </div>
-
-        <TextInput
-          label="New name"
-          value={name}
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Campaign name"
-          data-autofocus
-          required
-        />
-
-        <Divider />
-
-        <Stack gap="xs">
-          <Switch
-            label="Copy media associations"
-            description="Media items will appear in both campaigns"
-            checked={copyMedia}
-            onChange={(e) => setCopyMedia(e.currentTarget.checked)}
-          />
-          {!copyMedia && (
-            <Text size="xs" c="dimmed">
-              The duplicate will start with an empty media library.
-            </Text>
-          )}
-          {source?.layoutTemplateId && (
-            <>
-              <Switch
-                label="Duplicate linked layout template"
-                description="The copied campaign gets its own editable layout instead of sharing the original template."
-                checked={duplicateLayoutTemplate}
-                onChange={(e) => setDuplicateLayoutTemplate(e.currentTarget.checked)}
-              />
-              {!duplicateLayoutTemplate && (
-                <Text size="xs" c="dimmed">
-                  The duplicate will keep pointing at the original layout template.
-                </Text>
-              )}
-            </>
-          )}
-        </Stack>
-
-        <Group {...getWpsgDebugProps('CampaignDuplicateModal', 'actions')} justify="flex-end" mt="xs">
-          <Button variant="subtle" onClick={onClose} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button
-            leftSection={<IconCopy size={16} />}
-            onClick={handleConfirm}
-            loading={isSaving}
-            disabled={!name.trim()}
-          >
-            Duplicate
-          </Button>
-        </Group>
-      </Stack>
+      <CampaignDuplicateModalOptions
+        source={source}
+        name={name}
+        setName={setName}
+        copyMedia={copyMedia}
+        setCopyMedia={setCopyMedia}
+        duplicateLayoutTemplate={duplicateLayoutTemplate}
+        setDuplicateLayoutTemplate={setDuplicateLayoutTemplate}
+        onClose={onClose}
+        onConfirm={handleConfirm}
+        isSaving={isSaving}
+      />
     </Modal>
   );
 }

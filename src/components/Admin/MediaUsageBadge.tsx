@@ -19,6 +19,60 @@ interface MediaUsageBadgeProps {
   apiClient: ApiClient;
 }
 
+interface MediaUsageBadgeContentProps {
+  loading: boolean;
+  error: string | null;
+  detail: MediaUsageCampaignRef[] | null;
+}
+
+function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeContentProps) {
+  if (loading) {
+    return (
+      <Stack {...getWpsgDebugProps('MediaUsageBadge', 'loading')} align="center" py="xs">
+        <Loader size="xs" />
+      </Stack>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert color="red" icon={<IconInfoCircle size={14} />} py="xs">
+        {error}
+      </Alert>
+    );
+  }
+
+  if (detail === null) {
+    return null;
+  }
+
+  return (
+    <Stack {...getWpsgDebugProps('MediaUsageBadge', 'detail')} gap="xs">
+      {detail.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          Not used in any campaign.
+        </Text>
+      ) : (
+        <>
+          <Text size="xs" fw={600} c="dimmed">
+            Used in campaigns:
+          </Text>
+          {detail.map((campaign) => (
+            <Anchor
+              key={campaign.id}
+              size="sm"
+              href={`?campaign=${campaign.id}`}
+              onClick={(e) => e.preventDefault()}
+            >
+              {campaign.title}
+            </Anchor>
+          ))}
+        </>
+      )}
+    </Stack>
+  );
+}
+
 export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgeProps) {
   const [opened, setOpened] = useState(false);
   const [detail, setDetail] = useState<MediaUsageCampaignRef[] | null>(null);
@@ -74,41 +128,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
       </Popover.Target>
 
       <Popover.Dropdown {...getWpsgDebugProps('MediaUsageBadge', 'dropdown')}>
-        {loading && (
-          <Stack {...getWpsgDebugProps('MediaUsageBadge', 'loading')} align="center" py="xs">
-            <Loader size="xs" />
-          </Stack>
-        )}
-        {error && (
-          <Alert color="red" icon={<IconInfoCircle size={14} />} py="xs">
-            {error}
-          </Alert>
-        )}
-        {!loading && !error && detail !== null && (
-          <Stack {...getWpsgDebugProps('MediaUsageBadge', 'detail')} gap="xs">
-            {detail.length === 0 ? (
-              <Text size="sm" c="dimmed">
-                Not used in any campaign.
-              </Text>
-            ) : (
-              <>
-                <Text size="xs" fw={600} c="dimmed">
-                  Used in campaigns:
-                </Text>
-                {detail.map((c) => (
-                  <Anchor
-                    key={c.id}
-                    size="sm"
-                    href={`?campaign=${c.id}`}
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    {c.title}
-                  </Anchor>
-                ))}
-              </>
-            )}
-          </Stack>
-        )}
+        <MediaUsageBadgeContent loading={loading} error={error} detail={detail} />
       </Popover.Dropdown>
     </Popover>
   );
