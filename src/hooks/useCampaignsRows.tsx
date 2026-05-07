@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox } from '@mantine/core';
 import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid } from '@tabler/icons-react';
-import type { AdminCampaign } from '@/hooks/useAdminSWR';
+import type { AdminCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
 import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@/utils/campaignGalleryOverrides';
 

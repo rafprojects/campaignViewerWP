@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import useSWR from 'swr';
 import { safeLocalStorage } from '../../../utils/safeLocalStorage';
 import {
   Modal,
@@ -21,7 +20,7 @@ import {
   IconEye,
   IconEyeOff,
 } from '@tabler/icons-react';
-import type { LayoutTemplate, MediaItem } from '@/types';
+import type { LayoutTemplate } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import {
   useLayoutBuilderState,
@@ -40,6 +39,9 @@ import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
+import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
+import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -88,15 +90,10 @@ export function LayoutBuilderModal({
   const [isSaving, setIsSaving] = useState(false);
 
   // ── Fetch campaign list for the media picker ──
-  const { data: campaigns } = useSWR<Array<{ id: number; title: string }>>(
-    opened ? 'builder-campaigns' : null,
-    async () => {
-      const response = await apiClient.get<{ items: Array<{ id: number; title: string }> }>(
-        '/wp-json/wp-super-gallery/v1/campaigns?per_page=50',
-      );
-      return response.items ?? [];
-    },
-    { revalidateOnFocus: false, dedupingInterval: 30_000 },
+  const campaignOptions = useAllCampaignOptions(apiClient, opened);
+  const campaigns = useMemo(
+    () => campaignOptions.map((campaign) => ({ id: Number(campaign.id), title: campaign.title })),
+    [campaignOptions],
   );
 
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
@@ -130,24 +127,11 @@ export function LayoutBuilderModal({
   }, [selectedCampaignId, campaignSelectionStorageKey]);
 
   // ── Fetch media for the selected campaign ──
-  const { data: campaignMedia } = useSWR<MediaItem[]>(
-    selectedCampaignId ? `builder-campaign-media-${selectedCampaignId}` : null,
-    async () => {
-      const res = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
-        `/wp-json/wp-super-gallery/v1/campaigns/${selectedCampaignId}/media`,
-      );
-      return Array.isArray(res) ? res : res.items ?? [];
-    },
-    { revalidateOnFocus: false, dedupingInterval: 30_000 },
-  );
+  const { mediaItems: campaignMedia } = useMediaItems(apiClient, opened ? (selectedCampaignId ?? '') : '');
   const media = useMemo(() => campaignMedia ?? [], [campaignMedia]);
 
   // ── Overlay library (P15-H) ──
-  const { data: overlayLibrary, mutate: mutateOverlayLibrary } = useSWR<OverlayLibraryItem[]>(
-    opened ? 'overlay-library' : null,
-    () => apiClient.get<OverlayLibraryItem[]>('/wp-json/wp-super-gallery/v1/admin/overlay-library'),
-    { revalidateOnFocus: false, dedupingInterval: 60_000 },
-  );
+  const { data: overlayLibrary, refetch: refetchOverlayLibrary } = useOverlayLibrary(apiClient, opened);
   const [isUploadingOverlay, setIsUploadingOverlay] = useState(false);
   const [isUploadingBg, setIsUploadingBg] = useState(false);
 
@@ -271,7 +255,7 @@ export function LayoutBuilderModal({
           '/wp-json/wp-super-gallery/v1/admin/overlay-library',
           formData,
         );
-        await mutateOverlayLibrary();
+        await refetchOverlayLibrary();
         builder.addOverlay(entry.url);
         announce('Overlay uploaded and added to canvas');
       } catch (err) {
@@ -283,14 +267,14 @@ export function LayoutBuilderModal({
         setIsUploadingOverlay(false);
       }
     },
-    [apiClient, mutateOverlayLibrary, builder, announce, onNotify],
+    [apiClient, refetchOverlayLibrary, builder, announce, onNotify],
   );
 
   const handleDeleteLibraryOverlay = useCallback(
     async (id: string) => {
       try {
         await apiClient.delete(`/wp-json/wp-super-gallery/v1/admin/overlay-library/${id}`);
-        await mutateOverlayLibrary();
+        await refetchOverlayLibrary();
       } catch (err) {
         onNotify?.({
           type: 'error',
@@ -298,7 +282,7 @@ export function LayoutBuilderModal({
         });
       }
     },
-    [apiClient, mutateOverlayLibrary, onNotify],
+    [apiClient, refetchOverlayLibrary, onNotify],
   );
 
   // ── Background image upload ──
@@ -469,8 +453,8 @@ export function LayoutBuilderModal({
   const selectedSlot =
     builder.selectedSlotIds.size === 1
       ? builder.template.slots.find(
-          (s) => s.id === Array.from(builder.selectedSlotIds)[0],
-        )
+        (s) => s.id === Array.from(builder.selectedSlotIds)[0],
+      )
       : undefined;
 
   // ── Get selected graphic layer (P17-D) ──
@@ -704,3 +688,5 @@ export function LayoutBuilderModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderModal, 'LayoutBuilder:LayoutBuilderModal');

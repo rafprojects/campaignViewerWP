@@ -13,20 +13,40 @@ import { useState, useCallback } from 'react';
 import { Box, Group, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
+
+function resolveCompactGridAspectRatio(settings: GalleryBehaviorSettings, cardWidth: number, itemScale: number): string {
+  if (settings.gridCardAspectRatio && settings.gridCardAspectRatio !== 'auto') {
+    return settings.gridCardAspectRatio.replace(':', ' / ');
+  }
+
+  const legacyCardHeight = Math.max(1, Math.round((settings.gridCardHeight ?? 224) * itemScale));
+  return `${Math.max(1, cardWidth)} / ${legacyCardHeight}`;
+}
 
 interface CompactGridGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function CompactGridGallery({ media, settings, containerDimensions: _containerDimensions }: CompactGridGalleryProps) {
+export function CompactGridGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: CompactGridGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   const openAt = useCallback(
     (index: number) => {
@@ -38,37 +58,46 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
 
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
 
-  const cardWidth = settings.gridCardWidth;
-  const cardHeight = settings.gridCardHeight;
-  const borderRadius = settings.imageBorderRadius;
-  const gap = settings.adapterItemGap ?? 16;
+  const itemSc = settings.itemScale ?? 1;
+  const cardWidth = Math.round((settings.gridCardWidth ?? 160) * itemSc);
+  const cardWidthUnit = settings.gridCardWidthUnit ?? 'px';
+  const aspectRatio = resolveCompactGridAspectRatio(settings, cardWidth, itemSc);
+  const maxColumns = Math.max(0, Math.min(8, settings.gridCardMaxColumns ?? 0));
+  const minCardHeight = Math.max(0, settings.gridCardMinHeight ?? 0);
+  const borderRadius = toCssOrNumber(settings.imageBorderRadius, settings.imageBorderRadiusUnit);
+  const gap = common.adapterItemGap ?? 16;
+  const gapUnit = common.adapterItemGapUnit ?? 'px';
+  const cardWidthCss = toCss(cardWidth, cardWidthUnit);
+  const gridMaxWidth = maxColumns > 0
+    ? `min(100%, calc((${cardWidthCss} * ${maxColumns}) + ${toCss(gap * Math.max(0, maxColumns - 1), gapUnit)}))`
+    : undefined;
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  // Adapter sizing: fill = no maxWidth restriction; manual = percentage of parent
-  const isManual = settings.adapterSizingMode === 'manual';
-  const adapterSizing: React.CSSProperties = isManual
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
-            Gallery ({media.length})
+    <Stack {...getWpsgDebugProps('CompactGridGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+      {heading.visible && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
+            {heading.label}
           </Group>
         </Title>
       )}
 
       {/* auto-fit collapses empty tracks so justify-content can distribute items */}
       <Box
+        {...getWpsgDebugProps('CompactGridGallery', 'grid')}
         style={{
           display: 'grid',
           width: '100%',
-          gridTemplateColumns: `repeat(auto-fit, minmax(min(${cardWidth}px, calc(50% - ${gap / 2}px)), ${cardWidth}px))`,
-          gap: `${gap}px`,
-          justifyContent: settings.adapterJustifyContent || 'center',
+          maxWidth: gridMaxWidth,
+          marginInline: gridMaxWidth ? 'auto' : undefined,
+          gridTemplateColumns: `repeat(auto-fit, minmax(min(${cardWidthCss}, calc(50% - ${toCss(gap / 2, gapUnit)})), ${cardWidthCss}))`,
+          gap: toCss(gap, gapUnit),
+          justifyContent: common.adapterJustifyContent || 'center',
         }}
       >
         {media.map((item, index) => (
@@ -76,9 +105,9 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
             key={item.id}
             item={item}
             index={index}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            borderRadius={item.type === 'video' ? settings.videoBorderRadius : borderRadius}
+            aspectRatio={aspectRatio}
+            minHeight={minCardHeight > 0 ? toCssOrNumber(minCardHeight, 'px') : undefined}
+            borderRadius={item.type === 'video' ? toCssOrNumber(settings.videoBorderRadius, settings.videoBorderRadiusUnit) : borderRadius}
             onOpen={openAt}
           />
         ))}
@@ -91,23 +120,30 @@ export function CompactGridGallery({ media, settings, containerDimensions: _cont
         onPrev={prev}
         onNext={next}
         onClose={closeLightbox}
+        videoMaxWidth={settings.lightboxVideoMaxWidth}
+        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight}
+        videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight}
       />
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(CompactGridGallery, 'CompactGridGallery');
 
 // ─── Internal card component ────────────────────────────────────────────────
 
 interface GridCardProps {
   item: MediaItem;
   index: number;
-  cardWidth: number;
-  cardHeight: number;
-  borderRadius: number;
+  aspectRatio: string;
+  minHeight?: number | string;
+  borderRadius: number | string;
   onOpen: (index: number) => void;
 }
 
-function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: GridCardProps) {
+function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }: GridCardProps) {
   const [hovered, setHovered] = useState(false);
   const isVideo = item.type === 'video';
   const thumbSrc = item.thumbnail || item.url;
@@ -117,6 +153,7 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
 
   return (
     <Box
+      {...getWpsgDebugProps('CompactGridGallery', 'card')}
       component="button"
       onClick={() => onOpen(index)}
       onMouseEnter={() => setHovered(true)}
@@ -128,13 +165,14 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
         /* Layout */
         display: 'block',
         width: '100%',
-        aspectRatio: `${cardWidth} / ${cardHeight}`,
+        aspectRatio,
+        minHeight,
         /* Reset button styles */
         border: 'none',
         padding: 0,
         cursor: 'pointer',
         /* Card appearance */
-        borderRadius: `${borderRadius}px`,
+        borderRadius,
         overflow: 'hidden',
         position: 'relative',
         background: 'var(--wpsg-color-surface, #1a1a2e)',
@@ -219,3 +257,4 @@ function GridCard({ item, index, cardWidth, cardHeight, borderRadius, onOpen }: 
   );
 }
 
+setWpsgDebugDisplayName(GridCard, 'GridCard');

@@ -10,6 +10,7 @@ import { Badge, Popover, Stack, Text, Anchor, Loader, Alert } from '@mantine/cor
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaUsageCampaignRef } from '@/services/apiClient';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaUsageBadgeProps {
   /** Count already known from the batch summary call in MediaTab. */
@@ -17,6 +18,62 @@ interface MediaUsageBadgeProps {
   mediaId: string;
   apiClient: ApiClient;
 }
+
+interface MediaUsageBadgeContentProps {
+  loading: boolean;
+  error: string | null;
+  detail: MediaUsageCampaignRef[] | null;
+}
+
+function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeContentProps) {
+  if (loading) {
+    return (
+      <Stack {...getWpsgDebugProps('MediaUsageBadge', 'loading')} align="center" py="xs">
+        <Loader size="xs" />
+      </Stack>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert color="red" icon={<IconInfoCircle size={14} />} py="xs">
+        {error}
+      </Alert>
+    );
+  }
+
+  if (detail === null) {
+    return null;
+  }
+
+  return (
+    <Stack {...getWpsgDebugProps('MediaUsageBadge', 'detail')} gap="xs">
+      {detail.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          Not used in any campaign.
+        </Text>
+      ) : (
+        <>
+          <Text size="xs" fw={600} c="dimmed">
+            Used in campaigns:
+          </Text>
+          {detail.map((campaign) => (
+            <Anchor
+              key={campaign.id}
+              size="sm"
+              href={`?campaign=${campaign.id}`}
+              onClick={(e) => e.preventDefault()}
+            >
+              {campaign.title}
+            </Anchor>
+          ))}
+        </>
+      )}
+    </Stack>
+  );
+}
+
+setWpsgDebugDisplayName(MediaUsageBadgeContent, 'AdminPanel:MediaUsageBadge:Content');
 
 export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgeProps) {
   const [opened, setOpened] = useState(false);
@@ -50,6 +107,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
 
   return (
     <Popover
+      {...getWpsgDebugProps('MediaUsageBadge')}
       opened={opened}
       onChange={handleOpen}
       withArrow
@@ -59,6 +117,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
     >
       <Popover.Target>
         <Badge
+          {...getWpsgDebugProps('MediaUsageBadge', 'badge')}
           color={color}
           variant="light"
           size="sm"
@@ -70,43 +129,11 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
         </Badge>
       </Popover.Target>
 
-      <Popover.Dropdown>
-        {loading && (
-          <Stack align="center" py="xs">
-            <Loader size="xs" />
-          </Stack>
-        )}
-        {error && (
-          <Alert color="red" icon={<IconInfoCircle size={14} />} py="xs">
-            {error}
-          </Alert>
-        )}
-        {!loading && !error && detail !== null && (
-          <Stack gap="xs">
-            {detail.length === 0 ? (
-              <Text size="sm" c="dimmed">
-                Not used in any campaign.
-              </Text>
-            ) : (
-              <>
-                <Text size="xs" fw={600} c="dimmed">
-                  Used in campaigns:
-                </Text>
-                {detail.map((c) => (
-                  <Anchor
-                    key={c.id}
-                    size="sm"
-                    href={`?campaign=${c.id}`}
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    {c.title}
-                  </Anchor>
-                ))}
-              </>
-            )}
-          </Stack>
-        )}
+      <Popover.Dropdown {...getWpsgDebugProps('MediaUsageBadge', 'dropdown')}>
+        <MediaUsageBadgeContent loading={loading} error={error} detail={detail} />
       </Popover.Dropdown>
     </Popover>
   );
 }
+
+setWpsgDebugDisplayName(MediaUsageBadge, 'AdminPanel:MediaUsageBadge');

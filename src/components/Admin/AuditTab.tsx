@@ -1,6 +1,7 @@
 import { Group, ScrollArea, Skeleton, Table, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 /** P13-C: Skeleton rows displayed while audit entries load. */
 function AuditSkeletonRows() {
@@ -17,6 +18,8 @@ function AuditSkeletonRows() {
     </>
   );
 }
+
+setWpsgDebugDisplayName(AuditSkeletonRows, 'AdminPanel:AuditSkeletonRows');
 
 interface AuditTabProps {
   campaignSelectData: CampaignSelectItem[];
@@ -87,3 +90,5 @@ export function AuditTab({
     </>
   );
 }
+
+setWpsgDebugDisplayName(AuditTab, 'AdminPanel:AuditTab');

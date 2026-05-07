@@ -30,11 +30,12 @@ import { MediaUsageBadge } from './MediaUsageBadge';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
+import { useMediaItems } from '@/services/adminQuery';
 import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { useMediaItems } from '@/hooks/useAdminSWR';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
@@ -46,10 +47,10 @@ const LIST_PAGE_SIZE = 50;
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
-  // P13-C: SWR-cached media fetch — instant render on campaign revisit.
+  // P13-C: Query-cached media fetch — instant render on campaign revisit.
   // Local state holds the working copy for optimistic mutations (upload, delete,
-  // reorder, oEmbed enrichment). SWR data seeds it on mount / campaign change.
-  const { mediaItems, mediaLoading: swrLoading, mutateMedia } = useMediaItems(apiClient, campaignId);
+  // reorder, oEmbed enrichment). Query data seeds it on mount / campaign change.
+  const { mediaItems, mediaLoading: mediaQueryLoading, mutateMedia } = useMediaItems(apiClient, campaignId);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -140,8 +141,8 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     large: { span: { base: 12, sm: 6 }, height: 240 },
   }), []);
 
-  // Show skeleton only on first load (SWR loading and no cached data yet)
-  const effectiveLoading = swrLoading && media.length === 0;
+  // Show skeleton only on first load when no cached query data exists yet.
+  const effectiveLoading = mediaQueryLoading && media.length === 0;
 
   function getMediaTypeFromUrl(url: string): 'image' | 'video' {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
@@ -188,12 +189,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }, [apiClient, campaignId]);
 
-  // Sync local media state from SWR cache. This fires on initial load,
+  // Sync local media state from the query cache. This fires on initial load,
   // campaign switch, and background revalidation. OEmbed enrichment runs
   // once after the first sync for the current campaign.
   const enrichedRef = useRef<string>(''); // tracks campaignId already enriched
   useEffect(() => {
-    if (mediaItems.length > 0 || !swrLoading) {
+    if (mediaItems.length > 0 || !mediaQueryLoading) {
       setMedia(mediaItems);
       // Run oEmbed enrichment once per campaign after initial data arrives
       if (campaignId && mediaItems.length > 0 && enrichedRef.current !== campaignId) {
@@ -201,7 +202,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         void enrichOEmbedMetadata(mediaItems);
       }
     }
-  }, [mediaItems, swrLoading, campaignId, enrichOEmbedMetadata]);
+  }, [mediaItems, mediaQueryLoading, campaignId, enrichOEmbedMetadata]);
 
   async function handleUpload() {
     if (!selectedFile) return;
@@ -386,10 +387,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   async function saveEdit() {
     if (!editingItem) return;
     try {
-      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, { 
+      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, {
         title: editingTitle.trim() || undefined,
-        caption: editingCaption, 
-        thumbnail: editingThumbnail 
+        caption: editingCaption,
+        thumbnail: editingThumbnail
       });
       setMedia((m) => m.map((it) => (it.id === updated.id ? updated : it)));
       setEditOpen(false);
@@ -454,7 +455,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   );
 
   // P18-G: Fetch usage summary whenever the rendered media list changes (use
-  // `media`, not the SWR seed `mediaItems`, so mutations stay in sync)
+  // `media`, not the query seed `mediaItems`, so mutations stay in sync)
   useEffect(() => {
     if (usageSummaryIds.length === 0) {
       setUsageSummary({});
@@ -909,3 +910,5 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     </div>
   );
 }
+
+setWpsgDebugDisplayName(MediaTab, 'AdminPanel:MediaTab');

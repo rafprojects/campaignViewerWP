@@ -2,6 +2,7 @@ import { Badge, Button, Card, Center, Group, Image, Loader, SimpleGrid, Stack, T
 import { IconPhoto } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaLibraryPickerProps {
   libraryMedia: MediaItem[];
@@ -107,3 +108,5 @@ export function MediaLibraryPicker({
     </Card>
   );
 }
+
+setWpsgDebugDisplayName(MediaLibraryPicker, 'MediaLibraryPicker');

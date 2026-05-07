@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { fireEvent, render, screen } from '@/test/test-utils';
+import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 import { GalleryConfigEditorModal } from './GalleryConfigEditorModal';
+
+function openAccordionSection(name: string) {
+  fireEvent.click(screen.getByRole('button', { name }));
+}
 
 describe('GalleryConfigEditorModal', () => {
   it('renders the first schema-driven adapter-specific field for masonry selections', async () => {
@@ -51,7 +56,9 @@ describe('GalleryConfigEditorModal', () => {
                 adapterId: 'compact-grid',
                 adapterSettings: {
                   gridCardWidth: 180,
-                  gridCardHeight: 240,
+                  gridCardAspectRatio: '3:4',
+                  gridCardMaxColumns: 3,
+                  gridCardMinHeight: 220,
                 },
               },
             },
@@ -62,10 +69,13 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByLabelText('Card Min Width (px)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Card Height (px)')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Card Width')).toBeInTheDocument();
+    expect(screen.getByLabelText('Card Aspect Ratio', { selector: 'input' })).toHaveValue('3:4 (portrait)');
+    expect(screen.getByLabelText('Max Columns (0 = auto)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Card Min Height (px)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('180')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('240')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('3')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('220')).toBeInTheDocument();
   });
 
   it('renders schema-driven carousel adapter fields for classic selections', async () => {
@@ -118,10 +128,10 @@ describe('GalleryConfigEditorModal', () => {
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
     expect(screen.getByText('Media Frame')).toBeInTheDocument();
-    expect(screen.getByLabelText('Image Border Radius (px)')).toHaveValue('14');
-    expect(screen.getByLabelText('Video Border Radius (px)')).toHaveValue('18');
-    expect(screen.getByLabelText('Image Viewport Height (px)')).toHaveValue('560');
-    expect(screen.getByLabelText('Video Viewport Height (px)')).toHaveValue('500');
+    expect(screen.getByLabelText('Image Border Radius')).toHaveValue('14');
+    expect(screen.getByLabelText('Video Border Radius')).toHaveValue('18');
+    expect(screen.getByLabelText('Image Viewport Height')).toHaveValue('560');
+    expect(screen.getByLabelText('Video Viewport Height')).toHaveValue('500');
     expect(screen.getByLabelText('Image Shadow Preset', { selector: 'input' })).toHaveValue('Custom');
     expect(screen.getByLabelText('Image Custom Shadow')).toHaveValue('0 8px 24px rgba(0,0,0,0.35)');
     expect(screen.getByLabelText('Video Shadow Preset', { selector: 'input' })).toHaveValue('Strong');
@@ -148,6 +158,8 @@ describe('GalleryConfigEditorModal', () => {
 
   it('uses breakpoint tabs to edit unified adapter settings without collapsing them to desktop only', async () => {
     const onSave = vi.fn();
+    const tabletAdapterLabel = getAdapterSelectOptions({ context: 'unified-gallery', breakpoint: 'tablet' })
+      .find((option) => option.value === 'justified')?.label;
 
     render(
       <GalleryConfigEditorModal
@@ -188,14 +200,15 @@ describe('GalleryConfigEditorModal', () => {
     );
 
     expect(await screen.findByLabelText('Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Visible Cards')).toHaveValue('3');
+    expect(screen.getByDisplayValue('3')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
 
-    expect(await screen.findByText('Editing breakpoint-specific unified settings for the tablet layout. The unified adapter selector above still applies across all breakpoints.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Visible Cards')).toHaveValue('2');
-
-    fireEvent.change(screen.getByLabelText('Visible Cards'), { target: { value: '4' } });
+    expect(await screen.findByText('Editing breakpoint-specific unified settings for the tablet layout.')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2')).toBeInTheDocument();
+    fireEvent.change(screen.getByDisplayValue('2'), { target: { value: '4' } });
+    fireEvent.click(screen.getByLabelText('Unified Gallery Adapter', { selector: 'input' }));
+    fireEvent.click(screen.getByRole('option', { name: tabletAdapterLabel ?? 'Justified' }));
     fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
 
     expect(onSave).toHaveBeenCalledWith(
@@ -211,6 +224,7 @@ describe('GalleryConfigEditorModal', () => {
           }),
           tablet: expect.objectContaining({
             unified: expect.objectContaining({
+              adapterId: 'justified',
               adapterSettings: expect.objectContaining({
                 carouselVisibleCards: 4,
               }),
@@ -226,6 +240,105 @@ describe('GalleryConfigEditorModal', () => {
         }),
       }),
     );
+  });
+
+  it('keeps adapter-specific controls hidden until the active breakpoint has an explicit adapter override', async () => {
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: {},
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
+    expect(screen.getByText('This breakpoint is currently inheriting its adapter choice. Pick an explicit adapter above to expose adapter-specific settings here.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Visible Cards')).not.toBeInTheDocument();
+  });
+
+  it('preserves explicit classic carousel visible-card counts before saving', async () => {
+    const onSave = vi.fn();
+
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'unified',
+          breakpoints: {
+            desktop: {
+              unified: {
+                adapterId: 'classic',
+                adapterSettings: {
+                  carouselVisibleCards: 1,
+                },
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    const input = await screen.findByLabelText('Visible Cards');
+    fireEvent.change(input, { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        breakpoints: expect.objectContaining({
+          desktop: expect.objectContaining({
+            unified: expect.objectContaining({
+              adapterSettings: expect.objectContaining({
+                carouselVisibleCards: 4,
+              }),
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('emits undefined draft changes when clearMode is draft-backed', async () => {
+    const onChange = vi.fn();
+
+    render(
+      <GalleryConfigEditorModal
+        opened={true}
+        title="Responsive Gallery Config"
+        value={{
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'masonry',
+              },
+            },
+          },
+        }}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        onChange={onChange}
+        clearMode="draft"
+        clearLabel="Preview Inherited Gallery Settings"
+      />,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Preview Inherited Gallery Settings' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Inherited Gallery Settings' }));
+
+    expect(onChange).toHaveBeenLastCalledWith(undefined);
   });
 
   it('applies shared common-setting edits to the active breakpoint only', async () => {
@@ -261,6 +374,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Section Spacing');
     expect(await screen.findByLabelText('Section Padding (px)')).toHaveValue('16');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
@@ -326,6 +440,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Viewport Backgrounds');
     expect(await screen.findByLabelText('Image Gallery Background Color')).toHaveValue('#112233');
 
     fireEvent.change(screen.getByLabelText('Image Gallery Background Color'), { target: { value: '#445566' } });
@@ -417,9 +532,9 @@ describe('GalleryConfigEditorModal', () => {
 
     expect(await screen.findByText('Adapter-Specific Settings')).toBeInTheDocument();
     expect(screen.getByText('Shape Layout')).toBeInTheDocument();
-    expect(screen.getByLabelText('Image Tile Size (px)')).toHaveValue('180');
-    expect(screen.getByLabelText('Gap X (px)')).toHaveValue('12');
-    expect(screen.getByLabelText('Gap Y (px)')).toHaveValue('10');
+    expect(screen.getByLabelText('Image Tile Size')).toHaveValue('180');
+    expect(screen.getByLabelText('Gap X')).toHaveValue('12');
+    expect(screen.getByLabelText('Gap Y')).toHaveValue('10');
     expect(screen.getByText('Tile Appearance')).toBeInTheDocument();
     expect(screen.getByLabelText('Border Width (px)')).toHaveValue('2');
     expect(screen.getByLabelText('Border Color')).toHaveValue('#ff0000');
@@ -484,6 +599,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Adapter Sizing');
     expect(await screen.findByDisplayValue('20')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Space Between')).toBeInTheDocument();
   });
@@ -516,6 +632,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Section Sizing');
     expect(await screen.findByDisplayValue('1200')).toBeInTheDocument();
     expect(screen.getByDisplayValue('350')).toBeInTheDocument();
     expect(screen.getByLabelText('Section Height Mode', { selector: 'input' })).toHaveValue(
@@ -551,6 +668,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Adapter Sizing');
     expect(await screen.findByDisplayValue('Manual (custom %)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('85')).toBeInTheDocument();
     expect(screen.getByDisplayValue('90')).toBeInTheDocument();
@@ -580,7 +698,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByText('Shared Gallery Height')).toBeInTheDocument();
+    openAccordionSection('Shared Gallery Height');
     expect(screen.getByLabelText('Height Constraint', { selector: 'input' })).toHaveValue('Manually control height');
     expect(screen.getByLabelText('Manual Gallery Height')).toHaveValue('75vh');
   });
@@ -612,6 +730,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
+    openAccordionSection('Shared Gallery Presentation');
     expect(await screen.findByDisplayValue('Photos')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Clips')).toBeInTheDocument();
     expect(screen.getByLabelText('Gallery Label Justification', { selector: 'input' })).toHaveValue('Center');
@@ -650,7 +769,7 @@ describe('GalleryConfigEditorModal', () => {
       />,
     );
 
-    expect(await screen.findByText('Viewport Backgrounds')).toBeInTheDocument();
+    openAccordionSection('Viewport Backgrounds');
     expect(screen.getByLabelText('Image Gallery Background', { selector: 'input' })).toHaveValue('Solid Color');
     expect(screen.getByLabelText('Image Gallery Background Color')).toHaveValue('#112233');
     expect(screen.getByLabelText('Video Gallery Background', { selector: 'input' })).toHaveValue('Gradient');

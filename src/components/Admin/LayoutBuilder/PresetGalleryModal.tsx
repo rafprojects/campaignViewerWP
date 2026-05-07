@@ -7,6 +7,7 @@
 import { Modal, SimpleGrid, Card, Text, Group, Badge, Box } from '@mantine/core';
 import { IconLayoutDashboard } from '@tabler/icons-react';
 import { LAYOUT_PRESETS, type LayoutPreset } from '@/data/layoutPresets';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -56,6 +57,8 @@ function PresetPreview({ preset }: { preset: LayoutPreset }) {
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(PresetPreview, 'LayoutBuilder:PresetGalleryModal:PresetPreview');
 
 // ── Component ────────────────────────────────────────────────
 
@@ -127,3 +130,5 @@ export function PresetGalleryModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(PresetGalleryModal, 'LayoutBuilder:PresetGalleryModal');

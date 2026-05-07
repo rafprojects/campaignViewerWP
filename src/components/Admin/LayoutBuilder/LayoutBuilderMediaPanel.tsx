@@ -9,6 +9,7 @@ import { useBuilderDock } from './BuilderDockContext';
 import { MediaPickerSidebar } from './MediaPickerSidebar';
 import { AssetUploader } from './AssetUploader';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
   const {
@@ -94,3 +95,5 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
     </div>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderMediaPanel, 'LayoutBuilder:LayoutBuilderMediaPanel');

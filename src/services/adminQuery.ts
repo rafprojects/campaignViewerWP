@@ -1,0 +1,475 @@
+import {
+  useQuery,
+  type QueryClient,
+} from '@tanstack/react-query';
+
+import type {
+  AccessRequest,
+  ApiClient,
+  CampaignAnalyticsResponse,
+  CampaignCategoryEntry,
+} from '@/services/apiClient';
+import type { GalleryConfig, MediaItem } from '@/types';
+import { sortByOrder } from '@/utils/sortByOrder';
+
+type ListResponse<T> = T[] | { items?: T[]; entries?: T[]; grants?: T[]; data?: T[] };
+
+const normalizeListResponse = <T,>(response: ListResponse<T>): T[] => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.items)) return response.items;
+  if (Array.isArray(response.entries)) return response.entries;
+  if (Array.isArray(response.grants)) return response.grants;
+  if (Array.isArray(response.data)) return response.data;
+  return [];
+};
+
+export interface AdminCampaign {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'draft' | 'active' | 'archived';
+  visibility: 'public' | 'private';
+  createdAt: string;
+  updatedAt: string;
+  companyId: string;
+  companyName?: string;
+  tags: string[];
+  publishAt?: string;
+  unpublishAt?: string;
+  layoutTemplateId?: string;
+  galleryOverrides?: Partial<GalleryConfig>;
+  categories?: string[];
+}
+
+interface ApiCampaignResponse {
+  items: AdminCampaign[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface CampaignPagination {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface AuditEntry {
+  id: string;
+  action: string;
+  details: Record<string, unknown>;
+  userId: number;
+  createdAt: string;
+}
+
+export interface CompanyInfo {
+  id: number;
+  name: string;
+  slug: string;
+  campaignCount: number;
+  activeCampaigns: number;
+  archivedCampaigns: number;
+  accessGrantCount: number;
+  campaigns: Array<{ id: number; title: string; status: string }>;
+}
+
+export interface CompanyAccessGrant {
+  userId: number;
+  user?: { displayName: string; email: string };
+  source: 'campaign' | 'company';
+  grantedAt?: string;
+  campaignId?: number;
+  campaignTitle?: string;
+  campaignStatus?: string;
+  companyId?: number;
+  companyName?: string;
+}
+
+const ADMIN_QUERY_STALE_TIME = 3_000;
+const SELECTOR_QUERY_STALE_TIME = 30_000;
+const CATEGORY_QUERY_STALE_TIME = 60_000;
+const ANALYTICS_QUERY_STALE_TIME = 10_000;
+const ACCESS_REQUESTS_QUERY_STALE_TIME = 5_000;
+const PREFETCH_CONCURRENCY = 6;
+const MAX_SELECTOR_PAGES = 20;
+
+const ADMIN_QUERY_OPTIONS = {
+  retry: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const;
+
+function getApiClientCacheBase(apiClient: ApiClient) {
+  return typeof apiClient.getBaseUrl === 'function' ? apiClient.getBaseUrl() : 'default';
+}
+
+function getAdminQueryPrefix(apiClient: ApiClient) {
+  return ['admin', getApiClientCacheBase(apiClient)] as const;
+}
+
+export function getAdminCampaignsQueryKey(apiClient: ApiClient, page = 1, perPage = 20) {
+  return [...getAdminQueryPrefix(apiClient), 'campaigns', page, perPage] as const;
+}
+
+export function getAdminCampaignOptionsQueryKey(apiClient: ApiClient) {
+  return [...getAdminQueryPrefix(apiClient), 'campaign-options'] as const;
+}
+
+export function getAccessGrantsQueryKey(
+  apiClient: ApiClient,
+  mode: 'campaign' | 'company' | 'all',
+  targetId: string,
+) {
+  return [...getAdminQueryPrefix(apiClient), 'access', mode, targetId] as const;
+}
+
+export function getCompaniesQueryKey(apiClient: ApiClient) {
+  return [...getAdminQueryPrefix(apiClient), 'companies'] as const;
+}
+
+export function getAuditEntriesQueryKey(apiClient: ApiClient, campaignId: string) {
+  return [...getAdminQueryPrefix(apiClient), 'audit', campaignId] as const;
+}
+
+export function getMediaItemsQueryKey(apiClient: ApiClient, campaignId: string) {
+  return [...getAdminQueryPrefix(apiClient), 'media', campaignId] as const;
+}
+
+export function getCampaignCategoriesQueryKey(apiClient: ApiClient) {
+  return [...getAdminQueryPrefix(apiClient), 'campaign-categories'] as const;
+}
+
+export function getCampaignAnalyticsQueryKey(
+  apiClient: ApiClient,
+  campaignId: string,
+  from: string,
+  to: string,
+) {
+  return [...getAdminQueryPrefix(apiClient), 'campaign-analytics', campaignId, from, to] as const;
+}
+
+export function getAccessRequestsQueryKey(
+  apiClient: ApiClient,
+  campaignId: string,
+  status?: string,
+) {
+  return [...getAdminQueryPrefix(apiClient), 'access-requests', campaignId, status ?? 'all'] as const;
+}
+
+async function fetchAdminCampaigns(
+  apiClient: ApiClient,
+  page: number,
+  perPage: number,
+): Promise<{ campaigns: AdminCampaign[]; pagination: CampaignPagination }> {
+  const response = await apiClient.get<ApiCampaignResponse>(
+    `/wp-json/wp-super-gallery/v1/campaigns?page=${page}&per_page=${perPage}`,
+  );
+
+  return {
+    campaigns: response.items ?? [],
+    pagination: {
+      page: response.page ?? page,
+      perPage: response.perPage ?? perPage,
+      total: response.total ?? 0,
+      totalPages: response.totalPages ?? 1,
+    },
+  };
+}
+
+async function fetchAllCampaignOptions(apiClient: ApiClient): Promise<AdminCampaign[]> {
+  const all: AdminCampaign[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const response = await apiClient.get<ApiCampaignResponse>(
+      `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}`,
+    );
+    all.push(...(response.items ?? []));
+    totalPages = response.totalPages ?? 1;
+    page += 1;
+  } while (page <= totalPages && page <= MAX_SELECTOR_PAGES);
+
+  return all;
+}
+
+async function fetchAccessGrants(
+  apiClient: ApiClient,
+  mode: 'campaign' | 'company' | 'all',
+  targetId: string,
+): Promise<CompanyAccessGrant[]> {
+  if (mode === 'campaign') {
+    const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${targetId}/access`,
+    );
+    return normalizeListResponse(response);
+  }
+
+  const includeCampaigns = mode === 'all';
+  const url = `/wp-json/wp-super-gallery/v1/companies/${targetId}/access${includeCampaigns ? '?include_campaigns=true' : ''}`;
+  const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(url);
+  return normalizeListResponse(response);
+}
+
+async function fetchCompanies(apiClient: ApiClient): Promise<CompanyInfo[]> {
+  const response = await apiClient.get<ListResponse<CompanyInfo>>(
+    '/wp-json/wp-super-gallery/v1/companies',
+  );
+  return normalizeListResponse(response);
+}
+
+async function fetchAuditEntries(apiClient: ApiClient, campaignId: string): Promise<AuditEntry[]> {
+  const response = await apiClient.get<ListResponse<AuditEntry>>(
+    `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`,
+  );
+  return normalizeListResponse(response);
+}
+
+async function fetchMediaItems(apiClient: ApiClient, campaignId: string): Promise<MediaItem[]> {
+  const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
+    `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`,
+  );
+  const items = Array.isArray(response) ? response : response.items ?? [];
+  return sortByOrder(items);
+}
+
+function staggeredPrefetch(
+  ids: string[],
+  run: (id: string) => Promise<void>,
+  staggerMs: number,
+): () => void {
+  let cancelled = false;
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const batches: string[][] = [];
+
+  for (let index = 0; index < ids.length; index += PREFETCH_CONCURRENCY) {
+    batches.push(ids.slice(index, index + PREFETCH_CONCURRENCY));
+  }
+
+  let batchIndex = 0;
+
+  function runNextBatch() {
+    if (cancelled || batchIndex >= batches.length) {
+      return;
+    }
+
+    const batch = batches[batchIndex++];
+    Promise.allSettled(batch.map(run)).then(() => {
+      if (!cancelled) {
+        timers.push(setTimeout(runNextBatch, staggerMs));
+      }
+    });
+  }
+
+  runNextBatch();
+
+  return () => {
+    cancelled = true;
+    timers.forEach(clearTimeout);
+  };
+}
+
+export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20) {
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: getAdminCampaignsQueryKey(apiClient, page, perPage),
+    queryFn: () => fetchAdminCampaigns(apiClient, page, perPage),
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    campaigns: data?.campaigns ?? [],
+    pagination: data?.pagination ?? { page, perPage, total: 0, totalPages: 1 },
+    campaignsLoading: isLoading,
+    campaignsError: error instanceof Error ? error.message : error ? 'Failed to load campaigns' : null,
+    mutateCampaigns: refetch,
+  };
+}
+
+export function useAllCampaignOptions(apiClient: ApiClient, enabled = true) {
+  const { data } = useQuery({
+    queryKey: getAdminCampaignOptionsQueryKey(apiClient),
+    queryFn: () => fetchAllCampaignOptions(apiClient),
+    staleTime: SELECTOR_QUERY_STALE_TIME,
+    enabled,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return data ?? [];
+}
+
+export function useAccessGrants(
+  apiClient: ApiClient,
+  mode: 'campaign' | 'company' | 'all',
+  targetId: string,
+) {
+  const enabled = Boolean(targetId);
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: getAccessGrantsQueryKey(apiClient, mode, targetId || 'none'),
+    queryFn: () => fetchAccessGrants(apiClient, mode, targetId),
+    enabled,
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    accessEntries: data ?? [],
+    accessLoading: isLoading,
+    accessError: error ?? null,
+    mutateAccess: refetch,
+  };
+}
+
+export function useCompanies(apiClient: ApiClient, enabled: boolean) {
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: getCompaniesQueryKey(apiClient),
+    queryFn: () => fetchCompanies(apiClient),
+    enabled,
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    companies: data ?? [],
+    companiesLoading: isLoading,
+    companiesError: error ?? null,
+    mutateCompanies: refetch,
+  };
+}
+
+export function useAuditEntries(apiClient: ApiClient, campaignId: string) {
+  const enabled = Boolean(campaignId);
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: getAuditEntriesQueryKey(apiClient, campaignId || 'none'),
+    queryFn: () => fetchAuditEntries(apiClient, campaignId),
+    enabled,
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    auditEntries: data ?? [],
+    auditLoading: isLoading,
+    auditError: error ?? null,
+    mutateAudit: refetch,
+  };
+}
+
+export function useMediaItems(apiClient: ApiClient, campaignId: string) {
+  const enabled = Boolean(campaignId);
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: getMediaItemsQueryKey(apiClient, campaignId || 'none'),
+    queryFn: () => fetchMediaItems(apiClient, campaignId),
+    enabled,
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    mediaItems: data ?? [],
+    mediaLoading: isLoading,
+    mediaError: error ?? null,
+    mutateMedia: refetch,
+  };
+}
+
+export function useCampaignCategories(apiClient: ApiClient, enabled = true) {
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: getCampaignCategoriesQueryKey(apiClient),
+    queryFn: () => apiClient.listCampaignCategories(),
+    enabled,
+    staleTime: CATEGORY_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    campaignCategories: data ?? [],
+    categoriesLoading: isLoading,
+    categoriesError: error ?? null,
+    mutateCampaignCategories: refetch,
+  };
+}
+
+export function useCampaignAnalytics(
+  apiClient: ApiClient,
+  campaignId: string | null,
+  from: string,
+  to: string,
+) {
+  return useQuery<CampaignAnalyticsResponse>({
+    queryKey: getCampaignAnalyticsQueryKey(apiClient, campaignId || 'none', from, to),
+    queryFn: () => apiClient.getCampaignAnalytics(campaignId!, from, to),
+    enabled: Boolean(campaignId),
+    staleTime: ANALYTICS_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+}
+
+export function useAccessRequests(
+  apiClient: ApiClient,
+  campaignId: string,
+  status?: string,
+) {
+  return useQuery<AccessRequest[]>({
+    queryKey: getAccessRequestsQueryKey(apiClient, campaignId || 'none', status),
+    queryFn: () => apiClient.listAccessRequests(campaignId, status),
+    enabled: Boolean(campaignId),
+    staleTime: ACCESS_REQUESTS_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+}
+
+export function prefetchAllCampaignAccess(
+  apiClient: ApiClient,
+  campaignIds: string[],
+  queryClient: QueryClient,
+): () => void {
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => queryClient.prefetchQuery({
+      queryKey: getAccessGrantsQueryKey(apiClient, 'campaign', id),
+      queryFn: () => fetchAccessGrants(apiClient, 'campaign', id),
+      staleTime: ADMIN_QUERY_STALE_TIME,
+      ...ADMIN_QUERY_OPTIONS,
+    }),
+    60,
+  );
+}
+
+export function prefetchAllCampaignAudit(
+  apiClient: ApiClient,
+  campaignIds: string[],
+  queryClient: QueryClient,
+): () => void {
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => queryClient.prefetchQuery({
+      queryKey: getAuditEntriesQueryKey(apiClient, id),
+      queryFn: () => fetchAuditEntries(apiClient, id),
+      staleTime: ADMIN_QUERY_STALE_TIME,
+      ...ADMIN_QUERY_OPTIONS,
+    }),
+    60,
+  );
+}
+
+export function prefetchAllCampaignMedia(
+  apiClient: ApiClient,
+  campaignIds: string[],
+  queryClient: QueryClient,
+): () => void {
+  return staggeredPrefetch(
+    campaignIds,
+    (id) => queryClient.prefetchQuery({
+      queryKey: getMediaItemsQueryKey(apiClient, id),
+      queryFn: () => fetchMediaItems(apiClient, id),
+      staleTime: ADMIN_QUERY_STALE_TIME,
+      ...ADMIN_QUERY_OPTIONS,
+    }),
+    80,
+  );
+}
+
+export type { AccessRequest, CampaignAnalyticsResponse, CampaignCategoryEntry };

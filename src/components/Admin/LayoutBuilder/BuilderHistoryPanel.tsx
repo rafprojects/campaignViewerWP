@@ -3,6 +3,7 @@ import { Stack, Text, Box, ActionIcon, Tooltip, Group, ScrollArea, UnstyledButto
 import { IconClockHour4, IconTrash } from '@tabler/icons-react';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Component ────────────────────────────────────────────────
 
@@ -150,3 +151,5 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(BuilderHistoryPanel, 'LayoutBuilder:BuilderHistoryPanel');

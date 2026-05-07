@@ -5,6 +5,8 @@ import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { RequestAccessForm } from './RequestAccessForm';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import styles from './CampaignCard.module.scss';
@@ -16,14 +18,23 @@ interface CampaignCardProps {
   settings?: GalleryBehaviorSettings;
   apiClient?: ApiClient;
   maxWidth?: number;
-  maxWidthUnit?: 'px' | '%';
+  maxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth, maxWidthUnit = 'px' }, ref) => {
     const borderRadius = settings?.cardBorderRadius ?? 8;
+    const borderRadiusUnit = settings?.cardBorderRadiusUnit ?? 'px';
     const borderWidth = settings?.cardBorderWidth ?? 4;
     const borderMode = settings?.cardBorderMode ?? 'auto';
+    const lockedOpacity = settings?.cardLockedOpacity ?? 0.5;
+    const lockIconSize = settings?.cardLockIconSize ?? 32;
+    const accessIconSize = settings?.cardAccessIconSize ?? 14;
+    const badgeOffsetY = settings?.cardBadgeOffsetY ?? 8;
+    const companyBadgeMaxWidth = settings?.cardCompanyBadgeMaxWidth ?? 160;
+    const thumbnailHoverTransitionMs = settings?.cardThumbnailHoverTransitionMs ?? 300;
+    const gradientStartOpacity = settings?.cardGradientStartOpacity ?? 0;
+    const gradientEndOpacity = settings?.cardGradientEndOpacity ?? 0.85;
     // Resolve border color based on mode
     let resolvedBorderColor = campaign.company.brandColor;
     if (borderMode === 'single') {
@@ -32,7 +43,12 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
       resolvedBorderColor = campaign.borderColor;
     }
     const thumbHeight = settings?.cardThumbnailHeight ?? 200;
+    const thumbHeightUnit = settings?.cardThumbnailHeightUnit ?? 'px';
     const thumbFit = (settings?.cardThumbnailFit ?? 'cover') as 'cover' | 'contain';
+    const scale = settings?.cardScale ?? 1;
+    const scaledThumbHeight = Math.round(thumbHeight * scale);
+    const scaledMinHeight = settings?.cardMinHeight ? Math.round(settings.cardMinHeight * scale) : settings?.cardMinHeight;
+    const minHeightUnit = settings?.cardMinHeightUnit ?? 'px';
     const shadow = settings?.cardShadowPreset ?? 'subtle';
     const shadowMap: Record<string, string> = {
       none: 'none',
@@ -45,6 +61,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     const showInfo = settings?.showCardInfoPanel !== false;
     const safeSettings = settings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
     const cardTitleStyle = useTypographyStyle('cardTitle', safeSettings);
+    const thumbnailFade = `linear-gradient(to top, color-mix(in srgb, var(--wpsg-color-background) ${Math.round(gradientEndOpacity * 100)}%, transparent) 0%, color-mix(in srgb, var(--wpsg-color-background) ${Math.round(gradientStartOpacity * 100)}%, transparent) 100%)`;
     return (
       <UnstyledButton
         ref={ref}
@@ -58,14 +75,14 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
         className={styles.card}
         style={{
           cursor: hasAccess ? 'pointer' : 'not-allowed',
-          opacity: hasAccess ? 1 : 0.75,
+          opacity: hasAccess ? 1 : lockedOpacity,
           width: '100%',
-          ...(maxWidth ? { maxWidth: `${maxWidth}${maxWidthUnit}` } : {}),
+          ...(maxWidth ? { maxWidth: toCss(maxWidth, maxWidthUnit) } : {}),
         }}
       >
         <Card
           padding={0}
-          radius={borderRadius}
+          radius={toCssOrNumber(borderRadius, borderRadiusUnit)}
           withBorder={showBorder}
           style={{
             position: 'relative',
@@ -75,41 +92,41 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             ...(showBorder ? { borderLeft: `${borderWidth}px solid ${resolvedBorderColor}` } : {}),
             boxShadow: cardShadow,
             ...(settings?.cardAspectRatio && settings.cardAspectRatio !== 'auto' ? { aspectRatio: settings.cardAspectRatio.replace(':', ' / ') } : {}),
-            ...(settings?.cardMinHeight ? { minHeight: `${settings.cardMinHeight}px` } : {}),
+            ...(scaledMinHeight ? { minHeight: toCss(scaledMinHeight, minHeightUnit) } : {}),
           }}
         >
           {/* Thumbnail Section */}
           <Card.Section
             pos="relative"
-            h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : undefined}
+            h={showInfo ? { base: toCssOrNumber(Math.round(scaledThumbHeight * 0.8), thumbHeightUnit), sm: toCssOrNumber(scaledThumbHeight, thumbHeightUnit) } : undefined}
             style={!showInfo ? { flex: 1, overflow: 'hidden' } : undefined}
             component="div"
           >
-            <Image 
-              src={campaign.thumbnail} 
+            <Image
+              src={campaign.thumbnail}
               alt={campaign.title}
-              h={showInfo ? { base: Math.round(thumbHeight * 0.8), sm: thumbHeight } : '100%'}
+              h={showInfo ? { base: toCssOrNumber(Math.round(scaledThumbHeight * 0.8), thumbHeightUnit), sm: toCssOrNumber(scaledThumbHeight, thumbHeightUnit) } : '100%'}
               fit={thumbFit}
               loading="lazy"
-              style={{ 
+              style={{
                 filter: hasAccess ? 'none' : 'grayscale(100%)',
-                transition: 'transform 0.5s ease'
+                transition: `transform ${thumbnailHoverTransitionMs}ms ease`
               }}
               className={styles.thumbnailImage}
             />
-            
+
             {/* Overlay gradient */}
             {settings?.showCardThumbnailFade !== false && (
-            <Box
-              pos="absolute"
-              inset={0}
-              style={{
-                background: 'linear-gradient(to top, var(--wpsg-color-background) 0%, color-mix(in srgb, var(--wpsg-color-background) 40%, transparent) 40%, transparent 70%)',
-                pointerEvents: 'none'
-              }}
-            />
+              <Box
+                pos="absolute"
+                inset={0}
+                style={{
+                  background: thumbnailFade,
+                  pointerEvents: 'none'
+                }}
+              />
             )}
-            
+
             {/* Lock overlay for inaccessible cards */}
             {!hasAccess && (
               <Box
@@ -140,7 +157,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                       justifyContent: 'center',
                     }}
                   >
-                    <IconLock size={32} color="var(--wpsg-color-text-muted)" />
+                    <IconLock size={lockIconSize} color="var(--wpsg-color-text-muted)" />
                   </Box>
                 )}
               </Box>
@@ -150,10 +167,10 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             {hasAccess && settings?.showCardAccessBadge !== false && (
               <Badge
                 pos="absolute"
-                top={12}
+                top={badgeOffsetY}
                 right={12}
                 color="green"
-                leftSection={<IconEye size={14} />}
+                leftSection={<IconEye size={accessIconSize} />}
               >
                 Access
               </Badge>
@@ -161,61 +178,61 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
 
             {/* Company badge */}
             {settings?.showCardCompanyName !== false && (
-            <Badge
-              pos="absolute"
-              top={12}
-              left={12}
-              maw="70%"
-              style={{ backgroundColor: campaign.company.brandColor, overflow: 'hidden', textOverflow: 'ellipsis' }}
-            >
-              <Group gap={6}>
-                <CompanyLogo logo={campaign.company.logo} companyName={campaign.company.name} />
-                <span>{campaign.company.name}</span>
-              </Group>
-            </Badge>
+              <Badge
+                pos="absolute"
+                top={badgeOffsetY}
+                left={12}
+                maw={companyBadgeMaxWidth}
+                style={{ backgroundColor: campaign.company.brandColor, overflow: 'hidden', textOverflow: 'ellipsis' }}
+              >
+                <Group gap={6}>
+                  <CompanyLogo logo={campaign.company.logo} companyName={campaign.company.name} />
+                  <span>{campaign.company.name}</span>
+                </Group>
+              </Badge>
             )}
           </Card.Section>
 
           {/* Content Section */}
           {showInfo && (
-          <Card.Section p="md">
-          <Stack gap="sm">
-            {settings?.showCardTitle !== false && (
-            <Text fw={600} size="lg" lineClamp={1} style={cardTitleStyle}>
-              {campaign.title}
-            </Text>
-            )}
-            
-            {settings?.showCardDescription !== false && (
-            <Text size="sm" c="dimmed" lineClamp={2}>
-              {campaign.description}
-            </Text>
-            )}
+            <Card.Section p="md">
+              <Stack gap="sm">
+                {settings?.showCardTitle !== false && (
+                  <Text fw={600} size="lg" lineClamp={1} style={cardTitleStyle}>
+                    {campaign.title}
+                  </Text>
+                )}
 
-            {/* Tags */}
-            <Group gap={6}>
-              {campaign.tags.map((tag) => (
-                <Badge key={tag} variant="light" size="sm">
-                  #{tag}
-                </Badge>
-              ))}
-            </Group>
+                {settings?.showCardDescription !== false && (
+                  <Text size="sm" c="dimmed" lineClamp={2}>
+                    {campaign.description}
+                  </Text>
+                )}
 
-            {/* Previous counts layout (kept for quick revert)
+                {/* Tags */}
+                <Group gap={6}>
+                  {campaign.tags.map((tag) => (
+                    <Badge key={tag} variant="light" size="sm">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </Group>
+
+                {/* Previous counts layout (kept for quick revert)
             <Group gap="md" mt="auto">
               <Text size="sm" c="dimmed">🎬 {campaign.videos.length} videos</Text>
               <Text size="sm" c="dimmed">🖼️ {campaign.images.length} images</Text>
             </Group>
             */}
 
-            {settings?.showCardMediaCounts !== false && (
-            <Group gap="xs" mt="auto" className={styles.mediaStats}>
-              <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
-              <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
-            </Group>
-            )}
-          </Stack>
-          </Card.Section>
+                {settings?.showCardMediaCounts !== false && (
+                  <Group gap="xs" mt="auto" className={styles.mediaStats}>
+                    <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
+                    <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
+                  </Group>
+                )}
+              </Stack>
+            </Card.Section>
           )}
 
           {/* Hover border effect */}
@@ -225,7 +242,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 position: 'absolute',
                 inset: 0,
                 border: `2px solid ${resolvedBorderColor}`,
-                borderRadius: borderRadius,
+                borderRadius: toCssOrNumber(borderRadius, borderRadiusUnit),
                 pointerEvents: 'none',
               }}
             />
@@ -236,4 +253,4 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   },
 );
 
-CampaignCard.displayName = 'CampaignCard';
+setWpsgDebugDisplayName(CampaignCard, 'CampaignCard');

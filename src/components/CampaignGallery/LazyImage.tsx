@@ -13,6 +13,7 @@
  */
 import { useState, useCallback, type CSSProperties, type ImgHTMLAttributes } from 'react';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface LazyImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'onLoad' | 'onError'> {
   /** Additional styles merged onto the <img>. */
@@ -63,3 +64,5 @@ export function LazyImage({
     />
   );
 }
+
+setWpsgDebugDisplayName(LazyImage, 'LazyImage');

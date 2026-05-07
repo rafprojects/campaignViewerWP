@@ -157,6 +157,9 @@ class WPSG_Settings_Core_Fields {
     public static function render_allow_user_theme_override_field() {
         $value = WPSG_Settings::get_setting('allow_user_theme_override');
         ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[allow_user_theme_override]"
+               value="0">
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[allow_user_theme_override]"
@@ -167,6 +170,31 @@ class WPSG_Settings_Core_Fields {
         </label>
         <p class="description">
             <?php esc_html_e('When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors.', 'wp-super-gallery'); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render debug component markers checkbox.
+     *
+     * @return void
+     */
+    public static function render_debug_component_markers_field() {
+        $value = WPSG_Settings::get_setting('debug_component_markers');
+        ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[debug_component_markers]"
+               value="0">
+        <label>
+            <input type="checkbox"
+                   name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[debug_component_markers]"
+                   id="wpsg_debug_component_markers"
+                   value="1"
+                   <?php checked((bool) $value, true); ?>>
+            <?php esc_html_e('Keep React DevTools names and emit DOM component markers in deployed builds.', 'wp-super-gallery'); ?>
+        </label>
+        <p class="description">
+            <?php esc_html_e('Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging.', 'wp-super-gallery'); ?>
         </p>
         <?php
     }
@@ -227,6 +255,9 @@ class WPSG_Settings_Core_Fields {
     public static function render_lightbox_field() {
         $value = WPSG_Settings::get_setting('enable_lightbox');
         ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_lightbox]"
+               value="0">
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_lightbox]"
@@ -246,6 +277,9 @@ class WPSG_Settings_Core_Fields {
     public static function render_animations_field() {
         $value = WPSG_Settings::get_setting('enable_animations');
         ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_animations]"
+               value="0">
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[enable_animations]"

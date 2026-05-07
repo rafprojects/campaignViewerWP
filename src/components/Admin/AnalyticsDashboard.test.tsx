@@ -49,7 +49,7 @@ describe('AnalyticsDashboard', () => {
 
   it('shows empty state when no campaigns are provided', () => {
     render(<AnalyticsDashboard apiClient={makeApiClient()} campaigns={[]} />);
-    // With no campaignId the SWR key is null — no fetch, no chart
+    // With no campaignId the query is disabled — no fetch, no chart.
     expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument();
   });
 

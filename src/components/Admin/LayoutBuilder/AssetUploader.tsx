@@ -17,6 +17,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { IconUpload } from '@tabler/icons-react';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface AssetUploaderProps {
   /** Called when the user picks a file via the file dialog. */
@@ -116,3 +117,5 @@ export function AssetUploader({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(AssetUploader, 'LayoutBuilder:AssetUploader');

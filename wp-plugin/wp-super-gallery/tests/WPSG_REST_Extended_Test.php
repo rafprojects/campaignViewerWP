@@ -72,6 +72,40 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         );
     }
 
+    public function test_duplicate_campaign_can_deep_clone_layout_template() {
+        $cid      = $this->create_campaign('Original With Layout');
+        $template = WPSG_Layout_Templates::create([
+            'name'              => 'Hero Layout',
+            'canvasAspectRatio' => 16 / 9,
+            'slots'             => [
+                [
+                    'id'     => 'slot-1',
+                    'x'      => 0,
+                    'y'      => 0,
+                    'width'  => 50,
+                    'height' => 50,
+                    'zIndex' => 1,
+                    'shape'  => 'rectangle',
+                ],
+            ],
+        ]);
+
+        $this->assertIsArray($template);
+        update_post_meta($cid, '_wpsg_layout_binding_template_id', $template['id']);
+        update_post_meta($cid, '_wpsg_layout_binding', 'layout-builder');
+
+        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/duplicate");
+        $req->set_param('duplicateLayoutTemplate', true);
+        $res = rest_do_request($req);
+
+        $this->assertContains($res->get_status(), [200, 201]);
+        $data = $res->get_data();
+        $this->assertNotEquals($template['id'], $data['layoutTemplateId'] ?? null);
+        $cloned_template = WPSG_Layout_Templates::get($data['layoutTemplateId']);
+        $this->assertIsArray($cloned_template);
+        $this->assertStringContainsString('(Copy)', $cloned_template['name']);
+    }
+
     public function test_batch_campaigns_archive() {
         $c1 = $this->create_campaign('Batch1');
         $c2 = $this->create_campaign('Batch2');

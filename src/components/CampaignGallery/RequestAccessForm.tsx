@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Box, Button, Text, TextInput, Stack, Alert } from '@mantine/core';
 import { IconMail, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface RequestAccessFormProps {
   campaignId: string;
@@ -119,3 +120,5 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(RequestAccessForm, 'RequestAccessForm');

@@ -20,7 +20,7 @@
       if (contentType.indexOf('application/json') !== -1) {
         try {
           return JSON.parse(responseText);
-        } catch (error) {
+        } catch {
           return {
             success: false,
             data: {

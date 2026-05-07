@@ -16,12 +16,20 @@ import { RowsPhotoAlbum } from 'react-photo-album';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { Box, Stack, Title, Group } from '@mantine/core';
 import { IconLayoutRows, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { toCssOrNumber } from '@/utils/cssUnits';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'justified';
 
@@ -37,13 +45,16 @@ interface RpaPhoto {
 interface JustifiedGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
+export function JustifiedGallery({ media, settings, runtime }: JustifiedGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const enriched = useMediaDimensions(media);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
@@ -52,7 +63,8 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
   const close = useCallback(() => setLightboxOpen(false), []);
 
   const gap = settings.thumbnailGap ?? 6;
-  const targetRowHeight = settings.mosaicTargetRowHeight ?? 200;
+  const itemSc = settings.itemScale ?? 1;
+  const targetRowHeight = Math.round((settings.mosaicTargetRowHeight ?? 200) * itemSc);
 
   // Normalize all photos to a consistent reference height so large-resolution
   // images don't dominate the layout. react-photo-album uses width/height
@@ -70,18 +82,17 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
     };
   });
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconLayoutRows size={18} />}
-            Gallery ({media.length})
+    <Stack {...getWpsgDebugProps('JustifiedGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+      {heading.visible && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconLayoutRows size={18} />}
+            {heading.label}
           </Group>
         </Title>
       )}
@@ -98,11 +109,16 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
           // ⚠ CRITICAL: never set display here — it breaks the flex-row layout.
           // Only set overflow/radius/position which do not affect the layout flow.
           button({ style, className, ...props }, { photo }) {
-            const borderRadius = (photo as RpaPhoto).item.type === 'video' ? settings.videoBorderRadius : settings.imageBorderRadius;
+            const isVideo = (photo as RpaPhoto).item.type === 'video';
+            const borderRadius = toCssOrNumber(
+              isVideo ? settings.videoBorderRadius : settings.imageBorderRadius,
+              (isVideo ? settings.videoBorderRadiusUnit : settings.imageBorderRadiusUnit) ?? 'px',
+            );
 
             return (
               <button
                 {...props}
+                {...getWpsgDebugProps('JustifiedGallery', 'tile')}
                 className={`wpsg-tile-${SCOPE} ${className ?? ''}`}
                 style={{
                   ...style,
@@ -123,7 +139,10 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;
             const isVideo = p.item.type === 'video';
-            const borderRadius = isVideo ? settings.videoBorderRadius : settings.imageBorderRadius;
+            const borderRadius = toCssOrNumber(
+              isVideo ? settings.videoBorderRadius : settings.imageBorderRadius,
+              (isVideo ? settings.videoBorderRadiusUnit : settings.imageBorderRadiusUnit) ?? 'px',
+            );
             const iconSize = Math.max(20, Math.min(width, height) * 0.2);
             return (
               <Box
@@ -141,11 +160,13 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
                 >
                   {isVideo
                     ? <IconPlayerPlay size={iconSize} color="white"
-                        style={{ opacity: 0.8, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
+                      style={{ opacity: 0.8, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                     : <IconZoomIn size={iconSize} color="white"
-                        className="wpsg-jus-zoom"
-                        style={{ opacity: 0, transition: 'opacity 0.2s ease',
-                          filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))' }} />
+                      className="wpsg-jus-zoom"
+                      style={{
+                        opacity: 0, transition: 'opacity 0.2s ease',
+                        filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))'
+                      }} />
                   }
                 </Box>
                 {isVideo && (
@@ -172,7 +193,12 @@ export function JustifiedGallery({ media, settings }: JustifiedGalleryProps) {
       `}</style>
 
       <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
-        onPrev={prev} onNext={next} onClose={close} />
+        onPrev={prev} onNext={next} onClose={close}
+        videoMaxWidth={settings.lightboxVideoMaxWidth} videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight} videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight} />
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(JustifiedGallery, 'JustifiedGallery');

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface DotNavigatorProps {
   total: number;
@@ -169,3 +170,5 @@ export function DotNavigator({ total, currentIndex, onSelect, settings }: DotNav
     </div>
   );
 }
+
+setWpsgDebugDisplayName(DotNavigator, 'DotNavigator');

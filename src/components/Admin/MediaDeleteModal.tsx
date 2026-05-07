@@ -1,5 +1,6 @@
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import type { MediaItem } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaDeleteModalProps {
   opened: boolean;
@@ -38,3 +39,4 @@ export function MediaDeleteModal({
   );
 }
 
+setWpsgDebugDisplayName(MediaDeleteModal, 'AdminPanel:MediaDeleteModal');

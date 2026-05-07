@@ -11,6 +11,7 @@ import {
 } from '@mantine/core';
 import { IconUpload, IconInfoCircle } from '@tabler/icons-react';
 import type { CampaignExportPayload } from '@/services/apiClient';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface CampaignImportModalProps {
   opened: boolean;
@@ -18,6 +19,81 @@ interface CampaignImportModalProps {
   onImport: (payload: CampaignExportPayload) => void;
   onClose: () => void;
 }
+
+interface CampaignImportModalContentProps {
+  parsed: CampaignExportPayload | null;
+  parseError: string | null;
+  isSaving: boolean;
+  resetRef: React.MutableRefObject<(() => void) | null>;
+  campaignTitle: string | null;
+  onHandleFile: (file: File | null) => void;
+  onHandleClose: () => void;
+  onHandleImport: () => void;
+}
+
+function CampaignImportModalContent({
+  parsed,
+  parseError,
+  isSaving,
+  resetRef,
+  campaignTitle,
+  onHandleFile,
+  onHandleClose,
+  onHandleImport,
+}: CampaignImportModalContentProps) {
+  return (
+    <Stack {...getWpsgDebugProps('CampaignImportModal', 'stack')} gap="md">
+      <Text size="sm" c="dimmed">
+        Select a <Code>.json</Code> file exported from WP Super Gallery. The campaign will be
+        created as a draft — media references and layout template are imported by value.
+      </Text>
+
+      <FileButton resetRef={resetRef} onChange={onHandleFile} accept="application/json,.json">
+        {(props) => (
+          <Button
+            {...props}
+            variant="outline"
+            leftSection={<IconUpload size={16} />}
+            fullWidth
+          >
+            {parsed ? 'Change file' : 'Select .json file'}
+          </Button>
+        )}
+      </FileButton>
+
+      {parseError && (
+        <Alert color="red" icon={<IconInfoCircle size={16} />}>
+          {parseError}
+        </Alert>
+      )}
+
+      {parsed && (
+        <Alert color="teal" icon={<IconInfoCircle size={16} />}>
+          Ready to import: <strong>{campaignTitle}</strong>
+          {parsed.media_references?.length
+            ? ` (${parsed.media_references.length} media reference${parsed.media_references.length !== 1 ? 's' : ''})`
+            : ''}
+        </Alert>
+      )}
+
+      <Group {...getWpsgDebugProps('CampaignImportModal', 'actions')} justify="flex-end">
+        <Button variant="subtle" onClick={onHandleClose} disabled={isSaving}>
+          Cancel
+        </Button>
+        <Button
+          disabled={!parsed}
+          loading={isSaving}
+          onClick={onHandleImport}
+          leftSection={<IconUpload size={16} />}
+        >
+          Import
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
+setWpsgDebugDisplayName(CampaignImportModalContent, 'AdminPanel:CampaignImportModalContent');
 
 export function CampaignImportModal({
   opened,
@@ -75,55 +151,28 @@ export function CampaignImportModal({
     : null;
 
   return (
-    <Modal opened={opened} onClose={handleClose} title="Import Campaign" size="sm" centered>
-      <Stack gap="md">
-        <Text size="sm" c="dimmed">
-          Select a <Code>.json</Code> file exported from WP Super Gallery. The campaign will be
-          created as a draft — media references and layout template are imported by value.
-        </Text>
-
-        <FileButton resetRef={resetRef} onChange={handleFile} accept="application/json,.json">
-          {(props) => (
-            <Button
-              {...props}
-              variant="outline"
-              leftSection={<IconUpload size={16} />}
-              fullWidth
-            >
-              {parsed ? `Change file` : 'Select .json file'}
-            </Button>
-          )}
-        </FileButton>
-
-        {parseError && (
-          <Alert color="red" icon={<IconInfoCircle size={16} />}>
-            {parseError}
-          </Alert>
-        )}
-
-        {parsed && (
-          <Alert color="teal" icon={<IconInfoCircle size={16} />}>
-            Ready to import: <strong>{campaignTitle}</strong>
-            {parsed.media_references?.length
-              ? ` (${parsed.media_references.length} media reference${parsed.media_references.length !== 1 ? 's' : ''})`
-              : ''}
-          </Alert>
-        )}
-
-        <Group justify="flex-end">
-          <Button variant="subtle" onClick={handleClose} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button
-            disabled={!parsed}
-            loading={isSaving}
-            onClick={handleImport}
-            leftSection={<IconUpload size={16} />}
-          >
-            Import
-          </Button>
-        </Group>
-      </Stack>
+    <Modal
+      {...getWpsgDebugProps('CampaignImportModal')}
+      opened={opened}
+      onClose={handleClose}
+      title={<span {...getWpsgDebugProps('CampaignImportModal', 'title')}>Import Campaign</span>}
+      size="sm"
+      centered
+      closeButtonProps={getWpsgDebugProps('CampaignImportModal', 'close')}
+      overlayProps={getWpsgDebugProps('CampaignImportModal', 'overlay')}
+    >
+      <CampaignImportModalContent
+        parsed={parsed}
+        parseError={parseError}
+        isSaving={isSaving}
+        resetRef={resetRef}
+        campaignTitle={campaignTitle}
+        onHandleFile={handleFile}
+        onHandleClose={handleClose}
+        onHandleImport={handleImport}
+      />
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(CampaignImportModal, 'AdminPanel:CampaignImportModal');

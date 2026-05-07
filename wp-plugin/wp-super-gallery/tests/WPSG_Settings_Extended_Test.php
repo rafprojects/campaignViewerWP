@@ -125,9 +125,83 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         $settings = WPSG_Settings::get_settings();
 
         $defaults = WPSG_Settings::get_defaults();
+        $nested_only_keys = array_fill_keys(
+            WPSG_Settings_Sanitizer::get_nested_only_gallery_setting_keys(),
+            true
+        );
+
         foreach ($defaults as $key => $val) {
+            if (isset($nested_only_keys[$key])) {
+                $this->assertArrayNotHasKey($key, $settings, "Nested-only gallery key should be omitted: $key");
+                continue;
+            }
+
             $this->assertArrayHasKey($key, $settings, "Missing default key: $key");
         }
+    }
+
+    public function test_get_settings_omits_legacy_gallery_adapter_fields_when_gallery_config_exists() {
+        update_option('wpsg_settings', [
+            'gallery_config' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'masonry',
+                            'common' => [
+                                'sectionPadding' => 24,
+                                'viewportBgType' => 'solid',
+                                'viewportBgColor' => '#112233',
+                            ],
+                            'adapterSettings' => [
+                                'masonryColumns' => 5,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $settings = WPSG_Settings::get_settings();
+
+        $this->assertArrayNotHasKey('unified_gallery_enabled', $settings);
+        $this->assertArrayNotHasKey('unified_gallery_adapter_id', $settings);
+        $this->assertArrayNotHasKey('gallery_selection_mode', $settings);
+        $this->assertArrayNotHasKey('gallery_section_padding', $settings);
+        $this->assertArrayNotHasKey('unified_bg_type', $settings);
+        $this->assertArrayNotHasKey('unified_bg_color', $settings);
+        $this->assertArrayNotHasKey('masonry_columns', $settings);
+
+        $js = WPSG_Settings::to_js($settings, true);
+        $this->assertArrayNotHasKey('masonryColumns', $js);
+    }
+
+    public function test_get_settings_normalizes_legacy_card_config_desktop_into_flat_fields() {
+        update_option('wpsg_settings', [
+            'card_config' => [
+                'breakpoints' => [
+                    'desktop' => [
+                        'cardScale' => 1.25,
+                        'cardPageDotNav' => true,
+                    ],
+                    'mobile' => [
+                        'cardRowsPerPage' => 2,
+                    ],
+                ],
+            ],
+        ]);
+
+        $settings = WPSG_Settings::get_settings();
+        $this->assertEquals(1.25, $settings['card_scale'] ?? null);
+        $this->assertTrue($settings['card_page_dot_nav'] ?? false);
+        $this->assertArrayNotHasKey('desktop', $settings['card_config']['breakpoints'] ?? []);
+        $this->assertEquals(2, $settings['card_config']['breakpoints']['mobile']['cardRowsPerPage'] ?? null);
+
+        $js = WPSG_Settings::to_js($settings, true);
+        $this->assertEquals(1.25, $js['cardScale'] ?? null);
+        $this->assertTrue($js['cardPageDotNav'] ?? false);
+        $this->assertArrayNotHasKey('desktop', $js['cardConfig']['breakpoints'] ?? []);
+        $this->assertEquals(2, $js['cardConfig']['breakpoints']['mobile']['cardRowsPerPage'] ?? null);
     }
 
     // ── sanitize_settings ──────────────────────────────────────────────────
@@ -230,6 +304,17 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         WPSG_Settings::render_allow_user_theme_override_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[allow_user_theme_override]', $html);
+    }
+
+    public function test_render_debug_component_markers_field() {
+        ob_start();
+        WPSG_Settings::render_debug_component_markers_field();
+        $html = ob_get_clean();
+        $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[debug_component_markers]', $html);
     }
 
     public function test_render_layout_field_outputs_markup() {
@@ -251,6 +336,8 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         WPSG_Settings::render_lightbox_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[enable_lightbox]', $html);
     }
 
     public function test_render_animations_field_outputs_markup() {
@@ -258,6 +345,8 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         WPSG_Settings::render_animations_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[enable_animations]', $html);
     }
 
     public function test_render_cache_ttl_field_outputs_select() {

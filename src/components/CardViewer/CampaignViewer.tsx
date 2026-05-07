@@ -11,6 +11,7 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { buildGradientCss } from '@/utils/gradientCss';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
@@ -19,9 +20,9 @@ import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
 import {
   buildCampaignGalleryOverrideEditorValue,
-  clearCampaignGalleryOverrides,
   hasCampaignGalleryOverrides,
 } from '@/utils/campaignGalleryOverrides';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
 
@@ -43,6 +44,226 @@ interface CampaignViewerProps {
   onClose: () => void;
 }
 
+type CampaignViewerInContextSave = ReturnType<typeof useInContextSave>;
+type CampaignViewerBreakpoint = ReturnType<typeof useBreakpoint>['breakpoint'];
+
+interface CampaignViewerCoverHeaderProps {
+  displayedCampaign: Campaign;
+  settings: GalleryBehaviorSettings;
+  isAdmin: boolean;
+  inContextSave: CampaignViewerInContextSave;
+  campaignTitleStyle: React.CSSProperties | undefined;
+  campaignDateStyle: React.CSSProperties | undefined;
+  coverHeights: { base: string | number; sm: string | number; md: string | number };
+}
+
+function CampaignViewerCoverHeader({
+  displayedCampaign,
+  settings,
+  isAdmin,
+  inContextSave,
+  campaignTitleStyle,
+  campaignDateStyle,
+  coverHeights,
+}: CampaignViewerCoverHeaderProps) {
+  return (
+    <Box pos="relative" h={coverHeights} component="div">
+      <InContextEditor
+        visible={isAdmin && settings.showInContextEditors}
+        position="top-left"
+      >
+        <Stack gap="sm">
+          <Text fw={600} size="xs">Campaign Header</Text>
+          <Switch label="Show Company Name" checked={settings.showCampaignCompanyName !== false} onChange={(e) => inContextSave('showCampaignCompanyName', e.currentTarget.checked)} size="xs" />
+          <Switch label="Show Date" checked={settings.showCampaignDate !== false} onChange={(e) => inContextSave('showCampaignDate', e.currentTarget.checked)} size="xs" />
+          <Text fw={500} size="xs" mt="xs">Title Typography</Text>
+          <TypographyEditor
+            value={settings.typographyOverrides.campaignTitle ?? {}}
+            onChange={(value) => {
+              const overrides = { ...settings.typographyOverrides };
+              if (Object.keys(value).length === 0) delete overrides.campaignTitle;
+              else overrides.campaignTitle = value;
+              inContextSave('typographyOverrides', overrides);
+            }}
+          />
+        </Stack>
+      </InContextEditor>
+      <Image
+        src={displayedCampaign.coverImage}
+        alt={displayedCampaign.title}
+        h={coverHeights}
+        fit="cover"
+        loading="lazy"
+      />
+
+      <Box
+        pos="absolute"
+        inset={0}
+        style={{
+          background: 'linear-gradient(to top, var(--wpsg-color-surface) 0%, color-mix(in srgb, var(--wpsg-color-surface) 60%, transparent) 45%, transparent 80%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {settings.showCampaignCompanyName !== false && (
+        <Badge
+          pos="absolute"
+          top={16}
+          left={16}
+          style={{ backgroundColor: displayedCampaign.company.brandColor }}
+          size="lg"
+        >
+          <Group gap={8}>
+            <CompanyLogo logo={displayedCampaign.company.logo} companyName={displayedCampaign.company.name} />
+            <span>{displayedCampaign.company.name}</span>
+          </Group>
+        </Badge>
+      )}
+
+      <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
+        <Title order={2} size="h3" mb="sm" style={campaignTitleStyle}>
+          {displayedCampaign.title}
+        </Title>
+        {settings.showCampaignDate !== false && (
+          <Group gap="lg" wrap="wrap">
+            <Group gap={4}>
+              <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
+              <Text size="sm" c="dimmed" style={campaignDateStyle}>
+                {new Date(displayedCampaign.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
+            </Group>
+            {settings.showCampaignTags !== false && (
+              <Group gap={4}>
+                <IconTag size={16} color="var(--wpsg-color-text-muted)" />
+                <Text size="sm" c="dimmed">
+                  {displayedCampaign.tags.join(', ')}
+                </Text>
+              </Group>
+            )}
+          </Group>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+interface CampaignViewerGalleryContentProps {
+  hasAccess: boolean;
+  displayedCampaign: Campaign;
+  galleryShellLayout: ReturnType<typeof resolveCampaignViewerGalleryShellLayout>;
+  settings: GalleryBehaviorSettings;
+  breakpoint: CampaignViewerBreakpoint;
+  isAdmin: boolean;
+}
+
+function CampaignViewerGalleryContent({
+  hasAccess,
+  displayedCampaign,
+  galleryShellLayout,
+  settings,
+  breakpoint,
+  isAdmin,
+}: CampaignViewerGalleryContentProps) {
+  if (!hasAccess || (displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0)) {
+    return null;
+  }
+
+  return (
+    <Box
+      {...getWpsgDebugProps('CampaignViewer', 'gallery-shell')}
+      style={{
+        width: '100%',
+        maxWidth: galleryShellLayout.maxWidth,
+        marginInline: 'auto',
+        paddingLeft: galleryShellLayout.paddingLeft,
+        paddingRight: galleryShellLayout.paddingRight,
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: settings.modalGalleryVerticalAlign === 'center' ? 'center' : settings.modalGalleryVerticalAlign === 'end' ? 'flex-end' : undefined,
+        transform: settings.modalGalleryOffsetY ? `translateY(${toCss(settings.modalGalleryOffsetY, settings.modalGalleryOffsetYUnit ?? 'px')})` : undefined,
+      }}
+    >
+      <Suspense fallback={
+        <Center py="xl" mih={200}>
+          <Stack align="center" gap="xs">
+            <Loader size="md" />
+            <Text size="sm" c="dimmed">Loading gallery…</Text>
+          </Stack>
+        </Center>
+      }>
+        <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
+          {galleryShellLayout.galleryMode === 'unified' ? (
+            <UnifiedGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} />
+          ) : (
+            <PerTypeGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} />
+          )}
+        </Stack>
+      </Suspense>
+    </Box>
+  );
+}
+
+interface CampaignViewerStatsSectionProps {
+  displayedCampaign: Campaign;
+  settings: GalleryBehaviorSettings;
+  isAdmin: boolean;
+  inContextSave: CampaignViewerInContextSave;
+  campaignStatsValueStyle: React.CSSProperties | undefined;
+  campaignStatsLabelStyle: React.CSSProperties | undefined;
+}
+
+function CampaignViewerStatsSection({
+  displayedCampaign,
+  settings,
+  isAdmin,
+  inContextSave,
+  campaignStatsValueStyle,
+  campaignStatsLabelStyle,
+}: CampaignViewerStatsSectionProps) {
+  return (
+    <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
+      <InContextEditor
+        visible={isAdmin && settings.showInContextEditors}
+        position="top-right"
+      >
+        <Stack gap="sm">
+          <Text fw={600} size="xs">Stats Section</Text>
+          <Switch label="Show Stats" checked={settings.showCampaignStats !== false} onChange={(e) => inContextSave('showCampaignStats', e.currentTarget.checked)} size="xs" />
+          <Switch label="Admin Only" checked={!!settings.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
+        </Stack>
+      </InContextEditor>
+      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Videos</Text>
+        </Paper>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.images.length}</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Images</Text>
+        </Paper>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.tags.length}</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Tags</Text>
+        </Paper>
+        <Paper p="md" radius="md" withBorder ta="center">
+          <Text size="xl" fw={700} style={campaignStatsValueStyle}>
+            {displayedCampaign.visibility === 'public' ? '🌐' : '🔒'}
+          </Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>
+            {displayedCampaign.visibility === 'public' ? 'Public' : 'Private'}
+          </Text>
+        </Paper>
+      </SimpleGrid>
+    </Box>
+  );
+}
+
 export function CampaignViewer({
   campaign,
   opened,
@@ -58,17 +279,33 @@ export function CampaignViewer({
   const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   const [viewerCampaign, setViewerCampaign] = useState(campaign);
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
+  const [galleryConfigEditorValue, setGalleryConfigEditorValue] = useState<Partial<GalleryConfig> | undefined>(undefined);
+  const [galleryConfigPreviewBaseline, setGalleryConfigPreviewBaseline] = useState<Partial<GalleryConfig> | undefined>(undefined);
   const [isSavingGalleryConfig, setIsSavingGalleryConfig] = useState(false);
 
   useEffect(() => {
     setViewerCampaign(campaign);
     setGalleryConfigEditorOpen(false);
+    setGalleryConfigEditorValue(undefined);
+    setGalleryConfigPreviewBaseline(undefined);
   }, [campaign]);
 
   const openGalleryConfigEditor = useCallback((nextCampaign: Campaign) => {
     setViewerCampaign((current) => (current.id === nextCampaign.id ? current : nextCampaign));
+    setGalleryConfigEditorValue(buildCampaignGalleryOverrideEditorValue(nextCampaign));
+    setGalleryConfigPreviewBaseline(nextCampaign.galleryOverrides);
     setGalleryConfigEditorOpen(true);
   }, []);
+
+  const closeGalleryConfigEditor = useCallback(() => {
+    setViewerCampaign((current) => ({
+      ...current,
+      galleryOverrides: galleryConfigPreviewBaseline,
+    }));
+    setGalleryConfigEditorOpen(false);
+    setGalleryConfigEditorValue(undefined);
+    setGalleryConfigPreviewBaseline(undefined);
+  }, [galleryConfigPreviewBaseline]);
 
   const persistCampaignGalleryConfig = useCallback(async (
     nextState: Pick<Campaign, 'galleryOverrides'>,
@@ -98,12 +335,12 @@ export function CampaignViewer({
 
       setViewerCampaign((current) => ({
         ...current,
-        imageAdapterId: undefined,
-        videoAdapterId: undefined,
         galleryOverrides: nextState.galleryOverrides,
         updatedAt: new Date().toISOString(),
       }));
       setGalleryConfigEditorOpen(false);
+      setGalleryConfigEditorValue(undefined);
+      setGalleryConfigPreviewBaseline(undefined);
       onNotify?.({ type: 'success', text: 'Campaign gallery config updated.' });
       await onCampaignsUpdated?.();
     } catch (err) {
@@ -116,15 +353,18 @@ export function CampaignViewer({
     }
   }, [apiClient, isAdmin, isSavingGalleryConfig, onCampaignsUpdated, onNotify, viewerCampaign.id]);
 
-  const handleGalleryConfigSave = useCallback((galleryOverrides: GalleryConfig) => {
+  const handleGalleryConfigSave = useCallback((galleryOverrides: GalleryConfig | undefined) => {
     void persistCampaignGalleryConfig({
       galleryOverrides,
     });
   }, [persistCampaignGalleryConfig]);
 
-  const handleGalleryConfigClear = useCallback(() => {
-    void persistCampaignGalleryConfig({ galleryOverrides: clearCampaignGalleryOverrides().galleryOverrides });
-  }, [persistCampaignGalleryConfig]);
+  const handleGalleryConfigPreviewChange = useCallback((galleryOverrides: GalleryConfig | undefined) => {
+    setViewerCampaign((current) => ({
+      ...current,
+      galleryOverrides,
+    }));
+  }, []);
 
   // P22-K5: Keep CampaignContext in sync with viewer open/close
   useEffect(() => {
@@ -154,6 +394,7 @@ export function CampaignViewer({
   const campaignStatsValueStyle = useTypographyStyle('campaignStatsValue', s);
   const campaignStatsLabelStyle = useTypographyStyle('campaignStatsLabel', s);
   const coverH = s.modalCoverHeight;
+  const coverHUnit = s.modalCoverHeightUnit ?? 'px';
   const coverHBase = Math.round(coverH * 0.67);
   const coverHSm = Math.round(coverH * 0.83);
   const transition = s.modalTransition === 'slide-up' ? 'slide-up' : s.modalTransition as 'pop' | 'fade';
@@ -162,24 +403,40 @@ export function CampaignViewer({
   const isMobile = useMediaQuery('(max-width: 48em)'); // ≤ 768px
   // P15-A: Per-breakpoint adapter resolution
   const containerRef = useRef<HTMLDivElement>(null);
-  const breakpoint = useBreakpoint(containerRef);
+  // The campaign viewer is intentionally width-clamped, so container width
+  // tends to collapse desktop screens into the tablet breakpoint. Use the
+  // viewport here so desktop/tablet/mobile map to the actual device size.
+  const { breakpoint } = useBreakpoint(containerRef, { source: 'viewport' });
   const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(galleryBehaviorSettings, displayedCampaign.galleryOverrides);
   // P21-F: Fullscreen and conditional rendering
   const useFullscreen = !!isMobile || !!s.campaignModalFullscreen;
   const galleriesOnly = s.campaignOpenMode === 'galleries-only';
   const showStats = (s.showCampaignStats !== false) && (!s.campaignStatsAdminOnly || isAdmin);
-  // P22-P4: Modal dimension clamping
+  // P22-P4: Modal dimension clamping — only apply pixel clamps for px units;
+  // relative units (%, vw, etc.) are emitted raw and let CSS resolve them.
   const MODAL_MIN_WIDTH = 600;
   const MODAL_MAX_WIDTH = 1600;
   const MODAL_MIN_HEIGHT_DVH = 50;
   const MODAL_MAX_HEIGHT_DVH = 95;
-  const clampedWidth = Math.max(MODAL_MIN_WIDTH, Math.min(MODAL_MAX_WIDTH, s.modalMaxWidth || 1200));
+  const modalMaxWidthUnit = s.modalMaxWidthUnit ?? 'px';
+  const rawModalWidth = s.modalMaxWidth || 1200;
+  const modalWidthValue = modalMaxWidthUnit === 'px'
+    ? Math.max(MODAL_MIN_WIDTH, Math.min(MODAL_MAX_WIDTH, rawModalWidth))
+    : rawModalWidth;
   const clampedMaxHeight = Math.max(MODAL_MIN_HEIGHT_DVH, Math.min(MODAL_MAX_HEIGHT_DVH, s.modalMaxHeight));
-  const modalSize = useFullscreen ? '100%' : `${clampedWidth}px`;
-  const clampedInnerPadding = Math.max(0, Math.min(48, s.modalInnerPadding));
+  const modalSize = useFullscreen ? '100%' : toCss(modalWidthValue, modalMaxWidthUnit);
+  const innerPaddingUnit = s.modalInnerPaddingUnit ?? 'px';
+  const clampedInnerPadding = innerPaddingUnit === 'px'
+    ? Math.max(0, Math.min(48, s.modalInnerPadding))
+    : s.modalInnerPadding;
   const contentMaxWidth = useFullscreen
-    ? (s.fullscreenContentMaxWidth > 0 ? `${s.fullscreenContentMaxWidth}px` : '100%')
-    : (s.modalContentMaxWidth > 0 ? `${s.modalContentMaxWidth}px` : '100%');
+    ? (s.fullscreenContentMaxWidth > 0 ? toCss(s.fullscreenContentMaxWidth, s.fullscreenContentMaxWidthUnit ?? 'px') : '100%')
+    : (s.modalContentMaxWidth > 0 ? toCss(s.modalContentMaxWidth, s.modalContentMaxWidthUnit ?? 'px') : '100%');
+  const coverHeights = {
+    base: toCssOrNumber(coverHBase, coverHUnit),
+    sm: toCssOrNumber(coverHSm, coverHUnit),
+    md: toCssOrNumber(coverH, coverHUnit),
+  };
   // P22-K3: Modal background style (only applied in fullscreen)
   const modalBgStyle = useMemo<React.CSSProperties | undefined>(() => {
     if (!useFullscreen) return undefined;
@@ -194,12 +451,18 @@ export function CampaignViewer({
   }, [useFullscreen, s.modalBgType, s.modalBgColor, s.modalBgGradient]);
   return (
     <Modal
+      {...getWpsgDebugProps('CampaignViewer')}
       opened={opened}
       onClose={onClose}
       size={modalSize}
       padding={0}
       withCloseButton
-      closeButtonProps={{ 'aria-label': 'Close campaign viewer', size: 'lg' }}
+      closeButtonProps={{
+        ...getWpsgDebugProps('CampaignViewer', 'close'),
+        'aria-label': 'Close campaign viewer',
+        size: 'lg',
+      }}
+      overlayProps={getWpsgDebugProps('CampaignViewer', 'overlay')}
       transitionProps={{ transition, duration: s.modalTransitionDuration }}
       radius={useFullscreen ? 0 : 'lg'}
       fullScreen={useFullscreen}
@@ -215,125 +478,54 @@ export function CampaignViewer({
     >
       {/* Cover Image Header — hidden in galleries-only mode or when cover image disabled */}
       {!galleriesOnly && s.showCampaignCoverImage !== false && (
-      <Box pos="relative" h={{ base: coverHBase, sm: coverHSm, md: coverH }} component="div">
-        <InContextEditor
-          visible={isAdmin && s.showInContextEditors}
-          position="top-left"
-        >
-          <Stack gap="sm">
-            <Text fw={600} size="xs">Campaign Header</Text>
-            <Switch label="Show Company Name" checked={s.showCampaignCompanyName !== false} onChange={(e) => inContextSave('showCampaignCompanyName', e.currentTarget.checked)} size="xs" />
-            <Switch label="Show Date" checked={s.showCampaignDate !== false} onChange={(e) => inContextSave('showCampaignDate', e.currentTarget.checked)} size="xs" />
-            <Text fw={500} size="xs" mt="xs">Title Typography</Text>
-            <TypographyEditor
-              value={s.typographyOverrides['campaignTitle'] ?? {}}
-              onChange={(v) => {
-                const o = { ...s.typographyOverrides };
-                if (Object.keys(v).length === 0) delete o['campaignTitle'];
-                else o['campaignTitle'] = v;
-                inContextSave('typographyOverrides', o);
-              }}
-            />
-          </Stack>
-        </InContextEditor>
-        <Image
-          src={displayedCampaign.coverImage}
-          alt={displayedCampaign.title}
-          h={{ base: coverHBase, sm: coverHSm, md: coverH }}
-          fit="cover"
-          loading="lazy"
+        <CampaignViewerCoverHeader
+          displayedCampaign={displayedCampaign}
+          settings={s}
+          isAdmin={isAdmin}
+          inContextSave={inContextSave}
+          campaignTitleStyle={campaignTitleStyle}
+          campaignDateStyle={campaignDateStyle}
+          coverHeights={coverHeights}
         />
-        
-        {/* Overlay gradient */}
-        <Box
-          pos="absolute"
-          inset={0}
-          style={{
-            background: 'linear-gradient(to top, var(--wpsg-color-surface) 0%, color-mix(in srgb, var(--wpsg-color-surface) 60%, transparent) 45%, transparent 80%)',
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* Company badge */}
-        {s.showCampaignCompanyName !== false && (
-        <Badge
-          pos="absolute"
-          top={16}
-          left={16}
-          style={{ backgroundColor: campaign.company.brandColor }}
-          size="lg"
-        >
-          <Group gap={8}>
-            <CompanyLogo logo={displayedCampaign.company.logo} companyName={displayedCampaign.company.name} />
-            <span>{displayedCampaign.company.name}</span>
-          </Group>
-        </Badge>
-        )}
-
-        {/* Title and meta overlay */}
-        <Box pos="absolute" bottom={0} left={0} right={0} p={{ base: 'md', md: 'lg' }}>
-          <Title order={2} size="h3" mb="sm" style={campaignTitleStyle}>
-            {displayedCampaign.title}
-          </Title>
-          {s.showCampaignDate !== false && (
-          <Group gap="lg" wrap="wrap">
-            <Group gap={4}>
-              <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
-              <Text size="sm" c="dimmed" style={campaignDateStyle}>
-                {new Date(displayedCampaign.createdAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </Text>
-            </Group>
-            {s.showCampaignTags !== false && (
-            <Group gap={4}>
-              <IconTag size={16} color="var(--wpsg-color-text-muted)" />
-              <Text size="sm" c="dimmed">
-                {displayedCampaign.tags.join(', ')}
-              </Text>
-            </Group>
-            )}
-          </Group>
-          )}
-        </Box>
-      </Box>
       )}
 
       {/* Content */}
-      <Box ref={containerRef} style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : clampedInnerPadding, display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}>
+      <Box
+        {...getWpsgDebugProps('CampaignViewer', 'content-shell')}
+        ref={containerRef}
+        style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : toCssOrNumber(clampedInnerPadding, innerPaddingUnit), display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}
+      >
         <Stack gap="lg" style={{ width: '100%' }}>
           {/* Description — hidden in galleries-only mode */}
           {!galleriesOnly && s.showCampaignAbout !== false && (
-          <Box pos="relative">
-            <InContextEditor
-              visible={isAdmin && s.showInContextEditors}
-              position="top-right"
-            >
-              <Stack gap="sm">
-                <Text fw={600} size="xs">About Section</Text>
-                <Switch label="Show About" checked={Boolean(s.showCampaignAbout)} onChange={(e) => inContextSave('showCampaignAbout', e.currentTarget.checked)} size="xs" />
-                <Switch label="Show Description" checked={Boolean(s.showCampaignDescription)} onChange={(e) => inContextSave('showCampaignDescription', e.currentTarget.checked)} size="xs" />
-                <Text fw={500} size="xs" mt="xs">Heading Typography</Text>
-                <TypographyEditor
-                  value={s.typographyOverrides['campaignAboutHeading'] ?? {}}
-                  onChange={(v) => {
-                    const o = { ...s.typographyOverrides };
-                    if (Object.keys(v).length === 0) delete o['campaignAboutHeading'];
-                    else o['campaignAboutHeading'] = v;
-                    inContextSave('typographyOverrides', o);
-                  }}
-                />
-              </Stack>
-            </InContextEditor>
-            <Title order={2} size="h4" mb="sm" style={campaignAboutHeadingStyle}>{s.campaignAboutHeadingText || 'About this Campaign'}</Title>
-            {s.showCampaignDescription !== false && (
-            <Text c="dimmed" lh={1.6} style={campaignDescriptionStyle}>
-              {displayedCampaign.description}
-            </Text>
-            )}
-          </Box>
+            <Box pos="relative">
+              <InContextEditor
+                visible={isAdmin && s.showInContextEditors}
+                position="top-right"
+              >
+                <Stack gap="sm">
+                  <Text fw={600} size="xs">About Section</Text>
+                  <Switch label="Show About" checked={Boolean(s.showCampaignAbout)} onChange={(e) => inContextSave('showCampaignAbout', e.currentTarget.checked)} size="xs" />
+                  <Switch label="Show Description" checked={Boolean(s.showCampaignDescription)} onChange={(e) => inContextSave('showCampaignDescription', e.currentTarget.checked)} size="xs" />
+                  <Text fw={500} size="xs" mt="xs">Heading Typography</Text>
+                  <TypographyEditor
+                    value={s.typographyOverrides['campaignAboutHeading'] ?? {}}
+                    onChange={(v) => {
+                      const o = { ...s.typographyOverrides };
+                      if (Object.keys(v).length === 0) delete o['campaignAboutHeading'];
+                      else o['campaignAboutHeading'] = v;
+                      inContextSave('typographyOverrides', o);
+                    }}
+                  />
+                </Stack>
+              </InContextEditor>
+              <Title order={2} size="h4" mb="sm" style={campaignAboutHeadingStyle}>{s.campaignAboutHeadingText || 'About this Campaign'}</Title>
+              {s.showCampaignDescription !== false && (
+                <Text c="dimmed" lh={1.6} style={campaignDescriptionStyle}>
+                  {displayedCampaign.description}
+                </Text>
+              )}
+            </Box>
           )}
 
           {/* Access notice */}
@@ -345,33 +537,14 @@ export function CampaignViewer({
             </Paper>
           )}
 
-          {/* Media Sections */}
-          {hasAccess && (displayedCampaign.videos.length > 0 || displayedCampaign.images.length > 0) && (
-          <Box style={{
-            width: '100%',
-            maxWidth: galleryShellLayout.maxWidth,
-            marginInline: 'auto',
-            paddingLeft: galleryShellLayout.paddingLeft,
-            paddingRight: galleryShellLayout.paddingRight,
-          }}>
-            <Suspense fallback={
-              <Center py="xl" mih={200}>
-                <Stack align="center" gap="xs">
-                  <Loader size="md" />
-                  <Text size="sm" c="dimmed">Loading gallery…</Text>
-                </Stack>
-              </Center>
-            }>
-            <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
-              {galleryShellLayout.galleryMode === 'unified' ? (
-                <UnifiedGallerySection campaign={displayedCampaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
-              ) : (
-                <PerTypeGallerySection campaign={displayedCampaign} settings={galleryBehaviorSettings} breakpoint={breakpoint} isAdmin={isAdmin} />
-              )}
-            </Stack>
-            </Suspense>
-          </Box>
-          )}
+          <CampaignViewerGalleryContent
+            hasAccess={hasAccess}
+            displayedCampaign={displayedCampaign}
+            galleryShellLayout={galleryShellLayout}
+            settings={galleryBehaviorSettings}
+            breakpoint={breakpoint}
+            isAdmin={isAdmin}
+          />
 
           {hasAccess && displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0 && (
             <Text c="dimmed" ta="center" py="xl">No media available for this campaign.</Text>
@@ -379,41 +552,14 @@ export function CampaignViewer({
 
           {/* Campaign Stats — conditional */}
           {!galleriesOnly && showStats && (
-          <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
-            <InContextEditor
-              visible={isAdmin && s.showInContextEditors}
-              position="top-right"
-            >
-              <Stack gap="sm">
-                <Text fw={600} size="xs">Stats Section</Text>
-                <Switch label="Show Stats" checked={s.showCampaignStats !== false} onChange={(e) => inContextSave('showCampaignStats', e.currentTarget.checked)} size="xs" />
-                <Switch label="Admin Only" checked={!!s.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
-              </Stack>
-            </InContextEditor>
-            <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
-            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
-            <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
-              <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Videos</Text>
-            </Paper>
-            <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.images.length}</Text>
-              <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Images</Text>
-            </Paper>
-            <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.tags.length}</Text>
-              <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Tags</Text>
-            </Paper>
-            <Paper p="md" radius="md" withBorder ta="center">
-              <Text size="xl" fw={700} style={campaignStatsValueStyle}>
-                {displayedCampaign.visibility === 'public' ? '🌐' : '🔒'}
-              </Text>
-              <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>
-                {displayedCampaign.visibility === 'public' ? 'Public' : 'Private'}
-              </Text>
-            </Paper>
-          </SimpleGrid>
-          </Box>
+            <CampaignViewerStatsSection
+              displayedCampaign={displayedCampaign}
+              settings={s}
+              isAdmin={isAdmin}
+              inContextSave={inContextSave}
+              campaignStatsValueStyle={campaignStatsValueStyle}
+              campaignStatsLabelStyle={campaignStatsLabelStyle}
+            />
           )}
         </Stack>
       </Box>
@@ -422,21 +568,25 @@ export function CampaignViewer({
         <Suspense fallback={<GalleryConfigEditorLoader />}>
           <LazyGalleryConfigEditorModal
             opened={galleryConfigEditorOpen}
-            onClose={() => setGalleryConfigEditorOpen(false)}
+            onClose={closeGalleryConfigEditor}
             title="Campaign Gallery Config"
-            value={buildCampaignGalleryOverrideEditorValue(displayedCampaign)}
+            value={galleryConfigEditorValue}
             contextSummary={hasCampaignGalleryOverrides(displayedCampaign)
-              ? 'This campaign currently stores custom gallery overrides. Changes saved here update the active campaign immediately.'
-              : 'This campaign is currently inheriting global gallery settings. Any changes saved here create campaign-specific overrides immediately.'}
-            onClear={handleGalleryConfigClear}
+              ? 'This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.'
+              : 'This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.'}
+            onChange={handleGalleryConfigPreviewChange}
             onSave={handleGalleryConfigSave}
             saveLabel="Save Campaign Gallery Config"
-            clearLabel="Use Inherited Gallery Settings"
+            clearLabel="Preview Inherited Gallery Settings"
+            clearMode="draft"
             unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
-            zIndex={400}
+            zIndex={500}
+            blurEnabled={s.settingsDrawerBlurEnabled}
           />
         </Suspense>
       )}
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(CampaignViewer, 'CampaignViewer');

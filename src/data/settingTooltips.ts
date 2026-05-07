@@ -45,7 +45,6 @@ export const SETTING_TOOLTIPS: Record<string, string> = {
   mediaMediumCardHeight: 'Height (px) of medium media cards.',
   mediaLargeCardHeight: 'Height (px) of large media cards.',
   mediaListMinWidth: 'Minimum viewport width (px) before the media list collapses to compact mode.',
-  swrDedupingIntervalMs: 'Minimum time (ms) between duplicate API requests for the same resource.',
   notificationDismissMs: 'How long (ms) success/error notifications stay visible before dismissing.',
   optimizeOnUpload: 'Automatically resize and compress uploaded images to reduce storage and load times.',
   optimizeMaxWidth: 'Maximum width (px) to resize uploaded images down to.',

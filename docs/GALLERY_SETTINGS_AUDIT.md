@@ -309,7 +309,6 @@ Shared by masonry, justified, hexagonal, circular, and diamond adapters.
 | `mediaMediumCardHeight` | `number` | `240` | Medium card height in px. |
 | `mediaLargeCardHeight` | `number` | `340` | Large card height in px. |
 | `mediaListMinWidth` | `number` | `600` | Threshold for compact media list. |
-| `swrDedupingIntervalMs` | `number` | `5000` | SWR deduping interval. |
 | `notificationDismissMs` | `number` | `4000` | Toast auto-dismiss delay. |
 
 ---

@@ -7,12 +7,20 @@
  */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Box } from '@mantine/core';
-import type { ContainerDimensions, GalleryBehaviorSettings } from '@/types';
+import type {
+  ContainerDimensions,
+  GalleryBehaviorSettings,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { clampDimension } from '@/utils/clampDimension';
+import { toCss } from '@/utils/cssUnits';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface GallerySectionWrapperProps {
   settings: GalleryBehaviorSettings;
+  runtime: ResolvedGallerySectionRuntime;
   bgType: string;
   bgColor: string;
   bgGradient: string;
@@ -25,18 +33,19 @@ interface GallerySectionWrapperProps {
 /** Return a CSS background style object from viewport background settings. */
 function resolveBackground(type: string, color: string, gradient: string, imageUrl: string): CSSProperties {
   switch (type) {
-    case 'solid':    return { background: color };
+    case 'solid': return { background: color };
     case 'gradient': return { background: gradient };
     case 'image': {
       const safeUrl = sanitizeCssUrl(imageUrl);
       return safeUrl ? { backgroundImage: `url(${safeUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
     }
-    default:         return {};
+    default: return {};
   }
 }
 
 export function GallerySectionWrapper({
   settings: s,
+  runtime,
   bgType,
   bgColor,
   bgGradient,
@@ -48,6 +57,7 @@ export function GallerySectionWrapper({
   const sectionRef = useRef<HTMLDivElement>(null);
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const [measuredHeight, setMeasuredHeight] = useState(0);
+  const common = resolveGalleryComponentCommonSettings(s, runtime);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -64,57 +74,96 @@ export function GallerySectionWrapper({
   }, []);
 
   const availableWidth = measuredWidth > 0 ? measuredWidth : 0;
-  const effectiveMinWidth = Math.max(0, Math.min(s.gallerySectionMinWidth, s.gallerySectionMaxWidth || s.gallerySectionMinWidth));
+  const sc = s.sectionScale ?? 1;
+  const scaledMinWidth = Math.round((common.sectionMinWidth ?? 0) * sc);
+  const scaledMaxWidth = Math.round((common.sectionMaxWidth ?? 0) * sc);
+  const scaledMinHeight = Math.round((common.sectionMinHeight ?? 0) * sc);
+  const scaledMaxHeight = Math.round((common.sectionMaxHeight ?? 0) * sc);
+  const scaledPadding = Math.round(Math.max(0, Math.min(32, common.sectionPadding ?? 0)) * sc);
+  const widthUnit = common.sectionMaxWidthUnit ?? 'px';
+  const minWidthUnit = common.sectionMinWidthUnit ?? 'px';
+  const heightUnit = common.sectionMaxHeightUnit ?? 'px';
+  const minHeightUnit = common.sectionMinHeightUnit ?? 'px';
+  const paddingUnit = common.sectionPaddingUnit ?? 'px';
+  const offsetXUnit = s.gallerySectionContentOffsetXUnit ?? 'px';
+  const offsetYUnit = s.gallerySectionContentOffsetYUnit ?? 'px';
 
-  // Clamp user settings to measured available space
-  const effectiveMaxWidth = availableWidth > 0
+  // ── CSS emission: for px units, clamp against measured space; for relative
+  //    units, emit the raw configured value and let CSS resolve it. ──────────
+  const isPxWidth = widthUnit === 'px';
+  const isPxHeight = heightUnit === 'px';
+
+  const effectiveMinWidth = Math.max(0, Math.min(scaledMinWidth, scaledMaxWidth || scaledMinWidth));
+
+  // Clamp user settings to measured available space (px only)
+  const effectiveMaxWidth = isPxWidth && availableWidth > 0
     ? clampDimension(
-        s.gallerySectionMaxWidth,
-        effectiveMinWidth,
-        2000,
-        availableWidth,
-      )
-    : 0;
+      scaledMaxWidth,
+      effectiveMinWidth,
+      2000,
+      availableWidth,
+    )
+    : scaledMaxWidth;
 
   const resolvedMaxHeight =
-    s.gallerySectionHeightMode === 'manual' && s.gallerySectionMaxHeight > 0
-      ? `${clampDimension(s.gallerySectionMaxHeight, s.gallerySectionMinHeight, 2000, Infinity)}px`
-      : s.gallerySectionHeightMode === 'viewport'
+    common.sectionHeightMode === 'manual' && scaledMaxHeight > 0
+      ? (isPxHeight
+        ? toCss(clampDimension(scaledMaxHeight, scaledMinHeight, 2000, Infinity), heightUnit)
+        : toCss(scaledMaxHeight, heightUnit))
+      : common.sectionHeightMode === 'viewport'
         ? '80dvh'
         : undefined; // 'auto' — no max height constraint
 
-  const effectiveMaxHeight =
-    s.gallerySectionHeightMode === 'manual' && s.gallerySectionMaxHeight > 0
-      ? clampDimension(s.gallerySectionMaxHeight, s.gallerySectionMinHeight, 2000, Infinity)
-      : measuredHeight > 0 ? measuredHeight : 0;
-
+  // ── containerDimensions: always measured pixel values from ResizeObserver,
+  //    NOT from config numbers. This is the single source of truth for child
+  //    adapters that do pixel-space layout math. ─────────────────────────────
   const containerDimensions: ContainerDimensions = {
-    width: effectiveMaxWidth,
-    height: effectiveMaxHeight,
+    width: availableWidth > 0 ? availableWidth : 0,
+    height: measuredHeight > 0 ? measuredHeight : 0,
   };
 
   const hasBg = bgType !== 'none' && bgType !== 'theme';
   const backgroundStyles = hasBg ? resolveBackground(bgType, bgColor, bgGradient, bgImageUrl) : {};
 
+  const alignX = s.gallerySectionContentAlignX || 'center';
+  const alignY = s.gallerySectionContentAlignY || 'start';
+  const hasContentOffset = s.gallerySectionContentOffsetX !== 0 || s.gallerySectionContentOffsetY !== 0;
+
   const wrapperStyle: CSSProperties = {
     width: '100%',
-    maxWidth: s.gallerySectionMaxWidth > 0
-      ? `min(100%, ${Math.max(effectiveMinWidth, s.gallerySectionMaxWidth)}px)`
+    maxWidth: scaledMaxWidth > 0
+      ? (isPxWidth
+        ? `min(100%, ${toCss(Math.max(effectiveMinWidth, effectiveMaxWidth), widthUnit)})`
+        : toCss(scaledMaxWidth, widthUnit))
       : '100%',
-    minWidth: effectiveMinWidth > 0 ? `min(100%, ${effectiveMinWidth}px)` : undefined,
+    minWidth: effectiveMinWidth > 0 ? `min(100%, ${toCss(effectiveMinWidth, minWidthUnit)})` : undefined,
     maxHeight: resolvedMaxHeight,
-    minHeight: `${s.gallerySectionMinHeight}px`,
-    padding: `${Math.max(0, Math.min(32, s.gallerySectionPadding))}px`,
+    minHeight: toCss(scaledMinHeight, minHeightUnit),
+    padding: toCss(scaledPadding, paddingUnit),
     marginInline: 'auto',
     overflow: resolvedMaxHeight ? 'hidden' : undefined,
     borderRadius: borderRadius != null ? `${borderRadius}px` : undefined,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: alignX === 'center' ? 'center' : alignX === 'end' ? 'flex-end' : 'flex-start',
+    justifyContent: alignY === 'center' ? 'center' : alignY === 'end' ? 'flex-end' : 'flex-start',
     ...backgroundStyles,
     ...externalStyle,
   };
 
+  const contentStyle: CSSProperties | undefined = hasContentOffset
+    ? { width: '100%', transform: `translate(${toCss(s.gallerySectionContentOffsetX, offsetXUnit)}, ${toCss(s.gallerySectionContentOffsetY, offsetYUnit)})` }
+    : undefined;
+
   return (
-    <Box ref={sectionRef} style={wrapperStyle}>
-      {children(containerDimensions)}
+    <Box {...getWpsgDebugProps('GallerySectionWrapper')} ref={sectionRef} style={wrapperStyle}>
+      {hasContentOffset ? (
+        <div {...getWpsgDebugProps('GallerySectionWrapper', 'offset-content')} style={contentStyle}>{children(containerDimensions)}</div>
+      ) : (
+        children(containerDimensions)
+      )}
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(GallerySectionWrapper, 'GallerySectionWrapper');

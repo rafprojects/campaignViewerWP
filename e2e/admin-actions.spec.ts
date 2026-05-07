@@ -114,12 +114,10 @@ test('admin actions call REST endpoints', async ({ page }) => {
   await openCampaign();
   await openAdminMenu();
   await page.getByRole('button', { name: 'Manage media for Admin Campaign' }).click();
-  const addExternalMediaDialog = page.getByRole('dialog', { name: 'Add External Media' });
-  await expect(addExternalMediaDialog).toBeVisible();
-  await addExternalMediaDialog.getByPlaceholder('https://...').fill('https://example.com/video');
-  await addExternalMediaDialog.getByPlaceholder('Optional caption').fill('Caption');
-  await addExternalMediaDialog.getByPlaceholder('Optional thumbnail URL').fill('https://example.com/thumb.jpg');
-  await addExternalMediaDialog.getByRole('button', { name: 'Add Media' }).click();
+  const manageMediaDialog = page.getByRole('dialog', { name: 'Manage Media' });
+  await expect(manageMediaDialog).toBeVisible();
+  await manageMediaDialog.getByLabel('External media URL').fill('https://example.com/video');
+  await manageMediaDialog.getByRole('button', { name: 'Add external media' }).click();
   await expect(page.getByText('Media added.')).toBeVisible();
 
   await openCampaign();

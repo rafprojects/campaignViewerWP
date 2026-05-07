@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@/test/test-utils';
+import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
 import { AuthBarFloating } from './AuthBarFloating';
 import { CampaignContextProvider, useCampaignContext } from '@/contexts/CampaignContext';
 import type { Campaign, Company, MediaItem } from '@/types';
@@ -68,6 +68,8 @@ describe('AuthBarFloating', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Edit gallery config for Private Campaign' }));
 
     expect(onEditGalleryConfig).toHaveBeenCalledWith(activeCampaign);
-    expect(screen.queryByText('Edit Gallery Config')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Edit gallery config for Private Campaign' })).not.toBeInTheDocument();
+    });
   });
 });

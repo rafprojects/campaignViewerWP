@@ -1,7 +1,8 @@
-import { useCallback, type ReactNode } from 'react';
+import { forwardRef, useCallback, type ReactNode } from 'react';
 import { ActionIcon, Popover, ScrollArea, Box } from '@mantine/core';
 import { IconSettings } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface InContextEditorProps {
   /** Position relative to the nearest positioned parent. */
@@ -10,6 +11,54 @@ interface InContextEditorProps {
   visible?: boolean;
   /** Popup content — form fields for the relevant settings. */
   children: ReactNode;
+}
+
+interface InContextEditorToggleProps extends React.ComponentPropsWithoutRef<'button'> {
+  onToggle: () => void;
+}
+
+const InContextEditorToggle = forwardRef<HTMLButtonElement, InContextEditorToggleProps>(
+  ({ onToggle, style, children, onClick, ...actionIconProps }, ref) => {
+    const handleClick: React.MouseEventHandler<HTMLButtonElement> = (event) => {
+      onClick?.(event);
+      if (!event.defaultPrevented) {
+        onToggle();
+      }
+    };
+
+    return (
+      <ActionIcon
+        {...getWpsgDebugProps('InContextEditor', 'toggle')}
+        {...actionIconProps}
+        ref={ref}
+        variant="filled"
+        color="blue"
+        size="sm"
+        radius="xl"
+        onClick={handleClick}
+        title="Edit settings"
+        style={{ opacity: 0.85, ...style }}
+      >
+        {children ?? <IconSettings size={14} />}
+      </ActionIcon>
+    );
+  },
+);
+
+setWpsgDebugDisplayName(InContextEditorToggle, 'InContextEditorToggle');
+
+interface InContextEditorContentProps {
+  children: ReactNode;
+}
+
+function InContextEditorContent({ children }: InContextEditorContentProps) {
+  return (
+    <Popover.Dropdown {...getWpsgDebugProps('InContextEditor', 'dropdown')}>
+      <ScrollArea.Autosize {...getWpsgDebugProps('InContextEditor', 'content')} mah={400}>
+        {children}
+      </ScrollArea.Autosize>
+    </Popover.Dropdown>
+  );
 }
 
 const positionStyles: Record<string, React.CSSProperties> = {
@@ -40,8 +89,9 @@ export function InContextEditor({
   if (!visible) return null;
 
   return (
-    <Box style={positionStyles[position]} onKeyDown={handleKeyDown}>
+    <Box {...getWpsgDebugProps('InContextEditor', 'anchor')} style={positionStyles[position]} onKeyDown={handleKeyDown}>
       <Popover
+        {...getWpsgDebugProps('InContextEditor')}
         opened={opened}
         onClose={close}
         position="bottom-end"
@@ -53,24 +103,12 @@ export function InContextEditor({
         styles={{ dropdown: { backdropFilter: 'blur(8px)' } }}
       >
         <Popover.Target>
-          <ActionIcon
-            variant="filled"
-            color="blue"
-            size="sm"
-            radius="xl"
-            onClick={toggle}
-            title="Edit settings"
-            style={{ opacity: 0.85 }}
-          >
-            <IconSettings size={14} />
-          </ActionIcon>
+          <InContextEditorToggle onToggle={toggle} />
         </Popover.Target>
-        <Popover.Dropdown>
-          <ScrollArea.Autosize mah={400}>
-            {children}
-          </ScrollArea.Autosize>
-        </Popover.Dropdown>
+        <InContextEditorContent>{children}</InContextEditorContent>
       </Popover>
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(InContextEditor, 'InContextEditor');

@@ -10,23 +10,34 @@ import { useState, useCallback } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconCircles, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const SCOPE = 'circle';
 
 interface CircularGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function CircularGallery({ media, settings }: CircularGalleryProps) {
+export function CircularGallery({ media, settings, runtime }: CircularGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
@@ -34,47 +45,50 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const tSize = settings.tileSize ?? 150;
+  const tSize = Math.round((settings.tileSize ?? 150) * (settings.itemScale ?? 1));
+  const tileSizeUnit = settings.tileSizeUnit ?? 'px';
   const gapX = settings.tileGapX ?? 8;
+  const gapXUnit = settings.tileGapXUnit ?? 'px';
   const gapY = settings.tileGapY ?? 8;
+  const gapYUnit = settings.tileGapYUnit ?? 'px';
   // Circular tiles use outline for border (respects border-radius: 50%)
   const outlineStyle = settings.tileBorderWidth
     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
     : 'none';
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconCircles size={18} />}
-            Gallery ({media.length})
+    <Stack {...getWpsgDebugProps('CircularGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+      {heading.visible && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconCircles size={18} />}
+            {heading.label}
           </Group>
         </Title>
       )}
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
-      <Box style={{ display: 'flex', flexWrap: 'wrap', gap: `${gapY}px ${gapX}px`, justifyContent: settings.adapterJustifyContent || 'center' }}>
+      <Box {...getWpsgDebugProps('CircularGallery', 'grid')} style={{ display: 'flex', flexWrap: 'wrap', gap: `${toCss(gapY, gapYUnit)} ${toCss(gapX, gapXUnit)}`, justifyContent: common.adapterJustifyContent || 'center' }}>
         {media.map((item, idx) => {
           const thumbSrc = item.thumbnail || item.url;
           const isVideo = item.type === 'video';
           const label = item.caption || item.title || `${isVideo ? 'Video' : 'Image'} ${idx + 1}`;
           return (
             <Box
+              {...getWpsgDebugProps('CircularGallery', 'card')}
               key={item.id}
               component="button"
               onClick={() => openAt(idx)}
               aria-label={label}
               className={`wpsg-tile-${SCOPE}`}
               style={{
-                width: tSize,
-                height: tSize,
+                width: toCssOrNumber(tSize, tileSizeUnit),
+                height: toCssOrNumber(tSize, tileSizeUnit),
                 borderRadius: '50%',
                 outline: outlineStyle,
                 outlineOffset: 2,
@@ -110,10 +124,10 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
               >
                 {isVideo
                   ? <IconPlayerPlay size={tSize * 0.28} color="white"
-                      style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
+                    style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                   : <IconZoomIn size={tSize * 0.24} color="white"
-                      className="wpsg-circle-zoom"
-                      style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
+                    className="wpsg-circle-zoom"
+                    style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                 }
               </Box>
               {isVideo && (
@@ -143,7 +157,12 @@ export function CircularGallery({ media, settings }: CircularGalleryProps) {
       `}</style>
 
       <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
-        onPrev={prev} onNext={next} onClose={close} />
+        onPrev={prev} onNext={next} onClose={close}
+        videoMaxWidth={settings.lightboxVideoMaxWidth} videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight} videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight} />
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(CircularGallery, 'CircularGallery');

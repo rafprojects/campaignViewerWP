@@ -8,7 +8,7 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 function suppressConsoleError() {
-  return vi.spyOn(console, 'error').mockImplementation(() => {});
+  return vi.spyOn(console, 'error').mockImplementation(() => { });
 }
 
 describe('MediaTab', () => {
@@ -70,7 +70,7 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    // Wait for SWR data + useEffect sync to stabilize
+    // Wait for query data + useEffect sync to stabilize
     await waitFor(() => {
       expect(document.body.contains(screen.getByText('Item One'))).toBe(true);
     }, { timeout: 3000 });
@@ -272,7 +272,7 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    // Wait for SWR data + useEffect sync to stabilize
+    // Wait for query data + useEffect sync to stabilize
     await waitFor(() => {
       expect(document.body.contains(screen.getByRole('button', { name: 'Edit' }))).toBe(true);
     }, { timeout: 3000 });
@@ -316,7 +316,7 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    // Wait for SWR data + useEffect sync to stabilize
+    // Wait for query data + useEffect sync to stabilize
     await waitFor(() => {
       const btn = screen.getByRole('button', { name: 'Edit' });
       expect(document.body.contains(btn)).toBe(true);
@@ -441,7 +441,7 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    // Wait for SWR data + useEffect sync to stabilize
+    // Wait for query data + useEffect sync to stabilize
     await waitFor(() => {
       expect(document.body.contains(screen.getByLabelText('Delete media'))).toBe(true);
     }, { timeout: 3000 });
@@ -510,7 +510,7 @@ describe('MediaTab', () => {
 
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
-    // Wait for SWR data + useEffect sync to stabilize
+    // Wait for query data + useEffect sync to stabilize
     await waitFor(() => {
       const handles = screen.getAllByLabelText('Drag media to reorder');
       expect(document.body.contains(handles[0])).toBe(true);

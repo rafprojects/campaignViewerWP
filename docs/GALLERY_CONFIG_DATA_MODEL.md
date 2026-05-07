@@ -2,14 +2,22 @@
 
 ## Purpose
 
-This document records the implemented Phase 23 and Phase 24 gallery configuration model for WP Super Gallery.
+This document records the implemented gallery configuration model for WP Super Gallery as of Phase 25. Phase 23 and Phase 24 introduced the nested structures; Phase 25 completed the contract reset that makes them the active gallery settings surface.
+
+## Status Note (2026-04-30)
+
+This file documents the current nested-first gallery contract in the codebase.
+
+`galleryConfig` and campaign `galleryOverrides` are the only supported gallery configuration surfaces exposed to the app and REST responses when nested data exists. Older flat global settings and historical campaign adapter override fields may still be promoted into nested form during DB/read-time migration, but they are no longer rehydrated back into the live frontend/PHP contract once nested config is available.
+
+The broader implementation/refactor record lives in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md).
 
 The goals of the model are:
 
 1. support responsive gallery behavior cleanly
 2. support unified and per-type gallery modes with one coherent structure
 3. support full campaign-level gallery parity
-4. preserve backward compatibility with current flat settings during transition
+4. promote older flat settings into nested config without keeping them in the active contract
 5. allow UI, runtime rendering, and sanitization to operate from the same conceptual model
 
 ---
@@ -17,7 +25,7 @@ The goals of the model are:
 ## Design Principles
 
 1. New nested config is the authoritative source of truth for persistence and runtime resolution.
-2. Existing flat fields remain supported as compatibility inputs and in-memory bridge values while the transition is underway, but are no longer written on save.
+2. Older flat fields may still be accepted as migration inputs when nested config is missing, but they are not part of the live response/runtime contract once nested data exists.
 3. Campaign configuration uses the same model as global configuration.
 4. Inheritance is explicit and testable.
 5. Adapter-specific settings are schema-driven, not scattered conditionals.
@@ -108,65 +116,48 @@ export interface GalleryConfig {
 }
 ```
 
-`adapterSettings` remains intentionally broad at the top-level TypeScript type, but the live editor, shared adapter registry, runtime resolver, and backend sanitizer now constrain the known Phase 23 adapter fields through one schema-driven contract.
+`adapterSettings` remains intentionally broad at the top-level TypeScript type, but the settings parse boundary in `src/types/settingsSchemas.ts` now validates known adapter-setting leaves while preserving unknown future keys. The live editor, shared adapter registry, runtime resolver, and backend sanitizer all consume that same schema-driven contract.
 
 ---
 
 ## Implemented Global Settings Shape
 
-Phase 24 retains existing flat settings in `GalleryBehaviorSettings` only for compatibility, while using a nested preferred field as the persisted representation.
+Phase 25 uses `galleryConfig` as the only active gallery-settings contract. `GalleryBehaviorSettings` still includes some flat gallery fields in the broader type/default surface for defaults and untouched consumers, but the gallery editor, runtime resolver, and PHP REST contract do not depend on those flat fields as an active bridge.
 
 ```ts
 export interface GalleryBehaviorSettings {
-  // existing flat fields remain for compatibility and local bridge hydration
-  imageGalleryAdapterId: string;
-  videoGalleryAdapterId: string;
-  unifiedGalleryAdapterId: string;
-  gallerySelectionMode: 'unified' | 'per-breakpoint';
-  desktopImageAdapterId: string;
-  desktopVideoAdapterId: string;
-  tabletImageAdapterId: string;
-  tabletVideoAdapterId: string;
-  mobileImageAdapterId: string;
-  mobileVideoAdapterId: string;
-  // ...existing gallery fields...
+  // broader settings surface omitted
 
-  // new nested preferred field
+  // canonical gallery settings contract
   galleryConfig?: GalleryConfig;
 }
 ```
 
 ### Current Rule
 
-If `galleryConfig` is present and valid, it takes precedence over equivalent legacy flat fields. When a response contains only legacy flat fields, the load path promotes them into `galleryConfig` and rehydrates flat compatibility values in memory from the nested result.
+`galleryConfig` is the only gallery-settings contract surfaced to frontend UI, runtime resolution, and REST responses.
 
 ---
 
 ## Implemented Campaign Settings Shape
 
-Phase 23 introduced full campaign parity, and Phase 24 makes the nested override field the only persisted campaign representation.
+Phase 25 keeps `galleryOverrides` as the only supported campaign gallery override surface in frontend types and REST responses.
 
 ```ts
 export interface Campaign {
-  // existing fields remain
-  imageAdapterId?: string;
-  videoAdapterId?: string;
+  // existing campaign fields omitted
   layoutTemplateId?: string;
-
-  // new nested override field
   galleryOverrides?: Partial<GalleryConfig>;
 }
 ```
 
 The WordPress storage key for the nested campaign override payload is `_wpsg_gallery_overrides`.
 
-Legacy `_wpsg_image_adapter_id` and `_wpsg_video_adapter_id` post meta remain readable for one release cycle, but new nested saves delete those flat keys.
+Older `_wpsg_image_adapter_id` and `_wpsg_video_adapter_id` post meta are no longer exposed as parallel campaign fields in the app contract.
 
 ### Current Rule
 
-Campaigns should store only the portions they override, but the allowed override surface is the full editor-supported gallery config model.
-
-That means campaigns are not limited to adapter ids or adapter-specific deltas. They may override responsive common settings and scope behavior as needed.
+Campaign responses and modal/runtime state use only nested `galleryOverrides`.
 
 ---
 
@@ -177,40 +168,30 @@ Effective gallery behavior must be resolved in one place, in one deterministic o
 ### Current order
 
 1. campaign nested override
-2. campaign legacy override (`imageAdapterId`, `videoAdapterId`) only when no nested campaign override is present for that scope
-3. global nested `galleryConfig`
-4. hard fallback from default nested config
+2. global nested `galleryConfig`
+3. hard fallback from default nested config
 
 ### Why this order
 
 1. New nested config must win when present.
 2. Campaign-level intent must override global intent.
-3. Legacy values are migrated into nested form during load, not consulted as a parallel runtime source once nested config is available.
-4. Runtime behavior becomes predictable and testable.
+3. Runtime does not consult flat gallery fields as a parallel source.
+4. Runtime behavior stays predictable and testable.
 
 ---
 
-## Compatibility Strategy
+## Legacy Input Migration
 
-### Transitional behavior
+### Current behavior
 
-1. Existing installs may still have only flat global fields.
-2. Existing campaigns may still have only legacy adapter override fields.
-3. Load utilities must promote legacy flat data into nested config when nested data is missing.
-4. Save utilities must persist nested config only and prune legacy flat keys when nested payloads are posted.
+1. Live frontend runtime, settings panel state, PHP `get_settings()`, and REST responses use nested gallery data only.
+2. Save flows persist nested config and prune obsolete flat fields where that persistence path owns the write.
 
-### Practical bridge behavior
+### Practical contract
 
-1. Read nested config first if present.
-2. If nested config is absent, promote legacy flat settings or campaign adapter overrides into nested config during load.
-3. Rehydrate flat compatibility fields in memory from nested config for editor surfaces that still consume them.
-4. Do not emit legacy flat gallery keys in settings or campaign save payloads.
-
-### Migration posture
-
-Phase 24 is migration-first on writes and compatibility-first on reads.
-
-That means the system still reads old representations during the bridge window, but successful saves normalize storage back to the nested model.
+1. Read nested config only.
+2. Resolve runtime behavior from nested config plus default nested config.
+3. Emit nested gallery data only in active settings and campaign contracts.
 
 ---
 
@@ -301,7 +282,10 @@ Examples of adapter-specific settings the new model should absorb:
 ### Compact grid
 
 1. `gridCardWidth`
-2. `gridCardHeight`
+2. `gridCardAspectRatio`
+3. `gridCardMaxColumns`
+4. `gridCardMinHeight`
+5. legacy fallback `gridCardHeight` when aspect ratio is `auto`
 
 ### Justified / mosaic
 
@@ -384,11 +368,11 @@ Layout-builder glow defaults stay adapter-owned because only the layout-builder 
 
 ### Global settings
 
-Global settings REST update flow must accept nested `galleryConfig` while keeping legacy flat field handling stable.
+Global settings REST update flow must accept nested `galleryConfig`. Legacy flat inputs may still be sanitized as migration inputs, but REST responses are nested-only whenever `gallery_config` exists.
 
 ### Campaign settings
 
-Campaign update flow must accept nested `galleryOverrides` and sanitize it using the same schema rules as global config.
+Campaign update flow must accept nested `galleryOverrides` and sanitize it using the same schema rules as global config. Older flat campaign adapter meta may still be promoted before that contract is surfaced, but not exposed as parallel response fields.
 
 ### Core rule
 
@@ -400,12 +384,12 @@ There must not be two independently evolving sanitization definitions for the sa
 
 At minimum, the data model requires tests for:
 
-1. legacy-only global settings
+1. legacy-only global settings promotion into nested config
 2. nested-only global settings
-3. mixed nested plus legacy global settings
+3. global settings responses omitting flat gallery bridge fields when nested config exists
 4. campaign nested overrides
-5. campaign legacy overrides
-6. nested plus legacy resolution order
+5. legacy campaign meta promotion into nested overrides
+6. nested resolution order after promotion
 7. schema-driven adapter restrictions and fallbacks
 
 ---
@@ -416,7 +400,7 @@ This document does not prescribe:
 
 1. the exact final file paths for every new editor component
 2. the exact visual styling of the editor
-3. a full migration away from legacy flat fields in Phase 23
+3. the exact timing for deleting every remaining migration helper after the nested-only contract landed in Phase 25
 
 Those are implementation details or future cleanup concerns.
 
@@ -424,11 +408,11 @@ Those are implementation details or future cleanup concerns.
 
 ## Summary
 
-Phase 23 adopts a nested, responsive gallery configuration model with these properties:
+The implemented gallery configuration model now has these properties:
 
 1. one conceptual model for global and campaign contexts
 2. one resolver for effective behavior
 3. one schema for adapter-aware editing and sanitization
-4. one compatibility bridge for legacy flat settings during transition
+4. one active nested contract for settings and campaign overrides, with legacy flat values limited to migration input/backfill paths
 
-That is the minimum architecture that supports the required level of deep campaign customization without compounding the current settings drift.
+That is the minimum architecture that supports deep campaign customization without carrying a parallel flat-field runtime bridge.

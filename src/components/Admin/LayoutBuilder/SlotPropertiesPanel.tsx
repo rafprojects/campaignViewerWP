@@ -4,7 +4,6 @@ import {
   Text,
   NumberInput,
   Select,
-  ColorInput,
   Group,
   SegmentedControl,
   TextInput,
@@ -13,6 +12,7 @@ import {
   Box,
   Slider,
 } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import {
   IconArrowBigUpLine,
   IconArrowBigDownLine,
@@ -31,6 +31,7 @@ import type {
   SlotBlendMode,
   SlotOverlayEffect,
 } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -137,6 +138,8 @@ function PropRow({ label, children, tooltip }: { label: string; children: React.
   );
 }
 
+setWpsgDebugDisplayName(PropRow, 'LayoutBuilder:SlotPropertiesPanel:PropRow');
+
 /** Section header with a subtle horizontal rule. */
 function SectionHeader({ label }: { label: string }) {
   return (
@@ -154,6 +157,8 @@ function SectionHeader({ label }: { label: string }) {
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:SlotPropertiesPanel:SectionHeader');
 
 // ── Component ────────────────────────────────────────────────
 
@@ -694,3 +699,5 @@ export function SlotPropertiesPanel({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(SlotPropertiesPanel, 'LayoutBuilder:SlotPropertiesPanel');

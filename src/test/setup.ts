@@ -28,6 +28,7 @@ vi.mock('embla-carousel-react', async () => {
 		scrollTo: (index: number) => void;
 		selectedScrollSnap: () => number;
 		slidesInView: () => number[];
+		internalEngine: () => { options: { loop: boolean } };
 		on: (event: string, cb: EmblaListener) => EmblaApi | null;
 		off: (event: string, cb: EmblaListener) => EmblaApi | null;
 		canScrollPrev: () => boolean;
@@ -48,7 +49,7 @@ vi.mock('embla-carousel-react', async () => {
 
 		if (!stateRef.current) {
 			const s = {
-				selected: 0,
+				selected: Math.max(0, Math.round((options.startIndex as number) ?? 0)),
 				total: 0,
 				loop: (options.loop as boolean) ?? true,
 				listeners: {} as Record<string, Set<EmblaListener>>,
@@ -67,6 +68,7 @@ vi.mock('embla-carousel-react', async () => {
 							: Math.max(0, s.selected - 1);
 						fire('select');
 						fire('slidesInView');
+						fire('settle');
 						setTick((c) => c + 1);
 					},
 					scrollNext: () => {
@@ -76,6 +78,7 @@ vi.mock('embla-carousel-react', async () => {
 							: Math.min(s.total - 1, s.selected + 1);
 						fire('select');
 						fire('slidesInView');
+						fire('settle');
 						setTick((c) => c + 1);
 					},
 					scrollTo: (index: number) => {
@@ -83,10 +86,12 @@ vi.mock('embla-carousel-react', async () => {
 						s.selected = Math.max(0, Math.min(s.total - 1, index));
 						fire('select');
 						fire('slidesInView');
+						fire('settle');
 						setTick((c) => c + 1);
 					},
 					selectedScrollSnap: () => s.selected,
 					slidesInView: () => [s.selected],
+					internalEngine: () => ({ options: { loop: s.loop } }),
 					on: (event: string, cb: EmblaListener) => {
 						if (!s.listeners[event]) s.listeners[event] = new Set();
 						s.listeners[event].add(cb);
@@ -110,6 +115,10 @@ vi.mock('embla-carousel-react', async () => {
 			if (node && stateRef.current) {
 				const container = node.firstElementChild;
 				stateRef.current.total = container ? container.children.length : 0;
+				stateRef.current.selected = Math.min(
+					stateRef.current.selected,
+					Math.max(0, stateRef.current.total - 1),
+				);
 			}
 		}, []);
 

@@ -143,7 +143,6 @@ describe('UnifiedGallerySection', () => {
 
   it('falls back to the shared adapter resolver output when layout-builder is unsupported on mobile', () => {
     const settings = makeSettings({
-      unifiedGalleryAdapterId: 'layout-builder',
       galleryConfig: {
         mode: 'unified',
         breakpoints: {
@@ -165,7 +164,7 @@ describe('UnifiedGallerySection', () => {
       />,
     );
 
-    expect(screen.getByTestId('adapter-classic')).toHaveTextContent('video-1,image-1');
+    expect(screen.getByTestId('adapter-compact-grid')).toHaveTextContent('video-1,image-1');
     expect(screen.queryByTestId('layout-builder-gallery')).not.toBeInTheDocument();
   });
 
@@ -320,7 +319,6 @@ describe('PerTypeGallerySection', () => {
 
   it('falls back from unsupported mobile layout-builder selections to classic for per-type sections', () => {
     const settings = makeSettings({
-      imageGalleryAdapterId: 'classic',
       galleryConfig: {
         mode: 'per-type',
         breakpoints: {

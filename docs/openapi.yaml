@@ -1,0 +1,785 @@
+openapi: 3.0.3
+info:
+  title: WP Super Gallery API
+  version: "1.0.0"
+  description: OpenAPI description of the `wp-super-gallery/v1` REST endpoints used by the admin SPA and public site.
+servers:
+  - url: https://{site_base}
+    variables:
+      site_base:
+        default: example.com
+        description: Replace with your site host (no trailing slash)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieNonce:
+      type: apiKey
+      in: header
+      name: X-WP-Nonce
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        visibility:
+          type: string
+    MediaItem:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        type:
+          type: string
+        source:
+          type: string
+    PaginatedCampaigns:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campaign'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+security:
+  - {}
+
+paths:
+  /wp-json/wp-super-gallery/v1/campaigns:
+    get:
+      summary: List campaigns
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: visibility
+          schema:
+            type: string
+        - in: query
+          name: include_media
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Paginated campaign list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCampaigns'
+        '304':
+          description: Not modified (ETag)
+    post:
+      summary: Create campaign
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Get campaign
+      responses:
+        '200':
+          description: Campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+    put:
+      summary: Update campaign
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+        '400':
+          description: Invalid
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/archive:
+    post:
+      summary: Archive campaign
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Archived
+        '404':
+          description: Not found
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/restore:
+    post:
+      summary: Restore campaign
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Restored
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/duplicate:
+    post:
+      summary: Duplicate campaign
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                copyMedia:
+                  type: boolean
+      responses:
+        '201':
+          description: Duplicated
+
+  /wp-json/wp-super-gallery/v1/campaigns/batch:
+    post:
+      summary: Bulk campaign actions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '200':
+          description: Bulk action result
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/export:
+    get:
+      summary: Export campaign
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: JSON attachment
+
+  /wp-json/wp-super-gallery/v1/campaigns/import:
+    post:
+      summary: Import campaign
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Imported
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/media:
+    get:
+      summary: List campaign media
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Media list
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Create media item
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                source:
+                  type: string
+                url:
+                  type: string
+                attachmentId:
+                  type: integer
+      responses:
+        '201':
+          description: Created media
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/media/reorder:
+    put:
+      summary: Reorder media
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Reordered
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/media/rescan:
+    post:
+      summary: Rescan campaign media types
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Rescan result
+
+  /wp-json/wp-super-gallery/v1/media/rescan-all:
+    post:
+      summary: Rescan all media types
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Global rescan result
+
+  /wp-json/wp-super-gallery/v1/media/{mediaId}/usage:
+    get:
+      summary: Media usage for a mediaId
+      parameters:
+        - in: path
+          name: mediaId
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usage
+
+  /wp-json/wp-super-gallery/v1/media/usage-summary:
+    get:
+      summary: Media usage summary for multiple ids
+      parameters:
+        - in: query
+          name: ids[]
+          schema:
+            type: array
+            items:
+              type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Summary map
+
+  /wp-json/wp-super-gallery/v1/media/library:
+    get:
+      summary: Media library list
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Media library
+
+  /wp-json/wp-super-gallery/v1/media/upload:
+    post:
+      summary: Upload media (expects multipart/form-data)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Upload created
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access:
+    get:
+      summary: List campaign access grants
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grants
+    post:
+      summary: Grant access
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Granted
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access/{userId}:
+    delete:
+      summary: Revoke campaign access
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Revoked
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests:
+    post:
+      summary: Submit access request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Submitted
+    get:
+      summary: List access requests (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/approve:
+    post:
+      summary: Approve access request
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Approved
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/deny:
+    post:
+      summary: Deny access request
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Denied
+
+  /wp-json/wp-super-gallery/v1/companies:
+    get:
+      summary: List companies
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Companies
+
+  /wp-json/wp-super-gallery/v1/companies/{id}/access:
+    get:
+      summary: List company access
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Grants
+    post:
+      summary: Grant company access
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Granted
+
+  /wp-json/wp-super-gallery/v1/companies/{id}/access/{userId}:
+    delete:
+      summary: Revoke company access
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Revoked
+
+  /wp-json/wp-super-gallery/v1/companies/{id}/archive:
+    post:
+      summary: Archive company
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Archived
+
+  /wp-json/wp-super-gallery/v1/users/search:
+    get:
+      summary: Search users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Users
+
+  /wp-json/wp-super-gallery/v1/users:
+    post:
+      summary: Create user
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+
+  /wp-json/wp-super-gallery/v1/roles:
+    get:
+      summary: List roles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Roles
+
+  /wp-json/wp-super-gallery/v1/settings:
+    get:
+      summary: Public settings
+      responses:
+        '200':
+          description: Settings
+    post:
+      summary: Update settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+
+  /wp-json/wp-super-gallery/v1/permissions:
+    get:
+      summary: Current user permissions
+      security:
+        - cookieNonce: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Permissions payload
+
+  /wp-json/wp-super-gallery/v1/nonce:
+    get:
+      summary: Get fresh REST nonce
+      security:
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Nonce string
+
+  /wp-json/wp-super-gallery/v1/auth/login:
+    post:
+      summary: Cookie-based login helper
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                remember:
+                  type: boolean
+      responses:
+        '200':
+          description: Logged in (sets cookie)
+
+  /wp-json/wp-super-gallery/v1/auth/logout:
+    post:
+      summary: Logout (cookie)
+      security:
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Logged out
+
+  /wp-json/wp-super-gallery/v1/oembed:
+    get:
+      summary: OEmbed proxy
+      parameters:
+        - in: query
+          name: url
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: oEmbed response
+
+  /wp-json/wp-super-gallery/v1/analytics/event:
+    post:
+      summary: Record analytics event
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Recorded
+
+  /wp-json/wp-super-gallery/v1/analytics/campaigns/{id}:
+    get:
+      summary: Campaign analytics
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: from
+          schema:
+            type: string
+        - in: query
+          name: to
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Analytics data
+
+  /wp-json/wp-super-gallery/v1/campaign-categories:
+    get:
+      summary: Campaign categories
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Categories list
+
+  /wp-json/wp-super-gallery/v1/tags/campaign:
+    get:
+      summary: Campaign tags
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tags
+
+  /wp-json/wp-super-gallery/v1/tags/media:
+    get:
+      summary: Media tags
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tags
+
+  /wp-json/wp-super-gallery/v1/admin/health:
+    get:
+      summary: Health / diagnostics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Health data
+
+  /wp-json/wp-super-gallery/v1/admin/oembed-failures:
+    get:
+      summary: List oEmbed failures
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Reset oEmbed failures
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/thumbnail-cache:
+    get:
+      summary: Thumbnail cache stats
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Clear thumbnail cache
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/thumbnail-cache/refresh:
+    post:
+      summary: Refresh thumbnail cache
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/layout-templates:
+    get:
+      summary: List layout templates (admin)
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create layout template (admin)
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/layout-templates/{templateId}:
+    get:
+      summary: Get layout template (admin)
+      security:
+        - bearerAuth: []
+    put:
+      summary: Update layout template (admin)
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete layout template (admin)
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/layout-templates/{templateId}/duplicate:
+    post:
+      summary: Duplicate layout template
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/overlay-library:
+    get:
+      summary: List overlay library (admin)
+      security:
+        - bearerAuth: []
+    post:
+      summary: Upload overlay
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/overlay-library/{id}:
+    delete:
+      summary: Delete overlay
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/font-library:
+    get:
+      summary: List font library
+      security:
+        - bearerAuth: []
+    post:
+      summary: Upload font
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/admin/font-library/{id}:
+    delete:
+      summary: Delete font
+      security:
+        - bearerAuth: []
+
+  /wp-json/wp-super-gallery/v1/layout-templates/{templateId}:
+    get:
+      summary: Public layout template read
+      parameters:
+        - in: path
+          name: templateId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template

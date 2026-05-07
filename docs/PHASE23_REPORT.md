@@ -654,6 +654,8 @@ Completed sanitization/REST slices:
 13. campaign import flows now also route nested `galleryOverrides` through the shared gallery-override sanitizer before persistence, and duplicate flows preserve `_wpsg_gallery_overrides` directly, so non-editor lifecycle operations no longer punch a hole through the nested parity contract
 14. nested `adapterSettings` now also explicitly own the remaining classic navigation timing and spacing fields plus masonry auto-column breakpoint rules, so backend sanitization no longer treats those live runtime keys as stray compatibility-only fields when they arrive through nested config payloads
 15. the broader verification pass confirmed the shared sanitizer/REST path stays green in the full `wp-env` PHPUnit suite, including settings, campaign REST, duplicate, and import flows
+16. a later classic-admin QA pass confirmed one remaining requirement of the shared settings sanitizer: `Campaigns > Settings` submits only the registered PHP admin fields, so the sanitizer now merges those partial submissions over the raw stored option before validation so nested `gallery_config` and other non-posted settings survive classic saves instead of collapsing back to defaults
+17. that same classic-admin hardening pass now also sends explicit hidden `0` values for the PHP checkbox fields and adds focused PHPUnit coverage for both partial-save `gallery_config` preservation and unchecked admin booleans persisting as `false`
 
 P23-I is complete for the current nested gallery contract. Any future validation-map expansion belongs to new fields rather than unresolved sanitizer or REST drift in the existing Phase 23 surface.
 
@@ -761,6 +763,7 @@ Completed PHP audit/coverage slices:
 1. reviewed the existing settings, campaign REST, REST-extended, CLI, and sanitizer suites against the server-side Phase 23 surface instead of relying only on the pre-phase baseline
 2. expanded focused PHP coverage for global `gallery_config`, nested campaign override round-trips, shared sanitizer rules, and duplicate/import preservation of `_wpsg_gallery_overrides`
 3. revalidated the full plugin PHPUnit suite locally through `wp-env`, confirming the broader server-side baseline remains green at `492` tests and `1423` assertions
+4. post-phase hardening coverage now also asserts that classic WordPress settings saves preserve existing nested `gallery_config` state and that unchecked PHP admin checkbox fields persist explicit `false` values instead of silently reusing old truthy state
 
 P23-J1 is complete. The relevant Phase 23 PHP surface is audited, expanded, and passing in the full plugin test environment.
 

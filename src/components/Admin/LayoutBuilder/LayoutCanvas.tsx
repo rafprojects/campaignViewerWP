@@ -11,6 +11,7 @@ import { SmartGuides } from './SmartGuides';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { ASSET_MIME } from './DesignAssetsGrid';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -87,9 +88,9 @@ export function LayoutCanvas({
   const canvasHeight =
     template.canvasHeightMode === 'fixed-vh'
       ? Math.round(
-          viewportHeight *
-            ((template.canvasHeightVh || 50) / 100),
-        )
+        viewportHeight *
+        ((template.canvasHeightVh || 50) / 100),
+      )
       : Math.round(canvasWidth / template.canvasAspectRatio);
 
   // Auto-assign media to slots for preview
@@ -263,9 +264,9 @@ export function LayoutCanvas({
     // templateToGradientOpts reads 7+ fields; template is replaced on any field change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [template.backgroundGradientType, template.backgroundGradientDirection,
-     template.backgroundGradientAngle, template.backgroundGradientStops,
-     template.backgroundRadialShape, template.backgroundRadialSize,
-     template.backgroundGradientCenterX, template.backgroundGradientCenterY],
+    template.backgroundGradientAngle, template.backgroundGradientStops,
+    template.backgroundRadialShape, template.backgroundRadialSize,
+    template.backgroundGradientCenterX, template.backgroundGradientCenterY],
   );
 
   return (
@@ -481,3 +482,5 @@ export function LayoutCanvas({
     </div>
   );
 }
+
+setWpsgDebugDisplayName(LayoutCanvas, 'LayoutBuilder:LayoutCanvas');

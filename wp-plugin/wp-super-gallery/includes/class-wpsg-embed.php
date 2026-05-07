@@ -102,6 +102,7 @@ class WPSG_Embed {
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
         $theme = isset($settings['theme']) ? $settings['theme'] : 'default-dark';
         $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
+        $debug_component_markers = isset($settings['debug_component_markers']) ? (bool) $settings['debug_component_markers'] : true;
         $gallery_layout = isset($settings['gallery_layout']) ? $settings['gallery_layout'] : 'grid';
         $enable_lightbox = isset($settings['enable_lightbox']) ? $settings['enable_lightbox'] : true;
         $enable_animations = isset($settings['enable_animations']) ? $settings['enable_animations'] : true;
@@ -163,6 +164,9 @@ class WPSG_Embed {
             'restNonce'               => wp_create_nonce('wp_rest'),
             // P20-K: Gate JWT auth behind server-side constant.
             'enableJwt'               => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
+            // Admin setting controls whether DOM component markers are emitted
+            // in deployed builds; sites can still override with a filter.
+            'debugComponentMarkers'   => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
         ];
 
         $config_script = '<script>' .

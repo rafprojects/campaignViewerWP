@@ -12,6 +12,12 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
+### Unreleased (April 30, 2026)
+- Follow-on cleanup after v0.23.0
+  - Completed the broader frontend server-state migration to TanStack Query across app campaigns, admin resources, layout-template flows, and shared test providers; the `swr` dependency is no longer part of the active runtime.
+  - Removed the last live flat gallery bridge from the settings UI and gallery runtime so active settings and campaign flows resolve from nested `galleryConfig` and `galleryOverrides` only.
+  - Campaign duplication can now optionally deep-clone a linked layout template through the admin UI, REST endpoint, and WP-CLI command.
+
 ### v0.23.0 (March 31, 2026)
 - **MINOR**: Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes
   - **P24-A**: Global settings and campaign save paths now write nested gallery config only; legacy flat adapter fields remain readable for migration and are pruned on later nested saves.

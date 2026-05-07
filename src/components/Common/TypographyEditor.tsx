@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import {
   Accordion,
-  ColorInput,
   Group,
   NumberInput,
   Select,
@@ -12,10 +11,12 @@ import {
   Badge,
 } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { TypographyOverride } from '@/types';
 import { loadGoogleFont, getFailedFonts } from '@/utils/loadGoogleFont';
 import { useRecentFonts } from '@/hooks/useRecentFonts';
 import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface CustomFontEntry {
   /** Display name, e.g. "BrandSans" */
@@ -482,3 +483,5 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(TypographyEditor, 'TypographyEditor');

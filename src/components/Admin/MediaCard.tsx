@@ -3,6 +3,7 @@ import { Card, Image, Text, Group, Box, ActionIcon, Badge } from '@mantine/core'
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import styles from './MediaCard.module.scss';
 
 interface MediaCardProps {
@@ -121,4 +122,4 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
   },
 );
 
-MediaCard.displayName = 'MediaCard';
+setWpsgDebugDisplayName(MediaCard, 'AdminPanel:MediaCard');

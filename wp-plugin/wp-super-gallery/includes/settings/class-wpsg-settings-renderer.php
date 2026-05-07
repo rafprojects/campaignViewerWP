@@ -149,6 +149,14 @@ class WPSG_Settings_Renderer {
         );
 
         add_settings_field(
+            'debug_component_markers',
+            __('Component Debug Names & Markers', 'wp-super-gallery'),
+            ['WPSG_Settings_Core_Fields', 'render_debug_component_markers_field'],
+            WPSG_Settings::PAGE_SLUG,
+            'wpsg_display_section'
+        );
+
+        add_settings_field(
             'gallery_layout',
             __('Default Layout', 'wp-super-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_layout_field'],

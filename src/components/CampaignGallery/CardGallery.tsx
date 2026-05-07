@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, SimpleGrid, Center, Loader, TextInput, Switch, Select, ColorInput } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
+import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
@@ -9,10 +9,15 @@ import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useInContextSave } from '@/hooks/useInContextSave';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
+import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
+import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
+import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/CardViewer/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -68,31 +73,35 @@ export function CardGallery({
   const [isAnimating, setIsAnimating] = useState(false);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  const displayMode = galleryBehaviorSettings.cardDisplayMode ?? 'load-more';
+  // Container-based breakpoint resolution → resolved card settings
+  const { breakpoint, width: containerWidth } = useBreakpoint(gridContainerRef);
+  const s = useMemo(
+    () => resolveCardBreakpointSettings(galleryBehaviorSettings, breakpoint),
+    [galleryBehaviorSettings, breakpoint],
+  );
 
-  /** Resolve effective column count based on settings + current breakpoint. */
-  const isXxl = useMediaQuery('(min-width: 1800px)');
-  const isXl = useMediaQuery('(min-width: 1400px)');
-  const isLg = useMediaQuery('(min-width: 1200px)');
-  const isSm = useMediaQuery('(min-width: 768px)');
+  const displayMode = s.cardDisplayMode ?? 'load-more';
+
+  /** Resolve effective column count from resolved settings + container width. */
   const effectiveColumns = useMemo((): number => {
-    const cols = galleryBehaviorSettings.cardGridColumns;
-    const max = galleryBehaviorSettings.cardMaxColumns || 0;
-    if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
-    // Responsive auto: base:1 sm:2 lg:3 xl:4 xxl:5
-    const auto = isXxl ? 5 : isXl ? 4 : isLg ? 3 : isSm ? 2 : 1;
+    const cols = s.cardGridColumns;
+    if (cols > 0) return cols;
+    // Auto mode: use container width + cardAutoColumnsBreakpoints when available
+    const max = s.cardMaxColumns || 0;
+    const auto = containerWidth > 0
+      ? resolveColumnsFromWidth(containerWidth, 0, s.cardAutoColumnsBreakpoints)
+      : 1;
     return max > 0 ? Math.min(auto, max) : auto;
-  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isXxl, isXl, isLg, isSm]);
+  }, [s.cardGridColumns, s.cardMaxColumns, containerWidth, s.cardAutoColumnsBreakpoints]);
 
   /** Max columns for fixed-width (flex) branch — used to compute row maxWidth. */
   const maxCols = useMemo((): number => {
-    const cols = galleryBehaviorSettings.cardGridColumns;
-    const max = galleryBehaviorSettings.cardMaxColumns || 0;
-    if (cols > 0) return max > 0 ? Math.min(cols, max) : cols;
+    const cols = s.cardGridColumns;
+    if (cols > 0) return cols;
+    const max = s.cardMaxColumns || 0;
     if (max > 0) return max;
-    // Same breakpoint ladder as effectiveColumns (no hardcoded cap)
-    return isXxl ? 5 : isXl ? 4 : isLg ? 3 : isSm ? 2 : 1;
-  }, [galleryBehaviorSettings.cardGridColumns, galleryBehaviorSettings.cardMaxColumns, isXxl, isXl, isLg, isSm]);
+    return effectiveColumns;
+  }, [s.cardGridColumns, s.cardMaxColumns, effectiveColumns]);
 
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
@@ -124,7 +133,7 @@ export function CardGallery({
   const showHiddenNotice = useMemo(() => accessMode === 'hide' && filter === 'all' && hiddenCount > 0, [accessMode, filter, hiddenCount]);
 
   // Pagination math
-  const rowsPerPage = galleryBehaviorSettings.cardRowsPerPage ?? 3;
+  const rowsPerPage = s.cardRowsPerPage ?? 3;
   const cardsPerPage = rowsPerPage * effectiveColumns;
   const totalPages = displayMode === 'paginated' && cardsPerPage > 0
     ? Math.ceil(filteredCampaigns.length / cardsPerPage)
@@ -137,6 +146,11 @@ export function CardGallery({
     setSlideDirection(null);
     setIsAnimating(false);
   }, [filter, searchQuery, accessMode, displayMode]);
+
+  // Reset page when breakpoint changes (layout shifts column count)
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [breakpoint]);
 
   // Clamp currentPage if totalPages shrinks (e.g. resize or filter change)
   useEffect(() => {
@@ -175,14 +189,14 @@ export function CardGallery({
     setIsAnimating(true);
     // Clear any prior pending transition before starting a new one.
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-    const duration = galleryBehaviorSettings.cardPageTransitionMs ?? 300;
+    const duration = s.cardPageTransitionMs ?? 300;
     transitionTimerRef.current = setTimeout(() => {
       transitionTimerRef.current = null;
       setCurrentPage(page);
       setSlideDirection(null);
       setIsAnimating(false);
     }, duration);
-  }, [currentPage, galleryBehaviorSettings.cardPageTransitionMs, isAnimating, totalPages]);
+  }, [currentPage, s.cardPageTransitionMs, isAnimating, totalPages]);
 
   const goPrev = useCallback(() => goToPage(currentPage - 1), [currentPage, goToPage]);
   const goNext = useCallback(() => goToPage(currentPage + 1), [currentPage, goToPage]);
@@ -200,7 +214,7 @@ export function CardGallery({
   }, [displayMode, totalPages, goPrev, goNext]);
 
   // Slide animation styles
-  const transitionMs = galleryBehaviorSettings.cardPageTransitionMs ?? 300;
+  const transitionMs = s.cardPageTransitionMs ?? 300;
   const slideStyle: React.CSSProperties = displayMode === 'paginated' ? {
     transform: slideDirection === 'left'
       ? 'translateX(-100%)'
@@ -208,14 +222,59 @@ export function CardGallery({
         ? 'translateX(100%)'
         : 'translateX(0)',
     transition: slideDirection ? `transform ${transitionMs}ms ease` : 'none',
-    opacity: slideDirection ? 0.3 : 1,
+    opacity: slideDirection ? (s.cardPageTransitionOpacity ?? 0.3) : 1,
   } : {};
 
   const containerSize = galleryBehaviorSettings.appMaxWidth > 0
-    ? galleryBehaviorSettings.appMaxWidth
+    ? toCssOrNumber(galleryBehaviorSettings.appMaxWidth, galleryBehaviorSettings.appMaxWidthUnit)
     : undefined;
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
-  const containerPaddingStyle = { paddingInline: galleryBehaviorSettings.appPadding };
+  const containerPaddingStyle = { paddingInline: toCssOrNumber(galleryBehaviorSettings.appPadding, galleryBehaviorSettings.appPaddingUnit) };
+  /** Below this resolved pixel width, fixed-width cards fall back to the responsive branch. */
+  const MIN_FIXED_CARD_WIDTH_PX = 120;
+  const hasFixedCardWidth = s.cardMaxWidth > 0;
+  const cardGridJustification = s.cardJustifyContent || 'center';
+  const cardGridVerticalAlign = s.cardGalleryVerticalAlign || 'start';
+  const cardGridMinHeight = s.cardGalleryMinHeight || 0;
+  const cardGridMaxHeight = s.cardGalleryMaxHeight || 0;
+  const cardGridOffsetX = s.cardGalleryOffsetX || 0;
+  const cardGridOffsetY = s.cardGalleryOffsetY || 0;
+  const cardGapHUnit = s.cardGapHUnit ?? 'px';
+  const cardGapVUnit = s.cardGapVUnit ?? 'px';
+  // Clamp percentage-based horizontal gaps to a minimum visible pixel value
+  const effectiveGapH = cardGapHUnit === '%' && containerWidth > 0 && (containerWidth * s.cardGapH / 100) < 4
+    ? '4px'
+    : toCss(s.cardGapH, cardGapHUnit);
+  const responsiveCardWidth = useMemo(() => {
+    if (effectiveColumns <= 1) {
+      return '100%';
+    }
+
+    const totalGap = toCss((effectiveColumns - 1) * s.cardGapH, cardGapHUnit);
+    return `calc((100% - ${totalGap}) / ${effectiveColumns})`;
+  }, [effectiveColumns, s.cardGapH, cardGapHUnit]);
+
+  const fixedCardWidth = useMemo<{ value: number; unit: CssWidthUnit } | null>(() => {
+    if (!hasFixedCardWidth) return null;
+
+    const scale = s.cardScale ?? 1;
+    const scaledValue = scale !== 1 ? Math.round(s.cardMaxWidth * scale) : s.cardMaxWidth;
+
+    if (s.cardMaxWidthUnit === '%' && containerWidth > 0) {
+      const resolved = Math.round((containerWidth * scaledValue) / 100);
+      // Fall back to responsive branch when resolved width is too small
+      if (resolved < MIN_FIXED_CARD_WIDTH_PX) return null;
+      return { value: resolved, unit: 'px' };
+    }
+
+    // For absolute units, check against the floor when we can resolve to px
+    if (s.cardMaxWidthUnit === 'px' && scaledValue < MIN_FIXED_CARD_WIDTH_PX) return null;
+
+    return {
+      value: scaledValue,
+      unit: s.cardMaxWidthUnit,
+    };
+  }, [hasFixedCardWidth, s.cardMaxWidth, s.cardMaxWidthUnit, s.cardScale, containerWidth]);
 
   // P21-D: Dynamic viewer background
   const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
@@ -301,65 +360,65 @@ export function CardGallery({
             />
           </Stack>
         </InContextEditor>
-        <Container size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
-          <Stack gap="lg">
+        <Container {...getWpsgDebugProps('CardGallery', 'header-shell')} size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
+          <Stack {...getWpsgDebugProps('CardGallery', 'header-stack')} gap="lg">
             {/* Title and subtitle */}
             {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
-            <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-              {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
-              <Stack gap={0}>
-                {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
-                {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
-              </Stack>
-              )}
+              <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+                {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
+                  <Stack gap={0}>
+                    {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
+                    {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
+                  </Stack>
+                )}
 
-              {/* Admin controls */}
-              {isAdmin && galleryBehaviorSettings.showAccessMode && (
-                <Group gap="sm" align="center">
-                  <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
-                  <SegmentedControl
-                    value={accessMode}
-                    onChange={(v) => onAccessModeChange?.(v as 'lock' | 'hide')}
-                    data={[
-                      { label: 'Lock', value: 'lock' },
-                      { label: 'Hide', value: 'hide' },
-                    ]}
-                    size="xs"
-                    aria-label="Access mode"
-                  />
-                </Group>
-              )}
-            </Group>
+                {/* Admin controls */}
+                {isAdmin && galleryBehaviorSettings.showAccessMode && (
+                  <Group gap="sm" align="center">
+                    <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
+                    <SegmentedControl
+                      value={accessMode}
+                      onChange={(v) => onAccessModeChange?.(v as 'lock' | 'hide')}
+                      data={[
+                        { label: 'Lock', value: 'lock' },
+                        { label: 'Hide', value: 'hide' },
+                      ]}
+                      size="xs"
+                      aria-label="Access mode"
+                    />
+                  </Group>
+                )}
+              </Group>
             )}
 
             {/* Filter tabs */}
             {(galleryBehaviorSettings.showFilterTabs || galleryBehaviorSettings.showSearchBox) && (
-            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md" style={{ overflow: 'hidden' }}>
-              {galleryBehaviorSettings.showFilterTabs && (
-              <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
-                <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-                  <Tabs.Tab value="all">All</Tabs.Tab>
-                  <Tabs.Tab value="accessible">My Access</Tabs.Tab>
-                  {companies.map((company) => (
-                    <Tabs.Tab key={company} value={company}>
-                      {company}
-                    </Tabs.Tab>
-                  ))}
-                </Tabs.List>
-              </Tabs>
-              )}
-              {galleryBehaviorSettings.showSearchBox && (
-              <TextInput
-                placeholder="Search campaigns..."
-                leftSection={<IconSearch size={16} />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                style={{ minWidth: 'min(200px, 100%)', maxWidth: 280 }}
-                size="sm"
-                aria-label="Search campaigns by title, description, or tags"
-              />
-              )}
-            </Group>
+              <Group justify="space-between" align="flex-end" wrap="wrap" gap="md" style={{ overflow: 'hidden' }}>
+                {galleryBehaviorSettings.showFilterTabs && (
+                  <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
+                    <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+                      <Tabs.Tab value="all">All</Tabs.Tab>
+                      <Tabs.Tab value="accessible">My Access</Tabs.Tab>
+                      {companies.map((company) => (
+                        <Tabs.Tab key={company} value={company}>
+                          {company}
+                        </Tabs.Tab>
+                      ))}
+                    </Tabs.List>
+                  </Tabs>
+                )}
+                {galleryBehaviorSettings.showSearchBox && (
+                  <TextInput
+                    placeholder="Search campaigns..."
+                    leftSection={<IconSearch size={16} />}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                    style={{ minWidth: 'min(200px, 100%)', maxWidth: 280 }}
+                    size="sm"
+                    aria-label="Search campaigns by title, description, or tags"
+                  />
+                )}
+              </Group>
             )}
 
             {/* Hidden notice */}
@@ -373,60 +432,70 @@ export function CardGallery({
       </Box>
 
       {/* Gallery Grid */}
-      <Container size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
+      <Container {...getWpsgDebugProps('CardGallery')} size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
         {/* Pagination wrapper — relative for overlay arrows */}
         <Box
+          {...getWpsgDebugProps('CardGallery', 'pagination-shell')}
           ref={gridContainerRef}
           style={{ position: 'relative', overflow: 'hidden' }}
           tabIndex={displayMode === 'paginated' ? 0 : undefined}
           aria-label={displayMode === 'paginated' ? `Card gallery page ${currentPage + 1} of ${totalPages}` : undefined}
         >
           <div style={slideStyle}>
-            {galleryBehaviorSettings.cardMaxWidth > 0 ? (
-              <Box
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: `${galleryBehaviorSettings.cardGapV}px ${galleryBehaviorSettings.cardGapH}px`,
-                  justifyContent: galleryBehaviorSettings.cardJustifyContent || 'center',
-                  width: '100%',
-                  ...(galleryBehaviorSettings.cardMaxWidthUnit !== '%' ? {
-                    maxWidth: maxCols * galleryBehaviorSettings.cardMaxWidth + (maxCols - 1) * galleryBehaviorSettings.cardGapH,
-                    marginInline: 'auto',
-                  } : {}),
-                }}
-              >
-                {visibleCampaigns.map((campaign) => (
-                  <CampaignCard
+            <Box
+              {...getWpsgDebugProps('CardGallery', 'grid')}
+              data-testid="card-gallery-grid"
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: `${toCss(s.cardGapV, cardGapVUnit)} ${effectiveGapH}`,
+                justifyContent: cardGridJustification,
+                alignContent: cardGridVerticalAlign,
+                ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, s.cardGalleryMinHeightUnit) } : {}),
+                ...(cardGridMaxHeight > 0 ? { maxHeight: toCssOrNumber(cardGridMaxHeight, s.cardGalleryMaxHeightUnit), overflow: 'auto' as const } : {}),
+                ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, s.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, s.cardGalleryOffsetYUnit)})` } : {}),
+                width: '100%',
+                ...(fixedCardWidth ? {
+                  maxWidth: `calc(${toCss(maxCols * fixedCardWidth.value, fixedCardWidth.unit)} + ${(maxCols - 1)} * ${effectiveGapH})`,
+                  marginInline: 'auto',
+                } : {}),
+              }}
+            >
+              {visibleCampaigns.map((campaign) => {
+                const sharedProps = {
+                  campaign,
+                  hasAccess: hasAccess(campaign.id, campaign.visibility),
+                  onClick: () => setSelectedCampaign(campaign),
+                  settings: s,
+                  apiClient: !hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined,
+                };
+
+                if (fixedCardWidth) {
+                  return (
+                    <CampaignCard
+                      key={campaign.id}
+                      {...sharedProps}
+                      maxWidth={fixedCardWidth.value}
+                      maxWidthUnit={fixedCardWidth.unit}
+                    />
+                  );
+                }
+
+                return (
+                  <Box
                     key={campaign.id}
-                    campaign={campaign}
-                    hasAccess={hasAccess(campaign.id, campaign.visibility)}
-                    onClick={() => setSelectedCampaign(campaign)}
-                    settings={galleryBehaviorSettings}
-                    apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
-                    maxWidth={galleryBehaviorSettings.cardMaxWidth}
-                    maxWidthUnit={galleryBehaviorSettings.cardMaxWidthUnit}
-                  />
-                ))}
-              </Box>
-            ) : (
-              <SimpleGrid
-                cols={effectiveColumns}
-                spacing={galleryBehaviorSettings.cardGapH}
-                verticalSpacing={galleryBehaviorSettings.cardGapV}
-              >
-                {visibleCampaigns.map((campaign) => (
-                  <CampaignCard
-                    key={campaign.id}
-                    campaign={campaign}
-                    hasAccess={hasAccess(campaign.id, campaign.visibility)}
-                    onClick={() => setSelectedCampaign(campaign)}
-                    settings={galleryBehaviorSettings}
-                    apiClient={!hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined}
-                  />
-                ))}
-              </SimpleGrid>
-            )}
+                    data-testid="card-responsive-wrapper"
+                    style={{
+                      flex: `0 0 ${responsiveCardWidth}`,
+                      maxWidth: responsiveCardWidth,
+                      minWidth: 0,
+                    }}
+                  >
+                    <CampaignCard {...sharedProps} />
+                  </Box>
+                );
+              })}
+            </Box>
           </div>
 
           {/* Overlay arrows for paginated mode */}
@@ -435,7 +504,7 @@ export function CardGallery({
               onPrev={goPrev}
               onNext={goNext}
               total={totalPages}
-              settings={galleryBehaviorSettings}
+              settings={s}
               previousLabel="Previous page"
               nextLabel="Next page"
             />
@@ -445,12 +514,12 @@ export function CardGallery({
         {/* Dot navigator + page indicator for paginated mode */}
         {displayMode === 'paginated' && totalPages > 1 && (
           <Stack align="center" gap={4} mt="sm">
-            {galleryBehaviorSettings.cardPageDotNav && (
+            {s.cardPageDotNav && (
               <DotNavigator
                 total={totalPages}
                 currentIndex={currentPage}
                 onSelect={(page) => goToPage(page)}
-                settings={galleryBehaviorSettings}
+                settings={s}
               />
             )}
             <Text size="xs" c="dimmed">
@@ -511,3 +580,5 @@ export function CardGallery({
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(CardGallery, 'CardGallery');

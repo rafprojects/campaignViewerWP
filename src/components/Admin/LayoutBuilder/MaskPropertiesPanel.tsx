@@ -23,6 +23,7 @@ import type { LayoutSlot, MaskLayer } from '@/types';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import type { OverlayLibraryItem } from './BuilderDockContext';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -55,6 +56,8 @@ function PropRow({ label, children, tooltip }: { label: string; children: React.
   );
 }
 
+setWpsgDebugDisplayName(PropRow, 'LayoutBuilder:MaskPropertiesPanel:PropRow');
+
 function SectionHeader({ label }: { label: string }) {
   return (
     <Box
@@ -69,6 +72,8 @@ function SectionHeader({ label }: { label: string }) {
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:MaskPropertiesPanel:SectionHeader');
 
 // ── Component ────────────────────────────────────────────────
 
@@ -323,3 +328,5 @@ export function MaskPropertiesPanel({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(MaskPropertiesPanel, 'LayoutBuilder:MaskPropertiesPanel');

@@ -12,6 +12,7 @@ import {
 import { IconTrash, IconUpload } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import { type FontLibraryEntry, loadCustomFonts } from '@/utils/loadCustomFonts';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const ACCEPT = '.woff2,.woff,.ttf,.otf';
 
@@ -121,3 +122,5 @@ export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(FontLibraryManager, 'AdminPanel:FontLibraryManager');

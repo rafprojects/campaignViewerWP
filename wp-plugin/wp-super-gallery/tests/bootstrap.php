@@ -28,12 +28,6 @@ if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
 	exit( 1 );
 }
 
-// Ensure WP_DEBUG is active so the nonce-bypass guard in verify_admin_auth()
-// can fire when WPSG_ALLOW_NONCE_BYPASS is also set.
-if ( ! defined( 'WP_DEBUG' ) ) {
-	define( 'WP_DEBUG', true );
-}
-
 // Give access to tests_add_filter() function.
 require_once "{$_tests_dir}/includes/functions.php";
 
@@ -92,7 +86,9 @@ if ( file_exists( $polyfill_autoload ) ) {
 	require_once $polyfill_autoload;
 }
 
-// Allow nonce bypass in the test environment (WP_DEBUG is already true here).
+// Allow nonce bypass in the test environment. verify_admin_auth() accepts
+// WP_TESTS_DOMAIN from the WordPress PHPUnit bootstrap as a valid test marker,
+// so we do not need to predefine WP_DEBUG here.
 if ( ! defined( 'WPSG_ALLOW_NONCE_BYPASS' ) ) {
 	define( 'WPSG_ALLOW_NONCE_BYPASS', true );
 }

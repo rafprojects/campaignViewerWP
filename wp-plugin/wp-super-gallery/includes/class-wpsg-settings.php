@@ -125,8 +125,16 @@ class WPSG_Settings {
      */
     public static function get_settings() {
         self::load_registry();
-        $settings = get_option(self::OPTION_NAME, []);
-        return wp_parse_args($settings, self::$defaults);
+        $stored_settings = get_option(self::OPTION_NAME, []);
+        $settings = WPSG_Settings_Sanitizer::normalize_card_config_settings(
+            wp_parse_args($stored_settings, self::$defaults)
+        );
+
+        if (!array_key_exists('gallery_config', $settings)) {
+            return $settings;
+        }
+
+        return WPSG_Settings_Utils::strip_nested_only_gallery_legacy_fields($settings);
     }
 
     /**
@@ -288,6 +296,13 @@ class WPSG_Settings {
      */
     public static function render_allow_user_theme_override_field() {
         WPSG_Settings_Core_Fields::render_allow_user_theme_override_field();
+    }
+
+    /**
+     * Render debug component markers checkbox.
+     */
+    public static function render_debug_component_markers_field() {
+        WPSG_Settings_Core_Fields::render_debug_component_markers_field();
     }
 
     /**

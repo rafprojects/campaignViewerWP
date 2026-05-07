@@ -10,6 +10,7 @@ export default tseslint.config(
       'dist',
       'coverage',
       'node_modules',
+      'wp-plugin/wp-super-gallery/admin/build/**',
       'wp-plugin/wp-super-gallery/assets',
       'wp-plugin/wp-super-gallery/vendor',
     ],
@@ -56,6 +57,13 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+  },
+  {
+    files: ['scripts/**/*.{js,cjs,mjs}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.node,
     },
   },
 )

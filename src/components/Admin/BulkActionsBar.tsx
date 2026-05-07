@@ -1,5 +1,6 @@
 import { Button, Group, Text, Paper, ActionIcon, Tooltip } from '@mantine/core';
 import { IconX, IconArchive, IconArchiveOff } from '@tabler/icons-react';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface BulkActionsBarProps {
   selectedCount: number;
@@ -94,3 +95,5 @@ export function BulkActionsBar({
     </Paper>
   );
 }
+
+setWpsgDebugDisplayName(BulkActionsBar, 'AdminPanel:BulkActionsBar');

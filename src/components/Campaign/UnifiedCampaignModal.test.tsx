@@ -7,10 +7,11 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from 
 
 let capturedGalleryConfigEditorZIndex: number | undefined;
 
-vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
-  const { useState } = await import('react');
-
-  interface MockGalleryConfigEditorModalProps {
+// Synchronous mock – avoids the async factory pattern which can block vitest
+// worker threads under heavy parallel load.  Native <select> elements in jsdom
+// maintain their own .value so no React useState is needed.
+vi.mock('@/components/Common/GalleryConfigEditorModal', () => ({
+  GalleryConfigEditorModal: (props: {
     opened: boolean;
     title: string;
     contextSummary?: string;
@@ -32,82 +33,63 @@ vi.mock('@/components/Common/GalleryConfigEditorModal', async () => {
       breakpoints: Record<string, unknown>;
     }) => void;
     zIndex?: number;
-  }
+  }) => {
+    capturedGalleryConfigEditorZIndex = props.zIndex;
 
-  function MockGalleryConfigEditorModal({
-    opened,
-    title,
-    contextSummary,
-    clearLabel = 'Clear Campaign Overrides',
-    saveLabel = 'Apply Campaign Gallery Config',
-    value,
-    onClear,
-    onSave,
-    zIndex,
-  }: MockGalleryConfigEditorModalProps) {
-    const [mode, setMode] = useState<'unified' | 'per-type'>(value?.mode ?? 'per-type');
-    const [unifiedAdapterId, setUnifiedAdapterId] = useState(value?.breakpoints?.desktop?.unified?.adapterId ?? '');
-
-    capturedGalleryConfigEditorZIndex = zIndex;
-
-    if (!opened) {
+    if (!props.opened) {
       return null;
     }
 
+    const initialMode = props.value?.mode ?? 'per-type';
+    const initialAdapterId = props.value?.breakpoints?.desktop?.unified?.adapterId ?? '';
+
     return (
-      <div role="dialog" aria-label={title}>
-        <h2>{title}</h2>
-        {contextSummary ? <p>{contextSummary}</p> : null}
+      <div role="dialog" aria-label={props.title}>
+        <h2>{props.title}</h2>
+        {props.contextSummary ? <p>{props.contextSummary}</p> : null}
         <div>Shared Section Spacing</div>
         <div>Adapter Content Padding (px)</div>
         <label>
           Gallery Mode
-          <select
-            aria-label="Gallery Mode"
-            value={mode}
-            onChange={(event) => setMode(event.currentTarget.value as 'unified' | 'per-type')}
-          >
+          <select aria-label="Gallery Mode" defaultValue={initialMode}>
             <option value="per-type">Per-Type</option>
             <option value="unified">Unified</option>
           </select>
         </label>
-        {mode === 'unified' && (
-          <label>
-            Unified Gallery Adapter
-            <select
-              aria-label="Unified Gallery Adapter"
-              value={unifiedAdapterId}
-              onChange={(event) => setUnifiedAdapterId(event.currentTarget.value)}
-            >
-              <option value="">Default</option>
-              <option value="classic">Classic</option>
-            </select>
-          </label>
-        )}
-        <button type="button" onClick={() => onClear?.()}>{clearLabel}</button>
+        <label>
+          Unified Gallery Adapter
+          <select aria-label="Unified Gallery Adapter" defaultValue={initialAdapterId}>
+            <option value="">Default</option>
+            <option value="classic">Classic</option>
+          </select>
+        </label>
+        <button type="button" onClick={() => props.onClear?.()}>
+          {props.clearLabel ?? 'Clear Campaign Overrides'}
+        </button>
         <button
           type="button"
-          onClick={() => onSave({
-            mode,
-            breakpoints: mode === 'unified'
-              ? {
-                desktop: { unified: { adapterId: unifiedAdapterId || 'classic' } },
-                tablet: { unified: { adapterId: unifiedAdapterId || 'classic' } },
-                mobile: { unified: { adapterId: unifiedAdapterId || 'classic' } },
-              }
-              : {},
-          })}
+          onClick={() => {
+            const container = document.querySelector(`[aria-label="${props.title}"]`);
+            const mode = (container?.querySelector<HTMLSelectElement>('[aria-label="Gallery Mode"]')?.value ?? 'per-type') as 'unified' | 'per-type';
+            const adapterId = container?.querySelector<HTMLSelectElement>('[aria-label="Unified Gallery Adapter"]')?.value ?? '';
+            props.onSave({
+              mode,
+              breakpoints: mode === 'unified'
+                ? {
+                  desktop: { unified: { adapterId: adapterId || 'classic' } },
+                  tablet: { unified: { adapterId: adapterId || 'classic' } },
+                  mobile: { unified: { adapterId: adapterId || 'classic' } },
+                }
+                : {},
+            });
+          }}
         >
-          {saveLabel}
+          {props.saveLabel ?? 'Apply Campaign Gallery Config'}
         </button>
       </div>
     );
-  }
-
-  return {
-    GalleryConfigEditorModal: MockGalleryConfigEditorModal,
-  };
-});
+  },
+}));
 
 // Stub MediaLibraryPicker to avoid its heavy data fetching
 vi.mock('@/components/Campaign/MediaLibraryPicker', () => ({
@@ -130,8 +112,6 @@ function makeMockModal(overrides: Partial<UnifiedCampaignModalHandle> = {}): Uni
       publishAt: '',
       unpublishAt: '',
       layoutTemplateId: '',
-      imageAdapterId: '',
-      videoAdapterId: '',
       categories: [],
     },
     updateForm: vi.fn(),
@@ -282,7 +262,7 @@ describe('UnifiedCampaignModal', () => {
 
     await openCampaignResponsiveConfigDialog();
 
-    expect(capturedGalleryConfigEditorZIndex).toBe(400);
+    expect(capturedGalleryConfigEditorZIndex).toBe(500);
     expect(screen.getByRole('dialog', { name: 'Campaign Responsive Gallery Config' })).toBeInTheDocument();
   });
 
@@ -300,8 +280,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: { mode: 'unified' },
         categories: [],
       },
@@ -319,7 +297,6 @@ describe('UnifiedCampaignModal', () => {
   it('uses the effective global unified mode to choose the quick override controls when no explicit campaign mode override exists', () => {
     const galleryBehaviorSettings: GalleryBehaviorSettings = {
       ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-      unifiedGalleryEnabled: true,
       galleryConfig: {
         ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig,
         mode: 'unified',
@@ -339,8 +316,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: undefined,
         categories: [],
       },
@@ -371,8 +346,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: 'masonry',
-        videoAdapterId: 'diamond',
         galleryOverrides: { mode: 'unified' },
         categories: [],
       },
@@ -386,8 +359,6 @@ describe('UnifiedCampaignModal', () => {
     fireEvent.click(screen.getByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
 
     expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-      imageAdapterId: '',
-      videoAdapterId: '',
       galleryOverrides: expect.objectContaining({
         mode: 'unified',
         breakpoints: expect.objectContaining({
@@ -413,8 +384,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
           breakpoints: {
@@ -463,8 +432,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
         },
@@ -478,8 +445,6 @@ describe('UnifiedCampaignModal', () => {
     fireEvent.click(screen.getByRole('option', { name: perTypeAdapterLabel ?? 'Masonry' }));
 
     expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-      imageAdapterId: '',
-      videoAdapterId: '',
       galleryOverrides: expect.objectContaining({
         mode: 'per-type',
         breakpoints: expect.objectContaining({
@@ -517,10 +482,13 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: 'masonry',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: { adapterId: 'masonry' },
+            },
+          },
         },
         categories: [],
       },
@@ -548,8 +516,6 @@ describe('UnifiedCampaignModal', () => {
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
           breakpoints: {
@@ -579,8 +545,6 @@ describe('UnifiedCampaignModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use Inherited Gallery Settings' }));
 
     expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-      imageAdapterId: '',
-      videoAdapterId: '',
       galleryOverrides: undefined,
     }));
   });
@@ -602,8 +566,6 @@ describe('UnifiedCampaignModal', () => {
 
     await waitFor(() => {
       expect(updateForm).toHaveBeenCalledWith(expect.objectContaining({
-        imageAdapterId: 'classic',
-        videoAdapterId: 'classic',
         galleryOverrides: expect.objectContaining({
           mode: 'unified',
           breakpoints: expect.objectContaining({

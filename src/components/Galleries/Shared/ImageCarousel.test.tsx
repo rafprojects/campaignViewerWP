@@ -1,7 +1,54 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '../../../test/test-utils';
 import { ImageCarousel } from './ImageCarousel';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem, type GalleryBehaviorSettings } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type GalleryCommonSettings, type MediaItem } from '@/types';
+
+function buildImageSettings(
+  common: Partial<GalleryCommonSettings>,
+  overrides: Partial<GalleryBehaviorSettings> = {},
+): GalleryBehaviorSettings {
+  const baseConfig = DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig!;
+
+  return {
+    ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+    ...overrides,
+    galleryConfig: {
+      ...baseConfig,
+      breakpoints: {
+        desktop: {
+          ...baseConfig.breakpoints?.desktop,
+          image: {
+            ...baseConfig.breakpoints?.desktop?.image,
+            common: {
+              ...baseConfig.breakpoints?.desktop?.image?.common,
+              ...common,
+            },
+          },
+        },
+        tablet: {
+          ...baseConfig.breakpoints?.tablet,
+          image: {
+            ...baseConfig.breakpoints?.tablet?.image,
+            common: {
+              ...baseConfig.breakpoints?.tablet?.image?.common,
+              ...common,
+            },
+          },
+        },
+        mobile: {
+          ...baseConfig.breakpoints?.mobile,
+          image: {
+            ...baseConfig.breakpoints?.mobile?.image,
+            common: {
+              ...baseConfig.breakpoints?.mobile?.image?.common,
+              ...common,
+            },
+          },
+        },
+      },
+    },
+  };
+}
 
 const images: MediaItem[] = [
   {
@@ -87,11 +134,10 @@ describe('ImageCarousel', () => {
     render(
       <ImageCarousel
         images={images}
-        settings={{
-          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+        settings={buildImageSettings({
           gallerySizingMode: 'manual',
           galleryManualHeight: '500px',
-        }}
+        })}
       />,
     );
 
@@ -120,10 +166,7 @@ describe('ImageCarousel', () => {
     render(
       <ImageCarousel
         images={images}
-        settings={{
-          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-          gallerySizingMode: 'viewport',
-        }}
+        settings={buildImageSettings({ gallerySizingMode: 'viewport' })}
       />,
     );
 
@@ -140,10 +183,7 @@ describe('ImageCarousel', () => {
       <ImageCarousel
         images={images}
         breakpoint="mobile"
-        settings={{
-          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-          gallerySizingMode: 'viewport',
-        }}
+        settings={buildImageSettings({ gallerySizingMode: 'viewport' })}
       />,
     );
 
@@ -158,11 +198,10 @@ describe('ImageCarousel', () => {
       <ImageCarousel
         images={images}
         breakpoint="tablet"
-        settings={{
-          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-          gallerySizingMode: 'viewport',
-          viewportHeightTabletRatio: 0.85,
-        }}
+        settings={buildImageSettings(
+          { gallerySizingMode: 'viewport' },
+          { viewportHeightTabletRatio: 0.85 },
+        )}
       />,
     );
 

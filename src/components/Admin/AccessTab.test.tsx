@@ -180,6 +180,11 @@ describe('AccessTab', () => {
     expect(grantBtn).toBeInTheDocument();
   });
 
+  it('shows company-level helper text when scope is company', () => {
+    render(<AccessTabWrapper accessSource="company" />);
+    expect(screen.getByText(/company-level grants give access to all campaigns/i)).toBeInTheDocument();
+  });
+
   it('Quick Add User button fires onQuickAddUser', () => {
     const onQuickAddUser = vi.fn();
     render(<AccessTabWrapper onQuickAddUser={onQuickAddUser} />);

@@ -1,5 +1,4 @@
 import type {
-  Campaign,
   GalleryConfig,
   GalleryConfigBreakpoint,
   GalleryConfigMode,
@@ -13,17 +12,12 @@ const CAMPAIGN_OVERRIDE_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'ta
 
 type CampaignOverrideScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
 
-type CampaignGalleryOverrideSource = Pick<Campaign, 'imageAdapterId' | 'videoAdapterId' | 'galleryOverrides'>;
+type CampaignGalleryOverrideSource = {
+  galleryOverrides?: Partial<GalleryConfig>;
+};
 
 export interface ClearedCampaignGalleryOverrides {
-  imageAdapterId: '';
-  videoAdapterId: '';
   galleryOverrides: undefined;
-}
-
-export interface NormalizedCampaignLegacyAdapterOverrides {
-  imageAdapterId: string;
-  videoAdapterId: string;
 }
 
 function isNonEmptyObject(value: unknown): value is Record<string, unknown> {
@@ -100,24 +94,6 @@ function hasCampaignScopeAdapterOverrides(
   });
 }
 
-function getNormalizedLegacyScopeAdapterId(
-  source: CampaignGalleryOverrideSource,
-  scope: Extract<CampaignOverrideScope, 'image' | 'video'>,
-): string {
-  const uniformAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, scope);
-  if (uniformAdapterId) {
-    return uniformAdapterId;
-  }
-
-  if (hasCampaignScopeAdapterOverrides(source.galleryOverrides, scope)) {
-    return '';
-  }
-
-  return scope === 'image'
-    ? source.imageAdapterId || ''
-    : source.videoAdapterId || '';
-}
-
 export function getUniformCampaignScopeAdapterId(
   overrides: Partial<GalleryConfig> | undefined,
   scope: CampaignOverrideScope,
@@ -149,70 +125,12 @@ export function getCampaignGalleryOverrideMode(
 export function buildCampaignGalleryOverrideEditorValue(
   source: CampaignGalleryOverrideSource,
 ): Partial<GalleryConfig> | undefined {
-  const next = cloneGalleryConfig(source.galleryOverrides as GalleryConfig) ?? {};
-  const hasLegacyAdapterIds = !!source.imageAdapterId || !!source.videoAdapterId;
-
-  if (!source.galleryOverrides && !hasLegacyAdapterIds) {
-    return undefined;
-  }
-
-  if (next.mode !== 'unified' && hasLegacyAdapterIds) {
-    next.mode = next.mode ?? 'per-type';
-    next.breakpoints = next.breakpoints ?? {};
-
-    ([
-      ['image', source.imageAdapterId],
-      ['video', source.videoAdapterId],
-    ] as const).forEach(([scope, legacyAdapterId]) => {
-      if (!legacyAdapterId) {
-        return;
-      }
-
-      CAMPAIGN_OVERRIDE_BREAKPOINTS.forEach((breakpoint) => {
-        const breakpointConfig = next.breakpoints?.[breakpoint] ?? {};
-        const scopeConfig = breakpointConfig[scope];
-
-        if (scopeConfig?.adapterId) {
-          next.breakpoints![breakpoint] = breakpointConfig;
-          return;
-        }
-
-        breakpointConfig[scope] = {
-          ...scopeConfig,
-          adapterId: legacyAdapterId,
-        };
-        next.breakpoints![breakpoint] = breakpointConfig;
-      });
-    });
-  }
-
-  return pruneCampaignGalleryOverrides(next);
+  return pruneCampaignGalleryOverrides(source.galleryOverrides);
 }
 
 export function clearCampaignGalleryOverrides(): ClearedCampaignGalleryOverrides {
   return {
-    imageAdapterId: '',
-    videoAdapterId: '',
     galleryOverrides: undefined,
-  };
-}
-
-export function normalizeCampaignLegacyAdapterOverrides(
-  source: CampaignGalleryOverrideSource,
-): NormalizedCampaignLegacyAdapterOverrides {
-  const mode = getCampaignGalleryOverrideMode(source.galleryOverrides);
-
-  if (mode === 'unified') {
-    const unifiedAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'unified');
-    return {
-      imageAdapterId: unifiedAdapterId || '',
-      videoAdapterId: unifiedAdapterId || '',
-    };
-  }
-
-  return {
-    imageAdapterId: getNormalizedLegacyScopeAdapterId(source, 'image'),
-    videoAdapterId: getNormalizedLegacyScopeAdapterId(source, 'video'),
   };
 }
 
@@ -302,9 +220,7 @@ export function syncCampaignGalleryOverrideMode(
 
 export function hasCampaignGalleryOverrides(source: CampaignGalleryOverrideSource): boolean {
   return !!(
-    source.imageAdapterId
-    || source.videoAdapterId
-    || source.galleryOverrides?.mode
+    source.galleryOverrides?.mode
     || hasCampaignScopeOverrides(source.galleryOverrides, 'image')
     || hasCampaignScopeOverrides(source.galleryOverrides, 'video')
     || CAMPAIGN_OVERRIDE_BREAKPOINTS.some((breakpoint) => !isEmptyScopeConfig(source.galleryOverrides?.breakpoints?.[breakpoint]?.unified))
@@ -315,8 +231,8 @@ export function describeCampaignGalleryOverrides(source: CampaignGalleryOverride
   const descriptions: string[] = [];
   const mode = source.galleryOverrides?.mode;
   const unifiedAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'unified');
-  const imageAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'image') || source.imageAdapterId || '';
-  const videoAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'video') || source.videoAdapterId || '';
+  const imageAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'image');
+  const videoAdapterId = getUniformCampaignScopeAdapterId(source.galleryOverrides, 'video');
 
   if (mode === 'unified') {
     if (unifiedAdapterId) {

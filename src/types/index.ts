@@ -5,7 +5,11 @@ export interface Company {
   brandColor: string;
 }
 
-export type GalleryConfigBreakpoint = 'desktop' | 'tablet' | 'mobile';
+/** Shared breakpoint label used across gallery, card, and hook code. */
+export type ResponsiveBreakpoint = 'desktop' | 'tablet' | 'mobile';
+
+export type GalleryConfigBreakpoint = ResponsiveBreakpoint;
+export type CardConfigBreakpoint = ResponsiveBreakpoint;
 
 export type GalleryConfigScope = 'unified' | 'image' | 'video';
 
@@ -13,16 +17,23 @@ export type GalleryConfigMode = 'unified' | 'per-type';
 
 export interface GalleryCommonSettings {
   sectionMaxWidth?: number;
+  sectionMaxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
   sectionMaxHeight?: number;
+  sectionMaxHeightUnit?: import('@/utils/cssUnits').CssHeightUnit;
   sectionMinWidth?: number;
+  sectionMinWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
   sectionMinHeight?: number;
+  sectionMinHeightUnit?: import('@/utils/cssUnits').CssHeightUnit;
   sectionHeightMode?: 'auto' | 'manual' | 'viewport';
   sectionPadding?: number;
+  sectionPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit;
   adapterContentPadding?: number;
+  adapterContentPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit;
   adapterSizingMode?: 'fill' | 'manual';
   adapterMaxWidthPct?: number;
   adapterMaxHeightPct?: number;
   adapterItemGap?: number;
+  adapterItemGapUnit?: import('@/utils/cssUnits').CssSpacingUnit;
   adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
   gallerySizingMode?: 'auto' | 'viewport' | 'manual';
   galleryManualHeight?: string;
@@ -51,6 +62,21 @@ export interface GalleryConfig {
   breakpoints?: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>>;
 }
 
+export interface ResolvedGallerySectionBackground {
+  type: ViewportBgType;
+  color: string;
+  gradient: string;
+  imageUrl: string;
+}
+
+export interface ResolvedGallerySectionRuntime {
+  breakpoint: ResponsiveBreakpoint;
+  scope: GalleryConfigScope;
+  common: GalleryCommonSettings;
+  background: ResolvedGallerySectionBackground;
+  adapterSettings: Record<string, unknown>;
+}
+
 export interface Campaign {
   id: string;
   companyId: string;
@@ -74,10 +100,6 @@ export interface Campaign {
   unpublishAt?: string;
   /** P15-B: Optional layout template reference. */
   layoutTemplateId?: string;
-  /** @deprecated Legacy flat campaign override compatibility only. Persist galleryOverrides instead. */
-  imageAdapterId?: string;
-  /** @deprecated Legacy flat campaign override compatibility only. Persist galleryOverrides instead. */
-  videoAdapterId?: string;
   /** Phase 23 nested campaign gallery override surface. */
   galleryOverrides?: Partial<GalleryConfig>;
   /** P18-H: Category names assigned to this campaign. */
@@ -495,6 +517,7 @@ export type DotNavShape = 'circle' | 'pill' | 'square';
 // P12-J: Shadow types
 export type ShadowPreset = 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
 export type ViewportBgType = 'none' | 'solid' | 'gradient' | 'image';
+export type GridCardAspectRatio = 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2' | '21:9' | '5:7';
 
 // P21-I: Typography override type (Elementor-inspired)
 export interface TypographyOverride {
@@ -528,14 +551,18 @@ export interface TypographyOverride {
 
 export interface GalleryBehaviorSettings {
   videoViewportHeight: number;
+  videoViewportHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   imageViewportHeight: number;
+  imageViewportHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   thumbnailScrollSpeed: number;
   scrollAnimationStyle: ScrollAnimationStyle;
   scrollAnimationDurationMs: number;
   scrollAnimationEasing: ScrollAnimationEasing;
   scrollTransitionType: ScrollTransitionType;
   imageBorderRadius: number;
+  imageBorderRadiusUnit: import('@/utils/cssUnits').CssBorderRadiusUnit;
   videoBorderRadius: number;
+  videoBorderRadiusUnit: import('@/utils/cssUnits').CssBorderRadiusUnit;
   transitionFadeEnabled: boolean;
   // P12-A/B: Advanced thumbnail strip controls
   videoThumbnailWidth: number;
@@ -546,22 +573,23 @@ export interface GalleryBehaviorSettings {
   thumbnailWheelScrollEnabled: boolean;
   thumbnailDragScrollEnabled: boolean;
   thumbnailScrollButtonsVisible: boolean;
-  // P12-C: Pluggable Gallery Adapters
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.image.adapterId instead. */
-  imageGalleryAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.video.adapterId instead. */
-  videoGalleryAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.mode instead. */
-  unifiedGalleryEnabled: boolean;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.*.unified.adapterId instead. */
-  unifiedGalleryAdapterId: string;
   gridCardWidth: number;
+  gridCardWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  gridCardAspectRatio: GridCardAspectRatio;
+  gridCardMaxColumns: number;
+  gridCardMinHeight: number;
+  /** Legacy fallback when gridCardAspectRatio remains on 'auto'. */
   gridCardHeight: number;
+  gridCardHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   mosaicTargetRowHeight: number;
+  mosaicTargetRowHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   // Tile appearance — shared by masonry, justified, hexagonal, circular, diamond
   tileSize: number;          // px: fixed tile size for shape adapters
+  tileSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
   tileGapX: number;          // px: horizontal gap between tiles
+  tileGapXUnit: import('@/utils/cssUnits').CssSpacingUnit;
   tileGapY: number;          // px: vertical gap between tiles
+  tileGapYUnit: import('@/utils/cssUnits').CssSpacingUnit;
   tileBorderWidth: number;   // px: 0 = no border
   tileBorderColor: string;   // CSS color
   tileGlowEnabled: boolean;  // hover glow via drop-shadow
@@ -606,17 +634,22 @@ export interface GalleryBehaviorSettings {
   unifiedBgImageUrl: string;
   // P13-A: Campaign Card settings
   cardBorderRadius: number;
+  cardBorderRadiusUnit: import('@/utils/cssUnits').CssBorderRadiusUnit;
   cardBorderWidth: number;
   cardBorderMode: 'single' | 'auto' | 'individual';
   cardBorderColor: string;
   cardShadowPreset: string;
   cardThumbnailHeight: number;
+  cardThumbnailHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   cardThumbnailFit: string;
   cardGridColumns: number;
   cardGapH: number;
+  cardGapHUnit: import('@/utils/cssUnits').CssSpacingUnit;
   cardGapV: number;
+  cardGapVUnit: import('@/utils/cssUnits').CssSpacingUnit;
   cardMaxWidth: number;
   modalCoverHeight: number;
+  modalCoverHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   modalTransition: string;
   modalTransitionDuration: number;
   modalMaxHeight: number;
@@ -633,9 +666,11 @@ export interface GalleryBehaviorSettings {
   showSearchBox: boolean;
   // P13-E: App width control (0 = full width / edge-to-edge)
   appMaxWidth: number;
+  appMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   // P13-E: Container padding (px). Controls horizontal padding on all containers.
   // Default 16 (matches Mantine spacing-md). Set to 0 for true edge-to-edge.
   appPadding: number;
+  appPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
   /**
    * P13-E: WP Full Bleed — break out of WordPress block theme container padding.
    *
@@ -652,7 +687,9 @@ export interface GalleryBehaviorSettings {
   wpFullBleedMobile: boolean;  // < 768px
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: number;
+  imageTileSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
   videoTileSize: number;
+  videoTileSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
   // P14-C: Thumbnail cache TTL
   thumbnailCacheTtl: number;
   // P14-F: Image optimization on upload
@@ -682,6 +719,7 @@ export interface GalleryBehaviorSettings {
   modalCloseButtonSize: number;
   modalCloseButtonBgColor: string;
   modalContentMaxWidth: number;
+  modalContentMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   campaignDescriptionLineHeight: number;
   modalMobileBreakpoint: number;
   cardPageTransitionOpacity: number;
@@ -695,7 +733,6 @@ export interface GalleryBehaviorSettings {
   mediaMediumCardHeight: number;
   mediaLargeCardHeight: number;
   mediaListMinWidth: number;
-  swrDedupingIntervalMs: number;
   notificationDismissMs: number;
   // P14-B: Tile / Adapter (advanced)
   tileHoverOverlayOpacity: number;
@@ -709,6 +746,7 @@ export interface GalleryBehaviorSettings {
   diamondClipPath: string;
   tileDefaultPerRow: number;
   photoNormalizeHeight: number;
+  photoNormalizeHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   masonryAutoColumnBreakpoints: string;
   gridCardHoverShadow: string;
   gridCardDefaultShadow: string;
@@ -719,7 +757,9 @@ export interface GalleryBehaviorSettings {
   lightboxBackdropColor: string;
   lightboxEntryScale: number;
   lightboxVideoMaxWidth: number;
+  lightboxVideoMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   lightboxVideoHeight: number;
+  lightboxVideoHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   lightboxMediaMaxHeight: string;
   lightboxZIndex: number;
   // P14-B: Navigation (advanced)
@@ -742,24 +782,9 @@ export interface GalleryBehaviorSettings {
   cardAutoColumnsBreakpoints: string;
   // P20-K: Session idle timeout (minutes). 0 = disabled.
   sessionIdleTimeoutMinutes: number;
-  // P15-A: Per-breakpoint gallery selection
-  /** @deprecated Legacy flat-field compatibility only. Active UI writes nested galleryConfig. */
-  gallerySelectionMode: 'unified' | 'per-breakpoint';
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.desktop.image.adapterId instead. */
-  desktopImageAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.desktop.video.adapterId instead. */
-  desktopVideoAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.tablet.image.adapterId instead. */
-  tabletImageAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.tablet.video.adapterId instead. */
-  tabletVideoAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.mobile.image.adapterId instead. */
-  mobileImageAdapterId: string;
-  /** @deprecated Legacy flat-field compatibility only. Persist galleryConfig.breakpoints.mobile.video.adapterId instead. */
-  mobileVideoAdapterId: string;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
-  // P23-D: Nested responsive gallery config compatibility bridge.
+  // P23-D: Canonical responsive gallery configuration surface.
   galleryConfig?: GalleryConfig;
   // P20-E: Uninstall data preservation
   preserveDataOnUninstall: boolean;
@@ -785,6 +810,7 @@ export interface GalleryBehaviorSettings {
   cardMaxColumns: number;
   cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2' | '21:9';
   cardMinHeight: number;
+  cardMinHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   // P21-G: Gallery label editing & justification
   galleryImageLabel: string;
   galleryVideoLabel: string;
@@ -804,6 +830,8 @@ export interface GalleryBehaviorSettings {
   authBarDragMargin: number;
   // P21-H: Settings tooltips
   showSettingsTooltips: boolean;
+  // P25-Z: React DevTools names and DOM component debug metadata in deployed builds
+  debugComponentMarkers: boolean;
   // P21-I: Typography overrides & in-context editors
   typographyOverrides: Record<string, TypographyOverride>;
   showInContextEditors: boolean;
@@ -814,39 +842,80 @@ export interface GalleryBehaviorSettings {
   showCampaignAdminActions: boolean;
   showCampaignGalleryLabels: boolean;
   fullscreenContentMaxWidth: number;
+  fullscreenContentMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   // P22-K: Modal max width & background
   modalMaxWidth: number;
+  modalMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   modalBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   modalBgColor: string;
   modalBgGradient: import('@/utils/gradientCss').GradientOptions;
   // P22-M: Modal gallery width/gap/margin
   modalGalleryMaxWidth: number;
+  modalGalleryMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   modalGalleryGap: number;
+  modalGalleryGapUnit: import('@/utils/cssUnits').CssSpacingUnit;
   modalGalleryMargin: number;
+  modalGalleryMarginUnit: import('@/utils/cssUnits').CssSpacingUnit;
   // P22-P8: Vertical alignment of modal content
   modalContentVerticalAlign: 'top' | 'center' | 'bottom';
+  // P25-T: Gallery shell vertical alignment + offset
+  modalGalleryVerticalAlign: 'start' | 'center' | 'end';
+  modalGalleryOffsetY: number;
+  modalGalleryOffsetYUnit: import('@/utils/cssUnits').CssOffsetUnit;
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto' | 'viewport' | 'manual';
   galleryManualHeight: string;
   // P22-P2: Dimension propagation — gallery section sizing
   gallerySectionMaxWidth: number;
+  gallerySectionMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   gallerySectionMaxHeight: number;
+  gallerySectionMaxHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
   gallerySectionHeightMode: 'auto' | 'manual' | 'viewport';
   gallerySectionMinWidth: number;
+  gallerySectionMinWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   gallerySectionMinHeight: number;
+  gallerySectionMinHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  // P25-T: Section content alignment + offset
+  gallerySectionContentAlignX: 'start' | 'center' | 'end';
+  gallerySectionContentAlignY: 'start' | 'center' | 'end';
+  gallerySectionContentOffsetX: number;
+  gallerySectionContentOffsetXUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  gallerySectionContentOffsetY: number;
+  gallerySectionContentOffsetYUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  // P25-S: Primary gallery section scale multiplier
+  sectionScale: number;
   perTypeSectionEqualHeight: boolean;
   modalInnerPadding: number;
+  modalInnerPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
   gallerySectionPadding: number;
+  gallerySectionPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
   adapterContentPadding: number;
+  adapterContentPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
   adapterSizingMode: 'fill' | 'manual';
   adapterMaxWidthPct: number;
   adapterMaxHeightPct: number;
   // P22-P7: Card width responsive unit & last-row justification
-  cardMaxWidthUnit: 'px' | '%';
+  cardMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   cardJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
+  // P25-S: Primary card scale multiplier
+  cardScale: number;
+  // P25-Q: Card gallery vertical justification
+  cardGalleryVerticalAlign: 'start' | 'center' | 'end';
+  cardGalleryMinHeight: number;
+  cardGalleryMinHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  cardGalleryMaxHeight: number;
+  cardGalleryMaxHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  // P25-T: Card gallery offset nudges
+  cardGalleryOffsetX: number;
+  cardGalleryOffsetXUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  cardGalleryOffsetY: number;
+  cardGalleryOffsetYUnit: import('@/utils/cssUnits').CssOffsetUnit;
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: number;
+  adapterItemGapUnit: import('@/utils/cssUnits').CssSpacingUnit;
   adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
+  // P25-S: Primary gallery item scale multiplier (applies to adapter sizing)
+  itemScale: number;
   // P22-P8d: Embla carousel settings
   carouselVisibleCards: number;
   carouselAutoplay: boolean;
@@ -859,20 +928,104 @@ export interface GalleryBehaviorSettings {
   carouselEdgeFade: boolean;
   carouselLoop: boolean;
   carouselGap: number;
+  carouselGapUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  // P25-U Phase 1b: Drawer backdrop blur toggle
+  settingsDrawerBlurEnabled: boolean;
+  // P25-X Phase 5: Card breakpoint overrides
+  cardConfig: CardConfig;
+}
+
+// ── Card breakpoint override model ───────────────────────────────────────────
+
+/**
+ * Explicit list of card fields that may be overridden per breakpoint.
+ * Used to derive the override type and to drive UI / pruning logic.
+ */
+export const CARD_BREAKPOINT_OVERRIDE_KEYS = [
+  'cardGridColumns',
+  'cardMaxColumns',
+  'cardMaxWidth',
+  'cardMaxWidthUnit',
+  'cardGapH',
+  'cardGapHUnit',
+  'cardGapV',
+  'cardGapVUnit',
+  'cardScale',
+  'cardJustifyContent',
+  'cardGalleryVerticalAlign',
+  'cardAspectRatio',
+  'cardThumbnailHeight',
+  'cardThumbnailHeightUnit',
+  'cardMinHeight',
+  'cardMinHeightUnit',
+  'cardBorderRadius',
+  'cardBorderRadiusUnit',
+  'cardGalleryMinHeight',
+  'cardGalleryMinHeightUnit',
+  'cardGalleryMaxHeight',
+  'cardGalleryMaxHeightUnit',
+  'cardGalleryOffsetX',
+  'cardGalleryOffsetXUnit',
+  'cardGalleryOffsetY',
+  'cardGalleryOffsetYUnit',
+  'cardDisplayMode',
+  'cardRowsPerPage',
+  'cardPageDotNav',
+  'cardPageTransitionMs',
+  'cardPageTransitionOpacity',
+  'cardBorderWidth',
+  'cardBorderMode',
+  'cardBorderColor',
+  'cardShadowPreset',
+  'cardThumbnailFit',
+  'showCardCompanyName',
+  'showCardAccessBadge',
+  'showCardTitle',
+  'showCardDescription',
+  'showCardMediaCounts',
+  'showCardBorder',
+  'showCardThumbnailFade',
+  'showCardInfoPanel',
+  'cardLockedOpacity',
+  'cardGradientStartOpacity',
+  'cardGradientEndOpacity',
+  'cardLockIconSize',
+  'cardAccessIconSize',
+  'cardBadgeOffsetY',
+  'cardCompanyBadgeMaxWidth',
+  'cardThumbnailHoverTransitionMs',
+  'cardAutoColumnsBreakpoints',
+] as const;
+
+type CardBreakpointOverrideKey = (typeof CARD_BREAKPOINT_OVERRIDE_KEYS)[number];
+
+/** Sparse set of card setting overrides for a single breakpoint. */
+export type CardBreakpointOverrides = Partial<Pick<GalleryBehaviorSettings, CardBreakpointOverrideKey>>;
+
+/** Per-breakpoint card configuration container. */
+export interface CardConfig {
+  breakpoints?: Partial<Record<CardConfigBreakpoint, CardBreakpointOverrides>>;
 }
 
 const DEFAULT_GALLERY_COMMON_SETTINGS: GalleryCommonSettings = {
   sectionMaxWidth: 0,
+  sectionMaxWidthUnit: 'px',
   sectionMaxHeight: 0,
+  sectionMaxHeightUnit: 'px',
   sectionMinWidth: 300,
+  sectionMinWidthUnit: 'px',
   sectionMinHeight: 150,
+  sectionMinHeightUnit: 'px',
   sectionHeightMode: 'auto',
   sectionPadding: 16,
+  sectionPaddingUnit: 'px',
   adapterContentPadding: 0,
+  adapterContentPaddingUnit: 'px',
   adapterSizingMode: 'fill',
   adapterMaxWidthPct: 100,
   adapterMaxHeightPct: 100,
   adapterItemGap: 16,
+  adapterItemGapUnit: 'px',
   adapterJustifyContent: 'center',
   gallerySizingMode: 'auto',
   galleryManualHeight: '420px',
@@ -911,14 +1064,18 @@ function createDefaultGalleryConfig(): GalleryConfig {
 
 export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   videoViewportHeight: 420,
+  videoViewportHeightUnit: 'px',
   imageViewportHeight: 420,
+  imageViewportHeightUnit: 'px',
   thumbnailScrollSpeed: 1,
   scrollAnimationStyle: 'smooth',
   scrollAnimationDurationMs: 350,
   scrollAnimationEasing: 'ease',
   scrollTransitionType: 'slide-fade',
   imageBorderRadius: 8,
+  imageBorderRadiusUnit: 'px',
   videoBorderRadius: 8,
+  videoBorderRadiusUnit: 'px',
   transitionFadeEnabled: true,
   // P12-A/B defaults
   videoThumbnailWidth: 60,
@@ -966,17 +1123,22 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   unifiedBgImageUrl: '',
   // P13-A: Campaign Card settings
   cardBorderRadius: 8,
+  cardBorderRadiusUnit: 'px',
   cardBorderWidth: 4,
   cardBorderMode: 'auto',
   cardBorderColor: '#228be6',
   cardShadowPreset: 'subtle',
   cardThumbnailHeight: 200,
+  cardThumbnailHeightUnit: 'px',
   cardThumbnailFit: 'cover',
   cardGridColumns: 0,
   cardGapH: 16,
+  cardGapHUnit: 'px',
   cardGapV: 16,
+  cardGapVUnit: 'px',
   cardMaxWidth: 0,
   modalCoverHeight: 240,
+  modalCoverHeightUnit: 'px',
   modalTransition: 'pop',
   modalTransitionDuration: 300,
   modalMaxHeight: 90,
@@ -993,15 +1155,19 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   showSearchBox: true,
   // P13-E: App width control (0 = full width)
   appMaxWidth: 1200,
+  appMaxWidthUnit: 'px',
   // P13-E: Container horizontal padding (px)
   appPadding: 16,
+  appPaddingUnit: 'px',
   // P13-E: WP Full Bleed (per breakpoint)
   wpFullBleedDesktop: false,
   wpFullBleedTablet: false,
   wpFullBleedMobile: false,
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: 150,
+  imageTileSizeUnit: 'px',
   videoTileSize: 150,
+  videoTileSizeUnit: 'px',
   // P14-C: Thumbnail cache TTL
   thumbnailCacheTtl: 86400,
   // P14-F: Image optimization on upload
@@ -1031,6 +1197,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   modalCloseButtonSize: 36,
   modalCloseButtonBgColor: 'rgba(0,0,0,0.5)',
   modalContentMaxWidth: 900,
+  modalContentMaxWidthUnit: 'px',
   campaignDescriptionLineHeight: 1.6,
   modalMobileBreakpoint: 768,
   cardPageTransitionOpacity: 0.3,
@@ -1044,7 +1211,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   mediaMediumCardHeight: 240,
   mediaLargeCardHeight: 340,
   mediaListMinWidth: 600,
-  swrDedupingIntervalMs: 5000,
   notificationDismissMs: 4000,
   // P14-B: Tile / Adapter (advanced)
   tileHoverOverlayOpacity: 0.6,
@@ -1058,6 +1224,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   diamondClipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
   tileDefaultPerRow: 5,
   photoNormalizeHeight: 300,
+  photoNormalizeHeightUnit: 'px',
   masonryAutoColumnBreakpoints: '480:2,768:3,1024:4,1280:5',
   gridCardHoverShadow: '0 4px 12px rgba(0,0,0,0.3)',
   gridCardDefaultShadow: '0 2px 8px rgba(0,0,0,0.15)',
@@ -1068,7 +1235,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   lightboxBackdropColor: 'rgba(0,0,0,0.92)',
   lightboxEntryScale: 0.92,
   lightboxVideoMaxWidth: 900,
+  lightboxVideoMaxWidthUnit: 'px',
   lightboxVideoHeight: 506,
+  lightboxVideoHeightUnit: 'px',
   lightboxMediaMaxHeight: '85vh',
   lightboxZIndex: 1000,
   // P14-B: Navigation (advanced)
@@ -1091,14 +1260,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
   // P20-K: Session idle timeout
   sessionIdleTimeoutMinutes: 0,
-  // P15-A: Legacy per-breakpoint gallery selection compatibility
-  gallerySelectionMode: 'unified',
-  desktopImageAdapterId: 'classic',
-  desktopVideoAdapterId: 'classic',
-  tabletImageAdapterId: 'classic',
-  tabletVideoAdapterId: 'classic',
-  mobileImageAdapterId: 'classic',
-  mobileVideoAdapterId: 'classic',
   layoutBuilderScope: 'full',
   galleryConfig: createDefaultGalleryConfig(),
   // P20-E: Uninstall data preservation
@@ -1108,18 +1269,22 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   archivePurgeGraceDays: 30,
   // D-20: Analytics data retention
   analyticsRetentionDays: 0,
-  // P12-C defaults
-  imageGalleryAdapterId: 'classic',
-  videoGalleryAdapterId: 'classic',
-  unifiedGalleryEnabled: false,
-  unifiedGalleryAdapterId: 'compact-grid',
   gridCardWidth: 160,
+  gridCardWidthUnit: 'px',
+  gridCardAspectRatio: 'auto',
+  gridCardMaxColumns: 0,
+  gridCardMinHeight: 0,
   gridCardHeight: 224,
+  gridCardHeightUnit: 'px',
   mosaicTargetRowHeight: 200,
+  mosaicTargetRowHeightUnit: 'px',
   // Tile appearance defaults
   tileSize: 150,
+  tileSizeUnit: 'px',
   tileGapX: 8,
+  tileGapXUnit: 'px',
   tileGapY: 8,
+  tileGapYUnit: 'px',
   tileBorderWidth: 0,
   tileBorderColor: '#ffffff',
   tileGlowEnabled: false,
@@ -1144,6 +1309,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardMaxColumns: 0,
   cardAspectRatio: 'auto',
   cardMinHeight: 0,
+  cardMinHeightUnit: 'px',
   // P21-G: Gallery label editing & justification
   galleryImageLabel: 'Images',
   galleryVideoLabel: 'Videos',
@@ -1163,6 +1329,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   authBarDragMargin: 16,
   // P21-H: Settings tooltips
   showSettingsTooltips: true,
+  // P25-Z: React DevTools names and DOM component debug metadata in deployed builds
+  debugComponentMarkers: true,
   // P21-I: Typography overrides & in-context editors
   typographyOverrides: {},
   showInContextEditors: true,
@@ -1173,38 +1341,79 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   showCampaignAdminActions: true,
   showCampaignGalleryLabels: true,
   fullscreenContentMaxWidth: 0,
+  fullscreenContentMaxWidthUnit: 'px',
   // P22-K: Modal max width & background
   modalMaxWidth: 1200,
+  modalMaxWidthUnit: 'px',
   modalBgType: 'theme',
   modalBgColor: '',
   modalBgGradient: {},
   // P22-M: Modal gallery width/gap/margin
   modalGalleryMaxWidth: 0,
+  modalGalleryMaxWidthUnit: 'px',
   modalGalleryGap: 32,
+  modalGalleryGapUnit: 'px',
   modalGalleryMargin: 0,
+  modalGalleryMarginUnit: 'px',
   modalContentVerticalAlign: 'top',
+  // P25-T: Gallery shell vertical alignment + offset
+  modalGalleryVerticalAlign: 'start',
+  modalGalleryOffsetY: 0,
+  modalGalleryOffsetYUnit: 'px',
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto',
   galleryManualHeight: '420px',
   // P22-P2: Dimension propagation — gallery section sizing
   gallerySectionMaxWidth: 0,
+  gallerySectionMaxWidthUnit: 'px',
   gallerySectionMaxHeight: 0,
+  gallerySectionMaxHeightUnit: 'px',
   gallerySectionHeightMode: 'auto',
   gallerySectionMinWidth: 300,
+  gallerySectionMinWidthUnit: 'px',
   gallerySectionMinHeight: 150,
+  gallerySectionMinHeightUnit: 'px',
+  // P25-T: Section content alignment + offset
+  gallerySectionContentAlignX: 'center',
+  gallerySectionContentAlignY: 'start',
+  gallerySectionContentOffsetX: 0,
+  gallerySectionContentOffsetXUnit: 'px',
+  gallerySectionContentOffsetY: 0,
+  gallerySectionContentOffsetYUnit: 'px',
+  // P25-S: Primary gallery section scale multiplier
+  sectionScale: 1,
   perTypeSectionEqualHeight: false,
   modalInnerPadding: 16,
+  modalInnerPaddingUnit: 'px',
   gallerySectionPadding: 16,
+  gallerySectionPaddingUnit: 'px',
   adapterContentPadding: 0,
+  adapterContentPaddingUnit: 'px',
   adapterSizingMode: 'fill',
   adapterMaxWidthPct: 100,
   adapterMaxHeightPct: 100,
   // P22-P7: Card width responsive unit & last-row justification
   cardMaxWidthUnit: 'px',
   cardJustifyContent: 'center',
+  // P25-S: Primary card scale multiplier
+  cardScale: 1,
+  // P25-Q: Card gallery vertical justification
+  cardGalleryVerticalAlign: 'start',
+  cardGalleryMinHeight: 0,
+  cardGalleryMinHeightUnit: 'px',
+  cardGalleryMaxHeight: 0,
+  cardGalleryMaxHeightUnit: 'px',
+  // P25-T: Card gallery offset nudges
+  cardGalleryOffsetX: 0,
+  cardGalleryOffsetXUnit: 'px',
+  cardGalleryOffsetY: 0,
+  cardGalleryOffsetYUnit: 'px',
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: 16,
+  adapterItemGapUnit: 'px',
   adapterJustifyContent: 'center',
+  // P25-S: Primary gallery item scale multiplier
+  itemScale: 1,
   // P22-P8d: Embla carousel settings
   carouselVisibleCards: 1,
   carouselAutoplay: false,
@@ -1217,4 +1426,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   carouselEdgeFade: false,
   carouselLoop: true,
   carouselGap: 16,
+  carouselGapUnit: 'px',
+  // P25-U Phase 1b: Drawer backdrop blur toggle
+  settingsDrawerBlurEnabled: true,
+  // P25-X Phase 5: Card breakpoint overrides
+  cardConfig: { breakpoints: {} },
 };

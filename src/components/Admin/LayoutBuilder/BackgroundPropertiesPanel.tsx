@@ -7,12 +7,12 @@ import {
   Button,
   Select,
   Slider,
-  ColorInput,
   NumberInput,
   SegmentedControl,
   ActionIcon,
   Tooltip,
 } from '@mantine/core';
+import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { IconTrash } from '@tabler/icons-react';
 import type {
   GradientStop,
@@ -26,6 +26,7 @@ import { buildGradientCss, templateToGradientOpts, DEFAULT_GRADIENT_STOPS } from
 import { useBuilderDock } from './BuilderDockContext';
 import { AssetUploader } from './AssetUploader';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ function GRow({ label, children }: { label: string; children: React.ReactNode })
     </Group>
   );
 }
+setWpsgDebugDisplayName(GRow, 'LayoutBuilder:GRow');
 
 function SectionHeader({ label }: { label: string }) {
   return (
@@ -45,6 +47,7 @@ function SectionHeader({ label }: { label: string }) {
     </Box>
   );
 }
+setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:SectionHeader');
 
 const GRADIENT_DIRECTIONS: Array<{ value: GradientDirection; icon: string; label: string }> = [
   { value: 'horizontal', icon: '→', label: 'Horizontal (90°)' },
@@ -115,6 +118,8 @@ export function BackgroundPropertiesPanel() {
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(BackgroundPropertiesPanel, 'LayoutBuilder:BackgroundPropertiesPanel');
 
 // ── Background mode controls ─────────────────────────────────
 
@@ -344,3 +349,5 @@ function BackgroundModeControls({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(BackgroundModeControls, 'LayoutBuilder:BackgroundModeControls');

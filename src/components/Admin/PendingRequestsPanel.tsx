@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import useSWR from 'swr';
 import {
   Alert,
   Badge,
@@ -13,7 +12,9 @@ import {
   Title,
 } from '@mantine/core';
 import { IconAlertCircle, IconCheck, IconX } from '@tabler/icons-react';
-import type { ApiClient, AccessRequest } from '@/services/apiClient';
+import type { ApiClient } from '@/services/apiClient';
+import { useAccessRequests } from '@/services/adminQuery';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface PendingRequestsPanelProps {
   campaignId: string;
@@ -29,18 +30,7 @@ function formatDate(iso: string): string {
 export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: PendingRequestsPanelProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const swrKey = campaignId ? `access-requests-${campaignId}` : null;
-
-  const {
-    data: requests,
-    isLoading,
-    mutate,
-  } = useSWR<AccessRequest[]>(
-    swrKey,
-    () => apiClient.listAccessRequests(campaignId),
-    { revalidateOnFocus: false },
-  );
+  const { data: requests, isLoading, refetch } = useAccessRequests(apiClient, campaignId);
 
   const safeRequests = Array.isArray(requests) ? requests : [];
   const pendingRequests = safeRequests.filter((r) => r.status === 'pending');
@@ -51,7 +41,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
     setActionError(null);
     try {
       await apiClient.approveAccessRequest(campaignId, token);
-      await mutate();
+      await refetch();
       onMutate?.();
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : 'Failed to approve request');
@@ -65,7 +55,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
     setActionError(null);
     try {
       await apiClient.denyAccessRequest(campaignId, token);
-      await mutate();
+      await refetch();
       onMutate?.();
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : 'Failed to deny request');
@@ -216,3 +206,5 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(PendingRequestsPanel, 'AdminPanel:PendingRequestsPanel');

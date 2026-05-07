@@ -3,13 +3,12 @@ import {
   type GalleryBehaviorSettings,
 } from '@/types';
 import {
-  buildGalleryConfigFromLegacySettings,
-  collectLegacyGallerySettingValues,
   cloneGalleryConfig,
-  LEGACY_GALLERY_SETTING_KEYS,
   mergeGalleryConfig,
   parseGalleryConfig,
 } from './galleryConfig';
+import { normalizeCardConfigSettings, parseCardConfig } from './cardConfig';
+import { parseTypographyOverridesInput } from '@/types/settingsSchemas';
 
 /**
  * Merge a partial settings response with the full defaults.
@@ -26,25 +25,27 @@ export function mergeSettingsWithDefaults(
   const result = { ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS };
   const partialRecord = partial as Record<string, unknown>;
   const incomingGalleryConfig = parseGalleryConfig(partialRecord.galleryConfig);
-  const hasLegacyGalleryBridgeOverride = LEGACY_GALLERY_SETTING_KEYS.some((key) => partialRecord[key] !== undefined && partialRecord[key] !== null);
+  const incomingCardConfig = parseCardConfig(
+    partialRecord.cardConfig as GalleryBehaviorSettings['cardConfig'] | string | undefined | null,
+  );
 
   for (const key of Object.keys(DEFAULT_GALLERY_BEHAVIOR_SETTINGS) as Array<
     keyof GalleryBehaviorSettings
   >) {
-    if (key === 'galleryConfig') {
+    if (key === 'galleryConfig' || key === 'cardConfig') {
       continue;
     }
 
     const incoming = partialRecord[key];
     if (incoming !== undefined && incoming !== null) {
       // P21-I: typography_overrides arrives as a JSON string from the PHP API.
-      if (key === 'typographyOverrides' && typeof incoming === 'string') {
-        try {
+      if (key === 'typographyOverrides') {
+        const parsedTypographyOverrides = parseTypographyOverridesInput(incoming);
+        if (parsedTypographyOverrides) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (result as any)[key] = JSON.parse(incoming);
-        } catch {
-          // Invalid JSON — keep the default empty object.
-          console.warn('[WPSG] Failed to parse typographyOverrides JSON:', incoming);
+          (result as any)[key] = parsedTypographyOverrides;
+        } else {
+          console.warn('[WPSG] Failed to parse typographyOverrides payload:', incoming);
         }
         continue;
       }
@@ -60,22 +61,12 @@ export function mergeSettingsWithDefaults(
     }
   }
 
-  if (!incomingGalleryConfig && !hasLegacyGalleryBridgeOverride) {
-    result.galleryConfig = cloneGalleryConfig(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig);
-    return result;
-  }
-
-  const legacyGalleryConfig = buildGalleryConfigFromLegacySettings(result);
-  result.galleryConfig = incomingGalleryConfig
-    ? mergeGalleryConfig(legacyGalleryConfig, incomingGalleryConfig)
-    : cloneGalleryConfig(legacyGalleryConfig);
-
-  const resolvedGalleryConfig = result.galleryConfig
-    ?? cloneGalleryConfig(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig)
+  const defaultGalleryConfig = cloneGalleryConfig(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig)
     ?? { mode: 'per-type', breakpoints: {} };
-  result.galleryConfig = resolvedGalleryConfig;
+  result.galleryConfig = incomingGalleryConfig
+    ? mergeGalleryConfig(defaultGalleryConfig, incomingGalleryConfig)
+    : defaultGalleryConfig;
+  result.cardConfig = incomingCardConfig;
 
-  Object.assign(result, collectLegacyGallerySettingValues(resolvedGalleryConfig));
-
-  return result;
+  return normalizeCardConfigSettings(result);
 }

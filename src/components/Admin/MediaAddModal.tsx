@@ -16,10 +16,13 @@ import {
 } from '@mantine/core';
 import { IconUpload } from '@tabler/icons-react';
 import type { OEmbedResponse } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaAddModalProps {
   opened: boolean;
   onClose: () => void;
+  title?: string;
+  zIndex?: number;
   dropRef: RefObject<HTMLDivElement>;
   selectedFile: File | null;
   onSelectFile: (file: File | null) => void;
@@ -43,6 +46,8 @@ interface MediaAddModalProps {
 export function MediaAddModal({
   opened,
   onClose,
+  title = 'Add Media',
+  zIndex,
   dropRef,
   selectedFile,
   onSelectFile,
@@ -63,7 +68,7 @@ export function MediaAddModal({
   externalPreview,
 }: MediaAddModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Add Media" padding="md">
+    <Modal opened={opened} onClose={onClose} title={title} padding="md" zIndex={zIndex}>
       <Stack gap="md">
         <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
           <Stack gap="sm">
@@ -169,7 +174,15 @@ export function MediaAddModal({
             </Stack>
           </Card>
         )}
+
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            Cancel
+          </Button>
+        </Group>
       </Stack>
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(MediaAddModal, 'AdminPanel:MediaAddModal');

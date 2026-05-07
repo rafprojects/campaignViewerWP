@@ -5,6 +5,8 @@
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { MediaCarouselInner } from '@/components/Galleries/Adapters/MediaCarouselAdapter';
+import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
@@ -19,8 +21,11 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
     <MediaCarouselInner
       media={videos}
       settings={settings}
+      commonSettings={resolveGalleryComponentCommonSettings(settings, undefined, 'video')}
       breakpoint={breakpoint}
       maxWidth={maxWidth}
     />
   );
 }
+
+setWpsgDebugDisplayName(VideoCarousel, 'VideoCarousel');

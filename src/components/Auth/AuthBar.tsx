@@ -3,8 +3,10 @@ import { Box, Container, Group, Button, Tooltip, ActionIcon, Text, Menu } from '
 import { useMediaQuery } from '@mantine/hooks';
 import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings } from '@/types';
+import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { AuthBarFloating } from './AuthBarFloating';
 import { AuthBarMinimal } from './AuthBarMinimal';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AuthBarProps {
   email: string;
@@ -113,6 +115,8 @@ export function AuthBar({
   );
 }
 
+setWpsgDebugDisplayName(AuthBar, 'AuthBar');
+
 /** The original full-width bar, with optional auto-hide behavior. */
 function AuthBarFull({
   email,
@@ -135,6 +139,7 @@ function AuthBarFull({
 
   return (
     <Box
+      {...getWpsgDebugProps('AuthBar')}
       component="nav"
       aria-label="User navigation"
       style={{
@@ -148,82 +153,84 @@ function AuthBarFull({
         transition: 'transform 0.3s ease',
       }}
     >
-    <Container size={containerSize} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
-      <Group justify="space-between" wrap="nowrap" gap="sm">
-        {!isAuthenticated ? (
-          <>
-            <Text size="sm" c="dimmed">Sign in to access private campaigns</Text>
-            <Button variant="light" size="sm" onClick={onOpenSignIn}>Sign in</Button>
-          </>
-        ) : (
-        <>
-        <Text size="sm" truncate style={{ minWidth: 0 }}>
-          Signed in as {email}
-        </Text>
+      <Container {...getWpsgDebugProps('AuthBar', 'container')} size={containerSize} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
+        <Group {...getWpsgDebugProps('AuthBar', 'content')} justify="space-between" wrap="nowrap" gap="sm">
+          {!isAuthenticated ? (
+            <>
+              <Text size="sm" c="dimmed">Sign in to access private campaigns</Text>
+              <Button variant="light" size="sm" onClick={onOpenSignIn}>Sign in</Button>
+            </>
+          ) : (
+            <>
+              <Text size="sm" truncate style={{ minWidth: 0 }}>
+                Signed in as {email}
+              </Text>
 
-        {isMobile ? (
-          /* ── Mobile: single overflow menu ── */
-          <Menu shadow="md" width={200} position="bottom-end" withArrow>
-            <Menu.Target>
-              <ActionIcon variant="default" size="lg" aria-label="User menu">
-                <IconDotsVertical size={18} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {isAdmin && (
-                <>
-                  <Menu.Item leftSection={<IconDashboard size={16} />} onClick={onOpenAdminPanel}>
-                    Admin Panel
-                  </Menu.Item>
-                  <Menu.Item leftSection={<IconSettings size={16} />} onClick={onOpenSettings}>
-                    Settings
-                  </Menu.Item>
-                  <Menu.Divider />
-                </>
-              )}
-              <Menu.Item leftSection={<IconLogout size={16} />} onClick={onLogout} color="red">
-                Sign out
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        ) : (
-          /* ── Desktop: inline controls ── */
-          <Group gap="sm" wrap="nowrap">
-            {isAdmin && (
-              <>
-                <Button
-                  variant="default"
-                  onClick={onOpenAdminPanel}
-                  className="wpsg-admin-btn"
-                  size="sm"
-                >
-                  Admin Panel
-                </Button>
-                <Tooltip label="Settings">
-                  <ActionIcon
-                    variant="default"
-                    size="lg"
-                    className="wpsg-admin-btn"
-                    onClick={onOpenSettings}
-                    aria-label="Settings"
+              {isMobile ? (
+                /* ── Mobile: single overflow menu ── */
+                <Menu shadow="md" width={200} position="bottom-end" withArrow>
+                  <Menu.Target>
+                    <ActionIcon {...getWpsgDebugProps('AuthBar', 'menu-trigger')} variant="default" size="lg" aria-label="User menu">
+                      <IconDotsVertical size={18} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown {...getWpsgDebugProps('AuthBar', 'menu-dropdown')}>
+                    {isAdmin && (
+                      <>
+                        <Menu.Item leftSection={<IconDashboard size={16} />} onClick={onOpenAdminPanel}>
+                          Admin Panel
+                        </Menu.Item>
+                        <Menu.Item leftSection={<IconSettings size={16} />} onClick={onOpenSettings}>
+                          Settings
+                        </Menu.Item>
+                        <Menu.Divider />
+                      </>
+                    )}
+                    <Menu.Item leftSection={<IconLogout size={16} />} onClick={onLogout} color="red">
+                      Sign out
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              ) : (
+                /* ── Desktop: inline controls ── */
+                <Group {...getWpsgDebugProps('AuthBar', 'desktop-actions')} gap="sm" wrap="nowrap">
+                  {isAdmin && (
+                    <>
+                      <Button
+                        variant="default"
+                        onClick={onOpenAdminPanel}
+                        className="wpsg-admin-btn"
+                        size="sm"
+                      >
+                        Admin Panel
+                      </Button>
+                      <Tooltip label="Settings">
+                        <ActionIcon
+                          variant="default"
+                          size="lg"
+                          className="wpsg-admin-btn"
+                          onClick={onOpenSettings}
+                          aria-label="Settings"
+                        >
+                          <IconSettings size={20} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </>
+                  )}
+                  <Button
+                    variant="subtle"
+                    onClick={onLogout}
+                    size="sm"
                   >
-                    <IconSettings size={20} />
-                  </ActionIcon>
-                </Tooltip>
-              </>
-            )}
-            <Button
-              variant="subtle"
-              onClick={onLogout}
-              size="sm"
-            >
-              Sign out
-            </Button>
-          </Group>
-        )}
-        </>)}
-      </Group>
-    </Container>
+                    Sign out
+                  </Button>
+                </Group>
+              )}
+            </>)}
+        </Group>
+      </Container>
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(AuthBarFull, 'AuthBarFull');

@@ -1,9 +1,18 @@
 /**
  * Sprint 4 Tests: P15-E (LayoutBuilderGallery adapter) + P15-F (Template Library)
  */
+import { type PropsWithChildren, useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils';
+import { createTestQueryClient } from '@/services/queryClient';
 import '@testing-library/jest-dom/vitest';
+
+function QueryWrapper({ children }: PropsWithChildren) {
+  const [queryClient] = useState(createTestQueryClient);
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
 
 // ─── useLayoutTemplate hook tests (unit) ─────────────────────────────────────
 
@@ -56,7 +65,7 @@ describe('useLayoutTemplate', () => {
     const { useLayoutTemplate } = await import('@/hooks/useLayoutTemplate');
     const { renderHook } = await import('@testing-library/react');
 
-    const { result } = renderHook(() => useLayoutTemplate(''));
+    const { result } = renderHook(() => useLayoutTemplate(''), { wrapper: QueryWrapper });
     expect(result.current.template).toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
@@ -65,7 +74,7 @@ describe('useLayoutTemplate', () => {
     const { useLayoutTemplate } = await import('@/hooks/useLayoutTemplate');
     const { renderHook } = await import('@testing-library/react');
 
-    const { result } = renderHook(() => useLayoutTemplate(undefined));
+    const { result } = renderHook(() => useLayoutTemplate(undefined), { wrapper: QueryWrapper });
     expect(result.current.template).toBeNull();
     expect(result.current.isLoading).toBe(false);
   });
@@ -80,7 +89,7 @@ describe('useLayoutTemplate', () => {
     const { useLayoutTemplate } = await import('@/hooks/useLayoutTemplate');
     const { renderHook, waitFor: hookWaitFor } = await import('@testing-library/react');
 
-    const { result } = renderHook(() => useLayoutTemplate('tpl-1'));
+    const { result } = renderHook(() => useLayoutTemplate('tpl-1'), { wrapper: QueryWrapper });
 
     await hookWaitFor(() => {
       expect(result.current.template).not.toBeNull();
@@ -103,7 +112,7 @@ describe('useLayoutTemplate', () => {
     const { useLayoutTemplate } = await import('@/hooks/useLayoutTemplate');
     const { renderHook, waitFor: hookWaitFor } = await import('@testing-library/react');
 
-    const { result } = renderHook(() => useLayoutTemplate('bad-id'));
+    const { result } = renderHook(() => useLayoutTemplate('bad-id'), { wrapper: QueryWrapper });
 
     await hookWaitFor(() => {
       expect(result.current.error).not.toBeNull();
@@ -265,7 +274,7 @@ describe('LayoutBuilderGallery', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Gallery (2)')).toBeInTheDocument();
+      expect(screen.getByText('Images (2)')).toBeInTheDocument();
     });
 
     // Should render accessible buttons for lightbox-enabled slots
@@ -338,8 +347,6 @@ describe('UnifiedCampaignModal layout selector', () => {
     publishAt: '',
     unpublishAt: '',
     layoutTemplateId: '',
-    imageAdapterId: '',
-    videoAdapterId: '',
     categories: [] as string[],
   };
 
@@ -809,7 +816,7 @@ describe('LayoutBuilderGallery overlay rendering', () => {
 
     await waitFor(() => {
       // Canvas renders, but no img with the blob URL
-      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Images (1)')).toBeInTheDocument();
     });
 
     const blobImg = document.querySelector('img[src^="blob:"]');
@@ -912,7 +919,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Images (1)')).toBeInTheDocument();
     });
 
     // The slot image should be rendered (clip-path inner div contains the img)
@@ -943,7 +950,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Images (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
@@ -978,7 +985,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Images (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;
@@ -1006,7 +1013,7 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Gallery (1)')).toBeInTheDocument();
+      expect(screen.getByText('Images (1)')).toBeInTheDocument();
     });
 
     const img = document.querySelector('img[src="/img1.jpg"]') as HTMLElement;

@@ -27,6 +27,7 @@ import {
 import type { LayerItem } from '@/utils/layerList';
 import { getLayerName } from '@/utils/layerList';
 import type { LayoutTemplate } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -303,3 +304,5 @@ export function LayerRow({
     </Group>
   );
 }
+
+setWpsgDebugDisplayName(LayerRow, 'LayoutBuilder:LayerRow');

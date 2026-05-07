@@ -12,7 +12,7 @@
  *   wp wpsg campaign list --status=archived --format=table
  *   wp wpsg campaign archive 42
  *   wp wpsg campaign restore 42
- *   wp wpsg campaign duplicate 42 --name="Copy of Campaign" --copy-media
+ *   wp wpsg campaign duplicate 42 --name="Copy of Campaign" --copy-media --duplicate-layout-template
  *   wp wpsg campaign export 42
  *   wp wpsg campaign export 42 > campaign-42.json
  *   wp wpsg campaign import ./campaign-42.json
@@ -203,57 +203,24 @@ class WPSG_CLI {
             ? sanitize_text_field( $assoc_args['name'] )
             : ( $source->post_title . ' (Copy)' );
         $copy_media = isset( $assoc_args['copy-media'] );
+        $duplicate_layout_template = isset( $assoc_args['duplicate-layout-template'] );
 
-        $new_id = wp_insert_post( [
-            'post_type'    => 'wpsg_campaign',
-            'post_title'   => $new_name,
-            'post_content' => $source->post_content,
-            'post_status'  => 'publish',
-        ], true );
+        $new_id = WPSG_Campaign_Duplicator::duplicate(
+            $source_id,
+            $new_name,
+            $copy_media,
+            $duplicate_layout_template
+        );
 
         if ( is_wp_error( $new_id ) ) {
             WP_CLI::error( 'Failed to create campaign: ' . $new_id->get_error_message() );
         }
 
-        // Copy campaign-specific meta keys.
-        // NOTE: access_grants are intentionally excluded — cloned campaigns start with
-        // a clean permission slate so the owner can configure access from scratch.
-        $meta_keys = [
-            'visibility',
-            'tags',
-            'cover_image',
-            '_wpsg_image_adapter_id',
-            '_wpsg_video_adapter_id',
-            '_wpsg_gallery_overrides',
-            '_wpsg_layout_binding_template_id',
-            '_wpsg_layout_binding',
-        ];
-        foreach ( $meta_keys as $key ) {
-            $value = get_post_meta( $source_id, $key, true );
-            if ( $value !== '' && $value !== false ) {
-                update_post_meta( $new_id, $key, $value );
-            }
-        }
-        // Duplicates always start as draft.
-        update_post_meta( $new_id, 'status', 'draft' );
-
-        if ( $copy_media ) {
-            $media_items = get_post_meta( $source_id, 'media_items', true );
-            if ( is_array( $media_items ) ) {
-                update_post_meta( $new_id, 'media_items', $media_items );
-            }
-        }
-
-        // Copy company taxonomy assignment.
-        $company_terms = wp_get_post_terms( $source_id, 'wpsg_company', [ 'fields' => 'ids' ] );
-        if ( ! is_wp_error( $company_terms ) && ! empty( $company_terms ) ) {
-            wp_set_object_terms( $new_id, $company_terms, 'wpsg_company' );
-        }
-
         $this->add_audit_entry( $new_id, 'campaign.duplicated', [
-            'source_id'  => $source_id,
-            'copy_media' => $copy_media,
-            'source'     => 'cli',
+            'source_id'                 => $source_id,
+            'copy_media'                => $copy_media,
+            'duplicate_layout_template' => $duplicate_layout_template,
+            'source'                    => 'cli',
         ] );
         $this->clear_campaign_cache();
         WP_CLI::success( "Campaign duplicated. New ID: {$new_id}" );
@@ -383,8 +350,6 @@ class WPSG_CLI {
             'coverImage'      => 'cover_image',
             'publishAt'       => 'publish_at',
             'unpublishAt'     => 'unpublish_at',
-            'imageAdapterId'  => '_wpsg_image_adapter_id',
-            'videoAdapterId'  => '_wpsg_video_adapter_id',
         ];
         update_post_meta( $post_id, 'status', 'draft' );
         foreach ( $meta_map as $src_key => $meta_key ) {
@@ -397,11 +362,9 @@ class WPSG_CLI {
             }
         }
 
-        if ( array_key_exists( 'galleryOverrides', $src ) ) {
-            $gallery_overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides( $src['galleryOverrides'] );
-            if ( ! empty( $gallery_overrides ) ) {
-                update_post_meta( $post_id, '_wpsg_gallery_overrides', wp_json_encode( $gallery_overrides ) );
-            }
+        $gallery_overrides = WPSG_REST::promote_campaign_gallery_overrides($src['galleryOverrides'] ?? null);
+        if ( ! empty( $gallery_overrides ) ) {
+            update_post_meta( $post_id, '_wpsg_gallery_overrides', wp_json_encode( $gallery_overrides ) );
         }
 
         // Embed layout template by value if provided.
@@ -730,8 +693,9 @@ class WPSG_CLI {
             'publishAt'   => get_post_meta( $post->ID, 'publish_at', true ) ?: '',
             'unpublishAt' => get_post_meta( $post->ID, 'unpublish_at', true ) ?: '',
             'layoutBinding' => get_post_meta( $post->ID, '_wpsg_layout_binding', true ) ?: null,
-            'imageAdapterId' => get_post_meta( $post->ID, '_wpsg_image_adapter_id', true ) ?: '',
-            'videoAdapterId' => get_post_meta( $post->ID, '_wpsg_video_adapter_id', true ) ?: '',
+            'galleryOverrides' => WPSG_REST::promote_campaign_gallery_overrides(
+                get_post_meta( $post->ID, '_wpsg_gallery_overrides', true )
+            ),
             'createdAt'   => $post->post_date,
             'updatedAt'   => $post->post_modified,
         ];

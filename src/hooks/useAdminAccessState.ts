@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useCombobox } from '@mantine/core';
 import type { ApiClient } from '@/services/apiClient';
-import type { CompanyInfo, CompanyAccessGrant as CompanyAccessGrantType } from '@/hooks/useAdminSWR';
+import type { CompanyInfo, CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 export interface WpUser {

@@ -7,6 +7,7 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayoutCanvas } from './LayoutCanvas';
 import { CanvasTransformContext } from '@/contexts/CanvasTransformContext';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   const {
@@ -271,3 +272,5 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     </CanvasTransformContext.Provider>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderCanvasPanel, 'LayoutBuilder:LayoutBuilderCanvasPanel');

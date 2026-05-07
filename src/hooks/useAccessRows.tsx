@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Table, Text, Stack, Tooltip, Badge, ActionIcon } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
-import type { CompanyAccessGrant as CompanyAccessGrantType } from '@/hooks/useAdminSWR';
+import type { CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
 import type { AccessViewMode } from '@/hooks/useAdminAccessState';
 
 interface Options {

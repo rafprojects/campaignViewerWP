@@ -5,19 +5,17 @@
  * reference sheet, as specified in the P19-A track of PHASE19_REPORT.md.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
+import { createTestQueryClient } from '@/services/queryClient';
 
 // ── Heavy dep mocks ──────────────────────────────────────────────────────────
 
 vi.mock('dockview', () => ({
   DockviewReact: () => <div data-testid="dockview-mock" />,
-}));
-
-vi.mock('swr', () => ({
-  default: vi.fn().mockReturnValue({ data: undefined, mutate: vi.fn() }),
 }));
 
 vi.mock('react-zoom-pan-pinch', () => ({
@@ -138,16 +136,20 @@ import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function wrapper({ children }: { children: ReactNode }) {
+function Wrapper({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(createTestQueryClient);
+
   return (
-    <MantineProvider>
-      <ModalsProvider>{children}</ModalsProvider>
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+      <MantineProvider>
+        <ModalsProvider>{children}</ModalsProvider>
+      </MantineProvider>
+    </QueryClientProvider>
   );
 }
 
 const mockApiClient = {
-  get: vi.fn(),
+  get: vi.fn().mockResolvedValue([]),
   post: vi.fn(),
   postForm: vi.fn(),
   put: vi.fn(),
@@ -164,7 +166,7 @@ function renderModal(props: Partial<Parameters<typeof LayoutBuilderModal>[0]> = 
       apiClient={mockApiClient as never}
       {...props}
     />,
-    { wrapper },
+    { wrapper: Wrapper },
   );
 }
 
@@ -182,19 +184,19 @@ function pressKey(
 
 describe('BuilderKeyboardShortcutsModal', () => {
   it('renders shortcut sections when opened', () => {
-    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getByText('Builder Keyboard Shortcuts')).toBeDefined();
     expect(screen.getAllByText(/Ctrl/i).length).toBeGreaterThan(0);
   });
 
   it('does not render content when closed', () => {
-    render(<BuilderKeyboardShortcutsModal opened={false} onClose={vi.fn()} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened={false} onClose={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.queryByText('Builder Keyboard Shortcuts')).toBeNull();
   });
 
   it('calls onClose when close button is clicked', () => {
     const onClose = vi.fn();
-    render(<BuilderKeyboardShortcutsModal opened onClose={onClose} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened onClose={onClose} />, { wrapper: Wrapper });
     // Mantine renders a close button with data-close-button
     const closeBtn = document.body.querySelector('[data-mantine-stop-propagation]') as HTMLElement
       ?? document.body.querySelector('button[aria-label="Close"]') as HTMLElement;
@@ -208,27 +210,27 @@ describe('BuilderKeyboardShortcutsModal', () => {
   });
 
   it('shows undo shortcut (Ctrl+Z)', () => {
-    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getByText('Undo')).toBeDefined();
   });
 
   it('shows save shortcut (Ctrl+S)', () => {
-    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getByText('Save template')).toBeDefined();
   });
 
   it('shows H shortcut for hand tool', () => {
-    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getByText('Toggle hand / pan tool')).toBeDefined();
   });
 
   it('shows V shortcut for select tool', () => {
-    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getByText('Return to select tool')).toBeDefined();
   });
 
   it('shows ? shortcut for help', () => {
-    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper });
+    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getByText('Show this keyboard shortcuts reference')).toBeDefined();
   });
 });

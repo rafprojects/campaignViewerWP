@@ -6,7 +6,7 @@
  * border, and object-fit matching the slot definition.
  *
  * Features:
- * - Uses `useLayoutTemplate()` SWR hook + public endpoint (no auth).
+ * - Uses `useLayoutTemplate()` query hook + public endpoint (no auth).
  * - `assignMediaToSlots()` for media→slot assignment.
  * - Per-slot hover effects via `buildTileStyles()` + `buildBoxShadowStyles()`.
  * - Lightbox integration via `useCarousel` + `<Lightbox>`.
@@ -18,7 +18,16 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Box, Center, Loader, Text, Stack } from '@mantine/core';
 import { IconLayoutDashboard, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react';
-import type { GalleryBehaviorSettings, MediaItem, LayoutTemplate, CampaignLayoutBinding, SlotTiltEffect, LayoutSlot, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  LayoutTemplate,
+  CampaignLayoutBinding,
+  SlotTiltEffect,
+  LayoutSlot,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
@@ -31,6 +40,9 @@ import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEff
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { toCssOrNumber } from '@/utils/cssUnits';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
 
@@ -131,17 +143,17 @@ function GallerySlotView({
   const safeMaskUrl = sanitizeCssUrl(maskUrl);
   const maskStyle: React.CSSProperties = safeMaskUrl
     ? ({
-        WebkitMaskImage: `url(${safeMaskUrl})`,
-        maskImage: `url(${safeMaskUrl})`,
-        WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
-        maskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
-        WebkitMaskPosition: feMaskPos,
-        maskPosition: feMaskPos,
-        WebkitMaskRepeat: 'no-repeat',
-        maskRepeat: 'no-repeat',
-        WebkitMaskMode: resolvedMaskMode,
-        maskMode: resolvedMaskMode,
-      } as React.CSSProperties)
+      WebkitMaskImage: `url(${safeMaskUrl})`,
+      maskImage: `url(${safeMaskUrl})`,
+      WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
+      maskSize: ml ? `${ml.width}% ${ml.height}%` : 'cover',
+      WebkitMaskPosition: feMaskPos,
+      maskPosition: feMaskPos,
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      WebkitMaskMode: resolvedMaskMode,
+      maskMode: resolvedMaskMode,
+    } as React.CSSProperties)
     : {};
 
   // Slot effects
@@ -211,9 +223,9 @@ function GallerySlotView({
   // Hover handlers for inline glow (only wired when needed)
   const glowHandlers = needsInlineGlow
     ? {
-        onMouseEnter: () => setHovered(true),
-        onMouseLeave: () => setHovered(false),
-      }
+      onMouseEnter: () => setHovered(true),
+      onMouseLeave: () => setHovered(false),
+    }
     : {};
 
   // Media content (shared by clip-path wrapper and rectangle paths)
@@ -268,11 +280,11 @@ function GallerySlotView({
     onClick: isClickable ? () => onOpenAt(lightboxIndex) : undefined,
     onKeyDown: isClickable
       ? (e: React.KeyboardEvent<HTMLDivElement>) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpenAt(lightboxIndex);
-          }
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpenAt(lightboxIndex);
         }
+      }
       : undefined,
   };
 
@@ -398,6 +410,7 @@ function GallerySlotView({
 export interface LayoutBuilderGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   /** Campaign layout template ID (from campaign.layoutTemplateId). */
   templateId: string;
   /** Per-campaign slot overrides (media binding, focal point). */
@@ -413,6 +426,7 @@ export interface LayoutBuilderGalleryProps {
 export function LayoutBuilderGallery({
   media,
   settings,
+  runtime,
   templateId,
   slotOverrides = {},
   isAdmin = false,
@@ -462,6 +476,7 @@ export function LayoutBuilderGallery({
       template={template}
       media={media}
       settings={settings}
+      runtime={runtime}
       slotOverrides={slotOverrides}
       isAdmin={isAdmin}
       lightboxOpen={lightboxOpen}
@@ -480,6 +495,7 @@ interface InnerProps {
   template: LayoutTemplate;
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   slotOverrides: CampaignLayoutBinding['slotOverrides'];
   isAdmin: boolean;
   lightboxOpen: boolean;
@@ -494,6 +510,7 @@ function LayoutBuilderGalleryInner({
   template,
   media,
   settings,
+  runtime,
   slotOverrides,
   isAdmin,
   lightboxOpen,
@@ -506,6 +523,7 @@ function LayoutBuilderGalleryInner({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const viewportHeight = useViewportHeight();
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   // ── Responsive container width via ResizeObserver ──────────────────────────
   useEffect(() => {
@@ -557,23 +575,23 @@ function LayoutBuilderGalleryInner({
   const slotCount = template.slots.length;
   const mediaCount = media.length;
   const hasMismatch = slotCount !== mediaCount;
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
+    <Stack {...getWpsgDebugProps('LayoutBuilderGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {/* Hover styles injected into DOM */}
       <style>{hoverStylesCss}</style>
 
       {/* Header */}
-      {settings.showCampaignGalleryLabels !== false && (
-        <Text size="sm" fw={500} component="div" ta={settings.galleryLabelJustification || 'left'}>
+      {heading.visible && (
+        <Text size="sm" fw={500} component="div" ta={common.galleryLabelJustification || 'left'}>
           <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            {settings.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
-            Gallery ({mediaCount})
+            {common.showGalleryLabelIcon && <IconLayoutDashboard size={16} />}
+            {heading.label}
           </Box>
         </Text>
       )}
@@ -581,6 +599,7 @@ function LayoutBuilderGalleryInner({
       {/* Mismatch warning */}
       {hasMismatch && (
         <Box
+          {...getWpsgDebugProps('LayoutBuilderGallery', 'mismatch-warning')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -601,8 +620,9 @@ function LayoutBuilderGalleryInner({
       )}
 
       {/* Admin: slot assignment summary */}
-        {isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
+      {isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
         <Box
+          {...getWpsgDebugProps('LayoutBuilderGallery', 'assignment-summary')}
           style={{
             display: 'flex',
             gap: 8,
@@ -643,11 +663,13 @@ function LayoutBuilderGalleryInner({
 
       {/* Canvas container */}
       <div
+        {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas-shell')}
         ref={containerRef}
         style={{ width: '100%', maxWidth: maxW || undefined, overflowX: 'auto' }}
       >
         {containerWidth > 0 && (
           <div
+            {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas')}
             style={{
               position: 'relative',
               width: finalCanvasWidth,
@@ -661,7 +683,7 @@ function LayoutBuilderGalleryInner({
                   ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
                   : undefined,
               overflow: 'hidden',
-              borderRadius: settings.imageBorderRadius || 0,
+              borderRadius: toCssOrNumber(settings.imageBorderRadius || 0, settings.imageBorderRadiusUnit ?? 'px'),
               margin: '0 auto',
             }}
             role="img"
@@ -759,7 +781,14 @@ function LayoutBuilderGalleryInner({
         onPrev={onPrev}
         onNext={onNext}
         onClose={onCloseLightbox}
+        videoMaxWidth={settings.lightboxVideoMaxWidth}
+        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight}
+        videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight}
       />
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderGallery, 'LayoutBuilderGallery');

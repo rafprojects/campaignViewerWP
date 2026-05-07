@@ -1,7 +1,54 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '../../../test/test-utils';
 import { VideoCarousel } from './VideoCarousel';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type MediaItem } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type GalleryCommonSettings, type MediaItem } from '@/types';
+
+function buildVideoSettings(
+  common: Partial<GalleryCommonSettings>,
+  overrides: Partial<GalleryBehaviorSettings> = {},
+): GalleryBehaviorSettings {
+  const baseConfig = DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig!;
+
+  return {
+    ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+    ...overrides,
+    galleryConfig: {
+      ...baseConfig,
+      breakpoints: {
+        desktop: {
+          ...baseConfig.breakpoints?.desktop,
+          video: {
+            ...baseConfig.breakpoints?.desktop?.video,
+            common: {
+              ...baseConfig.breakpoints?.desktop?.video?.common,
+              ...common,
+            },
+          },
+        },
+        tablet: {
+          ...baseConfig.breakpoints?.tablet,
+          video: {
+            ...baseConfig.breakpoints?.tablet?.video,
+            common: {
+              ...baseConfig.breakpoints?.tablet?.video?.common,
+              ...common,
+            },
+          },
+        },
+        mobile: {
+          ...baseConfig.breakpoints?.mobile,
+          video: {
+            ...baseConfig.breakpoints?.mobile?.video,
+            common: {
+              ...baseConfig.breakpoints?.mobile?.video?.common,
+              ...common,
+            },
+          },
+        },
+      },
+    },
+  };
+}
 
 const videos: MediaItem[] = [
   {
@@ -79,11 +126,10 @@ describe('VideoCarousel', () => {
     render(
       <VideoCarousel
         videos={videos}
-        settings={{
-          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+        settings={buildVideoSettings({
           gallerySizingMode: 'manual',
           galleryManualHeight: '520px',
-        }}
+        })}
       />,
     );
 
@@ -112,10 +158,7 @@ describe('VideoCarousel', () => {
     render(
       <VideoCarousel
         videos={videos}
-        settings={{
-          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-          gallerySizingMode: 'viewport',
-        }}
+        settings={buildVideoSettings({ gallerySizingMode: 'viewport' })}
       />,
     );
 
@@ -132,10 +175,7 @@ describe('VideoCarousel', () => {
       <VideoCarousel
         videos={videos}
         maxWidth={900}
-        settings={{
-          ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
-          gallerySizingMode: 'viewport',
-        }}
+        settings={buildVideoSettings({ gallerySizingMode: 'viewport' })}
       />,
     );
 

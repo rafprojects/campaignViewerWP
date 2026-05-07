@@ -41,10 +41,10 @@ It preserves scanability while avoiding a giant inline form that would recreate 
 
 ## Persistence Contract
 
-1. Global settings UI may hydrate from legacy flat gallery fields when older data is loaded, but saves persist nested `galleryConfig` only.
-2. Campaign UI may hydrate from legacy flat campaign adapter overrides when older data is loaded, but saves persist nested `galleryOverrides` only.
+1. Global settings UI hydrates from nested `galleryConfig` and persists nested `galleryConfig` only.
+2. Campaign UI hydrates from nested `galleryOverrides` and persists nested `galleryOverrides` only.
 3. Quick selectors and the deeper gallery editor write directly to nested breakpoint and scope values.
-4. Successful nested saves prune legacy flat gallery storage so the runtime converges on one authoritative representation.
+4. Successful nested saves prune legacy flat gallery storage so the runtime stays on one authoritative representation.
 
 ---
 
@@ -144,7 +144,7 @@ When the user clicks the config action in campaign context:
 5. reset actions are available for the visible scope, the current breakpoint, or the full campaign gallery config
 6. parent screen summary refreshes to reflect effective values
 
-If the campaign was loaded from legacy flat adapter overrides, the editor first promotes those values into nested `galleryOverrides` so the user edits one consistent model.
+The campaign editor works against nested `galleryOverrides` directly so the user edits one consistent model.
 
 ---
 

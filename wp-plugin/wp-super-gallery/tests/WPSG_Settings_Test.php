@@ -100,26 +100,26 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
-     * Test deprecated flat gallery settings still sanitize through the generic handler.
+     * Test nested-only flat gallery fields are ignored on direct settings writes.
      */
-    public function test_sanitize_settings_legacy_gallery_fields_use_generic_handler() {
-        $defaults = WPSG_Settings::get_defaults();
-
+    public function test_sanitize_settings_ignores_flat_nested_only_gallery_fields() {
         $input = [
-            'image_gallery_adapter_id' => 'masonry',
-            'gallery_selection_mode' => 'per-breakpoint',
             'grid_card_width' => 999,
+            'grid_card_aspect_ratio' => '5:7',
+            'grid_card_max_columns' => 7,
+            'grid_card_min_height' => 240,
             'tile_glow_color' => '<b>#112233</b>',
             'gallery_manual_height' => 'calc(100vh)',
         ];
 
         $sanitized = WPSG_Settings::sanitize_settings($input);
 
-        $this->assertEquals('masonry', $sanitized['image_gallery_adapter_id']);
-        $this->assertEquals('per-breakpoint', $sanitized['gallery_selection_mode']);
-        $this->assertEquals(400, $sanitized['grid_card_width']);
-        $this->assertEquals('#112233', $sanitized['tile_glow_color']);
-        $this->assertEquals($defaults['gallery_manual_height'], $sanitized['gallery_manual_height']);
+        $this->assertArrayNotHasKey('grid_card_width', $sanitized);
+        $this->assertArrayNotHasKey('grid_card_aspect_ratio', $sanitized);
+        $this->assertArrayNotHasKey('grid_card_max_columns', $sanitized);
+        $this->assertArrayNotHasKey('grid_card_min_height', $sanitized);
+        $this->assertArrayNotHasKey('tile_glow_color', $sanitized);
+        $this->assertArrayNotHasKey('gallery_manual_height', $sanitized);
     }
 
     /**
@@ -159,9 +159,8 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
      * Test sanitize_settings handles boolean fields.
      */
     public function test_sanitize_settings_handles_booleans() {
-        // Absent keys must not appear in the sanitized output — callers that
-        // merge $sanitized over existing settings rely on this to avoid
-        // inadvertently resetting values (e.g. the REST partial-update path).
+        // With no stored option, absent keys should not be synthesized into the
+        // sanitized output.
         $input = [];
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $this->assertArrayNotHasKey('enable_lightbox',   $sanitized);
@@ -184,6 +183,61 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $this->assertFalse($sanitized['enable_lightbox']);
         $this->assertFalse($sanitized['enable_animations']);
+    }
+
+    /**
+     * Test partial classic admin saves preserve the stored nested gallery config.
+     */
+    public function test_sanitize_settings_preserves_gallery_config_on_partial_admin_save() {
+        update_option(WPSG_Settings::OPTION_NAME, [
+            'theme' => 'default-dark',
+            'gallery_config' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'masonry',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $sanitized = WPSG_Settings::sanitize_settings([
+            'theme' => 'nord',
+        ]);
+
+        $this->assertEquals('nord', $sanitized['theme']);
+        $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
+        $this->assertEquals('masonry', $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterId'] ?? null);
+    }
+
+    /**
+     * Test explicit hidden checkbox values persist false in the classic admin flow.
+     */
+    public function test_sanitize_settings_persists_false_for_classic_checkbox_hidden_inputs() {
+        update_option(WPSG_Settings::OPTION_NAME, [
+            'enable_lightbox' => true,
+            'enable_animations' => true,
+            'allow_user_theme_override' => true,
+            'debug_component_markers' => true,
+            'gallery_config' => [
+                'mode' => 'unified',
+            ],
+        ]);
+
+        $sanitized = WPSG_Settings::sanitize_settings([
+            'enable_lightbox' => '0',
+            'enable_animations' => '0',
+            'allow_user_theme_override' => '0',
+            'debug_component_markers' => '0',
+        ]);
+
+        $this->assertFalse($sanitized['enable_lightbox']);
+        $this->assertFalse($sanitized['enable_animations']);
+        $this->assertFalse($sanitized['allow_user_theme_override']);
+        $this->assertFalse($sanitized['debug_component_markers']);
+        $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
     }
 
     /**
@@ -286,6 +340,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                         ],
                         'adapterSettings' => [
                             'masonryColumns' => 99,
+                                'gridCardAspectRatio' => '5:7',
+                                'gridCardMaxColumns' => 99,
+                                'gridCardMinHeight' => -80,
                             'imageViewportHeight' => 9999,
                             'videoBorderRadius' => 99,
                             'thumbnailGap' => 99,
@@ -328,6 +385,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('theme', $common);
         $this->assertEquals('Allowed', $common['headlinescript'] ?? null);
         $this->assertEquals(8, $adapter_settings['masonryColumns'] ?? null);
+        $this->assertEquals('5:7', $adapter_settings['gridCardAspectRatio'] ?? null);
+        $this->assertEquals(8, $adapter_settings['gridCardMaxColumns'] ?? null);
+        $this->assertEquals(0, $adapter_settings['gridCardMinHeight'] ?? null);
         $this->assertEquals(900, $adapter_settings['imageViewportHeight'] ?? null);
         $this->assertEquals(48, $adapter_settings['videoBorderRadius'] ?? null);
         $this->assertEquals(24, $adapter_settings['thumbnailGap'] ?? null);
@@ -361,6 +421,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
                             'viewportBgImageUrl' => ['https://example.com/not-allowed.jpg'],
                         ],
                         'adapterSettings' => [
+                            'gridCardAspectRatio' => 'not-a-ratio',
+                            'gridCardMaxColumns' => ['8'],
+                            'gridCardMinHeight' => ['240'],
                             'tileGlowColor' => 'bad color',
                             'masonryAutoColumnBreakpoints' => ['480:2'],
                         ],
@@ -374,6 +437,9 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
 
         $this->assertEquals($defaults['image_bg_color'], $common['viewportBgColor'] ?? null);
         $this->assertEquals($defaults['image_bg_image_url'], $common['viewportBgImageUrl'] ?? null);
+        $this->assertEquals($defaults['grid_card_aspect_ratio'], $adapter_settings['gridCardAspectRatio'] ?? null);
+        $this->assertEquals($defaults['grid_card_max_columns'], $adapter_settings['gridCardMaxColumns'] ?? null);
+        $this->assertEquals($defaults['grid_card_min_height'], $adapter_settings['gridCardMinHeight'] ?? null);
         $this->assertEquals($defaults['tile_glow_color'], $adapter_settings['tileGlowColor'] ?? null);
         $this->assertEquals($defaults['masonry_auto_column_breakpoints'], $adapter_settings['masonryAutoColumnBreakpoints'] ?? null);
     }

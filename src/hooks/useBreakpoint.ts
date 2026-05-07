@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMantineTheme } from '@mantine/core';
+import type { ResponsiveBreakpoint } from '@/types';
 
 /**
- * Breakpoint label used for per-breakpoint adapter resolution.
+ * Breakpoint label — re-exported alias of the shared {@link ResponsiveBreakpoint} union
+ * so existing import sites keep working without churn.
  */
-export type Breakpoint = 'desktop' | 'tablet' | 'mobile';
+export type Breakpoint = ResponsiveBreakpoint;
+
+interface UseBreakpointOptions {
+  source?: 'container' | 'viewport';
+}
 
 /**
  * Converts a Mantine `em`-string (e.g. "48em") to pixels using the standard 16px base.
@@ -19,23 +25,33 @@ function emToPx(em: string): number {
 const FALLBACK_MOBILE_MAX = 768;
 const FALLBACK_TABLET_MAX = 1200;
 
+export interface UseBreakpointResult {
+  breakpoint: Breakpoint;
+  width: number;
+}
+
 /**
- * Determines the current {@link Breakpoint} based on the observed container width.
+ * Determines the current {@link Breakpoint} based on either container width or viewport width.
  *
- * Uses `ResizeObserver` on the supplied container ref (NOT `window.innerWidth`)
- * so it works correctly when the gallery is embedded inside a WordPress shortcode
- * where container width ≠ viewport width.
+ * Uses `ResizeObserver` on the supplied container ref by default so it works
+ * correctly when the gallery is embedded inside a WordPress shortcode where
+ * container width ≠ viewport width. When `source` is `'viewport'`, it instead
+ * tracks `window.innerWidth`, which is a better fit for fullscreen or modal
+ * viewer experiences that are intentionally width-clamped.
  *
  * Thresholds are sourced from the Mantine theme (`sm` → mobile/tablet boundary,
  * `lg` → tablet/desktop boundary) for consistency with the rest of the design system.
  *
  * @param containerRef - React ref to the DOM element to observe.
- * @returns The current `Breakpoint` value (`'desktop' | 'tablet' | 'mobile'`).
+ * @param options - Controls whether breakpoint resolution uses the container or viewport width.
+ * @returns Object with `breakpoint` label and raw `width` in pixels.
  */
 export function useBreakpoint(
   containerRef: React.RefObject<HTMLElement | null>,
-): Breakpoint {
+  options: UseBreakpointOptions = {},
+): UseBreakpointResult {
   const theme = useMantineTheme();
+  const source = options.source ?? 'container';
 
   // Resolve Mantine breakpoints → pixel thresholds
   const mobileMax = theme.breakpoints?.sm
@@ -55,29 +71,48 @@ export function useBreakpoint(
   );
 
   const [breakpoint, setBreakpoint] = useState<Breakpoint>('desktop');
+  const [width, setWidth] = useState<number>(0);
 
   // Keep a ref to avoid stale closures inside the ResizeObserver callback.
   const resolveRef = useRef(resolve);
   resolveRef.current = resolve;
 
   useEffect(() => {
+    if (source === 'viewport') {
+      const updateFromViewport = () => {
+        const w = window.innerWidth;
+        setWidth(w);
+        setBreakpoint(resolveRef.current(w));
+      };
+
+      updateFromViewport();
+      window.addEventListener('resize', updateFromViewport);
+
+      return () => {
+        window.removeEventListener('resize', updateFromViewport);
+      };
+    }
+
     const el = containerRef.current;
     if (!el) return;
 
     // Set initial value
-    setBreakpoint(resolveRef.current(el.clientWidth));
+    const initialWidth = el.clientWidth;
+    setWidth(initialWidth);
+    setBreakpoint(resolveRef.current(initialWidth));
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const width =
+        const w =
           entry.contentBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
-        setBreakpoint(resolveRef.current(width));
+        setWidth(w);
+        setBreakpoint(resolveRef.current(w));
       }
     });
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [containerRef]);
+  }, [containerRef, source]);
 
-  return breakpoint;
+  return { breakpoint, width };
 }

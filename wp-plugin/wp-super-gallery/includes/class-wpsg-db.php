@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '4';
+    const DB_VERSION = '5';
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');

@@ -16,6 +16,34 @@ if (!defined('ABSPATH')) {
 class WPSG_Settings_Utils {
 
     /**
+     * Return the nested-only gallery keys omitted from the public settings contract.
+     *
+     * @return string[]
+     */
+    private static function get_nested_only_legacy_gallery_setting_keys() {
+        return WPSG_Settings_Sanitizer::get_nested_only_gallery_setting_keys();
+    }
+
+    /**
+     * Determine whether a flat key is omitted when nested gallery_config exists.
+     *
+     * @param string $key Flat settings key.
+     * @return bool
+     */
+    private static function is_nested_only_legacy_gallery_setting_key($key) {
+        static $nested_only_legacy_gallery_setting_keys = null;
+
+        if ($nested_only_legacy_gallery_setting_keys === null) {
+            $nested_only_legacy_gallery_setting_keys = array_fill_keys(
+                self::get_nested_only_legacy_gallery_setting_keys(),
+                true
+            );
+        }
+
+        return isset($nested_only_legacy_gallery_setting_keys[$key]);
+    }
+
+    /**
      * Convert a snake_case key to camelCase.
      *
      * @param string $key Snake-case key.
@@ -35,9 +63,20 @@ class WPSG_Settings_Utils {
      * @return array
      */
     public static function to_js($settings, $defaults, $admin_only_fields = [], $admin = false) {
+        $settings = WPSG_Settings_Sanitizer::normalize_card_config_settings(
+            is_array($settings) ? $settings : []
+        );
         $result = [];
+        $omit_nested_only_gallery_fields = array_key_exists('gallery_config', $defaults);
         foreach ($defaults as $snake => $default) {
             if (!$admin && in_array($snake, $admin_only_fields, true)) {
+                continue;
+            }
+
+            if (
+                $omit_nested_only_gallery_fields
+                && self::is_nested_only_legacy_gallery_setting_key($snake)
+            ) {
                 continue;
             }
 
@@ -69,5 +108,23 @@ class WPSG_Settings_Utils {
         }
 
         return $input;
+    }
+
+    /**
+        * Remove nested-only flat gallery fields from the outward settings shape.
+     *
+     * @param array $settings Parsed settings array.
+     * @return array
+     */
+    public static function strip_nested_only_gallery_legacy_fields($settings) {
+        if (!is_array($settings) || !array_key_exists('gallery_config', $settings)) {
+            return $settings;
+        }
+
+        foreach (self::get_nested_only_legacy_gallery_setting_keys() as $key) {
+            unset($settings[$key]);
+        }
+
+        return $settings;
     }
 }

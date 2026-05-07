@@ -91,8 +91,7 @@ describe('QuickAddUserModal', () => {
         quickAddResult={{ success: true, message: 'User created! Email sent.' }}
       />,
     );
-    // Mantine Alert always renders role="alert" regardless of the role prop
-    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.getByText(/user created/i)).toBeInTheDocument();
   });
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '../../test/test-utils';
 import { CampaignDuplicateModal } from './CampaignDuplicateModal';
-import type { AdminCampaign } from '@/hooks/useAdminSWR';
+import type { AdminCampaign } from '@/services/adminQuery';
 
 const mockSource: AdminCampaign = {
   id: '42',
@@ -16,8 +16,6 @@ const mockSource: AdminCampaign = {
   publishAt: '',
   unpublishAt: '',
   layoutTemplateId: '',
-  imageAdapterId: '',
-  videoAdapterId: '',
   categories: [],
 };
 
@@ -26,6 +24,11 @@ const defaults = {
   isSaving: false,
   onConfirm: vi.fn(),
   onClose: vi.fn(),
+};
+
+const layoutTemplateSource: AdminCampaign = {
+  ...mockSource,
+  layoutTemplateId: 'tpl-1',
 };
 
 describe('CampaignDuplicateModal', () => {
@@ -54,7 +57,7 @@ describe('CampaignDuplicateModal', () => {
     const onConfirm = vi.fn();
     render(<CampaignDuplicateModal {...defaults} onConfirm={onConfirm} />);
     fireEvent.click(screen.getByRole('button', { name: /duplicate/i }));
-    expect(onConfirm).toHaveBeenCalledWith('Summer Campaign (Copy)', true);
+    expect(onConfirm).toHaveBeenCalledWith('Summer Campaign (Copy)', true, false);
   });
 
   it('Duplicate button is disabled when name is empty', () => {
@@ -78,7 +81,27 @@ describe('CampaignDuplicateModal', () => {
     const switchEl = screen.getByRole('switch', { name: /copy media/i });
     fireEvent.click(switchEl); // uncheck
     fireEvent.click(screen.getByRole('button', { name: /duplicate/i }));
-    expect(onConfirm).toHaveBeenCalledWith('Summer Campaign (Copy)', false);
+    expect(onConfirm).toHaveBeenCalledWith('Summer Campaign (Copy)', false, false);
+  });
+
+  it('shows layout-template deep-clone toggle when the source has a linked template', () => {
+    render(<CampaignDuplicateModal {...defaults} source={layoutTemplateSource} />);
+    expect(screen.getByRole('switch', { name: /duplicate linked layout template/i })).toBeInTheDocument();
+  });
+
+  it('defaults layout-template deep clone on when the source has a linked template', () => {
+    const onConfirm = vi.fn();
+    render(<CampaignDuplicateModal {...defaults} source={layoutTemplateSource} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /duplicate/i }));
+    expect(onConfirm).toHaveBeenCalledWith('Summer Campaign (Copy)', true, true);
+  });
+
+  it('passes false when layout-template deep clone is disabled', () => {
+    const onConfirm = vi.fn();
+    render(<CampaignDuplicateModal {...defaults} source={layoutTemplateSource} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('switch', { name: /duplicate linked layout template/i }));
+    fireEvent.click(screen.getByRole('button', { name: /duplicate/i }));
+    expect(onConfirm).toHaveBeenCalledWith('Summer Campaign (Copy)', true, false);
   });
 
   it('shows loading state on Duplicate button while saving', () => {

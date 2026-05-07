@@ -1,4 +1,5 @@
 import { Center, Loader, Stack, Text } from '@mantine/core';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface GalleryConfigEditorLoaderProps {
   minHeight?: number;
@@ -20,3 +21,5 @@ export function GalleryConfigEditorLoader({
     </Center>
   );
 }
+
+setWpsgDebugDisplayName(GalleryConfigEditorLoader, 'GalleryConfigEditorLoader');

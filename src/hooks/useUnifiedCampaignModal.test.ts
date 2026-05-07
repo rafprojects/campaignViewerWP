@@ -55,8 +55,6 @@ describe('useUnifiedCampaignModal', () => {
 
     await act(async () => {
       await result.current.openForEdit(makeCampaign({
-        imageAdapterId: '',
-        videoAdapterId: '',
         galleryOverrides: {
           mode: 'per-type',
           breakpoints: {
@@ -68,13 +66,13 @@ describe('useUnifiedCampaignModal', () => {
       }));
     });
 
-    expect(result.current.formState.imageAdapterId).toBe('masonry');
-    expect(result.current.formState.videoAdapterId).toBe('diamond');
     expect(result.current.formState.galleryOverrides?.mode).toBe('per-type');
     expect(result.current.formState.galleryOverrides?.breakpoints?.desktop?.image?.adapterId).toBe('masonry');
+    expect(result.current.formState).not.toHaveProperty('imageAdapterId');
+    expect(result.current.formState).not.toHaveProperty('videoAdapterId');
   });
 
-  it('normalizes legacy bridge adapter ids from unified nested overrides when opening a campaign', async () => {
+  it('leaves galleryOverrides undefined when opening a campaign without nested overrides', async () => {
     const { result } = renderHook(() => useUnifiedCampaignModal({
       apiClient: makeApiClient(),
       isAdmin: true,
@@ -83,23 +81,10 @@ describe('useUnifiedCampaignModal', () => {
     }));
 
     await act(async () => {
-      await result.current.openForEdit(makeCampaign({
-        imageAdapterId: 'masonry',
-        videoAdapterId: 'diamond',
-        galleryOverrides: {
-          mode: 'unified',
-          breakpoints: {
-            desktop: { unified: { adapterId: 'classic' } },
-            tablet: { unified: { adapterId: 'classic' } },
-            mobile: { unified: { adapterId: 'classic' } },
-          },
-        },
-      }));
+      await result.current.openForEdit(makeCampaign());
     });
 
-    expect(result.current.formState.imageAdapterId).toBe('classic');
-    expect(result.current.formState.videoAdapterId).toBe('classic');
-    expect(result.current.formState.galleryOverrides?.mode).toBe('unified');
+    expect(result.current.formState.galleryOverrides).toBeUndefined();
   });
 
   it('sends only nested galleryOverrides in the save payload', async () => {
@@ -118,8 +103,6 @@ describe('useUnifiedCampaignModal', () => {
     act(() => {
       result.current.updateForm({
         ...result.current.formState,
-        imageAdapterId: 'justified',
-        videoAdapterId: 'diamond',
         galleryOverrides: {
           mode: 'unified',
           breakpoints: {
@@ -170,8 +153,6 @@ describe('useUnifiedCampaignModal', () => {
     act(() => {
       result.current.updateForm({
         ...result.current.formState,
-        imageAdapterId: 'masonry',
-        videoAdapterId: 'diamond',
         galleryOverrides: {
           mode: 'per-type',
           breakpoints: {
@@ -204,5 +185,37 @@ describe('useUnifiedCampaignModal', () => {
     const payload = put.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('imageAdapterId');
     expect(payload).not.toHaveProperty('videoAdapterId');
+  });
+
+  it('notifies when campaign creation fails', async () => {
+    const post = vi.fn().mockRejectedValue(new Error('Create failed'));
+    const onNotify = vi.fn();
+    const { result } = renderHook(() => useUnifiedCampaignModal({
+      apiClient: makeApiClient({ post }),
+      isAdmin: true,
+      onMutate: vi.fn().mockResolvedValue(undefined),
+      onNotify,
+    }));
+
+    act(() => {
+      result.current.openForCreate();
+      result.current.updateForm({
+        ...result.current.formState,
+        title: 'New Campaign',
+      });
+    });
+
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      '/wp-json/wp-super-gallery/v1/campaigns',
+      expect.objectContaining({ title: 'New Campaign' }),
+    );
+    expect(onNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'error', text: 'Create failed' }),
+    );
+    expect(result.current.opened).toBe(true);
   });
 });

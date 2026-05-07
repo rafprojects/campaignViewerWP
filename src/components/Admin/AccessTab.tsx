@@ -25,6 +25,7 @@ import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } fro
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { PendingRequestsPanel } from './PendingRequestsPanel';
 import type { ApiClient } from '@/services/apiClient';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type AccessViewMode = 'campaign' | 'company' | 'all';
 
@@ -466,3 +467,5 @@ export function AccessTab({
     </>
   );
 }
+
+setWpsgDebugDisplayName(AccessTab, 'AdminPanel:AccessTab');

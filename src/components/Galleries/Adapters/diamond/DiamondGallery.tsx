@@ -14,11 +14,19 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconDiamond, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import type { GalleryBehaviorSettings, MediaItem, ContainerDimensions } from '@/types';
+import type {
+  GalleryBehaviorSettings,
+  MediaItem,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'diamond';
 /** Diamond clip-path: rhombus with tips at 12, 3, 6, 9 o'clock positions. */
@@ -29,14 +37,17 @@ const V_OVERLAP = 0.5;
 interface DiamondGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
 }
 
-export function DiamondGallery({ media, settings, containerDimensions: _containerDimensions }: DiamondGalleryProps) {
+export function DiamondGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: DiamondGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const common = resolveGalleryComponentCommonSettings(settings, runtime);
+  const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -55,9 +66,12 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const tSize = settings.tileSize ?? 150;
+  const tSize = Math.round((settings.tileSize ?? 150) * (settings.itemScale ?? 1));
+  const tileSizeUnit = settings.tileSizeUnit ?? 'px';
   const gapX = settings.tileGapX ?? 8;
+  const gapXUnit = settings.tileGapXUnit ?? 'px';
   const gapY = settings.tileGapY ?? 8;
+  const gapYUnit = settings.tileGapYUnit ?? 'px';
   const border = settings.tileBorderWidth
     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
     : 'none';
@@ -71,35 +85,35 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
     rows.push(media.slice(i, i + tilesPerRow));
   }
 
-  const adapterPad = Math.max(0, Math.min(24, settings.adapterContentPadding ?? 0));
-  const adapterSizing: React.CSSProperties = settings.adapterSizingMode === 'manual'
-    ? { maxWidth: `${settings.adapterMaxWidthPct ?? 100}%`, marginInline: 'auto' }
-    : {};
+  const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
+  const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
+  const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: adapterPad } : {}) }}>
-      {settings.showCampaignGalleryLabels !== false && (
-        <Title order={3} size="h5" ta={settings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={settings.galleryLabelJustification || 'left'}>
-            {settings.showGalleryLabelIcon && <IconDiamond size={18} />}
-            Gallery ({media.length})
+    <Stack {...getWpsgDebugProps('DiamondGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+      {heading.visible && (
+        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
+          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
+            {common.showGalleryLabelIcon && <IconDiamond size={18} />}
+            {heading.label}
           </Group>
         </Title>
       )}
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
-      <Box ref={containerRef} style={{ width: '100%', position: 'relative' }}>
+      <Box {...getWpsgDebugProps('DiamondGallery', 'grid')} ref={containerRef} style={{ width: '100%', position: 'relative' }}>
         {rows.map((row, rowIdx) => {
           const isOffset = rowIdx % 2 === 1;
           return (
             <Box
+              {...getWpsgDebugProps('DiamondGallery', 'row')}
               key={rowIdx}
               style={{
                 display: 'flex',
-                gap: gapX,
-                marginTop: rowIdx === 0 ? 0 : -tSize * V_OVERLAP + gapY,
-                paddingLeft: isOffset ? (tSize + gapX) / 2 : 0,
+                gap: toCssOrNumber(gapX, gapXUnit),
+                marginTop: rowIdx === 0 ? 0 : `calc(-${toCss(tSize * V_OVERLAP, tileSizeUnit)} + ${toCss(gapY, gapYUnit)})`,
+                paddingLeft: isOffset ? `calc((${toCss(tSize, tileSizeUnit)} + ${toCss(gapX, gapXUnit)}) / 2)` : 0,
               }}
             >
               {row.map((item, itemIdx) => {
@@ -117,8 +131,8 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
                     className={`wpsg-tile-${SCOPE}`}
                     style={{
                       flexShrink: 0,
-                      width: tSize,
-                      height: tSize,
+                      width: toCssOrNumber(tSize, tileSizeUnit),
+                      height: toCssOrNumber(tSize, tileSizeUnit),
                       clipPath: DIAMOND_CLIP,
                       border,
                       position: 'relative',
@@ -148,10 +162,10 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
                     >
                       {isVideo
                         ? <IconPlayerPlay size={tSize * 0.22} color="white"
-                            style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
+                          style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                         : <IconZoomIn size={tSize * 0.2} color="white"
-                            className="wpsg-diamond-zoom"
-                            style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
+                          className="wpsg-diamond-zoom"
+                          style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                       }
                     </Box>
                     {isVideo && (
@@ -187,7 +201,12 @@ export function DiamondGallery({ media, settings, containerDimensions: _containe
       `}</style>
 
       <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
-        onPrev={prev} onNext={next} onClose={close} />
+        onPrev={prev} onNext={next} onClose={close}
+        videoMaxWidth={settings.lightboxVideoMaxWidth} videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+        videoHeight={settings.lightboxVideoHeight} videoHeightUnit={settings.lightboxVideoHeightUnit}
+        mediaMaxHeight={settings.lightboxMediaMaxHeight} />
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(DiamondGallery, 'DiamondGallery');

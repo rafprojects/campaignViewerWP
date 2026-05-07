@@ -8,18 +8,15 @@
 import { createElement, lazy, type ComponentType } from 'react';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import type {
-  AdapterMediaScope,
   AdapterOptionContext,
   AdapterRegistration,
-  AdapterSelectionUpdate,
   AdapterSettingFieldDefinition,
   AdapterSettingGroupDefinition,
   AdapterSettingGroup,
   GalleryAdapterId,
   GalleryAdapterProps,
 } from './GalleryAdapter';
-import type { GalleryBehaviorSettings } from '@/types';
-import { getLegacyFlatAdapterId, LEGACY_BREAKPOINT_SCOPE_KEYS, LEGACY_FLAT_SCOPE_KEYS } from '@/utils/galleryAdapterSelection';
+import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 import { MediaCarouselAdapter } from './MediaCarouselAdapter';
 
 export interface AdapterSelectOption {
@@ -135,23 +132,25 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
     layout: 'stack',
     fields: [
       {
-        control: 'number',
+        control: 'dimension',
         key: 'imageBorderRadius',
-        label: 'Image Border Radius (px)',
+        unitKey: 'imageBorderRadiusUnit',
+        label: 'Image Border Radius',
         description: 'Rounded-corner radius for image media surfaces in supported adapters.',
         appliesTo: ['unified', 'image'],
-        min: 0,
+        allowedUnits: CSS_BORDER_RADIUS_UNITS,
         max: 48,
         step: 1,
         fallback: 8,
       },
       {
-        control: 'number',
+        control: 'dimension',
         key: 'videoBorderRadius',
-        label: 'Video Border Radius (px)',
+        unitKey: 'videoBorderRadiusUnit',
+        label: 'Video Border Radius',
         description: 'Rounded-corner radius for video media surfaces in supported adapters.',
         appliesTo: ['unified', 'video'],
-        min: 0,
+        allowedUnits: CSS_BORDER_RADIUS_UNITS,
         max: 48,
         step: 1,
         fallback: 8,
@@ -235,23 +234,25 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
     layout: 'stack',
     fields: [
       {
-        control: 'number',
+        control: 'dimension',
         key: 'imageViewportHeight',
-        label: 'Image Viewport Height (px)',
+        unitKey: 'imageViewportHeightUnit',
+        label: 'Image Viewport Height',
         description: 'Base height used for image-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual.',
         appliesTo: ['unified', 'image'],
-        min: 180,
+        allowedUnits: CSS_HEIGHT_UNITS,
         max: 900,
         step: 10,
         fallback: 420,
       },
       {
-        control: 'number',
+        control: 'dimension',
         key: 'videoViewportHeight',
-        label: 'Video Viewport Height (px)',
+        unitKey: 'videoViewportHeightUnit',
+        label: 'Video Viewport Height',
         description: 'Base height used for video-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual.',
         appliesTo: ['unified', 'video'],
-        min: 180,
+        allowedUnits: CSS_HEIGHT_UNITS,
         max: 900,
         step: 10,
         fallback: 420,
@@ -315,11 +316,12 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         fallback: 1,
       },
       {
-        control: 'number',
+        control: 'dimension',
         key: 'carouselGap',
-        label: 'Slide Gap (px)',
+        unitKey: 'carouselGapUnit',
+        label: 'Slide Gap',
         description: 'Space between carousel slides.',
-        min: 0,
+        allowedUnits: CSS_SPACING_UNITS,
         max: 64,
         step: 4,
         fallback: 16,
@@ -616,27 +618,57 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
   },
   'compact-grid': {
     group: 'compact-grid',
-    layout: 'group',
+    layout: 'stack',
     fields: [
       {
-        control: 'number',
+        control: 'dimension',
         key: 'gridCardWidth',
-        label: 'Card Min Width (px)',
-        description: 'Minimum width of each grid card. Grid auto-fills based on available space.',
-        min: 80,
+        unitKey: 'gridCardWidthUnit',
+        label: 'Card Width',
+        description: 'Primary width target for each compact-grid card. The grid wraps responsively around this width.',
+        allowedUnits: CSS_WIDTH_UNITS,
         max: 400,
         step: 10,
-        fallback: 220,
+        fallback: 160,
+      },
+      {
+        control: 'select',
+        key: 'gridCardAspectRatio',
+        label: 'Card Aspect Ratio',
+        description: 'Locks card proportions without requiring a separate height control. Auto keeps legacy height-derived behavior.',
+        fallback: 'auto',
+        options: [
+          { value: 'auto', label: 'Auto (legacy height-derived)' },
+          { value: '5:7', label: '5:7 (playing card)' },
+          { value: '16:9', label: '16:9 (widescreen)' },
+          { value: '4:3', label: '4:3 (standard)' },
+          { value: '1:1', label: '1:1 (square)' },
+          { value: '3:4', label: '3:4 (portrait)' },
+          { value: '9:16', label: '9:16 (tall portrait)' },
+          { value: '2:3', label: '2:3 (photo portrait)' },
+          { value: '3:2', label: '3:2 (photo landscape)' },
+          { value: '21:9', label: '21:9 (ultrawide)' },
+        ],
       },
       {
         control: 'number',
-        key: 'gridCardHeight',
-        label: 'Card Height (px)',
-        description: 'Fixed height of each grid card.',
-        min: 80,
+        key: 'gridCardMaxColumns',
+        label: 'Max Columns (0 = auto)',
+        description: 'Caps the number of compact-grid columns while preserving responsive wrapping.',
+        min: 0,
+        max: 8,
+        step: 1,
+        fallback: 0,
+      },
+      {
+        control: 'number',
+        key: 'gridCardMinHeight',
+        label: 'Card Min Height (px)',
+        description: 'Optional guard that prevents extremely thin cards on narrow containers. Set 0 to disable.',
+        min: 0,
         max: 600,
         step: 10,
-        fallback: 180,
+        fallback: 0,
       },
     ],
   },
@@ -648,7 +680,7 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         control: 'number',
         key: 'mosaicTargetRowHeight',
         label: 'Target Row Height (px)',
-        description: 'Ideal height for each justified row. Rows scale slightly to fill container width while preserving aspect ratios.',
+        description: 'Ideal pixel height for each justified row. This is an algorithm input for react-photo-album, not a CSS value.',
         min: 60,
         max: 600,
         step: 10,
@@ -658,8 +690,8 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         control: 'number',
         key: 'photoNormalizeHeight',
         label: 'Photo Normalize Height (px)',
-        description: 'Normalization height used to scale image dimensions before layout. Lower values produce smaller tiles.',
-        min: 100,
+        description: 'Normalization pixel height for aspect-ratio scaling before layout. Lower values produce smaller tiles.',
+        min: 50,
         max: 800,
         step: 10,
         fallback: 300,
@@ -696,54 +728,59 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
     scopeMode: 'contextual',
     fields: [
       {
-        control: 'number',
+        control: 'dimension',
         key: 'tileSize',
-        label: 'Tile Size (px)',
+        unitKey: 'tileSizeUnit',
+        label: 'Tile Size',
         description: 'Width and height of each shape tile (unified gallery).',
         appliesTo: 'unified',
-        min: 60,
+        allowedUnits: CSS_WIDTH_UNITS,
         max: 400,
         step: 10,
         fallback: 150,
       },
       {
-        control: 'number',
+        control: 'dimension',
         key: 'imageTileSize',
-        label: 'Image Tile Size (px)',
+        unitKey: 'imageTileSizeUnit',
+        label: 'Image Tile Size',
         description: 'Shape tile size for the image gallery.',
         appliesTo: 'image',
-        min: 60,
+        allowedUnits: CSS_WIDTH_UNITS,
         max: 400,
         step: 10,
         fallback: 150,
       },
       {
-        control: 'number',
+        control: 'dimension',
         key: 'videoTileSize',
-        label: 'Video Tile Size (px)',
+        unitKey: 'videoTileSizeUnit',
+        label: 'Video Tile Size',
         description: 'Shape tile size for the video gallery.',
         appliesTo: 'video',
-        min: 60,
+        allowedUnits: CSS_WIDTH_UNITS,
         max: 400,
         step: 10,
         fallback: 150,
       },
       {
-        control: 'number',
+        control: 'dimension',
         key: 'tileGapX',
-        label: 'Gap X (px)',
+        unitKey: 'tileGapXUnit',
+        label: 'Gap X',
         description: 'Horizontal gap between shape tiles.',
-        min: 0,
+        allowedUnits: CSS_SPACING_UNITS,
         max: 60,
         step: 1,
         fallback: 8,
       },
       {
-        control: 'number',
+        control: 'dimension',
         key: 'tileGapY',
-        label: 'Gap Y (px)',
+        unitKey: 'tileGapYUnit',
+        label: 'Gap Y',
         description: 'Vertical gap between shape-tile rows.',
-        min: 0,
+        allowedUnits: CSS_SPACING_UNITS,
         max: 60,
         step: 1,
         fallback: 8,
@@ -834,36 +871,6 @@ export function getSettingGroupFieldDefinitions(group: AdapterSettingGroup): Ada
 
 export function getActiveSettingGroupDefinitions(ids: Array<string | null | undefined>): AdapterSettingGroupDefinition[] {
   return Object.values(SETTING_GROUP_DEFINITIONS).filter((definition) => anyAdapterUsesSettingGroup(ids, definition.group));
-}
-
-export function getPerTypeAdapterSelectionUpdates(
-  settings: GalleryBehaviorSettings,
-  scope: AdapterMediaScope,
-  requestedId: string | null | undefined,
-): AdapterSelectionUpdate[] {
-  const nextId = (requestedId ?? 'classic') as GalleryAdapterId;
-  const flatKey = LEGACY_FLAT_SCOPE_KEYS[scope];
-
-  if (nextId !== 'layout-builder') {
-    return [{
-      key: flatKey,
-      value: nextId,
-    }];
-  }
-
-  const otherScope: AdapterMediaScope = scope === 'image' ? 'video' : 'image';
-  const currentScopeFallback = (getLegacyFlatAdapterId(settings, scope) || 'classic') as GalleryAdapterId;
-  const otherScopeFallback = (getLegacyFlatAdapterId(settings, otherScope) || 'classic') as GalleryAdapterId;
-
-  return [
-    { key: 'gallerySelectionMode', value: 'per-breakpoint' },
-    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[scope].desktop, value: 'layout-builder' },
-    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[scope].tablet, value: 'layout-builder' },
-    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[scope].mobile, value: currentScopeFallback },
-    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[otherScope].desktop, value: otherScopeFallback },
-    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[otherScope].tablet, value: otherScopeFallback },
-    { key: LEGACY_BREAKPOINT_SCOPE_KEYS[otherScope].mobile, value: otherScopeFallback },
-  ];
 }
 
 export function isAdapterSupportedAtBreakpoint(id: string | null | undefined, breakpoint: Breakpoint): boolean {

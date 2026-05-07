@@ -7,8 +7,12 @@
  * single adapter can display all campaign media in one layout.
  */
 import type { ComponentType } from 'react';
-import type { MediaItem, GalleryBehaviorSettings, ContainerDimensions } from '@/types';
-import type { GalleryMediaScope } from '@/utils/galleryAdapterSelection';
+import type {
+  MediaItem,
+  GalleryBehaviorSettings,
+  ContainerDimensions,
+  ResolvedGallerySectionRuntime,
+} from '@/types';
 
 export type GalleryAdapterId =
   | 'classic'
@@ -66,6 +70,19 @@ export interface AdapterNumberSettingField {
   fallback: number;
 }
 
+export interface AdapterDimensionSettingField {
+  control: 'dimension';
+  key: keyof GalleryBehaviorSettings;
+  unitKey: keyof GalleryBehaviorSettings;
+  label: string;
+  description: string;
+  appliesTo?: AdapterSettingFieldAppliesTo;
+  allowedUnits: readonly string[];
+  max: number;
+  step: number;
+  fallback: number;
+}
+
 export interface AdapterSelectSettingField {
   control: 'select';
   key: keyof GalleryBehaviorSettings;
@@ -110,6 +127,7 @@ export interface AdapterColorSettingField {
 
 export type AdapterSettingFieldDefinition =
   | AdapterNumberSettingField
+  | AdapterDimensionSettingField
   | AdapterSelectSettingField
   | AdapterBooleanSettingField
   | AdapterTextSettingField
@@ -129,18 +147,15 @@ export type AdapterOptionContext =
   | 'per-breakpoint-gallery'
   | 'campaign-override';
 
-export type AdapterMediaScope = GalleryMediaScope;
-
-export interface AdapterSelectionUpdate {
-  key: keyof GalleryBehaviorSettings;
-  value: GalleryBehaviorSettings[keyof GalleryBehaviorSettings];
-}
+export type AdapterMediaScope = 'image' | 'video';
 
 /** Unified, type-agnostic props every gallery adapter component must accept. */
 export interface GalleryAdapterProps {
   /** All media items for this campaign (images + videos, pre-sorted by order). */
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
+  /** Explicit resolved runtime common/background data for the active scope. */
+  runtime?: ResolvedGallerySectionRuntime;
   /** Measured container dimensions from GallerySectionWrapper. Optional during migration. */
   containerDimensions?: ContainerDimensions;
 }

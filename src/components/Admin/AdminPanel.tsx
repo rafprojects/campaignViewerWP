@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
@@ -10,12 +11,11 @@ import { AuditTab } from './AuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
-import useSWR from 'swr';
-import type { LayoutTemplate } from '@/types';
 import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
+  useCampaignCategories,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
-} from '@/hooks/useAdminSWR';
+} from '@/services/adminQuery';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
@@ -23,6 +23,8 @@ import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useAccessRows } from '@/hooks/useAccessRows';
 import { useAuditRows } from '@/hooks/useAuditRows';
+import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
@@ -42,6 +44,7 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useLocalStorage<string | null>({
     key: 'wpsg_admin_active_tab',
     defaultValue: 'campaigns',
@@ -62,17 +65,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const allCampaigns = useAllCampaignOptions(apiClient);
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 
-  const { data: layoutTemplates } = useSWR<LayoutTemplate[]>(
-    'admin-layout-templates-for-form',
-    () => apiClient.getLayoutTemplates(),
-    { revalidateOnFocus: false, dedupingInterval: 60_000 },
-  );
-
-  const { data: campaignCategories = [] } = useSWR(
-    'campaign-categories',
-    () => apiClient.listCampaignCategories(),
-    { revalidateOnFocus: false, dedupingInterval: 60_000 },
-  );
+  const { data: layoutTemplates } = useLayoutTemplates(apiClient);
+  const { campaignCategories } = useCampaignCategories(apiClient);
 
   const accessTargetId = accessViewMode === 'campaign' ? accessCampaignId : selectedCompanyId;
   const { accessEntries, accessLoading, mutateAccess } = useAccessGrants(
@@ -126,21 +120,21 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   useEffect(() => {
     if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
-      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)));
+      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
-  }, [activeTab, allCampaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient, queryClient]);
   useEffect(() => {
     if (activeTab === 'access' && allCampaigns.length > 0 && !accessPrefetchedRef.current) {
       accessPrefetchedRef.current = true;
-      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)));
+      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
-  }, [activeTab, allCampaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient, queryClient]);
   useEffect(() => {
     if (activeTab === 'audit' && allCampaigns.length > 0 && !auditPrefetchedRef.current) {
       auditPrefetchedRef.current = true;
-      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)));
+      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
-  }, [activeTab, allCampaigns, apiClient]);
+  }, [activeTab, allCampaigns, apiClient, queryClient]);
   useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
 
   const campaignSelectData = useMemo(
@@ -179,8 +173,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const auditRows = useAuditRows(auditEntries);
 
   return (
-    <Card shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
-      <Group justify="space-between" wrap="wrap" gap="sm" mb="md">
+    <Card {...getWpsgDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
+      <Group {...getWpsgDebugProps('AdminPanel', 'header')} justify="space-between" wrap="wrap" gap="sm" mb="md">
         <Group>
           <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
             <IconArrowLeft />
@@ -202,8 +196,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Group>
       </Group>
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+      <Tabs {...getWpsgDebugProps('AdminPanel', 'tabs')} value={activeTab} onChange={setActiveTab}>
+        <Tabs.List {...getWpsgDebugProps('AdminPanel', 'tab-list')} style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
           <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
           <Tabs.Tab value="media">Media</Tabs.Tab>
           <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
@@ -212,7 +206,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
         </Tabs.List>
 
-        <Tabs.Panel value="campaigns" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
           {campaignCategories.length > 0 && (
             <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
               <Group gap="xs" mb="sm" wrap="wrap">
@@ -260,7 +254,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           availableCategories={availableCategoryNames}
         />
 
-        <Tabs.Panel value="media" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
             <CampaignSelector data={campaignSelectData} value={mediaCampaignId} onChange={setMediaCampaignId} style={{ minWidth: 200, flex: '1 1 200px' }} />
             <Button
@@ -273,9 +267,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
                   const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
                     '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
                   );
-                  onNotify({ type: 'success', text: result.media_updated > 0
-                    ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
-                    : 'All media types are correct.' });
+                  onNotify({
+                    type: 'success', text: result.media_updated > 0
+                      ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
+                      : 'All media types are correct.'
+                  });
                   onCampaignsUpdated();
                 } catch (err) { onNotify({ type: 'error', text: (err as Error).message }); }
                 finally { setRescanAllLoading(false); }
@@ -291,11 +287,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           </ErrorBoundary>
         </Tabs.Panel>
 
-        <Tabs.Panel value="layouts" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
           <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} initialTemplateId={pendingEditLayoutId ?? undefined} />
         </Tabs.Panel>
 
-        <Tabs.Panel value="access" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">
           <AccessTab
             accessViewMode={accessViewMode}
             onAccessViewModeChange={setAccessViewMode}
@@ -336,7 +332,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           />
         </Tabs.Panel>
 
-        <Tabs.Panel value="audit" pt="md" component="section" aria-labelledby="audit-heading">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section" aria-labelledby="audit-heading">
           <AuditTab
             campaignSelectData={campaignSelectData}
             auditCampaignId={auditCampaignId}
@@ -347,7 +343,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           />
         </Tabs.Panel>
 
-        <Tabs.Panel value="analytics" pt="md">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'analytics-panel')} value="analytics" pt="md">
           <ErrorBoundary>
             <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
               <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} />
@@ -447,3 +443,5 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     </Card>
   );
 }
+
+setWpsgDebugDisplayName(AdminPanel, 'AdminPanel');

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface OverlayArrowsProps {
   onPrev: () => void;
@@ -145,3 +146,5 @@ export function OverlayArrows({
     </div>
   );
 }
+
+setWpsgDebugDisplayName(OverlayArrows, 'OverlayArrows');

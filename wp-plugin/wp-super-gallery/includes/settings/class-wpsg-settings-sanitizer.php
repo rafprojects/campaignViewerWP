@@ -21,16 +21,27 @@ class WPSG_Settings_Sanitizer {
      */
     private static $nested_common_field_map = [
         'sectionMaxWidth' => 'gallery_section_max_width',
+        'sectionMaxWidthUnit' => 'gallery_section_max_width_unit',
         'sectionMaxHeight' => 'gallery_section_max_height',
+        'sectionMaxHeightUnit' => 'gallery_section_max_height_unit',
         'sectionMinWidth' => 'gallery_section_min_width',
+        'sectionMinWidthUnit' => 'gallery_section_min_width_unit',
         'sectionMinHeight' => 'gallery_section_min_height',
+        'sectionMinHeightUnit' => 'gallery_section_min_height_unit',
         'sectionHeightMode' => 'gallery_section_height_mode',
+        'sectionContentAlignX' => 'gallery_section_content_align_x',
+        'sectionContentAlignY' => 'gallery_section_content_align_y',
+        'sectionContentOffsetX' => 'gallery_section_content_offset_x',
+        'sectionContentOffsetY' => 'gallery_section_content_offset_y',
         'sectionPadding' => 'gallery_section_padding',
+        'sectionPaddingUnit' => 'gallery_section_padding_unit',
         'adapterContentPadding' => 'adapter_content_padding',
+        'adapterContentPaddingUnit' => 'adapter_content_padding_unit',
         'adapterSizingMode' => 'adapter_sizing_mode',
         'adapterMaxWidthPct' => 'adapter_max_width_pct',
         'adapterMaxHeightPct' => 'adapter_max_height_pct',
         'adapterItemGap' => 'adapter_item_gap',
+        'adapterItemGapUnit' => 'adapter_item_gap_unit',
         'adapterJustifyContent' => 'adapter_justify_content',
         'gallerySizingMode' => 'gallery_sizing_mode',
         'galleryManualHeight' => 'gallery_manual_height',
@@ -48,7 +59,7 @@ class WPSG_Settings_Sanitizer {
      * @param string $scope Gallery scope.
      * @return array<string, string>
      */
-    private static function get_nested_common_field_map_for_scope($scope) {
+    public static function get_nested_common_field_map_for_scope($scope) {
         $map = self::$nested_common_field_map;
 
         if ($scope === 'unified') {
@@ -72,28 +83,53 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
+     * Return the shared nested common-setting map.
+     *
+     * @return array<string, string>
+     */
+    public static function get_nested_common_field_map() {
+        return self::$nested_common_field_map;
+    }
+
+    /**
      * Nested adapter-setting keys mapped to existing flat settings metadata.
      *
      * @var array<string, string>
      */
     private static $nested_adapter_field_map = [
         'gridCardWidth' => 'grid_card_width',
+        'gridCardAspectRatio' => 'grid_card_aspect_ratio',
+        'gridCardMaxColumns' => 'grid_card_max_columns',
+        'gridCardMinHeight' => 'grid_card_min_height',
+        'gridCardWidthUnit' => 'grid_card_width_unit',
         'gridCardHeight' => 'grid_card_height',
+        'gridCardHeightUnit' => 'grid_card_height_unit',
         'mosaicTargetRowHeight' => 'mosaic_target_row_height',
+        'mosaicTargetRowHeightUnit' => 'mosaic_target_row_height_unit',
         'photoNormalizeHeight' => 'photo_normalize_height',
+        'photoNormalizeHeightUnit' => 'photo_normalize_height_unit',
         'masonryColumns' => 'masonry_columns',
         'masonryAutoColumnBreakpoints' => 'masonry_auto_column_breakpoints',
         'imageViewportHeight' => 'image_viewport_height',
+        'imageViewportHeightUnit' => 'image_viewport_height_unit',
         'videoViewportHeight' => 'video_viewport_height',
+        'videoViewportHeightUnit' => 'video_viewport_height_unit',
         'imageBorderRadius' => 'image_border_radius',
+        'imageBorderRadiusUnit' => 'image_border_radius_unit',
         'videoBorderRadius' => 'video_border_radius',
+        'videoBorderRadiusUnit' => 'video_border_radius_unit',
         'thumbnailGap' => 'thumbnail_gap',
         'tileSize' => 'tile_size',
+        'tileSizeUnit' => 'tile_size_unit',
         'imageTileSize' => 'image_tile_size',
+        'imageTileSizeUnit' => 'image_tile_size_unit',
         'videoTileSize' => 'video_tile_size',
+        'videoTileSizeUnit' => 'video_tile_size_unit',
         'layoutBuilderScope' => 'layout_builder_scope',
         'tileGapX' => 'tile_gap_x',
+        'tileGapXUnit' => 'tile_gap_x_unit',
         'tileGapY' => 'tile_gap_y',
+        'tileGapYUnit' => 'tile_gap_y_unit',
         'tileBorderWidth' => 'tile_border_width',
         'tileBorderColor' => 'tile_border_color',
         'tileGlowEnabled' => 'tile_glow_enabled',
@@ -111,6 +147,7 @@ class WPSG_Settings_Sanitizer {
         'carouselEdgeFade' => 'carousel_edge_fade',
         'carouselLoop' => 'carousel_loop',
         'carouselGap' => 'carousel_gap',
+        'carouselGapUnit' => 'carousel_gap_unit',
         'navArrowPosition' => 'nav_arrow_position',
         'navArrowSize' => 'nav_arrow_size',
         'navArrowColor' => 'nav_arrow_color',
@@ -140,26 +177,22 @@ class WPSG_Settings_Sanitizer {
     ];
 
     /**
-     * Return the flat gallery setting keys retained only for legacy
-     * compatibility. New writes should persist nested `gallery_config` instead.
+     * Return the nested adapter-setting map.
+     *
+     * @return array<string, string>
+     */
+    public static function get_nested_adapter_field_map() {
+        return self::$nested_adapter_field_map;
+    }
+
+    /**
+     * Return the flat gallery setting keys that exist only as metadata for the
+     * nested gallery sanitizer and are omitted from the public settings contract.
      *
      * @return string[]
      */
-    public static function get_legacy_gallery_setting_keys() {
+    public static function get_nested_only_gallery_setting_keys() {
         return array_values(array_unique(array_merge(
-            [
-                'image_gallery_adapter_id',
-                'video_gallery_adapter_id',
-                'unified_gallery_enabled',
-                'unified_gallery_adapter_id',
-                'gallery_selection_mode',
-                'desktop_image_adapter_id',
-                'desktop_video_adapter_id',
-                'tablet_image_adapter_id',
-                'tablet_video_adapter_id',
-                'mobile_image_adapter_id',
-                'mobile_video_adapter_id',
-            ],
             array_values(self::$nested_common_field_map),
             array_values(self::get_nested_common_field_map_for_scope('image')),
             array_values(self::get_nested_common_field_map_for_scope('video')),
@@ -169,19 +202,20 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
-     * Determine whether a flat setting key is retained only for legacy gallery compatibility.
+     * Determine whether a flat setting key is nested-only and should be ignored
+     * on writes outside `gallery_config`.
      *
      * @param string $key Flat setting key.
      * @return bool
      */
-    private static function is_legacy_gallery_setting_key($key) {
-        static $legacy_gallery_setting_keys = null;
+    private static function is_nested_only_gallery_setting_key($key) {
+        static $nested_only_gallery_setting_keys = null;
 
-        if ($legacy_gallery_setting_keys === null) {
-            $legacy_gallery_setting_keys = array_fill_keys(self::get_legacy_gallery_setting_keys(), true);
+        if ($nested_only_gallery_setting_keys === null) {
+            $nested_only_gallery_setting_keys = array_fill_keys(self::get_nested_only_gallery_setting_keys(), true);
         }
 
-        return isset($legacy_gallery_setting_keys[$key]);
+        return isset($nested_only_gallery_setting_keys[$key]);
     }
 
     /**
@@ -247,6 +281,37 @@ class WPSG_Settings_Sanitizer {
         return preg_match('/^[a-zA-Z-]+$/', $value) === 1;
     }
 
+    // ------------------------------------------------------------------
+    // CSS unit validation
+    // ------------------------------------------------------------------
+
+    /** @var string[] Allowed width units. */
+    private static $width_units = ['px', '%', 'vw', 'em', 'rem'];
+
+    /** @var string[] Allowed height units (includes dynamic viewport). */
+    private static $height_units = ['px', '%', 'vh', 'dvh', 'svh', 'lvh', 'em', 'rem'];
+
+    /** @var string[] Allowed spacing units. */
+    private static $spacing_units = ['px', 'em', 'rem', '%'];
+
+    /** @var string[] Allowed offset units. */
+    private static $offset_units = ['px', 'em', 'rem', '%', 'vw', 'vh'];
+
+    /** @var string[] Allowed border-radius units. */
+    private static $border_radius_units = ['px', '%', 'em', 'rem'];
+
+    /**
+     * Sanitize a CSS unit value against an allowed list.
+     *
+     * @param mixed    $value         Raw unit string.
+     * @param string[] $allowed_units Allowlist (e.g. self::$width_units).
+     * @return string Validated unit, defaults to 'px' if invalid.
+     */
+    private static function sanitize_css_unit($value, $allowed_units) {
+        $value = is_string($value) ? strtolower(trim($value)) : '';
+        return in_array($value, $allowed_units, true) ? $value : 'px';
+    }
+
     /**
      * Sanitize settings before saving.
      *
@@ -257,6 +322,19 @@ class WPSG_Settings_Sanitizer {
      * @return array Sanitized settings.
      */
     public static function sanitize_settings($input, $defaults, $valid_options, $field_ranges) {
+        $input = is_array($input) ? $input : [];
+
+        $current_settings = get_option(WPSG_Settings::OPTION_NAME, []);
+        if (!is_array($current_settings)) {
+            $current_settings = [];
+        }
+
+        // The classic WordPress settings page only submits the registered admin
+        // fields. Merge those partial saves over the raw stored option so
+        // non-posted settings like gallery_config are preserved instead of
+        // collapsing back to defaults on the next read.
+        $input = wp_parse_args($input, $current_settings);
+
         $sanitized = [];
 
         if (isset($input['auth_provider'])) {
@@ -436,6 +514,9 @@ class WPSG_Settings_Sanitizer {
         if (isset($input['allow_user_theme_override'])) {
             $sanitized['allow_user_theme_override'] = (bool) $input['allow_user_theme_override'];
         }
+        if (isset($input['debug_component_markers'])) {
+            $sanitized['debug_component_markers'] = (bool) $input['debug_component_markers'];
+        }
 
         if (isset($input['cache_ttl'])) {
             $ttl = intval($input['cache_ttl']);
@@ -457,6 +538,13 @@ class WPSG_Settings_Sanitizer {
             );
         }
 
+        if (isset($input['card_config'])) {
+            $sanitized['card_config'] = self::sanitize_card_config_payload(
+                $input['card_config'],
+                $defaults['card_config'] ?? []
+            );
+        }
+
         foreach ($input as $key => $value) {
             if (isset($sanitized[$key])) {
                 continue;
@@ -465,19 +553,7 @@ class WPSG_Settings_Sanitizer {
                 continue;
             }
 
-            if (self::is_legacy_gallery_setting_key($key)) {
-                $legacy_setting = self::sanitize_nested_gallery_setting(
-                    $key,
-                    $value,
-                    $defaults,
-                    $valid_options,
-                    $field_ranges,
-                    true
-                );
-
-                if ($legacy_setting['accepted']) {
-                    $sanitized[$key] = $legacy_setting['value'];
-                }
+            if (self::is_nested_only_gallery_setting_key($key)) {
                 continue;
             }
 
@@ -513,7 +589,63 @@ class WPSG_Settings_Sanitizer {
             }
         }
 
-        return $sanitized;
+        return self::normalize_card_config_settings($sanitized);
+    }
+
+    /**
+     * Fold any legacy desktop card_config overrides into flat settings and
+     * strip the desktop breakpoint node.
+     *
+     * @param array $settings Parsed settings array.
+     * @return array
+     */
+    public static function normalize_card_config_settings($settings) {
+        if (!is_array($settings) || !array_key_exists('card_config', $settings)) {
+            return $settings;
+        }
+
+        if (!is_array($settings['card_config'])) {
+            $settings['card_config'] = self::sanitize_card_config_payload(
+                $settings['card_config'],
+                ['breakpoints' => []]
+            );
+        }
+
+        if (!is_array($settings['card_config'])) {
+            return $settings;
+        }
+
+        if (!isset($settings['card_config']['breakpoints']) || !is_array($settings['card_config']['breakpoints'])) {
+            $settings['card_config']['breakpoints'] = [];
+            return $settings;
+        }
+
+        $desktop_layer = $settings['card_config']['breakpoints']['desktop'] ?? null;
+        if (!is_array($desktop_layer) || empty($desktop_layer)) {
+            unset($settings['card_config']['breakpoints']['desktop']);
+            return $settings;
+        }
+
+        foreach (self::$card_dimension_pairs as [$val_key, $unit_key]) {
+            if (array_key_exists($unit_key, $desktop_layer) && !array_key_exists($val_key, $desktop_layer)) {
+                unset($desktop_layer[$unit_key]);
+            }
+        }
+
+        foreach ($desktop_layer as $camel_key => $value) {
+            if (!array_key_exists($camel_key, self::$nested_card_field_map)) {
+                continue;
+            }
+
+            $settings[self::$nested_card_field_map[$camel_key]] = $value;
+        }
+
+        unset($settings['card_config']['breakpoints']['desktop']);
+        if (!is_array($settings['card_config']['breakpoints']) || empty($settings['card_config']['breakpoints'])) {
+            $settings['card_config']['breakpoints'] = [];
+        }
+
+        return $settings;
     }
 
     /**
@@ -1058,5 +1190,167 @@ class WPSG_Settings_Sanitizer {
         }
 
         return empty($clean_grad) ? (object) [] : $clean_grad;
+    }
+
+    // ── Card config sanitization ──────────────────────────────────────────────
+
+    /**
+     * Explicit camelCase → snake_case map for card breakpoint override fields.
+     *
+     * Only keys listed here are allowed inside cardConfig.breakpoints.<bp>.
+     * The mapped snake_case key is used to look up defaults, valid options,
+     * and field ranges from the flat settings registry.
+     *
+     * @var array<string, string>
+     */
+    private static $nested_card_field_map = [
+        'cardGridColumns'          => 'card_grid_columns',
+        'cardMaxColumns'           => 'card_max_columns',
+        'cardMaxWidth'             => 'card_max_width',
+        'cardMaxWidthUnit'         => 'card_max_width_unit',
+        'cardGapH'                 => 'card_gap_h',
+        'cardGapHUnit'             => 'card_gap_h_unit',
+        'cardGapV'                 => 'card_gap_v',
+        'cardGapVUnit'             => 'card_gap_v_unit',
+        'cardScale'                => 'card_scale',
+        'cardJustifyContent'       => 'card_justify_content',
+        'cardGalleryVerticalAlign'  => 'card_gallery_vertical_align',
+        'cardAspectRatio'          => 'card_aspect_ratio',
+        'cardThumbnailHeight'      => 'card_thumbnail_height',
+        'cardThumbnailHeightUnit'  => 'card_thumbnail_height_unit',
+        'cardMinHeight'            => 'card_min_height',
+        'cardMinHeightUnit'        => 'card_min_height_unit',
+        'cardBorderRadius'         => 'card_border_radius',
+        'cardBorderRadiusUnit'     => 'card_border_radius_unit',
+        'cardGalleryMinHeight'     => 'card_gallery_min_height',
+        'cardGalleryMinHeightUnit' => 'card_gallery_min_height_unit',
+        'cardGalleryMaxHeight'     => 'card_gallery_max_height',
+        'cardGalleryMaxHeightUnit' => 'card_gallery_max_height_unit',
+        'cardGalleryOffsetX'       => 'card_gallery_offset_x',
+        'cardGalleryOffsetXUnit'   => 'card_gallery_offset_x_unit',
+        'cardGalleryOffsetY'       => 'card_gallery_offset_y',
+        'cardGalleryOffsetYUnit'   => 'card_gallery_offset_y_unit',
+        'cardDisplayMode'          => 'card_display_mode',
+        'cardRowsPerPage'          => 'card_rows_per_page',
+        'cardPageDotNav'           => 'card_page_dot_nav',
+        'cardPageTransitionMs'     => 'card_page_transition_ms',
+        'cardPageTransitionOpacity'=> 'card_page_transition_opacity',
+        'cardBorderWidth'          => 'card_border_width',
+        'cardBorderMode'           => 'card_border_mode',
+        'cardBorderColor'          => 'card_border_color',
+        'cardShadowPreset'         => 'card_shadow_preset',
+        'cardThumbnailFit'         => 'card_thumbnail_fit',
+        'showCardCompanyName'      => 'show_card_company_name',
+        'showCardAccessBadge'      => 'show_card_access_badge',
+        'showCardTitle'            => 'show_card_title',
+        'showCardDescription'      => 'show_card_description',
+        'showCardMediaCounts'      => 'show_card_media_counts',
+        'showCardBorder'           => 'show_card_border',
+        'showCardThumbnailFade'    => 'show_card_thumbnail_fade',
+        'showCardInfoPanel'        => 'show_card_info_panel',
+        'cardLockedOpacity'        => 'card_locked_opacity',
+        'cardGradientStartOpacity' => 'card_gradient_start_opacity',
+        'cardGradientEndOpacity'   => 'card_gradient_end_opacity',
+        'cardLockIconSize'         => 'card_lock_icon_size',
+        'cardAccessIconSize'       => 'card_access_icon_size',
+        'cardBadgeOffsetY'         => 'card_badge_offset_y',
+        'cardCompanyBadgeMaxWidth' => 'card_company_badge_max_width',
+        'cardThumbnailHoverTransitionMs' => 'card_thumbnail_hover_transition_ms',
+        'cardAutoColumnsBreakpoints' => 'card_auto_columns_breakpoints',
+    ];
+
+    /**
+     * Dimension pairs for unit-only override rejection in card config.
+     * Each entry is [valueKey, unitKey] in camelCase.
+     *
+     * @var array<array{0: string, 1: string}>
+     */
+    private static $card_dimension_pairs = [
+        ['cardMaxWidth',         'cardMaxWidthUnit'],
+        ['cardGapH',             'cardGapHUnit'],
+        ['cardGapV',             'cardGapVUnit'],
+        ['cardThumbnailHeight',  'cardThumbnailHeightUnit'],
+        ['cardMinHeight',        'cardMinHeightUnit'],
+        ['cardBorderRadius',     'cardBorderRadiusUnit'],
+        ['cardGalleryMinHeight', 'cardGalleryMinHeightUnit'],
+        ['cardGalleryMaxHeight', 'cardGalleryMaxHeightUnit'],
+        ['cardGalleryOffsetX',   'cardGalleryOffsetXUnit'],
+        ['cardGalleryOffsetY',   'cardGalleryOffsetYUnit'],
+    ];
+
+    /**
+     * Sanitize a card_config payload.
+     *
+     * Accepts JSON string or array. Only allows known breakpoints and known
+     * override keys. Reuses the flat settings registry metadata for type
+     * checking, range clamping, and enum validation. Rejects orphaned unit
+     * overrides (unit without matching value).
+     *
+     * @param mixed $raw  Raw card_config input (JSON string or array).
+     * @param array $default Default card_config from registry.
+     * @return array Sanitized card_config.
+     */
+    public static function sanitize_card_config_payload($raw, $default = []) {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                return is_array($default) ? $default : ['breakpoints' => []];
+            }
+        } elseif (is_array($raw)) {
+            $decoded = $raw;
+        } else {
+            return is_array($default) ? $default : ['breakpoints' => []];
+        }
+
+        $defaults      = WPSG_Settings_Registry::get_defaults();
+        $valid_options = WPSG_Settings_Registry::get_valid_options();
+        $field_ranges  = WPSG_Settings_Registry::get_field_ranges();
+        $sanitized     = ['breakpoints' => []];
+
+        if (empty($decoded['breakpoints']) || !is_array($decoded['breakpoints'])) {
+            return $sanitized;
+        }
+
+        foreach (['desktop', 'tablet', 'mobile'] as $breakpoint) {
+            if (empty($decoded['breakpoints'][$breakpoint]) || !is_array($decoded['breakpoints'][$breakpoint])) {
+                continue;
+            }
+
+            $layer = $decoded['breakpoints'][$breakpoint];
+            $clean_layer = [];
+
+            foreach ($layer as $camel_key => $value) {
+                if (!isset(self::$nested_card_field_map[$camel_key])) {
+                    continue; // unknown key — drop it
+                }
+
+                $flat_key = self::$nested_card_field_map[$camel_key];
+                $result   = self::sanitize_nested_gallery_setting(
+                    $flat_key,
+                    $value,
+                    $defaults,
+                    $valid_options,
+                    $field_ranges,
+                    false // do NOT fall back to defaults — undefined means "inherit"
+                );
+
+                if ($result['accepted']) {
+                    $clean_layer[$camel_key] = $result['value'];
+                }
+            }
+
+            // Reject unit-only overrides: strip unit keys whose numeric partner is absent.
+            foreach (self::$card_dimension_pairs as [$val_key, $unit_key]) {
+                if (array_key_exists($unit_key, $clean_layer) && !array_key_exists($val_key, $clean_layer)) {
+                    unset($clean_layer[$unit_key]);
+                }
+            }
+
+            if (!empty($clean_layer)) {
+                $sanitized['breakpoints'][$breakpoint] = $clean_layer;
+            }
+        }
+
+        return $sanitized;
     }
 }

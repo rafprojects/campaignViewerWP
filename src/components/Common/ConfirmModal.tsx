@@ -1,5 +1,6 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface ConfirmModalProps {
   opened: boolean;
@@ -15,6 +16,46 @@ interface ConfirmModalProps {
   children?: ReactNode;
 }
 
+interface ConfirmModalContentProps {
+  message: ReactNode;
+  children?: ReactNode;
+  onClose: () => void;
+  onConfirm: () => void;
+  confirmLabel: string;
+  confirmColor: string;
+  confirmAriaLabel?: string;
+  loading: boolean;
+}
+
+function ConfirmModalContent({
+  message,
+  children,
+  onClose,
+  onConfirm,
+  confirmLabel,
+  confirmColor,
+  confirmAriaLabel,
+  loading,
+}: ConfirmModalContentProps) {
+  return (
+    <Stack {...getWpsgDebugProps('ConfirmModal', 'stack')}>
+      {typeof message === 'string' ? <Text>{message}</Text> : message}
+      {children}
+      <Group {...getWpsgDebugProps('ConfirmModal', 'actions')} justify="flex-end">
+        <Button variant="default" onClick={onClose}>Cancel</Button>
+        <Button
+          color={confirmColor}
+          onClick={onConfirm}
+          loading={loading}
+          aria-label={confirmAriaLabel}
+        >
+          {confirmLabel}
+        </Button>
+      </Group>
+    </Stack>
+  );
+}
+
 export function ConfirmModal({
   opened,
   onClose,
@@ -28,22 +69,28 @@ export function ConfirmModal({
   children,
 }: ConfirmModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title={title} padding="md">
-      <Stack>
-        {typeof message === 'string' ? <Text>{message}</Text> : message}
-        {children}
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>Cancel</Button>
-          <Button
-            color={confirmColor}
-            onClick={onConfirm}
-            loading={loading}
-            aria-label={confirmAriaLabel}
-          >
-            {confirmLabel}
-          </Button>
-        </Group>
-      </Stack>
+    <Modal
+      {...getWpsgDebugProps('ConfirmModal')}
+      opened={opened}
+      onClose={onClose}
+      title={<span {...getWpsgDebugProps('ConfirmModal', 'title')}>{title}</span>}
+      closeButtonProps={getWpsgDebugProps('ConfirmModal', 'close')}
+      overlayProps={getWpsgDebugProps('ConfirmModal', 'overlay')}
+      padding="md"
+    >
+      <ConfirmModalContent
+        message={message}
+        children={children}
+        onClose={onClose}
+        onConfirm={onConfirm}
+        confirmLabel={confirmLabel}
+        confirmColor={confirmColor}
+        confirmAriaLabel={confirmAriaLabel}
+        loading={loading}
+      />
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(ConfirmModal, 'ConfirmModal');
+setWpsgDebugDisplayName(ConfirmModalContent, 'ConfirmModalContent');
