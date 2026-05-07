@@ -11,6 +11,8 @@ dist/
 .env.local
 .env.*.local
 docs/critiques/
+.repomix*
+repomix*
 
 # testing
 coverage/
@@ -19,6 +21,7 @@ test-results/
 # editors
 .vscode/
 .idea/
+.continue/
 
 # logs
 npm-debug.log*
@@ -42,6 +45,7 @@ phpunit
 # backups
 1BAK/
 *.bak
+
 # Stray image file uploads at root
 /*.png
 /*.jpg
