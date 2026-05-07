@@ -1,4 +1,5 @@
 import { Modal, Table, Text, Kbd, Group, Stack } from '@mantine/core';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface BuilderKeyboardShortcutsModalProps {
   opened: boolean;
@@ -113,3 +114,5 @@ export function BuilderKeyboardShortcutsModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(BuilderKeyboardShortcutsModal, 'LayoutBuilder:BuilderKeyboardShortcutsModal');

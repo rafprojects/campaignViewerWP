@@ -1,4 +1,5 @@
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type CampaignSummary = {
   id: string;
@@ -31,3 +32,5 @@ export function AdminCampaignRestoreModal({
     />
   );
 }
+
+setWpsgDebugDisplayName(AdminCampaignRestoreModal, 'AdminCampaignRestoreModal');

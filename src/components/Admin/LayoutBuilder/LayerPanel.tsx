@@ -3,6 +3,7 @@ import { Stack, Text, ScrollArea } from '@mantine/core';
 import { buildLayerList } from '@/utils/layerList';
 import { LayerRow } from './LayerRow';
 import type { LayoutTemplate } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -245,3 +246,5 @@ export function LayerPanel({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(LayerPanel, 'LayoutBuilder:LayerPanel');

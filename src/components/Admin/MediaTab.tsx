@@ -35,6 +35,7 @@ import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
@@ -909,3 +910,5 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     </div>
   );
 }
+
+setWpsgDebugDisplayName(MediaTab, 'AdminPanel:MediaTab');

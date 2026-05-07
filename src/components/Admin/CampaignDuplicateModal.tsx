@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import { IconCopy } from '@tabler/icons-react';
 import type { AdminCampaign } from '@/services/adminQuery';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface CampaignDuplicateModalProps {
   /** Source campaign to duplicate; null when modal is closed. */
@@ -112,6 +112,8 @@ function CampaignDuplicateModalOptions({
   );
 }
 
+setWpsgDebugDisplayName(CampaignDuplicateModalOptions, 'AdminPanel:CampaignDuplicateModalOptions');
+
 export function CampaignDuplicateModal({
   source,
   isSaving,
@@ -163,3 +165,5 @@ export function CampaignDuplicateModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(CampaignDuplicateModal, 'AdminPanel:CampaignDuplicateModal');

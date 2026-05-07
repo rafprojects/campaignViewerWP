@@ -1,7 +1,7 @@
 import { Button, Group, Modal, Stack, TextInput, Textarea } from '@mantine/core';
 import { useDirtyGuard } from '@/hooks/useDirtyGuard';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaEditModalProps {
   opened: boolean;
@@ -70,6 +70,8 @@ function MediaEditForm({
   );
 }
 
+setWpsgDebugDisplayName(MediaEditForm, 'AdminPanel:MediaEditForm');
+
 export function MediaEditModal({
   opened,
   onClose,
@@ -122,3 +124,5 @@ export function MediaEditModal({
     </>
   );
 }
+
+setWpsgDebugDisplayName(MediaEditModal, 'AdminPanel:MediaEditModal');

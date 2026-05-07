@@ -1,6 +1,6 @@
 import { Alert, Box, Checkbox, ScrollArea, Stack, Text } from '@mantine/core';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type CompanyCampaign = { id: number; title: string; status: string };
 
@@ -75,3 +75,5 @@ export function ArchiveCompanyModal({
     </ConfirmModal>
   );
 }
+
+setWpsgDebugDisplayName(ArchiveCompanyModal, 'AdminPanel:ArchiveCompanyModal');

@@ -6,6 +6,7 @@ import { getClipPath } from '@/utils/clipPath';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── MaskDragOverlay: draggable mask position/size on canvas ──
 
@@ -190,6 +191,8 @@ function MaskDragOverlay({ maskLayer, maskUrl, slotWidth, slotHeight, onUpdate }
   );
 }
 
+setWpsgDebugDisplayName(MaskDragOverlay, 'LayoutBuilder:MaskDragOverlay');
+
 // ── Props ────────────────────────────────────────────────────
 
 export interface LayoutSlotComponentProps {
@@ -358,17 +361,17 @@ export function LayoutSlotComponent({
 
   const maskCssProps: React.CSSProperties = maskUrl
     ? ({
-        WebkitMaskImage: `url(${maskUrl})`,
-        maskImage: `url(${maskUrl})`,
-        WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : ('cover' as const),
-        maskSize: ml ? `${ml.width}% ${ml.height}%` : ('cover' as const),
-        WebkitMaskPosition: maskPosValue,
-        maskPosition: maskPosValue,
-        WebkitMaskRepeat: 'no-repeat' as const,
-        maskRepeat: 'no-repeat' as const,
-        WebkitMaskMode: resolvedMaskMode,
-        maskMode: resolvedMaskMode,
-      } as React.CSSProperties)
+      WebkitMaskImage: `url(${maskUrl})`,
+      maskImage: `url(${maskUrl})`,
+      WebkitMaskSize: ml ? `${ml.width}% ${ml.height}%` : ('cover' as const),
+      maskSize: ml ? `${ml.width}% ${ml.height}%` : ('cover' as const),
+      WebkitMaskPosition: maskPosValue,
+      maskPosition: maskPosValue,
+      WebkitMaskRepeat: 'no-repeat' as const,
+      maskRepeat: 'no-repeat' as const,
+      WebkitMaskMode: resolvedMaskMode,
+      maskMode: resolvedMaskMode,
+    } as React.CSSProperties)
     : {};
 
   // ── Slot effects (filters, shadow, blend, overlay) ──────────────────
@@ -870,3 +873,5 @@ export function LayoutSlotComponent({
     </Rnd>
   );
 }
+
+setWpsgDebugDisplayName(LayoutSlotComponent, 'LayoutBuilder:LayoutSlotComponent');

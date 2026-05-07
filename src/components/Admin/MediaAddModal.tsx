@@ -16,6 +16,7 @@ import {
 } from '@mantine/core';
 import { IconUpload } from '@tabler/icons-react';
 import type { OEmbedResponse } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaAddModalProps {
   opened: boolean;
@@ -183,3 +184,5 @@ export function MediaAddModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(MediaAddModal, 'AdminPanel:MediaAddModal');

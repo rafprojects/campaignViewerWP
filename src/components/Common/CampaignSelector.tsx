@@ -1,5 +1,6 @@
 import { Select, Text } from '@mantine/core';
 import type { CSSProperties } from 'react';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export type CampaignSelectItem = { value: string; label: string };
 
@@ -37,3 +38,5 @@ export function CampaignSelector({
     />
   );
 }
+
+setWpsgDebugDisplayName(CampaignSelector, 'CampaignSelector');

@@ -1,6 +1,7 @@
 import { Box, Text, ActionIcon, Tooltip } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import type { OverlayLibraryItem } from './BuilderDockContext';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 /** Custom MIME type for Design Asset drag-and-drop. */
 export const ASSET_MIME = 'application/x-wpsg-asset-url';
@@ -115,3 +116,5 @@ export function DesignAssetsGrid({
     </div>
   );
 }
+
+setWpsgDebugDisplayName(DesignAssetsGrid, 'LayoutBuilder:DesignAssetsGrid');

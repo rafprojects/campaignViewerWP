@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import type { ApiClient } from '@/services/apiClient';
 import { useCampaignAnalytics } from '@/services/adminQuery';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface SelectItem {
   value: string;
@@ -69,6 +70,8 @@ function StatCard({
     </Paper>
   );
 }
+
+setWpsgDebugDisplayName(StatCard, 'AdminPanel:StatCard');
 
 export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardProps) {
   const [campaignId, setCampaignId] = useState<string | null>(campaigns[0]?.value ?? null);
@@ -217,3 +220,5 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(AnalyticsDashboard, 'AdminPanel:AnalyticsDashboard');

@@ -4,6 +4,7 @@
  */
 
 import type { GuideLine } from '@/utils/smartGuides';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -132,3 +133,5 @@ export function SmartGuides({
     </svg>
   );
 }
+
+setWpsgDebugDisplayName(SmartGuides, 'LayoutBuilder:SmartGuides');

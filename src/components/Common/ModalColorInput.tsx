@@ -1,4 +1,5 @@
 import { ColorInput, type ColorInputProps } from '@mantine/core';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 /**
  * Modal/drawer-safe ColorInput wrapper.
@@ -19,3 +20,5 @@ export function ModalColorInput(props: ColorInputProps) {
     />
   );
 }
+
+setWpsgDebugDisplayName(ModalColorInput, 'ModalColorInput');

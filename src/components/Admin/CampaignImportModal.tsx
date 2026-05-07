@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import { IconUpload, IconInfoCircle } from '@tabler/icons-react';
 import type { CampaignExportPayload } from '@/services/apiClient';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface CampaignImportModalProps {
   opened: boolean;
@@ -93,6 +93,8 @@ function CampaignImportModalContent({
   );
 }
 
+setWpsgDebugDisplayName(CampaignImportModalContent, 'AdminPanel:CampaignImportModalContent');
+
 export function CampaignImportModal({
   opened,
   isSaving,
@@ -172,3 +174,5 @@ export function CampaignImportModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(CampaignImportModal, 'AdminPanel:CampaignImportModal');

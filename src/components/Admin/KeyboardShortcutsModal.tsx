@@ -1,4 +1,5 @@
 import { Modal, Table, Text, Stack, Badge, Group } from '@mantine/core';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface ShortcutItem {
   keys: string[];
@@ -60,6 +61,8 @@ function Keys({ keys }: { keys: string[] }) {
   );
 }
 
+setWpsgDebugDisplayName(Keys, 'AdminPanel:ShortcutKeys');
+
 interface KeyboardShortcutsModalProps {
   opened: boolean;
   onClose: () => void;
@@ -97,3 +100,5 @@ export function KeyboardShortcutsModal({ opened, onClose }: KeyboardShortcutsMod
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(KeyboardShortcutsModal, 'AdminPanel:KeyboardShortcutsModal');

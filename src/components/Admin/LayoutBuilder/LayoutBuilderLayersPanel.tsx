@@ -5,6 +5,7 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
   const {
@@ -239,3 +240,5 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
     </div>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderLayersPanel, 'LayoutBuilder:LayoutBuilderLayersPanel');

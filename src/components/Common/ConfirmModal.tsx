@@ -1,6 +1,6 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface ConfirmModalProps {
   opened: boolean;
@@ -91,3 +91,6 @@ export function ConfirmModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(ConfirmModal, 'ConfirmModal');
+setWpsgDebugDisplayName(ConfirmModalContent, 'ConfirmModalContent');

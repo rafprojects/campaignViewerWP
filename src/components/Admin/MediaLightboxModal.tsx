@@ -1,6 +1,7 @@
 import { ActionIcon, Box, Image, Modal, Text } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaLightboxModalProps {
   opened: boolean;
@@ -96,3 +97,5 @@ export function MediaLightboxModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(MediaLightboxModal, 'AdminPanel:MediaLightboxModal');

@@ -2,7 +2,7 @@ import { forwardRef, useCallback, type ReactNode } from 'react';
 import { ActionIcon, Popover, ScrollArea, Box } from '@mantine/core';
 import { IconSettings } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface InContextEditorProps {
   /** Position relative to the nearest positioned parent. */
@@ -45,7 +45,7 @@ const InContextEditorToggle = forwardRef<HTMLButtonElement, InContextEditorToggl
   },
 );
 
-InContextEditorToggle.displayName = 'InContextEditorToggle';
+setWpsgDebugDisplayName(InContextEditorToggle, 'InContextEditorToggle');
 
 interface InContextEditorContentProps {
   children: ReactNode;
@@ -110,3 +110,5 @@ export function InContextEditor({
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(InContextEditor, 'InContextEditor');

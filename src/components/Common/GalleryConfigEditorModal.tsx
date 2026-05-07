@@ -24,7 +24,7 @@ import {
 } from '@/types';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { cloneGalleryConfig, getLegacyViewportBackgroundFieldMap } from '@/utils/galleryConfig';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
 type EditableGalleryScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
@@ -570,7 +570,7 @@ const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = 
   </>
 );
 
-GalleryConfigEditorIntro.displayName = 'GalleryConfigEditorIntro';
+setWpsgDebugDisplayName(GalleryConfigEditorIntro, 'GalleryConfigEditorIntro');
 
 interface GalleryConfigBreakpointAdaptersSectionProps {
   resolvedDraft: GalleryConfig;
@@ -675,7 +675,7 @@ const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakp
   </Accordion.Item>
 );
 
-GalleryConfigBreakpointAdaptersSection.displayName = 'GalleryConfigBreakpointAdaptersSection';
+setWpsgDebugDisplayName(GalleryConfigBreakpointAdaptersSection, 'GalleryConfigBreakpointAdaptersSection');
 
 interface GalleryConfigEditorFooterActionsProps {
   resolvedDraft: GalleryConfig;
@@ -752,7 +752,7 @@ const GalleryConfigEditorFooterActions: NamedComponent<GalleryConfigEditorFooter
   </Group>
 );
 
-GalleryConfigEditorFooterActions.displayName = 'GalleryConfigEditorFooterActions';
+setWpsgDebugDisplayName(GalleryConfigEditorFooterActions, 'GalleryConfigEditorFooterActions');
 
 export function GalleryConfigEditorModal({
   opened,
@@ -1382,3 +1382,5 @@ export function GalleryConfigEditorModal({
     </Drawer>
   );
 }
+
+setWpsgDebugDisplayName(GalleryConfigEditorModal, 'GalleryConfigEditorModal');

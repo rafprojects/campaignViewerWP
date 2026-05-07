@@ -29,6 +29,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import type { LayoutGraphicLayer } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -267,3 +268,5 @@ export function GraphicLayerPropertiesPanel({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(GraphicLayerPropertiesPanel, 'LayoutBuilder:GraphicLayerPropertiesPanel');

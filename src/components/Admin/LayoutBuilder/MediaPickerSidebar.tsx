@@ -22,6 +22,7 @@ import {
 } from '@mantine/core';
 import { IconWand, IconX } from '@tabler/icons-react';
 import type { LayoutSlot, LayoutTemplate, MediaItem } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -240,3 +241,5 @@ export function MediaPickerSidebar({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(MediaPickerSidebar, 'LayoutBuilder:MediaPickerSidebar');

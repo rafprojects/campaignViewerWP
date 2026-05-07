@@ -5,6 +5,7 @@ import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
 import { MaskPropertiesPanel } from './MaskPropertiesPanel';
 import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   const {
@@ -97,3 +98,5 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderPropertiesPanel, 'LayoutBuilder:LayoutBuilderPropertiesPanel');

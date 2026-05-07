@@ -14,6 +14,7 @@ import {
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { GradientStop, GradientDirection, GradientType, RadialShape, RadialSize } from '@/types';
 import { buildGradientCss, DEFAULT_GRADIENT_STOPS, type GradientOptions } from '@/utils/gradientCss';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface GradientEditorProps {
   value: GradientOptions;
@@ -180,3 +181,5 @@ export function GradientEditor({ value, onChange }: GradientEditorProps) {
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(GradientEditor, 'GradientEditor');

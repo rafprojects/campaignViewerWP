@@ -14,6 +14,7 @@ import {
 import { IconAlertCircle, IconCheck, IconX } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import { useAccessRequests } from '@/services/adminQuery';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface PendingRequestsPanelProps {
   campaignId: string;
@@ -205,3 +206,5 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(PendingRequestsPanel, 'AdminPanel:PendingRequestsPanel');

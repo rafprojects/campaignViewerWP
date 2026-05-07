@@ -26,6 +26,7 @@ import {
 import { useTheme } from '@/hooks/useTheme';
 import type { ThemeMeta } from '@/themes/types';
 import { getTheme } from '@/themes/index';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ---------------------------------------------------------------------------
 // Swatch-based item renderer
@@ -59,7 +60,7 @@ const ThemeSelectItem = forwardRef<HTMLDivElement, ThemeItemProps>(
   ),
 );
 
-ThemeSelectItem.displayName = 'ThemeSelectItem';
+setWpsgDebugDisplayName(ThemeSelectItem, 'ThemeSelectItem');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -172,3 +173,5 @@ export function ThemeSelector({
     />
   );
 }
+
+setWpsgDebugDisplayName(ThemeSelector, 'AdminPanel:ThemeSelector');

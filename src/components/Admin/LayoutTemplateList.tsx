@@ -53,6 +53,7 @@ import {
   getLayoutTemplatesQueryKey,
   useLayoutTemplates,
 } from '@/services/layoutTemplateQuery';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -470,6 +471,8 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
   );
 }
 
+setWpsgDebugDisplayName(LayoutTemplateList, 'AdminPanel:LayoutTemplateList');
+
 // ── Grid Card ────────────────────────────────────────────────────────────────
 
 interface TemplateGridCardProps {
@@ -580,3 +583,5 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
     </Card>
   );
 }
+
+setWpsgDebugDisplayName(TemplateGridCard, 'AdminPanel:TemplateGridCard');

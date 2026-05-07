@@ -16,6 +16,7 @@ import type { TypographyOverride } from '@/types';
 import { loadGoogleFont, getFailedFonts } from '@/utils/loadGoogleFont';
 import { useRecentFonts } from '@/hooks/useRecentFonts';
 import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface CustomFontEntry {
   /** Display name, e.g. "BrandSans" */
@@ -482,3 +483,5 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(TypographyEditor, 'TypographyEditor');

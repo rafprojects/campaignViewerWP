@@ -50,7 +50,7 @@ import { TypographySettingsSection } from '../Settings/TypographySettingsSection
 import { useTheme } from '@/hooks/useTheme';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import {
   LEGACY_GALLERY_SETTING_KEYS,
   resolveGalleryConfig,
@@ -121,7 +121,7 @@ const SettingsPanelTitle: NamedComponent = () => (
   </Group>
 );
 
-SettingsPanelTitle.displayName = 'SettingsPanelTitle';
+setWpsgDebugDisplayName(SettingsPanelTitle, 'SettingsPanel:Title');
 
 interface SettingsPanelTabsContentProps {
   activeTab: string | null;
@@ -285,7 +285,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   </Stack>
 );
 
-SettingsPanelTabsContent.displayName = 'SettingsPanelTabsContent';
+setWpsgDebugDisplayName(SettingsPanelTabsContent, 'SettingsPanel:TabsContent');
 
 interface SettingsPanelFooterProps {
   hasChanges: boolean;
@@ -321,7 +321,7 @@ const SettingsPanelFooter: NamedComponent<SettingsPanelFooterProps> = ({
   </Box>
 );
 
-SettingsPanelFooter.displayName = 'SettingsPanelFooter';
+setWpsgDebugDisplayName(SettingsPanelFooter, 'SettingsPanel:Footer');
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
@@ -512,3 +512,5 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     </Drawer>
   );
 }
+
+setWpsgDebugDisplayName(SettingsPanel, 'SettingsPanel');

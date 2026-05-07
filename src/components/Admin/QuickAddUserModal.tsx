@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconUserPlus } from '@tabler/icons-react';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type AdminCampaign = {
   id: string;
@@ -112,6 +112,8 @@ function QuickAddUserSuccessState({ quickAddResult, onClose, onNotify }: QuickAd
     </>
   );
 }
+
+setWpsgDebugDisplayName(QuickAddUserSuccessState, 'AdminPanel:QuickAddUserModal:SuccessState');
 
 interface QuickAddUserFormStateProps {
   quickAddEmail: string;
@@ -214,6 +216,8 @@ function QuickAddUserFormState({
   );
 }
 
+setWpsgDebugDisplayName(QuickAddUserFormState, 'AdminPanel:QuickAddUserModal:FormState');
+
 export function QuickAddUserModal({
   opened,
   onClose,
@@ -275,3 +279,5 @@ export function QuickAddUserModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(QuickAddUserModal, 'AdminPanel:QuickAddUserModal');

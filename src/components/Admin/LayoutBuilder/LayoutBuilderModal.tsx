@@ -41,6 +41,7 @@ import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
 import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -687,3 +688,5 @@ export function LayoutBuilderModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderModal, 'LayoutBuilder:LayoutBuilderModal');

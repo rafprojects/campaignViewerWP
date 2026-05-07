@@ -10,7 +10,7 @@ import { Badge, Popover, Stack, Text, Anchor, Loader, Alert } from '@mantine/cor
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaUsageCampaignRef } from '@/services/apiClient';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface MediaUsageBadgeProps {
   /** Count already known from the batch summary call in MediaTab. */
@@ -73,6 +73,8 @@ function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeConte
   );
 }
 
+setWpsgDebugDisplayName(MediaUsageBadgeContent, 'AdminPanel:MediaUsageBadge:Content');
+
 export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgeProps) {
   const [opened, setOpened] = useState(false);
   const [detail, setDetail] = useState<MediaUsageCampaignRef[] | null>(null);
@@ -133,3 +135,5 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
     </Popover>
   );
 }
+
+setWpsgDebugDisplayName(MediaUsageBadge, 'AdminPanel:MediaUsageBadge');

@@ -1,6 +1,7 @@
 import { Group, Pagination, Skeleton, Table, Text, Checkbox, Button, Tooltip } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { IconCheckbox, IconSquare } from '@tabler/icons-react';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 /** P13-C: Skeleton rows displayed while campaign list loads. */
 function CampaignSkeletonRows({ withCheckbox }: { withCheckbox: boolean }) {
@@ -27,6 +28,8 @@ function CampaignSkeletonRows({ withCheckbox }: { withCheckbox: boolean }) {
     </>
   );
 }
+
+setWpsgDebugDisplayName(CampaignSkeletonRows, 'AdminPanel:CampaignSkeletonRows');
 
 interface CampaignsTabProps {
   isLoading: boolean;
@@ -125,3 +128,5 @@ export function CampaignsTab({
     </>
   );
 }
+
+setWpsgDebugDisplayName(CampaignsTab, 'AdminPanel:CampaignsTab');
