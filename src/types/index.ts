@@ -830,6 +830,8 @@ export interface GalleryBehaviorSettings {
   authBarDragMargin: number;
   // P21-H: Settings tooltips
   showSettingsTooltips: boolean;
+  // P25-Z: React DevTools names and DOM component debug metadata in deployed builds
+  debugComponentMarkers: boolean;
   // P21-I: Typography overrides & in-context editors
   typographyOverrides: Record<string, TypographyOverride>;
   showInContextEditors: boolean;
@@ -1327,6 +1329,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   authBarDragMargin: 16,
   // P21-H: Settings tooltips
   showSettingsTooltips: true,
+  // P25-Z: React DevTools names and DOM component debug metadata in deployed builds
+  debugComponentMarkers: true,
   // P21-I: Typography overrides & in-context editors
   typographyOverrides: {},
   showInContextEditors: true,

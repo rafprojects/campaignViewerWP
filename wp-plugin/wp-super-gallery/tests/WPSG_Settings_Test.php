@@ -220,6 +220,7 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
             'enable_lightbox' => true,
             'enable_animations' => true,
             'allow_user_theme_override' => true,
+            'debug_component_markers' => true,
             'gallery_config' => [
                 'mode' => 'unified',
             ],
@@ -229,11 +230,13 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
             'enable_lightbox' => '0',
             'enable_animations' => '0',
             'allow_user_theme_override' => '0',
+            'debug_component_markers' => '0',
         ]);
 
         $this->assertFalse($sanitized['enable_lightbox']);
         $this->assertFalse($sanitized['enable_animations']);
         $this->assertFalse($sanitized['allow_user_theme_override']);
+        $this->assertFalse($sanitized['debug_component_markers']);
         $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
     }
 

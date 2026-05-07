@@ -23,6 +23,7 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey('itemsPerPage', $data);
         $this->assertArrayNotHasKey('gallerySectionPadding', $data);
         $this->assertArrayNotHasKey('masonryColumns', $data);
+        $this->assertArrayNotHasKey('debugComponentMarkers', $data);
     }
 
     public function test_settings_get_normalizes_legacy_desktop_card_config() {
@@ -78,6 +79,7 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
             'theme' => 'github-light',   // valid theme ID
             'itemsPerPage' => 24,
             'enableLightbox' => false,
+            'debugComponentMarkers' => false,
         ]));
         $response = rest_do_request($request);
 
@@ -86,6 +88,7 @@ class WPSG_Settings_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('github-light', $data['theme'] ?? null);
         $this->assertEquals(24, $data['itemsPerPage'] ?? null);
         $this->assertFalse($data['enableLightbox']);
+        $this->assertFalse($data['debugComponentMarkers'] ?? true);
     }
 
     public function test_settings_post_round_trips_gallery_config_for_admin() {

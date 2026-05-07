@@ -175,6 +175,31 @@ class WPSG_Settings_Core_Fields {
     }
 
     /**
+     * Render debug component markers checkbox.
+     *
+     * @return void
+     */
+    public static function render_debug_component_markers_field() {
+        $value = WPSG_Settings::get_setting('debug_component_markers');
+        ?>
+        <input type="hidden"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[debug_component_markers]"
+               value="0">
+        <label>
+            <input type="checkbox"
+                   name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[debug_component_markers]"
+                   id="wpsg_debug_component_markers"
+                   value="1"
+                   <?php checked((bool) $value, true); ?>>
+            <?php esc_html_e('Keep React DevTools names and emit DOM component markers in deployed builds.', 'wp-super-gallery'); ?>
+        </label>
+        <p class="description">
+            <?php esc_html_e('Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging.', 'wp-super-gallery'); ?>
+        </p>
+        <?php
+    }
+
+    /**
      * Render gallery layout select field.
      *
      * @return void

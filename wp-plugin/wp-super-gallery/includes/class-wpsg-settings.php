@@ -299,6 +299,13 @@ class WPSG_Settings {
     }
 
     /**
+     * Render debug component markers checkbox.
+     */
+    public static function render_debug_component_markers_field() {
+        WPSG_Settings_Core_Fields::render_debug_component_markers_field();
+    }
+
+    /**
      * Render gallery layout select field.
      */
     public static function render_layout_field() {

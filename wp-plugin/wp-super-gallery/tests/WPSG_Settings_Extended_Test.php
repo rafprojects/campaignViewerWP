@@ -308,6 +308,15 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         $this->assertStringContainsString('[allow_user_theme_override]', $html);
     }
 
+    public function test_render_debug_component_markers_field() {
+        ob_start();
+        WPSG_Settings::render_debug_component_markers_field();
+        $html = ob_get_clean();
+        $this->assertNotEmpty($html);
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('[debug_component_markers]', $html);
+    }
+
     public function test_render_layout_field_outputs_markup() {
         ob_start();
         WPSG_Settings::render_layout_field();

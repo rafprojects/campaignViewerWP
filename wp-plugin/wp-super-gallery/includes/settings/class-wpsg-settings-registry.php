@@ -27,6 +27,7 @@ class WPSG_Settings_Registry {
         'api_base'                   => '',
         'theme'                      => 'default-dark',
         'allow_user_theme_override'  => true,
+        'debug_component_markers'    => true,
         'gallery_layout'             => 'grid',
         'items_per_page'             => 12,
         'enable_lightbox'            => true,
@@ -357,6 +358,7 @@ class WPSG_Settings_Registry {
         'auth_provider',
         'api_base',
         'allow_user_theme_override',
+        'debug_component_markers',
         'cache_ttl',
         'thumbnail_cache_ttl',
         'optimize_on_upload',
@@ -676,6 +678,10 @@ class WPSG_Settings_Registry {
      */
     public static function get_defaults() {
         $defaults = self::$defaults;
+
+        if (defined('WPSG_DEBUG_COMPONENT_MARKERS')) {
+            $defaults['debug_component_markers'] = (bool) WPSG_DEBUG_COMPONENT_MARKERS;
+        }
 
         if (!array_key_exists('gallery_config', $defaults)) {
             $defaults['gallery_config'] = self::create_default_gallery_config();

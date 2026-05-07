@@ -248,6 +248,22 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
           </Accordion.Panel>
         </Accordion.Item>
 
+        <Accordion.Item value="adv-debug">
+          <Accordion.Control>Developer &amp; Debugging</Accordion.Control>
+          <Accordion.Panel>
+            {mounted.has('adv-debug') ? (
+              <Stack gap="md">
+                <Switch
+                  label={tooltipLabel('Enable Component Debug Names & Markers', 'debugComponentMarkers')}
+                  description="When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+                  checked={settings.debugComponentMarkers}
+                  onChange={(event) => updateSetting('debugComponentMarkers', event.currentTarget.checked)}
+                />
+              </Stack>
+            ) : null}
+          </Accordion.Panel>
+        </Accordion.Item>
+
         <Accordion.Item value="maintenance">
           <Accordion.Control>Data Maintenance</Accordion.Control>
           <Accordion.Panel>

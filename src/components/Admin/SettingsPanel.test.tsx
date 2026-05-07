@@ -2143,6 +2143,27 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
   });
 
+  it('toggles component debug markers from the developer section', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('button', { name: /Security & Login/i }));
+    toggleSwitchByLabel('Enable Advanced Settings');
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /System & Admin/i })).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: /System & Admin/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Developer & Debugging/i }));
+
+    toggleSwitchByLabel('Enable Component Debug Names & Markers');
+
+    expect(screen.getByRole('button', { name: 'Save Changes' })).not.toBeDisabled();
+  });
+
   it('tests connection successfully', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

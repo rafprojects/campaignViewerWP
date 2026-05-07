@@ -102,6 +102,14 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         $this->assertStringContainsString( '"nord"', $output );
     }
 
+    public function test_render_shortcode_reflects_debug_component_markers_setting() {
+        update_option( WPSG_Settings::OPTION_NAME, [ 'debug_component_markers' => false ] );
+
+        $output = WPSG_Embed::render_shortcode();
+
+        $this->assertStringContainsString( '"debugComponentMarkers":false', $output );
+    }
+
     public function test_render_shortcode_full_bleed_desktop_emits_style() {
         update_option( WPSG_Settings::OPTION_NAME, [
             'wp_full_bleed_desktop' => true,

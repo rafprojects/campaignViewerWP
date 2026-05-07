@@ -514,6 +514,9 @@ class WPSG_Settings_Sanitizer {
         if (isset($input['allow_user_theme_override'])) {
             $sanitized['allow_user_theme_override'] = (bool) $input['allow_user_theme_override'];
         }
+        if (isset($input['debug_component_markers'])) {
+            $sanitized['debug_component_markers'] = (bool) $input['debug_component_markers'];
+        }
 
         if (isset($input['cache_ttl'])) {
             $ttl = intval($input['cache_ttl']);
