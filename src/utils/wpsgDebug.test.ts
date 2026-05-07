@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { getWpsgDebugProps, getWpsgDebugSlotAttributes } from './wpsgDebug';
+import { getWpsgDebugProps, getWpsgDebugSlotAttributes, setWpsgDebugDisplayName } from './wpsgDebug';
 
 describe('wpsgDebug', () => {
   afterEach(() => {
@@ -64,6 +64,18 @@ describe('wpsgDebug', () => {
         'data-wpsg-component': 'ConfirmModal',
         'data-wpsg-slot': 'content',
       },
+    });
+  });
+
+  it('uses the runtime config flag for explicit display names', () => {
+    window.__WPSG_CONFIG__ = { debugComponentMarkers: true };
+
+    expect(setWpsgDebugDisplayName({}, 'GridCard')).toEqual({ displayName: 'GridCard' });
+  });
+
+  it('clears explicit display names when debug metadata is disabled', () => {
+    expect(setWpsgDebugDisplayName({ displayName: 'OldName' }, 'GridCard', false)).toEqual({
+      displayName: undefined,
     });
   });
 });

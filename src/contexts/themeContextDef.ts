@@ -9,6 +9,7 @@
 import { createContext } from 'react';
 import type { MantineThemeOverride } from '@mantine/core';
 import type { ThemeMeta } from '../themes/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,4 +49,4 @@ export interface ThemeContextValue {
 // ---------------------------------------------------------------------------
 
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
-ThemeContext.displayName = 'WPSGThemeContext';
+setWpsgDebugDisplayName(ThemeContext, 'WPSGThemeContext');

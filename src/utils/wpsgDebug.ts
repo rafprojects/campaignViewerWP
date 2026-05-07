@@ -1,5 +1,9 @@
 export type WpsgDebugProps = Record<string, string>;
 
+export interface WpsgDebugNamedComponent {
+  displayName?: string;
+}
+
 function isWpsgDebugEnabled(enabled?: boolean): boolean {
   return enabled ?? (import.meta.env.DEV || (window.__WPSG_CONFIG__?.debugComponentMarkers ?? false));
 }
@@ -38,4 +42,13 @@ export function getWpsgDebugSlotAttributes<TSlotKey extends string>(
       getWpsgDebugProps(component, slotName, true),
     ]),
   ) as Partial<Record<TSlotKey, WpsgDebugProps>>;
+}
+
+export function setWpsgDebugDisplayName<T extends object>(
+  component: T,
+  name: string,
+  enabled: boolean = isWpsgDebugEnabled(),
+): T {
+  (component as WpsgDebugNamedComponent).displayName = enabled ? name : undefined;
+  return component;
 }
