@@ -28,7 +28,7 @@ import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCssOrNumber } from '@/utils/cssUnits';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'justified';
@@ -200,3 +200,5 @@ export function JustifiedGallery({ media, settings, runtime }: JustifiedGalleryP
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(JustifiedGallery, 'JustifiedGallery');

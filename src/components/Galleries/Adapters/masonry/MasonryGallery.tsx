@@ -31,7 +31,7 @@ import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCssOrNumber } from '@/utils/cssUnits';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'masonry';
@@ -209,3 +209,5 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(MasonryGallery, 'MasonryGallery');

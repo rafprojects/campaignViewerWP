@@ -15,6 +15,7 @@ import type { MediaItem } from '@/types';
 import { toCss } from '@/utils/cssUnits';
 import { useSwipe } from '@/hooks/useSwipe';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const TRANSITION_MS = 250;
 
@@ -261,3 +262,5 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
     </Portal>
   );
 }
+
+setWpsgDebugDisplayName(Lightbox, 'Lightbox');

@@ -16,7 +16,7 @@ import { clampDimension } from '@/utils/clampDimension';
 import { toCss } from '@/utils/cssUnits';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface GallerySectionWrapperProps {
   settings: GalleryBehaviorSettings;
@@ -165,3 +165,5 @@ export function GallerySectionWrapper({
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(GallerySectionWrapper, 'GallerySectionWrapper');

@@ -10,6 +10,7 @@ import { resolveUnifiedCampaignGalleryRenderPlan } from '@/utils/campaignGallery
 
 import { CampaignGalleryAdapterRenderer } from './CampaignGalleryAdapterRenderer';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface UnifiedGallerySectionProps {
   campaign: Campaign;
@@ -46,3 +47,5 @@ export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdm
     </GallerySectionWrapper>
   );
 }
+
+setWpsgDebugDisplayName(UnifiedGallerySection, 'UnifiedGallerySection');

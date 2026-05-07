@@ -24,7 +24,7 @@ import {
   setCampaignBreakpointScopeAdapterOverride,
   syncCampaignGalleryOverrideMode,
 } from '@/utils/campaignGalleryOverrides';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const LazyGalleryConfigEditorModal = lazy(() =>
   import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
@@ -99,7 +99,7 @@ const UnifiedCampaignModalTabList: NamedComponent<UnifiedCampaignModalTabListPro
   </Tabs.List>
 );
 
-UnifiedCampaignModalTabList.displayName = 'UnifiedCampaignModalTabList';
+setWpsgDebugDisplayName(UnifiedCampaignModalTabList, 'UnifiedCampaignModalTabList');
 
 interface UnifiedCampaignDetailsPanelProps {
   isEdit: boolean;
@@ -203,7 +203,7 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
   </Tabs.Panel>
 );
 
-UnifiedCampaignDetailsPanel.displayName = 'UnifiedCampaignDetailsPanel';
+setWpsgDebugDisplayName(UnifiedCampaignDetailsPanel, 'UnifiedCampaignDetailsPanel');
 
 interface UnifiedCampaignSettingsPanelProps {
   isEdit: boolean;
@@ -474,7 +474,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   </Tabs.Panel>
 );
 
-UnifiedCampaignSettingsPanel.displayName = 'UnifiedCampaignSettingsPanel';
+setWpsgDebugDisplayName(UnifiedCampaignSettingsPanel, 'UnifiedCampaignSettingsPanel');
 
 export function UnifiedCampaignModal({
   modal,
@@ -791,4 +791,4 @@ function MediaTabContent({
   );
 }
 
-MediaTabContent.displayName = 'UnifiedCampaignMediaTabContent';
+setWpsgDebugDisplayName(MediaTabContent, 'UnifiedCampaignMediaTabContent');

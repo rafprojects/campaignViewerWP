@@ -1,5 +1,6 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { Campaign } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface ArchiveCampaignModalProps {
   opened: boolean;
@@ -36,6 +37,8 @@ function ArchiveCampaignModalContent({ campaign, onClose, onConfirm }: ArchiveCa
   );
 }
 
+setWpsgDebugDisplayName(ArchiveCampaignModalContent, 'ArchiveCampaignModalContent');
+
 export function ArchiveCampaignModal({
   opened,
   campaign,
@@ -54,3 +57,5 @@ export function ArchiveCampaignModal({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(ArchiveCampaignModal, 'ArchiveCampaignModal');

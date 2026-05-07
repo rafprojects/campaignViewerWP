@@ -19,7 +19,7 @@ import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { resolveBoxShadow } from '@/utils/shadowPresets';
 import { combineMaxWidthConstraints, resolveBreakpointValue } from '@/utils/resolveBreakpointValue';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveGalleryComponentCommonSettings, resolveGalleryHeading } from './_shared/runtimeCommon';
 import {
   getCarouselAlign,
@@ -719,3 +719,5 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(MediaCarouselInner, 'MediaCarouselInner');

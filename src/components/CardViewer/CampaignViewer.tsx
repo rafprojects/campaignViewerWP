@@ -22,7 +22,7 @@ import {
   buildCampaignGalleryOverrideEditorValue,
   hasCampaignGalleryOverrides,
 } from '@/utils/campaignGalleryOverrides';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
 
@@ -588,3 +588,5 @@ export function CampaignViewer({
     </Modal>
   );
 }
+
+setWpsgDebugDisplayName(CampaignViewer, 'CampaignViewer');

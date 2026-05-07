@@ -8,6 +8,7 @@ import type {
   MediaItem,
   ResolvedGallerySectionRuntime,
 } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const LayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((module) => ({
@@ -50,3 +51,5 @@ export function CampaignGalleryAdapterRenderer({
   const Adapter = resolveAdapter(adapterId);
   return <Adapter media={media} settings={settings} runtime={runtime} containerDimensions={containerDimensions} />;
 }
+
+setWpsgDebugDisplayName(CampaignGalleryAdapterRenderer, 'CampaignGalleryAdapterRenderer');

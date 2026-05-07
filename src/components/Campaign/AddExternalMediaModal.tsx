@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 
 import { MediaAddModal } from '@/components/Admin/MediaAddModal';
 import type { OEmbedResponse } from '@/types';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AddExternalMediaModalProps {
   opened: boolean;
@@ -29,3 +30,5 @@ interface AddExternalMediaModalProps {
 export function AddExternalMediaModal(props: AddExternalMediaModalProps) {
   return <MediaAddModal {...props} title="Manage Media" zIndex={550} />;
 }
+
+setWpsgDebugDisplayName(AddExternalMediaModal, 'AddExternalMediaModal');

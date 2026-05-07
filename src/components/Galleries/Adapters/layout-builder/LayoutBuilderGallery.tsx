@@ -41,7 +41,7 @@ import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { toCssOrNumber } from '@/utils/cssUnits';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
@@ -790,3 +790,5 @@ function LayoutBuilderGalleryInner({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(LayoutBuilderGallery, 'LayoutBuilderGallery');

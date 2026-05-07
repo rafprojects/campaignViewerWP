@@ -17,7 +17,7 @@ import { buildGradientCss } from '@/utils/gradientCss';
 import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/CardViewer/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -580,3 +580,5 @@ export function CardGallery({
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(CardGallery, 'CardGallery');

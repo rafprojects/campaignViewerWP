@@ -25,7 +25,7 @@ import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'diamond';
@@ -208,3 +208,5 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(DiamondGallery, 'DiamondGallery');

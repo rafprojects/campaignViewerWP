@@ -1,6 +1,6 @@
 import { Box, Container, Group, Text, Menu, ActionIcon } from '@mantine/core';
 import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown, IconLogin } from '@tabler/icons-react';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AuthBarMinimalProps {
   email: string;
@@ -90,3 +90,5 @@ export function AuthBarMinimal({
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(AuthBarMinimal, 'AuthBarMinimal');

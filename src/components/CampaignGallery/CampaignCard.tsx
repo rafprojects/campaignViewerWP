@@ -6,6 +6,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { RequestAccessForm } from './RequestAccessForm';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import styles from './CampaignCard.module.scss';
@@ -252,4 +253,4 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   },
 );
 
-CampaignCard.displayName = 'CampaignCard';
+setWpsgDebugDisplayName(CampaignCard, 'CampaignCard');

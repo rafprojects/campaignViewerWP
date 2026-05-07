@@ -6,6 +6,7 @@ import type { GalleryBehaviorSettings } from '@/types';
 import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { AuthBarFloating } from './AuthBarFloating';
 import { AuthBarMinimal } from './AuthBarMinimal';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AuthBarProps {
   email: string;
@@ -113,6 +114,8 @@ export function AuthBar({
     />
   );
 }
+
+setWpsgDebugDisplayName(AuthBar, 'AuthBar');
 
 /** The original full-width bar, with optional auto-hide behavior. */
 function AuthBarFull({
@@ -229,3 +232,5 @@ function AuthBarFull({
     </Box>
   );
 }
+
+setWpsgDebugDisplayName(AuthBarFull, 'AuthBarFull');

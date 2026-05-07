@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TextInput, PasswordInput, Button, Paper, Title, Text, Stack, Alert } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
@@ -100,3 +100,5 @@ export function LoginForm({ onSubmit, compact = false }: LoginFormProps) {
     </Paper>
   );
 }
+
+setWpsgDebugDisplayName(LoginForm, 'LoginForm');

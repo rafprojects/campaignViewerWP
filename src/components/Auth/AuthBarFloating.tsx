@@ -3,7 +3,7 @@ import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@manti
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import { useCampaignContext } from '@/contexts/CampaignContext';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
 const ICON_SIZE = 44;
@@ -60,7 +60,7 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
   ),
 );
 
-AuthBarFloatingTrigger.displayName = 'AuthBarFloatingTrigger';
+setWpsgDebugDisplayName(AuthBarFloatingTrigger, 'AuthBarFloatingTrigger');
 
 function scheduleCloseMenu(closeMenu: () => void) {
   requestAnimationFrame(() => closeMenu());
@@ -202,6 +202,8 @@ function AuthBarFloatingMenuContent({
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(AuthBarFloatingMenuContent, 'AuthBarFloatingMenuContent');
 
 function readSavedPos(): { x: number; y: number } | null {
   const raw = safeLocalStorage.getItem(STORAGE_KEY);
@@ -370,3 +372,5 @@ export function AuthBarFloating({
     </Popover>
   );
 }
+
+setWpsgDebugDisplayName(AuthBarFloating, 'AuthBarFloating');

@@ -23,7 +23,7 @@ import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 function resolveCompactGridAspectRatio(settings: GalleryBehaviorSettings, cardWidth: number, itemScale: number): string {
@@ -129,6 +129,8 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(CompactGridGallery, 'CompactGridGallery');
 
 // ─── Internal card component ────────────────────────────────────────────────
 
@@ -255,3 +257,4 @@ function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }:
   );
 }
 
+setWpsgDebugDisplayName(GridCard, 'GridCard');

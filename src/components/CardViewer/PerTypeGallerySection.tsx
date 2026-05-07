@@ -13,6 +13,7 @@ import {
   shouldUseEqualHeightPerTypeLayout,
 } from '@/utils/campaignGalleryRenderPlan';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 import { CampaignGalleryAdapterRenderer } from './CampaignGalleryAdapterRenderer';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
@@ -100,3 +101,5 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(PerTypeGallerySection, 'PerTypeGallerySection');

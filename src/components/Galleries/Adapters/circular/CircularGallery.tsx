@@ -22,7 +22,7 @@ import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const SCOPE = 'circle';
 
@@ -164,3 +164,5 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
     </Stack>
   );
 }
+
+setWpsgDebugDisplayName(CircularGallery, 'CircularGallery');
