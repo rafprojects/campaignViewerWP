@@ -70,12 +70,16 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 == Changelog ==
 
 = 0.24.0 =
-**Phase 25 / 26 — Settings UX follow-through and React 19 + Mantine 9 migration**
+**Phase 25 — Settings UX follow-through and query architecture**
 
 * Added: live campaign gallery preview with cancel-to-revert behavior, per-breakpoint unified adapter selection, accordionized campaign gallery config, shared upload/external media entry, and higher-level card/gallery scale and positioning controls.
 * Changed: Settings moved to a regrouped drawer workflow; app/admin/layout data fetching now uses TanStack Query and the nested `galleryConfig` / `galleryOverrides` contract only.
-* Changed: upgraded the frontend runtime to React 19.2.6 and Mantine 9.1.1; removed unused `react-window` packages.
-* Fixed: portal-heavy viewer/admin surfaces now stay inside the active tree in both shadow and non-shadow mounts; classic WordPress settings partial saves no longer reset nested gallery settings.
+* Fixed: classic WordPress settings partial saves no longer reset nested gallery settings; modal stacking correctness when opening Settings above an active campaign viewer.
+
+**Phase 26 — React 19 and Mantine 9 migration**
+
+* Changed: upgraded the frontend runtime to React 19.2.6 and Mantine 9.1.1; removed unused `react-window` packages; applied React 19 type fixes (nullable refs, timer ref initialization, ReactElement return types).
+* Fixed: portal-heavy viewer/admin surfaces now stay inside the active tree in both shadow and non-shadow mounts; `Notifications` component configured with `withinPortal={false}` to prevent shadow DOM escape.
 
 = 0.23.0 =
 **Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes**

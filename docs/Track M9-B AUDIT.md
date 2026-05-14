@@ -1,3 +1,5 @@
+> **⚠️ SUPERSEDED / INCORRECT DRAFT**: This document references component files that do not exist in the repository (e.g. `src/components/Gallery.tsx`, `src/components/Image.tsx`) and significantly overestimates `variant="light"` usage (stating 68 locations vs the real count). It was generated before the actual codebase audit and is retained only as a historical artifact. For accurate migration findings, see [docs/PHASE26_REVIEW.md](PHASE26_REVIEW.md) and [docs/MANTINE_9_REACT_UPGRADE_AUDIT.md](MANTINE_9_REACT_UPGRADE_AUDIT.md).
+
 # Track M9-B: Visual and Behavioral Compatibility
 
 ## Executive Summary
