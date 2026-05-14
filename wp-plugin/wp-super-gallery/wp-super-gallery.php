@@ -6,7 +6,7 @@
  * Version:           0.24.0
  * Requires at least: 6.0
  * Tested up to:      6.7
- * Requires PHP:      8.0
+ * Requires PHP:      8.1
  * Author:            WP Super Gallery
  * Author URI:        https://github.com/rafprojects/wp-super-gallery
  * License:           GPLv2 or later

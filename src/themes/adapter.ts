@@ -18,14 +18,17 @@ import { resolveColors, withAlpha } from './colorGen';
 const TABS_TAB_CLASS = 'wpsg-mantine-tabs-tab';
 const SEGMENTED_CONTROL_LABEL_CLASS = 'wpsg-mantine-segmented-control-label';
 const SELECT_OPTION_CLASS = 'wpsg-mantine-select-option';
+// 'md' is intentionally larger than Mantine 9's default 'sm' to match the
+// PHASE26 design decision (see docs/PHASE26_REVIEW.md Track P26-B).
 const DEFAULT_RADIUS = 'md';
 const FONT_WEIGHTS = {
   regular: '400',
   medium: '500',
+  semibold: '600',
   bold: '700',
 } as const;
-const FONT_WEIGHT_MEDIUM = 'var(--mantine-font-weight-medium)';
-const FONT_WEIGHT_SEMIBOLD = '600';
+const FONT_WEIGHT_MEDIUM = FONT_WEIGHTS.medium;
+const FONT_WEIGHT_SEMIBOLD = FONT_WEIGHTS.semibold;
 
 // ---------------------------------------------------------------------------
 // Component override generator

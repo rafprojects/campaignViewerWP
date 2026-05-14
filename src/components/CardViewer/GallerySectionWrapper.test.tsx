@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@/test/test-utils';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
-import type { ContainerDimensions, GalleryBehaviorSettings } from '@/types';
+import type { ContainerDimensions, GalleryBehaviorSettings, ResolvedGallerySectionRuntime } from '@/types';
 
 vi.mock('@/components/Galleries/Adapters/_shared/runtimeCommon', () => ({
 	resolveGalleryComponentCommonSettings: vi.fn(() => ({
@@ -39,12 +39,20 @@ const minimalSettings: GalleryBehaviorSettings = {
 	gallerySectionContentOffsetYUnit: 'px',
 } as unknown as GalleryBehaviorSettings;
 
+const minimalRuntime: ResolvedGallerySectionRuntime = {
+	breakpoint: 'desktop',
+	scope: 'image',
+	common: {},
+	background: { type: 'none', color: '', gradient: '', imageUrl: '' },
+	adapterSettings: {},
+} as unknown as ResolvedGallerySectionRuntime;
+
 describe('GallerySectionWrapper', () => {
 	it('renders children via render prop', () => {
 		render(
 			<GallerySectionWrapper
 				settings={minimalSettings}
-				runtime={undefined as any}
+				runtime={minimalRuntime}
 				bgType="none"
 				bgColor=""
 				bgGradient=""
@@ -63,7 +71,7 @@ describe('GallerySectionWrapper', () => {
 		render(
 			<GallerySectionWrapper
 				settings={minimalSettings}
-				runtime={undefined as any}
+				runtime={minimalRuntime}
 				bgType="none"
 				bgColor=""
 				bgGradient=""
@@ -87,7 +95,7 @@ describe('GallerySectionWrapper', () => {
 			render(
 				<GallerySectionWrapper
 					settings={minimalSettings}
-					runtime={undefined as any}
+					runtime={minimalRuntime}
 					bgType="solid"
 					bgColor="#ff0000"
 					bgGradient=""
@@ -106,7 +114,7 @@ describe('GallerySectionWrapper', () => {
 			render(
 				<GallerySectionWrapper
 					settings={minimalSettings}
-					runtime={undefined as any}
+					runtime={minimalRuntime}
 					bgType="gradient"
 					bgColor=""
 					bgGradient="linear-gradient(to right, #000, #fff)"

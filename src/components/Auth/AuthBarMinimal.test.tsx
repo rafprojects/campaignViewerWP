@@ -4,6 +4,7 @@ import { AuthBarMinimal } from './AuthBarMinimal';
 
 const baseProps = {
     email: 'user@example.com',
+    isAuthenticated: true,
     isAdmin: false,
     onOpenAdminPanel: vi.fn(),
     onOpenSettings: vi.fn(),
@@ -12,7 +13,7 @@ const baseProps = {
 
 describe('AuthBarMinimal', () => {
     it('shows email when authenticated', () => {
-        const { container } = render(<AuthBarMinimal {...baseProps} isAuthenticated={true} />);
+        const { container } = render(<AuthBarMinimal {...baseProps} />);
 
         const email = screen.getByText('user@example.com');
         expect(container).toContainElement(email);
@@ -34,7 +35,7 @@ describe('AuthBarMinimal', () => {
 
     it('renders admin menu items for admin users', () => {
         const { container } = render(
-            <AuthBarMinimal {...baseProps} isAdmin={true} isAuthenticated={true} />,
+            <AuthBarMinimal {...baseProps} isAdmin={true} />,
         );
 
         // The menu trigger button is present

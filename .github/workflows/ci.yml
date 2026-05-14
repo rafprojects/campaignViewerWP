@@ -4,7 +4,7 @@
 # Runs on every push / PR to main and develop.
 #   Job 1: lint-typecheck  — ESLint + TypeScript (fast-fail gate)
 #   Job 2: test-frontend   — Vitest w/ coverage + production build
-#   Job 3: test-php        — PHPUnit via wp-env (PHP 8.1 / 8.2 / 8.3)
+#   Job 3: test-php        — PHPUnit via MySQL service (PHP 8.1 / 8.2 / 8.3 / 8.4)
 # ──────────────────────────────────────────────────────────────────────────────
 
 name: CI
@@ -75,6 +75,15 @@ jobs:
           retention-days: 14
 
   # ── Job 3: PHP tests (WordPress test library + MySQL service) ───────────
+  # NOTE: This job intentionally does NOT use @wordpress/env (wp-env).
+  # wp-env spins up Docker containers inside the CI runner which adds 3-4 min
+  # of overhead and has proven fragile on GitHub-hosted runners. Instead we
+  # bootstrap WordPress core + the test library directly:
+  #   - WordPress core downloaded via curl (ABSPATH for bootstrap)
+  #   - WP test library via git sparse-checkout from WordPress/wordpress-develop
+  #   - Test DB served by the mysql service container (no Docker-in-Docker)
+  # Trade-off: local developers use `npx wp-env run tests-cli vendor/bin/phpunit`
+  # while CI runs phpunit directly. Both target the same test suite and config.
   test-php:
     name: PHP ${{ matrix.php-version }}
     runs-on: ubuntu-latest
@@ -82,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4']
+        php-version: ['8.1', '8.2', '8.3', '8.4']
 
     services:
       mysql:

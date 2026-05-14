@@ -3,7 +3,7 @@ Contributors: wpsupergallery
 Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.0
 Tested up to: 6.7
-Requires PHP: 8.0
+Requires PHP: 8.1
 Stable tag: 0.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
