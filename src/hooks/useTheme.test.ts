@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useTheme } from './useTheme';
 
@@ -13,6 +13,10 @@ describe('useTheme', () => {
     expect(result.current.availableThemes.length).toBeGreaterThan(0);
     expect(typeof result.current.setTheme).toBe('function');
     expect(typeof result.current.setPreviewTheme).toBe('function');
+
+    // Exercise the noop fallback functions (no-op: should not throw)
+    act(() => { result.current.setTheme('dark'); });
+    act(() => { result.current.setPreviewTheme?.('light'); });
 
     spy.mockRestore();
   });
