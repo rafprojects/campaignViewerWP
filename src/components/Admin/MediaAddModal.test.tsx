@@ -1,32 +1,10 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@/test/test-utils';
-
-const { modalPropsSpy } = vi.hoisted(() => ({
-    modalPropsSpy: vi.fn(),
-}));
-
-vi.mock('@mantine/core', async () => {
-    const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core');
-
-    return {
-        ...actual,
-        Modal: ({ children, withinPortal, opened }: { children: ReactNode; withinPortal?: boolean; opened: boolean }) => {
-            modalPropsSpy({ withinPortal });
-            return opened ? <div data-testid="media-add-modal-root">{children}</div> : null;
-        },
-    };
-});
-
 import { MediaAddModal } from './MediaAddModal';
 
 describe('MediaAddModal', () => {
-    beforeEach(() => {
-        modalPropsSpy.mockReset();
-    });
-
     it('keeps the media modal inside the active render tree', () => {
-        render(
+        const { container } = render(
             <MediaAddModal
                 opened={true}
                 onClose={vi.fn()}
@@ -51,7 +29,9 @@ describe('MediaAddModal', () => {
             />,
         );
 
-        expect(modalPropsSpy).toHaveBeenCalledWith(expect.objectContaining({ withinPortal: false }));
-        expect(screen.getByText('Add External URL')).toBeInTheDocument();
+        // With withinPortal={false}, the modal content renders inside our
+        // component tree rather than being portaled to document.body.
+        const content = screen.getByText('Add External URL');
+        expect(container).toContainElement(content);
     });
 });

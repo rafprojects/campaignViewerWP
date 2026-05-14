@@ -163,6 +163,10 @@ if (!document.fonts) {
 		value: {
 			addEventListener: () => {},
 			removeEventListener: () => {},
+			ready: Promise.resolve(),
+			status: 'loaded' as FontFaceSetLoadStatus,
+			check: () => true,
+			load: () => Promise.resolve([]),
 		},
 	});
 }

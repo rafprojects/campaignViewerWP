@@ -1,32 +1,10 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@/test/test-utils';
-
-const { modalPropsSpy } = vi.hoisted(() => ({
-    modalPropsSpy: vi.fn(),
-}));
-
-vi.mock('@mantine/core', async () => {
-    const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core');
-
-    return {
-        ...actual,
-        Modal: ({ children, withinPortal, opened }: { children: ReactNode; withinPortal?: boolean; opened: boolean }) => {
-            modalPropsSpy({ withinPortal });
-            return opened ? <div data-testid="confirm-modal-root">{children}</div> : null;
-        },
-    };
-});
-
 import { ConfirmModal } from './ConfirmModal';
 
 describe('ConfirmModal', () => {
-    beforeEach(() => {
-        modalPropsSpy.mockReset();
-    });
-
     it('keeps confirmation dialogs inside the active render tree', () => {
-        render(
+        const { container } = render(
             <ConfirmModal
                 opened={true}
                 onClose={vi.fn()}
@@ -37,7 +15,9 @@ describe('ConfirmModal', () => {
             />,
         );
 
-        expect(modalPropsSpy).toHaveBeenCalledWith(expect.objectContaining({ withinPortal: false }));
-        expect(screen.getByText('Unsaved changes will be lost.')).toBeInTheDocument();
+        // With withinPortal={false}, the modal content renders inside our
+        // component tree rather than being portaled to document.body.
+        const content = screen.getByText('Unsaved changes will be lost.');
+        expect(container).toContainElement(content);
     });
 });

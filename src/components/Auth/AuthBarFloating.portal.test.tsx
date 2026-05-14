@@ -1,45 +1,17 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import type { ReactNode } from 'react';
-import { render, screen } from '@/test/test-utils';
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen, within } from '@/test/test-utils';
+import userEvent from '@testing-library/user-event';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
-
-const { popoverPropsSpy } = vi.hoisted(() => ({
-    popoverPropsSpy: vi.fn(),
-}));
-
-vi.mock('@mantine/core', async () => {
-    const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core');
-
-    const Popover = Object.assign(
-        ({ children, withinPortal }: { children: ReactNode; withinPortal?: boolean }) => {
-            popoverPropsSpy({ withinPortal });
-            return <div data-testid="authbar-popover-root">{children}</div>;
-        },
-        {
-            Target: ({ children }: { children: ReactNode }) => <div data-testid="authbar-popover-target">{children}</div>,
-            Dropdown: ({ children }: { children: ReactNode }) => <div data-testid="authbar-popover-dropdown">{children}</div>,
-        },
-    );
-
-    return {
-        ...actual,
-        Popover,
-    };
-});
-
 import { AuthBarFloating } from './AuthBarFloating';
 
 describe('AuthBarFloating portal safety', () => {
-    beforeEach(() => {
-        popoverPropsSpy.mockReset();
-    });
-
-    it('keeps the floating admin menu inside the active render tree', () => {
-        render(
+    it('keeps the floating admin menu inside the active render tree', async () => {
+        const { container } = render(
             <CampaignContextProvider>
                 <AuthBarFloating
                     email="admin@example.com"
                     isAdmin
+                    isAuthenticated
                     onOpenAdminPanel={vi.fn()}
                     onOpenSettings={vi.fn()}
                     onLogout={vi.fn()}
@@ -47,7 +19,11 @@ describe('AuthBarFloating portal safety', () => {
             </CampaignContextProvider>,
         );
 
-        expect(popoverPropsSpy).toHaveBeenCalledWith(expect.objectContaining({ withinPortal: false }));
-        expect(screen.getByRole('button', { name: 'Admin menu' })).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: 'Admin menu' }));
+
+        // With withinPortal={false}, the popover dropdown renders inside our
+        // component tree rather than being portaled to document.body.
+        const content = within(container).getByText('Signed in as admin@example.com');
+        expect(container).toContainElement(content);
     });
 });
