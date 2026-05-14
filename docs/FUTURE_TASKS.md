@@ -99,11 +99,7 @@ The detailed sections below remain as the long-form backlog for builder, access,
 
 ### Builder Template Deep Clone
 
-**Status:** Completed in the Phase 25 follow-on cleanup slice.
-
-**Result:** Campaign duplication now exposes a modal option to duplicate the linked layout template as well. When enabled, the new campaign gets its own cloned layout template with a `"(Copy)"` suffix instead of sharing the original by reference.
-
-**Notes:** The REST and CLI duplication paths both use the same backend helper so deep-clone behavior stays aligned outside the admin UI too.
+**Status:** Completed in the Phase 25 follow-on cleanup slice. Removed from active backlog.
 
 ---
 
@@ -240,15 +236,10 @@ The detailed sections below remain as the long-form backlog for builder, access,
 - Gallery adapter stories double as visual regression test snapshots.
 - Open question: Storybook adds ~200 MB to `node_modules` as a dev dependency — acceptable? (Yes, dev-only.)
 
-**OpenAPI / Swagger documentation:**
-- Generate an OpenAPI 3.1 spec from WordPress REST Controller schemas via a custom exporter script.
-- Host the rendered docs at a new admin page or link from the readme.
-- Open question: should the spec cover the public embed beacon endpoints (analytics, access request) as well as the admin-only endpoints?
+~~**OpenAPI / Swagger documentation:**~~ **Superseded by Phase 27 P27-A.** The manual spec rebuild in P27-A is the complete resolution. Automated generation from WP REST Controller schemas is a future maintenance nice-to-have but is no longer an active backlog item.
 
-**TypeScript strictness improvements:**
-- Enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` progressively.
-- Current `tsconfig.json` has `"strict": true` — check for exceptions/overrides that have been silently added.
-- Open question: run `tsc --noEmit` with `exactOptionalPropertyTypes` before committing to the task scope — count the errors first.
+**TypeScript strictness improvements:** → **Promoted to Phase 27 (P27-D)**
+- See `docs/PHASE27_REPORT.md` Track P27-D for full scope and acceptance criteria.
 
 **Effort:** Medium per sub-task | **Impact:** Medium — primarily affects project health and contributor on-ramp
 
@@ -469,17 +460,17 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ## UX Workflow
 
-### Settings Panel as a Non-Disruptive Modal (Completed)
+### Settings Panel as a Non-Disruptive Modal
 
-**Current state:** This is already the shipped behavior. Settings render as a modal overlay instead of a full admin-tab transition.
-
-**Remaining work:** Only modal stacking correctness remained when opening Settings above an active campaign viewer. That follow-up is now tracked in [PHASE25_REPORT.md](PHASE25_REPORT.md), so this item should be removed from the active backlog.
-
-**Status:** Completed / remove from backlog
+**Status:** Completed and removed from active backlog. Modal stacking follow-up tracked in PHASE25_REPORT.md.
 
 ---
 
-### Reuse Loaded Admin Tab Data Across Tab Switches
+### Reuse Loaded Admin Tab Data Across Tab Switches → **Promoted to Phase 27 (P27-C)**
+
+See `docs/PHASE27_REPORT.md` Track P27-C for full scope and acceptance criteria.
+
+**Original context preserved for reference:**
 
 **Context:** The admin surface now relies on TanStack Query-backed data sources. There is already shared cache reuse and targeted refetch behavior in several places, but perceived reload cost can still show up when switching between heavy tabs or reopening campaign-specific panes.
 
@@ -632,7 +623,7 @@ Files: `src/components/Admin/SettingsPanel.tsx` (~1822 lines)
 Split into tab-level sub-components with React.memo. Admin-only, negligible perf impact.  
 LOE: High (6-8 hours) | Impact: Low
 
-**RD-3: Extract MediaTab Sortable Components**
+**RD-3: Extract MediaTab Sortable Components** → **Phase 27 (P27-E)**
 Files: `src/components/Admin/MediaTab.tsx`  
 Move SortableListRow/SortableGridItem outside render body. Inline components reference ~15+ closure variables.  
 LOE: Medium (4-6 hours) | Impact: Low-Medium
@@ -642,7 +633,7 @@ Files: `src/hooks/useLayoutBuilderState.ts`
 Break callback cascade by storing template in a ref. Extra re-renders, not user-visible.  
 LOE: Medium (3-4 hours) | Impact: Low
 
-**RD-8: CardGallery setTimeout → transitionend**
+**RD-8: CardGallery setTimeout → transitionend** → **Phase 27 (P27-E)**
 Files: `src/gallery-adapters/card/CardGallery.tsx`  
 Replace setTimeout with CSS transitionend event listener. Minor UX polish.  
 LOE: Low (1 hour) | Impact: Low
@@ -652,7 +643,7 @@ Files: `src/gallery-adapters/layout-builder/LayoutBuilderGallery.tsx`
 Replace inline `<style>` with useInsertionEffect/adoptedStyleSheets. Works correctly inside Shadow DOM today.  
 LOE: Low (1-2 hours) | Impact: Low
 
-**RD-10: AdminPanel AccessTab Prop Drilling**
+**RD-10: AdminPanel AccessTab Prop Drilling** → **Phase 27 (P27-E)**
 Files: `src/components/Admin/AdminPanel.tsx`, `src/components/Admin/AccessTab.tsx`  
 Reduce prop drilling by passing hook object directly. Code organization improvement.  
 LOE: Low (1-2 hours) | Impact: Low
@@ -662,7 +653,7 @@ Files: `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx`
 Extract IIFEs into named sub-components. Readability improvement.  
 LOE: Low (1-2 hours) | Impact: Low
 
-**RD-16: LoginForm Password Length from Settings**
+**RD-16: LoginForm Password Length from Settings** → **Phase 27 (P27-E)**
 Files: `src/components/Auth/LoginForm.tsx`  
 Read loginMinPasswordLength from settings instead of hardcoding (6). Server-side still validates.  
 LOE: Low (1 hour) | Impact: Low
@@ -672,7 +663,7 @@ Files: `src/services/apiClient.ts`, `src/hooks/useAuth.ts`
 Transparent JWT token refresh before expiry. **Blocked on RD-1**. Most deployments use nonce auth.  
 LOE: Medium (blocked on RD-1) | Impact: Low
 
-**RD-18: useMediaDimensions ID-Based Caching**
+**RD-18: useMediaDimensions ID-Based Caching** → **Phase 27 (P27-E)**
 Files: `src/hooks/useMediaDimensions.ts`  
 Stabilize with ID-based caching to reduce recalculations. Minor optimization.  
 LOE: Low (1-2 hours) | Impact: Low
