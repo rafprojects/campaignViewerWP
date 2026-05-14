@@ -91,7 +91,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3', '8.4']
+      # PHP 8.0 and 8.1 are NOT supported — several Composer dependencies
+      # (including PHPUnit 10+ and WP test library stubs) require PHP ≥ 8.2.
+      # Do NOT add 8.0 or 8.1 back to this matrix.
+        php-version: ['8.2', '8.3', '8.4']
 
     services:
       mysql:
