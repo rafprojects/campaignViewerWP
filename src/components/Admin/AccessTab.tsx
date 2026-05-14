@@ -1,5 +1,4 @@
-import type { MutableRefObject, ReactNode } from 'react';
-import type { ComboboxStore } from '@mantine/core';
+import type { ReactNode } from 'react';
 import {
   ActionIcon,
   Alert,
@@ -25,13 +24,14 @@ import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } fro
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { PendingRequestsPanel } from './PendingRequestsPanel';
 import type { ApiClient } from '@/services/apiClient';
+import type { AdminAccessState } from '@/hooks/useAdminAccessState';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type AccessViewMode = 'campaign' | 'company' | 'all';
 
 type SelectedCampaign = {
-  companyId?: string;
-  status?: string;
+  companyId?: string | undefined;
+  status?: string | undefined;
 } | null;
 
 type SelectedCompany = {
@@ -44,14 +44,6 @@ type SelectedCompany = {
   accessGrantCount: number;
   campaigns: Array<{ id: number; title: string; status: string }>;
 } | null;
-
-type WpUser = {
-  id: number;
-  email: string;
-  displayName: string;
-  login: string;
-  isAdmin: boolean;
-};
 
 interface AccessTabProps {
   accessViewMode: AccessViewMode;
@@ -68,25 +60,8 @@ interface AccessTabProps {
   accessEntriesCount: number;
   accessLoading: boolean;
   accessRows: ReactNode;
-  onArchiveCompanyClick: (company: NonNullable<SelectedCompany>) => void;
-  userCombobox: ComboboxStore;
-  userSearchResults: WpUser[];
-  userSearchQuery: string;
-  userSearchLoading: boolean;
-  selectedUser: WpUser | null;
-  setSelectedUser: (user: WpUser | null) => void;
-  setUserSearchQuery: (value: string) => void;
-  setAccessUserId: (value: string) => void;
-  accessUserId: string;
-  blurTimeoutRef: MutableRefObject<number | null>;
-  accessSource: 'company' | 'campaign';
-  onAccessSourceChange: (value: 'company' | 'campaign') => void;
-  accessAction: 'grant' | 'deny';
-  onAccessActionChange: (value: 'grant' | 'deny') => void;
-  onGrantAccess: () => void;
-  accessSaving: boolean;
-  onQuickAddUser: () => void;
-  apiClient?: ApiClient;
+  accessState: AdminAccessState;
+  apiClient?: ApiClient | undefined;
 }
 
 export function AccessTab({
@@ -104,26 +79,32 @@ export function AccessTab({
   accessEntriesCount,
   accessLoading,
   accessRows,
-  onArchiveCompanyClick,
-  userCombobox,
-  userSearchResults,
-  userSearchQuery,
-  userSearchLoading,
-  selectedUser,
-  setSelectedUser,
-  setUserSearchQuery,
-  setAccessUserId,
-  accessUserId,
-  blurTimeoutRef,
-  accessSource,
-  onAccessSourceChange,
-  accessAction,
-  onAccessActionChange,
-  onGrantAccess,
-  accessSaving,
-  onQuickAddUser,
+  accessState,
   apiClient,
 }: AccessTabProps) {
+  const {
+    userCombobox,
+    userSearchResults,
+    userSearchQuery,
+    userSearchLoading,
+    selectedUser,
+    setSelectedUser,
+    setUserSearchQuery,
+    setAccessUserId,
+    accessUserId,
+    blurTimeoutRef,
+    accessSource,
+    setAccessSource: onAccessSourceChange,
+    accessAction,
+    setAccessAction: onAccessActionChange,
+    handleGrantAccess: onGrantAccess,
+    accessSaving,
+    handleOpenQuickAddUser: onQuickAddUser,
+    setConfirmArchiveCompany,
+  } = accessState;
+
+  const onArchiveCompanyClick = (company: NonNullable<SelectedCompany>) => setConfirmArchiveCompany(company);
+
   return (
     <>
       {/* View Mode Toggle */}

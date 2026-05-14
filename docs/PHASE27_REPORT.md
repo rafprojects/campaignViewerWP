@@ -11,8 +11,8 @@
 | P27-A | API doc accuracy & completeness — fix every entry in `docs/api/` | Planned | Large |
 | P27-B | API improvement analysis — surface additions and enhancements through the "what can be added" lens | Planned | Medium |
 | P27-C | Admin SPA query cache & performance hardening — audit TanStack Query keys, staleTime, invalidation, and tab state preservation | Planned | Low–Medium |
-| P27-D | TypeScript strictness improvements — enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` across the codebase | Planned | Medium |
-| P27-E | React review debt batch — targeted fixes from the FUTURE_TASKS RD backlog (RD-3, RD-8, RD-10, RD-16, RD-18) | Planned | Low–Medium |
+| P27-D | TypeScript strictness improvements — enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` across the codebase | **Complete** | Medium |
+| P27-E | React review debt batch — targeted fixes from the FUTURE_TASKS RD backlog (RD-3, RD-8, RD-10, RD-16, RD-18) | In Progress | Low–Medium |
 
 ---
 
@@ -1374,8 +1374,22 @@ The admin surface relies on TanStack Query for all data fetching, but the query 
 ## Track P27-D — TypeScript Strictness Improvements
 
 **Source:** FUTURE_TASKS.md — Developer Experience → TypeScript strictness improvements
-**Status:** Planned
+**Status:** ✅ Complete — committed `feat/phase27-api-update-and-more` @ `8c7036e`
 **Effort:** Medium | **Impact:** Medium
+
+### Outcome
+
+Both flags are now permanently enabled in `tsconfig.json`. All 1430 Vitest tests pass. The diagnostic run found 215 errors across 75+ files; all were resolved without `@ts-ignore` or `@ts-expect-error` suppressions.
+
+**Fix patterns used:**
+- `prop?: T` → `prop?: T | undefined` in ~60 of our own interfaces
+- `arr[i]` → `arr[i]!` inside provably-bounds-checked loops; `.split(',')[0]!` pattern throughout
+- Mantine component props receiving `T | undefined` → conditional spread `{...(val !== undefined ? { prop: val } : {})}`
+- `forwardRef` components spreading `HTMLAttributes<HTMLButtonElement>` into Mantine `ActionIcon` → `{...(restProps as any)}`
+- `Partial<Record<K,V>>` object construction → conditional key assignment (`if (val !== undefined) result.key = val`)
+- `Array.reduce` initial value from array index → `arr[0] ?? defaultValue`
+- ResizeObserver `entries[0]` → `entries[0]!` after length guard
+- `parseGalleryConfigInput(input)` return cast: `as GalleryConfig | undefined`
 
 ### Problem
 

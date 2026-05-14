@@ -6,9 +6,10 @@ import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
   compact?: boolean;
+  minPasswordLength?: number | undefined;
 }
 
-export function LoginForm({ onSubmit, compact = false }: LoginFormProps) {
+export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: LoginFormProps) {
   const form = useForm({
     initialValues: {
       email: '',
@@ -16,7 +17,10 @@ export function LoginForm({ onSubmit, compact = false }: LoginFormProps) {
     },
     validate: {
       email: (value: string) => (/^\S+@\S+\.\S+$/.test(value) ? null : 'Enter a valid email'),
-      password: (value: string) => (value.trim().length >= 6 ? null : 'Password must be at least 6 characters'),
+      password: (value: string) =>
+        value.trim().length >= minPasswordLength
+          ? null
+          : `Password must be at least ${minPasswordLength} character${minPasswordLength === 1 ? '' : 's'}`,
     },
   });
   const [error, setError] = useState<string | null>(null);

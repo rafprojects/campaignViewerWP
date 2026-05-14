@@ -213,7 +213,7 @@ function AppContent({
       >
         {!isAuthenticated && isReady && (
           <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
-            <LoginForm onSubmit={handleLogin} compact />
+            <LoginForm onSubmit={handleLogin} compact minPasswordLength={resolvedSettings.loginMinPasswordLength} />
           </Modal>
         )}
         {isReady && (

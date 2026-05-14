@@ -60,11 +60,17 @@ function probeImageDimensions(item: MediaItem): Promise<ProbeResult> {
 }
 
 export function useMediaDimensions(media: MediaItem[]): MediaItemWithDimensions[] {
+  // Cache: item ID → { url that was probed, resolved width, resolved height }
+  // Persists across re-renders so probing only runs when the source URL changes.
+  const probeCache = useRef<Map<string, { url: string; width: number; height: number }>>(new Map());
+
+  // Stable key derived from each item's ID and its probe source URL.
+  // Effect only re-runs when actual content changes, not on every array reference change.
+  const mediaKey = media.map((item) => `${item.id}:${item.thumbnail ?? item.url ?? ''}`).join('\x00');
+
   const [items, setItems] = useState<MediaItemWithDimensions[]>(() =>
     media.map(buildWithDimensions),
   );
-  // Track which item IDs have already been probed to avoid redundant network work.
-  const probed = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (media.length === 0) {
@@ -72,14 +78,25 @@ export function useMediaDimensions(media: MediaItem[]): MediaItemWithDimensions[
       return;
     }
 
-    // Re-sync with updated media list — apply server dimensions immediately.
-    setItems(media.map(buildWithDimensions));
-    probed.current.clear();
-
-    // Only probe items that are missing server-supplied dimensions.
-    const needsProbe = media.filter(
-      (item) => !(item.width && item.height) && !probed.current.has(item.id),
+    // Build initial state: server dims > cached probe result > fallback placeholder.
+    setItems(
+      media.map((item) => {
+        if (item.width && item.height) return item as MediaItemWithDimensions;
+        const src = item.thumbnail ?? item.url ?? '';
+        const cached = probeCache.current.get(item.id);
+        if (cached && cached.url === src) return { ...item, width: cached.width, height: cached.height };
+        return buildWithDimensions(item);
+      }),
     );
+
+    // Only probe items that are missing server dims AND have no valid cache entry.
+    const needsProbe = media.filter((item) => {
+      if (item.width && item.height) return false;
+      const src = item.thumbnail ?? item.url ?? '';
+      const cached = probeCache.current.get(item.id);
+      return !(cached && cached.url === src);
+    });
+
     if (needsProbe.length === 0) return;
 
     let cancelled = false;
@@ -90,8 +107,10 @@ export function useMediaDimensions(media: MediaItem[]): MediaItemWithDimensions[
       const dimMap = new Map<string, { width: number; height: number }>();
       for (const result of results) {
         if (result) {
+          const orig = media.find((m) => m.id === result.id);
+          const src = orig ? (orig.thumbnail ?? orig.url ?? '') : '';
+          probeCache.current.set(result.id, { url: src, width: result.width, height: result.height });
           dimMap.set(result.id, { width: result.width, height: result.height });
-          probed.current.add(result.id);
         }
       }
 
@@ -108,7 +127,8 @@ export function useMediaDimensions(media: MediaItem[]): MediaItemWithDimensions[
     return () => {
       cancelled = true;
     };
-  }, [media]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaKey]);
 
   return items;
 }

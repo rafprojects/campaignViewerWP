@@ -307,27 +307,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             accessEntriesCount={accessEntries.length}
             accessLoading={accessLoading}
             accessRows={accessRows}
-            onArchiveCompanyClick={(c) => accessState.setConfirmArchiveCompany(c)}
-            userCombobox={accessState.userCombobox}
-            userSearchResults={accessState.userSearchResults}
-            userSearchQuery={accessState.userSearchQuery}
-            userSearchLoading={accessState.userSearchLoading}
-            selectedUser={accessState.selectedUser}
-            setSelectedUser={accessState.setSelectedUser}
-            setUserSearchQuery={accessState.setUserSearchQuery}
-            setAccessUserId={accessState.setAccessUserId}
-            accessUserId={accessState.accessUserId}
-            blurTimeoutRef={accessState.blurTimeoutRef}
-            accessSource={accessState.accessSource}
-            onAccessSourceChange={accessState.setAccessSource}
-            accessAction={accessState.accessAction}
-            onAccessActionChange={accessState.setAccessAction}
-            onGrantAccess={accessState.handleGrantAccess}
-            accessSaving={accessState.accessSaving}
-            onQuickAddUser={() => {
-              if (accessViewMode === 'campaign' && accessCampaignId) accessState.setQuickAddCampaignId(accessCampaignId);
-              accessState.setQuickAddUserOpen(true);
-            }}
+            accessState={accessState}
             apiClient={apiClient}
           />
         </Tabs.Panel>

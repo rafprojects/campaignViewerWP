@@ -1,52 +1,125 @@
 import { describe, it, expect, vi } from 'vitest';
+import React from 'react';
 import { useRef } from 'react';
 import { useCombobox } from '@mantine/core';
 import { render, screen, fireEvent } from '../../test/test-utils';
 import { AccessTab } from './AccessTab';
-import type { ComponentProps } from 'react';
+import type { AdminAccessState } from '@/hooks/useAdminAccessState';
+
+// Flat overrides for accessState fields, kept separate from top-level AccessTab props
+type AccessStateOverrides = {
+  userSearchResults?: AdminAccessState['userSearchResults'];
+  userSearchQuery?: AdminAccessState['userSearchQuery'];
+  userSearchLoading?: AdminAccessState['userSearchLoading'];
+  selectedUser?: AdminAccessState['selectedUser'];
+  setSelectedUser?: AdminAccessState['setSelectedUser'];
+  setUserSearchQuery?: AdminAccessState['setUserSearchQuery'];
+  setAccessUserId?: AdminAccessState['setAccessUserId'];
+  accessUserId?: AdminAccessState['accessUserId'];
+  accessSource?: AdminAccessState['accessSource'];
+  accessAction?: AdminAccessState['accessAction'];
+  accessSaving?: AdminAccessState['accessSaving'];
+  onQuickAddUser?: () => void;
+  onArchiveCompanyClick?: (company: Parameters<AdminAccessState['setConfirmArchiveCompany']>[0]) => void;
+};
+
+type AccessTabWrapperProps = {
+  accessViewMode?: 'campaign' | 'company';
+  onAccessViewModeChange?: (value: 'campaign' | 'company') => void;
+  campaignSelectData?: Array<{ value: string; label: string }>;
+  accessCampaignId?: string;
+  onAccessCampaignChange?: (value: string) => void;
+  companySelectData?: Array<{ value: string; label: string }>;
+  selectedCompanyId?: string;
+  onSelectedCompanyChange?: (value: string) => void;
+  companiesLoading?: boolean;
+  selectedCampaign?: Parameters<typeof AccessTab>[0]['selectedCampaign'];
+  selectedCompany?: Parameters<typeof AccessTab>[0]['selectedCompany'];
+  accessEntriesCount?: number;
+  accessLoading?: boolean;
+  accessRows?: React.ReactNode;
+} & AccessStateOverrides;
 
 // Wrapper that provides the real useCombobox store and blurTimeoutRef
-function AccessTabWrapper(props: Partial<ComponentProps<typeof AccessTab>>) {
+function AccessTabWrapper({
+  accessViewMode = 'campaign',
+  onAccessViewModeChange = vi.fn(),
+  campaignSelectData = [{ value: '101', label: 'Test Campaign' }],
+  accessCampaignId = '101',
+  onAccessCampaignChange = vi.fn(),
+  companySelectData = [{ value: 'acme', label: 'Acme Corp' }],
+  selectedCompanyId = '',
+  onSelectedCompanyChange = vi.fn(),
+  companiesLoading = false,
+  selectedCampaign = { companyId: 'acme', status: 'active' },
+  selectedCompany = null,
+  accessEntriesCount = 0,
+  accessLoading = false,
+  accessRows = null,
+  // accessState overrides
+  userSearchResults = [],
+  userSearchQuery = '',
+  userSearchLoading = false,
+  selectedUser = null,
+  setSelectedUser = vi.fn(),
+  setUserSearchQuery = vi.fn(),
+  setAccessUserId = vi.fn(),
+  accessUserId = '',
+  accessSource = 'campaign',
+  accessAction = 'grant',
+  accessSaving = false,
+  onQuickAddUser = vi.fn(),
+  onArchiveCompanyClick,
+}: AccessTabWrapperProps) {
   const userCombobox = useCombobox();
   const blurTimeoutRef = useRef<number | null>(null);
 
-  const defaults: ComponentProps<typeof AccessTab> = {
-    accessViewMode: 'campaign',
-    onAccessViewModeChange: vi.fn(),
-    campaignSelectData: [{ value: '101', label: 'Test Campaign' }],
-    accessCampaignId: '101',
-    onAccessCampaignChange: vi.fn(),
-    companySelectData: [{ value: 'acme', label: 'Acme Corp' }],
-    selectedCompanyId: '',
-    onSelectedCompanyChange: vi.fn(),
-    companiesLoading: false,
-    selectedCampaign: { companyId: 'acme', status: 'active' },
-    selectedCompany: null,
-    accessEntriesCount: 0,
-    accessLoading: false,
-    accessRows: null,
-    onArchiveCompanyClick: vi.fn(),
+  const accessState: AdminAccessState = {
     userCombobox,
-    userSearchResults: [],
-    userSearchQuery: '',
-    userSearchLoading: false,
-    selectedUser: null,
-    setSelectedUser: vi.fn(),
-    setUserSearchQuery: vi.fn(),
-    setAccessUserId: vi.fn(),
-    accessUserId: '',
+    userSearchResults,
+    userSearchQuery,
+    userSearchLoading,
+    selectedUser,
+    setSelectedUser,
+    setUserSearchQuery,
+    setAccessUserId,
+    accessUserId,
     blurTimeoutRef,
-    accessSource: 'campaign',
-    onAccessSourceChange: vi.fn(),
-    accessAction: 'grant',
-    onAccessActionChange: vi.fn(),
-    onGrantAccess: vi.fn(),
-    accessSaving: false,
-    onQuickAddUser: vi.fn(),
-    ...props,
-  };
+    accessSource,
+    setAccessSource: vi.fn(),
+    accessAction,
+    setAccessAction: vi.fn(),
+    handleGrantAccess: vi.fn(),
+    accessSaving,
+    handleOpenQuickAddUser: onQuickAddUser,
+    setConfirmArchiveCompany: onArchiveCompanyClick ?? vi.fn(),
+    accessCampaignId: null,
+    setQuickAddCampaignId: vi.fn(),
+    setQuickAddUserOpen: vi.fn(),
+    quickAddUserOpen: false,
+    quickAddCampaignId: null,
+    accessViewMode: 'campaign',
+  } as unknown as AdminAccessState;
 
-  return <AccessTab {...defaults} />;
+  return (
+    <AccessTab
+      accessViewMode={accessViewMode}
+      onAccessViewModeChange={onAccessViewModeChange}
+      campaignSelectData={campaignSelectData}
+      accessCampaignId={accessCampaignId}
+      onAccessCampaignChange={onAccessCampaignChange}
+      companySelectData={companySelectData}
+      selectedCompanyId={selectedCompanyId}
+      onSelectedCompanyChange={onSelectedCompanyChange}
+      companiesLoading={companiesLoading}
+      selectedCampaign={selectedCampaign}
+      selectedCompany={selectedCompany}
+      accessEntriesCount={accessEntriesCount}
+      accessLoading={accessLoading}
+      accessRows={accessRows}
+      accessState={accessState}
+    />
+  );
 }
 
 describe('AccessTab', () => {

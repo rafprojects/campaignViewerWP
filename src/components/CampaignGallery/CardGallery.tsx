@@ -173,30 +173,40 @@ export function CardGallery({
   const hasMore = displayMode === 'load-more' && visibleCount < filteredCampaigns.length;
 
   // Page navigation handlers
-  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Clear any pending transition timeout on unmount.
-  useEffect(() => {
-    return () => {
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-    };
-  }, []);
+  const slideRef = useRef<HTMLDivElement>(null);
 
   const goToPage = useCallback((page: number) => {
     if (isAnimating || page < 0 || page >= totalPages || page === currentPage) return;
     const dir = page > currentPage ? 'left' : 'right';
     setSlideDirection(dir);
     setIsAnimating(true);
-    // Clear any prior pending transition before starting a new one.
-    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-    const duration = s.cardPageTransitionMs ?? 300;
-    transitionTimerRef.current = setTimeout(() => {
-      transitionTimerRef.current = null;
+    const el = slideRef.current;
+    if (!el) {
+      // No element to observe — advance immediately.
       setCurrentPage(page);
       setSlideDirection(null);
       setIsAnimating(false);
-    }, duration);
-  }, [currentPage, s.cardPageTransitionMs, isAnimating, totalPages]);
+      return;
+    }
+    const onEnd = (e: TransitionEvent) => {
+      // Filter to the transform transition on this element only.
+      if (e.target !== el || e.propertyName !== 'transform') return;
+      el.removeEventListener('transitionend', onEnd);
+      setCurrentPage(page);
+      setSlideDirection(null);
+      setIsAnimating(false);
+    };
+    el.addEventListener('transitionend', onEnd);
+    // In environments without CSS transitions (e.g. jsdom), transitionend never
+    // fires. Advance immediately if no transition duration is detected.
+    const dur = window.getComputedStyle(el).transitionDuration;
+    if (!dur || dur === '0s' || dur === '') {
+      el.removeEventListener('transitionend', onEnd);
+      setCurrentPage(page);
+      setSlideDirection(null);
+      setIsAnimating(false);
+    }
+  }, [currentPage, isAnimating, totalPages]);
 
   const goPrev = useCallback(() => goToPage(currentPage - 1), [currentPage, goToPage]);
   const goNext = useCallback(() => goToPage(currentPage + 1), [currentPage, goToPage]);
@@ -441,7 +451,7 @@ export function CardGallery({
           tabIndex={displayMode === 'paginated' ? 0 : undefined}
           aria-label={displayMode === 'paginated' ? `Card gallery page ${currentPage + 1} of ${totalPages}` : undefined}
         >
-          <div style={slideStyle}>
+          <div ref={slideRef} style={slideStyle}>
             <Box
               {...getWpsgDebugProps('CardGallery', 'grid')}
               data-testid="card-gallery-grid"

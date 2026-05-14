@@ -231,6 +231,13 @@ export function useAdminAccessState({
     setQuickAddTestMode(false);
   }, []);
 
+  const handleOpenQuickAddUser = useCallback(() => {
+    if (accessViewMode === 'campaign' && accessCampaignId) {
+      setQuickAddCampaignId(accessCampaignId);
+    }
+    setQuickAddUserOpen(true);
+  }, [accessViewMode, accessCampaignId]);
+
   return {
     accessUserId, setAccessUserId,
     accessSource, setAccessSource,
@@ -256,6 +263,9 @@ export function useAdminAccessState({
     handleRevokeAccess,
     handleArchiveCompany,
     handleQuickAddUser,
+    handleOpenQuickAddUser,
     closeQuickAddUser,
   };
 }
+
+export type AdminAccessState = ReturnType<typeof useAdminAccessState>;
