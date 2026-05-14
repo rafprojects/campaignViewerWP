@@ -23,7 +23,7 @@ interface MediaAddModalProps {
   onClose: () => void;
   title?: string;
   zIndex?: number;
-  dropRef: RefObject<HTMLDivElement>;
+  dropRef: RefObject<HTMLDivElement | null>;
   selectedFile: File | null;
   onSelectFile: (file: File | null) => void;
   previewUrl: string | null;
@@ -68,7 +68,7 @@ export function MediaAddModal({
   externalPreview,
 }: MediaAddModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title={title} padding="md" zIndex={zIndex}>
+    <Modal opened={opened} onClose={onClose} title={title} padding="md" zIndex={zIndex} withinPortal={false}>
       <Stack gap="md">
         <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
           <Stack gap="sm">

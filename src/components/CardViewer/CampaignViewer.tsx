@@ -454,6 +454,7 @@ export function CampaignViewer({
       {...getWpsgDebugProps('CampaignViewer')}
       opened={opened}
       onClose={onClose}
+      withinPortal={false}
       size={modalSize}
       padding={0}
       withCloseButton

@@ -7,7 +7,7 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 interface AddExternalMediaModalProps {
   opened: boolean;
   onClose: () => void;
-  dropRef: RefObject<HTMLDivElement>;
+  dropRef: RefObject<HTMLDivElement | null>;
   selectedFile: File | null;
   onSelectFile: (file: File | null) => void;
   previewUrl: string | null;

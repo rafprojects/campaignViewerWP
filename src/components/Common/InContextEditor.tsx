@@ -94,6 +94,7 @@ export function InContextEditor({
         {...getWpsgDebugProps('InContextEditor')}
         opened={opened}
         onClose={close}
+        withinPortal={false}
         position="bottom-end"
         shadow="lg"
         width={340}
