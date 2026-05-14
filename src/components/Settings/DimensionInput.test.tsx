@@ -12,8 +12,8 @@ describe('DimensionInput', () => {
         label="Max Width"
         value={1200}
         unit="px"
-        onValueChange={() => {}}
-        onUnitChange={() => {}}
+        onValueChange={() => { }}
+        onUnitChange={() => { }}
         allowedUnits={CSS_WIDTH_UNITS}
       />,
     );
@@ -25,13 +25,13 @@ describe('DimensionInput', () => {
       <DimensionInput
         value={100}
         unit="px"
-        onValueChange={() => {}}
-        onUnitChange={() => {}}
+        onValueChange={() => { }}
+        onUnitChange={() => { }}
         allowedUnits={CSS_WIDTH_UNITS}
       />,
     );
     // Select renders a combobox showing the current unit
-    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
     expect(unitSelect).toBeInTheDocument();
     expect(unitSelect).toHaveValue('px');
   });
@@ -41,13 +41,13 @@ describe('DimensionInput', () => {
       <DimensionInput
         value={16}
         unit="px"
-        onValueChange={() => {}}
-        onUnitChange={() => {}}
+        onValueChange={() => { }}
+        onUnitChange={() => { }}
         allowedUnits={['px']}
       />,
     );
     // Should not render a unit Select
-    expect(screen.queryByRole('textbox', { name: 'Unit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Unit' })).not.toBeInTheDocument();
   });
 
   it('calls onUnitChange when a different unit is selected', async () => {
@@ -63,7 +63,7 @@ describe('DimensionInput', () => {
         allowedUnits={CSS_SPACING_UNITS}
       />,
     );
-    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
     await user.click(unitSelect);
     fireEvent.click(screen.getByRole('option', { name: 'em' }));
     expect(onUnitChange).toHaveBeenCalledWith('em');
@@ -84,7 +84,7 @@ describe('DimensionInput', () => {
       />,
     );
     // Switch to vw — max is 100
-    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
     await user.click(unitSelect);
     fireEvent.click(screen.getByRole('option', { name: 'vw' }));
     expect(onValueChange).toHaveBeenCalledWith(100);
@@ -104,7 +104,7 @@ describe('DimensionInput', () => {
         allowedUnits={CSS_WIDTH_UNITS}
       />,
     );
-    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
     await user.click(unitSelect);
     fireEvent.click(screen.getByRole('option', { name: '%' }));
     // 50 fits within 0–100, so onValueChange should NOT be called
@@ -118,12 +118,12 @@ describe('DimensionInput', () => {
       <DimensionInput
         value={80}
         unit="vh"
-        onValueChange={() => {}}
-        onUnitChange={() => {}}
+        onValueChange={() => { }}
+        onUnitChange={() => { }}
         allowedUnits={CSS_HEIGHT_UNITS}
       />,
     );
-    const unitSelect = screen.getByRole('textbox', { name: 'Unit' });
+    const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
     expect(unitSelect).toHaveValue('vh');
     // Open dropdown and verify all options
     await user.click(unitSelect);

@@ -193,6 +193,35 @@ describe('ThemeProvider', () => {
     updatedStyle?.remove();
   });
 
+  it('injects and updates CSS variables inside a shadow root when previewing a theme', () => {
+    const host = document.createElement('div');
+    const shadowRoot = host.attachShadow({ mode: 'open' });
+    document.body.appendChild(host);
+
+    const shadowWrapper = ({ children }: { children: ReactNode }) => (
+      <ThemeProvider shadowRoot={shadowRoot}>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper: shadowWrapper });
+    const otherTheme = result.current.availableThemes.find((theme) => theme.id !== DEFAULT_THEME_ID);
+    expect(otherTheme).toBeDefined();
+
+    const initialStyle = shadowRoot.querySelector('#wpsg-theme-vars') as HTMLStyleElement | null;
+    expect(initialStyle).toBeTruthy();
+    expect(initialStyle?.textContent).toBe(getTheme(DEFAULT_THEME_ID).cssVars);
+
+    act(() => {
+      result.current.setPreviewTheme(otherTheme!.id);
+    });
+
+    const updatedStyle = shadowRoot.querySelector('#wpsg-theme-vars') as HTMLStyleElement | null;
+    expect(updatedStyle).toBeTruthy();
+    expect(result.current.themeId).toBe(otherTheme!.id);
+    expect(updatedStyle?.textContent).toBe(getTheme(otherTheme!.id).cssVars);
+
+    host.remove();
+  });
+
   it('removes scoped document CSS variables on unmount', () => {
     const host = document.createElement('div');
     host.dataset.wpsgThemeScope = 'cleanup-scope';

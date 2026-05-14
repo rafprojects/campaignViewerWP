@@ -160,7 +160,7 @@ async function prepareApp(page: Page) {
 }
 
 async function selectOption(page: Page, scope: Locator, label: string, option: string) {
-  await scope.getByRole('textbox', { name: label, exact: true }).click();
+  await scope.getByRole('combobox', { name: label, exact: true }).click();
   const listbox = page.getByRole('listbox').last();
   await expect(listbox).toBeVisible();
   await listbox.getByRole('option', { name: option, exact: true }).click();
@@ -278,7 +278,7 @@ test('in-context typography editor opens nested controls in shadow DOM', async (
   await expect(typographyToggle).toBeVisible();
   await typographyToggle.click();
 
-  const fontFamilyInput = page.getByRole('textbox', { name: 'Font Family' }).first();
+  const fontFamilyInput = page.getByRole('combobox', { name: 'Font Family', exact: true }).first();
   await expect(fontFamilyInput).toBeVisible();
   await fontFamilyInput.click();
 
