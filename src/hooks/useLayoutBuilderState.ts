@@ -115,7 +115,7 @@ export interface LayoutBuilderActions {
   /** Nudge selected slots by a delta (arrow key). */
   nudgeSlots: (ids: string[], dx: number, dy: number) => void;
   /** Assign a specific media item to a slot (with optional cross-campaign metadata). */
-  assignMediaToSlot: (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) => void;
+  assignMediaToSlot: (slotId: string, mediaId: string, meta?: { attachmentId?: number | undefined; url?: string | undefined }) => void;
   /** Clear fixed media assignment for a slot. */
   clearSlotMedia: (slotId: string) => void;
   /** Auto-assign media to all slots by order (sets mediaId + cross-campaign metadata). */
@@ -451,7 +451,7 @@ export function useLayoutBuilderState(
       mutate((d) => {
         const idx = d.slots.findIndex((s) => s.id === id);
         if (idx !== -1) {
-          Object.assign(d.slots[idx], updates);
+          Object.assign(d.slots[idx]!, updates);
         }
       }, 'Update slot'),
     [mutate],
@@ -472,7 +472,7 @@ export function useLayoutBuilderState(
   );
 
   const assignMediaToSlot = useCallback(
-    (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) =>
+    (slotId: string, mediaId: string, meta?: { attachmentId?: number | undefined; url?: string | undefined }) =>
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === slotId);
         if (slot) {
@@ -501,15 +501,16 @@ export function useLayoutBuilderState(
     (mediaIds: string[], mediaItems?: MediaItem[]) =>
       mutate((d) => {
         for (let i = 0; i < d.slots.length; i++) {
+          const slot = d.slots[i]!;
           if (i < mediaIds.length) {
-            d.slots[i].mediaId = mediaIds[i];
+            slot.mediaId = mediaIds[i]!;
             const item = mediaItems?.find((m) => m.id === mediaIds[i]);
-            d.slots[i].mediaAttachmentId = item?.attachmentId;
-            d.slots[i].mediaUrl = item?.url;
+            slot.mediaAttachmentId = item?.attachmentId;
+            slot.mediaUrl = item?.url;
           } else {
-            d.slots[i].mediaId = undefined;
-            d.slots[i].mediaAttachmentId = undefined;
-            d.slots[i].mediaUrl = undefined;
+            slot.mediaId = undefined;
+            slot.mediaAttachmentId = undefined;
+            slot.mediaUrl = undefined;
           }
         }
       }, 'Auto-assign media'),
@@ -583,10 +584,10 @@ export function useLayoutBuilderState(
         const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
 
         for (let i = all.length - 1; i >= 0; i--) {
-          if (idSet.has(all[i].id)) {
+          if (idSet.has(all[i]!.id)) {
             const above = all[i + 1];
             if (above && !idSet.has(above.id)) {
-              const itemA = byId.get(all[i].id)!;
+              const itemA = byId.get(all[i]!.id)!;
               const itemB = byId.get(above.id)!;
               const tmp = itemA.zIndex;
               itemA.zIndex = itemB.zIndex;
@@ -612,10 +613,10 @@ export function useLayoutBuilderState(
         const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
 
         for (let i = 0; i < all.length; i++) {
-          if (idSet.has(all[i].id)) {
+          if (idSet.has(all[i]!.id)) {
             const below = all[i - 1];
             if (below && !idSet.has(below.id)) {
-              const itemA = byId.get(all[i].id)!;
+              const itemA = byId.get(all[i]!.id)!;
               const itemB = byId.get(below.id)!;
               const tmp = itemA.zIndex;
               itemA.zIndex = itemB.zIndex;
@@ -691,7 +692,7 @@ export function useLayoutBuilderState(
     (id: string, updates: Partial<LayoutGraphicLayer>) =>
       mutate((d) => {
         const idx = d.overlays.findIndex((o) => o.id === id);
-        if (idx !== -1) Object.assign(d.overlays[idx], updates);
+        if (idx !== -1) Object.assign(d.overlays[idx]!, updates);
       }, 'Update layer'),
     [mutate],
   );
@@ -817,7 +818,7 @@ export function useLayoutBuilderState(
 
   const undo = useCallback(() => {
     if (past.length === 0) return;
-    const lastItem = past[past.length - 1];
+    const lastItem = past[past.length - 1]!;
     // Snapshot goes to future so redo can restore it.
     setFuture((prev) => [{ snapshot: template, entry: lastItem.entry }, ...prev]);
     setPast((prev) => prev.slice(0, -1));
@@ -827,7 +828,7 @@ export function useLayoutBuilderState(
 
   const redo = useCallback(() => {
     if (future.length === 0) return;
-    const nextItem = future[0];
+    const nextItem = future[0]!;
     // Save current template to past before restoring redo state.
     setPast((prev) => {
       const next = [...prev, { snapshot: template, entry: nextItem.entry }];
@@ -865,13 +866,13 @@ export function useLayoutBuilderState(
       for (let k = clamped + 1; k < past.length; k++) {
         // Template *at* position k = past[k+1].snapshot (before mutation k+1)
         //                          = current template when k is the last past entry.
-        const snapshotAtK = k === past.length - 1 ? template : past[k + 1].snapshot;
-        newFutureItems.push({ snapshot: snapshotAtK, entry: past[k].entry });
+        const snapshotAtK = k === past.length - 1 ? template : past[k + 1]!.snapshot;
+        newFutureItems.push({ snapshot: snapshotAtK, entry: past[k]!.entry });
       }
       // The template to restore: state after mutation `clamped`
       //   = past[clamped + 1].snapshot (before mutation clamped+1)
       //   = past[0].snapshot (the initial template) when clamped === -1.
-      const targetTemplate = clamped >= 0 ? past[clamped + 1].snapshot : past[0].snapshot;
+      const targetTemplate = clamped >= 0 ? past[clamped + 1]!.snapshot : past[0]!.snapshot;
       setPast(past.slice(0, clamped + 1));
       setFuture([...newFutureItems, ...future]);
       setTemplateRaw(targetTemplate);

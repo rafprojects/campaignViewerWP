@@ -37,7 +37,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   );
 
   const handleMediaCanvasDrop = useCallback(
-    (mediaId: string, meta: { attachmentId?: number; url?: string }, x: number, y: number) => {
+    (mediaId: string, meta: { attachmentId?: number | undefined; url?: string | undefined }, x: number, y: number) => {
       const slotId = builder.addSlot();
       builder.updateSlot(slotId, { x, y });
       builder.assignMediaToSlot(slotId, mediaId, meta);

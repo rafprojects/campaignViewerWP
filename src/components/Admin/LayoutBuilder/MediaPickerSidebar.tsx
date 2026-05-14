@@ -83,7 +83,7 @@ export function MediaPickerSidebar({
     (mediaItem: MediaItem) => {
       if (!singleSelectedSlotId) return;
       onAssignMedia(singleSelectedSlotId, mediaItem.id, {
-        attachmentId: mediaItem.attachmentId,
+        ...(mediaItem.attachmentId !== undefined ? { attachmentId: mediaItem.attachmentId } : {}),
         url: mediaItem.url,
       });
     },
@@ -196,11 +196,10 @@ export function MediaPickerSidebar({
                   transition: 'background 0.1s',
                   opacity: singleSelectedSlotId ? 1 : 0.7,
                 }}
-                aria-label={`${item.title || 'Media item'} — ${
-                  assignedToSlots && assignedToSlots.length > 0
+                aria-label={`${item.title || 'Media item'} — ${assignedToSlots && assignedToSlots.length > 0
                     ? `assigned to slot${assignedToSlots.length > 1 ? 's' : ''} ${assignedToSlots.join(', ')}`
                     : 'unassigned'
-                }`}
+                  }`}
               >
                 <Image
                   src={item.thumbnail || item.url}

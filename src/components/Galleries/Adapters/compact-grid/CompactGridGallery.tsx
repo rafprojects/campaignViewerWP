@@ -138,7 +138,7 @@ interface GridCardProps {
   item: MediaItem;
   index: number;
   aspectRatio: string;
-  minHeight?: number | string;
+  minHeight?: number | string | undefined;
   borderRadius: number | string;
   onOpen: (index: number) => void;
 }

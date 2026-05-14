@@ -295,9 +295,9 @@ export function CardGallery({
   }, [galleryBehaviorSettings.showViewerBorder]);
 
   return (
-    <Box className={styles.gallery} style={galleryStyle}>
+    <Box {...(styles.gallery ? { className: styles.gallery } : {})} style={galleryStyle}>
       {/* Header */}
-      <Box component="header" className={styles.header} style={{ ...headerStyle, position: 'relative' }}>
+      <Box component="header" {...(styles.header ? { className: styles.header } : {})} style={{ ...headerStyle, position: 'relative' }}>
         <InContextEditor
           visible={!!isAdmin && galleryBehaviorSettings.showInContextEditors}
           position="top-right"
@@ -360,7 +360,7 @@ export function CardGallery({
             />
           </Stack>
         </InContextEditor>
-        <Container {...getWpsgDebugProps('CardGallery', 'header-shell')} size={containerSize} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
+        <Container {...getWpsgDebugProps('CardGallery', 'header-shell')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
           <Stack {...getWpsgDebugProps('CardGallery', 'header-stack')} gap="lg">
             {/* Title and subtitle */}
             {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
@@ -432,7 +432,7 @@ export function CardGallery({
       </Box>
 
       {/* Gallery Grid */}
-      <Container {...getWpsgDebugProps('CardGallery')} size={containerSize} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
+      <Container {...getWpsgDebugProps('CardGallery')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
         {/* Pagination wrapper — relative for overlay arrows */}
         <Box
           {...getWpsgDebugProps('CardGallery', 'pagination-shell')}

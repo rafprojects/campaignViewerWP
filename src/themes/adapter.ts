@@ -563,7 +563,10 @@ export function adaptTheme(def: ThemeDefinition): MantineThemeOverride {
     };
   }
 
-  theme.components = mergedComponents as MantineThemeOverride['components'];
+  const components = mergedComponents as MantineThemeOverride['components'];
+  if (components !== undefined) {
+    theme.components = components;
+  }
 
   return theme;
 }

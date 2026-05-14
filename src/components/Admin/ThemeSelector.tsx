@@ -92,11 +92,11 @@ function getDescription(meta: ThemeMeta): string {
 
 export interface ThemeSelectorProps {
   /** Controlled selected theme ID from settings state */
-  value?: string;
+  value?: string | undefined;
   /** Override Select label (default: "Theme") */
-  label?: string;
+  label?: string | undefined;
   /** Override Select description */
-  description?: string;
+  description?: string | undefined;
   /** Additional Select props pass-through */
   selectProps?: Partial<SelectProps>;
   /** Called when the user selects a theme (for settings staging) */

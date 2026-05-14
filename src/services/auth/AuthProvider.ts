@@ -6,8 +6,8 @@ export interface AuthUser {
 
 export interface AuthSession {
   accessToken: string;
-  refreshToken?: string;
-  expiresAt?: string;
+  refreshToken?: string | undefined;
+  expiresAt?: string | undefined;
 }
 
 export interface AuthProvider {

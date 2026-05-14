@@ -1,7 +1,7 @@
 export type WpsgDebugProps = Record<string, string>;
 
 export interface WpsgDebugNamedComponent {
-  displayName?: string;
+  displayName?: string | undefined;
 }
 
 function isWpsgDebugEnabled(enabled?: boolean): boolean {

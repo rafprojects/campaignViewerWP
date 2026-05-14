@@ -99,16 +99,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   });
 
   useEffect(() => {
-    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0].id));
+    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, allCampaigns, mediaCampaignId]);
   useEffect(() => {
-    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0].id));
+    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, accessCampaignId, allCampaigns, accessViewMode]);
   useEffect(() => {
-    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0].id));
+    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, auditCampaignId, allCampaigns]);
   useEffect(() => {
-    if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0].id));
+    if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0]!.id));
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
 
   const mediaPrefetchedRef = useRef(false);

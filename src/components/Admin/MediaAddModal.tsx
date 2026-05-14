@@ -68,7 +68,7 @@ export function MediaAddModal({
   externalPreview,
 }: MediaAddModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title={title} padding="md" zIndex={zIndex} withinPortal={false}>
+    <Modal opened={opened} onClose={onClose} title={title} padding="md" {...(zIndex !== undefined ? { zIndex } : {})} withinPortal={false}>
       <Stack gap="md">
         <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
           <Stack gap="sm">

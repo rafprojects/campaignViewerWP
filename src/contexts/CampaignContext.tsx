@@ -5,17 +5,17 @@ interface CampaignContextValue {
   /** The campaign currently open in CampaignViewer (null when closed). */
   activeCampaign: Campaign | null;
   setActiveCampaign: (campaign: Campaign | null) => void;
-  onEditCampaign?: (campaign: Campaign) => void;
-  onEditGalleryConfig?: (campaign: Campaign) => void;
+  onEditCampaign?: ((campaign: Campaign) => void) | undefined;
+  onEditGalleryConfig?: ((campaign: Campaign) => void) | undefined;
   setOnEditGalleryConfig: (handler?: (campaign: Campaign) => void) => void;
-  onArchiveCampaign?: (campaign: Campaign) => void;
-  onAddExternalMedia?: (campaign: Campaign) => void;
+  onArchiveCampaign?: ((campaign: Campaign) => void) | undefined;
+  onAddExternalMedia?: ((campaign: Campaign) => void) | undefined;
 }
 
 const CampaignContext = createContext<CampaignContextValue>({
   activeCampaign: null,
-  setActiveCampaign: () => {},
-  setOnEditGalleryConfig: () => {},
+  setActiveCampaign: () => { },
+  setOnEditGalleryConfig: () => { },
 });
 
 export function useCampaignContext() {
@@ -24,10 +24,10 @@ export function useCampaignContext() {
 
 interface CampaignContextProviderProps {
   children: React.ReactNode;
-  onEditCampaign?: (campaign: Campaign) => void;
-  onEditGalleryConfig?: (campaign: Campaign) => void;
-  onArchiveCampaign?: (campaign: Campaign) => void;
-  onAddExternalMedia?: (campaign: Campaign) => void;
+  onEditCampaign?: ((campaign: Campaign) => void) | undefined;
+  onEditGalleryConfig?: ((campaign: Campaign) => void) | undefined;
+  onArchiveCampaign?: ((campaign: Campaign) => void) | undefined;
+  onAddExternalMedia?: ((campaign: Campaign) => void) | undefined;
 }
 
 export function CampaignContextProvider({

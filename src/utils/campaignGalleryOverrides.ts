@@ -13,7 +13,7 @@ const CAMPAIGN_OVERRIDE_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'ta
 type CampaignOverrideScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
 
 type CampaignGalleryOverrideSource = {
-  galleryOverrides?: Partial<GalleryConfig>;
+  galleryOverrides?: Partial<GalleryConfig> | undefined;
 };
 
 export interface ClearedCampaignGalleryOverrides {
@@ -104,7 +104,7 @@ export function getUniformCampaignScopeAdapterId(
     return '';
   }
 
-  return adapterIds.every((adapterId) => adapterId === adapterIds[0]) ? adapterIds[0] : '';
+  return adapterIds.every((adapterId) => adapterId === adapterIds[0]) ? adapterIds[0] ?? '' : '';
 }
 
 export function hasMixedCampaignScopeAdapterOverrides(

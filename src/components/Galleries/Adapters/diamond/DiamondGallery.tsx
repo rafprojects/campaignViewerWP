@@ -53,7 +53,7 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
-      setContainerWidth(entries[0].contentRect.width);
+      setContainerWidth(entries[0]!.contentRect.width);
     });
     ro.observe(el);
     setContainerWidth(el.clientWidth);

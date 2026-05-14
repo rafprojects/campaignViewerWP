@@ -109,7 +109,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
                 <Text
                   size="xs"
                   fw={isCurrent ? 600 : 400}
-                  c={isCurrent ? 'blue' : undefined}
+                  {...(isCurrent ? { c: 'blue' as const } : {})}
                   truncate
                   style={{ flex: 1 }}
                 >

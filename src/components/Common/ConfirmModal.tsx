@@ -9,21 +9,21 @@ interface ConfirmModalProps {
   title: string;
   message: ReactNode;
   confirmLabel: string;
-  confirmColor?: string;
-  confirmAriaLabel?: string;
-  loading?: boolean;
+  confirmColor?: string | undefined;
+  confirmAriaLabel?: string | undefined;
+  loading?: boolean | undefined;
   /** Optional extra content rendered between the message and action buttons. */
-  children?: ReactNode;
+  children?: ReactNode | undefined;
 }
 
 interface ConfirmModalContentProps {
   message: ReactNode;
-  children?: ReactNode;
+  children?: ReactNode | undefined;
   onClose: () => void;
   onConfirm: () => void;
   confirmLabel: string;
   confirmColor: string;
-  confirmAriaLabel?: string;
+  confirmAriaLabel?: string | undefined;
   loading: boolean;
 }
 

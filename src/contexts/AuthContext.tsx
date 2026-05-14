@@ -13,8 +13,8 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 interface AuthProviderProps {
-  provider?: AuthProvider;
-  fallbackPermissions?: string[];
+  provider?: AuthProvider | undefined;
+  fallbackPermissions?: string[] | undefined;
   children: React.ReactNode;
 }
 

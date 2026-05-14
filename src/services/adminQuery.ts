@@ -256,6 +256,7 @@ function staggeredPrefetch(
     }
 
     const batch = batches[batchIndex++];
+    if (!batch) return;
     Promise.allSettled(batch.map(run)).then(() => {
       if (!cancelled) {
         timers.push(setTimeout(runNextBatch, staggerMs));

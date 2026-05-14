@@ -16,7 +16,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS as DEFAULT_SETTINGS } from '@/types';
 type GalleryMode = 'unified' | 'per-type';
 
 interface GalleryResolutionOptions {
-  galleryOverrides?: Partial<GalleryConfig>;
+  galleryOverrides?: Partial<GalleryConfig> | undefined;
 }
 
 const BLOCKED_ADAPTER_SETTING_KEYS = new Set(['__proto__', 'constructor', 'prototype']);

@@ -193,7 +193,7 @@ export class WpJwtProvider implements AuthProvider {
       return null;
     }
     try {
-      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const base64 = parts[1]!.replace(/-/g, '+').replace(/_/g, '/');
       const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
       const json = atob(padded);
       return JSON.parse(json) as { exp?: number };

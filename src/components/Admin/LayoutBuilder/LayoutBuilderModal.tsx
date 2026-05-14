@@ -70,9 +70,9 @@ export interface LayoutBuilderModalProps {
   onClose: () => void;
   apiClient: ApiClient;
   /** Existing template to edit — undefined = new template. */
-  initialTemplate?: LayoutTemplate;
-  onSaved?: (template: LayoutTemplate) => void;
-  onNotify?: (msg: { type: 'error' | 'success'; text: string }) => void;
+  initialTemplate?: LayoutTemplate | undefined;
+  onSaved?: ((template: LayoutTemplate) => void) | undefined;
+  onNotify?: ((msg: { type: 'error' | 'success'; text: string }) => void) | undefined;
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -116,7 +116,7 @@ export function LayoutBuilderModal({
 
     setSelectedCampaignId((curr) => {
       if (curr && campaigns.some((c) => String(c.id) === curr)) return curr;
-      return String(campaigns[0].id);
+      return String(campaigns[0]!.id);
     });
   }, [opened, campaigns, campaignSelectionStorageKey]);
 

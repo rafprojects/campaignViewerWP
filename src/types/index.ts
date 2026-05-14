@@ -16,50 +16,50 @@ export type GalleryConfigScope = 'unified' | 'image' | 'video';
 export type GalleryConfigMode = 'unified' | 'per-type';
 
 export interface GalleryCommonSettings {
-  sectionMaxWidth?: number;
-  sectionMaxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
-  sectionMaxHeight?: number;
-  sectionMaxHeightUnit?: import('@/utils/cssUnits').CssHeightUnit;
-  sectionMinWidth?: number;
-  sectionMinWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
-  sectionMinHeight?: number;
-  sectionMinHeightUnit?: import('@/utils/cssUnits').CssHeightUnit;
-  sectionHeightMode?: 'auto' | 'manual' | 'viewport';
-  sectionPadding?: number;
-  sectionPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit;
-  adapterContentPadding?: number;
-  adapterContentPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit;
-  adapterSizingMode?: 'fill' | 'manual';
-  adapterMaxWidthPct?: number;
-  adapterMaxHeightPct?: number;
-  adapterItemGap?: number;
-  adapterItemGapUnit?: import('@/utils/cssUnits').CssSpacingUnit;
-  adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
-  gallerySizingMode?: 'auto' | 'viewport' | 'manual';
-  galleryManualHeight?: string;
-  viewportBgType?: ViewportBgType;
-  viewportBgColor?: string;
-  viewportBgGradient?: string;
-  viewportBgImageUrl?: string;
-  perTypeSectionEqualHeight?: boolean;
-  galleryImageLabel?: string;
-  galleryVideoLabel?: string;
-  galleryLabelJustification?: 'left' | 'center' | 'right';
-  showGalleryLabelIcon?: boolean;
-  showCampaignGalleryLabels?: boolean;
+  sectionMaxWidth?: number | undefined;
+  sectionMaxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit | undefined;
+  sectionMaxHeight?: number | undefined;
+  sectionMaxHeightUnit?: import('@/utils/cssUnits').CssHeightUnit | undefined;
+  sectionMinWidth?: number | undefined;
+  sectionMinWidthUnit?: import('@/utils/cssUnits').CssWidthUnit | undefined;
+  sectionMinHeight?: number | undefined;
+  sectionMinHeightUnit?: import('@/utils/cssUnits').CssHeightUnit | undefined;
+  sectionHeightMode?: 'auto' | 'manual' | 'viewport' | undefined;
+  sectionPadding?: number | undefined;
+  sectionPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit | undefined;
+  adapterContentPadding?: number | undefined;
+  adapterContentPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit | undefined;
+  adapterSizingMode?: 'fill' | 'manual' | undefined;
+  adapterMaxWidthPct?: number | undefined;
+  adapterMaxHeightPct?: number | undefined;
+  adapterItemGap?: number | undefined;
+  adapterItemGapUnit?: import('@/utils/cssUnits').CssSpacingUnit | undefined;
+  adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch' | undefined;
+  gallerySizingMode?: 'auto' | 'viewport' | 'manual' | undefined;
+  galleryManualHeight?: string | undefined;
+  viewportBgType?: ViewportBgType | undefined;
+  viewportBgColor?: string | undefined;
+  viewportBgGradient?: string | undefined;
+  viewportBgImageUrl?: string | undefined;
+  perTypeSectionEqualHeight?: boolean | undefined;
+  galleryImageLabel?: string | undefined;
+  galleryVideoLabel?: string | undefined;
+  galleryLabelJustification?: 'left' | 'center' | 'right' | undefined;
+  showGalleryLabelIcon?: boolean | undefined;
+  showCampaignGalleryLabels?: boolean | undefined;
 }
 
 export interface GalleryScopeConfig {
-  adapterId?: string;
-  common?: GalleryCommonSettings;
-  adapterSettings?: Record<string, unknown>;
+  adapterId?: string | undefined;
+  common?: GalleryCommonSettings | undefined;
+  adapterSettings?: Record<string, unknown> | undefined;
 }
 
 export type BreakpointGalleryConfig = Partial<Record<GalleryConfigScope, GalleryScopeConfig>>;
 
 export interface GalleryConfig {
-  mode?: GalleryConfigMode;
-  breakpoints?: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>>;
+  mode?: GalleryConfigMode | undefined;
+  breakpoints?: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>> | undefined;
 }
 
 export interface ResolvedGallerySectionBackground {
@@ -93,17 +93,17 @@ export interface Campaign {
   createdAt: string;
   updatedAt: string;
   /** Per-campaign border color override (used when cardBorderMode is 'individual') */
-  borderColor?: string;
+  borderColor?: string | undefined;
   /** P13-D: Optional ISO 8601 scheduled-publish date. */
-  publishAt?: string;
+  publishAt?: string | undefined;
   /** P13-D: Optional ISO 8601 auto-unpublish date. */
-  unpublishAt?: string;
+  unpublishAt?: string | undefined;
   /** P15-B: Optional layout template reference. */
-  layoutTemplateId?: string;
+  layoutTemplateId?: string | undefined;
   /** Phase 23 nested campaign gallery override surface. */
-  galleryOverrides?: Partial<GalleryConfig>;
+  galleryOverrides?: Partial<GalleryConfig> | undefined;
   /** P18-H: Category names assigned to this campaign. */
-  categories?: string[];
+  categories?: string[] | undefined;
 }
 
 /** Measured dimensions of a gallery section container, passed to child adapters. */
@@ -117,16 +117,16 @@ export interface MediaItem {
   type: 'video' | 'image' | 'other';
   source: 'upload' | 'external';
   url: string;
-  embedUrl?: string;
-  provider?: 'youtube' | 'vimeo' | 'rumble' | 'bitchute' | 'odysee' | 'other';
-  attachmentId?: number;
-  thumbnail?: string;
-  title?: string;
-  caption?: string;
+  embedUrl?: string | undefined;
+  provider?: 'youtube' | 'vimeo' | 'rumble' | 'bitchute' | 'odysee' | 'other' | undefined;
+  attachmentId?: number | undefined;
+  thumbnail?: string | undefined;
+  title?: string | undefined;
+  caption?: string | undefined;
   order: number;
   /** Pixel dimensions supplied by server (WP attachment metadata). Used by mosaic layout. */
-  width?: number;
-  height?: number;
+  width?: number | undefined;
+  height?: number | undefined;
 }
 
 export interface User {
@@ -211,13 +211,13 @@ export interface LayoutSlot {
   /** Shape preset */
   shape: LayoutSlotShape;
   /** Custom CSS clip-path (used when shape === 'custom') */
-  clipPath?: string;
+  clipPath?: string | undefined;
   /** CSS mask-image URL (legacy — prefer maskLayer for new templates) */
-  maskUrl?: string;
+  maskUrl?: string | undefined;
   /** CSS mask-mode (legacy — prefer maskLayer for new templates) */
-  maskMode?: 'luminance' | 'alpha';
+  maskMode?: 'luminance' | 'alpha' | undefined;
   /** Mask layer with full position/scale/feather controls (replaces maskUrl). */
-  maskLayer?: MaskLayer;
+  maskLayer?: MaskLayer | undefined;
   /** Corner rounding in px (for rectangle shapes) */
   borderRadius: number;
   /** Border thickness in px (0 = none) */
@@ -229,39 +229,39 @@ export interface LayoutSlot {
   /** CSS object-position for focal point, e.g. '50% 30%' */
   objectPosition: string;
   /** Fixed media binding (overrides auto-assignment) */
-  mediaId?: string;
+  mediaId?: string | undefined;
   /** WP attachment post ID for cross-campaign matching (same image → same attachmentId). */
-  mediaAttachmentId?: number;
+  mediaAttachmentId?: number | undefined;
   /** Media URL for cross-campaign matching fallback. */
-  mediaUrl?: string;
+  mediaUrl?: string | undefined;
   /** Click behavior in rendered gallery */
   clickAction: 'lightbox' | 'none';
   /** Hover behavior in rendered gallery */
   hoverEffect: 'pop' | 'glow' | 'none';
   /** Per-slot glow color (overrides campaign-level tileGlowColor when hoverEffect is 'glow'). */
-  glowColor?: string;
+  glowColor?: string | undefined;
   /** Per-slot glow spread in px (overrides campaign-level tileGlowSpread when hoverEffect is 'glow'). */
-  glowSpread?: number;
+  glowSpread?: number | undefined;
   // ── Layer system (P16) ──
   /** Human-readable label shown in the layer panel. Defaults to "Slot N" if absent. */
-  name?: string;
+  name?: string | undefined;
   /** Builder-only visibility. false = ghost at 10% opacity in editor; no effect on gallery rendering. */
-  visible?: boolean;
+  visible?: boolean | undefined;
   /** Prevents drag/resize in the builder. No effect on gallery rendering. */
-  locked?: boolean;
+  locked?: boolean | undefined;
   /** When true, drag-resize handles maintain the width/height ratio. */
-  lockAspectRatio?: boolean;
+  lockAspectRatio?: boolean | undefined;
   // ── Image effects (P20 QA-R3) ──
   /** CSS filter chain (brightness, contrast, etc.). */
-  filterEffects?: SlotFilterEffects;
+  filterEffects?: SlotFilterEffects | undefined;
   /** Drop-shadow or glow applied via CSS filter. */
-  shadow?: SlotShadow;
+  shadow?: SlotShadow | undefined;
   /** 3D tilt on mouse interaction. Applied in gallery only (not builder). */
-  tilt?: SlotTiltEffect;
+  tilt?: SlotTiltEffect | undefined;
   /** CSS mix-blend-mode. Default: 'normal'. */
-  blendMode?: SlotBlendMode;
+  blendMode?: SlotBlendMode | undefined;
   /** Darken/lighten overlay on the slot. */
-  overlayEffect?: SlotOverlayEffect;
+  overlayEffect?: SlotOverlayEffect | undefined;
 }
 
 /** Sensible defaults for a new layout slot. */
@@ -302,11 +302,11 @@ export interface LayoutGraphicLayer {
   pointerEvents: boolean;
   // ── Layer system (P16) ──
   /** Human-readable label shown in the layer panel. Defaults to "Overlay N" if absent. */
-  name?: string;
+  name?: string | undefined;
   /** Builder-only visibility. false = ghost at 10% opacity in editor; no effect on gallery rendering. */
-  visible?: boolean;
+  visible?: boolean | undefined;
   /** Prevents drag/resize in the builder. No effect on gallery rendering. */
-  locked?: boolean;
+  locked?: boolean | undefined;
 }
 
 export type BackgroundMode = 'none' | 'color' | 'gradient' | 'image';
@@ -328,7 +328,7 @@ export type RadialSize = 'closest-side' | 'closest-corner' | 'farthest-side' | '
 
 export interface GradientStop {
   color: string;      // rgba or hex
-  position?: number;  // 0–100 %
+  position?: number | undefined;  // 0–100 %
 }
 
 // ── Mask Layer Sub-System ─────────────────────────────────────────
@@ -449,35 +449,35 @@ export interface LayoutTemplate {
    * - `'aspect-ratio'` (default): height = width / canvasAspectRatio
    * - `'fixed-vh'`: height = canvasHeightVh % of viewport height
    */
-  canvasHeightMode?: 'aspect-ratio' | 'fixed-vh';
+  canvasHeightMode?: 'aspect-ratio' | 'fixed-vh' | undefined;
   /** Viewport-height percentage used when canvasHeightMode is 'fixed-vh' (1–100, default 50). */
-  canvasHeightVh?: number;
+  canvasHeightVh?: number | undefined;
   /** Background mode: 'none' (transparent), 'color', 'gradient', or 'image'. Default: 'color'. */
-  backgroundMode?: BackgroundMode;
+  backgroundMode?: BackgroundMode | undefined;
   /** CSS background color for the canvas */
   backgroundColor: string;
   /** Gradient type: linear, radial, or conic. Default: 'linear'. */
-  backgroundGradientType?: GradientType;
+  backgroundGradientType?: GradientType | undefined;
   /** Gradient direction preset (legacy shortcut, maps to angle). */
-  backgroundGradientDirection?: GradientDirection;
+  backgroundGradientDirection?: GradientDirection | undefined;
   /** Custom angle in degrees for linear/conic gradients (overrides direction preset). */
-  backgroundGradientAngle?: number;
+  backgroundGradientAngle?: number | undefined;
   /** Gradient color stops (2–3 entries). */
-  backgroundGradientStops?: GradientStop[];
+  backgroundGradientStops?: GradientStop[] | undefined;
   /** Radial gradient shape. Default: 'ellipse'. */
-  backgroundRadialShape?: RadialShape;
+  backgroundRadialShape?: RadialShape | undefined;
   /** Radial gradient size. Default: 'farthest-corner'. */
-  backgroundRadialSize?: RadialSize;
+  backgroundRadialSize?: RadialSize | undefined;
   /** Radial / conic gradient center X as % (0–100). Default: 50. */
-  backgroundGradientCenterX?: number;
+  backgroundGradientCenterX?: number | undefined;
   /** Radial / conic gradient center Y as % (0–100). Default: 50. */
-  backgroundGradientCenterY?: number;
+  backgroundGradientCenterY?: number | undefined;
   /** Optional background image URL (layered on top of backgroundColor) */
-  backgroundImage?: string;
+  backgroundImage?: string | undefined;
   /** How the background image fills the canvas (default: 'cover') */
-  backgroundImageFit?: 'cover' | 'contain' | 'fill';
+  backgroundImageFit?: 'cover' | 'contain' | 'fill' | undefined;
   /** Background image opacity 0–1 (default: 1) */
-  backgroundImageOpacity?: number;
+  backgroundImageOpacity?: number | undefined;
   /** Ordered list of media slots */
   slots: LayoutSlot[];
   /** Decorative graphic layers (P15-H). Key is `overlays` for DB compatibility. */
@@ -522,31 +522,31 @@ export type GridCardAspectRatio = 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:1
 // P21-I: Typography override type (Elementor-inspired)
 export interface TypographyOverride {
   // Core typography
-  fontFamily?: string;
+  fontFamily?: string | undefined;
   /** First fallback font name (system font), e.g. "Helvetica" */
-  fontFallback1?: string;
+  fontFallback1?: string | undefined;
   /** Second fallback font name (system font), e.g. "Arial" */
-  fontFallback2?: string;
-  fontSize?: string;
-  fontWeight?: number;
-  fontStyle?: 'normal' | 'italic' | 'oblique';
-  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
-  textDecoration?: 'none' | 'underline' | 'overline' | 'line-through';
-  lineHeight?: number;
-  letterSpacing?: string;
-  wordSpacing?: string;
-  color?: string;
+  fontFallback2?: string | undefined;
+  fontSize?: string | undefined;
+  fontWeight?: number | undefined;
+  fontStyle?: 'normal' | 'italic' | 'oblique' | undefined;
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize' | undefined;
+  textDecoration?: 'none' | 'underline' | 'overline' | 'line-through' | undefined;
+  lineHeight?: number | undefined;
+  letterSpacing?: string | undefined;
+  wordSpacing?: string | undefined;
+  color?: string | undefined;
   // Text Stroke
-  textStrokeWidth?: string;
-  textStrokeColor?: string;
+  textStrokeWidth?: string | undefined;
+  textStrokeColor?: string | undefined;
   // Text Shadow
-  textShadowOffsetX?: string;
-  textShadowOffsetY?: string;
-  textShadowBlur?: string;
-  textShadowColor?: string;
+  textShadowOffsetX?: string | undefined;
+  textShadowOffsetY?: string | undefined;
+  textShadowBlur?: string | undefined;
+  textShadowColor?: string | undefined;
   // Text Glow
-  textGlowColor?: string;
-  textGlowBlur?: string;
+  textGlowColor?: string | undefined;
+  textGlowBlur?: string | undefined;
 }
 
 export interface GalleryBehaviorSettings {

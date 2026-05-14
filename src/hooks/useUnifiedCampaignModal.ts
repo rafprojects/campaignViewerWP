@@ -30,11 +30,11 @@ export interface UnifiedCampaignFormState {
   status: Campaign['status'];
   visibility: Campaign['visibility'];
   tags: string;
-  borderColor?: string;
+  borderColor?: string | undefined;
   publishAt: string;
   unpublishAt: string;
   layoutTemplateId: string;
-  galleryOverrides?: Partial<GalleryConfig>;
+  galleryOverrides?: Partial<GalleryConfig> | undefined;
   categories: string[];
 }
 

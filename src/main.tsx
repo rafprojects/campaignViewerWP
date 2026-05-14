@@ -85,7 +85,7 @@ function ThemedApp({
 }: {
   props: MountProps
   isShadowDom: boolean
-  shadowRootEl?: ShadowRoot
+  shadowRootEl?: ShadowRoot | undefined
 }) {
   const { mantineTheme, colorScheme } = useTheme()
 

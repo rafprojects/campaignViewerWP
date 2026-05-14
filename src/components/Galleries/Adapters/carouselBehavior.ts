@@ -82,7 +82,7 @@ export function getClosestSyntheticFocusIndex(
     return Math.abs(candidate - currentRenderedFocusIndex) < Math.abs(closest - currentRenderedFocusIndex)
       ? candidate
       : closest;
-  }, candidates[1] ?? candidates[0]);
+  }, candidates[1] ?? candidates[0] ?? 0);
 }
 
 export function getCarouselFocusIndex(

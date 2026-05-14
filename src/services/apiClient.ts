@@ -3,16 +3,16 @@ import type { GalleryBehaviorSettings, LayoutTemplate } from '@/types';
 
 export interface ApiClientOptions {
   baseUrl: string;
-  authProvider?: AuthProvider;
-  onUnauthorized?: () => void;
+  authProvider?: AuthProvider | undefined;
+  onUnauthorized?: (() => void) | undefined;
   /** Default request timeout in milliseconds (P20-H-9). 0 = no timeout. Default: 30000. */
-  timeout?: number;
+  timeout?: number | undefined;
 }
 
 export class ApiClient {
   private baseUrl: string;
-  private authProvider?: AuthProvider;
-  private onUnauthorized?: () => void;
+  private authProvider?: AuthProvider | undefined;
+  private onUnauthorized?: (() => void) | undefined;
   private timeout: number;
 
   constructor(options: ApiClientOptions) {

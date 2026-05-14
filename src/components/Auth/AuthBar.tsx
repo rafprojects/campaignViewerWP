@@ -11,14 +11,14 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 interface AuthBarProps {
   email: string;
   isAdmin: boolean;
-  isAuthenticated?: boolean;
-  appMaxWidth?: number;
-  appPadding?: number;
-  displayMode?: GalleryBehaviorSettings['authBarDisplayMode'];
-  dragMargin?: number;
+  isAuthenticated?: boolean | undefined;
+  appMaxWidth?: number | undefined;
+  appPadding?: number | undefined;
+  displayMode?: GalleryBehaviorSettings['authBarDisplayMode'] | undefined;
+  dragMargin?: number | undefined;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
-  onOpenSignIn?: () => void;
+  onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
 }
 
@@ -153,7 +153,7 @@ function AuthBarFull({
         transition: 'transform 0.3s ease',
       }}
     >
-      <Container {...getWpsgDebugProps('AuthBar', 'container')} size={containerSize} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
+      <Container {...getWpsgDebugProps('AuthBar', 'container')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
         <Group {...getWpsgDebugProps('AuthBar', 'content')} justify="space-between" wrap="nowrap" gap="sm">
           {!isAuthenticated ? (
             <>

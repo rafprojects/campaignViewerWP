@@ -125,13 +125,13 @@ export function loadGoogleFont(family: string): void {
  * Scan a typography overrides map and load any Google Fonts referenced.
  */
 export function loadGoogleFontsFromOverrides(
-  overrides: Record<string, { fontFamily?: string } | undefined>,
+  overrides: Record<string, { fontFamily?: string | undefined } | undefined>,
   googleFontNames: ReadonlySet<string>,
 ): void {
   for (const entry of Object.values(overrides)) {
     if (!entry?.fontFamily) continue;
     // fontFamily value is like "Roboto, sans-serif" — extract the first name
-    const name = entry.fontFamily.split(',')[0].trim();
+    const name = entry.fontFamily.split(',')[0]!.trim();
     if (googleFontNames.has(name)) {
       loadGoogleFont(name);
     }

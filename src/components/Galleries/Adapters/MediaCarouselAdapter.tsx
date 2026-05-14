@@ -704,7 +704,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
           <Lightbox
             isOpen={isLightboxOpen}
             media={images}
-            currentIndex={Math.max(0, images.indexOf(currentItem))}
+            currentIndex={Math.max(0, currentItem !== undefined ? images.indexOf(currentItem) : -1)}
             onPrev={scrollPrev}
             onNext={scrollNext}
             onClose={closeLightbox}

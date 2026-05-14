@@ -44,9 +44,9 @@ export interface LayerRowProps {
   onBringForward: (id: string) => void;
   onSendBackward: (id: string) => void;
   /** Delete this layer. */
-  onDelete?: (id: string) => void;
+  onDelete?: ((id: string) => void) | undefined;
   /** Add a mask sublayer to this slot (only for kind === 'slot'). */
-  onAddMask?: (slotId: string) => void;
+  onAddMask?: ((slotId: string) => void) | undefined;
   /** Native DnD callbacks */
   onDragStart: (e: DragEvent<HTMLDivElement>, id: string) => void;
   onDragOver: (e: DragEvent<HTMLDivElement>, id: string) => void;

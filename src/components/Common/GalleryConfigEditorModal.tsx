@@ -32,19 +32,19 @@ type EditableGalleryScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'v
 interface GalleryConfigEditorModalProps {
   opened: boolean;
   title: string;
-  value?: Partial<GalleryConfig>;
+  value?: Partial<GalleryConfig> | undefined;
   onClose: () => void;
   onSave: (value: GalleryConfig | undefined) => void;
-  onChange?: (value: GalleryConfig | undefined) => void;
-  onClear?: () => void;
-  contextSummary?: string;
-  saveLabel?: string;
-  clearLabel?: string;
-  clearMode?: 'external' | 'draft';
-  unifiedAdapterEnabled?: boolean;
-  unifiedAdapterDescription?: string;
-  zIndex?: number;
-  blurEnabled?: boolean;
+  onChange?: ((value: GalleryConfig | undefined) => void) | undefined;
+  onClear?: (() => void) | undefined;
+  contextSummary?: string | undefined;
+  saveLabel?: string | undefined;
+  clearLabel?: string | undefined;
+  clearMode?: 'external' | 'draft' | undefined;
+  unifiedAdapterEnabled?: boolean | undefined;
+  unifiedAdapterDescription?: string | undefined;
+  zIndex?: number | undefined;
+  blurEnabled?: boolean | undefined;
 }
 
 type SharedCommonSettingKey = keyof Pick<
@@ -516,7 +516,7 @@ type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactEle
 type GalleryConfigDraftUpdater = (updater: (current: GalleryConfig) => GalleryConfig) => void;
 
 interface GalleryConfigEditorIntroProps {
-  contextSummary?: string;
+  contextSummary?: string | undefined;
   resolvedDraft: GalleryConfig;
   unifiedAdapterEnabled: boolean;
   unifiedAdapterHelpText: string;
@@ -683,7 +683,7 @@ interface GalleryConfigEditorFooterActionsProps {
   activeBreakpoint: GalleryConfigBreakpoint;
   clearMode: 'external' | 'draft';
   clearLabel: string;
-  onClear?: () => void;
+  onClear?: (() => void) | undefined;
   onClearDraft: () => void;
   updateDraft: GalleryConfigDraftUpdater;
   onResetAllChanges: () => void;
@@ -831,7 +831,7 @@ export function GalleryConfigEditorModal({
       title={<span {...getWpsgDebugProps('GalleryConfigEditorModal', 'title')}>{title}</span>}
       position="right"
       size="lg"
-      zIndex={zIndex}
+      {...(zIndex !== undefined ? { zIndex } : {})}
       closeButtonProps={getWpsgDebugProps('GalleryConfigEditorModal', 'close')}
       transitionProps={{ transition: 'slide-left', duration: 200 }}
       overlayProps={{

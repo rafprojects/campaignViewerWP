@@ -9,19 +9,19 @@ import { sanitizeCssColor } from '@/utils/sanitizeCss';
 
 /** Options bag for fine-grained gradient control. */
 export interface GradientOptions {
-  type?: GradientType;
-  direction?: GradientDirection;
+  type?: GradientType | undefined;
+  direction?: GradientDirection | undefined;
   /** Custom angle in degrees (overrides direction preset for linear/conic). */
-  angle?: number;
-  stops?: GradientStop[];
+  angle?: number | undefined;
+  stops?: GradientStop[] | undefined;
   /** Radial shape: circle | ellipse. */
-  radialShape?: RadialShape;
+  radialShape?: RadialShape | undefined;
   /** Radial size keyword. */
-  radialSize?: RadialSize;
+  radialSize?: RadialSize | undefined;
   /** Radial / conic center X %. */
-  centerX?: number;
+  centerX?: number | undefined;
   /** Radial / conic center Y %. */
-  centerY?: number;
+  centerY?: number | undefined;
 }
 
 /** Direction preset → angle (degrees) for linear gradients. */
@@ -111,14 +111,14 @@ export function buildGradientCss(
 
 /** Build a GradientOptions bag from a LayoutTemplate's background* fields. */
 export function templateToGradientOpts(tpl: {
-  backgroundGradientType?: GradientType;
-  backgroundGradientDirection?: GradientDirection;
-  backgroundGradientAngle?: number;
-  backgroundGradientStops?: GradientStop[];
-  backgroundRadialShape?: RadialShape;
-  backgroundRadialSize?: RadialSize;
-  backgroundGradientCenterX?: number;
-  backgroundGradientCenterY?: number;
+  backgroundGradientType?: GradientType | undefined;
+  backgroundGradientDirection?: GradientDirection | undefined;
+  backgroundGradientAngle?: number | undefined;
+  backgroundGradientStops?: GradientStop[] | undefined;
+  backgroundRadialShape?: RadialShape | undefined;
+  backgroundRadialSize?: RadialSize | undefined;
+  backgroundGradientCenterX?: number | undefined;
+  backgroundGradientCenterY?: number | undefined;
 }): GradientOptions {
   return {
     type: tpl.backgroundGradientType,
