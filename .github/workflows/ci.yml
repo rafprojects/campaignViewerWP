@@ -131,9 +131,17 @@ jobs:
           # WordPress core — needed as ABSPATH for the test bootstrap
           curl -s -o /tmp/wordpress.tar.gz "https://wordpress.org/wordpress-${WP_VERSION}.tar.gz"
           tar -xzf /tmp/wordpress.tar.gz -C /tmp/
-          # WordPress test library (PHPUnit includes + data) from the official SVN tag
-          svn co --quiet "https://develop.svn.wordpress.org/tags/${WP_VERSION}/tests/phpunit/includes/" /tmp/wordpress-tests-lib/includes
-          svn co --quiet "https://develop.svn.wordpress.org/tags/${WP_VERSION}/tests/phpunit/data/" /tmp/wordpress-tests-lib/data
+          # WordPress test library — sparse git checkout of tests/phpunit from GitHub
+          git clone --depth=1 --filter=blob:none --no-checkout \
+            --branch "${WP_VERSION}" \
+            https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-develop
+          cd /tmp/wordpress-develop
+          git sparse-checkout init --cone
+          git sparse-checkout set tests/phpunit/includes tests/phpunit/data
+          git checkout
+          mkdir -p /tmp/wordpress-tests-lib
+          cp -r tests/phpunit/includes /tmp/wordpress-tests-lib/includes
+          cp -r tests/phpunit/data /tmp/wordpress-tests-lib/data
 
       - name: Create wp-tests-config.php
         run: |
