@@ -73,6 +73,7 @@ export function ConfirmModal({
       {...getWpsgDebugProps('ConfirmModal')}
       opened={opened}
       onClose={onClose}
+      withinPortal={false}
       title={<span {...getWpsgDebugProps('ConfirmModal', 'title')}>{title}</span>}
       closeButtonProps={getWpsgDebugProps('ConfirmModal', 'close')}
       overlayProps={getWpsgDebugProps('ConfirmModal', 'overlay')}

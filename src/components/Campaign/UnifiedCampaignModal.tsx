@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
@@ -74,7 +74,7 @@ interface UnifiedCampaignModalProps {
   availableCategories?: string[];
 }
 
-type NamedComponent<Props = Record<string, never>> = ((props: Props) => JSX.Element) & {
+type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
   displayName?: string;
 };
 
@@ -542,6 +542,7 @@ export function UnifiedCampaignModal({
         {...getWpsgDebugProps('UnifiedCampaignModal')}
         opened={opened}
         onClose={guardedClose}
+        withinPortal={false}
         title={<span {...getWpsgDebugProps('UnifiedCampaignModal', 'title')}>{isEdit ? 'Edit Campaign' : 'New Campaign'}</span>}
         size={isExtraSmall ? '100%' : 'xl'}
         fullScreen={!!isExtraSmall}

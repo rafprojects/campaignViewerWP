@@ -155,6 +155,14 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
     public function test_register_assets_uses_versionless_manifest_entry_script() {
         wp_deregister_script( 'wp-super-gallery-app' );
 
+        // Inject a fake manifest so the manifest-entry (versionless) path is exercised.
+        // Without this the code falls back to wp_register_script(..., WPSG_VERSION, ...).
+        $ref = new ReflectionProperty( WPSG_Embed::class, 'manifest_cache' );
+        $ref->setAccessible( true );
+        $ref->setValue( null, [
+            'index.html' => [ 'file' => 'assets/index-abc123.js' ],
+        ] );
+
         WPSG_Embed::register_assets();
 
         $registered = wp_scripts()->registered['wp-super-gallery-app'] ?? null;

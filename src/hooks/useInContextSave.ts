@@ -18,9 +18,9 @@ export function useInContextSave(
   settings: GalleryBehaviorSettings,
   delay = 500,
 ) {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const pendingRef = useRef<Record<string, unknown>>({});
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Ref to latest settings avoids stale closure in debounced callback
   const settingsRef = useRef(settings);
   settingsRef.current = settings;

@@ -1,7 +1,7 @@
 {
     "require": {
         "sentry/sentry": "^4.11",
-        "enshrined/svg-sanitize": "^0.20"
+        "enshrined/svg-sanitize": "^0.22"
     },
     "require-dev": {
         "yoast/phpunit-polyfills": "^2.0",

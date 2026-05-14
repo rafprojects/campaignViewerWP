@@ -18,6 +18,17 @@ import { resolveColors, withAlpha } from './colorGen';
 const TABS_TAB_CLASS = 'wpsg-mantine-tabs-tab';
 const SEGMENTED_CONTROL_LABEL_CLASS = 'wpsg-mantine-segmented-control-label';
 const SELECT_OPTION_CLASS = 'wpsg-mantine-select-option';
+// 'md' is intentionally larger than Mantine 9's default 'sm' to match the
+// PHASE26 design decision (see docs/PHASE26_REVIEW.md Track P26-B).
+const DEFAULT_RADIUS = 'md';
+const FONT_WEIGHTS = {
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+} as const;
+const FONT_WEIGHT_MEDIUM = FONT_WEIGHTS.medium;
+const FONT_WEIGHT_SEMIBOLD = FONT_WEIGHTS.semibold;
 
 // ---------------------------------------------------------------------------
 // Component override generator
@@ -40,7 +51,7 @@ function generateComponentOverrides(
       defaultProps: { variant: 'filled', autoContrast: true },
       styles: () => ({
         root: {
-          fontWeight: 600,
+          fontWeight: FONT_WEIGHT_SEMIBOLD,
           transition: 'background 150ms ease, border 150ms ease, opacity 150ms ease',
         },
       }),
@@ -86,7 +97,7 @@ function generateComponentOverrides(
           '&::placeholder': { color: rc.textMuted2 },
           '&:focus': { borderColor: rc.primary[5] },
         },
-        label: { color: rc.textMuted, fontWeight: 500 },
+        label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
       }),
     },
 
@@ -99,7 +110,7 @@ function generateComponentOverrides(
           '&::placeholder': { color: rc.textMuted2 },
           '&:focus': { borderColor: rc.primary[5] },
         },
-        label: { color: rc.textMuted, fontWeight: 500 },
+        label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         innerInput: { color: rc.text },
         visibilityToggle: { color: rc.textMuted },
       }),
@@ -115,7 +126,7 @@ function generateComponentOverrides(
           backgroundColor: rc.surface,
           borderBottom: `1px solid ${rc.border}`,
         },
-        title: { color: rc.text, fontWeight: 600 },
+        title: { color: rc.text, fontWeight: FONT_WEIGHT_SEMIBOLD },
         close: { color: rc.textMuted },
         overlay: { backgroundColor: withAlpha(rc.background, 0.75) },
       }),
@@ -132,7 +143,7 @@ function generateComponentOverrides(
     Badge: {
       styles: () => ({
         root: {
-          fontWeight: 600,
+          fontWeight: FONT_WEIGHT_SEMIBOLD,
           textTransform: 'uppercase' as const,
           letterSpacing: '0.02em',
         },
@@ -145,7 +156,7 @@ function generateComponentOverrides(
           backgroundColor: rc.surface,
           border: `1px solid ${rc.border}`,
         },
-        title: { color: rc.text, fontWeight: 600 },
+        title: { color: rc.text, fontWeight: FONT_WEIGHT_SEMIBOLD },
         message: { color: rc.textMuted },
       }),
     },
@@ -162,7 +173,7 @@ function generateComponentOverrides(
         root: { borderColor: rc.border },
         tab: {
           color: rc.textMuted,
-          fontWeight: 500,
+          fontWeight: FONT_WEIGHT_MEDIUM,
           '&:hover': {
             backgroundColor: withAlpha(rc.surface2, 0.5),
           },
@@ -177,7 +188,7 @@ function generateComponentOverrides(
         thead: { borderBottom: `2px solid ${rc.border}` },
         th: {
           color: rc.textMuted,
-          fontWeight: 600,
+          fontWeight: FONT_WEIGHT_SEMIBOLD,
           textTransform: 'uppercase' as const,
           fontSize: '0.75rem',
           letterSpacing: '0.03em',
@@ -355,7 +366,7 @@ function generateComponentOverrides(
           borderColor: rc.border,
           color: rc.text,
         },
-        label: { color: rc.textMuted, fontWeight: 500 },
+        label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         control: { borderColor: rc.border, color: rc.text },
       }),
     },
@@ -367,7 +378,7 @@ function generateComponentOverrides(
           borderColor: rc.border,
           color: rc.text,
         },
-        label: { color: rc.textMuted, fontWeight: 500 },
+        label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         dropdown: {
           backgroundColor: rc.surface,
           border: `1px solid ${rc.border}`,
@@ -424,6 +435,8 @@ export function adaptTheme(def: ThemeDefinition): MantineThemeOverride {
       light: rc.primaryShade.light as MantineColorShade,
       dark: rc.primaryShade.dark as MantineColorShade,
     },
+    defaultRadius: DEFAULT_RADIUS,
+    fontWeights: FONT_WEIGHTS,
 
     colors: {
       primary: colorsTuple(rc.primary),

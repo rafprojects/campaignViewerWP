@@ -12,11 +12,18 @@ We use **Semantic Versioning 2.0.0** with the format: `MAJOR.MINOR.PATCH`
 
 ## Version History
 
-### Unreleased (April 30, 2026)
-- Follow-on cleanup after v0.23.0
-  - Completed the broader frontend server-state migration to TanStack Query across app campaigns, admin resources, layout-template flows, and shared test providers; the `swr` dependency is no longer part of the active runtime.
-  - Removed the last live flat gallery bridge from the settings UI and gallery runtime so active settings and campaign flows resolve from nested `galleryConfig` and `galleryOverrides` only.
-  - Campaign duplication can now optionally deep-clone a linked layout template through the admin UI, REST endpoint, and WP-CLI command.
+### Unreleased (May 14, 2026)
+- No post-v0.24.0 changes recorded yet.
+
+### v0.24.0 (May 14, 2026)
+- **MINOR**: Phase 25 — settings UX follow-through, gallery-config reliability, and contract cleanup.
+  - Modal-heavy gallery and settings flows were hardened: dropdowns stay inside the active tree, the shared media add surface now supports upload plus external URL entry, campaign gallery edits preview live with cancel-to-revert behavior, unified adapters can differ per breakpoint, and the campaign gallery editor now uses accordion sections.
+  - The settings workflow was regrouped around the drawer-based IA overhaul, and higher-level card/grid tuning landed through vertical alignment, incremental scale controls, and layered section-positioning controls.
+  - The broader frontend data layer now uses TanStack Query instead of SWR, `galleryConfig` and `galleryOverrides` are the only active gallery contract surfaces, and campaign duplication can optionally deep-clone a linked layout template.
+- **MINOR**: Phase 26 — React 19.2+ and Mantine 9 migration.
+  - React and React DOM were upgraded to `19.2.6`, with Mantine packages upgraded together to `9.1.1`.
+  - Mantine 9 defaults are now explicit in the theme adapter, `deduplicateInlineStyles` is enabled, and unused `react-window` packages were removed.
+  - Shadow-DOM and non-shadow mounts were hardened so notifications and high-risk overlays stay in-tree, and the migration was validated through Vitest, Playwright, `npm run build:wp`, full `wp-env` PHPUnit, and live-host exploratory QA.
 
 ### v0.23.0 (March 31, 2026)
 - **MINOR**: Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes

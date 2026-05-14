@@ -11,7 +11,7 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'test@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: 'input' }), {
       target: { value: 'bad-pass' },
     });
 

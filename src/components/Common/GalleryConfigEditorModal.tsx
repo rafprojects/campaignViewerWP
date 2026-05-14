@@ -1,5 +1,5 @@
 import { Accordion, Button, Drawer, Group, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 
 import {
@@ -509,7 +509,7 @@ function resetScopeToBaseline(
   });
 }
 
-type NamedComponent<Props = Record<string, never>> = ((props: Props) => JSX.Element) & {
+type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
   displayName?: string;
 };
 
@@ -827,6 +827,7 @@ export function GalleryConfigEditorModal({
       {...getWpsgDebugProps('GalleryConfigEditorModal')}
       opened={opened}
       onClose={onClose}
+      withinPortal={false}
       title={<span {...getWpsgDebugProps('GalleryConfigEditorModal', 'title')}>{title}</span>}
       position="right"
       size="lg"

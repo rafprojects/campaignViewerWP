@@ -87,7 +87,7 @@ test.describe('auth and permissions', () => {
     const signInDialog = page.getByRole('dialog', { name: 'Sign in' });
     await expect(signInDialog).toBeVisible();
     await signInDialog.getByLabel('Email').fill('viewer@example.com');
-    await signInDialog.getByLabel('Password').fill('password');
+    await signInDialog.getByRole('textbox', { name: 'Password', exact: true }).fill('password');
     await signInDialog.getByRole('button', { name: 'Sign in' }).click();
 
     await expect(page.getByText('Public Campaign')).toBeVisible();

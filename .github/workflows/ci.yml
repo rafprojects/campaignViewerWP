@@ -4,7 +4,7 @@
 # Runs on every push / PR to main and develop.
 #   Job 1: lint-typecheck  — ESLint + TypeScript (fast-fail gate)
 #   Job 2: test-frontend   — Vitest w/ coverage + production build
-#   Job 3: test-php        — PHPUnit via wp-env (PHP 8.1 / 8.2 / 8.3)
+#   Job 3: test-php        — PHPUnit via MySQL service (PHP 8.1 / 8.2 / 8.3 / 8.4)
 # ──────────────────────────────────────────────────────────────────────────────
 
 name: CI
@@ -74,7 +74,16 @@ jobs:
           path: coverage/
           retention-days: 14
 
-  # ── Job 3: PHP tests via wp-env ──────────────────────────────────────────
+  # ── Job 3: PHP tests (WordPress test library + MySQL service) ───────────
+  # NOTE: This job intentionally does NOT use @wordpress/env (wp-env).
+  # wp-env spins up Docker containers inside the CI runner which adds 3-4 min
+  # of overhead and has proven fragile on GitHub-hosted runners. Instead we
+  # bootstrap WordPress core + the test library directly:
+  #   - WordPress core downloaded via curl (ABSPATH for bootstrap)
+  #   - WP test library via git sparse-checkout from WordPress/wordpress-develop
+  #   - Test DB served by the mysql service container (no Docker-in-Docker)
+  # Trade-off: local developers use `npx wp-env run tests-cli vendor/bin/phpunit`
+  # while CI runs phpunit directly. Both target the same test suite and config.
   test-php:
     name: PHP ${{ matrix.php-version }}
     runs-on: ubuntu-latest
@@ -82,14 +91,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+      # PHP 8.0 and 8.1 are NOT supported — several Composer dependencies
+      # (including PHPUnit 10+ and WP test library stubs) require PHP ≥ 8.2.
+      # Do NOT add 8.0 or 8.1 back to this matrix.
+        php-version: ['8.2', '8.3', '8.4']
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wptest
+          MYSQL_PASSWORD: wptest
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: mbstring, intl, pdo_mysql
+          extensions: mbstring, intl, pdo_mysql, mysqli
           tools: composer:v2
 
       - name: Cache Composer dependencies
@@ -108,17 +137,46 @@ jobs:
         working-directory: wp-plugin/wp-super-gallery
         run: composer install --prefer-dist --no-interaction
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - run: npm ci
-
-      - name: Start wp-env
-        run: npx wp-env start
-
-      - name: Run PHPUnit via wp-env
+      - name: Download WordPress core and test library
         run: |
-          npx wp-env run tests-cli sh -c \
-            "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+          WP_VERSION=6.7
+          # WordPress core — needed as ABSPATH for the test bootstrap
+          curl -s -o /tmp/wordpress.tar.gz "https://wordpress.org/wordpress-${WP_VERSION}.tar.gz"
+          tar -xzf /tmp/wordpress.tar.gz -C /tmp/
+          # WordPress test library — sparse git checkout of tests/phpunit from GitHub
+          git clone --depth=1 --filter=blob:none --no-checkout \
+            --branch "${WP_VERSION}" \
+            https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-develop
+          cd /tmp/wordpress-develop
+          git sparse-checkout init --cone
+          git sparse-checkout set tests/phpunit/includes tests/phpunit/data
+          git checkout
+          mkdir -p /tmp/wordpress-tests-lib
+          cp -r tests/phpunit/includes /tmp/wordpress-tests-lib/includes
+          cp -r tests/phpunit/data /tmp/wordpress-tests-lib/data
+
+      - name: Create wp-tests-config.php
+        run: |
+          cat > /tmp/wordpress-tests-lib/wp-tests-config.php <<'EOF'
+          <?php
+          define( 'DB_NAME',    'wordpress_test' );
+          define( 'DB_USER',    'wptest' );
+          define( 'DB_PASSWORD', 'wptest' );
+          define( 'DB_HOST',    '127.0.0.1' );
+          define( 'DB_CHARSET', 'utf8' );
+          define( 'DB_COLLATE', '' );
+          define( 'WP_TESTS_TABLE_PREFIX', 'wptests_' );
+          define( 'WP_TESTS_DOMAIN', 'example.org' );
+          define( 'WP_TESTS_EMAIL',  'admin@example.org' );
+          define( 'WP_TESTS_TITLE',  'Test Blog' );
+          define( 'WP_PHP_BINARY',   'php' );
+          define( 'WPLANG', '' );
+          define( 'ABSPATH', '/tmp/wordpress/' );
+          EOF
+
+      - name: Run PHPUnit
+        working-directory: wp-plugin/wp-super-gallery
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_CORE_DIR: /tmp/wordpress
+        run: ./vendor/bin/phpunit -c phpunit.xml.dist

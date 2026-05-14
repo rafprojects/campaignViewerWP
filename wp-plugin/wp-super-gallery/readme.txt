@@ -3,8 +3,8 @@ Contributors: wpsupergallery
 Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.0
 Tested up to: 6.7
-Requires PHP: 8.0
-Stable tag: 0.23.0
+Requires PHP: 8.2
+Stable tag: 0.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,7 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 * **Campaign management** — create, schedule, and organise media campaigns with tagging and access controls.
 * **oEmbed proxy** — embed external media via a built-in oEmbed proxy with provider allowlist and SSRF protection.
 * **Lightbox & viewer** — configurable modal viewer with keyboard navigation, pagination, and responsive breakpoints.
-* **Admin panel** — SWR-powered admin UI with analytics, audit logs, access-request management, and advanced settings.
+* **Admin panel** — TanStack Query-powered admin UI with analytics, audit logs, access-request management, and advanced settings.
 * **Theme system** — ship custom themes or let users author their own via a documented JSON schema.
 * **Design assets** — SVG overlay library with drag-and-drop, upload sanitization, and .htaccess hardening.
 * **Image optimisation** — automatic resize, compression, and optional WebP conversion on upload.
@@ -68,6 +68,30 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 5. Advanced settings accordion.
 
 == Changelog ==
+
+= 0.24.0 =
+**Phase 25 — Settings UX follow-through and query architecture**
+
+* Added: live campaign gallery preview with cancel-to-revert behavior, per-breakpoint unified adapter selection, accordionized campaign gallery config, shared upload/external media entry, and higher-level card/gallery scale and positioning controls.
+* Changed: Settings moved to a regrouped drawer workflow; app/admin/layout data fetching now uses TanStack Query and the nested `galleryConfig` / `galleryOverrides` contract only.
+* Fixed: classic WordPress settings partial saves no longer reset nested gallery settings; modal stacking correctness when opening Settings above an active campaign viewer.
+
+**Phase 26 — React 19 and Mantine 9 migration**
+
+* Changed: upgraded the frontend runtime to React 19.2.6 and Mantine 9.1.1; removed unused `react-window` packages; applied React 19 type fixes (nullable refs, timer ref initialization, ReactElement return types).
+* Fixed: portal-heavy viewer/admin surfaces now stay inside the active tree in both shadow and non-shadow mounts; `Notifications` component configured with `withinPortal={false}` to prevent shadow DOM escape.
+
+= 0.23.0 =
+**Phase 24 — Flat-Field Deprecation, Gallery Selection Parity & UX Fixes**
+
+* Added: nested-only write paths for global settings and campaign saves, breakpoint-grid adapter selection parity, theme preview/cancel reliability, and faster gallery-config editor entry points.
+* Fixed: hashed manifest entry scripts now register without `?ver=` so lazy chunks reuse the same main module instance and live theme preview stays consistent.
+
+= 0.22.0 =
+**Phase 23 — Settings Architecture Refactor, Responsive Gallery Config & Campaign Parity**
+
+* Added: backend and frontend settings decomposition, authoritative adapter schema, nested responsive `galleryConfig`, shared effective-config resolution, a shared Gallery Config editor, campaign override parity, and render-path consolidation.
+* Fixed: schedule visibility enforcement, UTC datetime sanitization, mixed-state campaign selector indicators, and nested gallery config sync with inline settings edits.
 
 = 0.21.0 =
 **Phase 22 — Carousel Overhaul, Viewer Alignment & Gallery Layout Fixes**
@@ -160,6 +184,9 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 * Settings DRY refactor: deleted 586 lines of triplicated mapping code.
 
 == Upgrade Notice ==
+
+= 0.24.0 =
+Settings and gallery configuration now run on the nested-only `galleryConfig` / `galleryOverrides` contract, and the frontend runtime now uses React 19.2.6 plus Mantine 9.1.1. Rebuild plugin assets and smoke-test custom settings and modal-heavy flows after upgrade.
 
 = 0.18.0 =
 Production hardening: JWT auth gated behind env var (nonce-only default), CSS sanitization, async email queue, rate-limiting defaults, GPLv2 licensing, CI/CD pipeline, and WordPress.org distribution readiness. Review auth settings after upgrade.

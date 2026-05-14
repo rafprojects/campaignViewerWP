@@ -51,7 +51,7 @@ export interface BuilderDockContextValue {
   // Design assets accordion
   designAssetsOpen: boolean;
   setDesignAssetsOpen: (open: boolean) => void;
-  bgSectionRef: RefObject<HTMLDivElement>;
+  bgSectionRef: RefObject<HTMLDivElement | null>;
 
   // Dockview API reference (set in onReady)
   dockApiRef: { current: DockviewApi | null };

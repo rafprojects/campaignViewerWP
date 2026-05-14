@@ -157,6 +157,20 @@ if (!globalThis.ResizeObserver) {
 	globalThis.ResizeObserver = ResizeObserver;
 }
 
+if (!document.fonts) {
+	Object.defineProperty(document, 'fonts', {
+		configurable: true,
+		value: {
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			ready: Promise.resolve(),
+			status: 'loaded' as FontFaceSetLoadStatus,
+			check: () => true,
+			load: () => Promise.resolve([]),
+		},
+	});
+}
+
 // Mantine's Combobox calls scrollIntoView on list items after dropdown opens.
 // JSDOM doesn't implement it, causing unhandled exception noise in tests.
 if (!window.HTMLElement.prototype.scrollIntoView) {

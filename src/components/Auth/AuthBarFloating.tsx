@@ -339,7 +339,7 @@ export function AuthBarFloating({
   if (draggable && pos === null) return null;
 
   return (
-    <Popover {...getWpsgDebugProps('AuthBarFloating')} opened={popoverOpen} onChange={setPopoverOpen} position="top-end" withArrow shadow="md" width={220}
+    <Popover {...getWpsgDebugProps('AuthBarFloating')} opened={popoverOpen} onChange={setPopoverOpen} withinPortal={false} position="top-end" withArrow shadow="md" width={220}
       styles={{ dropdown: { backdropFilter: 'blur(8px)' } }}
     >
       <Popover.Target>

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useStore } from 'zustand';
 import {
@@ -85,7 +85,7 @@ interface SettingsPanelProps {
   initialSettings?: SettingsDataInput;
 }
 
-type NamedComponent<Props = Record<string, never>> = ((props: Props) => JSX.Element) & {
+type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
   displayName?: string;
 };
 

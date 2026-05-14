@@ -93,6 +93,7 @@ function ThemedApp({
     <MantineProvider
       theme={mantineTheme}
       forceColorScheme={colorScheme}
+      deduplicateInlineStyles
       // Scope Mantine CSS variables into shadow root or document :root
       cssVariablesSelector={isShadowDom ? ':host' : ':root'}
       // getRootElement controls where data-mantine-color-scheme is set.
@@ -103,7 +104,7 @@ function ThemedApp({
           : document.documentElement
       }
     >
-      <Notifications />
+      <Notifications withinPortal={false} />
       <ModalsProvider>
         <App {...props} />
       </ModalsProvider>
