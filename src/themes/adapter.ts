@@ -21,10 +21,11 @@ const SELECT_OPTION_CLASS = 'wpsg-mantine-select-option';
 const DEFAULT_RADIUS = 'md';
 const FONT_WEIGHTS = {
   regular: '400',
-  medium: '600',
+  medium: '500',
   bold: '700',
 } as const;
 const FONT_WEIGHT_MEDIUM = 'var(--mantine-font-weight-medium)';
+const FONT_WEIGHT_SEMIBOLD = '600';
 
 // ---------------------------------------------------------------------------
 // Component override generator
@@ -47,7 +48,7 @@ function generateComponentOverrides(
       defaultProps: { variant: 'filled', autoContrast: true },
       styles: () => ({
         root: {
-          fontWeight: FONT_WEIGHT_MEDIUM,
+          fontWeight: FONT_WEIGHT_SEMIBOLD,
           transition: 'background 150ms ease, border 150ms ease, opacity 150ms ease',
         },
       }),
@@ -122,7 +123,7 @@ function generateComponentOverrides(
           backgroundColor: rc.surface,
           borderBottom: `1px solid ${rc.border}`,
         },
-        title: { color: rc.text, fontWeight: FONT_WEIGHT_MEDIUM },
+        title: { color: rc.text, fontWeight: FONT_WEIGHT_SEMIBOLD },
         close: { color: rc.textMuted },
         overlay: { backgroundColor: withAlpha(rc.background, 0.75) },
       }),
@@ -139,7 +140,7 @@ function generateComponentOverrides(
     Badge: {
       styles: () => ({
         root: {
-          fontWeight: FONT_WEIGHT_MEDIUM,
+          fontWeight: FONT_WEIGHT_SEMIBOLD,
           textTransform: 'uppercase' as const,
           letterSpacing: '0.02em',
         },
@@ -152,7 +153,7 @@ function generateComponentOverrides(
           backgroundColor: rc.surface,
           border: `1px solid ${rc.border}`,
         },
-        title: { color: rc.text, fontWeight: FONT_WEIGHT_MEDIUM },
+        title: { color: rc.text, fontWeight: FONT_WEIGHT_SEMIBOLD },
         message: { color: rc.textMuted },
       }),
     },
@@ -184,7 +185,7 @@ function generateComponentOverrides(
         thead: { borderBottom: `2px solid ${rc.border}` },
         th: {
           color: rc.textMuted,
-          fontWeight: FONT_WEIGHT_MEDIUM,
+          fontWeight: FONT_WEIGHT_SEMIBOLD,
           textTransform: 'uppercase' as const,
           fontSize: '0.75rem',
           letterSpacing: '0.03em',
