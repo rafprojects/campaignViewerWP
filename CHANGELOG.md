@@ -5,6 +5,26 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-05-14
+
+### Added - Phase 25: Settings UX, Gallery Editing, And Contract Cleanup
+
+- Modal-heavy campaign and settings flows were hardened end-to-end: gallery-config dropdowns stay in-tree, the shared media add surface now supports upload plus external URL entry in both admin and viewer contexts, campaign gallery edits preview live with cancel-to-revert semantics, unified adapters can differ per breakpoint, and the campaign gallery editor now uses accordion sections.
+- Settings information architecture was regrouped around the drawer-based workflow, and higher-level presentation controls were added for card and gallery tuning, including card-grid vertical alignment, incremental card/section/item scale controls, and layered shell/section positioning controls.
+- The broader Phase 25 settings cleanup is now complete: TanStack Query replaced SWR across app, admin, and layout-template flows; `galleryConfig` and `galleryOverrides` are now the only active gallery contract surfaces; and campaign duplication can optionally deep-clone a linked layout template.
+
+### Changed - Phase 26: React 19.2+ And Mantine 9 Migration
+
+- Upgraded the frontend baseline to React `19.2.6`, React DOM `19.2.6`, and Mantine `9.1.1` across core, dates, form, hooks, modals, and notifications.
+- Explicitly adopted Mantine 9 theme defaults in the adapter layer and enabled `deduplicateInlineStyles` in `MantineProvider`.
+- Removed unused `react-window` and `@types/react-window` from the active dependency set.
+
+### Fixed
+
+- Shadow-DOM and non-shadow mounts now keep notifications, popovers, drawers, and high-risk modal surfaces inside the active render tree, preventing portal escape in viewer and admin flows.
+- Classic WordPress `Campaigns > Settings` partial saves no longer drop nested gallery settings or silently preserve stale checkbox truthy values.
+- React 19 and Mantine 9 verification is green across unit tests, Playwright E2E, WordPress packaging, `wp-env` PHPUnit, and live-host exploratory QA on `wordpress.lan`.
+
 ## [0.23.0] - 2026-03-31
 
 ### Added - Phase 24: Flat-Field Deprecation, Gallery Selection Parity & UX Fixes

@@ -239,8 +239,12 @@ For manual releases, use this checklist:
 - [ ] PHP syntax is valid (`php -l wp-plugin/wp-super-gallery/wp-super-gallery.php`)
 - [ ] Version number updated in:
   - [ ] `wp-super-gallery.php` (Plugin header)
+   - [ ] `wp-super-gallery.php` (`WPSG_VERSION` constant)
+   - [ ] `wp-plugin/wp-super-gallery/readme.txt` (`Stable tag`)
   - [ ] `package.json` (npm version)
+   - [ ] `package-lock.json` (lockfile root version)
 - [ ] CHANGELOG updated with release notes
+- [ ] `docs/guides/VERSIONING.md` updated with the release summary
 - [ ] Manual QA completed (see TESTING_QA.md)
 
 ### Build
@@ -310,10 +314,22 @@ Update version in these locations:
    define('WPSG_VERSION', '1.2.3');
    ```
 
-3. **package.json**:
+3. **WordPress.org readme** (`wp-plugin/wp-super-gallery/readme.txt`):
+   ```text
+   Stable tag: 1.2.3
+   ```
+
+4. **package.json**:
    ```json
    "version": "1.2.3"
    ```
+
+5. **package-lock.json**:
+   - Update the root `version` fields alongside `package.json`.
+
+6. **Release documentation**:
+   - Add the release to `CHANGELOG.md`.
+   - Roll `docs/guides/VERSIONING.md` forward from `Unreleased` to the new tagged version.
 
 ### Git Tagging
 

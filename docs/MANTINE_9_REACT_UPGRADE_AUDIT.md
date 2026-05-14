@@ -227,6 +227,10 @@ Even if Mantine itself upgrades cleanly, the React `19` bump can still be blocke
 - [ ] Re-run carousel, layout builder, analytics, lightbox, and admin-media flows after the React 19 bump.
 - [ ] Pay extra attention to `react-window`, `react-rnd`, `dockview`, and `react-zoom-pan-pinch`, since they tend to be sensitive to lifecycle and rendering changes.
 
+### Notes
+- Analysis shows these packages should be compatible with React 19 with minimal issues: https://grok.com/share/bGVnYWN5_94a92f08-74f8-4a89-bdb9-68e87d8716cd
+- We *should* upgrade to React 19.2+ as Mantine has issues with versions prior to 19.2: https://grok.com/share/bGVnYWN5_86c38f2a-9229-4a7d-9304-a75345a0982f
+
 ---
 
 ## Track M9-E - Preferred Provider and Styling Improvements
