@@ -15,6 +15,7 @@ import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
   useCampaignCategories,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
+  getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
@@ -63,7 +64,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, campaignPage, CAMPAIGNS_PER_PAGE);
   const allCampaigns = useAllCampaignOptions(apiClient);
-  const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
+  const campaignsMutator = useCallback(async () => {
+    await mutateCampaigns();
+    void queryClient.invalidateQueries({ queryKey: getAdminCampaignOptionsQueryKey(apiClient) });
+  }, [mutateCampaigns, queryClient, apiClient]);
 
   const { data: layoutTemplates } = useLayoutTemplates(apiClient);
   const { campaignCategories } = useCampaignCategories(apiClient);

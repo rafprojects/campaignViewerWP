@@ -59,6 +59,7 @@ export function useGetSettings(apiClient: ApiClient) {
     queryKey: getSettingsQueryKey(apiClient),
     queryFn: async () => normalizeSettingsResponse(await apiClient.getSettings()),
     staleTime: SETTINGS_QUERY_STALE_TIME,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     placeholderData: (previousData) => previousData ?? DEFAULT_RESOLVED_SETTINGS,
   });

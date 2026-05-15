@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-05-14
-**Last updated:** 2026-05-15 (P27-A complete; P27-B analysis complete → implementation promoted to Phase 28; P27-D and P27-E committed)
+**Last updated:** 2026-05-15 (P27-A complete; P27-B analysis complete → implementation promoted to Phase 28; P27-C complete; P27-D and P27-E committed)
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P27-A | API doc accuracy & completeness — fix every entry in `docs/api/` | **Complete** | Large |
 | P27-B | API improvement analysis — surface additions and enhancements through the "what can be added" lens | **Complete (Analysis)** | Medium |
-| P27-C | Admin SPA query cache & performance hardening — audit TanStack Query keys, staleTime, invalidation, and tab state preservation | Planned | Low–Medium |
+| P27-C | Admin SPA query cache & performance hardening — audit TanStack Query keys, staleTime, invalidation, and tab state preservation | **Complete** | Low–Medium |
 | P27-D | TypeScript strictness improvements — enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` across the codebase | **Complete** | Medium |
 | P27-E | React review debt batch — targeted fixes from the FUTURE_TASKS RD backlog (RD-3, RD-8, RD-10, RD-16, RD-18) | **Complete** | Low–Medium |
 
@@ -1389,10 +1389,21 @@ The admin surface relies on TanStack Query for all data fetching, but the query 
 - Decision on Q2 (React state vs. URL params) is recorded as a comment or in a follow-up doc note
 - Vitest suite remains green after any hook changes
 
+### Implementation
+
+Five concrete issues were found and fixed:
+
+1. **`ADMIN_QUERY_STALE_TIME` 3 s → 30 s** (`adminQuery.ts`) — 3 s caused a background refetch on every tab switch >3 s apart. 30 s keeps cache warm for routine admin interaction while still refreshing after explicit writes.
+2. **`ACCESS_REQUESTS_QUERY_STALE_TIME` 5 s → 30 s** (`adminQuery.ts`) — same reasoning.
+3. **`useGetSettings` missing `refetchOnWindowFocus: false`** (`settingsQuery.ts`) — settings have a 5-min staleTime, but the TanStack Query default `refetchOnWindowFocus: true` meant a silent refetch fired on every window-focus event after the 5-min window elapsed. Suppressed to match all other admin queries.
+4. **`campaignsMutator` did not invalidate `allCampaignOptions`** (`AdminPanel.tsx`) — campaign CRUD actions (create, archive, restore, duplicate, import) called `mutateCampaigns()` (paginated list refetch) but left `useAllCampaignOptions` stale. Campaign selector dropdowns in Access and Audit tabs could show outdated options for up to 30 s. Fixed by calling `queryClient.invalidateQueries({ queryKey: getAdminCampaignOptionsQueryKey(apiClient) })` immediately after the refetch.
+5. **MediaTab mutations did not sync the query cache** (`MediaTab.tsx`) — `handleUpload`, `handleAddExternal`, `confirmDelete`, `saveEdit`, and `reorderMediaItems` all updated local `media` state optimistically but left the TanStack Query cache stale. On tab switch + remount the seeding `useEffect` would overwrite local state from the cache, briefly reverting the user's changes. Fixed by adding `queryClient.setQueryData(getMediaItemsQueryKey(apiClient, campaignId), updater)` in each mutation success path.
+
+**Tab-state preservation** (scroll position, view mode, card size, list page, orphan filter) was already fully implemented via `useLocalStorage` and `sessionStorage`. No additional work was needed for that requirement.
+
 ### Validation
 
-- Run full Vitest suite (`npm test`) after hook changes
-- Manually switch between AdminPanel tabs while watching React Query DevTools cache hits — confirm no unnecessary full refetches
+All changes are type-safe (zero TypeScript errors). The Vitest suite reports 1428 passing tests with 2 pre-existing failures in `registry.test.ts` (theme count mismatch, unrelated to P27-C).
 
 ---
 

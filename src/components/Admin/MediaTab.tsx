@@ -30,8 +30,9 @@ import { MediaDeleteModal } from './MediaDeleteModal';
 import { MediaUsageBadge } from './MediaUsageBadge';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
-import { useMediaItems } from '@/services/adminQuery';
+import { useMediaItems, getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
@@ -211,6 +212,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // P13-C: Query-cached media fetch — instant render on campaign revisit.
   // Local state holds the working copy for optimistic mutations (upload, delete,
   // reorder, oEmbed enrichment). Query data seeds it on mount / campaign change.
+  const queryClient = useQueryClient();
   const { mediaItems, mediaLoading: mediaQueryLoading, mutateMedia } = useMediaItems(apiClient, campaignId);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [addOpen, setAddOpen] = useState(false);
@@ -456,6 +458,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         title: uploadTitle.trim() || undefined,
       });
       setMedia((m) => [...m, newMedia]);
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => [...(prev ?? []), newMedia]);
       setSelectedFile(null);
       setUploadTitle('');
       setUploadCaption('');
@@ -489,6 +492,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       };
       const created = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, payload);
       setMedia((m) => [...m, created]);
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => [...(prev ?? []), created]);
       setExternalUrl('');
       setExternalPreview(null);
       setAddOpen(false);
@@ -573,6 +577,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     try {
       await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
       setMedia((m) => m.filter((x) => x.id !== deleteItem.id));
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).filter((x) => x.id !== deleteItem.id));
       showNotification({ title: 'Deleted', message: 'Media removed.' });
       onCampaignsUpdated?.();
     } catch (err) {
@@ -600,6 +605,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         thumbnail: editingThumbnail
       });
       setMedia((m) => m.map((it) => (it.id === updated.id ? updated : it)));
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).map((it) => (it.id === updated.id ? updated : it)));
       setEditOpen(false);
       showNotification({ title: 'Saved', message: 'Media updated.' });
     } catch (err) {
@@ -637,7 +643,9 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
     try {
       await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
-      setMedia(nextMedia.map((it, i) => ({ ...it, order: i + 1 })));
+      const reorderedMedia = nextMedia.map((it, i) => ({ ...it, order: i + 1 }));
+      setMedia(reorderedMedia);
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), reorderedMedia);
       showNotification({ title: 'Reordered', message: 'Media order updated.' });
       onCampaignsUpdated?.();
     } catch (err) {
