@@ -2,14 +2,14 @@
 
 **Status:** In Progress
 **Created:** 2026-05-14
-**Last updated:** 2026-05-15 (P27-A complete; P27-D and P27-E committed)
+**Last updated:** 2026-05-15 (P27-A complete; P27-B analysis complete → implementation promoted to Phase 28; P27-D and P27-E committed)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P27-A | API doc accuracy & completeness — fix every entry in `docs/api/` | **Complete** | Large |
-| P27-B | API improvement analysis — surface additions and enhancements through the "what can be added" lens | Planned | Medium |
+| P27-B | API improvement analysis — surface additions and enhancements through the "what can be added" lens | **Complete (Analysis)** | Medium |
 | P27-C | Admin SPA query cache & performance hardening — audit TanStack Query keys, staleTime, invalidation, and tab state preservation | Planned | Low–Medium |
 | P27-D | TypeScript strictness improvements — enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` across the codebase | **Complete** | Medium |
 | P27-E | React review debt batch — targeted fixes from the FUTURE_TASKS RD backlog (RD-3, RD-8, RD-10, RD-16, RD-18) | **Complete** | Low–Medium |
@@ -901,6 +901,14 @@ Add a collection-level pre-request script that sets the `X-WP-Nonce` header from
 ---
 
 ## Track P27-B — API Improvement Analysis ("What Can Be Added")
+
+**Status:** Complete (Analysis) — implementation → Phase 28 (`docs/PHASE28_PLAN.md`)
+
+> All 15 promoted items (API-1 through API-21, excluding deferred) have been
+> inventoried in `docs/PHASE28_PLAN.md` as tracks P28-A through P28-Q, along
+> with additional candidates surfaced by a deeper codebase read (batch media
+> upload, duplicate detection, campaign templates, hierarchical categories,
+> analytics expansion). Implementation begins in Phase 28.
 
 ### Problem
 
