@@ -79,7 +79,7 @@ function AppContent({
   accessMode,
 }: {
   apiBaseUrl: string;
-  authProvider?: AuthProviderInterface;
+  authProvider?: AuthProviderInterface | undefined;
   accessMode: 'lock' | 'hide';
 }) {
   const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
@@ -213,7 +213,7 @@ function AppContent({
       >
         {!isAuthenticated && isReady && (
           <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
-            <LoginForm onSubmit={handleLogin} compact />
+            <LoginForm onSubmit={handleLogin} compact minPasswordLength={resolvedSettings.loginMinPasswordLength} />
           </Modal>
         )}
         {isReady && (
@@ -232,7 +232,7 @@ function AppContent({
           />
         )}
         {actionMessage && (
-          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
+          <Container {...(appContainerSize !== undefined ? { size: appContainerSize } : {})} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
             <Alert color={actionMessage.type === 'error' ? 'red' : 'green'}
               role={actionMessage.type === 'error' ? 'alert' : 'status'}
               aria-live={actionMessage.type === 'error' ? 'assertive' : 'polite'}>
@@ -241,12 +241,12 @@ function AppContent({
           </Container>
         )}
         {!isOnline && (
-          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
+          <Container {...(appContainerSize !== undefined ? { size: appContainerSize } : {})} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
             <Alert color="orange" role="alert" aria-live="assertive">You appear to be offline. Some features are unavailable.</Alert>
           </Container>
         )}
         {error && (
-          <Container size={appContainerSize} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
+          <Container {...(appContainerSize !== undefined ? { size: appContainerSize } : {})} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
             <Alert color="red" role="alert" aria-live="assertive">{error}</Alert>
           </Container>
         )}
@@ -259,13 +259,13 @@ function AppContent({
                 onClose={closeSettings}
                 onNotify={handleAdminNotify}
                 initialSettings={settingsResponse}
-                onSettingsSaved={(saved) => setSettingsQueryData(queryClient, apiClient, saved)}
+                onSettingsSaved={(saved) => setSettingsQueryData(queryClient, apiClient, saved as unknown as Parameters<typeof setSettingsQueryData>[2])}
               />
             </Suspense>
           </ErrorBoundary>
         )}
         {isAdminPanelOpen ? (
-          <Container size={appContainerSize} py="xl" style={appContainerPaddingStyle}>
+          <Container {...(appContainerSize !== undefined ? { size: appContainerSize } : {})} py="xl" style={appContainerPaddingStyle}>
             <ErrorBoundary onReset={closeAdminPanel}>
               <Suspense fallback={<Center py={120}><Loader /></Center>}>
                 <AdminPanel

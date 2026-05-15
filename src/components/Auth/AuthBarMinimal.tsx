@@ -5,12 +5,12 @@ import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 interface AuthBarMinimalProps {
   email: string;
   isAdmin: boolean;
-  isAuthenticated?: boolean;
-  appMaxWidth?: number;
-  appPadding?: number;
+  isAuthenticated?: boolean | undefined;
+  appMaxWidth?: number | undefined;
+  appPadding?: number | undefined;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
-  onOpenSignIn?: () => void;
+  onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
 }
 
@@ -44,7 +44,7 @@ export function AuthBarMinimal({
         maxHeight: 32,
       }}
     >
-      <Container {...getWpsgDebugProps('AuthBarMinimal', 'container')} size={containerSize} fluid={containerFluid} py={4} style={containerPaddingStyle}>
+      <Container {...getWpsgDebugProps('AuthBarMinimal', 'container')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py={4} style={containerPaddingStyle}>
         <Group {...getWpsgDebugProps('AuthBarMinimal', 'content')} justify="space-between" wrap="nowrap" gap={4}>
           {!isAuthenticated ? (
             <>

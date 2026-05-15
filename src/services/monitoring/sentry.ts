@@ -1,6 +1,6 @@
 type SentryInitOptions = {
-  dsn?: string;
-  tracesSampleRate?: number;
+  dsn?: string | undefined;
+  tracesSampleRate?: number | undefined;
 };
 
 export async function initSentry(options: SentryInitOptions) {

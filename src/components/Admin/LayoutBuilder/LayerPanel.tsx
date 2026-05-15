@@ -10,13 +10,13 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 export interface LayerPanelProps {
   template: LayoutTemplate;
   /** ID of the currently-selected slot (from builder state). */
-  selectedSlotId?: string | null;
+  selectedSlotId?: string | null | undefined;
   /** ID of the currently-selected graphic layer / overlay (local modal state). */
-  selectedOverlayId?: string | null;
+  selectedOverlayId?: string | null | undefined;
   /** Whether the Background row is currently selected. */
-  isBackgroundSelected?: boolean;
+  isBackgroundSelected?: boolean | undefined;
   /** Slot ID whose mask sublayer is currently selected. */
-  selectedMaskSlotId?: string | null;
+  selectedMaskSlotId?: string | null | undefined;
   onSelectSlot: (id: string) => void;
   onSelectOverlay: (id: string) => void;
   /** Called when the user clicks the Background row. */
@@ -128,7 +128,7 @@ export function LayerPanel({
       case ' ':
       case 'Space': {
         e.preventDefault();
-        const cur = layers[selectedIndex];
+        const cur = layers[selectedIndex]!;
         if (cur.kind === 'slot') onToggleSlotVisible(cur.id);
         else if (cur.kind === 'graphic') onToggleOverlayVisible(cur.id);
         else if (cur.kind === 'mask') onToggleMaskVisible?.(cur.parentSlotId);
@@ -137,7 +137,7 @@ export function LayerPanel({
       case 'l':
       case 'L': {
         e.preventDefault();
-        const cur = layers[selectedIndex];
+        const cur = layers[selectedIndex]!;
         if (cur.kind === 'slot') onToggleSlotLocked(cur.id);
         else if (cur.kind === 'graphic') onToggleOverlayLocked(cur.id);
         break;
@@ -145,7 +145,7 @@ export function LayerPanel({
       case 'f':
       case 'F': {
         e.preventDefault();
-        const cur = layers[selectedIndex];
+        const cur = layers[selectedIndex]!;
         if (cur.kind === 'background') break;
         onBringToFront(cur.id);
         break;
@@ -153,7 +153,7 @@ export function LayerPanel({
       case 'b':
       case 'B': {
         e.preventDefault();
-        const cur = layers[selectedIndex];
+        const cur = layers[selectedIndex]!;
         if (cur.kind === 'background') break;
         onSendToBack(cur.id);
         break;

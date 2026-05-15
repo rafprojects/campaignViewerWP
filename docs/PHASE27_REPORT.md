@@ -1,15 +1,18 @@
 # Phase 27 — API Contract Sweep & Improvement Analysis
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-05-14
-**Last updated:** 2026-05-14
+**Last updated:** 2026-05-15 (P27-A complete; P27-B analysis complete → implementation promoted to Phase 28; P27-C complete; P27-D and P27-E committed)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P27-A | API doc accuracy & completeness — fix every entry in `docs/api/` | Planned | Large |
-| P27-B | API improvement analysis — surface additions and enhancements through the "what can be added" lens | Planned | Medium |
+| P27-A | API doc accuracy & completeness — fix every entry in `docs/api/` | **Complete** | Large |
+| P27-B | API improvement analysis — surface additions and enhancements through the "what can be added" lens | **Complete (Analysis)** | Medium |
+| P27-C | Admin SPA query cache & performance hardening — audit TanStack Query keys, staleTime, invalidation, and tab state preservation | **Complete** | Low–Medium |
+| P27-D | TypeScript strictness improvements — enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` across the codebase | **Complete** | Medium |
+| P27-E | React review debt batch — targeted fixes from the FUTURE_TASKS RD backlog (RD-3, RD-8, RD-10, RD-16, RD-18) | **Complete** | Low–Medium |
 
 ---
 
@@ -37,12 +40,32 @@ Phase 27 fixes all of this and goes one step further: it evaluates the full API 
 
 1. **P27-A** — fix documentation first so the spec is trustworthy before any new endpoints are added.
 2. **P27-B** — improvement candidates are evaluated and prioritized so implementation can follow in a Phase 28 or dedicated sub-phase.
+3. **P27-C** — query cache audit is independent of API work and can run in parallel with P27-A.
+4. **P27-D** — TypeScript strictness is a global pass; run the error-count diagnostic first before committing scope.
+5. **P27-E** — React debt items are individually small; can be interleaved with other tracks as capacity allows.
 
 ---
 
 ## Track P27-A — API Documentation Accuracy & Quality Review
 
-### Problem
+**Status: Complete** — committed with P27-A tag.
+
+### Outcome
+
+| Artifact | Before | After |
+|---|---|---|
+| `docs/api/openapi.yaml` | Incomplete stub (~1200 lines, missing schemas, error responses, operationIds) | 66 operations, 25 schemas, full request/response bodies, all error codes, zero lint warnings (Redocly CLI) |
+| `docs/api/wp-super-gallery.postman_collection.json` | 4 requests, no folder hierarchy | 66 requests across 19 domain folders, auto-nonce capture test script, all env vars documented |
+
+### What was done
+
+- Rewrote `openapi.yaml` from scratch to OpenAPI 3.0.3 with all 66 operations (covering every `wp-super-gallery/v1` route), 25 `components/schemas`, full request/response bodies, per-operation error responses (400/401/403/404/422 where applicable), correct security annotations, `operationId` and `tags` on every operation.
+- Fixed two YAML structural bugs introduced by the manual edit pass: garbled `AccessGrant`/`AccessRequest` schema merge, and two `delete:` operations missing `parameters:` keys and reorder body fragments.
+- Removed two unused schema components (`NoncePaginationMeta`, `MediaReorderItem`) that caused `no-unused-components` warnings.
+- Added `info.license` field (GPL-2.0-or-later) to satisfy the `info-license` rule.
+- Rebuilt the Postman collection from 29 requests → 66 requests, with all 19 domain folders matching the OpenAPI tag groupings. Added a collection-level test script to auto-capture the nonce from login responses.
+
+
 
 The two `docs/api/` artifacts — `openapi.yaml` and `wp-super-gallery.postman_collection.json` — do not accurately or completely reflect the live API at v0.24.0.
 
@@ -879,6 +902,14 @@ Add a collection-level pre-request script that sets the `X-WP-Nonce` header from
 
 ## Track P27-B — API Improvement Analysis ("What Can Be Added")
 
+**Status:** Complete (Analysis) — implementation → Phase 28 (`docs/PHASE28_PLAN.md`)
+
+> All 15 promoted items (API-1 through API-21, excluding deferred) have been
+> inventoried in `docs/PHASE28_PLAN.md` as tracks P28-A through P28-Q, along
+> with additional candidates surfaced by a deeper codebase read (batch media
+> upload, duplicate detection, campaign templates, hierarchical categories,
+> analytics expansion). Implementation begins in Phase 28.
+
 ### Problem
 
 The current API serves the SPA's immediate needs but leaves several capability gaps that reduce the plugin's value for developers building on top of it, operators managing it at scale, and users who need features that the backend could already partially support. This track evaluates every improvement candidate from two angles: (1) does the API need a new or changed endpoint, and (2) does the frontend need a corresponding change.
@@ -1254,7 +1285,7 @@ These items are correctly in scope for FUTURE_TASKS and are not API work; no dis
 - Builder Template Deep Clone — already completed per FUTURE_TASKS; verify note is accurate
 - Role-Based Access Levels — high-effort; deferred correctly
 - Storybook for component development
-- TypeScript strictness improvements
+- TypeScript strictness improvements — **promoted to P27-D**
 - Redis/Memcached Object Cache documentation
 - WAF Rules documentation
 - Structured Logging
@@ -1320,6 +1351,205 @@ These items are correctly in scope for FUTURE_TASKS and are not API work; no dis
 | Campaign export — binary ZIP (API-15) | Requires background job architecture; warrants its own phase |
 | JWT in-memory auth (API-5) | Blocked on concrete standalone SPA deployment requirement |
 | RBAC per-campaign access levels | High effort; requires data model change; best in a dedicated access-control phase |
-| Storybook / component stories | DX only; no API impact |
-| TypeScript strictness (`exactOptionalPropertyTypes`) | Validate error count before committing scope |
+| Storybook / component stories | DX only; no API impact; dedicated tooling phase |
 | OpenAPI 3.1.0 upgrade | After 3.0.3 spec is fully accurate and passes linting |
+
+---
+
+## Track P27-C — Admin SPA Query Cache & Performance Hardening
+
+**Source:** FUTURE_TASKS.md — "Reuse Loaded Admin Tab Data Across Tab Switches"
+**Status:** Planned
+**Effort:** Low–Medium | **Impact:** Medium
+
+### Problem
+
+The admin surface relies on TanStack Query for all data fetching, but the query configuration has grown incrementally and has not been audited as a whole. Symptoms include:
+
+- Perceived reload cost when switching between heavy tabs or reopening campaign-specific panes
+- Uncertainty about whether `staleTime` settings are appropriate for each query type
+- Post-mutation state may be stale if invalidation paths are inconsistently wired
+- MediaTab scroll position and active filter state are lost on tab switch (component unmount)
+
+### Scope
+
+1. **Query key & staleTime audit** — review all `useQuery`/`useInfiniteQuery` calls in:
+   - `adminQuery` hooks (campaigns, companies, settings)
+   - `AdminPanel` tab loaders (AccessTab, MediaTab, AnalyticsTab, AuditTab)
+   - `LayoutTemplateList` and layout-builder data queries
+   - Identify queries that should share a key (deduplication) vs. have intentionally separate keys
+2. **Mutation invalidation audit** — for every `useMutation` that writes data, verify that `onSuccess` / `onSettled` correctly calls `queryClient.invalidateQueries` or `setQueryData` so the UI reflects the write without a manual refresh
+3. **Reconnect / window-focus behavior** — confirm `refetchOnWindowFocus` and `refetchOnReconnect` are intentionally set (or intentionally left at default) per query; suppress aggressive refetch on focus for queries that are expensive and infrequently stale
+4. **MediaTab tab-state preservation** — preserve scroll position and active filter state (search text, sort order, view mode) across tab switches. Decide: React state in a parent component (lost on full unmount) vs. URL search params (persistent on refresh). Implement whichever is chosen.
+
+### Acceptance Criteria
+
+- No `useQuery` call in the admin surface has an unintentional stale-on-switch regression after a write mutation
+- MediaTab scroll position and filter state survive a tab switch to another tab and back
+- Decision on Q2 (React state vs. URL params) is recorded as a comment or in a follow-up doc note
+- Vitest suite remains green after any hook changes
+
+### Implementation
+
+Five concrete issues were found and fixed:
+
+1. **`ADMIN_QUERY_STALE_TIME` 3 s → 30 s** (`adminQuery.ts`) — 3 s caused a background refetch on every tab switch >3 s apart. 30 s keeps cache warm for routine admin interaction while still refreshing after explicit writes.
+2. **`ACCESS_REQUESTS_QUERY_STALE_TIME` 5 s → 30 s** (`adminQuery.ts`) — same reasoning.
+3. **`useGetSettings` missing `refetchOnWindowFocus: false`** (`settingsQuery.ts`) — settings have a 5-min staleTime, but the TanStack Query default `refetchOnWindowFocus: true` meant a silent refetch fired on every window-focus event after the 5-min window elapsed. Suppressed to match all other admin queries.
+4. **`campaignsMutator` did not invalidate `allCampaignOptions`** (`AdminPanel.tsx`) — campaign CRUD actions (create, archive, restore, duplicate, import) called `mutateCampaigns()` (paginated list refetch) but left `useAllCampaignOptions` stale. Campaign selector dropdowns in Access and Audit tabs could show outdated options for up to 30 s. Fixed by calling `queryClient.invalidateQueries({ queryKey: getAdminCampaignOptionsQueryKey(apiClient) })` immediately after the refetch.
+5. **MediaTab mutations did not sync the query cache** (`MediaTab.tsx`) — `handleUpload`, `handleAddExternal`, `confirmDelete`, `saveEdit`, and `reorderMediaItems` all updated local `media` state optimistically but left the TanStack Query cache stale. On tab switch + remount the seeding `useEffect` would overwrite local state from the cache, briefly reverting the user's changes. Fixed by adding `queryClient.setQueryData(getMediaItemsQueryKey(apiClient, campaignId), updater)` in each mutation success path.
+
+**Tab-state preservation** (scroll position, view mode, card size, list page, orphan filter) was already fully implemented via `useLocalStorage` and `sessionStorage`. No additional work was needed for that requirement.
+
+### Validation
+
+All changes are type-safe (zero TypeScript errors). The Vitest suite reports 1428 passing tests with 2 pre-existing failures in `registry.test.ts` (theme count mismatch, unrelated to P27-C).
+
+---
+
+## Track P27-D — TypeScript Strictness Improvements
+
+**Source:** FUTURE_TASKS.md — Developer Experience → TypeScript strictness improvements
+**Status:** ✅ Complete — committed `feat/phase27-api-update-and-more` @ `8c7036e`
+**Effort:** Medium | **Impact:** Medium
+
+### Outcome
+
+Both flags are now permanently enabled in `tsconfig.json`. All 1430 Vitest tests pass. The diagnostic run found 215 errors across 75+ files; all were resolved without `@ts-ignore` or `@ts-expect-error` suppressions.
+
+**Fix patterns used:**
+- `prop?: T` → `prop?: T | undefined` in ~60 of our own interfaces
+- `arr[i]` → `arr[i]!` inside provably-bounds-checked loops; `.split(',')[0]!` pattern throughout
+- Mantine component props receiving `T | undefined` → conditional spread `{...(val !== undefined ? { prop: val } : {})}`
+- `forwardRef` components spreading `HTMLAttributes<HTMLButtonElement>` into Mantine `ActionIcon` → `{...(restProps as any)}`
+- `Partial<Record<K,V>>` object construction → conditional key assignment (`if (val !== undefined) result.key = val`)
+- `Array.reduce` initial value from array index → `arr[0] ?? defaultValue`
+- ResizeObserver `entries[0]` → `entries[0]!` after length guard
+- `parseGalleryConfigInput(input)` return cast: `as GalleryConfig | undefined`
+
+### Problem
+
+`tsconfig.json` has `"strict": true` but two additional strictness flags that are off by default are not enabled:
+
+- `exactOptionalPropertyTypes` — prevents assigning `undefined` to optional properties that do not explicitly include `| undefined`
+- `noUncheckedIndexedAccess` — adds `| undefined` to all indexed array/object access results, forcing explicit null-guards
+
+These flags surface a class of latent type bugs (reading from possibly-undefined array indices without guards, writing `undefined` into optional props) that `strict: true` alone does not catch.
+
+### Scope
+
+1. **Diagnostic run** — run `tsc --noEmit` with both flags enabled in a temporary `tsconfig.check.json` (extends base tsconfig) to count and categorize errors before committing scope
+2. **Fix all errors** — resolve every type error in-track; no `@ts-ignore` or `@ts-expect-error` suppressions are acceptable as a permanent fix
+3. **Enable flags permanently** — add both flags to `tsconfig.json` once zero errors remain
+4. **Update `tsconfig.json` audit** — verify no existing overrides/exclusions silently suppress errors that should surface under the new flags
+
+### Acceptance Criteria
+
+- `tsconfig.json` contains `"exactOptionalPropertyTypes": true` and `"noUncheckedIndexedAccess": true`
+- `tsc --noEmit` exits with code 0
+- Zero `@ts-ignore` or `@ts-expect-error` suppressions added as part of this track (existing pre-track suppressions may remain if they pre-date this work and have separate justifications)
+- Vitest suite remains green
+
+### Validation
+
+- `tsc --noEmit` (no errors)
+- `npm test` (no regressions)
+- `npm run build` (production build succeeds)
+
+---
+
+## Track P27-E — React Review Debt Batch
+
+**Source:** FUTURE_TASKS.md — Deferred Review Tasks (RD-3, RD-8, RD-10, RD-16, RD-18)
+**Status:** ✅ Complete — committed `feat/phase27-api-update-and-more` @ `a37a120`
+**Effort:** Low–Medium | **Impact:** Low–Medium
+
+### Outcome
+
+All five RD items resolved. 1430 Vitest tests pass. Key changes:
+
+- **RD-3** — `SortableListRow` / `SortableGridItem` moved to module scope in `MediaTab.tsx`. Shared hook-captured values extracted into a `sharedSortableProps` object spread at call sites. No more remount on every `MediaTab` render.
+- **RD-8** — `CardGallery.tsx` `goToPage` replaces `setTimeout` with a `transitionend` event listener filtered to `e.target === el && e.propertyName === 'transform'`. Falls back to immediate advance when `getComputedStyle(el).transitionDuration` is `'0s'`/empty (covers jsdom in tests).
+- **RD-10** — `AccessTab` props reduced from ~33 to ~15 individual props + one `accessState: AdminAccessState` object. `useAdminAccessState` exports `AdminAccessState = ReturnType<typeof useAdminAccessState>`. `AccessTab.test.tsx` wrapper rebuilt to match the new interface.
+- **RD-16** — `LoginForm` accepts `minPasswordLength?: number | undefined` (default `6`). `App.tsx` wires `resolvedSettings.loginMinPasswordLength` to the prop.
+- **RD-18** — `useMediaDimensions` uses a stable `mediaKey` dep string (`id:url` pairs joined) instead of the `media` array reference. Probe cache keyed by item ID stores `{ url, width, height }` so cache is invalidated per item when its source URL changes.
+
+### Problem
+
+Five items from the React review backlog are individually small (1–6 hours each) but have been deferred across multiple phases. Batching them removes the carry-cost of tracking them individually and clears the RD backlog down to items that are either blocked or high-effort.
+
+### Items
+
+#### RD-3: Extract MediaTab Sortable Components
+
+**File:** `src/components/Admin/MediaTab.tsx`
+
+`SortableListRow` and `SortableGridItem` are defined inline inside the render body, which means they are recreated as new function references on every render. This forces React to unmount and remount the sortable items unnecessarily.
+
+**Fix:** Move both components above the `MediaTab` component definition. Update any closure variable references to be explicit props.
+
+**LOE:** Medium (4–6 hours) | **Impact:** Low–Medium — eliminates unnecessary remounts in the media sort flow; improves test isolation for sortable row/grid items
+
+---
+
+#### RD-8: CardGallery setTimeout → transitionend
+
+**File:** `src/gallery-adapters/card/CardGallery.tsx`
+
+A `setTimeout` is used to detect when a CSS transition completes before performing a follow-up action. This is fragile — it can fire too early (short CPU) or too late (delayed reflow).
+
+**Fix:** Replace the `setTimeout` with a `transitionend` event listener on the relevant element. Add cleanup in the effect's teardown to remove the listener.
+
+**LOE:** Low (1 hour) | **Impact:** Low — minor UX polish; eliminates a class of timing-sensitive flakiness
+
+---
+
+#### RD-10: AdminPanel AccessTab Prop Drilling
+
+**Files:** `src/components/Admin/AdminPanel.tsx`, `src/components/Admin/AccessTab.tsx`
+
+Individual props are drilled from `AdminPanel` down into `AccessTab`. The hook that generates them is already in scope; passing the hook's return object directly reduces the number of explicit prop declarations.
+
+**Fix:** Pass the hook return object as a single prop to `AccessTab` rather than spreading individual values. Update `AccessTab` prop types accordingly.
+
+**LOE:** Low (1–2 hours) | **Impact:** Low — code organization improvement; no user-visible change
+
+---
+
+#### RD-16: LoginForm Password Length from Settings
+
+**File:** `src/components/Auth/LoginForm.tsx`
+
+The minimum password length is hard-coded to `6` in `LoginForm`. The server-side validation uses the value from settings, so the client and server can silently disagree.
+
+**Fix:** Read `loginMinPasswordLength` from the settings store/context and use it as the `minLength` validation rule in the form.
+
+**LOE:** Low (1 hour) | **Impact:** Low — correctness improvement; server-side validation is the authoritative check, but aligning the client removes misleading UX
+
+---
+
+#### RD-18: useMediaDimensions ID-Based Caching
+
+**File:** `src/hooks/useMediaDimensions.ts`
+
+The hook recalculates dimensions on every render because the cache key is not stable. Using the media item's ID as the cache key ensures the expensive calculation runs once per item, not once per render.
+
+**Fix:** Stabilize the cache key to use the media item's `id` field. Ensure the cache is cleared or bypassed when the item's source URL changes.
+
+**LOE:** Low (1–2 hours) | **Impact:** Low — minor optimization; reduces redundant recalculations in large media grids
+
+---
+
+### Acceptance Criteria
+
+- `SortableListRow` and `SortableGridItem` are defined at module scope in `MediaTab.tsx`, not inside the render body
+- `CardGallery.tsx` has no `setTimeout` calls in transition-wait contexts; uses `transitionend` instead
+- `AccessTab` receives a hook-object prop rather than individually drilled values
+- `LoginForm` reads `loginMinPasswordLength` from settings; no hard-coded `6`
+- `useMediaDimensions` caches by item ID; recalculates only when the source URL changes
+- Vitest suite remains green after all five changes
+
+### Validation
+
+- `npm test` (no regressions)
+- Manual spot-check: MediaTab drag-sort still works; CardGallery transitions still complete; LoginForm still validates correctly

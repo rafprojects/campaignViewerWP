@@ -9,14 +9,14 @@ import styles from './MediaCard.module.scss';
 interface MediaCardProps {
   item: MediaItem;
   height: number;
-  compact?: boolean;
-  showUrl?: boolean;
+  compact?: boolean | undefined;
+  showUrl?: boolean | undefined;
   onEdit: () => void;
   onDelete: () => void;
-  onImageClick?: () => void;
-  style?: CSSProperties;
-  cardStyle?: CSSProperties;
-  dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
+  onImageClick?: (() => void) | undefined;
+  style?: CSSProperties | undefined;
+  cardStyle?: CSSProperties | undefined;
+  dragHandleProps?: HTMLAttributes<HTMLButtonElement> | undefined;
 }
 
 export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
@@ -69,7 +69,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               }
             }}
           >
-            <Box className={styles.previewWrapper}>
+            <Box {...(styles.previewWrapper ? { className: styles.previewWrapper } : {})}>
               <Image
                 src={item.thumbnail ?? item.url}
                 alt={item.caption || 'Media thumbnail'}
@@ -78,7 +78,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 loading="lazy"
                 fallbackSrc={FALLBACK_IMAGE_SRC}
               />
-              <Group gap={4} className={styles.badgeGroup}>
+              <Group gap={4} {...(styles.badgeGroup ? { className: styles.badgeGroup } : {})}>
                 <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
                 <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
               </Group>
@@ -98,10 +98,11 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               </Box>
               <Group gap={4} wrap="nowrap">
                 <ActionIcon
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  {...(dragHandleProps as any)}
                   variant="subtle"
                   aria-label="Drag media to reorder"
                   style={{ cursor: 'grab' }}
-                  {...dragHandleProps}
                 >
                   <IconGripVertical size={16} />
                 </ActionIcon>

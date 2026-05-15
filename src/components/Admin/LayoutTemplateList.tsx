@@ -104,7 +104,7 @@ interface LayoutTemplateListProps {
   apiClient: ApiClient;
   onNotify: (msg: { type: 'error' | 'success'; text: string }) => void;
   /** If set, open the builder for this template ID as soon as data loads. */
-  initialTemplateId?: string;
+  initialTemplateId?: string | undefined;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────

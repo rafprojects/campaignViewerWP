@@ -26,7 +26,7 @@ export interface LayoutCanvasProps {
   onSlotSelect: (id: string) => void;
   onSlotToggleSelect: (id: string) => void;
   onCanvasClick: () => void;
-  onMediaDrop?: (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) => void;
+  onMediaDrop?: (slotId: string, mediaId: string, meta?: { attachmentId?: number | undefined; url?: string | undefined }) => void;
   /** Announce a11y messages. */
   onAnnounce?: (msg: string) => void;
   /** Overlay move callback (P15-H). */
@@ -44,7 +44,7 @@ export interface LayoutCanvasProps {
   /** Called when a Design Asset is dropped on the canvas background. x,y are canvas %. */
   onAssetCanvasDrop?: (assetUrl: string, x: number, y: number) => void;
   /** Called when campaign media is dropped on the canvas background. x,y are canvas %. */
-  onMediaCanvasDrop?: (mediaId: string, meta: { attachmentId?: number; url?: string }, x: number, y: number) => void;
+  onMediaCanvasDrop?: (mediaId: string, meta: { attachmentId?: number | undefined; url?: string | undefined }, x: number, y: number) => void;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -129,7 +129,7 @@ export function LayoutCanvas({
   // ── Smart guides state ─────────────────────────────────────
 
   const [activeGuides, setActiveGuides] = useState<GuideLine[]>([]);
-  const lastGuideResultRef = useRef<{ snapX?: number; snapY?: number }>({});
+  const lastGuideResultRef = useRef<{ snapX?: number | undefined; snapY?: number | undefined }>({});
 
   /** Called on every drag frame from a slot. */
   const handleDragFrame = useCallback(
@@ -246,7 +246,7 @@ export function LayoutCanvas({
       const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
       if (mediaId && onMediaCanvasDrop) {
         const metaRaw = e.dataTransfer.getData('application/x-wpsg-media-meta');
-        let meta: { attachmentId?: number; url?: string } = {};
+        let meta: { attachmentId?: number | undefined; url?: string | undefined } = {};
         try { meta = metaRaw ? JSON.parse(metaRaw) : {}; } catch { /* ignore */ }
         onMediaCanvasDrop(mediaId, meta, pctX, pctY);
       }

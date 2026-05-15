@@ -11,7 +11,7 @@ import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@/utils/cssUnits';
 import { ThemeSelector } from '../Admin/ThemeSelector';
 
 interface GeneralSettingsData extends GalleryBehaviorSettings {
-  theme?: string;
+  theme?: string | undefined;
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;

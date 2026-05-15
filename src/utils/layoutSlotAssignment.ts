@@ -75,7 +75,7 @@ export function assignMediaToSlots(
 
   // First pass: resolve explicit bindings (overrides take precedence over template).
   for (let i = 0; i < template.slots.length; i++) {
-    const slot = template.slots[i];
+    const slot = template.slots[i]!;
     const override = overrides[slot.id];
     const fixedMediaId = override?.mediaId ?? slot.mediaId;
 
@@ -109,13 +109,13 @@ export function assignMediaToSlots(
   let autoIndex = 0;
 
   for (let i = 0; i < template.slots.length; i++) {
-    const slot = template.slots[i];
+    const slot = template.slots[i]!;
     if (result.has(slot.id)) {
       continue; // Already assigned by binding.
     }
 
     if (autoIndex < availableMedia.length) {
-      const item = availableMedia[autoIndex];
+      const item = availableMedia[autoIndex]!;
       result.set(slot.id, item);
       autoIndex++;
       summary.autoFilled.push({ slotIndex: i + 1, mediaTitle: item.title || item.url });

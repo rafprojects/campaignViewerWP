@@ -147,7 +147,7 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
     template.slots.map((s) => [s.id, s]),
   );
   for (let i = items.length - 1; i >= 0; i--) {
-    const item = items[i];
+    const item = items[i]!;
     if (item.kind !== 'slot') continue;
     const slot = slotMap.get(item.id);
     if (!slot?.maskLayer) continue;
@@ -211,7 +211,8 @@ export function computeReorderedZIndices(
 
   // Remove dragged item first so we can find the correct insertion point
   const reordered = [...movable];
-  const [dragged] = reordered.splice(draggedIdx, 1);
+  const [draggedRaw] = reordered.splice(draggedIdx, 1);
+  const dragged = draggedRaw!;
 
   let insertAt: number;
   if (targetId === 'background') {

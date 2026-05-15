@@ -206,19 +206,19 @@ export interface LayoutSlotComponentProps {
   canvasHeight: number;
   isSelected: boolean;
   isPreview: boolean;
-  mediaItem?: MediaItem;
+  mediaItem?: MediaItem | undefined;
   onDragStop: (id: string, x: number, y: number) => void;
   onResizeStop: (id: string, x: number, y: number, w: number, h: number) => void;
   onSelect: (id: string) => void;
   onToggleSelect: (id: string) => void;
   /** Called on every drag frame (for smart guides). */
-  onDragFrame?: (id: string, pxX: number, pxY: number) => void;
+  onDragFrame?: ((id: string, pxX: number, pxY: number) => void) | undefined;
   /** Called when a media item is dropped onto this slot. */
-  onMediaDrop?: (slotId: string, mediaId: string, meta?: { attachmentId?: number; url?: string }) => void;
+  onMediaDrop?: ((slotId: string, mediaId: string, meta?: { attachmentId?: number | undefined; url?: string | undefined }) => void) | undefined;
   /** Generic slot property update (e.g. mask layer drag). */
-  onSlotUpdate?: (slotId: string, updates: Partial<LayoutSlot>) => void;
+  onSlotUpdate?: ((slotId: string, updates: Partial<LayoutSlot>) => void) | undefined;
   /** Whether this slot's mask sublayer is selected in the Layers panel. */
-  isMaskSelected?: boolean;
+  isMaskSelected?: boolean | undefined;
 }
 
 // ── Minimum slot size (px) ───────────────────────────────────

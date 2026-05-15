@@ -7,8 +7,8 @@ export interface CampaignViewerGalleryShellLayout {
   galleryMode: 'unified' | 'per-type';
   galleryGap: number | string;
   maxWidth: string;
-  paddingLeft?: string;
-  paddingRight?: string;
+  paddingLeft?: string | undefined;
+  paddingRight?: string | undefined;
 }
 
 export function resolveCampaignViewerGalleryShellLayout(

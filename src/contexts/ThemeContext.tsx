@@ -117,13 +117,13 @@ export interface ThemeProviderProps {
    * Defaults to true. Set to false when WP admin has disabled
    * user theme overrides.
    */
-  allowPersistence?: boolean;
+  allowPersistence?: boolean | undefined;
 
   /**
    * Force a specific theme ID (overrides localStorage and WP config).
    * Used for preview mode or admin-controlled embedding.
    */
-  forcedThemeId?: string;
+  forcedThemeId?: string | undefined;
 
   /**
    * Shadow DOM root reference. When provided, the CSS variables will
@@ -142,7 +142,7 @@ export interface ThemeProviderProps {
    * Scoped selector for non-shadow custom CSS variable injection.
    * Example: `[data-wpsg-theme-scope="abc123"]`.
    */
-  themeScopeSelector?: string;
+  themeScopeSelector?: string | undefined;
 }
 
 export function ThemeProvider({

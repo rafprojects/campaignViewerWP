@@ -143,7 +143,8 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
             );
           },
           image({ style: imgStyle, ...imgProps }) {
-            return <LazyImage {...imgProps} style={imgStyle} />;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return <LazyImage {...(imgProps as any)} {...(imgStyle !== undefined ? { style: imgStyle } : {})} />;
           },
           extras(_cls, { photo, width, height }) {
             const p = photo as RpaPhoto;

@@ -11,12 +11,12 @@ const ICON_SIZE = 44;
 interface AuthBarFloatingProps {
   email: string;
   isAdmin: boolean;
-  isAuthenticated?: boolean;
-  draggable?: boolean;
-  dragMargin?: number;
+  isAuthenticated?: boolean | undefined;
+  draggable?: boolean | undefined;
+  dragMargin?: number | undefined;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
-  onOpenSignIn?: () => void;
+  onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
 }
 
@@ -39,7 +39,8 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
   }, ref) => (
     <ActionIcon
       {...getWpsgDebugProps('AuthBarFloating', 'trigger')}
-      {...actionIconProps}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {...(actionIconProps as any)}
       ref={ref}
       size={ICON_SIZE}
       radius="xl"
@@ -78,7 +79,7 @@ interface AuthBarFloatingMenuContentProps {
   closeMenu: () => void;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
-  onOpenSignIn?: () => void;
+  onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
 }
 

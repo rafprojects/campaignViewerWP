@@ -1,0 +1,30 @@
+{
+  "_comment": "Crimson Canvas — A rich red-based theme with burgundy and gold accents",
+  "id": "crimson-canvas",
+  "name": "Crimson Canvas",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#1e0a1f",
+    "surface": "#2d1b3d",
+    "surface2": "#4a2a5a",
+    "surface3": "#6b3b7a",
+
+    "text": "#f8fafc",
+    "textMuted": "#d1d5db",
+    "textMuted2": "#9ca3af",
+
+    "border": "#dc2626",
+
+    "primary": "#dc2626",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "error": "#ef4444",
+    "info": "#8b5cf6",
+
+    "accent": "#f59e0b",
+    "accentGreen": "#10b981",
+    "accentPurple": "#8b5cf6"
+  }
+}

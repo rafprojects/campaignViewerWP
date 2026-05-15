@@ -192,7 +192,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
     if (recentFonts.length > 0) {
       // Build recent options from all pools
       const allOptions = [...SYSTEM_FONT_OPTIONS, ...GOOGLE_FONT_OPTIONS,
-        ...(customFonts ?? []).map((f) => ({ value: f.family, label: f.name })),
+      ...(customFonts ?? []).map((f) => ({ value: f.family, label: f.name })),
       ];
       const recentItems = recentFonts
         .map((name) => allOptions.find((o) => o.label === name))
@@ -215,7 +215,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
   }, [recentFonts, customFonts]);
 
   // ── Fallback chain derived state ──
-  const primaryLabel = (value.fontFamily ?? '').split(',')[0].trim();
+  const primaryLabel = (value.fontFamily ?? '').split(',')[0]!.trim();
   const suggestedFb1 = FONT_FALLBACK_MAP[primaryLabel]?.[0] ?? '';
   const terminalFamily = primaryLabel ? getTerminalFamily(primaryLabel) : '';
   const isFailed = primaryLabel ? getFailedFonts().has(primaryLabel) : false;
@@ -248,7 +248,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
         value={value.fontFamily ?? ''}
         onChange={(v) => {
           if (v) {
-            const name = v.split(',')[0].trim();
+            const name = v.split(',')[0]!.trim();
             if (GOOGLE_FONT_NAMES.has(name)) loadGoogleFont(name);
             addRecentFont(name);
             // Auto-populate fallback 1 from the suggestion map

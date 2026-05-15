@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch, type GridColProps } from '@mantine/core';
 import {
   DndContext,
   DragOverlay,
@@ -29,8 +30,9 @@ import { MediaDeleteModal } from './MediaDeleteModal';
 import { MediaUsageBadge } from './MediaUsageBadge';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
-import { useMediaItems } from '@/services/adminQuery';
+import { useMediaItems, getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
@@ -44,12 +46,173 @@ type DropPosition = 'before' | 'after';
 const LIST_MIN_WIDTH = 720;
 const LIST_PAGE_SIZE = 50;
 
+type SharedSortableProps = {
+  item: MediaItem;
+  getInsertionStyle: (itemId: string, axis: 'horizontal' | 'vertical') => CSSProperties | undefined;
+  moveByKeyboard: (itemId: string, direction: 'forward' | 'backward') => Promise<void>;
+  openLightbox: (item: MediaItem) => void;
+  openEdit: (item: MediaItem) => void;
+  handleDelete: (item: MediaItem) => void;
+  usageSummaryLoading: boolean;
+  usageSummary: Record<string, number>;
+  apiClient: ApiClient;
+};
+
+function SortableListRow({
+  item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
+  usageSummaryLoading, usageSummary, apiClient,
+}: SharedSortableProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
+    listeners?.onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      void moveByKeyboard(item.id, 'forward');
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      void moveByKeyboard(item.id, 'backward');
+    }
+  };
+  const rowStyle: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+    ...getInsertionStyle(item.id, 'vertical'),
+  };
+  const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
+  const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
+  const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
+  const sourceColor = item.source === 'external' ? 'grape' : 'teal';
+
+  return (
+    <Table.Tr ref={setNodeRef} data-testid={`media-draggable-${item.id}`} style={rowStyle}>
+      <Table.Td>
+        <Image
+          src={item.thumbnail ?? item.url}
+          alt={item.caption || 'Media thumbnail'}
+          w={50}
+          h={50}
+          fit="cover"
+          radius="sm"
+          loading="lazy"
+          style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
+          onClick={() => item.type === 'image' && openLightbox(item)}
+          role={item.type === 'image' ? 'button' : undefined}
+          tabIndex={item.type === 'image' ? 0 : -1}
+          aria-label={
+            item.type === 'image'
+              ? `Open image preview for ${item.caption || item.url}`
+              : undefined
+          }
+          onKeyDown={(event) => {
+            if (item.type !== 'image') return;
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              openLightbox(item);
+            }
+          }}
+          fallbackSrc={FALLBACK_IMAGE_SRC}
+        />
+      </Table.Td>
+      <Table.Td>
+        <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
+        <Group gap={4} mt={4}>
+          <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
+          <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
+        </Group>
+        <Text size="xs" c="dimmed" lineClamp={1}>{item.url}</Text>
+      </Table.Td>
+      <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
+      <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
+      <Table.Td>
+        {usageSummaryLoading
+          ? <Skeleton width={64} height={20} radius="xl" />
+          : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
+      </Table.Td>
+      <Table.Td>
+        <Group gap={4}>
+          <ActionIcon
+            variant="subtle"
+            aria-label="Drag media to reorder"
+            style={{ cursor: 'grab' }}
+            {...attributes}
+            {...listeners}
+            onKeyDown={onHandleKeyDown}
+          >
+            <IconGripVertical size={16} />
+          </ActionIcon>
+          <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
+          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
+        </Group>
+      </Table.Td>
+    </Table.Tr>
+  );
+}
+
+type SortableGridItemProps = SharedSortableProps & {
+  viewMode: ViewMode;
+  cardSize: CardSize;
+  mediaHeight: number;
+  gridSpan: GridColProps['span'];
+  showUrl: boolean;
+};
+
+function SortableGridItem({
+  item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
+  usageSummaryLoading, usageSummary, apiClient,
+  viewMode, cardSize, mediaHeight, gridSpan, showUrl,
+}: SortableGridItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
+    listeners?.onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      void moveByKeyboard(item.id, 'forward');
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      void moveByKeyboard(item.id, 'backward');
+    }
+  };
+  const isCompact = viewMode === 'compact' || cardSize === 'small';
+
+  return (
+    <Grid.Col
+      ref={setNodeRef}
+      data-testid={`media-draggable-${item.id}`}
+      style={{ transform: CSS.Transform.toString(transform) ?? undefined, transition: transition ?? undefined, opacity: isDragging ? 0.7 : 1 } as CSSProperties}
+      span={gridSpan!}
+    >
+      <Box style={{ position: 'relative' }}>
+        <MediaCard
+          item={item}
+          height={mediaHeight}
+          compact={isCompact}
+          showUrl={showUrl}
+          onEdit={() => openEdit(item)}
+          onDelete={() => handleDelete(item)}
+          onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
+          cardStyle={getInsertionStyle(item.id, 'horizontal')}
+          dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
+        />
+        <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
+          {usageSummaryLoading
+            ? <Skeleton width={64} height={20} radius="xl" />
+            : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
+        </Box>
+      </Box>
+    </Grid.Col>
+  );
+}
+
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
   // P13-C: Query-cached media fetch — instant render on campaign revisit.
   // Local state holds the working copy for optimistic mutations (upload, delete,
   // reorder, oEmbed enrichment). Query data seeds it on mount / campaign change.
+  const queryClient = useQueryClient();
   const { mediaItems, mediaLoading: mediaQueryLoading, mutateMedia } = useMediaItems(apiClient, campaignId);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [addOpen, setAddOpen] = useState(false);
@@ -74,15 +237,31 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
   const [overMediaId, setOverMediaId] = useState<string | null>(null);
 
-  // View options
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [cardSize, setCardSize] = useState<CardSize>('medium');
-  const [listPage, setListPage] = useState(1);
+  // View options — persisted per-campaign so tab switches / refreshes preserve user preference
+  const [viewMode, setViewMode] = useLocalStorage<ViewMode>({
+    key: `wpsg_media_viewMode_${campaignId}`,
+    defaultValue: 'grid',
+    getInitialValueInEffect: false,
+  });
+  const [cardSize, setCardSize] = useLocalStorage<CardSize>({
+    key: `wpsg_media_cardSize_${campaignId}`,
+    defaultValue: 'medium',
+    getInitialValueInEffect: false,
+  });
+  const [listPage, setListPage] = useLocalStorage<number>({
+    key: `wpsg_media_listPage_${campaignId}`,
+    defaultValue: 1,
+    getInitialValueInEffect: false,
+  });
 
   // P18-G: Media usage tracking
   const [usageSummary, setUsageSummary] = useState<Record<string, number>>({});
   const [usageSummaryLoading, setUsageSummaryLoading] = useState(false);
-  const [orphanFilter, setOrphanFilter] = useState(false);
+  const [orphanFilter, setOrphanFilter] = useLocalStorage<boolean>({
+    key: `wpsg_media_orphanFilter_${campaignId}`,
+    defaultValue: false,
+    getInitialValueInEffect: false,
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -92,6 +271,36 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Scroll position preservation across tab switches (sessionStorage, per-campaign)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const scrollKey = `wpsg_media_scrollTop_${campaignId}`;
+
+  const hasMedia = media.length > 0;
+
+  // Restore scroll on mount (after data ready)
+  useEffect(() => {
+    if (!campaignId) return;
+    const saved = sessionStorage.getItem(scrollKey);
+    if (saved && scrollContainerRef.current) {
+      const top = parseInt(saved, 10);
+      // Defer to ensure DOM + lazy content is painted
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = top;
+      });
+    }
+  }, [campaignId, hasMedia, scrollKey]);
+
+  // Save scroll on unmount / campaign change
+  useEffect(() => {
+    const key = scrollKey;
+    const el = scrollContainerRef.current;
+    return () => {
+      if (el) {
+        sessionStorage.setItem(key, String(el.scrollTop));
+      }
+    };
+  }, [scrollKey]);
 
   // Get image items for lightbox navigation
   const imageItems = useMemo(() => media.filter((m) => m.type === 'image'), [media]);
@@ -249,6 +458,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         title: uploadTitle.trim() || undefined,
       });
       setMedia((m) => [...m, newMedia]);
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => [...(prev ?? []), newMedia]);
       setSelectedFile(null);
       setUploadTitle('');
       setUploadCaption('');
@@ -282,6 +492,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       };
       const created = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, payload);
       setMedia((m) => [...m, created]);
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => [...(prev ?? []), created]);
       setExternalUrl('');
       setExternalPreview(null);
       setAddOpen(false);
@@ -366,6 +577,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     try {
       await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
       setMedia((m) => m.filter((x) => x.id !== deleteItem.id));
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).filter((x) => x.id !== deleteItem.id));
       showNotification({ title: 'Deleted', message: 'Media removed.' });
       onCampaignsUpdated?.();
     } catch (err) {
@@ -393,6 +605,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         thumbnail: editingThumbnail
       });
       setMedia((m) => m.map((it) => (it.id === updated.id ? updated : it)));
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).map((it) => (it.id === updated.id ? updated : it)));
       setEditOpen(false);
       showNotification({ title: 'Saved', message: 'Media updated.' });
     } catch (err) {
@@ -430,7 +643,9 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
     try {
       await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
-      setMedia(nextMedia.map((it, i) => ({ ...it, order: i + 1 })));
+      const reorderedMedia = nextMedia.map((it, i) => ({ ...it, order: i + 1 }));
+      setMedia(reorderedMedia);
+      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), reorderedMedia);
       showNotification({ title: 'Reordered', message: 'Media order updated.' });
       onCampaignsUpdated?.();
     } catch (err) {
@@ -504,13 +719,13 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     if (listPage > listTotalPages) {
       setListPage(listTotalPages);
     }
-  }, [listPage, listTotalPages]);
+  }, [listPage, listTotalPages, setListPage]);
 
   useEffect(() => {
     if (viewMode !== 'list') {
       setListPage(1);
     }
-  }, [viewMode]);
+  }, [viewMode, setListPage]);
 
   const getDropPosition = (activeId: string, overId: string): DropPosition => {
     const sourceIndex = media.findIndex((item) => item.id === activeId);
@@ -583,144 +798,14 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     [activeMediaId, media],
   );
 
-  const SortableListRow = ({ item }: { item: MediaItem }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
-    const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
-      listeners?.onKeyDown?.(event);
-      if (event.defaultPrevented) return;
-      if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-        event.preventDefault();
-        void moveByKeyboard(item.id, 'forward');
-      } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-        event.preventDefault();
-        void moveByKeyboard(item.id, 'backward');
-      }
-    };
-    const rowStyle: CSSProperties = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0.7 : 1,
-      ...getInsertionStyle(item.id, 'vertical'),
-    };
-    const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
-    const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
-    const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
-    const sourceColor = item.source === 'external' ? 'grape' : 'teal';
-
-    return (
-      <Table.Tr ref={setNodeRef} data-testid={`media-draggable-${item.id}`} style={rowStyle}>
-        <Table.Td>
-          <Image
-            src={item.thumbnail ?? item.url}
-            alt={item.caption || 'Media thumbnail'}
-            w={50}
-            h={50}
-            fit="cover"
-            radius="sm"
-            loading="lazy"
-            style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
-            onClick={() => item.type === 'image' && openLightbox(item)}
-            role={item.type === 'image' ? 'button' : undefined}
-            tabIndex={item.type === 'image' ? 0 : -1}
-            aria-label={
-              item.type === 'image'
-                ? `Open image preview for ${item.caption || item.url}`
-                : undefined
-            }
-            onKeyDown={(event) => {
-              if (item.type !== 'image') return;
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                openLightbox(item);
-              }
-            }}
-            fallbackSrc={FALLBACK_IMAGE_SRC}
-          />
-        </Table.Td>
-        <Table.Td>
-          <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
-          <Group gap={4} mt={4}>
-            <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
-            <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
-          </Group>
-          <Text size="xs" c="dimmed" lineClamp={1}>{item.url}</Text>
-        </Table.Td>
-        <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
-        <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
-        <Table.Td>
-          {usageSummaryLoading
-            ? <Skeleton width={64} height={20} radius="xl" />
-            : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
-        </Table.Td>
-        <Table.Td>
-          <Group gap={4}>
-            <ActionIcon
-              variant="subtle"
-              aria-label="Drag media to reorder"
-              style={{ cursor: 'grab' }}
-              {...attributes}
-              {...listeners}
-              onKeyDown={onHandleKeyDown}
-            >
-              <IconGripVertical size={16} />
-            </ActionIcon>
-            <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-            <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
-          </Group>
-        </Table.Td>
-      </Table.Tr>
-    );
-  };
-
-  const SortableGridItem = ({ item }: { item: MediaItem }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
-    const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
-      listeners?.onKeyDown?.(event);
-      if (event.defaultPrevented) return;
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-        event.preventDefault();
-        void moveByKeyboard(item.id, 'forward');
-      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-        event.preventDefault();
-        void moveByKeyboard(item.id, 'backward');
-      }
-    };
-    const mediaHeight = viewMode === 'compact'
-      ? sizeConfig.compact.height
-      : sizeConfig[cardSize].height;
-    const isCompact = viewMode === 'compact' || cardSize === 'small';
-
-    return (
-      <Grid.Col
-        ref={setNodeRef}
-        data-testid={`media-draggable-${item.id}`}
-        style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 }}
-        span={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
-      >
-        <Box style={{ position: 'relative' }}>
-          <MediaCard
-            item={item}
-            height={mediaHeight}
-            compact={isCompact}
-            showUrl={cardSize === 'large'}
-            onEdit={() => openEdit(item)}
-            onDelete={() => handleDelete(item)}
-            onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
-            cardStyle={getInsertionStyle(item.id, 'horizontal')}
-            dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
-          />
-          <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
-            {usageSummaryLoading
-              ? <Skeleton width={64} height={20} radius="xl" />
-              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
-          </Box>
-        </Box>
-      </Grid.Col>
-    );
+  // Shared props passed to both sortable sub-components (stable references prevent remounts).
+  const sharedSortableProps: Omit<SharedSortableProps, 'item'> = {
+    getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
+    usageSummaryLoading, usageSummary, apiClient,
   };
 
   return (
-    <div>
+    <div ref={scrollContainerRef} style={{ overflowY: 'auto', maxHeight: '70vh' }}>
       <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
         <Group gap="md" wrap="wrap">
           <Text fw={700}>Media</Text>
@@ -816,7 +901,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                   <Table verticalSpacing="xs" highlightOnHover>
                     <Table.Tbody>
                       {pagedListMedia.map((item) => (
-                        <SortableListRow key={item.id} item={item} />
+                        <SortableListRow key={item.id} item={item} {...sharedSortableProps} />
                       ))}
                     </Table.Tbody>
                   </Table>
@@ -840,7 +925,16 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
               <Grid>
                 {displayedMedia.map((item) => (
-                  <SortableGridItem key={item.id} item={item} />
+                  <SortableGridItem
+                    key={item.id}
+                    item={item}
+                    {...sharedSortableProps}
+                    viewMode={viewMode}
+                    cardSize={cardSize}
+                    mediaHeight={viewMode === 'compact' ? sizeConfig.compact.height : sizeConfig[cardSize].height}
+                    gridSpan={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
+                    showUrl={cardSize === 'large'}
+                  />
                 ))}
               </Grid>
             </SortableContext>

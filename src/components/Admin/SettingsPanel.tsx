@@ -80,9 +80,9 @@ interface SettingsPanelProps {
   apiClient: ApiClient;
   onClose: () => void;
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
-  onSettingsSaved?: (settings: SettingsData) => void;
+  onSettingsSaved?: ((settings: SettingsData) => void) | undefined;
   /** Pre-cached settings from the root settings query. */
-  initialSettings?: SettingsDataInput;
+  initialSettings?: SettingsDataInput | undefined;
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -384,7 +384,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         delete payload[key];
       }
 
-      const response = await updateSettingsMutation.mutateAsync(payload as Partial<SettingsData>);
+      const response = await updateSettingsMutation.mutateAsync(payload as unknown as import('@/services/apiClient').SettingsUpdateRequest);
       const saved = mapResponseToSettings(response);
       markSaved(saved);
       onSettingsSaved?.(saved);

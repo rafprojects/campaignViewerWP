@@ -102,6 +102,6 @@ export function DimensionInput({
 
 /** Resolve the effective max for a given unit, falling back to explicit max for px. */
 function resolveMax(unit: string, explicitMax?: number): number {
-  if (unit === 'px') return explicitMax ?? UNIT_MAX_DEFAULTS.px;
-  return UNIT_MAX_DEFAULTS[unit] ?? UNIT_MAX_DEFAULTS.px;
+  if (unit === 'px') return explicitMax ?? UNIT_MAX_DEFAULTS.px ?? 9999;
+  return UNIT_MAX_DEFAULTS[unit] ?? UNIT_MAX_DEFAULTS.px ?? 9999;
 }

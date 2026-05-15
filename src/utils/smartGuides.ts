@@ -28,9 +28,9 @@ export interface GuideLine {
 
 export interface GuideResult {
   /** If set, snap the dragged slot's X to this value (%). */
-  snapX?: number;
+  snapX?: number | undefined;
   /** If set, snap the dragged slot's Y to this value (%). */
-  snapY?: number;
+  snapY?: number | undefined;
   /** Guide lines to render on the SVG overlay. */
   guides: GuideLine[];
 }
@@ -216,8 +216,8 @@ function computeSpacingGuides(
   const sortedX = [...all].sort((a, b) => a.x - b.x);
   const hGaps: Gap[] = [];
   for (let i = 0; i < sortedX.length - 1; i++) {
-    const aRight = sortedX[i].x + sortedX[i].width;
-    const bLeft = sortedX[i + 1].x;
+    const aRight = sortedX[i]!.x + sortedX[i]!.width;
+    const bLeft = sortedX[i + 1]!.x;
     const gap = bLeft - aRight;
     if (gap > 0) {
       hGaps.push({ distance: gap, startEdge: aRight, endEdge: bLeft });
@@ -229,8 +229,8 @@ function computeSpacingGuides(
   const sortedY = [...all].sort((a, b) => a.y - b.y);
   const vGaps: Gap[] = [];
   for (let i = 0; i < sortedY.length - 1; i++) {
-    const aBottom = sortedY[i].y + sortedY[i].height;
-    const bTop = sortedY[i + 1].y;
+    const aBottom = sortedY[i]!.y + sortedY[i]!.height;
+    const bTop = sortedY[i + 1]!.y;
     const gap = bTop - aBottom;
     if (gap > 0) {
       vGaps.push({ distance: gap, startEdge: aBottom, endEdge: bTop });
@@ -249,14 +249,14 @@ function markEqualGaps(
   const matched = new Set<number>();
   for (let i = 0; i < gaps.length; i++) {
     for (let j = i + 1; j < gaps.length; j++) {
-      if (near(gaps[i].distance, gaps[j].distance, threshold)) {
+      if (near(gaps[i]!.distance, gaps[j]!.distance, threshold)) {
         matched.add(i);
         matched.add(j);
       }
     }
   }
   for (const idx of matched) {
-    const gap = gaps[idx];
+    const gap = gaps[idx]!;
     const midpoint = r2((gap.startEdge + gap.endEdge) / 2);
     guides.push({
       axis,

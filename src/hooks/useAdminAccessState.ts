@@ -59,7 +59,7 @@ export function useAdminAccessState({
   const [quickAddRole, setQuickAddRole] = useState('subscriber');
   const [quickAddCampaignId, setQuickAddCampaignId] = useState('');
   const [quickAddSaving, setQuickAddSaving] = useState(false);
-  const [quickAddResult, setQuickAddResult] = useState<{ success: boolean; message: string; resetUrl?: string } | null>(null);
+  const [quickAddResult, setQuickAddResult] = useState<{ success: boolean; message: string; resetUrl?: string | undefined } | null>(null);
   const [quickAddTestMode, setQuickAddTestMode] = useState(false);
 
   // Cleanup blur timeout on unmount
@@ -231,6 +231,13 @@ export function useAdminAccessState({
     setQuickAddTestMode(false);
   }, []);
 
+  const handleOpenQuickAddUser = useCallback(() => {
+    if (accessViewMode === 'campaign' && accessCampaignId) {
+      setQuickAddCampaignId(accessCampaignId);
+    }
+    setQuickAddUserOpen(true);
+  }, [accessViewMode, accessCampaignId]);
+
   return {
     accessUserId, setAccessUserId,
     accessSource, setAccessSource,
@@ -256,6 +263,9 @@ export function useAdminAccessState({
     handleRevokeAccess,
     handleArchiveCompany,
     handleQuickAddUser,
+    handleOpenQuickAddUser,
     closeQuickAddUser,
   };
 }
+
+export type AdminAccessState = ReturnType<typeof useAdminAccessState>;

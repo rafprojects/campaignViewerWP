@@ -31,9 +31,9 @@ export interface MaskPropertiesPanelProps {
   slot: LayoutSlot;
   onUpdate: (updates: Partial<LayoutSlot>) => void;
   /** Upload a mask image and return the URL (or null on failure). */
-  onUploadMask?: (file: File) => Promise<string | null>;
+  onUploadMask?: ((file: File) => Promise<string | null>) | undefined;
   /** Available Design Assets for mask image selection. */
-  overlayLibrary?: OverlayLibraryItem[];
+  overlayLibrary?: OverlayLibraryItem[] | undefined;
 }
 
 // ── Inline helpers (shared with SlotPropertiesPanel) ─────────

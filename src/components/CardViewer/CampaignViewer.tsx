@@ -38,9 +38,9 @@ interface CampaignViewerProps {
   hasAccess: boolean;
   galleryBehaviorSettings: GalleryBehaviorSettings;
   isAdmin: boolean;
-  apiClient?: ApiClient;
-  onCampaignsUpdated?: () => Promise<unknown> | void;
-  onNotify?: (message: { type: 'error' | 'success'; text: string }) => void;
+  apiClient?: ApiClient | undefined;
+  onCampaignsUpdated?: (() => Promise<unknown> | void) | undefined;
+  onNotify?: ((message: { type: 'error' | 'success'; text: string }) => void) | undefined;
   onClose: () => void;
 }
 

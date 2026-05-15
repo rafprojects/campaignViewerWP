@@ -207,7 +207,7 @@ setWpsgDebugDisplayName(UnifiedCampaignDetailsPanel, 'UnifiedCampaignDetailsPane
 
 interface UnifiedCampaignSettingsPanelProps {
   isEdit: boolean;
-  cardBorderMode?: 'single' | 'auto' | 'individual';
+  cardBorderMode?: 'single' | 'auto' | 'individual' | undefined;
   formState: UnifiedCampaignFormState;
   updateForm: UnifiedCampaignUpdateForm;
   availableCategories: string[];
@@ -226,7 +226,7 @@ interface UnifiedCampaignSettingsPanelProps {
   ) => void;
   onOpenResponsiveConfig: () => void;
   layoutTemplates: LayoutTemplate[];
-  onEditLayout?: (templateId: string) => void;
+  onEditLayout?: ((templateId: string) => void) | undefined;
 }
 
 const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelProps> = ({

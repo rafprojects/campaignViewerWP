@@ -167,7 +167,7 @@ function BackgroundModeControls({
 
     const updateStop = (index: number, patch: Partial<GradientStop>) => {
       const next = [...stops];
-      next[index] = { ...next[index], ...patch };
+      next[index] = { ...next[index]!, ...patch } as GradientStop;
       builder.setBackgroundGradientStops(next);
     };
 

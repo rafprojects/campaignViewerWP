@@ -1,82 +1,1877 @@
 {
   "info": {
-    "name": "WP Super Gallery — Cookie Login & Examples",
+    "name": "WP Super Gallery \u2014 Full API Collection",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Collection demonstrating cookie-based login, capturing the `wp_rest` nonce, and example authenticated requests.\n\nBefore running: set environment variable `baseUrl` to your site (e.g. https://example.com), and `username`/`password`."
+    "description": "Complete Postman collection for the WP Super Gallery REST API.\n\nEnvironment variables required:\n- baseUrl (e.g. https://example.com)\n- username\n- password\n- wpsg_nonce (auto-captured from login)\n- campaign_id\n- media_id\n- user_id\n- token\n- template_id\n- overlay_id\n- font_id\n- company_id\n\nPre-request script at collection level injects X-WP-Nonce when available."
   },
   "item": [
     {
-      "name": "Cookie Login",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Origin", "value": "{{baseUrl}}" },
-          { "key": "Referer", "value": "{{baseUrl}}/" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"username\": \"{{username}}\", \"password\": \"{{password}}\", \"remember\": true}"
-        },
-        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/auth/login"
-      },
-      "event": [
+      "name": "00. Auth",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
-              "var json = {};",
-              "try { json = pm.response.json(); } catch (e) { }",
-              "if (json && json.nonce) {",
-              "  pm.environment.set('wpsg_nonce', json.nonce);",
-              "  pm.test('Saved nonce', function () { pm.expect(json.nonce).to.be.a('string'); });",
-              "} else {",
-              "  pm.test('Nonce present', function () { pm.expect(json.nonce).to.exist; });",
-              "}"
-            ]
-          }
+          "name": "Cookie Login (captures nonce)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"remember\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Nonce",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/nonce",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "nonce"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Get Settings (Authenticated)",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "X-WP-Nonce", "value": "{{wpsg_nonce}}" },
-          { "key": "Accept", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/settings"
-      }
+      "name": "01. Settings",
+      "item": [
+        {
+          "name": "Get Public Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"default_visibility\": \"public\",\n  \"max_upload_size\": 10485760\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "Get Campaigns (Authenticated)",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "X-WP-Nonce", "value": "{{wpsg_nonce}}" },
-          { "key": "Accept", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns?include_media=1"
-      }
+      "name": "02. Permissions",
+      "item": [
+        {
+          "name": "Get Current User Permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "Get Campaigns (Public)",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Accept", "value": "application/json" }
-        ],
-        "url": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns"
-      }
+      "name": "03. Campaigns",
+      "item": [
+        {
+          "name": "List Campaigns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Campaign from Postman\",\n  \"visibility\": \"public\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Campaign",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Campaign",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Campaign Title\",\n  \"visibility\": \"private\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/archive",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "archive"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "restore"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Duplicate Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Copy of Campaign\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/duplicate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "duplicate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Campaign",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Import Campaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Batch Campaigns",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"archive\",\n  \"ids\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/batch",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "batch"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04. Campaign Media",
+      "item": [
+        {
+          "name": "List Campaign Media",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "media"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Media Item (URL/oEmbed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"image\",\n  \"source\": \"external\",\n  \"url\": \"https://example.com/image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "media"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Media Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caption\": \"Updated caption\",\n  \"sort_order\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media/{{media_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "media",
+                "{{media_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rescan Campaign Media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media/rescan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "media",
+                "rescan"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05. Media Library",
+      "item": [
+        {
+          "name": "List Media Library",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/library",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "media",
+                "library"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Media",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/image.jpg"
+                },
+                {
+                  "key": "campaign_id",
+                  "value": "{{campaign_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "media",
+                "upload"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rescan All Media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/rescan-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "media",
+                "rescan-all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/{{media_id}}/usage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "media",
+                "{{media_id}}",
+                "usage"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media Usage Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/usage-summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "media",
+                "usage-summary"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06. Campaign Access",
+      "item": [
+        {
+          "name": "List Access Grants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Grant Access (by user ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Access",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access",
+                "{{user_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07. Access Requests",
+      "item": [
+        {
+          "name": "Submit Access Request (public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"message\": \"Requesting access for review\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Access Requests (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Access Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access-requests",
+                "{{token}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deny Access Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/deny",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access-requests",
+                "{{token}}",
+                "deny"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08. Campaign Audit Log",
+      "item": [
+        {
+          "name": "Get Campaign Audit Log",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/audit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09. Analytics",
+      "item": [
+        {
+          "name": "Record Analytics Event (public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campaign_id\": {{campaign_id}},\n  \"event_type\": \"view\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/event",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "analytics",
+                "event"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Campaign Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/campaigns/{{campaign_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "analytics",
+                "campaigns",
+                "{{campaign_id}}"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10. Categories & Tags",
+      "item": [
+        {
+          "name": "List Campaign Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaign-categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Campaign Tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/campaign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "tags",
+                "campaign"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Media Tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "tags",
+                "media"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11. Companies",
+      "item": [
+        {
+          "name": "List Companies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "companies"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Company Access",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/access",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "companies",
+                "{{company_id}}",
+                "access"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Grant Company Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/access",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "companies",
+                "{{company_id}}",
+                "access"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Company Access",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/access/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "companies",
+                "{{company_id}}",
+                "access",
+                "{{user_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/archive",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "companies",
+                "{{company_id}}",
+                "archive"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12. Users & Roles",
+      "item": [
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/users/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "users",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "admin"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"SecureP@ss1\",\n  \"role\": \"subscriber\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "13. Layout Templates (Admin)",
+      "item": [
+        {
+          "name": "List Layout Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "layout-templates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Layout Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Template from Postman\",\n  \"config\": {}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "layout-templates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Layout Template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "layout-templates",
+                "{{template_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Layout Template",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Template Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "layout-templates",
+                "{{template_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Layout Template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "layout-templates",
+                "{{template_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Duplicate Layout Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Copy of Template\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}/duplicate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "layout-templates",
+                "{{template_id}}",
+                "duplicate"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "14. Layout Templates (Public)",
+      "item": [
+        {
+          "name": "Get Layout Template (public render)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/layout-templates/{{template_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "layout-templates",
+                "{{template_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "15. Overlay Library",
+      "item": [
+        {
+          "name": "List Overlay Library",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/overlay-library",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "overlay-library"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Overlay",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/overlay.png"
+                },
+                {
+                  "key": "name",
+                  "value": "My Overlay",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/overlay-library",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "overlay-library"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Overlay",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/overlay-library/{{overlay_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "overlay-library",
+                "{{overlay_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "16. Font Library",
+      "item": [
+        {
+          "name": "List Font Library",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/font-library",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "font-library"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Font",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/font.woff2"
+                },
+                {
+                  "key": "name",
+                  "value": "My Custom Font",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/font-library",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "font-library"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Font",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/font-library/{{font_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "font-library",
+                "{{font_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "17. oEmbed",
+      "item": [
+        {
+          "name": "Proxy oEmbed (YouTube example)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/oembed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "oembed"
+              ],
+              "query": [
+                {
+                  "key": "url",
+                  "value": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "18. Admin Tools",
+      "item": [
+        {
+          "name": "Get Health Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List oEmbed Failures",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/oembed-failures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "oembed-failures"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset oEmbed Failures",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/oembed-failures",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "oembed-failures"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Thumbnail Cache Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/thumbnail-cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "thumbnail-cache"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Thumbnail Cache",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/thumbnail-cache",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "thumbnail-cache"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Thumbnail Cache",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/thumbnail-cache/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "thumbnail-cache",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
-  "variable": [
-    { "key": "baseUrl", "value": "https://example.com" },
-    { "key": "username", "value": "admin" },
-    { "key": "password", "value": "secret" },
-    { "key": "wpsg_nonce", "value": "" }
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const nonce = pm.environment.get('wpsg_nonce');",
+          "if (nonce) {",
+          "    pm.request.headers.upsert({key: 'X-WP-Nonce', value: nonce});",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-capture nonce from login response",
+          "if (pm.request.url.toString().includes('/auth/login') && pm.response.code === 200) {",
+          "    try {",
+          "        const body = pm.response.json();",
+          "        if (body.nonce) pm.environment.set('wpsg_nonce', body.nonce);",
+          "    } catch (e) {}",
+          "}"
+        ]
+      }
+    }
   ]
 }

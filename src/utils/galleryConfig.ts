@@ -241,11 +241,14 @@ function cloneBreakpointConfig(config?: BreakpointGalleryConfig): BreakpointGall
     return undefined;
   }
 
-  return {
-    unified: cloneScopeConfig(config.unified),
-    image: cloneScopeConfig(config.image),
-    video: cloneScopeConfig(config.video),
-  };
+  const result: BreakpointGalleryConfig = {};
+  const unified = cloneScopeConfig(config.unified);
+  const image = cloneScopeConfig(config.image);
+  const video = cloneScopeConfig(config.video);
+  if (unified !== undefined) result.unified = unified;
+  if (image !== undefined) result.image = image;
+  if (video !== undefined) result.video = video;
+  return result;
 }
 
 export function cloneGalleryConfig(config?: GalleryConfig): GalleryConfig | undefined {
@@ -415,7 +418,7 @@ export function getScopeGalleryCommonSetting(
 }
 
 export function parseGalleryConfig(input: unknown): GalleryConfig | undefined {
-  return parseGalleryConfigInput(input);
+  return parseGalleryConfigInput(input) as GalleryConfig | undefined;
 }
 
 function mergeScopeConfig(base?: GalleryScopeConfig, override?: GalleryScopeConfig): GalleryScopeConfig | undefined {
@@ -428,7 +431,7 @@ function mergeScopeConfig(base?: GalleryScopeConfig, override?: GalleryScopeConf
     common: {
       ...(base?.common ?? {}),
       ...(override?.common ?? {}),
-    },
+    } as GalleryCommonSettings,
     adapterSettings: {
       ...(base?.adapterSettings ?? {}),
       ...(override?.adapterSettings ?? {}),

@@ -15,10 +15,10 @@ interface CampaignCardProps {
   campaign: Campaign;
   hasAccess: boolean;
   onClick: () => void;
-  settings?: GalleryBehaviorSettings;
-  apiClient?: ApiClient;
-  maxWidth?: number;
-  maxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit;
+  settings?: GalleryBehaviorSettings | undefined;
+  apiClient?: ApiClient | undefined;
+  maxWidth?: number | undefined;
+  maxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit | undefined;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
@@ -72,7 +72,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             ? `Open campaign ${campaign.title}`
             : `Campaign ${campaign.title} is locked`
         }
-        className={styles.card}
+        {...(styles.card ? { className: styles.card } : {})}
         style={{
           cursor: hasAccess ? 'pointer' : 'not-allowed',
           opacity: hasAccess ? 1 : lockedOpacity,
@@ -112,7 +112,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 filter: hasAccess ? 'none' : 'grayscale(100%)',
                 transition: `transform ${thumbnailHoverTransitionMs}ms ease`
               }}
-              className={styles.thumbnailImage}
+              {...(styles.thumbnailImage ? { className: styles.thumbnailImage } : {})}
             />
 
             {/* Overlay gradient */}
@@ -226,7 +226,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
             */}
 
                 {settings?.showCardMediaCounts !== false && (
-                  <Group gap="xs" mt="auto" className={styles.mediaStats}>
+                  <Group gap="xs" mt="auto" {...(styles.mediaStats ? { className: styles.mediaStats } : {})}>
                     <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
                     <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
                   </Group>

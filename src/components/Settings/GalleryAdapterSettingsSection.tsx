@@ -87,7 +87,7 @@ function renderSettingFields(
             key={`${group}-${String(field.key)}`}
             label={field.label}
             description={field.description}
-            value={getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined}
+            {...((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined) !== undefined ? { value: getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number } : {})}
             onChange={(value) => updateSetting(field.key, (typeof value === 'number' ? value : field.fallback) as GalleryBehaviorSettings[typeof field.key])}
             min={field.min}
             max={field.max}
@@ -159,8 +159,8 @@ function renderSettingFields(
           key={`${group}-${String(field.key)}`}
           label={field.label}
           description={field.description}
-          size={field.size}
-          value={getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined}
+          {...(field.size !== undefined ? { size: field.size } : {})}
+          {...((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) !== undefined ? { value: getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string } : {})}
           onChange={(value) => updateSetting(field.key, (value ?? field.fallback) as GalleryBehaviorSettings[typeof field.key])}
           data={field.options}
         />

@@ -44,7 +44,7 @@ export function useMediaTransition(
     (navigate: () => void) => {
       window.clearTimeout(exitTimerRef.current);
       if (mediaTransitionDuration > 0 && settings.scrollAnimationStyle !== 'instant') {
-        setPreviousItem(items[currentIndex]);
+        setPreviousItem(items[currentIndex] ?? null);
         exitTimerRef.current = window.setTimeout(
           () => setPreviousItem(null),
           mediaTransitionDuration + 100,

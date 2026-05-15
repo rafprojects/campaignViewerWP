@@ -26,7 +26,19 @@ Create custom themes for WP Super Gallery by writing a JSON file that specifies 
    ];
    ```
 
-4. **Build & test** — the theme appears automatically in the ThemeSelector dropdown.
+4. **Whitelist** the theme in `includes/settings/class-wpsg-settings-registry.php`;
+  
+   ```php
+    408                'synthwave',
+  409                'github-light',
+  410                'catppuccin-latte',
+  411  +             'sunset-boulevard',
+  412            ],
+  413            'gallery_layout' => ['grid', 'masonry', 'carousel'],
+  414            'scroll_animation_style' => ['smooth', 'instant'],
+  ```
+
+5. **Build & test** — the theme appears automatically in the ThemeSelector dropdown.
 
 ---
 

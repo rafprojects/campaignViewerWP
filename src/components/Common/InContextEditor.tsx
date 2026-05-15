@@ -29,7 +29,8 @@ const InContextEditorToggle = forwardRef<HTMLButtonElement, InContextEditorToggl
     return (
       <ActionIcon
         {...getWpsgDebugProps('InContextEditor', 'toggle')}
-        {...actionIconProps}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {...(actionIconProps as any)}
         ref={ref}
         variant="filled"
         color="blue"

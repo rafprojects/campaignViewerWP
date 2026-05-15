@@ -43,6 +43,12 @@ import cyberpunkDef from './definitions/cyberpunk.json';
 import synthwaveDef from './definitions/synthwave.json';
 import githubLightDef from './definitions/github-light.json';
 import catppuccinLatteDef from './definitions/catppuccin-latte.json';
+import sunsetBoulevardDef from './definitions/sunset-boulevard.json';
+import oceanBreezeDef from './definitions/ocean-breeze.json';
+import crimsonCanvasDef from './definitions/crimson-canvas.json';
+import forestWhisperDef from './definitions/forest-whisper.json';
+import halloweenDef from './definitions/halloween.json';
+import reverseHalloweenDef from './definitions/reverse-halloween.json';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,7 +56,7 @@ import catppuccinLatteDef from './definitions/catppuccin-latte.json';
 
 /** A fully pre-computed theme entry stored in the registry Map */
 export interface ThemeEntry {
-  /** Ready-to-use Mantine theme override */
+  /** Ready-to-use MantineThemeOverride */
   mantine: MantineThemeOverride;
 
   /** Lightweight metadata for UI pickers */
@@ -183,6 +189,12 @@ function initializeRegistry(): void {
     synthwaveDef as unknown as ThemeExtension,
     githubLightDef as unknown as ThemeExtension,
     catppuccinLatteDef as unknown as ThemeExtension,
+    sunsetBoulevardDef as unknown as ThemeExtension,
+    oceanBreezeDef as unknown as ThemeExtension,
+    crimsonCanvasDef as unknown as ThemeExtension,
+    forestWhisperDef as unknown as ThemeExtension,
+    halloweenDef as unknown as ThemeExtension,
+    reverseHalloweenDef as unknown as ThemeExtension,
   ];
 
   let successCount = 0;

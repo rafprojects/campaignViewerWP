@@ -15,6 +15,7 @@ import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
   useCampaignCategories,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
+  getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
@@ -63,7 +64,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, campaignPage, CAMPAIGNS_PER_PAGE);
   const allCampaigns = useAllCampaignOptions(apiClient);
-  const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
+  const campaignsMutator = useCallback(async () => {
+    await mutateCampaigns();
+    void queryClient.invalidateQueries({ queryKey: getAdminCampaignOptionsQueryKey(apiClient) });
+  }, [mutateCampaigns, queryClient, apiClient]);
 
   const { data: layoutTemplates } = useLayoutTemplates(apiClient);
   const { campaignCategories } = useCampaignCategories(apiClient);
@@ -99,16 +103,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   });
 
   useEffect(() => {
-    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0].id));
+    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, allCampaigns, mediaCampaignId]);
   useEffect(() => {
-    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0].id));
+    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, accessCampaignId, allCampaigns, accessViewMode]);
   useEffect(() => {
-    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0].id));
+    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, auditCampaignId, allCampaigns]);
   useEffect(() => {
-    if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0].id));
+    if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0]!.id));
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
 
   const mediaPrefetchedRef = useRef(false);
@@ -307,27 +311,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             accessEntriesCount={accessEntries.length}
             accessLoading={accessLoading}
             accessRows={accessRows}
-            onArchiveCompanyClick={(c) => accessState.setConfirmArchiveCompany(c)}
-            userCombobox={accessState.userCombobox}
-            userSearchResults={accessState.userSearchResults}
-            userSearchQuery={accessState.userSearchQuery}
-            userSearchLoading={accessState.userSearchLoading}
-            selectedUser={accessState.selectedUser}
-            setSelectedUser={accessState.setSelectedUser}
-            setUserSearchQuery={accessState.setUserSearchQuery}
-            setAccessUserId={accessState.setAccessUserId}
-            accessUserId={accessState.accessUserId}
-            blurTimeoutRef={accessState.blurTimeoutRef}
-            accessSource={accessState.accessSource}
-            onAccessSourceChange={accessState.setAccessSource}
-            accessAction={accessState.accessAction}
-            onAccessActionChange={accessState.setAccessAction}
-            onGrantAccess={accessState.handleGrantAccess}
-            accessSaving={accessState.accessSaving}
-            onQuickAddUser={() => {
-              if (accessViewMode === 'campaign' && accessCampaignId) accessState.setQuickAddCampaignId(accessCampaignId);
-              accessState.setQuickAddUserOpen(true);
-            }}
+            accessState={accessState}
             apiClient={apiClient}
           />
         </Tabs.Panel>

@@ -495,7 +495,7 @@ interface InnerProps {
   template: LayoutTemplate;
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
-  runtime?: ResolvedGallerySectionRuntime;
+  runtime?: ResolvedGallerySectionRuntime | undefined;
   slotOverrides: CampaignLayoutBinding['slotOverrides'];
   isAdmin: boolean;
   lightboxOpen: boolean;

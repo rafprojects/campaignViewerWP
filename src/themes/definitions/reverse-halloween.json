@@ -1,0 +1,30 @@
+{
+  "_comment": "Reverse-Halloween — A light theme with dark accents for high-contrast effect",
+  "id": "reverse-halloween",
+  "name": "Reverse Halloween",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#FFFFFF",
+    "surface": "#F5F5F5",
+    "surface2": "#E0E0E0",
+    "surface3": "#CCCCCC",
+
+    "text": "#000000",
+    "textMuted": "#2D2D2D",
+    "textMuted2": "#4D4D4D",
+
+    "border": "#4B0082",
+
+    "primary": "#4B0082",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#8B0000",
+    "warning": "#FFA500",
+    "error": "#8B0000",
+    "info": "#000000",
+
+    "accent": "#000000",
+    "accentGreen": "#2D2D2D",
+    "accentPurple": "#4B0082"
+  }
+}

@@ -25,7 +25,7 @@ type AdminCampaign = {
 type QuickAddResult = {
   success: boolean;
   message: string;
-  resetUrl?: string;
+  resetUrl?: string | undefined;
 };
 
 interface QuickAddUserModalProps {

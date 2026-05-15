@@ -9,15 +9,15 @@ export const ASSET_MIME = 'application/x-wpsg-asset-url';
 export interface DesignAssetsGridProps {
   items: OverlayLibraryItem[];
   /** Called when user clicks an asset (e.g. pick as mask or background). */
-  onSelect?: (url: string) => void;
+  onSelect?: ((url: string) => void) | undefined;
   /** Called to delete an asset from the library. */
-  onDelete?: (id: string) => void;
+  onDelete?: ((id: string) => void) | undefined;
   /** Highlight the currently-active URL (e.g. current mask image). */
-  activeUrl?: string;
+  activeUrl?: string | undefined;
   /** Max height of the scrollable container (default: 180). */
-  maxHeight?: number;
+  maxHeight?: number | undefined;
   /** Number of grid columns (default: 2). */
-  columns?: number;
+  columns?: number | undefined;
 }
 
 export function DesignAssetsGrid({

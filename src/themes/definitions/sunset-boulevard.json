@@ -1,0 +1,30 @@
+{
+  "_comment": "Sunset Boulevard — A vibrant warm theme with gradients from coral to purple",
+  "id": "sunset-boulevard",
+  "name": "Sunset Boulevard",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#fffbeb",
+    "surface": "#fef3c7",
+    "surface2": "#fde68a",
+    "surface3": "#fcd34d",
+
+    "text": "#1c1917",
+    "textMuted": "#3f3f46",
+    "textMuted2": "#575760",
+
+    "border": "#f59e0b",
+
+    "primary": "#f97316",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#f43f5e",
+    "warning": "#eab308",
+    "error": "#dc2626",
+    "info": "#8b5cf6",
+
+    "accent": "#f43f5e",
+    "accentGreen": "#22c55e",
+    "accentPurple": "#8b5cf6"
+  }
+}

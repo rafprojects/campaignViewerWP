@@ -1,0 +1,30 @@
+{
+  "_comment": "Forest Whisper — A nature-inspired theme with earthy greens and browns",
+  "id": "forest-whisper",
+  "name": "Forest Whisper",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#f3f5f4",
+    "surface": "#e2e8e0",
+    "surface2": "#cbd5b1",
+    "surface3": "#a7b98d",
+
+    "text": "#166534",
+    "textMuted": "#15803d",
+    "textMuted2": "#16a34a",
+
+    "border": "#16a34a",
+
+    "primary": "#15803d",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#16a34a",
+    "warning": "#f59e0b",
+    "error": "#dc2626",
+    "info": "#60a5fa",
+
+    "accent": "#15803d",
+    "accentGreen": "#16a34a",
+    "accentPurple": "#8b5cf6"
+  }
+}

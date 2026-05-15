@@ -1,0 +1,30 @@
+{
+  "_comment": "Ocean Breeze — A serene light theme with soft blues and greens",
+  "id": "ocean-breeze",
+  "name": "Ocean Breeze",
+  "colorScheme": "light",
+  "colors": {
+    "background": "#f0f9ff",
+    "surface": "#e0f2fe",
+    "surface2": "#bae6fd",
+    "surface3": "#7dd3fc",
+
+    "text": "#0c4a6e",
+    "textMuted": "#0e7490",
+    "textMuted2": "#155e7d",
+
+    "border": "#0ea5e9",
+
+    "primary": "#0284c7",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "error": "#ef4444",
+    "info": "#60a5fa",
+
+    "accent": "#0ea5e9",
+    "accentGreen": "#10b981",
+    "accentPurple": "#8b5cf6"
+  }
+}

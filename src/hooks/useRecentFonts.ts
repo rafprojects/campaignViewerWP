@@ -45,7 +45,7 @@ export function useRecentFonts() {
   const addRecentFont = useCallback((fontFamily: string) => {
     if (!fontFamily) return;
     // Extract the first name from a CSS font-family string
-    const name = fontFamily.split(',')[0].trim().replace(/['"]/g, '');
+    const name = fontFamily.split(',')[0]!.trim().replace(/['"]/g, '');
     if (!name) return;
 
     const current = getSnapshot();

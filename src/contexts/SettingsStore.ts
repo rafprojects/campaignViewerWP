@@ -7,7 +7,7 @@ import {
 import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 
 export interface SettingsData extends GalleryBehaviorSettings {
-  theme?: string;
+  theme?: string | undefined;
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;
@@ -15,11 +15,11 @@ export interface SettingsData extends GalleryBehaviorSettings {
 }
 
 export type SettingsDataInput = Partial<GalleryBehaviorSettings> & {
-  theme?: string;
-  galleryLayout?: string;
-  itemsPerPage?: number;
-  enableLightbox?: boolean;
-  enableAnimations?: boolean;
+  theme?: string | undefined;
+  galleryLayout?: string | undefined;
+  itemsPerPage?: number | undefined;
+  enableLightbox?: boolean | undefined;
+  enableAnimations?: boolean | undefined;
 };
 
 export const DEFAULT_SETTINGS_DATA: SettingsData = {

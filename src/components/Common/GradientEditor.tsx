@@ -55,7 +55,7 @@ export function GradientEditor({ value, onChange }: GradientEditorProps) {
 
   const updateStop = (index: number, patch: Partial<GradientStop>) => {
     const next = [...stops];
-    next[index] = { ...next[index], ...patch };
+    next[index] = { ...next[index]!, ...patch } as GradientStop;
     update({ stops: next });
   };
 

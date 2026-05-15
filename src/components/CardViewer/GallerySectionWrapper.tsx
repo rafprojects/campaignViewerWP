@@ -25,8 +25,8 @@ interface GallerySectionWrapperProps {
   bgColor: string;
   bgGradient: string;
   bgImageUrl: string;
-  borderRadius?: number;
-  style?: CSSProperties;
+  borderRadius?: number | undefined;
+  style?: CSSProperties | undefined;
   children: (containerDimensions: ContainerDimensions) => ReactNode;
 }
 
@@ -63,7 +63,7 @@ export function GallerySectionWrapper({
     const el = sectionRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
-      const rect = entries[0].contentRect;
+      const rect = entries[0]!.contentRect;
       setMeasuredWidth(rect.width);
       setMeasuredHeight(rect.height);
     });

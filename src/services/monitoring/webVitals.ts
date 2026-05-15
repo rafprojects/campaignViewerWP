@@ -87,7 +87,7 @@ export function startWebVitalsMonitoring(options: WebVitalsOptions = {}) {
     const lcpObserver = new PerformanceObserver((entryList) => {
       const entries = entryList.getEntries();
       if (entries.length > 0) {
-        lcpEntry = entries[entries.length - 1];
+        lcpEntry = entries[entries.length - 1] ?? null;
       }
     });
     try {
