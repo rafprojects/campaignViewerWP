@@ -49,6 +49,7 @@ import crimsonCanvasDef from './definitions/crimson-canvas.json';
 import forestWhisperDef from './definitions/forest-whisper.json';
 import halloweenDef from './definitions/halloween.json';
 import reverseHalloweenDef from './definitions/reverse-halloween.json';
+import midnightRoseDef from './definitions/midnight-rose.json';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -195,6 +196,7 @@ function initializeRegistry(): void {
     forestWhisperDef as unknown as ThemeExtension,
     halloweenDef as unknown as ThemeExtension,
     reverseHalloweenDef as unknown as ThemeExtension,
+    midnightRoseDef as unknown as ThemeExtension,
   ];
 
   let successCount = 0;

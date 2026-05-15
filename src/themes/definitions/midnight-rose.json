@@ -1,0 +1,30 @@
+{
+  "_comment": "Midnight Rose — A dark theme with rose accents for a sophisticated look",
+  "id": "midnight-rose",
+  "name": "Midnight Rose",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#0a0a0a",
+    "surface": "#1a1a1a",
+    "surface2": "#2a2a2a",
+    "surface3": "#3a3a3a",
+
+    "text": "#ffffff",
+    "textMuted": "#e0e0e0",
+    "textMuted2": "#b0b0b0",
+
+    "border": "#333333",
+    "success": "#4caf50",
+
+    "primary": "#e91e63",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "warning": "#ff9800",
+    "error": "#f44336",
+    "info": "#2196f3",
+
+    "accent": "#ff4081",
+    "accentGreen": "#22c55e",
+    "accentPurple": "#8b5cf6"
+  }
+}

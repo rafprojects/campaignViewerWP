@@ -21,9 +21,9 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('Theme Registry', () => {
-  it('registers all 22 bundled themes', () => {
+  it('registers all 23 bundled themes', () => {
     const ids = getAllThemeIds();
-    expect(ids).toHaveLength(22);
+    expect(ids).toHaveLength(23);
     expect(ids).toContain('default-dark');
     expect(ids).toContain('default-light');
     expect(ids).toContain('material-dark');
@@ -46,6 +46,7 @@ describe('Theme Registry', () => {
     expect(ids).toContain('forest-whisper');
     expect(ids).toContain('halloween');
     expect(ids).toContain('reverse-halloween');
+    expect(ids).toContain('midnight-rose');
   });
 
   it('has DEFAULT_THEME_ID set to "default-dark"', () => {
@@ -126,9 +127,9 @@ describe('getMantineTheme', () => {
 // ---------------------------------------------------------------------------
 
 describe('getAllThemeMeta', () => {
-  it('returns metadata for all 22 themes', () => {
+  it('returns metadata for all 23 themes', () => {
     const meta = getAllThemeMeta();
-    expect(meta).toHaveLength(22);
+    expect(meta).toHaveLength(23);
     for (const m of meta) {
       expect(m.id).toBeTruthy();
       expect(m.name).toBeTruthy();
