@@ -1,18 +1,18 @@
 # Phase 27 — API Contract Sweep & Improvement Analysis
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-05-14
-**Last updated:** 2026-05-14 (added P27-C, P27-D, P27-E)
+**Last updated:** 2026-05-15 (P27-A complete; P27-D and P27-E committed)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P27-A | API doc accuracy & completeness — fix every entry in `docs/api/` | Planned | Large |
+| P27-A | API doc accuracy & completeness — fix every entry in `docs/api/` | **Complete** | Large |
 | P27-B | API improvement analysis — surface additions and enhancements through the "what can be added" lens | Planned | Medium |
 | P27-C | Admin SPA query cache & performance hardening — audit TanStack Query keys, staleTime, invalidation, and tab state preservation | Planned | Low–Medium |
 | P27-D | TypeScript strictness improvements — enable `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` across the codebase | **Complete** | Medium |
-| P27-E | React review debt batch — targeted fixes from the FUTURE_TASKS RD backlog (RD-3, RD-8, RD-10, RD-16, RD-18) | In Progress | Low–Medium |
+| P27-E | React review debt batch — targeted fixes from the FUTURE_TASKS RD backlog (RD-3, RD-8, RD-10, RD-16, RD-18) | **Complete** | Low–Medium |
 
 ---
 
@@ -48,7 +48,24 @@ Phase 27 fixes all of this and goes one step further: it evaluates the full API 
 
 ## Track P27-A — API Documentation Accuracy & Quality Review
 
-### Problem
+**Status: Complete** — committed with P27-A tag.
+
+### Outcome
+
+| Artifact | Before | After |
+|---|---|---|
+| `docs/api/openapi.yaml` | Incomplete stub (~1200 lines, missing schemas, error responses, operationIds) | 66 operations, 25 schemas, full request/response bodies, all error codes, zero lint warnings (Redocly CLI) |
+| `docs/api/wp-super-gallery.postman_collection.json` | 4 requests, no folder hierarchy | 66 requests across 19 domain folders, auto-nonce capture test script, all env vars documented |
+
+### What was done
+
+- Rewrote `openapi.yaml` from scratch to OpenAPI 3.0.3 with all 66 operations (covering every `wp-super-gallery/v1` route), 25 `components/schemas`, full request/response bodies, per-operation error responses (400/401/403/404/422 where applicable), correct security annotations, `operationId` and `tags` on every operation.
+- Fixed two YAML structural bugs introduced by the manual edit pass: garbled `AccessGrant`/`AccessRequest` schema merge, and two `delete:` operations missing `parameters:` keys and reorder body fragments.
+- Removed two unused schema components (`NoncePaginationMeta`, `MediaReorderItem`) that caused `no-unused-components` warnings.
+- Added `info.license` field (GPL-2.0-or-later) to satisfy the `info-license` rule.
+- Rebuilt the Postman collection from 29 requests → 66 requests, with all 19 domain folders matching the OpenAPI tag groupings. Added a collection-level test script to auto-capture the nonce from login responses.
+
+
 
 The two `docs/api/` artifacts — `openapi.yaml` and `wp-super-gallery.postman_collection.json` — do not accurately or completely reflect the live API at v0.24.0.
 
@@ -1425,8 +1442,18 @@ These flags surface a class of latent type bugs (reading from possibly-undefined
 ## Track P27-E — React Review Debt Batch
 
 **Source:** FUTURE_TASKS.md — Deferred Review Tasks (RD-3, RD-8, RD-10, RD-16, RD-18)
-**Status:** Planned
+**Status:** ✅ Complete — committed `feat/phase27-api-update-and-more` @ `a37a120`
 **Effort:** Low–Medium | **Impact:** Low–Medium
+
+### Outcome
+
+All five RD items resolved. 1430 Vitest tests pass. Key changes:
+
+- **RD-3** — `SortableListRow` / `SortableGridItem` moved to module scope in `MediaTab.tsx`. Shared hook-captured values extracted into a `sharedSortableProps` object spread at call sites. No more remount on every `MediaTab` render.
+- **RD-8** — `CardGallery.tsx` `goToPage` replaces `setTimeout` with a `transitionend` event listener filtered to `e.target === el && e.propertyName === 'transform'`. Falls back to immediate advance when `getComputedStyle(el).transitionDuration` is `'0s'`/empty (covers jsdom in tests).
+- **RD-10** — `AccessTab` props reduced from ~33 to ~15 individual props + one `accessState: AdminAccessState` object. `useAdminAccessState` exports `AdminAccessState = ReturnType<typeof useAdminAccessState>`. `AccessTab.test.tsx` wrapper rebuilt to match the new interface.
+- **RD-16** — `LoginForm` accepts `minPasswordLength?: number | undefined` (default `6`). `App.tsx` wires `resolvedSettings.loginMinPasswordLength` to the prop.
+- **RD-18** — `useMediaDimensions` uses a stable `mediaKey` dep string (`id:url` pairs joined) instead of the `media` array reference. Probe cache keyed by item ID stores `{ url, width, height }` so cache is invalidated per item when its source URL changes.
 
 ### Problem
 

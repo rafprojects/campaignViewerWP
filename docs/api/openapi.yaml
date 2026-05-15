@@ -1,8 +1,23 @@
 openapi: 3.0.3
 info:
   title: WP Super Gallery API
-  version: "1.0.0"
-  description: OpenAPI description of the `wp-super-gallery/v1` REST endpoints used by the admin SPA and public site.
+  version: "0.24.0"
+  license:
+    name: GPL-2.0-or-later
+    url: https://www.gnu.org/licenses/gpl-2.0.html
+  description: |
+    OpenAPI 3.0.3 description of all `wp-super-gallery/v1` REST endpoints
+    used by the admin SPA and public site.
+
+    ## Authentication
+
+    Most write endpoints and all admin read endpoints require one of:
+    - **bearerAuth** — `Authorization: Bearer <jwt>` header (JWT issued by
+      `POST /auth/login` or a compatible JWT plugin)
+    - **cookieNonce** — `X-WP-Nonce: <nonce>` header obtained from the login
+      response or `GET /nonce`
+
+    Public read endpoints and event-recording endpoints use no authentication.
 servers:
   - url: https://{site_base}
     variables:
@@ -16,42 +31,166 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtained from POST /auth/login
     cookieNonce:
       type: apiKey
       in: header
       name: X-WP-Nonce
+      description: WordPress REST nonce; obtain from login response or GET /nonce
+
   schemas:
+
     Error:
       type: object
+      description: Standard error response body returned for 4xx and 5xx responses.
+      required: [code, message]
       properties:
         code:
           type: string
+          description: Machine-readable error code
+          example: rest_forbidden
         message:
           type: string
+          description: Human-readable description of the error
+          example: Sorry, you are not allowed to do that.
+        data:
+          type: object
+          description: Optional additional context (e.g. per-field validation errors)
+          additionalProperties: true
+
     Campaign:
       type: object
+      description: A WP Super Gallery campaign (gallery instance).
+      required: [id, title]
       properties:
         id:
           type: integer
+          description: WordPress post ID
+          example: 42
+        title:
+          type: string
+          description: Campaign title
+          example: Summer 2026 Product Launch
+        description:
+          type: string
+          nullable: true
+          description: Optional campaign description / excerpt
+          example: A showcase of the Q3 product line.
+        slug:
+          type: string
+          description: URL-safe post slug
+          example: summer-2026-product-launch
+        status:
+          type: string
+          enum: [publish, draft, archived]
+          description: WordPress post status (archived maps to the custom status)
+          example: publish
+        visibility:
+          type: string
+          enum: [public, private, password]
+          description: WP post visibility setting
+          example: public
+        company_id:
+          type: string
+          nullable: true
+          description: Slug of the owning Company, if assigned
+          example: acme-corp
+        template_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of the linked LayoutTemplate
+          example: 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+        categories:
+          type: array
+          items:
+            type: integer
+          description: WordPress term IDs for campaign-categories taxonomy
+          example: [1, 3]
+        tags:
+          type: array
+          items:
+            type: integer
+          description: WordPress term IDs for campaign-tags taxonomy
+          example: [5]
+        media_count:
+          type: integer
+          description: Number of media items currently attached to this campaign
+          example: 12
+        settings_override:
+          type: object
+          description: Per-campaign settings that override global defaults
+          additionalProperties: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 creation timestamp
+          example: "2026-01-15T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: ISO 8601 last-modified timestamp
+          example: "2026-04-20T14:30:00Z"
+
+    CampaignCreate:
+      type: object
+      description: Request body for creating a new campaign.
+      required: [title]
+      properties:
+        title:
+          type: string
+          description: Campaign title (required)
+          example: New Campaign
+        description:
+          type: string
+          description: Optional campaign description
+        visibility:
+          type: string
+          enum: [public, private, password]
+          default: public
+        company_id:
+          type: string
+          description: Company slug to associate with this campaign
+          nullable: true
+        template_id:
+          type: string
+          format: uuid
+          description: UUID of a LayoutTemplate to link
+          nullable: true
+        settings_override:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    CampaignUpdate:
+      type: object
+      description: Request body for updating an existing campaign. All fields are optional.
+      properties:
         title:
           type: string
         description:
           type: string
+          nullable: true
         visibility:
           type: string
-    MediaItem:
-      type: object
-      properties:
-        id:
+          enum: [public, private, password]
+        company_id:
           type: string
-        url:
+          nullable: true
+        template_id:
           type: string
-        type:
-          type: string
-        source:
-          type: string
+          format: uuid
+          nullable: true
+        settings_override:
+          type: object
+          additionalProperties: true
+          nullable: true
+
     PaginatedCampaigns:
       type: object
+      description: Paginated list of campaigns.
+      required: [items, page, per_page, total, total_pages]
       properties:
         items:
           type: array
@@ -59,41 +198,825 @@ components:
             $ref: '#/components/schemas/Campaign'
         page:
           type: integer
-        perPage:
+          example: 1
+        per_page:
           type: integer
+          example: 20
         total:
           type: integer
-        totalPages:
+          example: 100
+        total_pages:
           type: integer
+          example: 5
+
+    MediaItem:
+      type: object
+      description: A single media item attached to a campaign.
+      required: [id, url, type, source]
+      properties:
+        id:
+          type: string
+          description: Unique string identifier for this media item
+          example: abc123.jpg
+        url:
+          type: string
+          format: uri
+          description: Full URL to the media asset
+          example: https://example.com/wp-content/uploads/2026/01/photo.jpg
+        type:
+          type: string
+          enum: [image, video, oembed, external]
+          description: Media type
+          example: image
+        source:
+          type: string
+          enum: [upload, external]
+          description: Whether the asset is a WP upload or an external URL
+          example: upload
+        caption:
+          type: string
+          nullable: true
+          description: Optional caption text
+          example: A beautiful sunrise over the mountains
+        order:
+          type: integer
+          description: Display order within the campaign (0-indexed)
+          example: 0
+        thumbnail:
+          type: string
+          format: uri
+          nullable: true
+          description: URL of a thumbnail image
+          example: https://example.com/wp-content/uploads/2026/01/photo-150x150.jpg
+        attachment_id:
+          type: integer
+          nullable: true
+          description: WordPress attachment post ID (null for external/oembed items)
+          example: 123
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO 8601 timestamp when this item was added to the campaign
+          example: "2026-02-01T10:00:00Z"
+
+    MediaItemUpdate:
+      type: object
+      description: Fields that can be updated on an existing media item.
+      properties:
+        caption:
+          type: string
+          nullable: true
+          description: New caption text
+        order:
+          type: integer
+          description: New display order position
+        thumbnail:
+          type: string
+          format: uri
+          nullable: true
+          description: New thumbnail URL
+
+    AccessGrant:
+      type: object
+      description: A user-level access grant for a campaign or company.
+      required: [user_id, user_login, user_email, granted_at]
+      properties:
+        campaign_id:
+          type: integer
+          nullable: true
+          description: Campaign post ID (null for company-level grants)
+          example: 42
+        user_id:
+          type: integer
+          description: WordPress user ID
+          example: 7
+        user_login:
+          type: string
+          description: WordPress username
+          example: jsmith
+        user_email:
+          type: string
+          format: email
+          description: User email address
+          example: jsmith@example.com
+        granted_at:
+          type: string
+          format: date-time
+          description: "Timestamp when access was granted"
+          example: "2026-03-10T08:00:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: "Optional ISO 8601 expiration timestamp. Null = permanent grant."
+          example: "2026-12-31T23:59:59Z"
+        is_expired:
+          type: boolean
+          description: "Computed: true if expires_at is in the past"
+
+    AccessRequest:
+      type: object
+      description: A pending access request submitted by a non-authenticated visitor.
+      required: [id, token, campaign_id, email, status, created_at]
+      properties:
+        id:
+          type: integer
+          description: Internal request ID
+          example: 1
+        token:
+          type: string
+          format: uuid
+          description: UUID v4 token used in approval/denial URLs
+          example: 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+        campaign_id:
+          type: integer
+          description: Campaign post ID
+          example: 42
+        email:
+          type: string
+          format: email
+          description: Requestor's email address
+          example: visitor@example.com
+        name:
+          type: string
+          nullable: true
+          description: Requestor's name, if provided
+          example: Jane Visitor
+        message:
+          type: string
+          nullable: true
+          description: Optional message from the requestor
+        status:
+          type: string
+          enum: [pending, approved, denied]
+          description: Current status of the request
+          example: pending
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the request was submitted
+          example: "2026-04-01T12:00:00Z"
+
+    AuditEntry:
+      type: object
+      description: A single entry in a campaign's audit log.
+      required: [id, action, actor_id, actor_login, created_at]
+      properties:
+        id:
+          type: integer
+          description: Unique audit entry ID
+          example: 501
+        action:
+          type: string
+          description: Action string in dot-notation (e.g. media.added, access.granted)
+          example: media.added
+        actor_id:
+          type: integer
+          description: WordPress user ID of the user who performed the action
+          example: 1
+        actor_login:
+          type: string
+          description: WordPress username of the actor
+          example: admin
+        data:
+          type: object
+          description: Arbitrary payload recording what changed (keys vary by action)
+          additionalProperties: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when this event occurred
+          example: "2026-04-15T11:22:00Z"
+
+    Company:
+      type: object
+      description: An organisational grouping for campaigns.
+      required: [id, name, slug]
+      properties:
+        id:
+          type: integer
+          description: Internal company ID
+          example: 3
+        name:
+          type: string
+          description: Display name
+          example: Acme Corp
+        slug:
+          type: string
+          description: URL-safe identifier
+          example: acme-corp
+
+    User:
+      type: object
+      description: A WordPress user.
+      required: [id, login, email]
+      properties:
+        id:
+          type: integer
+          description: WordPress user ID
+          example: 7
+        login:
+          type: string
+          description: WordPress username
+          example: jsmith
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: jsmith@example.com
+        display_name:
+          type: string
+          description: Display name shown in the UI
+          example: John Smith
+        roles:
+          type: array
+          items:
+            type: string
+          description: WordPress roles assigned to this user
+          example: [subscriber]
+
+    Role:
+      type: object
+      description: A WordPress role with its capabilities.
+      required: [name, display_name]
+      properties:
+        name:
+          type: string
+          description: Slug / machine name of the role
+          example: editor
+        display_name:
+          type: string
+          description: Human-readable label
+          example: Editor
+        capabilities:
+          type: object
+          description: Capability map (capability name -> boolean)
+          additionalProperties:
+            type: boolean
+
+    AnalyticsEvent:
+      type: object
+      description: A single analytics event recorded by the embedded gallery.
+      required: [campaign_id, event_type]
+      properties:
+        campaign_id:
+          type: integer
+          description: Campaign post ID
+          example: 42
+        event_type:
+          type: string
+          enum: [view, lightbox_open, video_play]
+          description: Type of interaction
+          example: view
+        session_id:
+          type: string
+          format: uuid
+          description: Client-generated UUID v4 session identifier
+          example: 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+        media_id:
+          type: string
+          nullable: true
+          description: ID of the specific media item involved (for lightbox/video events)
+          example: abc123.jpg
+
+    AnalyticsDailyPoint:
+      type: object
+      required: [date, views, unique_visitors]
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-04-01"
+        views:
+          type: integer
+          example: 120
+        unique_visitors:
+          type: integer
+          example: 84
+
+    AnalyticsSummary:
+      type: object
+      description: Analytics summary for a campaign over a date range.
+      required: [campaign_id, period_start, period_end, total_views, unique_visitors]
+      properties:
+        campaign_id:
+          type: integer
+          example: 42
+        period_start:
+          type: string
+          format: date
+          example: "2026-04-01"
+        period_end:
+          type: string
+          format: date
+          example: "2026-04-30"
+        total_views:
+          type: integer
+          example: 3200
+        unique_visitors:
+          type: integer
+          example: 1100
+        daily:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsDailyPoint'
+
+    LayoutTemplate:
+      type: object
+      description: A reusable layout template that defines gallery slot configuration.
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique template identifier (UUID v4)
+          example: 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+        name:
+          type: string
+          description: Human-readable template name
+          example: Classic 3-Column Grid
+        slots:
+          type: array
+          description: Array of slot configuration objects
+          items:
+            type: object
+            additionalProperties: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-01-10T08:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-03-22T15:45:00Z"
+
+    OverlayItem:
+      type: object
+      description: An image file stored in the overlay library.
+      required: [id, url, name, mime_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique overlay identifier (UUID v4)
+          example: 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+        url:
+          type: string
+          format: uri
+          description: Public URL of the overlay image
+          example: https://example.com/wp-content/uploads/wpsg/overlays/frame.png
+        name:
+          type: string
+          description: Original filename
+          example: frame.png
+        mime_type:
+          type: string
+          description: MIME type
+          example: image/png
+        size:
+          type: integer
+          description: File size in bytes
+          example: 45231
+
+    FontItem:
+      type: object
+      description: A font file stored in the font library.
+      required: [id, url, family, filename]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique font identifier (UUID v4)
+          example: 3f2504e0-4f89-11d3-9a0c-0305e82c3301
+        url:
+          type: string
+          format: uri
+          description: Public URL of the font file
+          example: https://example.com/wp-content/uploads/wpsg/fonts/custom.woff2
+        family:
+          type: string
+          description: CSS font-family name
+          example: Custom Sans
+        filename:
+          type: string
+          description: Original filename
+          example: custom-sans.woff2
+        size:
+          type: integer
+          description: File size in bytes
+          example: 85000
+          nullable: true
+
+    Settings:
+      type: object
+      description: Flat key/value map of plugin settings.
+      additionalProperties: true
+      properties:
+        loginMinPasswordLength:
+          type: integer
+          description: Minimum password length enforced at the login form
+          example: 6
+        defaultVisibility:
+          type: string
+          enum: [public, private]
+          example: public
+        enableAnalytics:
+          type: boolean
+          example: true
+        enableAccessRequests:
+          type: boolean
+          example: true
+
+    HealthData:
+      type: object
+      description: Plugin and environment health diagnostics.
+      required: [version, wp_version, php_version]
+      properties:
+        version:
+          type: string
+          description: Plugin version
+          example: 0.24.0
+        wp_version:
+          type: string
+          description: WordPress core version
+          example: "6.7"
+        php_version:
+          type: string
+          description: PHP runtime version
+          example: "8.2.10"
+        db_version:
+          type: string
+          description: MySQL/MariaDB version string
+          example: "8.0.32"
+        cache_driver:
+          type: string
+          description: Active object cache driver (or "none")
+          example: redis
+        table_checks:
+          type: array
+          description: Status of each custom DB table
+          items:
+            type: object
+            required: [table, ok]
+            properties:
+              table:
+                type: string
+              ok:
+                type: boolean
+
+    ThumbnailCacheStats:
+      type: object
+      description: Statistics for the server-side thumbnail cache.
+      required: [count, total_size_bytes]
+      properties:
+        count:
+          type: integer
+          description: Number of cached entries
+          example: 240
+        total_size_bytes:
+          type: integer
+          description: Total disk space used by the cache in bytes
+          example: 5242880
+        oldest_entry:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the oldest cache entry
+          example: "2025-09-01T00:00:00Z"
+        newest_entry:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the most recently added cache entry
+          example: "2026-05-01T08:30:00Z"
+
+    OembedResponse:
+      type: object
+      description: Proxied oEmbed discovery response.
+      required: [url, html]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: The original URL that was resolved
+          example: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+        html:
+          type: string
+          description: Embed HTML returned by the oEmbed provider
+        width:
+          type: integer
+          nullable: true
+          example: 640
+        height:
+          type: integer
+          nullable: true
+          example: 360
+        provider_name:
+          type: string
+          nullable: true
+          example: YouTube
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          example: https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg
 
 security:
   - {}
 
 paths:
+
+  # ── Auth ──────────────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/auth/login:
+    post:
+      operationId: cookieLogin
+      tags: [Auth]
+      summary: Cookie-based login
+      description: |
+        Authenticates with WordPress using username/password and sets the
+        session cookie. Returns a fresh X-WP-Nonce value for subsequent
+        authenticated requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  format: password
+                remember:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Logged in. Save the nonce value as X-WP-Nonce.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user_id, user_login, display_name, nonce, roles]
+                properties:
+                  user_id:
+                    type: integer
+                    example: 1
+                  user_login:
+                    type: string
+                    example: admin
+                  display_name:
+                    type: string
+                    example: Administrator
+                  nonce:
+                    type: string
+                    example: 1ab2c3d4e5
+                  roles:
+                    type: array
+                    items:
+                      type: string
+                    example: [administrator]
+        '400':
+          description: Missing username or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/auth/logout:
+    post:
+      operationId: cookieLogout
+      tags: [Auth]
+      summary: Cookie-based logout
+      description: Clears the WordPress session cookie. Accepts cookie or bearer auth.
+      security:
+        - cookieNonce: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/nonce:
+    get:
+      operationId: refreshNonce
+      tags: [Auth]
+      summary: Refresh REST nonce
+      description: |
+        Returns a fresh wp_rest nonce. Use to refresh a stale X-WP-Nonce header
+        in long-running SPA sessions. Accepts cookie or bearer auth.
+      security:
+        - cookieNonce: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fresh nonce string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [nonce]
+                properties:
+                  nonce:
+                    type: string
+                    example: 1ab2c3d4e5
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Permissions ───────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/permissions:
+    get:
+      operationId: getPermissions
+      tags: [Auth]
+      summary: Get current user permissions
+      description: Returns a flat capability map for the currently authenticated user.
+      security:
+        - cookieNonce: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Capability map
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [can_manage_wpsg, can_upload_files, can_manage_options, user_id, roles]
+                properties:
+                  can_manage_wpsg:
+                    type: boolean
+                  can_upload_files:
+                    type: boolean
+                  can_manage_options:
+                    type: boolean
+                  user_id:
+                    type: integer
+                    example: 1
+                  roles:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Settings ──────────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/settings:
+    get:
+      operationId: getPublicSettings
+      tags: [Settings]
+      summary: Get public settings
+      description: Public endpoint (rate_limit_public). Returns the subset of settings safe for unauthenticated callers.
+      security:
+        - {}
+      responses:
+        '200':
+          description: Settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: updateSettings
+      tags: [Settings]
+      summary: Update settings (partial)
+      description: Only the keys present in the request body are updated. Requires manage_options.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Settings'
+      responses:
+        '200':
+          description: Full updated settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '400':
+          description: Malformed request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error - per-field details in data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Campaigns ─────────────────────────────────────────────────────────
+
   /wp-json/wp-super-gallery/v1/campaigns:
     get:
+      operationId: listCampaigns
+      tags: [Campaigns]
       summary: List campaigns
+      description: |
+        Paginated campaign list. Unauthenticated callers see only public/publish
+        campaigns. Admin callers also see private and draft campaigns.
       parameters:
         - in: query
           name: page
           schema:
             type: integer
+            default: 1
         - in: query
           name: per_page
           schema:
             type: integer
+            default: 20
         - in: query
           name: status
           schema:
             type: string
+            enum: [publish, draft, archived]
         - in: query
           name: visibility
           schema:
             type: string
+            enum: [public, private, password]
+        - in: query
+          name: company
+          schema:
+            type: string
+          description: Filter by company slug or ID
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Full-text search across title and description
         - in: query
           name: include_media
           schema:
             type: boolean
+            default: false
+          description: When true, embed the media items array in each Campaign object
       responses:
         '200':
           description: Paginated campaign list
@@ -102,8 +1025,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedCampaigns'
         '304':
-          description: Not modified (ETag)
+          description: Not modified (ETag match)
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
+      operationId: createCampaign
+      tags: [Campaigns]
       summary: Create campaign
       security:
         - bearerAuth: []
@@ -113,21 +1044,28 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                description:
-                  type: string
+              $ref: '#/components/schemas/CampaignCreate'
       responses:
         '201':
-          description: Created
+          description: Campaign created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Campaign'
         '400':
-          description: Validation error
+          description: Validation error (e.g. missing title)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
           content:
             application/json:
               schema:
@@ -138,126 +1076,162 @@ paths:
       - in: path
         name: id
         required: true
+        description: Numeric campaign post ID
         schema:
           type: integer
+          example: 42
     get:
+      operationId: getCampaign
+      tags: [Campaigns]
       summary: Get campaign
+      description: |
+        Returns a single campaign. Public campaigns are accessible without
+        authentication. Private campaigns require read_post or manage_options.
       responses:
         '200':
-          description: Campaign
+          description: Campaign object
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Campaign'
+        '401':
+          description: Campaign is private and caller is unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '403':
-          description: Forbidden
+          description: Caller does not have read access to this campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
-          description: Not found
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
+      operationId: updateCampaign
+      tags: [Campaigns]
       summary: Update campaign
+      description: Partial update. Omitted fields retain their current values.
       security:
         - bearerAuth: []
         - cookieNonce: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/CampaignUpdate'
       responses:
         '200':
-          description: Updated
+          description: Updated campaign object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
         '400':
-          description: Invalid
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteCampaign
+      tags: [Campaigns]
+      summary: Permanently delete a campaign
+      description: Hard-deletes the campaign and all associated media entries. Requires `confirm=true`.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Campaign post ID
+          schema:
+            type: integer
+        - in: query
+          name: confirm
+          required: true
+          schema:
+            type: boolean
+            enum: [true]
+          description: Must be true to confirm permanent deletion
+        - in: query
+          name: purge_analytics
+          schema:
+            type: boolean
+            default: false
+          description: When true, also deletes all analytics events for this campaign
+      responses:
+        '200':
+          description: Campaign deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Campaign deleted
+                  id:
+                    type: integer
+                    example: 42
+        '400':
+          description: Missing or invalid confirm parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/campaigns/{id}/archive:
     post:
+      operationId: archiveCampaign
+      tags: [Campaigns]
       summary: Archive campaign
       security:
         - bearerAuth: []
         - cookieNonce: []
-      responses:
-        '200':
-          description: Archived
-        '404':
-          description: Not found
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/restore:
-    post:
-      summary: Restore campaign
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Restored
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/duplicate:
-    post:
-      summary: Duplicate campaign
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                copyMedia:
-                  type: boolean
-      responses:
-        '201':
-          description: Duplicated
-
-  /wp-json/wp-super-gallery/v1/campaigns/batch:
-    post:
-      summary: Bulk campaign actions
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                action:
-                  type: string
-                ids:
-                  type: array
-                  items:
-                    type: integer
-      responses:
-        '200':
-          description: Bulk action result
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/export:
-    get:
-      summary: Export campaign
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: JSON attachment
-
-  /wp-json/wp-super-gallery/v1/campaigns/import:
-    post:
-      summary: Import campaign
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '201':
-          description: Imported
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/media:
-    get:
-      summary: List campaign media
       parameters:
         - in: path
           name: id
@@ -266,367 +1240,1392 @@ paths:
             type: integer
       responses:
         '200':
-          description: Media list
+          description: Archived
           content:
             application/json:
               schema:
                 type: object
+                properties:
+                  message:
+                    type: string
+                    example: Campaign archived
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/restore:
     post:
-      summary: Create media item
+      operationId: restoreCampaign
+      tags: [Campaigns]
+      summary: Restore archived campaign
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Campaign restored
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/duplicate:
+    post:
+      operationId: duplicateCampaign
+      tags: [Campaigns]
+      summary: Duplicate campaign
+      description: |
+        Creates a copy of an existing campaign. When copyTemplate=true, an
+        independent clone of the linked layout template is created.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Title for the duplicate (default adds " (Copy)" suffix)
+                copyMedia:
+                  type: boolean
+                  default: true
+                copyTemplate:
+                  type: boolean
+                  default: false
+                  description: When true, creates an independent clone of the linked layout template
+      responses:
+        '201':
+          description: Duplicated campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Source campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/batch:
+    post:
+      operationId: batchCampaigns
+      tags: [Campaigns]
+      summary: Bulk campaign actions
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [action, ids]
+              properties:
+                action:
+                  type: string
+                  enum: [archive, restore, delete]
+                ids:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3]
+      responses:
+        '200':
+          description: Batch action result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [processed, failed]
+                properties:
+                  processed:
+                    type: integer
+                    example: 3
+                  failed:
+                    type: integer
+                    example: 0
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        message:
+                          type: string
+        '400':
+          description: Invalid action or empty ids array
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/export:
+    get:
+      operationId: exportCampaign
+      tags: [Campaigns]
+      summary: Export campaign as JSON
+      description: Returns a JSON export bundle. Response sets Content-Disposition attachment.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Campaign export bundle
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="campaign-42.json"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, campaign, media]
+                properties:
+                  version:
+                    type: string
+                    example: "1.0"
+                  campaign:
+                    $ref: '#/components/schemas/Campaign'
+                  media:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaItem'
+                  settings_override:
+                    type: object
+                    additionalProperties: true
+                    nullable: true
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/import:
+    post:
+      operationId: importCampaign
+      tags: [Campaigns]
+      summary: Import campaign from JSON
+      description: Creates a new campaign from an export bundle. Returns 422 if schema version is unsupported.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, campaign, media]
+              properties:
+                version:
+                  type: string
+                  example: "1.0"
+                campaign:
+                  $ref: '#/components/schemas/CampaignCreate'
+                media:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MediaItem'
+      responses:
+        '201':
+          description: Imported campaign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          description: Malformed import bundle
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Export schema version not supported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Campaign Media ────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/media:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: Numeric campaign post ID
+        schema:
+          type: integer
+    get:
+      operationId: listCampaignMedia
+      tags: [Media]
+      summary: List campaign media
+      description: Returns all media items attached to a campaign, ordered by the order field.
+      responses:
+        '200':
+          description: Media items for this campaign
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaItem'
+                  total:
+                    type: integer
+                    example: 12
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createCampaignMedia
+      tags: [Media]
+      summary: Add media item to campaign
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, source, url]
               properties:
                 type:
                   type: string
+                  enum: [image, video, oembed, external]
                 source:
                   type: string
+                  enum: [upload, external]
                 url:
                   type: string
-                attachmentId:
+                  format: uri
+                attachment_id:
                   type: integer
+                  nullable: true
+                caption:
+                  type: string
+                  nullable: true
+                order:
+                  type: integer
+                  nullable: true
       responses:
         '201':
-          description: Created media
+          description: Media item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItem'
+        '400':
+          description: Invalid or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/media/reorder:
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/media/{mediaId}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: Numeric campaign post ID
+        schema:
+          type: integer
+      - in: path
+        name: mediaId
+        required: true
+        description: String identifier of the media item
+        schema:
+          type: string
+          example: abc123.jpg
     put:
-      summary: Reorder media
+      operationId: updateCampaignMediaItem
+      tags: [Media]
+      summary: Update media item
+      description: Updates caption, order, or thumbnail for an existing media item.
       security:
         - bearerAuth: []
+        - cookieNonce: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                items:
-                  type: array
-                  items:
-                    type: object
+              $ref: '#/components/schemas/MediaItemUpdate'
       responses:
         '200':
-          description: Reordered
+          description: Media item updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Media updated
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign or media item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteCampaignMediaItem
+      tags: [Media]
+      summary: Remove media item from campaign
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Media item removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Media item removed
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign or media item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/campaigns/{id}/media/rescan:
     post:
+      operationId: rescanCampaignMedia
+      tags: [Media]
       summary: Rescan campaign media types
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
       responses:
         '200':
-          description: Rescan result
+          description: Rescan complete
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updated, message]
+                properties:
+                  updated:
+                    type: integer
+                    example: 3
+                  message:
+                    type: string
+                    example: Rescan complete
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Media (site-wide) ─────────────────────────────────────────────────
 
   /wp-json/wp-super-gallery/v1/media/rescan-all:
     post:
-      summary: Rescan all media types
+      operationId: rescanAllMedia
+      tags: [Media]
+      summary: Rescan all media types (site-wide)
       security:
         - bearerAuth: []
+        - cookieNonce: []
       responses:
         '200':
-          description: Global rescan result
-
-  /wp-json/wp-super-gallery/v1/media/{mediaId}/usage:
-    get:
-      summary: Media usage for a mediaId
-      parameters:
-        - in: path
-          name: mediaId
-          required: true
-          schema:
-            type: string
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Usage
-
-  /wp-json/wp-super-gallery/v1/media/usage-summary:
-    get:
-      summary: Media usage summary for multiple ids
-      parameters:
-        - in: query
-          name: ids[]
-          schema:
-            type: array
-            items:
-              type: string
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Summary map
+          description: Site-wide rescan complete
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [scanned, updated, message]
+                properties:
+                  scanned:
+                    type: integer
+                    example: 240
+                  updated:
+                    type: integer
+                    example: 12
+                  message:
+                    type: string
+                    example: Rescan complete
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/media/library:
     get:
-      summary: Media library list
+      operationId: listMediaLibrary
+      tags: [Media]
+      summary: List WP media library
       security:
         - bearerAuth: []
-      responses:
-        '200':
-          description: Media library
-
-  /wp-json/wp-super-gallery/v1/media/upload:
-    post:
-      summary: Upload media (expects multipart/form-data)
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-      responses:
-        '201':
-          description: Upload created
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access:
-    get:
-      summary: List campaign access grants
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Grants
-    post:
-      summary: Grant access
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Granted
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access/{userId}:
-    delete:
-      summary: Revoke campaign access
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Revoked
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests:
-    post:
-      summary: Submit access request
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '201':
-          description: Submitted
-    get:
-      summary: List access requests (admin)
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: List
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/approve:
-    post:
-      summary: Approve access request
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Approved
-
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/deny:
-    post:
-      summary: Deny access request
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Denied
-
-  /wp-json/wp-super-gallery/v1/companies:
-    get:
-      summary: List companies
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Companies
-
-  /wp-json/wp-super-gallery/v1/companies/{id}/access:
-    get:
-      summary: List company access
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Grants
-    post:
-      summary: Grant company access
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Granted
-
-  /wp-json/wp-super-gallery/v1/companies/{id}/access/{userId}:
-    delete:
-      summary: Revoke company access
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Revoked
-
-  /wp-json/wp-super-gallery/v1/companies/{id}/archive:
-    post:
-      summary: Archive company
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Archived
-
-  /wp-json/wp-super-gallery/v1/users/search:
-    get:
-      summary: Search users
-      security:
-        - bearerAuth: []
+        - cookieNonce: []
       parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 20
         - in: query
           name: search
           schema:
             type: string
+        - in: query
+          name: mime_type
+          schema:
+            type: string
+          description: Filter by MIME type prefix (e.g. image, video/mp4)
       responses:
         '200':
-          description: Users
+          description: Media library page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, page, per_page]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaItem'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  per_page:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/users:
+  /wp-json/wp-super-gallery/v1/media/upload:
     post:
-      summary: Create user
+      operationId: uploadMedia
+      tags: [Media]
+      summary: Upload media file
+      description: |
+        Uploads a media file to the WordPress media library. When campaign_id
+        is provided, the uploaded item is automatically attached to that campaign.
       security:
         - bearerAuth: []
+        - cookieNonce: []
       requestBody:
+        required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                campaign_id:
+                  type: integer
+                  description: Optional campaign to attach the upload to
       responses:
         '201':
-          description: Created
+          description: Upload created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/MediaItem'
+                  - type: object
+                    properties:
+                      attachment_id:
+                        type: integer
+        '400':
+          description: No file provided or partial upload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions (upload_files required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: File exceeds server upload size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/roles:
+  /wp-json/wp-super-gallery/v1/media/{mediaId}/usage:
     get:
-      summary: List roles
+      operationId: getMediaUsage
+      tags: [Media]
+      summary: Get media item usage
+      description: Returns the list of campaigns that include a specific media item.
       security:
         - bearerAuth: []
-      responses:
-        '200':
-          description: Roles
-
-  /wp-json/wp-super-gallery/v1/settings:
-    get:
-      summary: Public settings
-      responses:
-        '200':
-          description: Settings
-    post:
-      summary: Update settings
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Updated
-
-  /wp-json/wp-super-gallery/v1/permissions:
-    get:
-      summary: Current user permissions
-      security:
         - cookieNonce: []
-        - bearerAuth: []
+      parameters:
+        - in: path
+          name: mediaId
+          required: true
+          description: Media item string ID (not the WP attachment ID)
+          schema:
+            type: string
       responses:
         '200':
-          description: Permissions payload
+          description: Usage details
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [media_id, campaigns, total]
+                properties:
+                  media_id:
+                    type: string
+                  campaigns:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, title]
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Media item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/nonce:
+  /wp-json/wp-super-gallery/v1/media/usage-summary:
     get:
-      summary: Get fresh REST nonce
+      operationId: getMediaUsageSummary
+      tags: [Media]
+      summary: Get media usage summary (batch)
       security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: query
+          name: ids[]
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Media item IDs to summarise
+      responses:
+        '200':
+          description: Usage summary map keyed by media ID
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  required: [campaign_count]
+                  properties:
+                    campaign_count:
+                      type: integer
+                    campaigns:
+                      type: array
+                      items:
+                        type: integer
+        '400':
+          description: Missing ids[] parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Campaign Access ───────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: Campaign post ID
+        schema:
+          type: integer
+    get:
+      operationId: listCampaignAccess
+      tags: [Access]
+      summary: List campaign access grants
+      security:
+        - bearerAuth: []
         - cookieNonce: []
       responses:
         '200':
-          description: Nonce string
-
-  /wp-json/wp-super-gallery/v1/auth/login:
+          description: Access grants for this campaign
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccessGrant'
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
-      summary: Cookie-based login helper
+      operationId: grantCampaignAccess
+      tags: [Access]
+      summary: Grant campaign access
+      description: Either user_id or email must be supplied.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                username:
+                user_id:
+                  type: integer
+                email:
                   type: string
-                password:
+                  format: email
+                expires_at:
                   type: string
-                remember:
-                  type: boolean
+                  format: date-time
+                  nullable: true
+                  description: Optional expiry datetime. Null for permanent grant.
+                note:
+                  type: string
+                  nullable: true
       responses:
         '200':
-          description: Logged in (sets cookie)
+          description: Access granted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessGrant'
+        '400':
+          description: Neither user_id nor email provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Access grant already exists for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/auth/logout:
-    post:
-      summary: Logout (cookie)
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access/{userId}:
+    delete:
+      operationId: revokeCampaignAccess
+      tags: [Access]
+      summary: Revoke campaign access
       security:
+        - bearerAuth: []
         - cookieNonce: []
-      responses:
-        '200':
-          description: Logged out
-
-  /wp-json/wp-super-gallery/v1/oembed:
-    get:
-      summary: OEmbed proxy
       parameters:
-        - in: query
-          name: url
+        - in: path
+          name: id
           required: true
+          description: Campaign post ID
           schema:
-            type: string
+            type: integer
+        - in: path
+          name: userId
+          required: true
+          description: WordPress user ID whose access is being revoked
+          schema:
+            type: integer
       responses:
         '200':
-          description: oEmbed response
+          description: Access revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Access revoked
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign or grant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/analytics/event:
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: Campaign post ID
+        schema:
+          type: integer
     post:
-      summary: Record analytics event
+      operationId: submitAccessRequest
+      tags: [Access]
+      summary: Submit access request (public)
+      description: Allows an unauthenticated visitor to request access. Rate-limited via rate_limit_public.
+      security:
+        - {}
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+                message:
+                  type: string
       responses:
         '201':
-          description: Recorded
+          description: Request submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, status, message]
+                properties:
+                  token:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [pending]
+                  message:
+                    type: string
+                    example: Your request has been submitted
+        '400':
+          description: Missing or invalid email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Email already has access or a pending request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      operationId: listAccessRequests
+      tags: [Access]
+      summary: List access requests (admin)
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Access requests for this campaign
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccessRequest'
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/approve:
+    post:
+      operationId: approveAccessRequest
+      tags: [Access]
+      summary: Approve access request
+      description: |
+        Approves a pending access request and creates an AccessGrant.
+        Accepts an optional magic_key query parameter for one-click approval
+        from the admin notification email (no session required when valid).
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Campaign post ID
+          schema:
+            type: integer
+        - in: path
+          name: token
+          required: true
+          description: UUID v4 token from the access request
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: magic_key
+          schema:
+            type: string
+          description: HMAC-SHA256 token from admin notification email (TTL 48h, single-use)
+      responses:
+        '200':
+          description: Request approved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, grant]
+                properties:
+                  message:
+                    type: string
+                    example: Access request approved
+                  grant:
+                    $ref: '#/components/schemas/AccessGrant'
+        '401':
+          description: Not authenticated and no valid magic_key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: magic_key invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign or token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Request already approved or denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/deny:
+    post:
+      operationId: denyAccessRequest
+      tags: [Access]
+      summary: Deny access request
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Campaign post ID
+          schema:
+            type: integer
+        - in: path
+          name: token
+          required: true
+          description: UUID v4 token from the access request
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Request denied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Access request denied
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign or token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Request already decided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Campaign Audit Log ────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/campaigns/{id}/audit:
+    get:
+      operationId: listCampaignAudit
+      tags: [Campaigns]
+      summary: List campaign audit log
+      description: |
+        Returns the chronological audit log for a campaign. Each entry records
+        a state-change event with the acting user and a data payload.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Campaign post ID
+          schema:
+            type: integer
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Filter entries on or after this ISO date (YYYY-MM-DD)
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: Filter entries on or before this ISO date
+        - in: query
+          name: action
+          schema:
+            type: string
+          description: Filter by action string (e.g. media.added)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, page, per_page]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEntry'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  per_page:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Analytics ─────────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/analytics/event:
+    post:
+      operationId: recordAnalyticsEvent
+      tags: [Analytics]
+      summary: Record analytics event
+      description: Public endpoint rate-limited via rate_limit_public. No authentication required.
+      security:
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsEvent'
+      responses:
+        '201':
+          description: Event recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recorded]
+                properties:
+                  recorded:
+                    type: boolean
+                    example: true
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/analytics/campaigns/{id}:
     get:
-      summary: Campaign analytics
+      operationId: getCampaignAnalytics
+      tags: [Analytics]
+      summary: Get campaign analytics
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
       parameters:
         - in: path
           name: id
@@ -637,149 +2636,1396 @@ paths:
           name: from
           schema:
             type: string
+            format: date
+          description: Start date in YYYY-MM-DD format
         - in: query
           name: to
           schema:
             type: string
-      security:
-        - bearerAuth: []
+            format: date
+          description: End date in YYYY-MM-DD format
       responses:
         '200':
-          description: Analytics data
+          description: Analytics summary for the requested period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsSummary'
+        '400':
+          description: Invalid date format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Tags & Categories ─────────────────────────────────────────────────
 
   /wp-json/wp-super-gallery/v1/campaign-categories:
     get:
-      summary: Campaign categories
+      operationId: listCampaignCategories
+      tags: [Taxonomy]
+      summary: List campaign categories
       security:
         - bearerAuth: []
+        - cookieNonce: []
       responses:
         '200':
-          description: Categories list
+          description: Campaign category terms
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, slug, count]
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/tags/campaign:
     get:
-      summary: Campaign tags
+      operationId: listCampaignTags
+      tags: [Taxonomy]
+      summary: List campaign tags
       security:
         - bearerAuth: []
+        - cookieNonce: []
       responses:
         '200':
-          description: Tags
+          description: Campaign tag terms
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, slug, count]
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/tags/media:
     get:
-      summary: Media tags
+      operationId: listMediaTags
+      tags: [Taxonomy]
+      summary: List media tags
       security:
         - bearerAuth: []
+        - cookieNonce: []
       responses:
         '200':
-          description: Tags
+          description: Media tag terms
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, slug, count]
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Companies ─────────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/companies:
+    get:
+      operationId: listCompanies
+      tags: [Companies]
+      summary: List companies
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Company list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Company'
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/companies/{id}/access:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        description: Company ID
+        schema:
+          type: integer
+    get:
+      operationId: listCompanyAccess
+      tags: [Companies]
+      summary: List company access grants
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Company access grants
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccessGrant'
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: grantCompanyAccess
+      tags: [Companies]
+      summary: Grant company-level access
+      description: Either user_id or email required.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Company access granted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessGrant'
+        '400':
+          description: Neither user_id nor email supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Company or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Grant already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/companies/{id}/access/{userId}:
+    delete:
+      operationId: revokeCompanyAccess
+      tags: [Companies]
+      summary: Revoke company-level access
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Company ID
+          schema:
+            type: integer
+        - in: path
+          name: userId
+          required: true
+          description: WordPress user ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Company access revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Access revoked
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Company or grant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/companies/{id}/archive:
+    post:
+      operationId: archiveCompany
+      tags: [Companies]
+      summary: Archive company
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Company ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Company archived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Company archived
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Users & Roles ─────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/users/search:
+    get:
+      operationId: searchUsers
+      tags: [Users]
+      summary: Search WordPress users
+      description: Searches by login, email, or display name.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: query
+          name: search
+          required: true
+          schema:
+            type: string
+          description: Search string (minimum 2 characters)
+      responses:
+        '200':
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '400':
+          description: Missing or too-short search parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/users:
+    post:
+      operationId: createUser
+      tags: [Users]
+      summary: Create WordPress user
+      description: Uses rate_limit_authenticated. The caller must have create_users capability.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username:
+                  type: string
+                  example: newuser
+                email:
+                  type: string
+                  format: email
+                  example: newuser@example.com
+                password:
+                  type: string
+                  format: password
+                role:
+                  type: string
+                  description: WordPress role slug (default subscriber)
+                  example: subscriber
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Missing required fields or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Username or email already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/roles:
+    get:
+      operationId: listRoles
+      tags: [Users]
+      summary: List WordPress roles
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Available roles
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── oEmbed ────────────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/oembed:
+    get:
+      operationId: proxyOembed
+      tags: [Media]
+      summary: oEmbed proxy
+      description: |
+        Proxies an oEmbed discovery request via the server to bypass CORS.
+        Public and rate-limited. SSRF mitigations applied: HTTPS-only,
+        RFC-1918 IP blocking, optional provider allowlist.
+      security:
+        - {}
+      parameters:
+        - in: query
+          name: url
+          required: true
+          schema:
+            type: string
+            format: uri
+          description: The media URL to resolve via oEmbed
+      responses:
+        '200':
+          description: oEmbed response data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OembedResponse'
+        '400':
+          description: Missing or non-HTTPS URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: oEmbed provider returned no usable data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Admin Tools ───────────────────────────────────────────────────────
 
   /wp-json/wp-super-gallery/v1/admin/health:
     get:
-      summary: Health / diagnostics
+      operationId: getHealthData
+      tags: [Admin]
+      summary: Get health diagnostics
       security:
         - bearerAuth: []
+        - cookieNonce: []
       responses:
         '200':
-          description: Health data
+          description: Plugin and environment health data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthData'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/admin/oembed-failures:
     get:
+      operationId: listOembedFailures
+      tags: [Admin]
       summary: List oEmbed failures
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Recent oEmbed failure log
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [url, error, failed_at]
+                      properties:
+                        url:
+                          type: string
+                        error:
+                          type: string
+                        failed_at:
+                          type: string
+                          format: date-time
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
+      operationId: resetOembedFailures
+      tags: [Admin]
       summary: Reset oEmbed failures
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Failures cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cleared, message]
+                properties:
+                  cleared:
+                    type: integer
+                  message:
+                    type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/admin/thumbnail-cache:
     get:
-      summary: Thumbnail cache stats
+      operationId: getThumbnailCacheStats
+      tags: [Admin]
+      summary: Get thumbnail cache stats
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Thumbnail cache statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThumbnailCacheStats'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
+      operationId: clearThumbnailCache
+      tags: [Admin]
       summary: Clear thumbnail cache
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Cache cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cleared, message]
+                properties:
+                  cleared:
+                    type: integer
+                  message:
+                    type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/admin/thumbnail-cache/refresh:
     post:
+      operationId: refreshThumbnailCache
+      tags: [Admin]
       summary: Refresh thumbnail cache
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Cache refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [refreshed, message]
+                properties:
+                  refreshed:
+                    type: integer
+                  message:
+                    type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Layout Templates (Admin) ──────────────────────────────────────────
 
   /wp-json/wp-super-gallery/v1/admin/layout-templates:
     get:
+      operationId: listLayoutTemplates
+      tags: [LayoutTemplates]
       summary: List layout templates (admin)
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Layout template list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LayoutTemplate'
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
-      summary: Create layout template (admin)
+      operationId: createLayoutTemplate
+      tags: [LayoutTemplates]
+      summary: Create layout template
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: My Custom Grid
+                slots:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                  nullable: true
+                preset:
+                  type: string
+                  description: Optional preset key to initialise the template from
+                  example: three-column
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutTemplate'
+        '400':
+          description: Missing name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/admin/layout-templates/{templateId}:
+    parameters:
+      - in: path
+        name: templateId
+        required: true
+        description: UUID v4 string identifier of the layout template
+        schema:
+          type: string
+          format: uuid
     get:
+      operationId: getLayoutTemplate
+      tags: [LayoutTemplates]
       summary: Get layout template (admin)
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Full layout template including slots array
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutTemplate'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
-      summary: Update layout template (admin)
+      operationId: updateLayoutTemplate
+      tags: [LayoutTemplates]
+      summary: Update layout template
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                slots:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                  nullable: true
+      responses:
+        '200':
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutTemplate'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
-      summary: Delete layout template (admin)
+      operationId: deleteLayoutTemplate
+      tags: [LayoutTemplates]
+      summary: Delete layout template
+      description: |
+        Permanently deletes the template. Campaigns linked to this template
+        will have their template_id set to null (no cascade).
       security:
         - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Template deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Template deleted
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Template is in use by active campaigns (if enforced)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /wp-json/wp-super-gallery/v1/admin/layout-templates/{templateId}/duplicate:
     post:
+      operationId: duplicateLayoutTemplate
+      tags: [LayoutTemplates]
       summary: Duplicate layout template
+      description: Creates a copy with " (Copy)" appended to the name.
       security:
         - bearerAuth: []
-
-  /wp-json/wp-super-gallery/v1/admin/overlay-library:
-    get:
-      summary: List overlay library (admin)
-      security:
-        - bearerAuth: []
-    post:
-      summary: Upload overlay
-      security:
-        - bearerAuth: []
-
-  /wp-json/wp-super-gallery/v1/admin/overlay-library/{id}:
-    delete:
-      summary: Delete overlay
-      security:
-        - bearerAuth: []
-
-  /wp-json/wp-super-gallery/v1/admin/font-library:
-    get:
-      summary: List font library
-      security:
-        - bearerAuth: []
-    post:
-      summary: Upload font
-      security:
-        - bearerAuth: []
-
-  /wp-json/wp-super-gallery/v1/admin/font-library/{id}:
-    delete:
-      summary: Delete font
-      security:
-        - bearerAuth: []
-
-  /wp-json/wp-super-gallery/v1/layout-templates/{templateId}:
-    get:
-      summary: Public layout template read
+        - cookieNonce: []
       parameters:
         - in: path
           name: templateId
           required: true
           schema:
             type: string
+            format: uuid
+      responses:
+        '201':
+          description: Template duplicated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutTemplate'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Source template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Layout Templates (Public) ─────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/layout-templates/{templateId}:
+    get:
+      operationId: getPublicLayoutTemplate
+      tags: [LayoutTemplates]
+      summary: Get layout template (public)
+      description: |
+        Read-only public endpoint used by the embedded gallery renderer.
+        No authentication required.
+      security:
+        - {}
+      parameters:
+        - in: path
+          name: templateId
+          required: true
+          description: UUID v4 string identifier
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
-          description: Template
+          description: Layout template (render-only fields)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutTemplate'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Overlay Library ───────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/admin/overlay-library:
+    get:
+      operationId: listOverlayLibrary
+      tags: [Admin]
+      summary: List overlay library
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Overlay items
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OverlayItem'
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: uploadOverlay
+      tags: [Admin]
+      summary: Upload overlay image
+      description: Accepts PNG, SVG, or WebP files.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Overlay uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverlayItem'
+        '400':
+          description: No file provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/admin/overlay-library/{id}:
+    delete:
+      operationId: deleteOverlay
+      tags: [Admin]
+      summary: Delete overlay
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: UUID v4 string identifier of the overlay
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Overlay deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Overlay deleted
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Overlay not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Font Library ──────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/admin/font-library:
+    get:
+      operationId: listFontLibrary
+      tags: [Admin]
+      summary: List font library
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Font items
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FontItem'
+                  total:
+                    type: integer
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: uploadFont
+      tags: [Admin]
+      summary: Upload font file
+      description: Accepts TTF, OTF, WOFF, or WOFF2 files.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Font file (TTF/OTF/WOFF/WOFF2)
+                family:
+                  type: string
+                  description: Optional CSS font-family name override
+      responses:
+        '201':
+          description: Font uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FontItem'
+        '400':
+          description: No file provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unsupported font format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/admin/font-library/{id}:
+    delete:
+      operationId: deleteFont
+      tags: [Admin]
+      summary: Delete font
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: UUID v4 string identifier of the font
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Font deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Font deleted
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Font not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
