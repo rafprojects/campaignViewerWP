@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
+import { useLocalStorage } from '@mantine/hooks';
 import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch, type GridColProps } from '@mantine/core';
 import {
   DndContext,
@@ -234,15 +235,31 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
   const [overMediaId, setOverMediaId] = useState<string | null>(null);
 
-  // View options
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [cardSize, setCardSize] = useState<CardSize>('medium');
-  const [listPage, setListPage] = useState(1);
+  // View options — persisted per-campaign so tab switches / refreshes preserve user preference
+  const [viewMode, setViewMode] = useLocalStorage<ViewMode>({
+    key: `wpsg_media_viewMode_${campaignId}`,
+    defaultValue: 'grid',
+    getInitialValueInEffect: false,
+  });
+  const [cardSize, setCardSize] = useLocalStorage<CardSize>({
+    key: `wpsg_media_cardSize_${campaignId}`,
+    defaultValue: 'medium',
+    getInitialValueInEffect: false,
+  });
+  const [listPage, setListPage] = useLocalStorage<number>({
+    key: `wpsg_media_listPage_${campaignId}`,
+    defaultValue: 1,
+    getInitialValueInEffect: false,
+  });
 
   // P18-G: Media usage tracking
   const [usageSummary, setUsageSummary] = useState<Record<string, number>>({});
   const [usageSummaryLoading, setUsageSummaryLoading] = useState(false);
-  const [orphanFilter, setOrphanFilter] = useState(false);
+  const [orphanFilter, setOrphanFilter] = useLocalStorage<boolean>({
+    key: `wpsg_media_orphanFilter_${campaignId}`,
+    defaultValue: false,
+    getInitialValueInEffect: false,
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -252,6 +269,36 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Scroll position preservation across tab switches (sessionStorage, per-campaign)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const scrollKey = `wpsg_media_scrollTop_${campaignId}`;
+
+  const hasMedia = media.length > 0;
+
+  // Restore scroll on mount (after data ready)
+  useEffect(() => {
+    if (!campaignId) return;
+    const saved = sessionStorage.getItem(scrollKey);
+    if (saved && scrollContainerRef.current) {
+      const top = parseInt(saved, 10);
+      // Defer to ensure DOM + lazy content is painted
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = top;
+      });
+    }
+  }, [campaignId, hasMedia, scrollKey]);
+
+  // Save scroll on unmount / campaign change
+  useEffect(() => {
+    const key = scrollKey;
+    const el = scrollContainerRef.current;
+    return () => {
+      if (el) {
+        sessionStorage.setItem(key, String(el.scrollTop));
+      }
+    };
+  }, [scrollKey]);
 
   // Get image items for lightbox navigation
   const imageItems = useMemo(() => media.filter((m) => m.type === 'image'), [media]);
@@ -664,13 +711,13 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     if (listPage > listTotalPages) {
       setListPage(listTotalPages);
     }
-  }, [listPage, listTotalPages]);
+  }, [listPage, listTotalPages, setListPage]);
 
   useEffect(() => {
     if (viewMode !== 'list') {
       setListPage(1);
     }
-  }, [viewMode]);
+  }, [viewMode, setListPage]);
 
   const getDropPosition = (activeId: string, overId: string): DropPosition => {
     const sourceIndex = media.findIndex((item) => item.id === activeId);
@@ -750,7 +797,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   };
 
   return (
-    <div>
+    <div ref={scrollContainerRef} style={{ overflowY: 'auto', maxHeight: '70vh' }}>
       <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
         <Group gap="md" wrap="wrap">
           <Text fw={700}>Media</Text>
