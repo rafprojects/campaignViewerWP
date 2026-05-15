@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox } from '@mantine/core';
-import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid } from '@tabler/icons-react';
+import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash } from '@tabler/icons-react';
 import type { AdminCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
 import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@/utils/campaignGalleryOverrides';
@@ -28,8 +28,8 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
     selectMode, selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,
     setDuplicateSource, handleExportCampaign,
-    setConfirmRestore, setConfirmArchive,
-    restoringIds, archivingIds,
+    setConfirmRestore, setConfirmArchive, setConfirmDelete,
+    restoringIds, archivingIds, deletingIds,
   } = campaignActions;
 
   return useMemo(() => {
@@ -99,10 +99,13 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
               ) : (
                 <Button color="orange" variant="light" size="xs" leftSection={<IconArchive size={14} />} loading={archivingIds.has(cid)} onClick={() => setConfirmArchive(c)}>Archive</Button>
               )}
+              <Tooltip label="Permanently delete campaign">
+                <Button color="red" variant="subtle" size="xs" leftSection={<IconTrash size={14} />} loading={deletingIds.has(cid)} onClick={() => setConfirmDelete(c)} aria-label={`Delete ${c.title}`}>Delete</Button>
+              </Tooltip>
             </Group>
           </Table.Td>
         </Table.Tr>
       );
     });
-  }, [campaigns, categoryFilter, selectMode, selectedCampaignIds, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, restoringIds, archivingIds]);
+  }, [campaigns, categoryFilter, selectMode, selectedCampaignIds, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
 }

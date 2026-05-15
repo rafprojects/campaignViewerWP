@@ -78,6 +78,11 @@ class WPSG_REST {
                 'callback' => [self::class, 'update_campaign'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'delete_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/archive', [
@@ -1022,6 +1027,67 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'campaign.restored', []);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
+    }
+
+    // ── P28-A: Campaign hard-delete ───────────────────────────────────────────
+
+    public static function delete_campaign($request) {
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        }
+
+        $confirm = $request->get_param('confirm');
+        if (!self::is_truthy_param($confirm)) {
+            return new WP_Error(
+                'wpsg_delete_unconfirmed',
+                'Missing confirm=true query parameter',
+                ['status' => 400]
+            );
+        }
+
+        $purge_analytics = self::is_truthy_param($request->get_param('purge_analytics'));
+
+        // Audit BEFORE deletion so the entry is preserved in any external sink
+        // (post meta entry itself is dropped with the post).
+        self::add_audit_entry($post_id, 'campaign.deleted', [
+            'purge_analytics' => $purge_analytics,
+        ]);
+
+        WPSG_DB::delete_media_refs($post_id);
+        WPSG_DB::delete_access_requests_for_campaign($post_id);
+
+        if ($purge_analytics) {
+            global $wpdb;
+            $wpdb->delete(
+                WPSG_DB::get_analytics_table(),
+                ['campaign_id' => $post_id],
+                ['%d']
+            );
+        }
+
+        $deleted = wp_delete_post($post_id, true);
+        if (!$deleted) {
+            return new WP_Error('wpsg_delete_failed', 'Failed to delete campaign', ['status' => 500]);
+        }
+
+        self::clear_accessible_campaigns_cache();
+
+        return new WP_REST_Response([
+            'message' => 'Campaign deleted',
+            'id'      => $post_id,
+        ], 200);
+    }
+
+    private static function is_truthy_param($value): bool {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+            return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+        }
+        return (bool) $value;
     }
 
     // ── P18-C: Campaign duplication ───────────────────────────────────────────

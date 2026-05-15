@@ -22,8 +22,10 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 
   const [confirmArchive, setConfirmArchive] = useState<AdminCampaign | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<AdminCampaign | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AdminCampaign | null>(null);
   const [archivingIds, setArchivingIds] = useState<Set<string>>(new Set());
   const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   const [selectMode, setSelectMode] = useState(false);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<string>>(new Set());
@@ -57,6 +59,21 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive campaign.') });
     } finally {
       setArchivingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
+
+  const deleteCampaign = useCallback(async (campaign: AdminCampaign, opts: { purgeAnalytics: boolean }) => {
+    const id = String(campaign.id);
+    setDeletingIds((prev) => new Set(prev).add(id));
+    try {
+      await apiClient.deleteCampaign(id, { purgeAnalytics: opts.purgeAnalytics });
+      onNotify({ type: 'success', text: `"${campaign.title}" deleted.` });
+      await onMutate();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to delete campaign.') });
+    } finally {
+      setDeletingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
@@ -200,8 +217,11 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     setConfirmArchive,
     confirmRestore,
     setConfirmRestore,
+    confirmDelete,
+    setConfirmDelete,
     archivingIds,
     restoringIds,
+    deletingIds,
     // Bulk selection
     selectMode,
     selectedCampaignIds,
@@ -222,6 +242,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     handleCreate,
     archiveCampaign,
     restoreCampaign,
+    deleteCampaign,
     handleToggleSelectMode,
     handleToggleCampaignSelect,
     handleSelectAll,

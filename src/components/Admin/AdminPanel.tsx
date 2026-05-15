@@ -34,6 +34,7 @@ const CampaignImportModal = lazy(() => import('./CampaignImportModal').then((m) 
 const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal').then((m) => ({ default: m.KeyboardShortcutsModal })));
 const AdminCampaignArchiveModal = lazy(() => import('./AdminCampaignArchiveModal').then((m) => ({ default: m.AdminCampaignArchiveModal })));
 const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal').then((m) => ({ default: m.AdminCampaignRestoreModal })));
+const AdminCampaignDeleteModal = lazy(() => import('./AdminCampaignDeleteModal').then((m) => ({ default: m.AdminCampaignDeleteModal })));
 const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
 const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 
@@ -356,6 +357,22 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             onClose={() => campaignActions.setConfirmRestore(null)}
             onConfirm={async () => {
               if (campaignActions.confirmRestore) { campaignActions.setConfirmRestore(null); await campaignActions.restoreCampaign(campaignActions.confirmRestore); }
+            }}
+          />
+        </Suspense>
+      )}
+      {!!campaignActions.confirmDelete && (
+        <Suspense fallback={null}>
+          <AdminCampaignDeleteModal
+            opened={!!campaignActions.confirmDelete}
+            campaign={campaignActions.confirmDelete ? { id: campaignActions.confirmDelete.id, title: campaignActions.confirmDelete.title } : null}
+            loading={campaignActions.confirmDelete ? campaignActions.deletingIds.has(String(campaignActions.confirmDelete.id)) : false}
+            onClose={() => campaignActions.setConfirmDelete(null)}
+            onConfirm={async ({ purgeAnalytics }) => {
+              const target = campaignActions.confirmDelete;
+              if (!target) return;
+              campaignActions.setConfirmDelete(null);
+              await campaignActions.deleteCampaign(target, { purgeAnalytics });
             }}
           />
         </Suspense>

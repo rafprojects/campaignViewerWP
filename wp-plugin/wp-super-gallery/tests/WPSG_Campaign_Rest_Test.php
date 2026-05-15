@@ -538,4 +538,142 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_sanitize_datetime_accepts_empty_string() {
         $this->assertEquals( '', WPSG_CPT::sanitize_datetime( '' ) );
     }
+
+    // ── P28-A: Campaign hard-delete ─────────────────────────────────────────
+
+    public function test_delete_campaign_happy_path_removes_post_and_meta() {
+        $this->set_admin_user();
+        WPSG_DB::maybe_create_media_refs_table();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_param('title', 'Doomed Campaign');
+        $create->set_param('status', 'active');
+        $campaign_id = intval(rest_do_request($create)->get_data()['id']);
+        $this->assertGreaterThan(0, $campaign_id);
+
+        global $wpdb;
+        $refs_table = WPSG_DB::get_media_refs_table();
+        $wpdb->insert($refs_table, [
+            'media_id'    => 'm1',
+            'campaign_id' => $campaign_id,
+            'created_at'  => current_time('mysql', true),
+        ], ['%s', '%d', '%s']);
+
+        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $delete->set_param('confirm', 'true');
+        $response = rest_do_request($delete);
+
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals('Campaign deleted', $data['message'] ?? null);
+        $this->assertEquals($campaign_id, $data['id'] ?? null);
+        $this->assertNull(get_post($campaign_id));
+
+        $remaining_refs = intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$refs_table} WHERE campaign_id = %d",
+            $campaign_id
+        )));
+        $this->assertSame(0, $remaining_refs);
+    }
+
+    public function test_delete_campaign_requires_confirm_param() {
+        $this->set_admin_user();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_param('title', 'Should Survive');
+        $create->set_param('status', 'active');
+        $campaign_id = intval(rest_do_request($create)->get_data()['id']);
+
+        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $response = rest_do_request($delete);
+
+        $this->assertEquals(400, $response->get_status());
+        $this->assertNotNull(get_post($campaign_id));
+    }
+
+    public function test_delete_campaign_returns_404_for_unknown_id() {
+        $this->set_admin_user();
+
+        $delete = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/campaigns/999999999');
+        $delete->set_param('confirm', 'true');
+        $response = rest_do_request($delete);
+
+        $this->assertEquals(404, $response->get_status());
+    }
+
+    public function test_delete_campaign_purge_analytics_removes_event_rows() {
+        $this->set_admin_user();
+        WPSG_DB::maybe_create_analytics_table();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_param('title', 'Analytics Campaign');
+        $create->set_param('status', 'active');
+        $campaign_id = intval(rest_do_request($create)->get_data()['id']);
+
+        global $wpdb;
+        $analytics_table = WPSG_DB::get_analytics_table();
+        $wpdb->insert($analytics_table, [
+            'campaign_id'  => $campaign_id,
+            'event_type'   => 'view',
+            'visitor_hash' => str_repeat('a', 64),
+            'occurred_at'  => current_time('mysql', true),
+        ], ['%d', '%s', '%s', '%s']);
+        $this->assertSame(1, intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$analytics_table} WHERE campaign_id = %d",
+            $campaign_id
+        ))));
+
+        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $delete->set_param('confirm', 'true');
+        $delete->set_param('purge_analytics', 'true');
+        $response = rest_do_request($delete);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertSame(0, intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$analytics_table} WHERE campaign_id = %d",
+            $campaign_id
+        ))));
+    }
+
+    public function test_delete_campaign_keeps_analytics_when_purge_not_requested() {
+        $this->set_admin_user();
+        WPSG_DB::maybe_create_analytics_table();
+
+        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create->set_param('title', 'Analytics Preserved');
+        $create->set_param('status', 'active');
+        $campaign_id = intval(rest_do_request($create)->get_data()['id']);
+
+        global $wpdb;
+        $analytics_table = WPSG_DB::get_analytics_table();
+        $wpdb->insert($analytics_table, [
+            'campaign_id'  => $campaign_id,
+            'event_type'   => 'view',
+            'visitor_hash' => str_repeat('b', 64),
+            'occurred_at'  => current_time('mysql', true),
+        ], ['%d', '%s', '%s', '%s']);
+
+        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $delete->set_param('confirm', 'true');
+        $response = rest_do_request($delete);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertSame(1, intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$analytics_table} WHERE campaign_id = %d",
+            $campaign_id
+        ))));
+
+        // Cleanup so other tests don't see orphan rows.
+        $wpdb->delete($analytics_table, ['campaign_id' => $campaign_id], ['%d']);
+    }
+
+    public function test_delete_campaign_requires_admin_capability() {
+        wp_set_current_user(0);
+
+        $delete = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/campaigns/123');
+        $delete->set_param('confirm', 'true');
+        $response = rest_do_request($delete);
+
+        $this->assertContains($response->get_status(), [401, 403]);
+    }
 }

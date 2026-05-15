@@ -292,6 +292,21 @@ export class ApiClient {
     );
   }
 
+  // ── P28-A: Campaign hard-delete ─────────────────────────────────────────
+
+  async deleteCampaign(
+    id: string,
+    options: { purgeAnalytics?: boolean } = {},
+  ): Promise<{ message: string; id: number }> {
+    const params = new URLSearchParams({ confirm: 'true' });
+    if (options.purgeAnalytics) {
+      params.set('purge_analytics', 'true');
+    }
+    return this.delete<{ message: string; id: number }>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}?${params.toString()}`,
+    );
+  }
+
   // ── P18-B: Bulk campaign actions ────────────────────────────────────────
 
   async batchCampaigns(
