@@ -1,0 +1,30 @@
+{
+  "_comment": "Halloween — A dark theme with vibrant orange, red, and purple accents",
+  "id": "halloween",
+  "name": "Halloween",
+  "colorScheme": "dark",
+  "colors": {
+    "background": "#121212",
+    "surface": "#1e1e1e",
+    "surface2": "#2d2d2d",
+    "surface3": "#3d3d3d",
+
+    "text": "#FFA500",
+    "textMuted": "#FF6347",
+    "textMuted2": "#FF4500",
+
+    "border": "#FF8C00",
+
+    "primary": "#FF8C00",
+    "primaryShade": { "light": 6, "dark": 5 },
+
+    "success": "#FF0000",
+    "warning": "#FFA500",
+    "error": "#FF0000",
+    "info": "#8B0000",
+
+    "accent": "#FF6347",
+    "accentGreen": "#32CD32",
+    "accentPurple": "#4B0082"
+  }
+}
