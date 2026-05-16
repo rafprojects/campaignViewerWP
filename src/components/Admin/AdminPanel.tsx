@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient } from '@/services/apiClient';
-import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
+import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings } from '@tabler/icons-react';
 import { CampaignsTab } from './CampaignsTab';
@@ -12,11 +12,12 @@ import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import {
-  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useCompanies, useAuditEntries,
-  useCampaignCategories,
+  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies, useAuditEntries,
+  useCampaignCategories, useCampaignTags,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
   getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
+import type { AccessSummaryItem, CampaignFilters } from '@/services/adminQuery';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
@@ -62,11 +63,22 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<CampaignFilters['sort']>('created_desc');
+  const [includeArchived, setIncludeArchived] = useState(false);
   const [taxonomyManagerOpen, setTaxonomyManagerOpen] = useState(false);
   const [campaignPage, setCampaignPage] = useState(1);
   const CAMPAIGNS_PER_PAGE = 20;
 
-  const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, campaignPage, CAMPAIGNS_PER_PAGE);
+  const campaignFilters = useMemo<CampaignFilters>(() => ({
+    category: categoryFilter ?? undefined,
+    tag: tagFilter ?? undefined,
+    sort: sortOrder,
+    includeArchived,
+  }), [categoryFilter, tagFilter, sortOrder, includeArchived]);
+
+  const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, campaignPage, CAMPAIGNS_PER_PAGE, campaignFilters);
+  const { data: accessSummaryData } = useAccessSummary(apiClient);
   const allCampaigns = useAllCampaignOptions(apiClient);
   const campaignsMutator = useCallback(async () => {
     await mutateCampaigns();
@@ -75,6 +87,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const { data: layoutTemplates } = useLayoutTemplates(apiClient);
   const { campaignCategories } = useCampaignCategories(apiClient);
+  const { campaignTags } = useCampaignTags(apiClient);
 
   const accessTargetId = accessViewMode === 'campaign' ? accessCampaignId : selectedCompanyId;
   const { accessEntries, accessLoading, mutateAccess } = useAccessGrants(
@@ -163,12 +176,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   );
   const availableCategoryNames = useMemo(() => campaignCategories.map((c) => c.name), [campaignCategories]);
 
-  const filteredCampaigns = useMemo(
-    () => categoryFilter ? campaigns.filter((c) => (c.categories ?? []).includes(categoryFilter)) : campaigns,
-    [campaigns, categoryFilter],
-  );
-  // Reset to page 1 when category filter changes.
-  useEffect(() => { setCampaignPage(1); }, [categoryFilter]);
+  // Reset to page 1 whenever any filter changes.
+  useEffect(() => { setCampaignPage(1); }, [categoryFilter, tagFilter, sortOrder, includeArchived]);
   // Clamp page into [1, totalPages] when dataset shrinks (deletions, server-side changes).
   useEffect(() => {
     if (campaignPagination.totalPages > 0 && campaignPage > campaignPagination.totalPages) {
@@ -176,7 +185,12 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     }
   }, [campaignPage, campaignPagination.totalPages]);
 
-  const campaignsRows = useCampaignsRows({ campaigns, categoryFilter, campaignActions });
+  const grantSummary = useMemo<Map<number, AccessSummaryItem> | undefined>(() => {
+    if (!accessSummaryData) return undefined;
+    return new Map(accessSummaryData.items.map((item) => [item.id, item]));
+  }, [accessSummaryData]);
+
+  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
 
@@ -215,19 +229,49 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.List>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
-          <Group justify="space-between" align="flex-start" mb="sm" wrap="nowrap">
-            {campaignCategories.length > 0 ? (
-              <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
-                <Group gap="xs" wrap="wrap">
-                  <Chip value="" variant="light" size="sm">All</Chip>
-                  {campaignCategories.map((cat) => (
-                    <Chip key={cat.id} value={cat.name} variant="light" size="sm">{cat.name}</Chip>
-                  ))}
-                </Group>
-              </Chip.Group>
-            ) : (
-              <span />
-            )}
+          <Group justify="space-between" align="flex-start" mb="sm" wrap="wrap" gap="sm">
+            <Group gap="xs" wrap="wrap" style={{ flex: '1 1 auto' }}>
+              {campaignCategories.length > 0 && (
+                <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
+                  <Group gap="xs" wrap="wrap">
+                    <Chip value="" variant="light" size="sm">All</Chip>
+                    {campaignCategories.map((cat) => (
+                      <Chip key={cat.id} value={cat.slug} variant="light" size="sm">{cat.name}</Chip>
+                    ))}
+                  </Group>
+                </Chip.Group>
+              )}
+              {campaignTags.length > 0 && (
+                <Select
+                  size="xs"
+                  placeholder="Tag"
+                  clearable
+                  data={campaignTags.map((t) => ({ value: t.slug, label: t.name }))}
+                  value={tagFilter}
+                  onChange={setTagFilter}
+                  style={{ minWidth: 120 }}
+                />
+              )}
+              <Select
+                size="xs"
+                data={[
+                  { value: 'created_desc', label: 'Newest first' },
+                  { value: 'created_asc', label: 'Oldest first' },
+                  { value: 'title_asc', label: 'Title A–Z' },
+                  { value: 'title_desc', label: 'Title Z–A' },
+                  { value: 'updated_desc', label: 'Recently updated' },
+                ]}
+                value={sortOrder ?? 'created_desc'}
+                onChange={(v) => setSortOrder((v as CampaignFilters['sort']) ?? 'created_desc')}
+                style={{ minWidth: 150 }}
+              />
+              <Switch
+                size="sm"
+                label="Include archived"
+                checked={includeArchived}
+                onChange={(e) => setIncludeArchived(e.currentTarget.checked)}
+              />
+            </Group>
             <Tooltip label="Manage categories & tags">
               <ActionIcon variant="subtle" size="sm" onClick={() => setTaxonomyManagerOpen(true)} aria-label="Manage taxonomy">
                 <IconSettings size={16} />
@@ -240,9 +284,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             campaignsRows={campaignsRows}
             selectMode={campaignActions.selectMode}
             selectedCount={campaignActions.selectedCampaignIds.size}
-            totalCount={filteredCampaigns.length}
+            totalCount={campaigns.length}
             onToggleSelectMode={campaignActions.handleToggleSelectMode}
-            onSelectAll={() => campaignActions.handleSelectAll(filteredCampaigns.map((c) => String(c.id)))}
+            onSelectAll={() => campaignActions.handleSelectAll(campaigns.map((c) => String(c.id)))}
             onDeselectAll={campaignActions.handleDeselectAll}
             page={campaignPagination.page}
             totalPages={campaignPagination.totalPages}

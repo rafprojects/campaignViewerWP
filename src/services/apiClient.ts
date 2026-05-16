@@ -1,5 +1,10 @@
 import type { AuthProvider } from '@/services/auth/AuthProvider';
-import type { GalleryBehaviorSettings, LayoutTemplate } from '@/types';
+import type {
+  CampaignMediaBatchRequestItem,
+  CampaignMediaBatchResponse,
+  GalleryBehaviorSettings,
+  LayoutTemplate,
+} from '@/types';
 
 export interface ApiClientOptions {
   baseUrl: string;
@@ -232,6 +237,13 @@ export class ApiClient {
     });
   }
 
+  // WordPress core pages (used by magic-link landing page selector)
+  async listWpPages(): Promise<WpPageSummary[]> {
+    return this.get<WpPageSummary[]>(
+      '/wp-json/wp/v2/pages?per_page=100&status=publish&_fields=id,title,link',
+    );
+  }
+
   // Settings API methods
   async getSettings(): Promise<SettingsResponse> {
     return this.get<SettingsResponse>('/wp-json/wp-super-gallery/v1/settings');
@@ -319,6 +331,16 @@ export class ApiClient {
     );
   }
 
+  async addCampaignMediaBatch(
+    campaignId: string,
+    items: CampaignMediaBatchRequestItem[],
+  ): Promise<CampaignMediaBatchResponse> {
+    return this.post<CampaignMediaBatchResponse>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(campaignId)}/media/batch`,
+      { items },
+    );
+  }
+
   // ── P18-D: Export / Import ───────────────────────────────────────────────
 
   async exportCampaign(id: string): Promise<CampaignExportPayload> {
@@ -331,10 +353,11 @@ export class ApiClient {
 
   // ── P18-F: Analytics ────────────────────────────────────────────────────
 
-  async recordAnalyticsEvent(campaignId: string, eventType = 'view'): Promise<void> {
+  async recordAnalyticsEvent(campaignId: string, eventType = 'view', mediaId?: string): Promise<void> {
     await this.post('/wp-json/wp-super-gallery/v1/analytics/event', {
       campaignId,
       eventType,
+      ...(mediaId ? { mediaId } : {}),
     });
   }
 
@@ -350,6 +373,28 @@ export class ApiClient {
     return this.get<CampaignAnalyticsResponse>(
       `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}${qs}`,
     );
+  }
+
+  async getCampaignMediaAnalytics(
+    campaignId: string,
+    from?: string,
+    to?: string,
+  ): Promise<MediaAnalyticsResponse> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.get<MediaAnalyticsResponse>(
+      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}/media${qs}`,
+    );
+  }
+
+  async getAnalyticsSummary(from?: string, to?: string): Promise<AnalyticsSummaryResponse> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.get<AnalyticsSummaryResponse>(`/wp-json/wp-super-gallery/v1/analytics/summary${qs}`);
   }
 
   // ── P18-G: Media Usage Tracking ─────────────────────────────────────────
@@ -437,6 +482,39 @@ export class ApiClient {
   async denyAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
     return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/deny`, {});
   }
+
+  // ── P28-J: Access Totals Summary ─────────────────────────────────────────
+
+  async getAccessSummary(page = 1, perPage = 50): Promise<AccessSummaryResponse> {
+    return this.get<AccessSummaryResponse>(
+      `/wp-json/wp-super-gallery/v1/campaigns/access-summary?page=${page}&per_page=${perPage}`,
+    );
+  }
+}
+
+/** One row in the access-summary response. */
+export interface AccessSummaryItem {
+  id: number;
+  title: string;
+  grantCount: number;
+  pendingRequestCount: number;
+  /** null = unlimited (reserved for future capacity feature). */
+  capacity: number | null;
+}
+
+export interface AccessSummaryResponse {
+  items: AccessSummaryItem[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+/** Minimal WP page summary returned by the /wp/v2/pages endpoint. */
+export interface WpPageSummary {
+  id: number;
+  title: { rendered: string };
+  link: string;
 }
 
 /**
@@ -456,6 +534,8 @@ export interface SettingsResponse extends Partial<GalleryBehaviorSettings> {
   enableLightbox?: boolean;
   enableAnimations?: boolean;
   cacheTtl?: number;
+  /** P28-I: WP page ID used as magic-link result landing page (0 = none). */
+  magicLinkLandingPageId?: number | undefined;
 }
 
 /**
@@ -497,6 +577,26 @@ export interface CampaignAnalyticsResponse {
   totalViews: number;
   uniqueVisitors: number;
   daily: CampaignAnalyticsDayEntry[];
+}
+
+export interface MediaAnalyticsItem {
+  media_id: string;
+  views: number;
+  lightbox_opens: number;
+}
+export interface MediaAnalyticsResponse {
+  items: MediaAnalyticsItem[];
+}
+
+export interface AnalyticsSummaryTopCampaign {
+  id: string;
+  title: string;
+  views: number;
+}
+export interface AnalyticsSummaryResponse {
+  totalViews: number;
+  uniqueVisitors: number;
+  topCampaigns: AnalyticsSummaryTopCampaign[];
 }
 
 export interface MediaUsageCampaignRef {

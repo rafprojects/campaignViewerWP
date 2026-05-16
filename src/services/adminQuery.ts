@@ -5,9 +5,13 @@ import {
 
 import type {
   AccessRequest,
+  AccessSummaryItem,
+  AccessSummaryResponse,
+  AnalyticsSummaryResponse,
   ApiClient,
   CampaignAnalyticsResponse,
   CampaignCategoryEntry,
+  MediaAnalyticsResponse,
   TagEntry,
 } from '@/services/apiClient';
 import type { GalleryConfig, MediaItem } from '@/types';
@@ -112,8 +116,17 @@ function getAdminQueryPrefix(apiClient: ApiClient) {
   return ['admin', getApiClientCacheBase(apiClient)] as const;
 }
 
-export function getAdminCampaignsQueryKey(apiClient: ApiClient, page = 1, perPage = 20) {
-  return [...getAdminQueryPrefix(apiClient), 'campaigns', page, perPage] as const;
+// P28-E: Server-side campaign filter params.
+export interface CampaignFilters {
+  category?: string | undefined;
+  tag?: string | undefined;
+  sort?: 'created_desc' | 'created_asc' | 'title_asc' | 'title_desc' | 'updated_desc' | undefined;
+  includeArchived?: boolean | undefined;
+  templateId?: string | undefined;
+}
+
+export function getAdminCampaignsQueryKey(apiClient: ApiClient, page = 1, perPage = 20, filters?: CampaignFilters) {
+  return [...getAdminQueryPrefix(apiClient), 'campaigns', page, perPage, filters ?? {}] as const;
 }
 
 export function getAdminCampaignOptionsQueryKey(apiClient: ApiClient) {
@@ -166,9 +179,17 @@ async function fetchAdminCampaigns(
   apiClient: ApiClient,
   page: number,
   perPage: number,
+  filters?: CampaignFilters,
 ): Promise<{ campaigns: AdminCampaign[]; pagination: CampaignPagination }> {
+  const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (filters?.category) params.set('category', filters.category);
+  if (filters?.tag) params.set('tag', filters.tag);
+  if (filters?.sort) params.set('sort', filters.sort);
+  if (filters?.includeArchived) params.set('include_archived', 'true');
+  if (filters?.templateId) params.set('template_id', filters.templateId);
+
   const response = await apiClient.get<ApiCampaignResponse>(
-    `/wp-json/wp-super-gallery/v1/campaigns?page=${page}&per_page=${perPage}`,
+    `/wp-json/wp-super-gallery/v1/campaigns?${params.toString()}`,
   );
 
   return {
@@ -189,7 +210,7 @@ async function fetchAllCampaignOptions(apiClient: ApiClient): Promise<AdminCampa
 
   do {
     const response = await apiClient.get<ApiCampaignResponse>(
-      `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}`,
+      `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}&include_archived=true`,
     );
     all.push(...(response.items ?? []));
     totalPages = response.totalPages ?? 1;
@@ -283,10 +304,10 @@ function staggeredPrefetch(
   };
 }
 
-export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20) {
+export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20, filters?: CampaignFilters) {
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: getAdminCampaignsQueryKey(apiClient, page, perPage),
-    queryFn: () => fetchAdminCampaigns(apiClient, page, perPage),
+    queryKey: getAdminCampaignsQueryKey(apiClient, page, perPage, filters),
+    queryFn: () => fetchAdminCampaigns(apiClient, page, perPage, filters),
     staleTime: ADMIN_QUERY_STALE_TIME,
     ...ADMIN_QUERY_OPTIONS,
   });
@@ -527,4 +548,59 @@ export function useMediaTags(apiClient: ApiClient, enabled = true) {
   };
 }
 
-export type { AccessRequest, CampaignAnalyticsResponse, CampaignCategoryEntry, TagEntry };
+export function getCampaignMediaAnalyticsQueryKey(
+  apiClient: ApiClient,
+  campaignId: string,
+  from: string,
+  to: string,
+) {
+  return [...getAdminQueryPrefix(apiClient), 'campaign-media-analytics', campaignId, from, to] as const;
+}
+
+export function getAnalyticsSummaryQueryKey(apiClient: ApiClient, from: string, to: string) {
+  return [...getAdminQueryPrefix(apiClient), 'analytics-summary', from, to] as const;
+}
+
+export function useCampaignMediaAnalytics(
+  apiClient: ApiClient,
+  campaignId: string | null,
+  from: string,
+  to: string,
+) {
+  return useQuery<MediaAnalyticsResponse>({
+    queryKey: getCampaignMediaAnalyticsQueryKey(apiClient, campaignId || 'none', from, to),
+    queryFn: () => apiClient.getCampaignMediaAnalytics(campaignId!, from, to),
+    enabled: Boolean(campaignId),
+    staleTime: ANALYTICS_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+}
+
+export function useAnalyticsSummary(apiClient: ApiClient, from: string, to: string, enabled = true) {
+  return useQuery<AnalyticsSummaryResponse>({
+    queryKey: getAnalyticsSummaryQueryKey(apiClient, from, to),
+    queryFn: () => apiClient.getAnalyticsSummary(from, to),
+    enabled,
+    staleTime: ANALYTICS_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+}
+
+// ── P28-J: Access Summary ────────────────────────────────────────────────────
+
+const ACCESS_SUMMARY_STALE_TIME = 30_000;
+
+function getAccessSummaryQueryKey(apiClient: ApiClient, page: number, perPage: number) {
+  return ['access-summary', apiClient.getBaseUrl(), page, perPage] as const;
+}
+
+export function useAccessSummary(apiClient: ApiClient, page = 1, perPage = 200) {
+  return useQuery<AccessSummaryResponse>({
+    queryKey: getAccessSummaryQueryKey(apiClient, page, perPage),
+    queryFn: () => apiClient.getAccessSummary(page, perPage),
+    staleTime: ACCESS_SUMMARY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+}
+
+export type { AccessRequest, AccessSummaryItem, AccessSummaryResponse, AnalyticsSummaryResponse, CampaignAnalyticsResponse, CampaignCategoryEntry, MediaAnalyticsResponse, TagEntry };

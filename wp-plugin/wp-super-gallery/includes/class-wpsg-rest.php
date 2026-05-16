@@ -42,6 +42,15 @@ class WPSG_REST {
             ],
         ]);
 
+        // P28-J: Access totals summary (must be before (?P<id>\d+) to avoid regex clash).
+        register_rest_route('wp-super-gallery/v1', '/campaigns/access-summary', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'access_summary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)', [
             [
                 'methods' => 'GET',
@@ -194,6 +203,22 @@ class WPSG_REST {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/analytics/campaigns/(?P<id>\d+)/media', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_campaign_media_analytics'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/analytics/summary', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'get_analytics_summary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
@@ -203,6 +228,14 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'create_media'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/batch', [
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'create_media_batch'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -294,6 +327,14 @@ class WPSG_REST {
                 'methods' => 'POST',
                 'callback' => [self::class, 'deny_access_request'],
                 'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/magic-approve', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'magic_approve_access_request'],
+                'permission_callback' => [self::class, 'rate_limit_magic_approve'],
             ],
         ]);
 
@@ -679,6 +720,18 @@ class WPSG_REST {
         return self::verify_admin_auth();
     }
 
+    /**
+     * Rate-limit the magic-link approve endpoint.
+     *
+     * Default: 10 requests per minute per IP. Override via
+     * `wpsg_rate_limit_magic_approve` filter.
+     */
+    public static function rate_limit_magic_approve($request) {
+        $limit  = intval(apply_filters('wpsg_rate_limit_magic_approve', 10));
+        $window = intval(apply_filters('wpsg_rate_limit_window', 60));
+        return self::rate_limit_check($request, 'magic_approve', $limit, $window);
+    }
+
     private static function rate_limit_check($request, $scope, $limit, $window) {
         if ($limit <= 0) {
             return true;
@@ -821,6 +874,12 @@ class WPSG_REST {
         $include_media = in_array(strtolower((string) $include_media_raw), ['1', 'true', 'yes'], true);
         $page = max(1, intval($request->get_param('page')));
         $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
+        // P28-E: New filter params.
+        $category           = sanitize_text_field($request->get_param('category') ?? '');
+        $tag                = sanitize_text_field($request->get_param('tag') ?? '');
+        $sort               = sanitize_text_field($request->get_param('sort') ?: 'created_desc');
+        $include_archived   = in_array(strtolower((string) $request->get_param('include_archived')), ['1', 'true', 'yes'], true);
+        $template_id_filter = sanitize_text_field($request->get_param('template_id') ?? '');
 
         // Generate cache key based on user ID, query parameters, and cache version
         $user_id = get_current_user_id();
@@ -828,7 +887,7 @@ class WPSG_REST {
         $search_key = $search ? md5($search) : 'none';
         $cv = self::get_cache_version();
         $cache_key = sprintf(
-            'wpsg_campaigns_v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s',
+            'wpsg_campaigns_v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s',
             $cv,
             $user_id,
             $status ?: 'all',
@@ -838,7 +897,12 @@ class WPSG_REST {
             $page,
             $per_page,
             $is_admin ? 'admin' : 'user',
-            $include_media ? 'with_media' : 'no_media'
+            $include_media ? 'with_media' : 'no_media',
+            $category ?: 'none',
+            $tag ?: 'none',
+            $sort,
+            $include_archived ? 'incl' : 'excl',
+            $template_id_filter ? md5($template_id_filter) : 'none'
         );
 
         // Try to get cached data
@@ -848,38 +912,95 @@ class WPSG_REST {
         }
 
         $args = [
-            'post_type' => 'wpsg_campaign',
-            'post_status' => 'publish',
-            'paged' => $page,
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'publish',
+            'paged'          => $page,
             'posts_per_page' => $per_page,
-            's' => $search,
+            's'              => $search,
         ];
+
+        // P28-E: Sort mapping.
+        switch ($sort) {
+            case 'created_asc':
+                $args['orderby'] = 'date';
+                $args['order']   = 'ASC';
+                break;
+            case 'title_asc':
+                $args['orderby'] = 'title';
+                $args['order']   = 'ASC';
+                break;
+            case 'title_desc':
+                $args['orderby'] = 'title';
+                $args['order']   = 'DESC';
+                break;
+            case 'updated_desc':
+                $args['orderby'] = 'modified';
+                $args['order']   = 'DESC';
+                break;
+            default: // created_desc
+                $args['orderby'] = 'date';
+                $args['order']   = 'DESC';
+        }
 
         $meta_query = [];
         if (!empty($status)) {
             $meta_query[] = [
-                'key' => 'status',
+                'key'   => 'status',
                 'value' => $status,
+            ];
+        } elseif (!$include_archived) {
+            // P28-E: Exclude archived campaigns by default; pass include_archived=true to override.
+            $meta_query[] = [
+                'relation' => 'OR',
+                ['key' => 'status', 'compare' => 'NOT EXISTS'],
+                ['key' => 'status', 'value' => 'archived', 'compare' => '!='],
             ];
         }
         if (!empty($visibility)) {
             $meta_query[] = [
-                'key' => 'visibility',
+                'key'   => 'visibility',
                 'value' => $visibility,
+            ];
+        }
+        // P28-E: Filter by layout template ID.
+        if (!empty($template_id_filter)) {
+            $meta_query[] = [
+                'key'   => '_wpsg_layout_binding_template_id',
+                'value' => $template_id_filter,
             ];
         }
         if (!empty($meta_query)) {
             $args['meta_query'] = $meta_query;
         }
 
+        // P28-E: Taxonomy filters — company, category, and tag may all be present simultaneously.
+        $tax_clauses = [];
         if (!empty($company)) {
-            $args['tax_query'] = [
-                [
-                    'taxonomy' => 'wpsg_company',
-                    'field' => 'slug',
-                    'terms' => [$company],
-                ],
+            $tax_clauses[] = [
+                'taxonomy' => 'wpsg_company',
+                'field'    => 'slug',
+                'terms'    => [$company],
             ];
+        }
+        if (!empty($category)) {
+            $tax_clauses[] = [
+                'taxonomy' => 'wpsg_campaign_category',
+                'field'    => 'slug',
+                'terms'    => [$category],
+            ];
+        }
+        if (!empty($tag)) {
+            $tax_clauses[] = [
+                'taxonomy' => 'wpsg_campaign_tag',
+                'field'    => 'slug',
+                'terms'    => [$tag],
+            ];
+        }
+        if (!empty($tax_clauses)) {
+            if (count($tax_clauses) > 1) {
+                $tax_clauses['relation'] = 'AND';
+            }
+            $args['tax_query'] = $tax_clauses;
         }
 
         if (!$is_admin) {
@@ -1391,10 +1512,15 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        $allowed_events = ['view'];
+        $allowed_events = ['view', 'lightbox_open'];
         if (!in_array($event_type, $allowed_events, true)) {
             $event_type = 'view';
         }
+
+        $media_id_raw = $request->get_param('mediaId') ?? $request->get_param('media_id') ?? null;
+        $media_id     = ($media_id_raw !== null && $media_id_raw !== '')
+            ? sanitize_text_field($media_id_raw)
+            : null;
 
         global $wpdb;
         $ip   = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -1402,12 +1528,20 @@ class WPSG_REST {
         $hash = hash('sha256', $ip . $salt);
 
         $table = WPSG_DB::get_analytics_table();
-        $wpdb->insert($table, [
+        $row   = [
             'campaign_id'  => $campaign_id,
             'event_type'   => $event_type,
             'visitor_hash' => $hash,
             'occurred_at'  => current_time('mysql', true),
-        ], ['%d', '%s', '%s', '%s']);
+        ];
+        $fmts = ['%d', '%s', '%s', '%s'];
+        if ($media_id !== null) {
+            $row['media_id'] = $media_id;
+            $fmts[]          = '%s';
+        }
+        $wpdb->insert($table, $row, $fmts);
+
+        do_action('wpsg_analytics_event', $campaign_id, $media_id, $event_type, $hash);
 
         return new WP_REST_Response(['recorded' => true], 201);
     }
@@ -1423,18 +1557,11 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        $from = sanitize_text_field($request->get_param('from') ?? '');
-        $to   = sanitize_text_field($request->get_param('to') ?? '');
-
-        // Default: last 30 days.
-        $to_ts   = $to   ? strtotime($to)   : time();
-        $from_ts = $from ? strtotime($from) : strtotime('-30 days', $to_ts);
-        if (!$from_ts || !$to_ts || $from_ts > $to_ts) {
-            return new WP_Error('wpsg_invalid_date_range', 'Invalid date range', ['status' => 400]);
+        $range = self::parse_analytics_date_range($request);
+        if (is_wp_error($range)) {
+            return $range;
         }
-
-        $from_str = gmdate('Y-m-d 00:00:00', $from_ts);
-        $to_str   = gmdate('Y-m-d 23:59:59', $to_ts);
+        [$from_str, $to_str] = $range;
 
         global $wpdb;
         $table = WPSG_DB::get_analytics_table();
@@ -1484,6 +1611,133 @@ class WPSG_REST {
                     'unique'  => (int) $row['unique_visitors'],
                 ];
             }, $rows),
+        ], 200);
+    }
+
+    /**
+     * Shared date-range parser for analytics endpoints.
+     * Returns [from_str, to_str] or WP_Error on invalid range.
+     */
+    private static function parse_analytics_date_range($request) {
+        $from = sanitize_text_field($request->get_param('from') ?? '');
+        $to   = sanitize_text_field($request->get_param('to') ?? '');
+
+        $to_ts   = $to   ? strtotime($to)   : time();
+        $from_ts = $from ? strtotime($from) : strtotime('-30 days', $to_ts);
+        if (!$from_ts || !$to_ts || $from_ts > $to_ts) {
+            return new WP_Error('wpsg_invalid_date_range', 'Invalid date range', ['status' => 400]);
+        }
+
+        return [gmdate('Y-m-d 00:00:00', $from_ts), gmdate('Y-m-d 23:59:59', $to_ts)];
+    }
+
+    /**
+     * GET /analytics/campaigns/{id}/media
+     * Admin-only. Returns per-media view/lightbox_open breakdown.
+     */
+    public static function get_campaign_media_analytics($request) {
+        $campaign_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($campaign_id)) {
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        }
+
+        $range = self::parse_analytics_date_range($request);
+        if (is_wp_error($range)) {
+            return $range;
+        }
+        [$from_str, $to_str] = $range;
+
+        global $wpdb;
+        $table = WPSG_DB::get_analytics_table();
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT
+                    media_id,
+                    COUNT(*) AS views,
+                    SUM(CASE WHEN event_type = 'lightbox_open' THEN 1 ELSE 0 END) AS lightbox_opens
+                FROM {$table}
+                WHERE campaign_id = %d
+                  AND media_id IS NOT NULL
+                  AND occurred_at BETWEEN %s AND %s
+                GROUP BY media_id
+                ORDER BY views DESC",
+                $campaign_id,
+                $from_str,
+                $to_str,
+            ),
+            ARRAY_A,
+        );
+
+        $items = array_map(function ($row) {
+            return [
+                'media_id'      => $row['media_id'],
+                'views'         => (int) $row['views'],
+                'lightbox_opens' => (int) $row['lightbox_opens'],
+            ];
+        }, $rows);
+
+        return new WP_REST_Response(['items' => $items], 200);
+    }
+
+    /**
+     * GET /analytics/summary
+     * Admin-only. Cross-campaign totals and top-10 campaigns by views.
+     */
+    public static function get_analytics_summary($request) {
+        $range = self::parse_analytics_date_range($request);
+        if (is_wp_error($range)) {
+            return $range;
+        }
+        [$from_str, $to_str] = $range;
+
+        global $wpdb;
+        $table = WPSG_DB::get_analytics_table();
+
+        $total_views = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table}
+                 WHERE event_type = 'view' AND occurred_at BETWEEN %s AND %s",
+                $from_str,
+                $to_str,
+            )
+        );
+
+        $unique_visitors = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(DISTINCT visitor_hash) FROM {$table}
+                 WHERE occurred_at BETWEEN %s AND %s",
+                $from_str,
+                $to_str,
+            )
+        );
+
+        $top_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT campaign_id, COUNT(*) AS views
+                 FROM {$table}
+                 WHERE event_type = 'view' AND occurred_at BETWEEN %s AND %s
+                 GROUP BY campaign_id
+                 ORDER BY views DESC
+                 LIMIT 10",
+                $from_str,
+                $to_str,
+            ),
+            ARRAY_A,
+        );
+
+        $top_campaigns = array_map(function ($row) {
+            return [
+                'id'    => strval($row['campaign_id']),
+                'title' => get_post_field('post_title', intval($row['campaign_id'])) ?: sprintf('Campaign #%d', $row['campaign_id']),
+                'views' => (int) $row['views'],
+            ];
+        }, $top_rows);
+
+        return new WP_REST_Response([
+            'totalViews'     => $total_views,
+            'uniqueVisitors' => $unique_visitors,
+            'topCampaigns'   => $top_campaigns,
         ], 200);
     }
 
@@ -1604,40 +1858,59 @@ class WPSG_REST {
         return $response;
     }
 
-    public static function create_media($request) {
+    private static function resolve_campaign_id_from_request($request) {
         $post_id = intval($request->get_param('campaignId') ?? 0);
-        if ($post_id <= 0) {
-            $route = method_exists($request, 'get_route') ? $request->get_route() : '';
-            if (is_string($route) && preg_match('#/campaigns/(\d+)/media$#', $route, $matches)) {
-                $post_id = intval($matches[1]);
-            }
-        }
-        if ($post_id <= 0) {
-            $route_id = $request->get_param('id');
-            if (is_numeric($route_id)) {
-                $post_id = intval($route_id);
-            }
-        }
-        if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        if ($post_id > 0) {
+            return $post_id;
         }
 
-        $type = sanitize_text_field($request->get_param('type'));
-        $source = sanitize_text_field($request->get_param('source'));
-        $caption = sanitize_text_field($request->get_param('caption'));
-        $order = intval($request->get_param('order'));
-        if ($order < 0) {
-            $order = 0;
-        } elseif ($order > 1000000) {
-            $order = 1000000;
+        $route = method_exists($request, 'get_route') ? $request->get_route() : '';
+        if (is_string($route) && preg_match('#/campaigns/(\d+)/media(?:/batch)?$#', $route, $matches)) {
+            return intval($matches[1]);
         }
-        $thumbnail = esc_url_raw($request->get_param('thumbnail') ?? '');
+
+        $route_id = $request->get_param('id');
+        if (is_numeric($route_id)) {
+            return intval($route_id);
+        }
+
+        return 0;
+    }
+
+    private static function clamp_media_order($order) {
+        $order = intval($order);
+        if ($order < 0) {
+            return 0;
+        }
+
+        if ($order > 1000000) {
+            return 1000000;
+        }
+
+        return $order;
+    }
+
+    private static function get_next_media_order(array $media_items) {
+        $max_order = -1;
+        foreach ($media_items as $media_item) {
+            $max_order = max($max_order, intval($media_item['order'] ?? 0));
+        }
+
+        return $max_order + 1;
+    }
+
+    private static function build_media_item_from_payload(array $payload) {
+        $type = sanitize_text_field($payload['type'] ?? '');
+        $source = sanitize_text_field($payload['source'] ?? '');
+        $caption = sanitize_text_field($payload['caption'] ?? '');
+        $title = sanitize_text_field($payload['title'] ?? '');
+        $thumbnail = esc_url_raw($payload['thumbnail'] ?? '');
 
         if (!in_array($type, ['video', 'image'], true)) {
             return new WP_Error('wpsg_invalid_media_type', 'Invalid media type', ['status' => 400]);
         }
 
-        $custom_media_id = sanitize_text_field($request->get_param('id') ?? '');
+        $custom_media_id = sanitize_text_field($payload['id'] ?? '');
         if ($custom_media_id !== '' && !preg_match('/^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*$/', $custom_media_id)) {
             return new WP_Error('wpsg_invalid_media_id', 'Invalid media ID', ['status' => 400]);
         }
@@ -1647,33 +1920,282 @@ class WPSG_REST {
             'type' => $type,
             'source' => $source,
             'caption' => $caption,
-            'order' => $order,
+            'order' => self::clamp_media_order($payload['order'] ?? 0),
         ];
 
+        if ($title !== '') {
+            $media_item['title'] = $title;
+        }
+
         if ($source === 'external') {
-            $url = esc_url_raw($request->get_param('url') ?? '');
-            $normalized = self::normalize_external_media($url);
-            if (is_wp_error($normalized)) {
-                return new WP_Error('wpsg_bad_request', $normalized->get_error_message(), ['status' => 400]);
+            $url = esc_url_raw($payload['url'] ?? '');
+            if (empty($url)) {
+                return new WP_Error('invalid_url', 'URL is required', ['status' => 400]);
             }
-            $media_item['url'] = $normalized['url'];
-            $media_item['embedUrl'] = $normalized['embedUrl'];
-            $media_item['provider'] = $normalized['provider'];
-            $media_item['thumbnail'] = $thumbnail;
+
+            $parsed = wp_parse_url($url);
+            if (empty($parsed['scheme']) || strtolower($parsed['scheme']) !== 'https') {
+                return new WP_Error('invalid_url', 'URL must use HTTPS', ['status' => 400]);
+            }
+
+            if ($type === 'image') {
+                $media_item['url'] = $url;
+                $media_item['provider'] = 'external';
+                if ($thumbnail !== '') {
+                    $media_item['thumbnail'] = $thumbnail;
+                }
+            } else {
+                $normalized = self::normalize_external_media($url);
+                if (is_wp_error($normalized)) {
+                    return new WP_Error('wpsg_bad_request', $normalized->get_error_message(), ['status' => 400]);
+                }
+
+                $media_item['url'] = $normalized['url'];
+                $media_item['embedUrl'] = $normalized['embedUrl'];
+                $media_item['provider'] = $normalized['provider'];
+                if ($thumbnail !== '') {
+                    $media_item['thumbnail'] = $thumbnail;
+                }
+            }
         } elseif ($source === 'upload') {
-            $attachment_id = intval($request->get_param('attachmentId'));
+            $attachment_id = intval($payload['attachmentId'] ?? 0);
             if ($attachment_id <= 0) {
                 return new WP_Error('wpsg_missing_attachment_id', 'attachmentId is required for uploads', ['status' => 400]);
             }
+
             $attachment_url = wp_get_attachment_url($attachment_id);
             if (!$attachment_url) {
                 return new WP_Error('wpsg_invalid_attachment_id', 'Invalid attachmentId', ['status' => 400]);
             }
+
+            $provider = sanitize_text_field($payload['provider'] ?? '');
             $media_item['attachmentId'] = $attachment_id;
             $media_item['url'] = $attachment_url;
             $media_item['thumbnail'] = $thumbnail ?: $attachment_url;
+            if ($provider !== '') {
+                $media_item['provider'] = $provider;
+            }
         } else {
             return new WP_Error('wpsg_invalid_media_source', 'Invalid media source', ['status' => 400]);
+        }
+
+        return $media_item;
+    }
+
+    private static function get_max_batch_upload_size() {
+        $configured_limit = intval(WPSG_Settings::get_setting('max_batch_upload_size', 20));
+        if ($configured_limit <= 0) {
+            $configured_limit = 20;
+        }
+
+        return intval(apply_filters('wpsg_max_batch_upload_size', $configured_limit));
+    }
+
+    private static function get_uploaded_file_entries(array $files) {
+        if (!empty($files['file']) && !is_array($files['file']['name'] ?? null)) {
+            return [$files['file']];
+        }
+
+        if (!empty($files['files']) && is_array($files['files']['name'] ?? null)) {
+            $entries = [];
+            $names = $files['files']['name'];
+            foreach ($names as $index => $name) {
+                $entries[] = [
+                    'name' => $name,
+                    'type' => $files['files']['type'][$index] ?? '',
+                    'tmp_name' => $files['files']['tmp_name'][$index] ?? '',
+                    'error' => $files['files']['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                    'size' => $files['files']['size'][$index] ?? 0,
+                ];
+            }
+
+            return $entries;
+        }
+
+        return [];
+    }
+
+    private static function get_upload_error_data(array $file) {
+        if (!isset($file['error']) || $file['error'] === UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $message = 'Upload failed.';
+        $status = 400;
+
+        switch ($file['error']) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                $message = 'Uploaded file exceeds the allowed size.';
+                $status = 413;
+                break;
+            case UPLOAD_ERR_PARTIAL:
+                $message = 'The uploaded file was only partially uploaded.';
+                break;
+            case UPLOAD_ERR_NO_FILE:
+                $message = 'No file was uploaded.';
+                break;
+            case UPLOAD_ERR_NO_TMP_DIR:
+            case UPLOAD_ERR_CANT_WRITE:
+            case UPLOAD_ERR_EXTENSION:
+                $message = 'Server error while processing upload.';
+                $status = 500;
+                break;
+        }
+
+        return [
+            'message' => $message,
+            'status' => $status,
+        ];
+    }
+
+    private static function is_trusted_uploaded_file($tmp_name, array $file) {
+        $allow_non_http_uploads = (bool) apply_filters('wpsg_allow_non_http_uploads', false, $file);
+        if ($allow_non_http_uploads) {
+            return is_string($tmp_name) && $tmp_name !== '' && file_exists($tmp_name);
+        }
+
+        return is_string($tmp_name) && $tmp_name !== '' && is_uploaded_file($tmp_name);
+    }
+
+    private static function create_attachment_from_upload(array $upload, $original_name) {
+        $file_path = $upload['file'] ?? '';
+        if (!is_string($file_path) || $file_path === '' || !file_exists($file_path)) {
+            return new WP_Error('wpsg_bad_request', 'Upload failed.', ['status' => 400]);
+        }
+
+        $file_name = $original_name ?: wp_basename($file_path);
+        $file_type = wp_check_filetype(wp_basename($file_path), null);
+        $attachment = [
+            'post_mime_type' => $file_type['type'] ?? ($upload['type'] ?? ''),
+            'post_title' => sanitize_text_field(pathinfo($file_name, PATHINFO_FILENAME)),
+            'post_content' => '',
+            'post_status' => 'inherit',
+        ];
+
+        $attachment_id = wp_insert_attachment($attachment, $file_path, 0, true);
+        if (is_wp_error($attachment_id)) {
+            return new WP_Error('wpsg_bad_request', $attachment_id->get_error_message(), ['status' => 400]);
+        }
+
+        $attachment_metadata = wp_generate_attachment_metadata($attachment_id, $file_path);
+        if (!is_wp_error($attachment_metadata)) {
+            wp_update_attachment_metadata($attachment_id, $attachment_metadata);
+        }
+
+        return intval($attachment_id);
+    }
+
+    private static function prepare_uploaded_attachment_payload($attachment_id) {
+        $url = wp_get_attachment_url($attachment_id);
+        $thumbnail = null;
+        $mime = get_post_mime_type($attachment_id);
+
+        if ($mime && strpos($mime, 'image') === 0) {
+            $thumb = wp_get_attachment_image_src($attachment_id, 'medium');
+            $thumbnail = $thumb ? $thumb[0] : $url;
+        }
+
+        return [
+            'attachmentId' => intval($attachment_id),
+            'url' => $url,
+            'thumbnail' => $thumbnail,
+            'mimeType' => $mime,
+        ];
+    }
+
+    private static function upload_single_media_file(array $file) {
+        $error = self::get_upload_error_data($file);
+        if ($error) {
+            return new WP_Error('wpsg_upload_error', $error['message'], ['status' => $error['status']]);
+        }
+
+        if (!isset($file['tmp_name']) || !self::is_trusted_uploaded_file($file['tmp_name'], $file)) {
+            return new WP_Error('wpsg_invalid_upload', 'Invalid upload', ['status' => 400]);
+        }
+
+        $allowed_mimes = apply_filters('wpsg_upload_allowed_mimes', [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'video/mp4',
+            'video/webm',
+            'video/ogg',
+        ]);
+
+        $size_limit = intval(apply_filters('wpsg_upload_max_bytes', 50 * 1024 * 1024));
+        if (isset($file['size']) && intval($file['size']) > $size_limit) {
+            return new WP_Error('wpsg_file_too_large', 'File too large', ['status' => 413]);
+        }
+
+        $check = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
+        $mime = $check['type'] ?? '';
+        $ext = $check['ext'] ?? '';
+        $check_filename = wp_check_filetype($file['name']);
+        $mime_filename = $check_filename['type'] ?? '';
+
+        if (!$mime || !in_array($mime, $allowed_mimes, true)) {
+            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
+        }
+
+        if (!$ext || ($mime_filename && $mime_filename !== $mime)) {
+            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $overrides = [
+            'test_form' => false,
+        ];
+
+        $upload = wp_handle_sideload($file, $overrides);
+        if (!empty($upload['error'])) {
+            return new WP_Error('wpsg_bad_request', $upload['error'], ['status' => 400]);
+        }
+
+        if (class_exists('WPSG_Image_Optimizer')) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = true;
+            try {
+                $upload = WPSG_Image_Optimizer::optimize_on_upload($upload, 'upload');
+            } finally {
+                WPSG_Image_Optimizer::$wpsg_upload_context = false;
+            }
+        }
+
+        $attachment_id = self::create_attachment_from_upload($upload, $file['name'] ?? '');
+        if (is_wp_error($attachment_id)) {
+            return $attachment_id;
+        }
+
+        return self::prepare_uploaded_attachment_payload($attachment_id);
+    }
+
+    public static function create_media($request) {
+        $post_id = self::resolve_campaign_id_from_request($request);
+        if (!self::campaign_exists($post_id)) {
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        }
+
+        $payload = $request->get_json_params();
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+
+        foreach (['id', 'type', 'source', 'url', 'attachmentId', 'caption', 'order', 'thumbnail', 'provider', 'title'] as $key) {
+            if (!array_key_exists($key, $payload)) {
+                $value = $request->get_param($key);
+                if (!is_null($value)) {
+                    $payload[$key] = $value;
+                }
+            }
+        }
+
+        $media_item = self::build_media_item_from_payload($payload);
+        if (is_wp_error($media_item)) {
+            return $media_item;
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -1694,6 +2216,80 @@ class WPSG_REST {
         self::bump_cache_version();
 
         return new WP_REST_Response($media_item, 201);
+    }
+
+    public static function create_media_batch($request) {
+        $post_id = self::resolve_campaign_id_from_request($request);
+        if (!self::campaign_exists($post_id)) {
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        }
+
+        $items = $request->get_param('items');
+        if (!is_array($items) || empty($items)) {
+            return new WP_Error('wpsg_invalid_items', 'items must be a non-empty array', ['status' => 400]);
+        }
+
+        $max_batch_upload_size = self::get_max_batch_upload_size();
+        if (count($items) > $max_batch_upload_size) {
+            return new WP_Error(
+                'wpsg_batch_limit_exceeded',
+                sprintf('A maximum of %d items can be added per batch.', $max_batch_upload_size),
+                ['status' => 400]
+            );
+        }
+
+        $media_items = get_post_meta($post_id, 'media_items', true);
+        $media_items = is_array($media_items) ? $media_items : [];
+        $next_order = self::get_next_media_order($media_items);
+        $added = [];
+        $failed = [];
+
+        foreach ($items as $index => $item) {
+            if (!is_array($item)) {
+                $failed[] = [
+                    'index' => intval($index),
+                    'error' => 'Each batch item must be an object.',
+                ];
+                continue;
+            }
+
+            if (!isset($item['order'])) {
+                $item['order'] = $next_order;
+                $next_order++;
+            }
+
+            $media_item = self::build_media_item_from_payload($item);
+            if (is_wp_error($media_item)) {
+                $failed[] = [
+                    'index' => intval($index),
+                    'error' => $media_item->get_error_message(),
+                ];
+                continue;
+            }
+
+            $added[] = $media_item;
+        }
+
+        if (!empty($added)) {
+            $media_items = array_merge($media_items, $added);
+            update_post_meta($post_id, 'media_items', $media_items);
+            self::add_audit_entry($post_id, 'media.batch_created', [
+                'count' => count($added),
+                'failed' => count($failed),
+                'mediaIds' => array_values(array_map(function ($item) {
+                    return $item['id'];
+                }, $added)),
+            ]);
+            self::bump_cache_version();
+        }
+
+        $status = !empty($added) ? 201 : 400;
+
+        return new WP_REST_Response([
+            'added' => $added,
+            'failed' => $failed,
+            'total' => count($items),
+        ], $status);
     }
 
     public static function list_access($request) {
@@ -1951,8 +2547,40 @@ class WPSG_REST {
             'requested_at' => $now,
         ]);
 
-        // Confirmation email to the requester
+        // Generate magic key for one-click admin approval (P28-I).
+        // 256 bits of random entropy — hash stored in DB, raw key sent in email.
+        $raw_magic_key  = bin2hex(random_bytes(32));
+        $magic_key_hash = hash('sha256', $raw_magic_key);
+        $expires_at     = gmdate('Y-m-d H:i:s', time() + 48 * 3600);
+        WPSG_DB::set_magic_key($token, $magic_key_hash, $expires_at);
+
         $site_name = get_bloginfo('name');
+
+        // One-click magic link for the admin email.
+        $magic_link = rest_url(
+            sprintf(
+                'wp-super-gallery/v1/campaigns/%d/access-requests/%s/magic-approve?magic_key=%s',
+                $post_id,
+                rawurlencode($token),
+                rawurlencode($raw_magic_key)
+            )
+        );
+
+        // Admin notification with one-click approval link.
+        wp_mail(
+            get_option('admin_email'),
+            sprintf('[%s] Access Request — %s', $site_name, $campaign_title),
+            sprintf(
+                "Hello,\n\nA new access request for \"%s\" has been received from: %s\n\nClick to approve instantly (valid 48 hours):\n%s\n\nOr log in to review requests manually:\n%s\n\nThank you,\n%s",
+                $campaign_title,
+                $email,
+                $magic_link,
+                admin_url(),
+                $site_name
+            )
+        );
+
+        // Confirmation email to the requester.
         wp_mail(
             $email,
             sprintf('[%s] Access Request Received — %s', $site_name, $campaign_title),
@@ -2007,37 +2635,57 @@ class WPSG_REST {
             return new WP_Error('wpsg_request_resolved', 'Request already resolved', ['status' => 409]);
         }
 
-        // Provision access: look up or create a WP user for this email
+        $result = self::do_approve_request($post_id, $token, $data);
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        return new WP_REST_Response(['message' => 'Access request approved'], 200);
+    }
+
+    /**
+     * Shared approval logic used by both the admin POST and the magic-link GET endpoints.
+     *
+     * Provisions or looks up the WP user, grants campaign access, updates request
+     * status, fires the audit entry, and sends the requester notification email.
+     *
+     * @return true|WP_Error
+     */
+    private static function do_approve_request(int $post_id, string $token, array $data) {
+        // Provision access: look up or create a WP user for this email.
         $user = get_user_by('email', $data['email']);
         if (!$user) {
             $username = sanitize_user(explode('@', $data['email'])[0], true);
-            // Ensure unique username
-            $base = $username ?: 'user';
+            $base     = $username ?: 'user';
             $username = $base;
-            $suffix = 1;
+            $suffix   = 1;
             while (username_exists($username)) {
                 $username = $base . $suffix++;
             }
             $user_id = wp_create_user($username, wp_generate_password(), $data['email']);
             if (is_wp_error($user_id)) {
-                return new WP_Error('wpsg_user_creation_failed', 'Failed to create user: ' . $user_id->get_error_message(), ['status' => 500]);
+                return new WP_Error(
+                    'wpsg_user_creation_failed',
+                    'Failed to create user: ' . $user_id->get_error_message(),
+                    ['status' => 500]
+                );
             }
             $user = get_user_by('ID', $user_id);
         }
 
-        // Grant access (campaign-level)
+        // Grant access (campaign-level).
         $grants = get_post_meta($post_id, 'access_grants', true);
         $grants = is_array($grants) ? $grants : [];
         $grants = self::upsert_grant($grants, [
-            'userId'    => $user->ID,
+            'userId'     => $user->ID,
             'campaignId' => $post_id,
-            'source'    => 'campaign',
-            'grantedAt' => gmdate('c'),
+            'source'     => 'campaign',
+            'grantedAt'  => gmdate('c'),
         ]);
         update_post_meta($post_id, 'access_grants', $grants);
         self::clear_accessible_campaigns_cache();
 
-        // Update request status
+        // Update request status.
         WPSG_DB::update_access_request_status($token, 'approved');
 
         self::add_audit_entry($post_id, 'access.request.approved', [
@@ -2046,7 +2694,7 @@ class WPSG_REST {
             'token'  => $token,
         ]);
 
-        // Notify requester
+        // Notify the requester.
         $site_name      = get_bloginfo('name');
         $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
         wp_mail(
@@ -2060,7 +2708,105 @@ class WPSG_REST {
             )
         );
 
-        return new WP_REST_Response(['message' => 'Access request approved'], 200);
+        return true;
+    }
+
+    /**
+     * GET /campaigns/{id}/access-requests/{token}/magic-approve?magic_key=…
+     * Public (rate-limited at 10/min) — one-click approval from admin email.
+     *
+     * Validates the magic key, approves the request, then redirects to the
+     * configured landing page or returns inline HTML if no page is set.
+     */
+    public static function magic_approve_access_request($request) {
+        $post_id = intval($request->get_param('id'));
+        $token   = sanitize_text_field($request->get_param('token') ?? '');
+        $raw_key = sanitize_text_field($request->get_param('magic_key') ?? '');
+
+        if (!self::campaign_exists($post_id)) {
+            self::magic_link_redirect('invalid');
+        }
+
+        $data = WPSG_DB::get_access_request($token);
+        if (!$data || intval($data['campaign_id']) !== $post_id) {
+            self::magic_link_redirect('invalid');
+        }
+
+        if ($raw_key === '' || empty($data['magic_key_hash'])) {
+            self::magic_link_redirect('invalid');
+        }
+
+        // Constant-time hash comparison prevents timing attacks.
+        $expected_hash = hash('sha256', $raw_key);
+        if (!hash_equals($data['magic_key_hash'], $expected_hash)) {
+            self::magic_link_redirect('invalid');
+        }
+
+        // Check TTL.
+        if (!empty($data['magic_key_expires_at']) && strtotime($data['magic_key_expires_at']) < time()) {
+            self::magic_link_redirect('expired');
+        }
+
+        // Check replay (key already consumed).
+        if (!empty($data['magic_key_used_at'])) {
+            self::magic_link_redirect('used');
+        }
+
+        // Request already resolved by another means.
+        if ($data['status'] !== 'pending') {
+            self::magic_link_redirect('used');
+        }
+
+        // Mark consumed BEFORE processing to close the replay window.
+        WPSG_DB::mark_magic_key_used($token);
+
+        $result = self::do_approve_request($post_id, $token, $data);
+        if (is_wp_error($result)) {
+            self::magic_link_redirect('invalid');
+        }
+
+        self::magic_link_redirect('approved');
+    }
+
+    /**
+     * Redirect the browser to the configured magic-link landing page, appending
+     * ?wpsg_result=<result>. Falls back to inline HTML if no page is configured.
+     * Always terminates via exit() — never returns.
+     */
+    private static function magic_link_redirect(string $result): void {
+        $settings = get_option('wpsg_settings', []);
+        $page_id  = intval($settings['magic_link_landing_page_id'] ?? 0);
+        $page_url = $page_id ? get_permalink($page_id) : null;
+
+        if ($page_url) {
+            wp_redirect(add_query_arg('wpsg_result', rawurlencode($result), $page_url), 302);
+            exit;
+        }
+
+        // Inline HTML fallback — used when no landing page is configured.
+        $labels = [
+            'approved' => ['Access Approved',   'The access request has been approved. The user will receive a notification email.', '#16a34a'],
+            'expired'  => ['Link Expired',       'This magic link has expired (valid for 48 hours). Please log in to approve requests manually.', '#d97706'],
+            'used'     => ['Already Processed',  'This magic link has already been used or the request was already resolved.', '#d97706'],
+            'invalid'  => ['Invalid Link',       'This magic link is invalid or the request could not be found.', '#dc2626'],
+        ];
+        [$title, $message, $color] = $labels[$result] ?? $labels['invalid'];
+
+        $site_name  = esc_html(get_bloginfo('name'));
+        $title_e    = esc_html($title);
+        $message_e  = esc_html($message);
+        $admin_url  = esc_url(admin_url());
+
+        status_header(200);
+        header('Content-Type: text/html; charset=utf-8');
+        // phpcs:disable
+        echo "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">
+<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">
+<title>{$title_e} — {$site_name}</title>
+<style>*{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f4f4f5}.card{max-width:420px;width:100%;margin:1rem;padding:2rem;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}h1{margin:0 0 .75rem;font-size:1.4rem;color:{$color}}p{margin:0 0 1.5rem;color:#555;line-height:1.5}a{color:#3b82f6;text-decoration:none;font-weight:500}a:hover{text-decoration:underline}</style>
+</head><body><div class=\"card\"><h1>{$title_e}</h1><p>{$message_e}</p><a href=\"{$admin_url}\">Go to Admin Panel</a></div></body></html>";
+        // phpcs:enable
+        exit;
     }
 
     /**
@@ -2826,104 +3572,58 @@ class WPSG_REST {
 
     public static function upload_media($request) {
         $files = $request->get_file_params();
-        if (empty($files['file'])) {
+        $entries = self::get_uploaded_file_entries($files);
+        if (empty($entries)) {
             return new WP_Error('wpsg_missing_file', 'File is required', ['status' => 400]);
         }
 
-        $file = $files['file'];
-        if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
-            $message = 'Upload failed.';
-            $status = 400;
-            switch ($file['error']) {
-                case UPLOAD_ERR_INI_SIZE:
-                case UPLOAD_ERR_FORM_SIZE:
-                    $message = 'Uploaded file exceeds the allowed size.';
-                    $status = 413;
-                    break;
-                case UPLOAD_ERR_PARTIAL:
-                    $message = 'The uploaded file was only partially uploaded.';
-                    $status = 400;
-                    break;
-                case UPLOAD_ERR_NO_FILE:
-                    $message = 'No file was uploaded.';
-                    $status = 400;
-                    break;
-                case UPLOAD_ERR_NO_TMP_DIR:
-                case UPLOAD_ERR_CANT_WRITE:
-                case UPLOAD_ERR_EXTENSION:
-                    $message = 'Server error while processing upload.';
-                    $status = 500;
-                    break;
+        $is_batch = count($entries) > 1 || isset($files['files']);
+        $max_batch_upload_size = self::get_max_batch_upload_size();
+        if ($is_batch && count($entries) > $max_batch_upload_size) {
+            return new WP_Error(
+                'wpsg_batch_limit_exceeded',
+                sprintf('A maximum of %d files can be uploaded per batch.', $max_batch_upload_size),
+                ['status' => 400]
+            );
+        }
+
+        if (!$is_batch) {
+            $upload = self::upload_single_media_file($entries[0]);
+            if (is_wp_error($upload)) {
+                return $upload;
             }
-            return new WP_REST_Response(['message' => $message], $status);
-        }
-        if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            return new WP_Error('wpsg_invalid_upload', 'Invalid upload', ['status' => 400]);
+
+            return new WP_REST_Response($upload, 201);
         }
 
-        $allowed_mimes = apply_filters('wpsg_upload_allowed_mimes', [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-            'video/mp4',
-            'video/webm',
-            'video/ogg',
-        ]);
+        $results = [];
+        $success_count = 0;
 
-        $size_limit = intval(apply_filters('wpsg_upload_max_bytes', 50 * 1024 * 1024));
-        if (isset($file['size']) && $file['size'] > $size_limit) {
-            return new WP_Error('wpsg_file_too_large', 'File too large', ['status' => 413]);
-        }
+        foreach ($entries as $entry) {
+            $upload = self::upload_single_media_file($entry);
+            $filename = sanitize_file_name($entry['name'] ?? '');
 
-        $check = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
-        $mime = $check['type'] ?? '';
-        $ext = $check['ext'] ?? '';
-        $check_filename = wp_check_filetype($file['name']);
-        $mime_filename = $check_filename['type'] ?? '';
-
-        if (!$mime || !in_array($mime, $allowed_mimes, true)) {
-            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
-        }
-
-        if (!$ext || ($mime_filename && $mime_filename !== $mime)) {
-            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
-        }
-
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        require_once ABSPATH . 'wp-admin/includes/media.php';
-        require_once ABSPATH . 'wp-admin/includes/image.php';
-
-        // Signal the image optimizer to process this upload.
-        if (class_exists('WPSG_Image_Optimizer')) {
-            WPSG_Image_Optimizer::$wpsg_upload_context = true;
-        }
-
-        try {
-            $attachment_id = media_handle_upload('file', 0);
-        } finally {
-            if (class_exists('WPSG_Image_Optimizer')) {
-                WPSG_Image_Optimizer::$wpsg_upload_context = false;
+            if (is_wp_error($upload)) {
+                $results[] = [
+                    'filename' => $filename,
+                    'success' => false,
+                    'error' => $upload->get_error_message(),
+                ];
+                continue;
             }
-        }
-        if (is_wp_error($attachment_id)) {
-            return new WP_Error('wpsg_bad_request', $attachment_id->get_error_message(), ['status' => 400]);
-        }
 
-        $url = wp_get_attachment_url($attachment_id);
-
-        // Generate thumbnail for images
-        $thumbnail = null;
-        $mime = get_post_mime_type($attachment_id);
-        if ($mime && strpos($mime, 'image') === 0) {
-            $thumb = wp_get_attachment_image_src($attachment_id, 'medium');
-            $thumbnail = $thumb ? $thumb[0] : $url;
+            $results[] = array_merge([
+                'filename' => $filename,
+                'success' => true,
+            ], $upload);
+            $success_count++;
         }
 
         return new WP_REST_Response([
-            'attachmentId' => $attachment_id,
-            'url' => $url,
-            'thumbnail' => $thumbnail,
+            'results' => $results,
+            'total' => count($entries),
+            'succeeded' => $success_count,
+            'failed' => count($entries) - $success_count,
         ], 201);
     }
 
@@ -4762,6 +5462,113 @@ class WPSG_REST {
             return new WP_Error( 'wpsg_font_not_found', 'Font not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'deleted' => true ], 200 );
+    }
+
+    // =========================================================================
+    // P28-J — Access Totals Summary
+    // =========================================================================
+
+    /**
+     * GET /campaigns/access-summary
+     *
+     * Returns grant counts and pending access-request counts for every campaign.
+     * Supports optional `page` + `per_page` query params.
+     */
+    public static function access_summary($request) {
+        global $wpdb;
+
+        $per_page = max(1, min(100, intval($request->get_param('per_page') ?: 50)));
+        $page     = max(1, intval($request->get_param('page') ?: 1));
+        $offset   = ($page - 1) * $per_page;
+
+        // Count all campaigns (any post_status that "exists").
+        $total = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign' AND post_status NOT IN ('trash','auto-draft')"
+        ));
+
+        $total_pages = max(1, (int) ceil($total / $per_page));
+
+        // Fetch this page of campaigns.
+        $ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts}
+             WHERE post_type = 'wpsg_campaign'
+               AND post_status NOT IN ('trash','auto-draft')
+             ORDER BY post_title ASC
+             LIMIT %d OFFSET %d",
+            $per_page,
+            $offset
+        ));
+
+        if (empty($ids)) {
+            return new WP_REST_Response([
+                'items'      => [],
+                'page'       => $page,
+                'perPage'    => $per_page,
+                'total'      => $total,
+                'totalPages' => $total_pages,
+            ], 200);
+        }
+
+        // Batch-load post meta to avoid N+1 queries.
+        update_meta_cache('post', $ids);
+
+        // Load titles in one query.
+        $id_placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+        $posts = $wpdb->get_results($wpdb->prepare(
+            "SELECT ID, post_title FROM {$wpdb->posts} WHERE ID IN ({$id_placeholders})",
+            ...$ids
+        ), ARRAY_A);
+        $title_map = array_column($posts, 'post_title', 'ID');
+
+        // Pending request counts for these campaigns in one SQL query.
+        $pending_map = [];
+        $table       = WPSG_DB::get_access_requests_table();
+        // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+        $pending_rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT campaign_id, COUNT(*) AS cnt FROM {$table}
+             WHERE status = 'pending' AND campaign_id IN ({$id_placeholders})
+             GROUP BY campaign_id",
+            ...$ids
+        ), ARRAY_A);
+        foreach ($pending_rows as $row) {
+            $pending_map[intval($row['campaign_id'])] = intval($row['cnt']);
+        }
+
+        $now   = time();
+        $items = [];
+        foreach ($ids as $id) {
+            $id    = intval($id);
+            $grants = get_post_meta($id, 'access_grants', true);
+            $grants = is_array($grants) ? $grants : [];
+
+            // Count only non-expired grants.
+            $active_count = 0;
+            foreach ($grants as $grant) {
+                if (!empty($grant['expires_at']) && strtotime($grant['expires_at']) < $now) {
+                    continue;
+                }
+                if (!empty($grant['userId'])) {
+                    $active_count++;
+                }
+            }
+
+            $items[] = [
+                'id'                  => $id,
+                'title'               => $title_map[$id] ?? '',
+                'grantCount'          => $active_count,
+                'pendingRequestCount' => $pending_map[$id] ?? 0,
+                'capacity'            => null,
+            ];
+        }
+
+        return new WP_REST_Response([
+            'items'      => $items,
+            'page'       => $page,
+            'perPage'    => $per_page,
+            'total'      => $total,
+            'totalPages' => $total_pages,
+        ], 200);
     }
 
     /**

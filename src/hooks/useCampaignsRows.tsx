@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox } from '@mantine/core';
 import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash } from '@tabler/icons-react';
-import type { AdminCampaign } from '@/services/adminQuery';
+import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
 import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@/utils/campaignGalleryOverrides';
 
@@ -19,11 +19,12 @@ function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string
 
 interface Options {
   campaigns: AdminCampaign[];
-  categoryFilter: string | null;
   campaignActions: CampaignActionsHandle;
+  /** Map of campaign id (number) → AccessSummaryItem. Undefined while loading. */
+  grantSummary?: Map<number, AccessSummaryItem> | undefined;
 }
 
-export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }: Options) {
+export function useCampaignsRows({ campaigns, campaignActions, grantSummary }: Options) {
   const {
     selectMode, selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,
@@ -33,14 +34,11 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
   } = campaignActions;
 
   return useMemo(() => {
-    const visible = categoryFilter
-      ? campaigns.filter((c) => (c.categories ?? []).includes(categoryFilter))
-      : campaigns;
-
-    return visible.map((c) => {
+    return campaigns.map((c) => {
       const cid = String(c.id);
       const isSelected = selectedCampaignIds.has(cid);
       const galleryOverrideSummary = describeCampaignGalleryOverrides(c);
+      const summary = grantSummary?.get(Number(c.id));
       return (
         <Table.Tr key={c.id} data-selected={isSelected || undefined}>
           {selectMode && (
@@ -86,6 +84,22 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
           <Table.Td><Badge variant="light">{c.visibility}</Badge></Table.Td>
           <Table.Td>{c.companyId || '—'}</Table.Td>
           <Table.Td>
+            {summary !== undefined ? (
+              <Group gap={4} wrap="nowrap">
+                <Tooltip label={`${summary.grantCount} active grant${summary.grantCount !== 1 ? 's' : ''}`} withArrow>
+                  <Badge variant="light" color="blue" size="sm">{summary.grantCount}</Badge>
+                </Tooltip>
+                {summary.pendingRequestCount > 0 && (
+                  <Tooltip label={`${summary.pendingRequestCount} pending request${summary.pendingRequestCount !== 1 ? 's' : ''}`} withArrow>
+                    <Badge variant="dot" color="orange" size="sm">{summary.pendingRequestCount}</Badge>
+                  </Tooltip>
+                )}
+              </Group>
+            ) : (
+              <Text size="xs" c="dimmed">—</Text>
+            )}
+          </Table.Td>
+          <Table.Td>
             <Group gap="xs" wrap="wrap">
               <Button variant="outline" size="xs" leftSection={<IconEdit size={14} />} onClick={() => handleEdit(c)}>Edit</Button>
               <Tooltip label="Clone campaign">
@@ -107,5 +121,5 @@ export function useCampaignsRows({ campaigns, categoryFilter, campaignActions }:
         </Table.Tr>
       );
     });
-  }, [campaigns, categoryFilter, selectMode, selectedCampaignIds, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
+  }, [campaigns, selectMode, selectedCampaignIds, grantSummary, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
 }
