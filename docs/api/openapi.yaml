@@ -668,6 +668,10 @@ components:
                 type: string
               ok:
                 type: boolean
+        expiredGrantsPendingCleanup:
+          type: integer
+          description: "P28-B: Number of access grants whose expires_at has passed but have not yet been removed by the daily WP-Cron job. A non-zero value indicates the cron job is lagging."
+          example: 0
 
     ThumbnailCacheStats:
       type: object
@@ -2107,6 +2111,14 @@ paths:
       security:
         - bearerAuth: []
         - cookieNonce: []
+      parameters:
+        - in: query
+          name: include_expired
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: "P28-B: When true, includes grants whose expires_at is in the past. Expired grants are hidden by default."
       responses:
         '200':
           description: Access grants for this campaign
@@ -2143,8 +2155,12 @@ paths:
     post:
       operationId: grantCampaignAccess
       tags: [Access]
-      summary: Grant campaign access
-      description: Either user_id or email must be supplied.
+      summary: Grant or deny campaign access
+      description: |
+        Grants (or denies) access for a user to a campaign or its parent company.
+        `userId` is required. `source` controls whether the grant is campaign-scoped
+        or company-wide. `expires_at` (P28-B) sets an optional expiry after which the
+        grant is treated as expired and hidden from the default list.
       security:
         - bearerAuth: []
         - cookieNonce: []
@@ -2154,29 +2170,41 @@ paths:
           application/json:
             schema:
               type: object
+              required: [userId, source]
               properties:
-                user_id:
+                userId:
                   type: integer
-                email:
+                  description: WordPress user ID to grant/deny access for.
+                  example: 7
+                source:
                   type: string
-                  format: email
+                  enum: [campaign, company]
+                  description: "'campaign' scopes to this campaign; 'company' grants across all campaigns under the same company."
+                  example: campaign
+                action:
+                  type: string
+                  enum: [grant, deny]
+                  default: grant
+                  description: "'grant' adds the user; 'deny' adds an override that blocks company-level access. Ignored when source=company."
                 expires_at:
                   type: string
                   format: date-time
                   nullable: true
-                  description: Optional expiry datetime. Null for permanent grant.
-                note:
-                  type: string
-                  nullable: true
+                  description: "P28-B: Optional ISO 8601 expiry. Null or omitted = permanent grant. Must be a parseable datetime string."
+                  example: "2026-12-31T23:59:59Z"
       responses:
         '200':
-          description: Access granted
+          description: Access updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccessGrant'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Access updated
         '400':
-          description: Neither user_id nor email provided
+          description: Missing userId, invalid source, or unparseable expires_at
           content:
             application/json:
               schema:
@@ -2194,13 +2222,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Campaign or user not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '409':
-          description: Access grant already exists for this user
+          description: Campaign not found
           content:
             application/json:
               schema:
@@ -2900,7 +2922,7 @@ paths:
       operationId: grantCompanyAccess
       tags: [Companies]
       summary: Grant company-level access
-      description: Either user_id or email required.
+      description: Grants access to all current and future campaigns belonging to this company.
       security:
         - bearerAuth: []
         - cookieNonce: []
@@ -2910,12 +2932,18 @@ paths:
           application/json:
             schema:
               type: object
+              required: [userId]
               properties:
-                user_id:
+                userId:
                   type: integer
-                email:
+                  description: WordPress user ID to grant access for.
+                  example: 7
+                expires_at:
                   type: string
-                  format: email
+                  format: date-time
+                  nullable: true
+                  description: "P28-B: Optional ISO 8601 expiry. Null or omitted = permanent grant."
+                  example: "2026-12-31T23:59:59Z"
       responses:
         '200':
           description: Company access granted

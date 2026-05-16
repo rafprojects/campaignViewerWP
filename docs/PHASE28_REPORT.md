@@ -24,8 +24,8 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 
 | Track | Description | Effort | Priority |
 |-------|-------------|--------|----------|
-| P28-A | Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) | Low | High |
-| P28-B | Time-limited access grants (`expires_at` on grant endpoints) | Low–Medium | High |
+| P28-A | Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) | Low | High | Completed | 
+| P28-B | Time-limited access grants (`expires_at` on grant endpoints) | Low–Medium | High | Completed |
 | P28-C | Taxonomy CRUD — campaign categories + tags (create/update/delete) | Low | High |
 | P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High |
 | P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium |

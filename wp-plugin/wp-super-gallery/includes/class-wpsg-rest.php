@@ -1658,6 +1658,9 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
+        // P28-B: include_expired=true shows grants past their expiry (hidden by default).
+        $include_expired = filter_var($request->get_param('include_expired'), FILTER_VALIDATE_BOOLEAN);
+
         $company_term = self::get_company_term($post_id);
         $company_grants = $company_term ? get_term_meta($company_term->term_id, 'access_grants', true) : [];
         $campaign_grants = get_post_meta($post_id, 'access_grants', true);
@@ -1673,16 +1676,24 @@ class WPSG_REST {
             return ($entry['action'] ?? '') === 'deny';
         }));
 
-        $effective = array_values(array_filter(array_merge($company_grants, $campaign_grants), function ($entry) use ($deny_user_ids) {
+        $now = time();
+        $effective = array_values(array_filter(array_merge($company_grants, $campaign_grants), function ($entry) use ($deny_user_ids, $include_expired, $now) {
             $user_id = intval($entry['userId'] ?? 0);
-            return $user_id > 0 && !in_array($user_id, $deny_user_ids, true);
+            if ($user_id <= 0 || in_array($user_id, $deny_user_ids, true)) {
+                return false;
+            }
+            // P28-B: skip expired grants unless caller asks for them.
+            if (!$include_expired && !empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+                return false;
+            }
+            return true;
         }));
 
         // Enrich with user details
         $user_ids = array_unique(array_map(function ($entry) {
             return intval($entry['userId'] ?? 0);
         }, $effective));
-        
+
         $user_map = [];
         if (!empty($user_ids)) {
             $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
@@ -1695,11 +1706,15 @@ class WPSG_REST {
             }
         }
 
-        $enriched = array_map(function ($entry) use ($user_map) {
+        $enriched = array_map(function ($entry) use ($user_map, $now) {
             $user_id = intval($entry['userId'] ?? 0);
             if (isset($user_map[$user_id])) {
                 $entry['user'] = $user_map[$user_id];
             }
+            // P28-B: compute is_expired on the fly.
+            $expires_at = $entry['expires_at'] ?? null;
+            $entry['expires_at'] = $expires_at;
+            $entry['is_expired'] = $expires_at !== null && strtotime($expires_at) < $now;
             return $entry;
         }, $effective);
 
@@ -1724,11 +1739,23 @@ class WPSG_REST {
             return new WP_Error('wpsg_invalid_source', 'Invalid source', ['status' => 400]);
         }
 
+        // P28-B: optional expiry — validate ISO 8601 datetime if provided.
+        $expires_at_raw = $request->get_param('expires_at');
+        $expires_at = null;
+        if ($expires_at_raw !== null && $expires_at_raw !== '') {
+            $ts = strtotime(sanitize_text_field($expires_at_raw));
+            if ($ts === false) {
+                return new WP_Error('wpsg_invalid_expires_at', 'expires_at must be a valid ISO 8601 datetime', ['status' => 400]);
+            }
+            $expires_at = gmdate('c', $ts);
+        }
+
         $entry = [
-            'userId' => $user_id,
+            'userId'    => $user_id,
             'campaignId' => $post_id,
-            'source' => $source,
+            'source'    => $source,
             'grantedAt' => gmdate('c'),
+            'expires_at' => $expires_at,
         ];
 
         if ($source === 'company') {
@@ -2270,14 +2297,26 @@ class WPSG_REST {
             return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
+        // P28-B: optional expiry.
+        $expires_at_raw = $request->get_param('expires_at');
+        $expires_at = null;
+        if ($expires_at_raw !== null && $expires_at_raw !== '') {
+            $ts = strtotime(sanitize_text_field($expires_at_raw));
+            if ($ts === false) {
+                return new WP_Error('wpsg_invalid_expires_at', 'expires_at must be a valid ISO 8601 datetime', ['status' => 400]);
+            }
+            $expires_at = gmdate('c', $ts);
+        }
+
         $grants = get_term_meta($term_id, 'access_grants', true);
         $grants = is_array($grants) ? $grants : [];
 
         $entry = [
-            'userId' => $user_id,
-            'companyId' => $term_id,
-            'source' => 'company',
-            'grantedAt' => gmdate('c'),
+            'userId'     => $user_id,
+            'companyId'  => $term_id,
+            'source'     => 'company',
+            'grantedAt'  => gmdate('c'),
+            'expires_at' => $expires_at,
         ];
 
         $grants = self::upsert_grant($grants, $entry);

@@ -59,6 +59,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [auditCampaignId, setAuditCampaignId] = useState('');
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
+  const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [campaignPage, setCampaignPage] = useState(1);
   const CAMPAIGNS_PER_PAGE = 20;
@@ -75,7 +76,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
   const accessTargetId = accessViewMode === 'campaign' ? accessCampaignId : selectedCompanyId;
   const { accessEntries, accessLoading, mutateAccess } = useAccessGrants(
-    apiClient, accessViewMode, activeTab === 'access' ? accessTargetId : '',
+    apiClient, accessViewMode, activeTab === 'access' ? accessTargetId : '', showExpiredGrants,
   );
   const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
   const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, companiesEnabled);
@@ -314,6 +315,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             accessRows={accessRows}
             accessState={accessState}
             apiClient={apiClient}
+            showExpiredGrants={showExpiredGrants}
+            onShowExpiredGrantsChange={setShowExpiredGrants}
           />
         </Tabs.Panel>
 

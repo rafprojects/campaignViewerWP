@@ -85,6 +85,8 @@ export interface CompanyAccessGrant {
   campaignStatus?: string;
   companyId?: number;
   companyName?: string;
+  expires_at?: string | null;
+  is_expired?: boolean;
 }
 
 const ADMIN_QUERY_STALE_TIME = 30_000;
@@ -121,8 +123,9 @@ export function getAccessGrantsQueryKey(
   apiClient: ApiClient,
   mode: 'campaign' | 'company' | 'all',
   targetId: string,
+  includeExpired = false,
 ) {
-  return [...getAdminQueryPrefix(apiClient), 'access', mode, targetId] as const;
+  return [...getAdminQueryPrefix(apiClient), 'access', mode, targetId, includeExpired] as const;
 }
 
 export function getCompaniesQueryKey(apiClient: ApiClient) {
@@ -199,17 +202,24 @@ async function fetchAccessGrants(
   apiClient: ApiClient,
   mode: 'campaign' | 'company' | 'all',
   targetId: string,
+  includeExpired = false,
 ): Promise<CompanyAccessGrant[]> {
   if (mode === 'campaign') {
+    const qs = includeExpired ? '?include_expired=true' : '';
     const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${targetId}/access`,
+      `/wp-json/wp-super-gallery/v1/campaigns/${targetId}/access${qs}`,
     );
     return normalizeListResponse(response);
   }
 
   const includeCampaigns = mode === 'all';
-  const url = `/wp-json/wp-super-gallery/v1/companies/${targetId}/access${includeCampaigns ? '?include_campaigns=true' : ''}`;
-  const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(url);
+  const params = new URLSearchParams();
+  if (includeCampaigns) params.set('include_campaigns', 'true');
+  if (includeExpired) params.set('include_expired', 'true');
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
+    `/wp-json/wp-super-gallery/v1/companies/${targetId}/access${qs}`,
+  );
   return normalizeListResponse(response);
 }
 
@@ -305,11 +315,12 @@ export function useAccessGrants(
   apiClient: ApiClient,
   mode: 'campaign' | 'company' | 'all',
   targetId: string,
+  includeExpired = false,
 ) {
   const enabled = Boolean(targetId);
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: getAccessGrantsQueryKey(apiClient, mode, targetId || 'none'),
-    queryFn: () => fetchAccessGrants(apiClient, mode, targetId),
+    queryKey: getAccessGrantsQueryKey(apiClient, mode, targetId || 'none', includeExpired),
+    queryFn: () => fetchAccessGrants(apiClient, mode, targetId, includeExpired),
     enabled,
     staleTime: ADMIN_QUERY_STALE_TIME,
     ...ADMIN_QUERY_OPTIONS,

@@ -785,7 +785,36 @@
           "response": []
         },
         {
-          "name": "Grant Access (by user ID)",
+          "name": "List Access Grants (include expired)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access?include_expired=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access"
+              ],
+              "query": [
+                {
+                  "key": "include_expired",
+                  "value": "true",
+                  "description": "P28-B: Show grants whose expires_at is in the past"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Grant Access",
           "request": {
             "method": "POST",
             "header": [
@@ -796,7 +825,48 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": {{user_id}}\n}"
+              "raw": "{\n  \"userId\": {{user_id}},\n  \"source\": \"campaign\",\n  \"action\": \"grant\",\n  \"expires_at\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Grant Access (time-limited)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{user_id}},\n  \"source\": \"campaign\",\n  \"action\": \"grant\",\n  \"expires_at\": \"2026-12-31T23:59:59Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access",
@@ -1192,7 +1262,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": {{user_id}}\n}"
+              "raw": "{\n  \"userId\": {{user_id}},\n  \"expires_at\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/access",
