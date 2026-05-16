@@ -203,6 +203,53 @@
           "response": []
         },
         {
+          "name": "List Campaigns — P28-E Filters (category + tag + sort + include_archived + template_id)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns?category=weddings&tag=2026&sort=title_asc&include_archived=true&template_id={{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "weddings",
+                  "description": "Filter by wpsg_campaign_category slug"
+                },
+                {
+                  "key": "tag",
+                  "value": "2026",
+                  "description": "Filter by wpsg_campaign_tag slug"
+                },
+                {
+                  "key": "sort",
+                  "value": "title_asc",
+                  "description": "created_desc | created_asc | title_asc | title_desc | updated_desc"
+                },
+                {
+                  "key": "include_archived",
+                  "value": "true",
+                  "description": "Include archived campaigns (default false)"
+                },
+                {
+                  "key": "template_id",
+                  "value": "{{templateId}}",
+                  "description": "Filter by layout template UUID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Create Campaign",
           "request": {
             "method": "POST",
@@ -549,6 +596,38 @@
           "response": []
         },
         {
+          "name": "Add Media Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"type\": \"image\",\n      \"source\": \"upload\",\n      \"attachmentId\": 123,\n      \"caption\": \"Homepage hero\"\n    },\n    {\n      \"type\": \"video\",\n      \"source\": \"external\",\n      \"url\": \"https://example.com/video.mp4\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media/batch",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "media",
+                "batch"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Update Media Item",
           "request": {
             "method": "PATCH",
@@ -649,7 +728,7 @@
           "response": []
         },
         {
-          "name": "Upload Media",
+          "name": "Upload Media (Single)",
           "request": {
             "method": "POST",
             "header": [],
@@ -660,11 +739,42 @@
                   "key": "file",
                   "type": "file",
                   "src": "/path/to/image.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "media",
+                "upload"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Media (Batch)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files[]",
+                  "type": "file",
+                  "src": "/path/to/image-1.jpg"
                 },
                 {
-                  "key": "campaign_id",
-                  "value": "{{campaign_id}}",
-                  "type": "text"
+                  "key": "files[]",
+                  "type": "file",
+                  "src": "/path/to/image-2.jpg"
                 }
               ]
             },
@@ -762,6 +872,24 @@
     {
       "name": "06. Campaign Access",
       "item": [
+        {
+          "name": "Get Access Summary (all campaigns)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/access-summary?page=1&per_page=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["wp-json", "wp-super-gallery", "v1", "campaigns", "access-summary"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "50" }
+              ]
+            },
+            "description": "P28-J: Returns grant counts and pending request counts for every campaign."
+          },
+          "response": []
+        },
         {
           "name": "List Access Grants",
           "request": {
@@ -1031,6 +1159,38 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Magic-Link Approve Access Request (browser)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/magic-approve?magic_key={{magic_key}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaigns",
+                "{{campaign_id}}",
+                "access-requests",
+                "{{token}}",
+                "magic-approve"
+              ],
+              "query": [
+                {
+                  "key": "magic_key",
+                  "value": "{{magic_key}}",
+                  "description": "Raw 64-char hex magic key from the admin notification email (TTL 48h, single-use)."
+                }
+              ]
+            },
+            "description": "One-click approval link embedded in the admin notification email. No session required \u2014 validated by the magic key alone. Redirects to the configured landing page on success or failure."
+          },
+          "response": []
         }
       ]
     },
@@ -1121,6 +1281,70 @@
                 "analytics",
                 "campaigns",
                 "{{campaign_id}}"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Campaign Media Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/campaigns/{{campaign_id}}/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "analytics",
+                "campaigns",
+                "{{campaign_id}}",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Analytics Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "analytics",
+                "summary"
               ],
               "query": [
                 {

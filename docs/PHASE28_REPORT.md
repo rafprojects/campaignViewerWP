@@ -27,13 +27,13 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-A | Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) | Low | High | Completed | 
 | P28-B | Time-limited access grants (`expires_at` on grant endpoints) | Low–Medium | High | Completed |
 | P28-C | Taxonomy CRUD — campaign categories + tags (create/update/delete) | Low | High | Completed |
-| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High |
-| P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium |
+| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High | Completed |
+| P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium | Completed |
 | P28-F | Pagination on currently unbounded list endpoints | Low | Medium |
 | P28-G | Audit log improvements (pagination, filters, global admin endpoint) | Low–Medium | Medium |
-| P28-H | Analytics expansion (per-media tracking, cross-campaign dashboard, external hook) | Medium | Medium |
-| P28-I | Magic-link access request approval | Low | Medium |
-| P28-J | Access totals summary endpoint | Low | Low–Medium |
+| P28-H | Analytics expansion (per-media tracking, cross-campaign dashboard, external hook) | Medium | Medium | Completed |
+| P28-I | Magic-link access request approval | Low | Medium | Completed |
+| P28-J | Access totals summary endpoint | Low | Low–Medium | Completed |
 | P28-K | REST args hardening (`D-8` — typed args arrays on all routes) | Large | Medium |
 | P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium |
 | P28-M | Media sort controls on list endpoints | Low | Low–Medium |
@@ -210,14 +210,14 @@ or the React UI.
 Accept multiple files via a `files[]` multipart field (in addition to the
 existing single `file` field for backward compatibility).
 - Process each file independently; return an array of results:
-  `[ { id, url, success: true } | { filename, success: false, error: "..." } ]`
+  `{ results: [ { filename, success, attachmentId, url, thumbnail, mimeType } | { filename, success: false, error: "..." } ], total, succeeded, failed }`
 - Enforce per-request file count limit (`max_batch_upload_size` setting,
   default 20).
-- Stop on first PHP memory limit breach; report partial success.
+- Report per-file failures without discarding successful uploads.
 
 **New endpoint:** `POST /campaigns/{id}/media/batch`
-- Accepts `{ items: [ { type, source, url } ] }` — batch-add URL/oEmbed items.
-- Returns `{ added: [...], failed: [...] }`.
+- Accepts `{ items: [ { type, source, url } | { type, source, attachmentId } ] }`.
+- Returns `{ added: [...], failed: [{ index, error }], total }`.
 - Existing `POST /campaigns/{id}/media` (single-item) is unchanged.
 
 **Setting:** `max_batch_upload_size` (integer, default 20, admin-only) added to
@@ -225,19 +225,20 @@ settings registry.
 
 ### Frontend change
 
-- MediaAddModal: add a "Upload multiple files" droppable zone (file input with
-  `multiple`). Show per-file progress indicators. Summarise results in a toast:
-  "18 of 20 files uploaded successfully."
-- Drag-and-drop directly onto the MediaTab grid triggers batch upload.
+- MediaAddModal: supports multi-file selection and shows per-file progress and
+  per-file errors.
+- MediaTab and UnifiedCampaignModal upload with the batch API path and reuse the
+  batch-create endpoint for successful attachments.
+- Shared external media modal now supports the same multi-file upload flow.
 
 ### Acceptance criteria
 
-- [ ] `POST /media/upload` with `files[]` containing 3 files returns 3 result entries.
-- [ ] Exceeding `max_batch_upload_size` returns 400.
-- [ ] Each uploaded file is added to WP media library.
-- [ ] `POST /campaigns/{id}/media/batch` adds multiple URL items.
-- [ ] PHPUnit: mixed success/failure batch, count limit enforcement.
-- [ ] React: `<input multiple>` triggers batch upload flow; progress shown per file.
+- [x] `POST /media/upload` with `files[]` containing 3 files returns 3 result entries.
+- [x] Exceeding `max_batch_upload_size` returns 400.
+- [x] Each uploaded file is added to WP media library.
+- [x] `POST /campaigns/{id}/media/batch` adds multiple media items and reports per-item failures.
+- [x] PHPUnit: mixed success/failure batch, count limit enforcement.
+- [x] React: `<input multiple>` triggers batch upload flow; progress shown per file.
 
 ---
 
@@ -271,12 +272,12 @@ All map to additional `WP_Query` args / `tax_query` entries; response shape unch
 
 ### Acceptance criteria
 
-- [ ] `?category=weddings` returns only campaigns in that category.
-- [ ] `?tag=2026` returns only campaigns with that tag.
-- [ ] `?sort=title_asc` returns campaigns in alphabetical order.
-- [ ] `?include_archived=true` includes archived campaigns in the list.
-- [ ] `?template_id=<uuid>` returns campaigns bound to that layout template.
-- [ ] PHPUnit: each param independently, combined params.
+- [x] `?category=weddings` returns only campaigns in that category.
+- [x] `?tag=2026` returns only campaigns with that tag.
+- [x] `?sort=title_asc` returns campaigns in alphabetical order.
+- [x] `?include_archived=true` includes archived campaigns in the list.
+- [x] `?template_id=<uuid>` returns campaigns bound to that layout template.
+- [x] PHPUnit: each param independently, combined params.
 
 ---
 
@@ -510,8 +511,8 @@ count, query `wpsg_access_requests` table with status=pending, GROUP BY campaign
 
 ### Acceptance criteria
 
-- [ ] `GET /campaigns/access-summary` returns all campaigns with grant counts.
-- [ ] PHPUnit: campaign with grants, campaign with no grants, pending request count.
+- [x] `GET /campaigns/access-summary` returns all campaigns with grant counts.
+- [x] PHPUnit: campaign with grants, campaign with no grants, pending request count.
 
 ---
 
