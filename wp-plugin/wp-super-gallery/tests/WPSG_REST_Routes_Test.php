@@ -14,6 +14,7 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
     public function test_media_routes_are_registered() {
         $routes = rest_get_server()->get_routes('wp-super-gallery/v1');
         $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media', $routes);
+        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media/batch', $routes);
         $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', $routes);
     }
 
