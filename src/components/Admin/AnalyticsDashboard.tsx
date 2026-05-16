@@ -1,30 +1,42 @@
 import { useMemo, useState } from 'react';
 import {
-  Stack,
-  Group,
-  Text,
-  Title,
-  Select,
-  SegmentedControl,
-  Paper,
-  SimpleGrid,
+  Alert,
+  Badge,
   Center,
   Loader,
-  Alert,
+  Paper,
+  ScrollArea,
+  SegmentedControl,
+  Select,
+  SimpleGrid,
+  Stack,
+  Table,
+  Text,
+  Title,
 } from '@mantine/core';
-import { IconChartLine, IconEye, IconUsers, IconInfoCircle } from '@tabler/icons-react';
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
+import {
+  IconChartLine,
+  IconEye,
+  IconInfoCircle,
+  IconPhoto,
+  IconUsers,
+} from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
-import { useCampaignAnalytics } from '@/services/adminQuery';
+import {
+  useAnalyticsSummary,
+  useCampaignAnalytics,
+  useCampaignMediaAnalytics,
+} from '@/services/adminQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface SelectItem {
@@ -58,12 +70,12 @@ function StatCard({
 }) {
   return (
     <Paper withBorder p="md" radius="md">
-      <Group mb="xs" gap="xs">
+      <Stack gap={4} mb="xs">
         {icon}
         <Text size="sm" c="dimmed" fw={500}>
           {label}
         </Text>
-      </Group>
+      </Stack>
       <Title order={3}>
         {value === null ? '—' : value.toLocaleString()}
       </Title>
@@ -77,6 +89,7 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
   const [campaignId, setCampaignId] = useState<string | null>(campaigns[0]?.value ?? null);
   const [preset, setPreset] = useState<RangePreset>('30');
   const dateRange = useMemo(() => getDateRange(preset), [preset]);
+
   const { data, isLoading, error } = useCampaignAnalytics(
     apiClient,
     campaignId,
@@ -84,26 +97,66 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
     dateRange.to,
   );
 
+  const { data: summaryData } = useAnalyticsSummary(
+    apiClient,
+    dateRange.from,
+    dateRange.to,
+    true,
+  );
+
+  const { data: mediaData, isLoading: mediaLoading } = useCampaignMediaAnalytics(
+    apiClient,
+    campaignId,
+    dateRange.from,
+    dateRange.to,
+  );
+
   const chartData = (data?.daily ?? []).map((d) => ({
-    date: d.date.slice(5), // MM-DD
+    date: d.date.slice(5),
     Views: d.views,
     Unique: d.unique,
   }));
 
+  const mediaItems = mediaData?.items ?? [];
+
   return (
     <Stack gap="md">
-      <Group justify="space-between" wrap="wrap" gap="sm">
-        <Group gap="xs">
+      {/* ── Summary strip ─────────────────────────────────────────────────── */}
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        <StatCard
+          label="Total Views (all campaigns)"
+          value={summaryData?.totalViews ?? null}
+          icon={<IconEye size={18} color="var(--mantine-color-blue-5)" />}
+        />
+        <StatCard
+          label="Unique Visitors (all campaigns)"
+          value={summaryData?.uniqueVisitors ?? null}
+          icon={<IconUsers size={18} color="var(--mantine-color-teal-5)" />}
+        />
+        <StatCard
+          label="Views (selected campaign)"
+          value={data?.totalViews ?? null}
+          icon={<IconEye size={18} color="var(--mantine-color-violet-5)" />}
+        />
+        <StatCard
+          label="Unique (selected campaign)"
+          value={data?.uniqueVisitors ?? null}
+          icon={<IconUsers size={18} color="var(--mantine-color-orange-5)" />}
+        />
+      </SimpleGrid>
+
+      {/* ── Controls ──────────────────────────────────────────────────────── */}
+      <Stack gap="xs">
+        <Title order={4} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconChartLine size={20} />
-          <Title order={4}>Campaign Analytics</Title>
-        </Group>
-        <Group gap="sm" wrap="wrap">
+          Campaign Analytics
+        </Title>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <Select
             placeholder="Select campaign"
             data={campaigns}
             value={campaignId}
             onChange={setCampaignId}
-            w={220}
             size="sm"
             clearable={false}
           />
@@ -117,30 +170,18 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
               { label: 'Last 90d', value: '90' },
             ]}
           />
-        </Group>
-      </Group>
+        </SimpleGrid>
+      </Stack>
 
       {!campaignId && (
         <Alert icon={<IconInfoCircle size={16} />} color="blue">
-          Select a campaign to view analytics.
+          Select a campaign to view per-campaign analytics.
         </Alert>
       )}
 
       {campaignId && (
         <>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <StatCard
-              label="Total Views"
-              value={data?.totalViews ?? null}
-              icon={<IconEye size={18} color="var(--mantine-color-blue-5)" />}
-            />
-            <StatCard
-              label="Unique Visitors"
-              value={data?.uniqueVisitors ?? null}
-              icon={<IconUsers size={18} color="var(--mantine-color-teal-5)" />}
-            />
-          </SimpleGrid>
-
+          {/* ── Daily chart ───────────────────────────────────────────────── */}
           {isLoading && (
             <Center py="xl">
               <Loader size="sm" />
@@ -213,6 +254,86 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </Paper>
+          )}
+
+          {/* ── Media Performance table ──────────────────────────────────── */}
+          <Paper withBorder p="md" radius="md">
+            <Stack gap="sm">
+              <Title order={5} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <IconPhoto size={16} />
+                Media Performance
+              </Title>
+              {mediaLoading && (
+                <Center py="md">
+                  <Loader size="xs" />
+                </Center>
+              )}
+              {!mediaLoading && mediaItems.length === 0 && (
+                <Text size="sm" c="dimmed">
+                  No per-media events recorded for this period. Lightbox interactions with media IDs will appear here.
+                </Text>
+              )}
+              {!mediaLoading && mediaItems.length > 0 && (
+                <ScrollArea>
+                  <Table striped highlightOnHover withTableBorder withColumnBorders fz="sm">
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Media ID</Table.Th>
+                        <Table.Th style={{ textAlign: 'right' }}>Views</Table.Th>
+                        <Table.Th style={{ textAlign: 'right' }}>Lightbox Opens</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {mediaItems.map((item) => (
+                        <Table.Tr key={item.media_id}>
+                          <Table.Td>
+                            <Text size="xs" ff="monospace">{item.media_id}</Text>
+                          </Table.Td>
+                          <Table.Td style={{ textAlign: 'right' }}>
+                            <Badge variant="light" color="blue" size="sm">{item.views.toLocaleString()}</Badge>
+                          </Table.Td>
+                          <Table.Td style={{ textAlign: 'right' }}>
+                            <Badge variant="light" color="teal" size="sm">{item.lightbox_opens.toLocaleString()}</Badge>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </ScrollArea>
+              )}
+            </Stack>
+          </Paper>
+
+          {/* ── Top campaigns table ───────────────────────────────────────── */}
+          {(summaryData?.topCampaigns?.length ?? 0) > 0 && (
+            <Paper withBorder p="md" radius="md">
+              <Stack gap="sm">
+                <Title order={5} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <IconChartLine size={16} />
+                  Top Campaigns by Views
+                </Title>
+                <Table striped highlightOnHover withTableBorder withColumnBorders fz="sm">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>#</Table.Th>
+                      <Table.Th>Campaign</Table.Th>
+                      <Table.Th style={{ textAlign: 'right' }}>Views</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {summaryData!.topCampaigns.map((c, i) => (
+                      <Table.Tr key={c.id}>
+                        <Table.Td c="dimmed">{i + 1}</Table.Td>
+                        <Table.Td>{c.title}</Table.Td>
+                        <Table.Td style={{ textAlign: 'right' }}>
+                          <Badge variant="light" color="blue" size="sm">{c.views.toLocaleString()}</Badge>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Stack>
             </Paper>
           )}
         </>

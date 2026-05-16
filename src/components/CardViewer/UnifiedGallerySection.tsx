@@ -6,6 +6,7 @@
  */
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
+import type { ApiClient } from '@/services/apiClient';
 import { resolveUnifiedCampaignGalleryRenderPlan } from '@/utils/campaignGalleryRenderPlan';
 
 import { CampaignGalleryAdapterRenderer } from './CampaignGalleryAdapterRenderer';
@@ -17,9 +18,10 @@ interface UnifiedGallerySectionProps {
   settings: GalleryBehaviorSettings;
   breakpoint: Breakpoint;
   isAdmin: boolean;
+  apiClient?: ApiClient | undefined;
 }
 
-export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdmin }: UnifiedGallerySectionProps) {
+export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdmin, apiClient }: UnifiedGallerySectionProps) {
   const plan = resolveUnifiedCampaignGalleryRenderPlan(campaign, s, breakpoint);
   if (!plan) return null;
 
@@ -42,6 +44,7 @@ export function UnifiedGallerySection({ campaign, settings: s, breakpoint, isAdm
           campaign={campaign}
           isAdmin={isAdmin}
           containerDimensions={containerDimensions}
+          apiClient={apiClient}
         />
       )}
     </GallerySectionWrapper>

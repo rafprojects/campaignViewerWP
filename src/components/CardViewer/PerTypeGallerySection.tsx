@@ -8,6 +8,7 @@
 import { SimpleGrid, Stack } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
+import type { ApiClient } from '@/services/apiClient';
 import {
   resolvePerTypeCampaignGalleryRenderPlan,
   shouldUseEqualHeightPerTypeLayout,
@@ -23,9 +24,10 @@ interface PerTypeGallerySectionProps {
   settings: GalleryBehaviorSettings;
   breakpoint: Breakpoint;
   isAdmin: boolean;
+  apiClient?: ApiClient | undefined;
 }
 
-export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdmin }: PerTypeGallerySectionProps) {
+export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdmin, apiClient }: PerTypeGallerySectionProps) {
   const videoPlan = resolvePerTypeCampaignGalleryRenderPlan(campaign, s, breakpoint, 'video');
   const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(campaign, s, breakpoint, 'image');
   const galleryShellLayout = resolveCampaignViewerGalleryShellLayout(s, campaign.galleryOverrides);
@@ -51,6 +53,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
           campaign={campaign}
           isAdmin={isAdmin}
           containerDimensions={dims}
+          apiClient={apiClient}
         />
       )}
     </GallerySectionWrapper>
@@ -76,6 +79,7 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
           campaign={campaign}
           isAdmin={isAdmin}
           containerDimensions={dims}
+          apiClient={apiClient}
         />
       )}
     </GallerySectionWrapper>

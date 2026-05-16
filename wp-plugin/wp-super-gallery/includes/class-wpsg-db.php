@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '5';
+    const DB_VERSION = '7';
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
@@ -34,8 +34,10 @@ class WPSG_DB {
             event_type   VARCHAR(32) NOT NULL DEFAULT 'view',
             visitor_hash CHAR(64) NOT NULL,
             occurred_at  DATETIME NOT NULL,
+            media_id     VARCHAR(191) NULL DEFAULT NULL,
             PRIMARY KEY  (id),
-            KEY campaign_occurred (campaign_id, occurred_at)
+            KEY campaign_occurred (campaign_id, occurred_at),
+            KEY media_id (media_id)
         ) {$charset};";
 
         dbDelta($sql);
@@ -279,13 +281,16 @@ class WPSG_DB {
         $charset = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$table} (
-            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            token        VARCHAR(36) NOT NULL,
-            campaign_id  BIGINT UNSIGNED NOT NULL,
-            email        VARCHAR(255) NOT NULL,
-            status       VARCHAR(20) NOT NULL DEFAULT 'pending',
-            requested_at DATETIME NOT NULL,
-            resolved_at  DATETIME DEFAULT NULL,
+            id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            token                VARCHAR(36)  NOT NULL,
+            campaign_id          BIGINT UNSIGNED NOT NULL,
+            email                VARCHAR(255) NOT NULL,
+            status               VARCHAR(20)  NOT NULL DEFAULT 'pending',
+            requested_at         DATETIME     NOT NULL,
+            resolved_at          DATETIME     DEFAULT NULL,
+            magic_key_hash       VARCHAR(64)  NULL DEFAULT NULL,
+            magic_key_expires_at DATETIME     NULL DEFAULT NULL,
+            magic_key_used_at    DATETIME     NULL DEFAULT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY token (token),
             KEY campaign_status (campaign_id, status),
@@ -409,6 +414,42 @@ class WPSG_DB {
         global $wpdb;
         $table = self::get_access_requests_table();
         $wpdb->delete($table, ['token' => $token], ['%s']);
+    }
+
+    /**
+     * Store a magic key hash and expiry against an access request token.
+     * Resets used_at so a freshly generated key is treated as unused.
+     */
+    public static function set_magic_key(string $token, string $hash, string $expires_at): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            [
+                'magic_key_hash'       => $hash,
+                'magic_key_expires_at' => $expires_at,
+                'magic_key_used_at'    => null,
+            ],
+            ['token' => $token],
+            ['%s', '%s', null],
+            ['%s']
+        );
+    }
+
+    /**
+     * Mark the magic key for a request as consumed.
+     * Called immediately before processing approval to prevent replay.
+     */
+    public static function mark_magic_key_used(string $token): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            ['magic_key_used_at' => current_time('mysql', true)],
+            ['token' => $token],
+            ['%s'],
+            ['%s']
+        );
     }
 
     /**
