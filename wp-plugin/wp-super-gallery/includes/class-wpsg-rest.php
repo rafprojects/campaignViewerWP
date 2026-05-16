@@ -158,6 +158,24 @@ class WPSG_REST {
                 'callback' => [self::class, 'list_campaign_categories'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'create_campaign_category'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaign-categories/(?P<id>\d+)', [
+            [
+                'methods' => 'PUT',
+                'callback' => [self::class, 'update_campaign_category'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'delete_campaign_category'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
         ]);
 
         // P18-F: Analytics
@@ -493,11 +511,24 @@ class WPSG_REST {
             ],
         ]);
 
-        // P14-G: Campaign tags.
+        // P14-G / P28-C: Campaign tags.
         register_rest_route('wp-super-gallery/v1', '/tags/campaign', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaign_tags'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'create_campaign_tag'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/tags/campaign/(?P<id>\d+)', [
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'delete_campaign_tag'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -506,6 +537,19 @@ class WPSG_REST {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_media_tags'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [self::class, 'create_media_tag'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/tags/media/(?P<id>\d+)', [
+            [
+                'methods' => 'DELETE',
+                'callback' => [self::class, 'delete_media_tag'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -4389,6 +4433,117 @@ class WPSG_REST {
         }, $terms);
 
         return new WP_REST_Response(['items' => $result], 200);
+    }
+
+    // ── P28-C: Taxonomy CRUD Handlers ────────────────────────
+
+    private static function format_term($term) {
+        return [
+            'id'    => strval($term->term_id),
+            'name'  => $term->name,
+            'slug'  => $term->slug,
+            'count' => (int) $term->count,
+        ];
+    }
+
+    private static function handle_term_insert($name, $slug, $taxonomy, $created_status = 201) {
+        $name = sanitize_text_field($name ?? '');
+        if ($name === '') {
+            return new WP_Error('wpsg_missing_name', 'name is required', ['status' => 400]);
+        }
+        $args = [];
+        if ($slug !== null && $slug !== '') {
+            $args['slug'] = sanitize_title($slug);
+        }
+        $result = wp_insert_term($name, $taxonomy, $args);
+        if (is_wp_error($result)) {
+            $code = $result->get_error_code();
+            if ($code === 'term_exists' || $code === 'duplicate_term_slug') {
+                return new WP_Error('wpsg_term_exists', 'A term with that name or slug already exists', ['status' => 409]);
+            }
+            return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
+        }
+        $term = get_term($result['term_id'], $taxonomy);
+        return new WP_REST_Response(self::format_term($term), $created_status);
+    }
+
+    private static function handle_term_delete($term_id, $taxonomy) {
+        $term_id = intval($term_id);
+        $term = get_term($term_id, $taxonomy);
+        if (!$term || is_wp_error($term)) {
+            return new WP_Error('wpsg_not_found', 'Term not found', ['status' => 404]);
+        }
+        $result = wp_delete_term($term_id, $taxonomy);
+        if (is_wp_error($result) || $result === false) {
+            return new WP_Error('wpsg_internal_error', 'Failed to delete term', ['status' => 500]);
+        }
+        return new WP_REST_Response(['deleted' => true, 'id' => strval($term_id)], 200);
+    }
+
+    public static function create_campaign_category(WP_REST_Request $request) {
+        return self::handle_term_insert(
+            $request->get_param('name'),
+            $request->get_param('slug'),
+            'wpsg_campaign_category',
+        );
+    }
+
+    public static function update_campaign_category(WP_REST_Request $request) {
+        $term_id = intval($request->get_param('id'));
+        $term    = get_term($term_id, 'wpsg_campaign_category');
+        if (!$term || is_wp_error($term)) {
+            return new WP_Error('wpsg_not_found', 'Category not found', ['status' => 404]);
+        }
+        $args = [];
+        $name = $request->get_param('name');
+        $slug = $request->get_param('slug');
+        if ($name !== null) {
+            $args['name'] = sanitize_text_field($name);
+        }
+        if ($slug !== null) {
+            $args['slug'] = sanitize_title($slug);
+        }
+        if (empty($args)) {
+            return new WP_Error('wpsg_bad_request', 'Provide name or slug to update', ['status' => 400]);
+        }
+        $result = wp_update_term($term_id, 'wpsg_campaign_category', $args);
+        if (is_wp_error($result)) {
+            $code = $result->get_error_code();
+            if ($code === 'term_exists' || $code === 'duplicate_term_slug') {
+                return new WP_Error('wpsg_term_exists', 'A category with that name or slug already exists', ['status' => 409]);
+            }
+            return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
+        }
+        $term = get_term($result['term_id'], 'wpsg_campaign_category');
+        return new WP_REST_Response(self::format_term($term), 200);
+    }
+
+    public static function delete_campaign_category(WP_REST_Request $request) {
+        return self::handle_term_delete($request->get_param('id'), 'wpsg_campaign_category');
+    }
+
+    public static function create_campaign_tag(WP_REST_Request $request) {
+        return self::handle_term_insert(
+            $request->get_param('name'),
+            $request->get_param('slug'),
+            'wpsg_campaign_tag',
+        );
+    }
+
+    public static function delete_campaign_tag(WP_REST_Request $request) {
+        return self::handle_term_delete($request->get_param('id'), 'wpsg_campaign_tag');
+    }
+
+    public static function create_media_tag(WP_REST_Request $request) {
+        return self::handle_term_insert(
+            $request->get_param('name'),
+            $request->get_param('slug'),
+            'wpsg_media_tag',
+        );
+    }
+
+    public static function delete_media_tag(WP_REST_Request $request) {
+        return self::handle_term_delete($request->get_param('id'), 'wpsg_media_tag');
     }
 
     // ── P15-B: Layout Template Handlers ──────────────────────

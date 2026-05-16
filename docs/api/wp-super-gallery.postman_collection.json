@@ -1162,6 +1162,104 @@
           "response": []
         },
         {
+          "name": "Create Campaign Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaign-categories"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weddings\",\n  \"slug\": \"weddings\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a new campaign category term."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Campaign Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories/{{category_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaign-categories",
+                "{{category_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Rename an existing campaign category. Set {{category_id}} to the term ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Campaign Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories/{{category_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "campaign-categories",
+                "{{category_id}}"
+              ]
+            },
+            "description": "Delete a campaign category. Campaigns lose this category assignment. Set {{category_id}} to the term ID."
+          },
+          "response": []
+        },
+        {
           "name": "List Campaign Tags",
           "request": {
             "method": "GET",
@@ -1183,6 +1281,70 @@
           "response": []
         },
         {
+          "name": "Create Campaign Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/campaign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "tags",
+                "campaign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Summer 2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a new campaign tag term."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Campaign Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/campaign/{{tag_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "tags",
+                "campaign",
+                "{{tag_id}}"
+              ]
+            },
+            "description": "Delete a campaign tag. Set {{tag_id}} to the term ID."
+          },
+          "response": []
+        },
+        {
           "name": "List Media Tags",
           "request": {
             "method": "GET",
@@ -1200,6 +1362,70 @@
                 "media"
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Media Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "tags",
+                "media"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Portrait\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a new media tag term."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Media Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/media/{{tag_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "tags",
+                "media",
+                "{{tag_id}}"
+              ]
+            },
+            "description": "Delete a media tag. Set {{tag_id}} to the term ID."
           },
           "response": []
         }

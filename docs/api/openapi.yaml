@@ -40,6 +40,26 @@ components:
 
   schemas:
 
+    TermEntry:
+      type: object
+      description: A WordPress taxonomy term (category or tag).
+      required: [id, name, slug, count]
+      properties:
+        id:
+          type: string
+          description: Term ID (stringified integer)
+          example: "42"
+        name:
+          type: string
+          example: Weddings
+        slug:
+          type: string
+          example: weddings
+        count:
+          type: integer
+          description: Number of posts assigned to this term
+          example: 5
+
     Error:
       type: object
       description: Standard error response body returned for 4xx and 5xx responses.
@@ -2714,23 +2734,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      required: [id, name, slug, count]
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                        slug:
-                          type: string
-                        count:
-                          type: integer
+                type: array
+                items:
+                  $ref: '#/components/schemas/TermEntry'
         '401':
           description: Not authenticated
           content:
@@ -2739,6 +2745,160 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createCampaignCategory
+      tags: [Taxonomy]
+      summary: Create a campaign category
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Weddings
+                slug:
+                  type: string
+                  example: weddings
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermEntry'
+        '400':
+          description: Missing or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: A category with that name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/campaign-categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Term ID
+    put:
+      operationId: updateCampaignCategory
+      tags: [Taxonomy]
+      summary: Rename or update a campaign category
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermEntry'
+        '400':
+          description: No updatable fields supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Name or slug already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteCampaignCategory
+      tags: [Taxonomy]
+      summary: Delete a campaign category (uncategories affected campaigns)
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Category deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted, id]
+                properties:
+                  deleted:
+                    type: boolean
+                  id:
+                    type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Category not found
           content:
             application/json:
               schema:
@@ -2764,17 +2924,7 @@ paths:
                   items:
                     type: array
                     items:
-                      type: object
-                      required: [id, name, slug, count]
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                        slug:
-                          type: string
-                        count:
-                          type: integer
+                      $ref: '#/components/schemas/TermEntry'
         '401':
           description: Not authenticated
           content:
@@ -2783,6 +2933,104 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createCampaignTag
+      tags: [Taxonomy]
+      summary: Create a campaign tag
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Summer 2026
+                slug:
+                  type: string
+      responses:
+        '201':
+          description: Tag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermEntry'
+        '400':
+          description: Missing name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Tag already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/tags/campaign/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Term ID
+    delete:
+      operationId: deleteCampaignTag
+      tags: [Taxonomy]
+      summary: Delete a campaign tag
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Tag deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted, id]
+                properties:
+                  deleted:
+                    type: boolean
+                  id:
+                    type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Tag not found
           content:
             application/json:
               schema:
@@ -2808,17 +3056,7 @@ paths:
                   items:
                     type: array
                     items:
-                      type: object
-                      required: [id, name, slug, count]
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                        slug:
-                          type: string
-                        count:
-                          type: integer
+                      $ref: '#/components/schemas/TermEntry'
         '401':
           description: Not authenticated
           content:
@@ -2827,6 +3065,104 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createMediaTag
+      tags: [Taxonomy]
+      summary: Create a media tag
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Portrait
+                slug:
+                  type: string
+      responses:
+        '201':
+          description: Tag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermEntry'
+        '400':
+          description: Missing name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Tag already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wp-json/wp-super-gallery/v1/tags/media/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: Term ID
+    delete:
+      operationId: deleteMediaTag
+      tags: [Taxonomy]
+      summary: Delete a media tag
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      responses:
+        '200':
+          description: Tag deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted, id]
+                properties:
+                  deleted:
+                    type: boolean
+                  id:
+                    type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Tag not found
           content:
             application/json:
               schema:

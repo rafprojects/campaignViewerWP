@@ -8,6 +8,7 @@ import type {
   ApiClient,
   CampaignAnalyticsResponse,
   CampaignCategoryEntry,
+  TagEntry,
 } from '@/services/apiClient';
 import type { GalleryConfig, MediaItem } from '@/types';
 import { sortByOrder } from '@/utils/sortByOrder';
@@ -484,4 +485,46 @@ export function prefetchAllCampaignMedia(
   );
 }
 
-export type { AccessRequest, CampaignAnalyticsResponse, CampaignCategoryEntry };
+export function getCampaignTagsQueryKey(apiClient: ApiClient) {
+  return [...getAdminQueryPrefix(apiClient), 'campaign-tags'] as const;
+}
+
+export function getMediaTagsQueryKey(apiClient: ApiClient) {
+  return [...getAdminQueryPrefix(apiClient), 'media-tags'] as const;
+}
+
+export function useCampaignTags(apiClient: ApiClient, enabled = true) {
+  const { data, error, isLoading, refetch } = useQuery<TagEntry[]>({
+    queryKey: getCampaignTagsQueryKey(apiClient),
+    queryFn: () => apiClient.listCampaignTags(),
+    enabled,
+    staleTime: CATEGORY_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    campaignTags: data ?? [],
+    campaignTagsLoading: isLoading,
+    campaignTagsError: error ?? null,
+    mutateCampaignTags: refetch,
+  };
+}
+
+export function useMediaTags(apiClient: ApiClient, enabled = true) {
+  const { data, error, isLoading, refetch } = useQuery<TagEntry[]>({
+    queryKey: getMediaTagsQueryKey(apiClient),
+    queryFn: () => apiClient.listMediaTags(),
+    enabled,
+    staleTime: CATEGORY_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    mediaTags: data ?? [],
+    mediaTagsLoading: isLoading,
+    mediaTagsError: error ?? null,
+    mutateMediaTags: refetch,
+  };
+}
+
+export type { AccessRequest, CampaignAnalyticsResponse, CampaignCategoryEntry, TagEntry };

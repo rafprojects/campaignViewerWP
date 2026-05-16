@@ -368,10 +368,52 @@ export class ApiClient {
     );
   }
 
-  // ── P18-H: Campaign Categories ───────────────────────────────────────────
+  // ── P18-H / P28-C: Campaign Categories ──────────────────────────────────
 
   async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
     return this.get<CampaignCategoryEntry[]>('/wp-json/wp-super-gallery/v1/campaign-categories');
+  }
+
+  async createCampaignCategory(name: string, slug?: string): Promise<CampaignCategoryEntry> {
+    return this.post<CampaignCategoryEntry>('/wp-json/wp-super-gallery/v1/campaign-categories', { name, ...(slug ? { slug } : {}) });
+  }
+
+  async updateCampaignCategory(id: string, data: { name?: string; slug?: string }): Promise<CampaignCategoryEntry> {
+    return this.put<CampaignCategoryEntry>(`/wp-json/wp-super-gallery/v1/campaign-categories/${id}`, data);
+  }
+
+  async deleteCampaignCategory(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.delete<{ deleted: boolean; id: string }>(`/wp-json/wp-super-gallery/v1/campaign-categories/${id}`);
+  }
+
+  // ── P28-C: Campaign Tags ─────────────────────────────────────────────────
+
+  async listCampaignTags(): Promise<TagEntry[]> {
+    const response = await this.get<{ items: TagEntry[] }>('/wp-json/wp-super-gallery/v1/tags/campaign');
+    return response.items ?? [];
+  }
+
+  async createCampaignTag(name: string, slug?: string): Promise<TagEntry> {
+    return this.post<TagEntry>('/wp-json/wp-super-gallery/v1/tags/campaign', { name, ...(slug ? { slug } : {}) });
+  }
+
+  async deleteCampaignTag(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.delete<{ deleted: boolean; id: string }>(`/wp-json/wp-super-gallery/v1/tags/campaign/${id}`);
+  }
+
+  // ── P28-C: Media Tags ────────────────────────────────────────────────────
+
+  async listMediaTags(): Promise<TagEntry[]> {
+    const response = await this.get<{ items: TagEntry[] }>('/wp-json/wp-super-gallery/v1/tags/media');
+    return response.items ?? [];
+  }
+
+  async createMediaTag(name: string, slug?: string): Promise<TagEntry> {
+    return this.post<TagEntry>('/wp-json/wp-super-gallery/v1/tags/media', { name, ...(slug ? { slug } : {}) });
+  }
+
+  async deleteMediaTag(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.delete<{ deleted: boolean; id: string }>(`/wp-json/wp-super-gallery/v1/tags/media/${id}`);
   }
 
   // ── P18-I: Access Request Workflow ───────────────────────────────────────
@@ -469,6 +511,13 @@ export interface MediaUsageResponse {
 
 export interface CampaignCategoryEntry {
   id: string;
+  name: string;
+  slug: string;
+  count: number;
+}
+
+export interface TagEntry {
+  id: number;
   name: string;
   slug: string;
   count: number;

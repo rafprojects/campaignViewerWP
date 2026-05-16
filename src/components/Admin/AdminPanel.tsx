@@ -4,7 +4,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard } from '@tabler/icons-react';
+import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings } from '@tabler/icons-react';
 import { CampaignsTab } from './CampaignsTab';
 import { BulkActionsBar } from './BulkActionsBar';
 import { AuditTab } from './AuditTab';
@@ -37,6 +37,7 @@ const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal
 const AdminCampaignDeleteModal = lazy(() => import('./AdminCampaignDeleteModal').then((m) => ({ default: m.AdminCampaignDeleteModal })));
 const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
 const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
+const TaxonomyManagerModal = lazy(() => import('./TaxonomyManagerModal').then((m) => ({ default: m.TaxonomyManagerModal })));
 
 interface AdminPanelProps {
   apiClient: ApiClient;
@@ -61,6 +62,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [taxonomyManagerOpen, setTaxonomyManagerOpen] = useState(false);
   const [campaignPage, setCampaignPage] = useState(1);
   const CAMPAIGNS_PER_PAGE = 20;
 
@@ -213,16 +215,25 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
         </Tabs.List>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
-          {campaignCategories.length > 0 && (
-            <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
-              <Group gap="xs" mb="sm" wrap="wrap">
-                <Chip value="" variant="light" size="sm">All</Chip>
-                {campaignCategories.map((cat) => (
-                  <Chip key={cat.id} value={cat.name} variant="light" size="sm">{cat.name}</Chip>
-                ))}
-              </Group>
-            </Chip.Group>
-          )}
+          <Group justify="space-between" align="flex-start" mb="sm" wrap="nowrap">
+            {campaignCategories.length > 0 ? (
+              <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
+                <Group gap="xs" wrap="wrap">
+                  <Chip value="" variant="light" size="sm">All</Chip>
+                  {campaignCategories.map((cat) => (
+                    <Chip key={cat.id} value={cat.name} variant="light" size="sm">{cat.name}</Chip>
+                  ))}
+                </Group>
+              </Chip.Group>
+            ) : (
+              <span />
+            )}
+            <Tooltip label="Manage categories & tags">
+              <ActionIcon variant="subtle" size="sm" onClick={() => setTaxonomyManagerOpen(true)} aria-label="Manage taxonomy">
+                <IconSettings size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
           <CampaignsTab
             isLoading={isLoading}
             error={error}
@@ -441,6 +452,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <KeyboardShortcutsModal
             opened={campaignActions.shortcutHelpOpen}
             onClose={() => campaignActions.setShortcutHelpOpen(false)}
+          />
+        </Suspense>
+      )}
+      {taxonomyManagerOpen && (
+        <Suspense fallback={null}>
+          <TaxonomyManagerModal
+            opened={taxonomyManagerOpen}
+            apiClient={apiClient}
+            onClose={() => setTaxonomyManagerOpen(false)}
+            onNotify={onNotify}
           />
         </Suspense>
       )}
