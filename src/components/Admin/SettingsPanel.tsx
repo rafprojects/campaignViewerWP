@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
+import { useQuery } from '@tanstack/react-query';
 import { useStore } from 'zustand';
 import {
   Accordion,
@@ -7,7 +8,9 @@ import {
   Button,
   Drawer,
   Group,
+  Paper,
   SegmentedControl,
+  Select,
   Stack,
   Loader,
   Center,
@@ -112,6 +115,54 @@ function mergeCachedAndFetchedSettings(
     enableLightbox: preferred.enableLightbox ?? fallback.enableLightbox,
     enableAnimations: preferred.enableAnimations ?? fallback.enableAnimations,
   };
+}
+
+function MagicLinkPageSelector({
+  apiClient,
+  value,
+  onChange,
+}: {
+  apiClient: ApiClient;
+  value: number;
+  onChange: (id: number) => void;
+}) {
+  const { data: pages, isLoading } = useQuery({
+    queryKey: ['wpPages'],
+    queryFn: () => apiClient.listWpPages(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const selectData = [
+    { value: '0', label: '— None (use inline HTML fallback) —' },
+    ...(pages ?? []).map((p) => ({
+      value: String(p.id),
+      label: p.title.rendered || `Page #${p.id}`,
+    })),
+  ];
+
+  return (
+    <Paper withBorder p="md" radius="md">
+      <Stack gap="xs">
+        <Text size="sm" fw={600}>Access Request Magic-Link</Text>
+        <Text size="xs" c="dimmed">
+          When an admin clicks a one-click approval link, the result is shown on this page
+          (via <code>?wpsg_result=approved|expired|used|invalid</code>). If no page is selected,
+          a minimal inline HTML page is returned instead.
+        </Text>
+        <Select
+          label="Magic-link landing page"
+          placeholder={isLoading ? 'Loading pages…' : 'Select a page'}
+          data={selectData}
+          value={String(value)}
+          onChange={(v) => onChange(v ? parseInt(v, 10) : 0)}
+          disabled={isLoading}
+          searchable
+          clearable={false}
+          size="sm"
+        />
+      </Stack>
+    </Paper>
+  );
 }
 
 const SettingsPanelTitle: NamedComponent = () => (
@@ -260,11 +311,18 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
       {settings.advancedSettingsEnabled && (
         <Tabs.Panel value="system-admin" pt="md">
           {activeTab === 'system-admin' && (
-            <AdvancedSettingsSection
-              settings={settings}
-              updateSetting={updateGallerySetting}
-              tooltipLabel={tooltipLabel}
-            />
+            <Stack gap="xl">
+              <MagicLinkPageSelector
+                apiClient={apiClient}
+                value={settings.magicLinkLandingPageId ?? 0}
+                onChange={(id) => updateSetting('magicLinkLandingPageId', id)}
+              />
+              <AdvancedSettingsSection
+                settings={settings}
+                updateSetting={updateGallerySetting}
+                tooltipLabel={tooltipLabel}
+              />
+            </Stack>
           )}
         </Tabs.Panel>
       )}

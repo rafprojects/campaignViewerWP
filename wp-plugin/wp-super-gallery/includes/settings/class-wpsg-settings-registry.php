@@ -156,6 +156,7 @@ class WPSG_Settings_Registry {
         'modal_mobile_breakpoint'        => 768,
         'card_page_transition_opacity'   => 0.3,
         'upload_max_size_mb'             => 50,
+        'max_batch_upload_size'          => 20,
         'upload_allowed_types'           => 'image/*,video/*',
         'library_page_size'              => 20,
         'media_list_page_size'           => 50,
@@ -211,6 +212,7 @@ class WPSG_Settings_Registry {
         'archive_purge_days'             => 0,
         'archive_purge_grace_days'       => 30,
         'analytics_retention_days'       => 0,
+        'magic_link_landing_page_id'     => 0,
         'show_card_company_name'         => true,
         'show_card_media_counts'         => true,
         'show_card_title'                => true,
@@ -368,6 +370,7 @@ class WPSG_Settings_Registry {
         'optimize_webp_enabled',
         'advanced_settings_enabled',
         'upload_max_size_mb',
+        'max_batch_upload_size',
         'upload_allowed_types',
         'swr_deduping_interval_ms',
         'notification_dismiss_ms',
@@ -382,6 +385,7 @@ class WPSG_Settings_Registry {
         'archive_purge_days',
         'archive_purge_grace_days',
         'analytics_retention_days',
+        'magic_link_landing_page_id',
     ];
 
     /**
@@ -577,6 +581,7 @@ class WPSG_Settings_Registry {
         'modal_mobile_breakpoint'     => [320, 1280],
         'card_page_transition_opacity' => [0, 1],
         'upload_max_size_mb'          => [1, 500],
+        'max_batch_upload_size'       => [1, 100],
         'library_page_size'           => [5, 100],
         'media_list_page_size'        => [10, 200],
         'media_compact_card_height'   => [40, 300],
@@ -621,6 +626,7 @@ class WPSG_Settings_Registry {
         'archive_purge_days'           => [0, 365],
         'archive_purge_grace_days'     => [7, 90],
         'analytics_retention_days'     => [0, 730],
+        'magic_link_landing_page_id'   => [0, PHP_INT_MAX],
         'card_max_columns'             => [0, 8],
         'card_min_height'              => [0, 600],
         'auth_bar_drag_margin'         => [0, 64],
