@@ -491,7 +491,7 @@ export function UnifiedCampaignModal({
     activeTab, setActiveTab,
     mediaItems, mediaLoading, handleRemoveMedia, handleAddFromLibrary,
     handleUploadMedia, handleAddExternalMedia,
-    uploadFile, uploadProgress,
+    uploadFiles, uploadErrors, uploadProgresses, uploadLoading,
     addMediaUrl, setAddMediaUrl, addMediaType, setAddMediaType,
     addMediaCaption, setAddMediaCaption, addMediaLoading,
     libraryMedia, libraryLoading, librarySearch, setLibrarySearch, loadLibraryMedia,
@@ -581,9 +581,12 @@ export function UnifiedCampaignModal({
                   onLibrarySearchChange={setLibrarySearch}
                   onLoadLibrary={loadLibraryMedia}
                   onAddFromLibrary={handleAddFromLibrary}
-                  uploadFile={uploadFile}
-                  uploadProgress={uploadProgress}
+                  uploadFiles={uploadFiles}
+                  uploadErrors={uploadErrors}
+                  uploadProgresses={uploadProgresses}
+                  uploadLoading={uploadLoading}
                   onUploadFile={handleUploadMedia}
+                  maxBatchUploadSize={galleryBehaviorSettings.maxBatchUploadSize}
                   addMediaType={addMediaType}
                   onAddMediaTypeChange={setAddMediaType}
                   addMediaUrl={addMediaUrl}
@@ -675,9 +678,12 @@ interface MediaTabContentProps {
   onLibrarySearchChange: (value: string) => void;
   onLoadLibrary: (search: string) => void;
   onAddFromLibrary: (media: MediaItem) => void;
-  uploadFile: File | null;
-  uploadProgress: number | null;
-  onUploadFile: (file: File) => void;
+  uploadFiles: File[];
+  uploadErrors: Array<string | null>;
+  uploadProgresses: number[] | null;
+  uploadLoading: boolean;
+  onUploadFile: (value: File | File[] | null) => void;
+  maxBatchUploadSize: number;
   addMediaType: 'video' | 'image';
   onAddMediaTypeChange: (value: 'video' | 'image') => void;
   addMediaUrl: string;
@@ -697,9 +703,12 @@ function MediaTabContent({
   onLibrarySearchChange,
   onLoadLibrary,
   onAddFromLibrary,
-  uploadFile,
-  uploadProgress,
+  uploadFiles,
+  uploadErrors,
+  uploadProgresses,
+  uploadLoading,
   onUploadFile,
+  maxBatchUploadSize,
   addMediaType,
   onAddMediaTypeChange,
   addMediaUrl,
@@ -750,14 +759,37 @@ function MediaTabContent({
       <Card withBorder>
         <Stack gap="sm">
           <Group><IconUpload size={20} /><Text fw={500}>Upload New File</Text></Group>
-          <FileButton onChange={(file) => file && void onUploadFile(file)} accept="image/*,video/*">
+          <FileButton onChange={(files) => files && void onUploadFile(files)} accept="image/*,video/*" multiple>
             {(props) => (
-              <Button {...props} variant="light" fullWidth disabled={!!uploadFile}>
-                {uploadFile ? 'Uploading...' : 'Choose file to upload'}
+              <Button {...props} variant="light" fullWidth disabled={uploadLoading}>
+                {uploadLoading ? 'Uploading...' : `Choose up to ${maxBatchUploadSize} files`}
               </Button>
             )}
           </FileButton>
-          {uploadProgress !== null && <Progress value={uploadProgress} size="md" striped animated />}
+          {uploadFiles.length > 0 && (
+            <Stack gap={4}>
+              {uploadFiles.map((file, index) => {
+                const progress = uploadProgresses?.[index] ?? null;
+                const error = uploadErrors[index] ?? null;
+                const identity = `${file.name}-${file.size}-${file.lastModified}`;
+
+                return (
+                  <Stack key={identity} gap={4}>
+                    <Group justify="space-between" wrap="nowrap" gap="sm">
+                      <Text size="sm" lineClamp={1}>{file.name}</Text>
+                      <Text size="xs" c={error ? 'red' : 'dimmed'}>
+                        {error ?? (progress !== null ? `${progress}%` : '')}
+                      </Text>
+                    </Group>
+                    {progress !== null && <Progress value={progress} size="sm" striped animated={uploadLoading && progress < 100} color={error ? 'red' : 'blue'} />}
+                  </Stack>
+                );
+              })}
+            </Stack>
+          )}
+          <Text size="xs" c="dimmed">
+            Uploaded files use their filenames as captions in this modal.
+          </Text>
         </Stack>
       </Card>
 

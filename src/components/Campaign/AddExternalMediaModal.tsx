@@ -8,14 +8,15 @@ interface AddExternalMediaModalProps {
   opened: boolean;
   onClose: () => void;
   dropRef: RefObject<HTMLDivElement | null>;
-  selectedFile: File | null;
-  onSelectFile: (file: File | null) => void;
+  selectedFiles: File[];
+  onSelectFiles: (files: File[]) => void;
   previewUrl: string | null;
   uploadTitle: string;
   onUploadTitleChange: (value: string) => void;
   uploadCaption: string;
   onUploadCaptionChange: (value: string) => void;
-  uploadProgress: number | null;
+  uploadProgresses: number[] | null;
+  uploadErrors?: Array<string | null>;
   uploading: boolean;
   onUpload: () => void;
   externalUrl: string;

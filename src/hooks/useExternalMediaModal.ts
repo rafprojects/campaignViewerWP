@@ -3,12 +3,26 @@
  *
  * Encapsulates state and handlers for the shared campaign media-entry modal in App.tsx.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
-import type { Campaign, OEmbedResponse, UploadResponse } from '@/types';
+import { useGetSettings } from '@/services/settingsQuery';
+import type {
+  BatchUploadResponse,
+  Campaign,
+  CampaignMediaBatchRequestItem,
+  OEmbedResponse,
+} from '@/types';
 import { ApiError } from '@/services/apiClient';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { useXhrUpload } from './useXhrUpload';
+
+function normalizeSelectedFiles(value: File | File[] | null): File[] {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
+}
 
 interface UseExternalMediaModalOptions {
   apiClient: ApiClient;
@@ -29,12 +43,36 @@ export function useExternalMediaModal({
   const [externalMediaError, setExternalMediaError] = useState<string | null>(null);
   const [externalMediaPreview, setExternalMediaPreview] = useState<OEmbedResponse | null>(null);
   const [externalMediaLoading, setExternalMediaLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<Array<string | null>>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadCaption, setUploadCaption] = useState('');
   const dropRef = useRef<HTMLDivElement | null>(null);
-  const { upload, isUploading: uploading, progress: uploadProgress, resetProgress } = useXhrUpload();
+  const { data: settingsResponse } = useGetSettings(apiClient);
+  const { uploadMany, isUploading: uploading, batchProgress, resetProgress } = useXhrUpload();
+  const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
+
+  const handleSelectFiles = useCallback((value: File | File[] | null) => {
+    const nextFiles = normalizeSelectedFiles(value);
+    const mediaFiles = nextFiles.filter((file) => file.type.startsWith('image/') || file.type.startsWith('video/'));
+    const limitedFiles = mediaFiles.slice(0, maxBatchUploadSize);
+
+    if (nextFiles.length !== mediaFiles.length) {
+      onNotify({ type: 'error', text: 'Only image and video files can be uploaded.' });
+    }
+
+    if (mediaFiles.length > maxBatchUploadSize) {
+      onNotify({ type: 'error', text: `Only the first ${maxBatchUploadSize} files were kept.` });
+    }
+
+    setSelectedFiles(limitedFiles);
+    setUploadErrors(Array(limitedFiles.length).fill(null));
+    if (limitedFiles.length !== 1) {
+      setUploadTitle('');
+      setUploadCaption('');
+    }
+  }, [maxBatchUploadSize, onNotify]);
 
   useEffect(() => {
     const element = dropRef.current;
@@ -51,9 +89,9 @@ export function useExternalMediaModal({
 
     const handleDrop = (event: globalThis.DragEvent) => {
       event.preventDefault();
-      const file = event.dataTransfer?.files?.[0];
-      if (file) {
-        setSelectedFile(file);
+      const files = event.dataTransfer?.files ? Array.from(event.dataTransfer.files) : [];
+      if (files.length > 0) {
+        handleSelectFiles(files);
       }
     };
 
@@ -64,22 +102,23 @@ export function useExternalMediaModal({
       element.removeEventListener('dragover', handleDragOver);
       element.removeEventListener('drop', handleDrop);
     };
-  }, []);
+  }, [handleSelectFiles, maxBatchUploadSize]);
 
   useEffect(() => {
-    if (!selectedFile) {
+    if (selectedFiles.length !== 1) {
       setPreviewUrl(null);
       return;
     }
 
-    const nextPreviewUrl = URL.createObjectURL(selectedFile);
+    const nextPreviewUrl = URL.createObjectURL(selectedFiles[0]!);
     setPreviewUrl(nextPreviewUrl);
 
     return () => URL.revokeObjectURL(nextPreviewUrl);
-  }, [selectedFile]);
+  }, [selectedFiles]);
 
   const resetModalState = () => {
-    setSelectedFile(null);
+    setSelectedFiles([]);
+    setUploadErrors([]);
     setPreviewUrl(null);
     setUploadTitle('');
     setUploadCaption('');
@@ -181,56 +220,69 @@ export function useExternalMediaModal({
   };
 
   const confirmUploadMedia = async () => {
-    if (!externalMediaCampaign || !selectedFile) return;
-
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/webm', 'video/ogg',
-    ];
-    const maxSize = 50 * 1024 * 1024;
-
-    if (!allowedTypes.includes(selectedFile.type)) {
-      onNotify({ type: 'error', text: 'File type not allowed. Accepted: JPEG, PNG, GIF, WebP, MP4, WebM, OGG.' });
-      return;
-    }
-
-    if (selectedFile.size > maxSize) {
-      onNotify({ type: 'error', text: `File too large (${Math.round(selectedFile.size / 1024 / 1024)} MB). Maximum size is 50 MB.` });
-      return;
-    }
+    if (!externalMediaCampaign || selectedFiles.length === 0) return;
 
     try {
+      setUploadErrors(Array(selectedFiles.length).fill(null));
+
       const authHeaders = await apiClient.getAuthHeaders();
-      const uploadResponse = await upload<UploadResponse>({
+      const uploadResponse = await uploadMany<BatchUploadResponse>({
         url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
-        file: selectedFile,
+        files: selectedFiles,
         headers: authHeaders,
       });
 
-      const mediaType = selectedFile.type.startsWith('image') ? 'image' : 'video';
-      const order = externalMediaCampaign.videos.length + externalMediaCampaign.images.length + 1;
+      const baseOrder = externalMediaCampaign.videos.length + externalMediaCampaign.images.length + 1;
+      const successfulUploadEntries = uploadResponse.results
+        .map((result, index) => ({ result, file: selectedFiles[index] }))
+        .filter(({ result, file }) => Boolean(file) && result.success && result.attachmentId && result.url);
 
-      await apiClient.post(
-        `/wp-json/wp-super-gallery/v1/campaigns/${externalMediaCampaign.id}/media`,
-        {
-          type: mediaType,
-          source: 'upload',
-          provider: 'wordpress',
-          attachmentId: uploadResponse.attachmentId,
-          url: uploadResponse.url,
-          thumbnail: uploadResponse.thumbnail ?? uploadResponse.url,
-          caption: uploadCaption.trim() || uploadTitle.trim() || selectedFile.name,
-          title: uploadTitle.trim() || undefined,
-          order,
-        },
-      );
+      const batchItems: CampaignMediaBatchRequestItem[] = successfulUploadEntries.map(({ result, file }, index) => ({
+        type: file!.type.startsWith('image') ? 'image' : 'video',
+        source: 'upload',
+        provider: 'wordpress',
+        attachmentId: result.attachmentId!,
+        url: result.url!,
+        thumbnail: result.thumbnail ?? result.url,
+        caption: selectedFiles.length === 1
+          ? uploadCaption.trim() || uploadTitle.trim() || file!.name
+          : file!.name,
+        title: selectedFiles.length === 1 ? uploadTitle.trim() || undefined : undefined,
+        order: baseOrder + index,
+      }));
 
-      onNotify({ type: 'success', text: 'File uploaded and added to campaign.' });
-      setExternalMediaCampaign(null);
-      resetModalState();
+      let batchAddFailures = 0;
+      if (batchItems.length > 0) {
+        const batchAddResponse = await apiClient.addCampaignMediaBatch(externalMediaCampaign.id, batchItems);
+        batchAddFailures = batchAddResponse.failed.length;
+      }
+
+      const failedUploadEntries = uploadResponse.results
+        .map((result, index) => ({
+          file: selectedFiles[index],
+          error: result.success ? null : (result.error ?? 'Upload failed.'),
+        }))
+        .filter((entry): entry is { file: File; error: string } => Boolean(entry.file) && Boolean(entry.error));
+
+      if (failedUploadEntries.length > 0) {
+        setSelectedFiles(failedUploadEntries.map((entry) => entry.file));
+        setUploadErrors(failedUploadEntries.map((entry) => entry.error));
+      } else {
+        setExternalMediaCampaign(null);
+        resetModalState();
+      }
+
+      const successCount = batchItems.length - batchAddFailures;
+      const hasFailures = failedUploadEntries.length > 0 || batchAddFailures > 0;
+      onNotify({
+        type: hasFailures ? 'error' : 'success',
+        text: `${successCount} of ${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} uploaded successfully.${batchAddFailures > 0 ? ` ${batchAddFailures} file${batchAddFailures === 1 ? '' : 's'} could not be added to the campaign.` : ''}`,
+      });
       await onMutate();
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Upload failed.') });
+    } finally {
+      resetProgress();
     }
   };
 
@@ -244,14 +296,15 @@ export function useExternalMediaModal({
     setExternalMediaCampaign,
     closeExternalMediaModal,
     dropRef,
-    selectedFile,
-    setSelectedFile,
+    selectedFiles,
+    setSelectedFiles: handleSelectFiles,
+    uploadErrors,
     previewUrl,
     uploadTitle,
     setUploadTitle,
     uploadCaption,
     setUploadCaption,
-    uploadProgress,
+    uploadProgresses: batchProgress,
     uploading,
     confirmUploadMedia,
     externalMediaUrl,

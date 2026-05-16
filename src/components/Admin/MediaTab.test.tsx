@@ -17,6 +17,12 @@ describe('MediaTab', () => {
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
+    getSettings: vi.fn().mockResolvedValue({
+      uploadMaxSizeMb: 50,
+      maxBatchUploadSize: 20,
+      uploadAllowedTypes: 'image/*,video/*',
+    }),
+    addCampaignMediaBatch: vi.fn(),
     getBaseUrl: vi.fn().mockReturnValue('https://example.test'),
     getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer test' }),
     // P18-G: media usage — default to empty map so tests aren't affected
@@ -26,6 +32,8 @@ describe('MediaTab', () => {
     post: ReturnType<typeof vi.fn>;
     put: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+    getSettings: ReturnType<typeof vi.fn>;
+    addCampaignMediaBatch: ReturnType<typeof vi.fn>;
     getBaseUrl: ReturnType<typeof vi.fn>;
     getAuthHeaders: ReturnType<typeof vi.fn>;
     getMediaUsageSummary: ReturnType<typeof vi.fn>;
@@ -41,6 +49,13 @@ describe('MediaTab', () => {
     apiClient.post.mockReset();
     apiClient.put.mockReset();
     apiClient.delete.mockReset();
+    apiClient.getSettings.mockReset();
+    apiClient.getSettings.mockResolvedValue({
+      uploadMaxSizeMb: 50,
+      maxBatchUploadSize: 20,
+      uploadAllowedTypes: 'image/*,video/*',
+    });
+    apiClient.addCampaignMediaBatch.mockReset();
     apiClient.getMediaUsageSummary.mockReset();
     apiClient.getMediaUsageSummary.mockResolvedValue({});
   });
@@ -338,19 +353,24 @@ describe('MediaTab', () => {
     });
   });
 
-  it('uploads media successfully', async () => {
-    apiClient.get.mockResolvedValueOnce([]);
+  it('uploads media in a batch and keeps failed files selected', async () => {
     apiClient.get.mockResolvedValueOnce([]);
     apiClient.getBaseUrl.mockReturnValueOnce('https://example.test');
     apiClient.getAuthHeaders.mockResolvedValueOnce({ Authorization: 'Bearer test' });
-    apiClient.post.mockResolvedValueOnce({
-      id: 'm10',
-      type: 'image',
-      source: 'upload',
-      url: 'https://example.com/upload.jpg',
-      thumbnail: 'https://example.com/thumb.jpg',
-      caption: 'test.jpg',
-      order: 1,
+    apiClient.addCampaignMediaBatch.mockResolvedValueOnce({
+      added: [
+        {
+          id: 'm10',
+          type: 'image',
+          source: 'upload',
+          url: 'https://example.com/upload.jpg',
+          thumbnail: 'https://example.com/thumb.jpg',
+          caption: 'test.jpg',
+          order: 1,
+        },
+      ],
+      failed: [],
+      total: 1,
     });
 
     const originalCreateObjectURL = URL.createObjectURL;
@@ -377,10 +397,24 @@ describe('MediaTab', () => {
           this.upload.onprogress({ lengthComputable: true, loaded: 5, total: 10 } as ProgressEvent);
         }
         this.response = {
-          attachmentId: 55,
-          url: 'https://example.com/upload.jpg',
-          mimeType: 'image/jpeg',
-          thumbnail: 'https://example.com/thumb.jpg',
+          results: [
+            {
+              filename: 'test.jpg',
+              success: true,
+              attachmentId: 55,
+              url: 'https://example.com/upload.jpg',
+              mimeType: 'image/jpeg',
+              thumbnail: 'https://example.com/thumb.jpg',
+            },
+            {
+              filename: 'second.webp',
+              success: false,
+              error: 'File too large',
+            },
+          ],
+          total: 2,
+          succeeded: 1,
+          failed: 1,
         };
         this.onload?.();
       });
@@ -394,13 +428,15 @@ describe('MediaTab', () => {
     render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Add Media' }));
-    await screen.findByRole('button', { name: 'Choose file' });
+    await screen.findByRole('button', { name: 'Choose files' });
     const file = new File(['hello'], 'test.jpg', { type: 'image/jpeg' });
+    const secondFile = new File(['world'], 'second.webp', { type: 'image/webp' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(fileInput, { target: { files: [file] } });
+    fireEvent.change(fileInput, { target: { files: [file, secondFile] } });
     expect(await screen.findByText('test.jpg')).toBeInTheDocument();
+    expect(await screen.findByText('second.webp')).toBeInTheDocument();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Upload' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Upload 2 files' }));
 
     await waitFor(() => {
       expect(MockXHR.instances.length).toBeGreaterThan(0);
@@ -412,11 +448,22 @@ describe('MediaTab', () => {
     });
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media',
-        expect.objectContaining({ caption: 'test.jpg' }),
+      expect(apiClient.addCampaignMediaBatch).toHaveBeenCalledWith(
+        '101',
+        expect.arrayContaining([
+          expect.objectContaining({
+            attachmentId: 55,
+            caption: 'test.jpg',
+            source: 'upload',
+          }),
+        ]),
       );
     });
+
+    expect(await screen.findByText('File too large')).toBeInTheDocument();
+    expect(showNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Upload complete with issues' }),
+    );
 
     globalThis.XMLHttpRequest = originalXhr;
     window.XMLHttpRequest = originalWindowXhr;

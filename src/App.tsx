@@ -317,14 +317,15 @@ function AppContent({
         <AddExternalMediaModal
           opened={!!externalMediaModal.externalMediaCampaign}
           dropRef={externalMediaModal.dropRef}
-          selectedFile={externalMediaModal.selectedFile}
-          onSelectFile={externalMediaModal.setSelectedFile}
+          selectedFiles={externalMediaModal.selectedFiles}
+          onSelectFiles={externalMediaModal.setSelectedFiles}
           previewUrl={externalMediaModal.previewUrl}
           uploadTitle={externalMediaModal.uploadTitle}
           onUploadTitleChange={externalMediaModal.setUploadTitle}
           uploadCaption={externalMediaModal.uploadCaption}
           onUploadCaptionChange={externalMediaModal.setUploadCaption}
-          uploadProgress={externalMediaModal.uploadProgress}
+          uploadProgresses={externalMediaModal.uploadProgresses}
+          uploadErrors={externalMediaModal.uploadErrors}
           uploading={externalMediaModal.uploading}
           onUpload={externalMediaModal.confirmUploadMedia}
           externalUrl={externalMediaModal.externalMediaUrl}
