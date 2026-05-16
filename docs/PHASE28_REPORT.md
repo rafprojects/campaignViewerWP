@@ -27,9 +27,9 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-A | Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) | Low | High | Completed | 
 | P28-B | Time-limited access grants (`expires_at` on grant endpoints) | Low–Medium | High | Completed |
 | P28-C | Taxonomy CRUD — campaign categories + tags (create/update/delete) | Low | High | Completed |
-| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High | Completed |
+| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High | In Progress |
 | P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium | Completed |
-| P28-F | Pagination on currently unbounded list endpoints | Low | Medium |
+| P28-F | Pagination on currently unbounded list endpoints | Low | Medium | Completed |
 | P28-G | Audit log improvements (pagination, filters, global admin endpoint) | Low–Medium | Medium |
 | P28-H | Analytics expansion (per-media tracking, cross-campaign dashboard, external hook) | Medium | Medium | Completed |
 | P28-I | Magic-link access request approval | Low | Medium | Completed |
@@ -328,10 +328,10 @@ controls where appropriate (companies list, access grants list, audit log).
 
 ### Acceptance criteria
 
-- [ ] Each affected endpoint respects `page` + `per_page`.
-- [ ] Response has `total`, `page`, `per_page`, `total_pages`.
-- [ ] All React Query hooks updated to read `.items`.
-- [ ] PHPUnit: page 1 vs page 2, over-bounds page returns empty items array.
+- [x] Each affected endpoint respects `page` + `per_page`.
+- [x] Response has `total`, `page`, `per_page`, `total_pages`.
+- [x] All React Query hooks updated to read `.items`.
+- [x] PHPUnit: page 1 vs page 2, over-bounds page returns empty items array.
 
 ---
 

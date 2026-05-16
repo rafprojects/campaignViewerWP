@@ -416,7 +416,8 @@ export class ApiClient {
   // ── P18-H / P28-C: Campaign Categories ──────────────────────────────────
 
   async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
-    return this.get<CampaignCategoryEntry[]>('/wp-json/wp-super-gallery/v1/campaign-categories');
+    const response = await this.get<{ items: CampaignCategoryEntry[] }>('/wp-json/wp-super-gallery/v1/campaign-categories');
+    return response.items ?? [];
   }
 
   async createCampaignCategory(name: string, slug?: string): Promise<CampaignCategoryEntry> {

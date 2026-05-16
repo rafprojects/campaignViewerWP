@@ -1786,23 +1786,48 @@ class WPSG_REST {
         return is_array($terms) && !is_wp_error($terms) ? array_values($terms) : [];
     }
 
+    // ── P28-F: Pagination helpers ────────────────────────────────────────────
+
+    private static function parse_pagination($request, int $default_per_page = 50, int $max_per_page = 200): array {
+        $page     = max(1, intval($request->get_param('page') ?? 1));
+        $per_page = max(1, min($max_per_page, intval($request->get_param('per_page') ?? $default_per_page)));
+        return [$page, $per_page, ($page - 1) * $per_page];
+    }
+
+    private static function paginated_response(array $items, int $total, int $page, int $per_page): WP_REST_Response {
+        $total_pages = $per_page > 0 ? (int) ceil($total / $per_page) : 1;
+        return new WP_REST_Response([
+            'items'       => $items,
+            'total'       => $total,
+            'page'        => $page,
+            'per_page'    => $per_page,
+            'total_pages' => max(1, $total_pages),
+        ], 200);
+    }
+
     /**
      * GET /campaign-categories
-     * Returns all wpsg_campaign_category terms (id, name, slug, count).
+     * Returns paginated wpsg_campaign_category terms (id, name, slug, count).
      */
-    public static function list_campaign_categories() {
+    public static function list_campaign_categories($request) {
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+
+        $total = (int) wp_count_terms('wpsg_campaign_category', ['hide_empty' => false]);
+
         $terms = get_terms([
             'taxonomy'   => 'wpsg_campaign_category',
             'hide_empty' => false,
             'orderby'    => 'name',
             'order'      => 'ASC',
+            'number'     => $per_page,
+            'offset'     => $offset,
         ]);
 
         if (is_wp_error($terms)) {
             return new WP_Error('wpsg_internal_error', 'Failed to retrieve categories', ['status' => 500]);
         }
 
-        $result = array_map(function ($term) {
+        $items = array_map(function ($term) {
             return [
                 'id'    => strval($term->term_id),
                 'name'  => $term->name,
@@ -1811,7 +1836,7 @@ class WPSG_REST {
             ];
         }, $terms);
 
-        return new WP_REST_Response($result, 200);
+        return self::paginated_response($items, $total, $page, $per_page);
     }
 
     public static function list_media($request) {
@@ -2329,10 +2354,15 @@ class WPSG_REST {
             return true;
         }));
 
-        // Enrich with user details
+        // P28-F: paginate before enrichment.
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+        $total = count($effective);
+        $page_items = array_slice($effective, $offset, $per_page);
+
+        // Enrich only the current page with user details.
         $user_ids = array_unique(array_map(function ($entry) {
             return intval($entry['userId'] ?? 0);
-        }, $effective));
+        }, $page_items));
 
         $user_map = [];
         if (!empty($user_ids)) {
@@ -2356,9 +2386,9 @@ class WPSG_REST {
             $entry['expires_at'] = $expires_at;
             $entry['is_expired'] = $expires_at !== null && strtotime($expires_at) < $now;
             return $entry;
-        }, $effective);
+        }, $page_items);
 
-        return new WP_REST_Response(['items' => $enriched], 200);
+        return self::paginated_response($enriched, $total, $page, $per_page);
     }
 
     public static function grant_access($request) {
@@ -2960,7 +2990,15 @@ class WPSG_REST {
             ];
         }
 
-        $response_data = ['items' => $companies, 'total' => (int) wp_count_terms('wpsg_company', ['hide_empty' => false])];
+        $total       = (int) wp_count_terms('wpsg_company', ['hide_empty' => false]);
+        $total_pages = $per_page > 0 ? max(1, (int) ceil($total / $per_page)) : 1;
+        $response_data = [
+            'items'       => $companies,
+            'total'       => $total,
+            'page'        => $page,
+            'per_page'    => $per_page,
+            'total_pages' => $total_pages,
+        ];
 
         $ttl = 300;
         if (class_exists('WPSG_Settings')) {
@@ -2969,7 +3007,6 @@ class WPSG_REST {
         set_transient($cache_key, $response_data, $ttl);
 
         $response = new WP_REST_Response($response_data, 200);
-        $total = $response_data['total'];
         $response->header('X-WPSG-Total', (string) $total);
         $response->header('X-WPSG-Page', (string) $page);
         $response->header('X-WPSG-Per-Page', (string) $per_page);
@@ -3037,10 +3074,14 @@ class WPSG_REST {
             }
         }
 
-        // Enrich with user details
+        // P28-F: paginate before enrichment.
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+        $total      = count($all_grants);
+        $page_slice = array_slice($all_grants, $offset, $per_page);
+
         $user_ids = array_unique(array_filter(array_map(function ($entry) {
             return intval($entry['userId'] ?? 0);
-        }, $all_grants)));
+        }, $page_slice)));
 
         $user_map = [];
         if (!empty($user_ids)) {
@@ -3060,12 +3101,12 @@ class WPSG_REST {
                 $entry['user'] = $user_map[$user_id];
             }
             return $entry;
-        }, $all_grants);
+        }, $page_slice);
 
-        $response = new WP_REST_Response(['items' => $enriched], 200);
+        $response = self::paginated_response($enriched, $total, $page, $per_page);
         self::log_slow_rest('companies.access', $start, [
             'companyId' => $term_id,
-            'entries' => count($enriched),
+            'entries' => $total,
             'includeCampaigns' => $include_campaigns,
         ]);
         return $response;
@@ -3567,7 +3608,13 @@ class WPSG_REST {
 
         $entries = get_post_meta($post_id, 'audit_log', true);
         $entries = is_array($entries) ? $entries : [];
-        return new WP_REST_Response(['items' => $entries], 200);
+
+        // P28-F: paginate.
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+        $total      = count($entries);
+        $page_items = array_slice($entries, $offset, $per_page);
+
+        return self::paginated_response($page_items, $total, $page, $per_page);
     }
 
     public static function upload_media($request) {
@@ -4259,7 +4306,7 @@ class WPSG_REST {
      *
      * @return WP_REST_Response Available roles.
      */
-    public static function list_roles() {
+    public static function list_roles($request) {
         // Only return roles that can be assigned via quick add
         $roles = [
             [
@@ -4274,7 +4321,12 @@ class WPSG_REST {
             ],
         ];
 
-        return new WP_REST_Response(['roles' => $roles], 200);
+        // P28-F: paginated shape for consistency.
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+        $total      = count($roles);
+        $page_items = array_slice($roles, $offset, $per_page);
+
+        return self::paginated_response($page_items, $total, $page, $per_page);
     }
 
     /**
@@ -5087,19 +5139,25 @@ class WPSG_REST {
 
     // --- P14-G: Tag endpoints ---
 
-    public static function list_campaign_tags() {
+    public static function list_campaign_tags($request) {
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+
+        $total = (int) wp_count_terms('wpsg_campaign_tag', ['hide_empty' => false]);
+
         $terms = get_terms([
             'taxonomy'   => 'wpsg_campaign_tag',
             'hide_empty' => false,
             'orderby'    => 'name',
             'order'      => 'ASC',
+            'number'     => $per_page,
+            'offset'     => $offset,
         ]);
 
         if (is_wp_error($terms)) {
-            return new WP_REST_Response(['items' => []], 200);
+            return self::paginated_response([], 0, $page, $per_page);
         }
 
-        $result = array_map(function ($term) {
+        $items = array_map(function ($term) {
             return [
                 'id'    => $term->term_id,
                 'name'  => $term->name,
@@ -5108,22 +5166,28 @@ class WPSG_REST {
             ];
         }, $terms);
 
-        return new WP_REST_Response(['items' => $result], 200);
+        return self::paginated_response($items, $total, $page, $per_page);
     }
 
-    public static function list_media_tags() {
+    public static function list_media_tags($request) {
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+
+        $total = (int) wp_count_terms('wpsg_media_tag', ['hide_empty' => false]);
+
         $terms = get_terms([
             'taxonomy'   => 'wpsg_media_tag',
             'hide_empty' => false,
             'orderby'    => 'name',
             'order'      => 'ASC',
+            'number'     => $per_page,
+            'offset'     => $offset,
         ]);
 
         if (is_wp_error($terms)) {
-            return new WP_REST_Response(['items' => []], 200);
+            return self::paginated_response([], 0, $page, $per_page);
         }
 
-        $result = array_map(function ($term) {
+        $items = array_map(function ($term) {
             return [
                 'id'    => $term->term_id,
                 'name'  => $term->name,
@@ -5132,7 +5196,7 @@ class WPSG_REST {
             ];
         }, $terms);
 
-        return new WP_REST_Response(['items' => $result], 200);
+        return self::paginated_response($items, $total, $page, $per_page);
     }
 
     // ── P28-C: Taxonomy CRUD Handlers ────────────────────────

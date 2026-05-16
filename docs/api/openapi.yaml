@@ -40,6 +40,41 @@ components:
 
   schemas:
 
+    # P28-F: Reusable paginated response envelopes.
+    PaginatedTerms:
+      type: object
+      required: [items, total, page, per_page, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermEntry'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    PaginatedAccessGrants:
+      type: object
+      required: [items, total, page, per_page, total_pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessGrant'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
     TermEntry:
       type: object
       description: A WordPress taxonomy term (category or tag).
@@ -2538,21 +2573,24 @@ paths:
             type: boolean
             default: false
           description: "P28-B: When true, includes grants whose expires_at is in the past. Expired grants are hidden by default."
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
       responses:
         '200':
           description: Access grants for this campaign
           content:
             application/json:
               schema:
-                type: object
-                required: [items, total]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AccessGrant'
-                  total:
-                    type: integer
+                $ref: '#/components/schemas/PaginatedAccessGrants'
         '401':
           description: Not authenticated
           content:
@@ -3036,7 +3074,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [items, total, page, per_page]
+                required: [items, total, page, per_page, total_pages]
                 properties:
                   items:
                     type: array
@@ -3047,6 +3085,8 @@ paths:
                   page:
                     type: integer
                   per_page:
+                    type: integer
+                  total_pages:
                     type: integer
         '401':
           description: Not authenticated
@@ -3281,18 +3321,29 @@ paths:
       operationId: listCampaignCategories
       tags: [Taxonomy]
       summary: List campaign categories
+      description: "P28-F: Paginated. Default per_page=50, max 200."
       security:
         - bearerAuth: []
         - cookieNonce: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
       responses:
         '200':
           description: Campaign category terms
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TermEntry'
+                $ref: '#/components/schemas/PaginatedTerms'
         '401':
           description: Not authenticated
           content:
@@ -3465,22 +3516,29 @@ paths:
       operationId: listCampaignTags
       tags: [Taxonomy]
       summary: List campaign tags
+      description: "P28-F: Paginated. Default per_page=50, max 200."
       security:
         - bearerAuth: []
         - cookieNonce: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
       responses:
         '200':
           description: Campaign tag terms
           content:
             application/json:
               schema:
-                type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TermEntry'
+                $ref: '#/components/schemas/PaginatedTerms'
         '401':
           description: Not authenticated
           content:
@@ -3597,22 +3655,29 @@ paths:
       operationId: listMediaTags
       tags: [Taxonomy]
       summary: List media tags
+      description: "P28-F: Paginated. Default per_page=50, max 200."
       security:
         - bearerAuth: []
         - cookieNonce: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
       responses:
         '200':
           description: Media tag terms
           content:
             application/json:
               schema:
-                type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TermEntry'
+                $ref: '#/components/schemas/PaginatedTerms'
         '401':
           description: Not authenticated
           content:
@@ -3731,9 +3796,22 @@ paths:
       operationId: listCompanies
       tags: [Companies]
       summary: List companies
+      description: "P28-F: Paginated. Default per_page=50, max 100."
       security:
         - bearerAuth: []
         - cookieNonce: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
       responses:
         '200':
           description: Company list
@@ -3741,13 +3819,19 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [items, total]
+                required: [items, total, page, per_page, total_pages]
                 properties:
                   items:
                     type: array
                     items:
                       $ref: '#/components/schemas/Company'
                   total:
+                    type: integer
+                  page:
+                    type: integer
+                  per_page:
+                    type: integer
+                  total_pages:
                     type: integer
         '401':
           description: Not authenticated
@@ -3774,24 +3858,29 @@ paths:
       operationId: listCompanyAccess
       tags: [Companies]
       summary: List company access grants
+      description: "P28-F: Paginated. Default per_page=50, max 200."
       security:
         - bearerAuth: []
         - cookieNonce: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
       responses:
         '200':
           description: Company access grants
           content:
             application/json:
               schema:
-                type: object
-                required: [items, total]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AccessGrant'
-                  total:
-                    type: integer
+                $ref: '#/components/schemas/PaginatedAccessGrants'
         '401':
           description: Not authenticated
           content:
@@ -4088,9 +4177,21 @@ paths:
       operationId: listRoles
       tags: [Users]
       summary: List WordPress roles
+      description: "P28-F: Returns roles in paginated envelope (static list — page/per_page accepted but effectively no-op)."
       security:
         - bearerAuth: []
         - cookieNonce: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
       responses:
         '200':
           description: Available roles
@@ -4098,12 +4199,20 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [items]
+                required: [items, total, page, per_page, total_pages]
                 properties:
                   items:
                     type: array
                     items:
                       $ref: '#/components/schemas/Role'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  per_page:
+                    type: integer
+                  total_pages:
+                    type: integer
         '401':
           description: Not authenticated
           content:
