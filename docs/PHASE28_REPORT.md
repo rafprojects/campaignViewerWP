@@ -27,7 +27,7 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-A | Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) | Low | High | Completed | 
 | P28-B | Time-limited access grants (`expires_at` on grant endpoints) | Low–Medium | High | Completed |
 | P28-C | Taxonomy CRUD — campaign categories + tags (create/update/delete) | Low | High | Completed |
-| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High | In Progress |
+| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High | Completed |
 | P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium | Completed |
 | P28-F | Pagination on currently unbounded list endpoints | Low | Medium | Completed |
 | P28-G | Audit log improvements (pagination, filters, global admin endpoint) | Low–Medium | Medium |
@@ -370,13 +370,20 @@ filtering or pagination. There is no global audit log view across all campaigns.
 
 ### Acceptance criteria
 
-- [ ] `GET /campaigns/{id}/audit?from=2026-01-01&to=2026-03-31` returns filtered entries.
-- [ ] `GET /campaigns/{id}/audit?action=media.added` returns only media additions.
-- [ ] `GET /admin/audit-log` returns entries across all campaigns.
-- [ ] `GET /admin/audit-log` with `Accept: text/csv` returns valid CSV.
-- [ ] `wpsg_audit_log` table created by `WPSG_DB::maybe_upgrade()`.
-- [ ] Backfill from post meta runs on first query.
-- [ ] PHPUnit: pagination, date filter, action filter, CSV export header.
+- [x] `GET /campaigns/{id}/audit?from=2026-01-01&to=2026-03-31` returns filtered entries.
+- [x] `GET /campaigns/{id}/audit?action=media.added` returns only media additions.
+- [x] `GET /admin/audit-log` returns entries across all campaigns.
+- [x] `GET /admin/audit-log` with `Accept: text/csv` returns valid CSV.
+- [x] `wpsg_audit_log` table created by `WPSG_DB::maybe_upgrade()`.
+- [x] Backfill from post meta runs on first query.
+- [x] PHPUnit: pagination, date filter, action filter, CSV export header.
+
+### Implementation notes
+
+- **DB layer** (`class-wpsg-db.php`): `DB_VERSION` bumped to `8`. `maybe_create_audit_log_table()` called from `maybe_upgrade()`. `insert_audit_entry()`, `backfill_audit_entries()`, `list_audit_entries()` (supports `campaign_id`, `from`, `to`, `action`, `page`, `per_page`), and `format_audit_entry()` added.
+- **REST layer** (`class-wpsg-rest.php`): `add_audit_entry()` writes to DB. `list_audit()` triggers backfill-on-first-query, then queries DB with filters. New `GET /admin/audit-log` route (admin-only) backed by `list_global_audit()`. CSV export via `rest_pre_serve_request` filter with `audit_csv_response()`.
+- **Frontend**: `AuditEntry` type updated (adds `actorLogin`, `campaignId`). `AuditFilters` interface added. `useAuditEntries` / `useGlobalAuditEntries` hooks support filter params. `AuditTab` gets From/To/Action inputs and Export CSV button. New `GlobalAuditTab` component added. `AdminPanel` gains Global Audit tab.
+- **PHPUnit** (`WPSG_P28G_Audit_Log_Test.php`): 8 tests covering table creation, backfill, date/action filters, pagination, cross-campaign view, campaign_id filter, CSV Content-Type.
 
 ---
 

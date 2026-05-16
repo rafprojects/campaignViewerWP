@@ -8,16 +8,18 @@ import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings } f
 import { CampaignsTab } from './CampaignsTab';
 import { BulkActionsBar } from './BulkActionsBar';
 import { AuditTab } from './AuditTab';
+import { GlobalAuditTab } from './GlobalAuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies, useAuditEntries,
+  useGlobalAuditEntries,
   useCampaignCategories, useCampaignTags,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
   getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
-import type { AccessSummaryItem, CampaignFilters } from '@/services/adminQuery';
+import type { AccessSummaryItem, AuditFilters, CampaignFilters } from '@/services/adminQuery';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
@@ -60,6 +62,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [accessViewMode, setAccessViewMode] = useState<'campaign' | 'company' | 'all'>('campaign');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [auditCampaignId, setAuditCampaignId] = useState('');
+  const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
+  const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -95,7 +99,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   );
   const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
   const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, companiesEnabled);
-  const { auditEntries, auditLoading } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '');
+  const { auditEntries, auditLoading } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
+  const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, activeTab === 'globalAudit' ? globalAuditFilters : {});
 
   const unifiedModal = useUnifiedCampaignModal({
     apiClient, isAdmin: true, onMutate: campaignsMutator, onNotify,
@@ -225,6 +230,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
           <Tabs.Tab value="access">Access</Tabs.Tab>
           <Tabs.Tab value="audit">Audit</Tabs.Tab>
+          <Tabs.Tab value="globalAudit">Global Audit</Tabs.Tab>
           <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
         </Tabs.List>
 
@@ -383,6 +389,19 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             auditLoading={auditLoading}
             auditEntriesCount={auditEntries.length}
             auditRows={auditRows}
+            filters={auditFilters}
+            onFiltersChange={setAuditFilters}
+            onExportCsv={() => apiClient.downloadGlobalAuditCsv({ campaignId: auditCampaignId, ...auditFilters })}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="globalAudit" pt="md" component="section" aria-labelledby="global-audit-heading">
+          <GlobalAuditTab
+            entries={globalAuditEntries}
+            loading={globalAuditLoading}
+            filters={globalAuditFilters}
+            onFiltersChange={setGlobalAuditFilters}
+            onExportCsv={() => apiClient.downloadGlobalAuditCsv(globalAuditFilters)}
           />
         </Tabs.Panel>
 

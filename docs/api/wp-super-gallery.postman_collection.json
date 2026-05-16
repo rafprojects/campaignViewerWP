@@ -1223,9 +1223,89 @@
                 {
                   "key": "per_page",
                   "value": "50"
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "description": "ISO date (YYYY-MM-DD) — filter entries on or after this date",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "description": "ISO date (YYYY-MM-DD) — filter entries on or before this date",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "",
+                  "description": "Action string filter (e.g. media.added)",
+                  "disabled": true
                 }
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Global Audit Log (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Set to text/csv for CSV export"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/audit-log",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wp-json",
+                "wp-super-gallery",
+                "v1",
+                "admin",
+                "audit-log"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "50"
+                },
+                {
+                  "key": "campaign_id",
+                  "value": "",
+                  "description": "Filter to a specific campaign",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "description": "ISO date (YYYY-MM-DD)",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "description": "ISO date (YYYY-MM-DD)",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "",
+                  "description": "Action string filter (e.g. media.added)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Cross-campaign audit log. Admin only. Change Accept header to text/csv for CSV export."
           },
           "response": []
         }

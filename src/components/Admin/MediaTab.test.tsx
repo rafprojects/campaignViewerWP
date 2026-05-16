@@ -393,30 +393,34 @@ describe('MediaTab', () => {
       open = vi.fn();
       setRequestHeader = vi.fn();
       send = vi.fn(() => {
-        if (this.upload.onprogress) {
-          this.upload.onprogress({ lengthComputable: true, loaded: 5, total: 10 } as ProgressEvent);
-        }
-        this.response = {
-          results: [
-            {
-              filename: 'test.jpg',
-              success: true,
-              attachmentId: 55,
-              url: 'https://example.com/upload.jpg',
-              mimeType: 'image/jpeg',
-              thumbnail: 'https://example.com/thumb.jpg',
-            },
-            {
-              filename: 'second.webp',
-              success: false,
-              error: 'File too large',
-            },
-          ],
-          total: 2,
-          succeeded: 1,
-          failed: 1,
-        };
-        this.onload?.();
+        // Fire onload asynchronously to avoid synchronous state cascades
+        // that trigger Mantine SegmentedControl's setState-in-ref-callback loop.
+        Promise.resolve().then(() => {
+          if (this.upload.onprogress) {
+            this.upload.onprogress({ lengthComputable: true, loaded: 5, total: 10 } as ProgressEvent);
+          }
+          this.response = {
+            results: [
+              {
+                filename: 'test.jpg',
+                success: true,
+                attachmentId: 55,
+                url: 'https://example.com/upload.jpg',
+                mimeType: 'image/jpeg',
+                thumbnail: 'https://example.com/thumb.jpg',
+              },
+              {
+                filename: 'second.webp',
+                success: false,
+                error: 'File too large',
+              },
+            ],
+            total: 2,
+            succeeded: 1,
+            failed: 1,
+          };
+          this.onload?.();
+        });
       });
       constructor() {
         MockXHR.instances.push(this);

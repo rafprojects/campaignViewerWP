@@ -44,6 +44,7 @@ describe('AdminPanel', () => {
     const base = {
       getLayoutTemplates: vi.fn().mockResolvedValue([]),
       listCampaignCategories: vi.fn().mockResolvedValue([]),
+      getAccessSummary: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, perPage: 50, totalPages: 0 }),
       ...partial,
     };
     // Return a Proxy so any un-stubbed method returns a resolved promise

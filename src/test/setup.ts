@@ -177,6 +177,16 @@ if (!window.HTMLElement.prototype.scrollIntoView) {
 	window.HTMLElement.prototype.scrollIntoView = function () {};
 }
 
+// JSDOM doesn't implement URL.createObjectURL / revokeObjectURL.
+// Stub them globally so any useEffect that calls URL.revokeObjectURL in cleanup
+// doesn't crash when tests restore the (undefined) original value.
+if (typeof URL.createObjectURL !== 'function') {
+	URL.createObjectURL = () => 'blob:test';
+}
+if (typeof URL.revokeObjectURL !== 'function') {
+	URL.revokeObjectURL = () => {};
+}
+
 afterEach(() => {
 	cleanup();
 });

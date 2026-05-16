@@ -3107,6 +3107,91 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  # ── Admin Audit ────────────────────────────────────────────────────────
+
+  /wp-json/wp-super-gallery/v1/admin/audit-log:
+    get:
+      operationId: listGlobalAuditLog
+      tags: [Admin]
+      summary: List global audit log (cross-campaign, admin only)
+      description: |
+        Returns audit log entries across all campaigns. Requires administrator
+        role. Supports optional `Accept: text/csv` header for CSV export.
+      security:
+        - bearerAuth: []
+        - cookieNonce: []
+      parameters:
+        - in: query
+          name: campaign_id
+          schema:
+            type: integer
+          description: Filter to a specific campaign
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Filter entries on or after this ISO date (YYYY-MM-DD)
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: Filter entries on or before this ISO date
+        - in: query
+          name: action
+          schema:
+            type: string
+          description: Filter by action string (e.g. media.added)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: |
+            Paginated audit entries (JSON) or CSV file depending on Accept header.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, page, per_page, total_pages]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEntry'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  per_page:
+                    type: integer
+                  total_pages:
+                    type: integer
+            text/csv:
+              schema:
+                type: string
+                description: CSV file with columns id,campaign_id,action,actor_id,actor_login,details,created_at
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions (admin role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   # ── Analytics ─────────────────────────────────────────────────────────
 
   /wp-json/wp-super-gallery/v1/analytics/event:

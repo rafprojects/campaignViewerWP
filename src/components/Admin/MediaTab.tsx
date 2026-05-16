@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, memo, type CSSProperties, type KeyboardEventHandler } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch, type GridColProps } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch, type GridColProps, type Primitive } from '@mantine/core';
+
+// Mantine's SegmentedControl calls setState inside its ref callbacks, which triggers
+// React's "maximum update depth" error when the component re-renders rapidly.
+// Wrapping in memo (with stable data/onChange props) prevents re-renders during cascades.
+const StableSegmentedControl = memo(SegmentedControl);
 import {
   DndContext,
   DragOverlay,
@@ -875,6 +880,23 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     [activeMediaId, media],
   );
 
+  // Stable data arrays for SegmentedControl — new array references on every render can trigger
+  // Mantine's internal ref-measurement loop and cause infinite setState cycles under rapid updates.
+  const viewModeData = useMemo(() => [
+    { value: 'grid', label: <Tooltip label="Grid View"><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
+    { value: 'compact', label: <Tooltip label="Compact Grid"><Box><IconGridDots size={16} /></Box></Tooltip> },
+    { value: 'list', label: <Tooltip label="List View"><Box><IconList size={16} /></Box></Tooltip> },
+  ], []);
+
+  const cardSizeData = useMemo(() => [
+    { value: 'small', label: 'S' },
+    { value: 'medium', label: 'M' },
+    { value: 'large', label: 'L' },
+  ], []);
+
+  const handleViewModeChange = useCallback((v: Primitive) => setViewMode(v as unknown as ViewMode), [setViewMode]);
+  const handleCardSizeChange = useCallback((v: Primitive) => setCardSize(v as unknown as CardSize), [setCardSize]);
+
   // Shared props passed to both sortable sub-components (stable references prevent remounts).
   const sharedSortableProps: Omit<SharedSortableProps, 'item'> = {
     getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
@@ -890,29 +912,21 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         </Group>
         <Group gap="sm" wrap="wrap" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
           {/* View Mode Toggle */}
-          <SegmentedControl
+          <StableSegmentedControl
             size="xs"
             value={viewMode}
-            onChange={(v) => setViewMode(v as ViewMode)}
+            onChange={handleViewModeChange}
             aria-label="Media view mode"
-            data={[
-              { value: 'grid', label: <Tooltip label="Grid View"><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
-              { value: 'compact', label: <Tooltip label="Compact Grid"><Box><IconGridDots size={16} /></Box></Tooltip> },
-              { value: 'list', label: <Tooltip label="List View"><Box><IconList size={16} /></Box></Tooltip> },
-            ]}
+            data={viewModeData}
           />
           {/* Card Size (only for grid modes) */}
           {viewMode !== 'list' && (
-            <SegmentedControl
+            <StableSegmentedControl
               size="xs"
               value={cardSize}
-              onChange={(v) => setCardSize(v as CardSize)}
+              onChange={handleCardSizeChange}
               aria-label="Media card size"
-              data={[
-                { value: 'small', label: 'S' },
-                { value: 'medium', label: 'M' },
-                { value: 'large', label: 'L' },
-              ]}
+              data={cardSizeData}
             />
           )}
           <Tooltip label="Show only items exclusive to this campaign">

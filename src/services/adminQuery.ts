@@ -66,7 +66,17 @@ export interface AuditEntry {
   action: string;
   details: Record<string, unknown>;
   userId: number;
+  /** P28-G: login name of the actor (from DB table). */
+  actorLogin?: string;
+  /** P28-G: campaign ID — present on global audit log responses. */
+  campaignId?: string;
   createdAt: string;
+}
+
+export interface AuditFilters {
+  from?: string;
+  to?: string;
+  action?: string;
 }
 
 export interface CompanyInfo {
@@ -146,8 +156,12 @@ export function getCompaniesQueryKey(apiClient: ApiClient) {
   return [...getAdminQueryPrefix(apiClient), 'companies'] as const;
 }
 
-export function getAuditEntriesQueryKey(apiClient: ApiClient, campaignId: string) {
-  return [...getAdminQueryPrefix(apiClient), 'audit', campaignId] as const;
+export function getAuditEntriesQueryKey(apiClient: ApiClient, campaignId: string, filters?: AuditFilters) {
+  return [...getAdminQueryPrefix(apiClient), 'audit', campaignId, filters ?? {}] as const;
+}
+
+export function getGlobalAuditQueryKey(apiClient: ApiClient, filters?: AuditFilters & { campaignId?: string }) {
+  return [...getAdminQueryPrefix(apiClient), 'globalAudit', filters ?? {}] as const;
 }
 
 export function getMediaItemsQueryKey(apiClient: ApiClient, campaignId: string) {
@@ -252,9 +266,30 @@ async function fetchCompanies(apiClient: ApiClient): Promise<CompanyInfo[]> {
   return normalizeListResponse(response);
 }
 
-async function fetchAuditEntries(apiClient: ApiClient, campaignId: string): Promise<AuditEntry[]> {
+async function fetchAuditEntries(apiClient: ApiClient, campaignId: string, filters: AuditFilters = {}): Promise<AuditEntry[]> {
+  const params = new URLSearchParams();
+  if (filters.from) params.set('from', filters.from);
+  if (filters.to) params.set('to', filters.to);
+  if (filters.action) params.set('action', filters.action);
+  const qs = params.toString() ? `?${params}` : '';
   const response = await apiClient.get<ListResponse<AuditEntry>>(
-    `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit`,
+    `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit${qs}`,
+  );
+  return normalizeListResponse(response);
+}
+
+async function fetchGlobalAuditEntries(
+  apiClient: ApiClient,
+  filters: AuditFilters & { campaignId?: string } = {},
+): Promise<AuditEntry[]> {
+  const params = new URLSearchParams();
+  if (filters.campaignId) params.set('campaign_id', filters.campaignId);
+  if (filters.from) params.set('from', filters.from);
+  if (filters.to) params.set('to', filters.to);
+  if (filters.action) params.set('action', filters.action);
+  const qs = params.toString() ? `?${params}` : '';
+  const response = await apiClient.get<ListResponse<AuditEntry>>(
+    `/wp-json/wp-super-gallery/v1/admin/audit-log${qs}`,
   );
   return normalizeListResponse(response);
 }
@@ -373,11 +408,11 @@ export function useCompanies(apiClient: ApiClient, enabled: boolean) {
   };
 }
 
-export function useAuditEntries(apiClient: ApiClient, campaignId: string) {
+export function useAuditEntries(apiClient: ApiClient, campaignId: string, filters: AuditFilters = {}) {
   const enabled = Boolean(campaignId);
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: getAuditEntriesQueryKey(apiClient, campaignId || 'none'),
-    queryFn: () => fetchAuditEntries(apiClient, campaignId),
+    queryKey: getAuditEntriesQueryKey(apiClient, campaignId || 'none', filters),
+    queryFn: () => fetchAuditEntries(apiClient, campaignId, filters),
     enabled,
     staleTime: ADMIN_QUERY_STALE_TIME,
     ...ADMIN_QUERY_OPTIONS,
@@ -388,6 +423,22 @@ export function useAuditEntries(apiClient: ApiClient, campaignId: string) {
     auditLoading: isLoading,
     auditError: error ?? null,
     mutateAudit: refetch,
+  };
+}
+
+export function useGlobalAuditEntries(apiClient: ApiClient, filters: AuditFilters & { campaignId?: string } = {}) {
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: getGlobalAuditQueryKey(apiClient, filters),
+    queryFn: () => fetchGlobalAuditEntries(apiClient, filters),
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+
+  return {
+    globalAuditEntries: data ?? [],
+    globalAuditLoading: isLoading,
+    globalAuditError: error ?? null,
+    mutateGlobalAudit: refetch,
   };
 }
 

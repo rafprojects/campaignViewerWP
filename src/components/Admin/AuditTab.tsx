@@ -1,7 +1,18 @@
-import { Group, ScrollArea, Skeleton, Table, Text } from '@mantine/core';
+import { Button, Group, ScrollArea, Skeleton, Table, Text, TextInput } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import type { AuditFilters } from '@/services/adminQuery';
+
+function mergeFilter(base: AuditFilters, key: keyof AuditFilters, value: string): AuditFilters {
+  const next = { ...base };
+  if (value) {
+    next[key] = value;
+  } else {
+    delete next[key];
+  }
+  return next;
+}
 
 /** P13-C: Skeleton rows displayed while audit entries load. */
 function AuditSkeletonRows() {
@@ -28,6 +39,10 @@ interface AuditTabProps {
   auditLoading: boolean;
   auditEntriesCount: number;
   auditRows: ReactNode;
+  /** P28-G: active filters */
+  filters: AuditFilters;
+  onFiltersChange: (filters: AuditFilters) => void;
+  onExportCsv: () => void;
 }
 
 export function AuditTab({
@@ -37,13 +52,16 @@ export function AuditTab({
   auditLoading,
   auditEntriesCount,
   auditRows,
+  filters,
+  onFiltersChange,
+  onExportCsv,
 }: AuditTabProps) {
   return (
     <>
       <Text size="sm" fw={600} id="audit-heading" mb="xs">
         Campaign Audit Log
       </Text>
-      <Group mb="md">
+      <Group mb="sm" wrap="wrap" gap="sm">
         <CampaignSelector
           data={campaignSelectData}
           value={auditCampaignId}
@@ -51,6 +69,33 @@ export function AuditTab({
           style={{ minWidth: 200 }}
           aria-label="Select campaign for audit log"
         />
+        <TextInput
+          size="xs"
+          placeholder="From (YYYY-MM-DD)"
+          value={filters.from ?? ''}
+          onChange={(e) => onFiltersChange(mergeFilter(filters, 'from', e.currentTarget.value))}
+          aria-label="Audit log from date"
+          style={{ width: 150 }}
+        />
+        <TextInput
+          size="xs"
+          placeholder="To (YYYY-MM-DD)"
+          value={filters.to ?? ''}
+          onChange={(e) => onFiltersChange(mergeFilter(filters, 'to', e.currentTarget.value))}
+          aria-label="Audit log to date"
+          style={{ width: 150 }}
+        />
+        <TextInput
+          size="xs"
+          placeholder="Action filter"
+          value={filters.action ?? ''}
+          onChange={(e) => onFiltersChange(mergeFilter(filters, 'action', e.currentTarget.value))}
+          aria-label="Audit log action filter"
+          style={{ width: 160 }}
+        />
+        <Button size="xs" variant="default" onClick={onExportCsv} aria-label="Export audit log as CSV">
+          Export CSV
+        </Button>
       </Group>
       {auditLoading ? (
         <Table verticalSpacing="sm" aria-label="Loading audit entries" style={{ minWidth: 640 }}>

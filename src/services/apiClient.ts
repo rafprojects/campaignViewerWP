@@ -491,6 +491,25 @@ export class ApiClient {
       `/wp-json/wp-super-gallery/v1/campaigns/access-summary?page=${page}&per_page=${perPage}`,
     );
   }
+
+  // ── P28-G: Global audit log ───────────────────────────────────────────────
+
+  async downloadGlobalAuditCsv(params: { campaignId?: string; from?: string; to?: string; action?: string } = {}): Promise<void> {
+    const qs = new URLSearchParams();
+    if (params.campaignId) qs.set('campaign_id', params.campaignId);
+    if (params.from) qs.set('from', params.from);
+    if (params.to) qs.set('to', params.to);
+    if (params.action) qs.set('action', params.action);
+    const url = `${this.getBaseUrl()}/wp-json/wp-super-gallery/v1/admin/audit-log${qs.toString() ? `?${qs}` : ''}`;
+    const headers = await this.getAuthHeaders();
+    const res = await fetch(url, { headers: { ...headers, Accept: 'text/csv' } });
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'audit-log.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
 }
 
 /** One row in the access-summary response. */

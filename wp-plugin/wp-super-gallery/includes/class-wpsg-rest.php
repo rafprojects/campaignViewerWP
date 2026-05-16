@@ -346,6 +346,15 @@ class WPSG_REST {
             ],
         ]);
 
+        // P28-G: cross-campaign audit log.
+        register_rest_route('wp-super-gallery/v1', '/admin/audit-log', [
+            [
+                'methods' => 'GET',
+                'callback' => [self::class, 'list_global_audit'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/media/library', [
             [
                 'methods' => 'GET',
@@ -3606,15 +3615,87 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        $entries = get_post_meta($post_id, 'audit_log', true);
-        $entries = is_array($entries) ? $entries : [];
+        // P28-G: backfill from post meta if no DB entries exist yet for this campaign.
+        $db_count = WPSG_DB::list_audit_entries(['campaign_id' => $post_id, 'per_page' => 1, 'page' => 1])['total'];
+        if ($db_count === 0) {
+            $legacy = get_post_meta($post_id, 'audit_log', true);
+            if (is_array($legacy) && count($legacy) > 0) {
+                WPSG_DB::backfill_audit_entries($post_id, $legacy);
+            }
+        }
 
-        // P28-F: paginate.
-        [$page, $per_page, $offset] = self::parse_pagination($request);
-        $total      = count($entries);
-        $page_items = array_slice($entries, $offset, $per_page);
+        // P28-F: pagination; P28-G: from/to/action filters.
+        [$page, $per_page, ] = self::parse_pagination($request);
+        $result = WPSG_DB::list_audit_entries([
+            'campaign_id' => $post_id,
+            'from'        => $request->get_param('from') ?: null,
+            'to'          => $request->get_param('to') ?: null,
+            'action'      => $request->get_param('action') ?: null,
+            'page'        => $page,
+            'per_page'    => $per_page,
+        ]);
 
-        return self::paginated_response($page_items, $total, $page, $per_page);
+        return self::paginated_response($result['items'], $result['total'], $page, $per_page);
+    }
+
+    // P28-G: cross-campaign audit log.
+    public static function list_global_audit($request) {
+        [$page, $per_page, ] = self::parse_pagination($request);
+
+        $args = [
+            'from'     => $request->get_param('from') ?: null,
+            'to'       => $request->get_param('to') ?: null,
+            'action'   => $request->get_param('action') ?: null,
+            'page'     => $page,
+            'per_page' => $per_page,
+        ];
+
+        $campaign_id_param = $request->get_param('campaign_id');
+        if ($campaign_id_param) {
+            $args['campaign_id'] = intval($campaign_id_param);
+        }
+
+        $result = WPSG_DB::list_audit_entries($args);
+
+        // Accept: text/csv → CSV export.
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        if (strpos($accept, 'text/csv') !== false) {
+            return self::audit_csv_response($result['items']);
+        }
+
+        return self::paginated_response($result['items'], $result['total'], $page, $per_page);
+    }
+
+    private static function audit_csv_response(array $items): WP_REST_Response {
+        $lines = ["id,campaign_id,action,actor_login,created_at,details"];
+        foreach ($items as $item) {
+            $lines[] = implode(',', [
+                '"' . $item['id'] . '"',
+                '"' . $item['campaignId'] . '"',
+                '"' . str_replace('"', '""', $item['action']) . '"',
+                '"' . str_replace('"', '""', $item['actorLogin']) . '"',
+                '"' . $item['createdAt'] . '"',
+                '"' . str_replace('"', '""', wp_json_encode($item['details'])) . '"',
+            ]);
+        }
+        $csv = implode("\r\n", $lines);
+
+        // Register a one-shot filter so WP REST serves raw CSV instead of JSON.
+        add_filter('rest_pre_serve_request', function ($served) use ($csv) {
+            if (!$served) {
+                header('Content-Type: text/csv; charset=utf-8');
+                header('Content-Disposition: attachment; filename="audit-log.csv"');
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                echo $csv;
+                $served = true;
+            }
+            return $served;
+        }, 10, 1);
+
+        $response = new WP_REST_Response(null, 200);
+        $response->header('Content-Type', 'text/csv; charset=utf-8');
+        $response->header('Content-Disposition', 'attachment; filename="audit-log.csv"');
+        return $response;
     }
 
     public static function upload_media($request) {
@@ -4923,21 +5004,15 @@ class WPSG_REST {
     }
 
     public static function add_audit_entry($post_id, $action, $details = []) {
-        $entries = get_post_meta($post_id, 'audit_log', true);
-        $entries = is_array($entries) ? $entries : [];
-        $entries[] = [
-            'id' => wp_generate_uuid4(),
-            'action' => sanitize_text_field($action),
-            'details' => self::sanitize_audit_details($details),
-            'userId' => get_current_user_id(),
-            'createdAt' => gmdate('c'),
-        ];
-
-        if (count($entries) > 200) {
-            $entries = array_slice($entries, -200);
-        }
-
-        update_post_meta($post_id, 'audit_log', $entries);
+        $user = wp_get_current_user();
+        WPSG_DB::insert_audit_entry([
+            'campaign_id' => intval($post_id),
+            'action'      => $action,
+            'actor_id'    => $user->ID ?? 0,
+            'actor_login' => $user->user_login ?? '',
+            'details'     => self::sanitize_audit_details($details),
+            'created_at'  => gmdate('Y-m-d H:i:s'),
+        ]);
     }
 
     private static function sanitize_audit_details($details, int $depth = 0) {
