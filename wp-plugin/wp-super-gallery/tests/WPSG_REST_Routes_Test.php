@@ -331,6 +331,103 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
         // Verify that the route matched by checking it's not false
         // The regex validation is already tested in other methods
     }
+
+    // ── P28-P: Settings ETag + PATCH ────────────────────────────────────────
+
+    public function test_get_settings_returns_etag_header() {
+        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $headers = $response->get_headers();
+        $this->assertArrayHasKey('ETag', $headers);
+        $this->assertNotEmpty($headers['ETag']);
+    }
+
+    public function test_get_settings_returns_304_on_matching_etag() {
+        // First request — capture the ETag.
+        $response1 = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/settings'));
+        $etag = $response1->get_headers()['ETag'];
+
+        // Second request with If-None-Match — should return 304.
+        $request2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $request2->add_header('If-None-Match', $etag);
+        $response2 = rest_do_request($request2);
+        $this->assertEquals(304, $response2->get_status());
+    }
+
+    public function test_patch_settings_merges_partial_keys() {
+        update_option('wpsg_settings', ['enable_analytics' => true, 'default_visibility' => 'public']);
+
+        $request = new WP_REST_Request('PATCH', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(json_encode(['defaultVisibility' => 'private']));
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $stored = get_option('wpsg_settings');
+        // PATCH must not destroy sibling keys.
+        $this->assertEquals('private', $stored['default_visibility']);
+        $this->assertTrue((bool) $stored['enable_analytics'], 'Unmentioned key must be preserved');
+    }
+
+    public function test_post_settings_still_works_after_patch_added() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(json_encode(['enableAnalytics' => false]));
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+    }
+
+    // ── P28-Q: Hierarchical campaign categories ──────────────────────────────
+
+    public function test_campaign_category_list_includes_parent_id() {
+        $result = wp_insert_term('Parent Cat', 'wpsg_campaign_category');
+        $parent_term_id = $result['term_id'];
+
+        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $items = $response->get_data()['items'];
+        $this->assertNotEmpty($items);
+        $this->assertArrayHasKey('parent_id', $items[0]);
+        $this->assertEquals(0, $items[0]['parent_id']); // top-level
+
+        wp_delete_term($parent_term_id, 'wpsg_campaign_category');
+    }
+
+    public function test_create_child_category_with_parent_id() {
+        $parent = wp_insert_term('Parent', 'wpsg_campaign_category');
+        $parent_id = (int) $parent['term_id'];
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request->set_param('name', 'Child Category');
+        $request->set_param('parent_id', $parent_id);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(201, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals($parent_id, $data['parent_id']);
+
+        wp_delete_term((int) $data['id'], 'wpsg_campaign_category');
+        wp_delete_term($parent_id, 'wpsg_campaign_category');
+    }
+
+    public function test_update_category_can_set_parent_id() {
+        $parent = wp_insert_term('Update Parent', 'wpsg_campaign_category');
+        $child  = wp_insert_term('Update Child',  'wpsg_campaign_category');
+        $parent_id = (int) $parent['term_id'];
+        $child_id  = (int) $child['term_id'];
+
+        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaign-categories/{$child_id}");
+        $request->set_param('parent_id', $parent_id);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertEquals($parent_id, $response->get_data()['parent_id']);
+
+        wp_delete_term($child_id,  'wpsg_campaign_category');
+        wp_delete_term($parent_id, 'wpsg_campaign_category');
+    }
 }
 
 // Simple regex validation tests that can run without WordPress test environment

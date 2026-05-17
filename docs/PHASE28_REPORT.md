@@ -39,8 +39,8 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-M | Media sort controls on list endpoints | Low | Low–Medium | Completed |
 | P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium | Completed |
 | P28-O | Campaign templates (preset library) | Medium | Low |
-| P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low |
-| P28-Q | Hierarchical campaign categories | Low | Low |
+| P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low | Completed |
+| P28-Q | Hierarchical campaign categories | Low | Low | Completed |
 
 ---
 
@@ -784,11 +784,20 @@ conditions when two admin tabs save different settings keys concurrently.
 
 ### Acceptance criteria
 
-- [ ] `GET /settings` response includes `ETag` header.
-- [ ] `GET /settings` with matching `If-None-Match` returns `304`.
-- [ ] `PATCH /settings` with `{ "default_visibility": "private" }` updates only that key.
-- [ ] `POST /settings` still works (full replace for backward compat).
-- [ ] PHPUnit: ETag roundtrip, PATCH partial merge, POST full replace.
+- [x] `GET /settings` response includes `ETag` header.
+- [x] `GET /settings` with matching `If-None-Match` returns `304`.
+- [x] `PATCH /settings` with `{ "default_visibility": "private" }` updates only that key.
+- [x] `POST /settings` still works (full replace for backward compat).
+- [x] PHPUnit: ETag roundtrip, PATCH partial merge, POST full replace.
+
+### Implementation notes
+
+- `get_public_settings()` now accepts `$request` and delegates to the existing
+  `respond_with_etag()` helper (same md5-of-payload approach used by other endpoints).
+- `patch_settings()` converts camelCase body via `WPSG_Settings::from_js()`, sanitizes,
+  then intersects with the sent keys before merging — so unsent sibling keys are never
+  overwritten. `POST` is unchanged for backward compat.
+- Route registration adds a third `PATCH` entry alongside GET/POST.
 
 ---
 
@@ -813,10 +822,22 @@ Campaign categories are flat. Many gallery managers organise work in trees
 
 ### Acceptance criteria
 
-- [ ] `GET /campaign-categories` returns `parent_id` on each term.
-- [ ] `POST /campaign-categories` with `parent_id` creates a child term.
-- [ ] Taxonomy re-registration does not affect existing flat terms (parent_id = 0).
-- [ ] TreeSelect renders up to 3 levels.
+- [x] `GET /campaign-categories` returns `parent_id` on each term.
+- [x] `POST /campaign-categories` with `parent_id` creates a child term.
+- [x] Taxonomy re-registration does not affect existing flat terms (parent_id = 0).
+- [ ] TreeSelect renders up to 3 levels. *(deferred — frontend only; backend complete)*
+
+### Implementation notes
+
+- `class-wpsg-cpt.php`: `wpsg_campaign_category` registration changed to
+  `'hierarchical' => true`. Existing flat terms are unaffected (WP stores `parent = 0`).
+- `format_term()`: adds `'parent_id' => (int) $term->parent` — used by all category
+  responses (list, create, update).
+- `handle_term_insert()`: accepts optional `$parent_id`; passes `'parent'` to
+  `wp_insert_term()` when non-zero.
+- `create_campaign_category()` / `update_campaign_category()`: both forward `parent_id`
+  from the request; route args updated with `type: integer, minimum: 0`.
+- PHPUnit: 3 tests covering `parent_id` in list, child creation, and PUT update.
 
 ---
 

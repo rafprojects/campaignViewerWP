@@ -231,6 +231,11 @@ class WPSG_REST {
                         'type'              => 'string',
                         'sanitize_callback' => 'sanitize_title',
                     ],
+                    'parent_id' => [
+                        'type'    => 'integer',
+                        'default' => 0,
+                        'minimum' => 0,
+                    ],
                 ],
             ],
         ]);
@@ -248,6 +253,10 @@ class WPSG_REST {
                     'slug' => [
                         'type'              => 'string',
                         'sanitize_callback' => 'sanitize_title',
+                    ],
+                    'parent_id' => [
+                        'type'    => 'integer',
+                        'minimum' => 0,
                     ],
                 ],
             ],
@@ -674,6 +683,11 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'update_settings'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods' => 'PATCH',
+                'callback' => [self::class, 'patch_settings'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -4723,7 +4737,7 @@ class WPSG_REST {
      *
      * @return WP_REST_Response Settings data.
      */
-    public static function get_public_settings() {
+    public static function get_public_settings($request = null) {
         if (class_exists('WPSG_Settings')) {
             $settings = WPSG_Settings::get_settings();
         } else {
@@ -4731,10 +4745,8 @@ class WPSG_REST {
         }
 
         $is_admin = current_user_can('manage_options');
-        return new WP_REST_Response(
-            WPSG_Settings::to_js($settings, $is_admin),
-            200
-        );
+        $payload  = WPSG_Settings::to_js($settings, $is_admin);
+        return self::respond_with_etag($request, $payload);
     }
 
     /**
@@ -4758,6 +4770,24 @@ class WPSG_REST {
         update_option(WPSG_Settings::OPTION_NAME, $merged);
         self::bump_cache_version();
 
+        return new WP_REST_Response(
+            WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
+            200
+        );
+    }
+
+    public static function patch_settings($request) {
+        if (!class_exists('WPSG_Settings')) {
+            return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
+        }
+        $body  = $request->get_json_params() ?: [];
+        $input = WPSG_Settings::from_js($body);
+        $sanitized = WPSG_Settings::sanitize_settings($input);
+        $current = WPSG_Settings::get_settings();
+        // Only merge the keys the caller actually sent.
+        $merged = array_merge($current, array_intersect_key($sanitized, $input));
+        update_option(WPSG_Settings::OPTION_NAME, $merged);
+        self::bump_cache_version();
         return new WP_REST_Response(
             WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
             200
@@ -5583,14 +5613,15 @@ class WPSG_REST {
 
     private static function format_term($term) {
         return [
-            'id'    => strval($term->term_id),
-            'name'  => $term->name,
-            'slug'  => $term->slug,
-            'count' => (int) $term->count,
+            'id'        => strval($term->term_id),
+            'name'      => $term->name,
+            'slug'      => $term->slug,
+            'count'     => (int) $term->count,
+            'parent_id' => (int) $term->parent,
         ];
     }
 
-    private static function handle_term_insert($name, $slug, $taxonomy, $created_status = 201) {
+    private static function handle_term_insert($name, $slug, $taxonomy, $created_status = 201, $parent_id = 0) {
         $name = sanitize_text_field($name ?? '');
         if ($name === '') {
             return new WP_Error('wpsg_missing_name', 'name is required', ['status' => 400]);
@@ -5598,6 +5629,9 @@ class WPSG_REST {
         $args = [];
         if ($slug !== null && $slug !== '') {
             $args['slug'] = sanitize_title($slug);
+        }
+        if ($parent_id > 0) {
+            $args['parent'] = $parent_id;
         }
         $result = wp_insert_term($name, $taxonomy, $args);
         if (is_wp_error($result)) {
@@ -5629,6 +5663,8 @@ class WPSG_REST {
             $request->get_param('name'),
             $request->get_param('slug'),
             'wpsg_campaign_category',
+            201,
+            (int) ($request->get_param('parent_id') ?? 0),
         );
     }
 
@@ -5639,16 +5675,20 @@ class WPSG_REST {
             return new WP_Error('wpsg_not_found', 'Category not found', ['status' => 404]);
         }
         $args = [];
-        $name = $request->get_param('name');
-        $slug = $request->get_param('slug');
+        $name      = $request->get_param('name');
+        $slug      = $request->get_param('slug');
+        $parent_id = $request->get_param('parent_id');
         if ($name !== null) {
             $args['name'] = sanitize_text_field($name);
         }
         if ($slug !== null) {
             $args['slug'] = sanitize_title($slug);
         }
+        if ($parent_id !== null) {
+            $args['parent'] = (int) $parent_id;
+        }
         if (empty($args)) {
-            return new WP_Error('wpsg_bad_request', 'Provide name or slug to update', ['status' => 400]);
+            return new WP_Error('wpsg_bad_request', 'Provide name, slug, or parent_id to update', ['status' => 400]);
         }
         $result = wp_update_term($term_id, 'wpsg_campaign_category', $args);
         if (is_wp_error($result)) {
