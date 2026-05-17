@@ -515,9 +515,15 @@ class WPSG_REST {
 
         register_rest_route('wp-super-gallery/v1', '/media/upload', [
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'upload_media'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'upload_media'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'force' => [
+                        'type'    => 'boolean',
+                        'default' => false,
+                    ],
+                ],
             ],
         ]);
 
@@ -2377,7 +2383,16 @@ class WPSG_REST {
         ];
     }
 
-    private static function upload_single_media_file(array $file) {
+    private static function find_attachment_by_md5(string $md5): int {
+        global $wpdb;
+        $id = $wpdb->get_var($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpsg_file_md5' AND meta_value = %s LIMIT 1",
+            $md5
+        ));
+        return $id ? intval($id) : 0;
+    }
+
+    private static function upload_single_media_file(array $file, bool $force = false) {
         $error = self::get_upload_error_data($file);
         if ($error) {
             return new WP_Error('wpsg_upload_error', $error['message'], ['status' => $error['status']]);
@@ -2416,6 +2431,19 @@ class WPSG_REST {
             return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
         }
 
+        // P28-N: MD5 duplicate detection — compute before sideload while tmp file is readable.
+        $md5 = md5_file($file['tmp_name']) ?: null;
+        if ($md5 && !$force) {
+            $existing_id = self::find_attachment_by_md5($md5);
+            if ($existing_id > 0) {
+                return new WP_Error('wpsg_duplicate_file', 'This file has already been uploaded.', [
+                    'status'       => 409,
+                    'existing_id'  => $existing_id,
+                    'existing_url' => wp_get_attachment_url($existing_id),
+                ]);
+            }
+        }
+
         require_once ABSPATH . 'wp-admin/includes/file.php';
         require_once ABSPATH . 'wp-admin/includes/media.php';
         require_once ABSPATH . 'wp-admin/includes/image.php';
@@ -2441,6 +2469,11 @@ class WPSG_REST {
         $attachment_id = self::create_attachment_from_upload($upload, $file['name'] ?? '');
         if (is_wp_error($attachment_id)) {
             return $attachment_id;
+        }
+
+        // P28-N: Store MD5 for future duplicate detection.
+        if ($md5) {
+            update_post_meta($attachment_id, '_wpsg_file_md5', $md5);
         }
 
         return self::prepare_uploaded_attachment_payload($attachment_id);
@@ -3944,6 +3977,8 @@ class WPSG_REST {
             return new WP_Error('wpsg_missing_file', 'File is required', ['status' => 400]);
         }
 
+        $force = (bool) ($request->get_param('force') ?? false);
+
         $is_batch = count($entries) > 1 || isset($files['files']);
         $max_batch_upload_size = self::get_max_batch_upload_size();
         if ($is_batch && count($entries) > $max_batch_upload_size) {
@@ -3955,8 +3990,16 @@ class WPSG_REST {
         }
 
         if (!$is_batch) {
-            $upload = self::upload_single_media_file($entries[0]);
+            $upload = self::upload_single_media_file($entries[0], $force);
             if (is_wp_error($upload)) {
+                if ($upload->get_error_code() === 'wpsg_duplicate_file') {
+                    $data = $upload->get_error_data();
+                    return new WP_REST_Response([
+                        'duplicate'    => true,
+                        'existing_id'  => $data['existing_id'],
+                        'existing_url' => $data['existing_url'],
+                    ], 409);
+                }
                 return $upload;
             }
 
@@ -3967,30 +4010,37 @@ class WPSG_REST {
         $success_count = 0;
 
         foreach ($entries as $entry) {
-            $upload = self::upload_single_media_file($entry);
+            $upload = self::upload_single_media_file($entry, $force);
             $filename = sanitize_file_name($entry['name'] ?? '');
 
             if (is_wp_error($upload)) {
-                $results[] = [
+                $result = [
                     'filename' => $filename,
-                    'success' => false,
-                    'error' => $upload->get_error_message(),
+                    'success'  => false,
+                    'error'    => $upload->get_error_message(),
                 ];
+                if ($upload->get_error_code() === 'wpsg_duplicate_file') {
+                    $data = $upload->get_error_data();
+                    $result['duplicate']    = true;
+                    $result['existing_id']  = $data['existing_id'];
+                    $result['existing_url'] = $data['existing_url'];
+                }
+                $results[] = $result;
                 continue;
             }
 
             $results[] = array_merge([
                 'filename' => $filename,
-                'success' => true,
+                'success'  => true,
             ], $upload);
             $success_count++;
         }
 
         return new WP_REST_Response([
-            'results' => $results,
-            'total' => count($entries),
+            'results'   => $results,
+            'total'     => count($entries),
             'succeeded' => $success_count,
-            'failed' => count($entries) - $success_count,
+            'failed'    => count($entries) - $success_count,
         ], 201);
     }
 

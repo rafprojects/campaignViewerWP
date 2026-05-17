@@ -37,7 +37,7 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-K | REST args hardening (`D-8` — typed args arrays on all routes) | Large | Medium | Completed |
 | P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium | Completed |
 | P28-M | Media sort controls on list endpoints | Low | Low–Medium | Completed |
-| P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium |
+| P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium | Completed |
 | P28-O | Campaign templates (preset library) | Medium | Low |
 | P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low |
 | P28-Q | Hierarchical campaign categories | Low | Low |
@@ -688,12 +688,34 @@ the media grid. There is no deduplication check on upload.
   campaign) or "Upload anyway" (re-send with `force=true` query param).
 - Near-duplicate warning: non-blocking toast; user can dismiss and continue.
 
+### Change implemented
+
+MD5-based exact-duplicate detection added to `POST /media/upload`.
+
+**Flow:**
+1. After file type/size validation, `md5_file($tmp_name)` is called while the
+   temp file is still readable (before `wp_handle_sideload` moves it).
+2. `find_attachment_by_md5()` queries `wp_postmeta` for `_wpsg_file_md5 = {hash}`.
+3. If a match exists and `force` is false: a `wpsg_duplicate_file` WP_Error is
+   returned (with `existing_id` and `existing_url` in error data).
+4. `upload_media` converts this to a `409` response with
+   `{ duplicate: true, existing_id, existing_url }` for single uploads.
+5. For batch uploads the per-file result gets `{ success: false, duplicate: true,
+   existing_id, existing_url }` — the batch itself still returns 201 (partial success).
+6. On successful upload, `update_post_meta($id, '_wpsg_file_md5', $md5)` stores
+   the hash for future comparisons.
+7. `?force=true` (registered as a boolean arg) skips step 2–3 entirely.
+
+**pHash (near-duplicate):** deferred to a future phase; the `jensseger/imagehash`
+dependency is not bundled. The MD5 check covers exact duplicates.
+
 ### Acceptance criteria
 
-- [ ] Uploading the same file twice returns `409` on the second attempt.
-- [ ] `_wpsg_file_md5` is stored on each uploaded attachment.
-- [ ] `?force=true` bypasses MD5 check and uploads anyway.
-- [ ] PHPUnit: exact duplicate (409), forced re-upload (201), unique file (201).
+- [x] Uploading the same file twice returns `409` on the second attempt.
+- [x] `_wpsg_file_md5` is stored on each uploaded attachment.
+- [x] `?force=true` bypasses MD5 check and uploads anyway.
+- [x] Duplicate in batch: per-file result has `duplicate: true`; batch returns 201.
+- [x] PHPUnit: unique file (201 + MD5 stored), exact duplicate (409), forced re-upload (201), batch duplicate.
 
 ---
 
