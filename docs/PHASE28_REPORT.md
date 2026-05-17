@@ -41,6 +41,7 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-O | Campaign templates (preset library) | Medium | Low |
 | P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low | Completed |
 | P28-Q | Hierarchical campaign categories | Low | Low | Completed |
+| P28-R | Campaign category TreeSelect UI (P28-Q frontend) | Low | Low |
 
 ---
 
@@ -838,6 +839,57 @@ Campaign categories are flat. Many gallery managers organise work in trees
 - `create_campaign_category()` / `update_campaign_category()`: both forward `parent_id`
   from the request; route args updated with `type: integer, minimum: 0`.
 - PHPUnit: 3 tests covering `parent_id` in list, child creation, and PUT update.
+
+---
+
+## Track P28-R — Campaign Category TreeSelect UI
+
+**Source:** P28-Q deferred frontend
+
+### Problem
+
+The campaign category picker in `UnifiedCampaignModal` is a flat `TagsInput`
+that stores category **names** as `string[]`. Now that the backend (P28-Q)
+supports parent–child relationships, the UI needs to show the hierarchy and
+allow users to pick from it.
+
+### Current state
+
+- `UnifiedCampaignModal` props: `availableCategories?: string[]` (flat names)
+- `formState.categories: string[]` (names)
+- Rendered as Mantine `<TagsInput>` with free-text entry and autocomplete
+
+### Proposed change
+
+- Fetch the full category objects from `GET /campaign-categories` (which now
+  returns `{ id, name, slug, parent_id }`) in `AdminPanel` / the modal's data
+  source.
+- Build a `CategoryTreeSelect` component backed by Mantine `<MultiSelect>` with
+  indented group labels for parent terms, or a custom tree-aware combobox.
+- Enforce a maximum of **3 nesting levels** in the UI — deeper terms are shown
+  but selecting a 4th-level term is blocked with a tooltip.
+- Change `formState.categories` from `string[]` (names) to `string[]` (term IDs
+  as strings) to unambiguously identify terms. Update all consumers.
+- `availableCategories` prop replaced by `availableCategoryTerms: CategoryTerm[]`
+  where `CategoryTerm = { id: string; name: string; parent_id: number }`.
+
+### Acceptance criteria
+
+- [ ] Category picker in `UnifiedCampaignModal` shows parent → child indentation.
+- [ ] Selecting a child term does not require selecting the parent first.
+- [ ] Attempting to assign a 4th-level term shows a disabled state with a tooltip.
+- [ ] `formState.categories` stores term IDs (not names); existing save/load logic updated.
+- [ ] `TaxonomyManagerModal` shows parent name in the category list for child terms.
+- [ ] Vitest: tree-building helper unit tests; modal integration snapshot or interaction test.
+
+### Notes
+
+- The `TagsInput` → `MultiSelect` change requires updating the save path: the
+  campaign create/edit handlers currently send `categories` as names and the PHP
+  side does `wp_insert_term` on unknown names. After this change they should send
+  IDs and the PHP side should call `wp_set_object_terms` with integers directly.
+- This is a **data-model change** for `formState.categories`; grep for all usages
+  before starting.
 
 ---
 
