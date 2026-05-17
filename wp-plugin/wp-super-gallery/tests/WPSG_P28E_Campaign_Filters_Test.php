@@ -134,9 +134,11 @@ class WPSG_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $data     = $response->get_data();
 
         $titles = array_column($data['items'], 'title');
+        // In title_desc order Omega (O) appears before Alpha (A), so Omega's index
+        // is smaller and Alpha's index must be greater than Omega's.
         $this->assertGreaterThan(
-            array_search('Alpha', $titles),
             array_search('Omega', $titles),
+            array_search('Alpha', $titles),
             '"Omega" should come before "Alpha" in desc order.'
         );
     }

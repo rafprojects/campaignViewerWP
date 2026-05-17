@@ -213,6 +213,8 @@ class WPSG_Settings_Registry {
         'archive_purge_grace_days'       => 30,
         'analytics_retention_days'       => 0,
         'magic_link_landing_page_id'     => 0,
+        'enable_analytics'               => false,
+        'default_visibility'             => 'public',
         'show_card_company_name'         => true,
         'show_card_media_counts'         => true,
         'show_card_title'                => true,
@@ -394,7 +396,8 @@ class WPSG_Settings_Registry {
      * @var array
      */
     private static $valid_options = [
-        'auth_provider'  => ['wp-jwt', 'none'],
+        'auth_provider'       => ['wp-jwt', 'none'],
+        'default_visibility'  => ['public', 'private'],
         'theme'          => [
             'default-dark',
             'default-light',

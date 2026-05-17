@@ -218,7 +218,8 @@ class WPSG_P28G_Audit_Log_Test extends WP_UnitTestCase {
 
         unset($_SERVER['HTTP_ACCEPT']);
 
-        $content_type = $response->get_header('Content-Type');
+        $headers = $response->get_headers();
+        $content_type = $headers['Content-Type'] ?? '';
         $this->assertNotEmpty($content_type, 'Content-Type header must be set for CSV response.');
         $this->assertStringContainsString('text/csv', $content_type);
     }

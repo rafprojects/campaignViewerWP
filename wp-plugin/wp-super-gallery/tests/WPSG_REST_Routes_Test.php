@@ -69,8 +69,8 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
         ]);
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
-        $request->set_param('campaignId', $campaign_id);
-        $request->set_param('eventType', 'click');
+        $request->set_param('campaign_id', $campaign_id);
+        $request->set_param('event_type', 'click');
         $response = rest_do_request($request);
         $this->assertEquals(400, $response->get_status());
         $this->assertEquals('rest_invalid_param', $response->get_data()['code']);

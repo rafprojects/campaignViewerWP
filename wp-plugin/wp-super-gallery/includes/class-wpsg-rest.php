@@ -32,8 +32,6 @@ class WPSG_REST {
         ], $status);
     }
     public static function register_routes() {
-        add_filter('rest_post_dispatch', [self::class, 'inject_rate_limit_headers'], 10, 3);
-
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
             [
                 'methods' => 'GET',
@@ -327,17 +325,17 @@ class WPSG_REST {
                 'callback'            => [self::class, 'record_analytics_event'],
                 'permission_callback' => [self::class, 'rate_limit_public'],
                 'args'                => [
-                    'campaignId' => [
+                    'campaign_id' => [
                         'required' => true,
                         'type'     => 'integer',
                         'minimum'  => 1,
                     ],
-                    'eventType'  => [
+                    'event_type'  => [
                         'type'    => 'string',
                         'enum'    => ['view', 'lightbox_open'],
                         'default' => 'view',
                     ],
-                    'mediaId'    => [
+                    'media_id'    => [
                         'type'              => 'string',
                         'sanitize_callback' => 'sanitize_text_field',
                     ],
@@ -1065,9 +1063,26 @@ class WPSG_REST {
         return true;
     }
 
-    public static function inject_rate_limit_headers($response, $server, $request) {
-        foreach (self::$rate_limit_headers as $header => $value) {
-            $response->header($header, $value);
+    public static function inject_rate_limit_headers($response, $handler, $request) {
+        if (empty(self::$rate_limit_headers)) {
+            return $response;
+        }
+        // rest_request_after_callbacks may receive a WP_Error (e.g. 429 rate-limit
+        // denial from permission_callback). Convert it to WP_REST_Response so we
+        // can attach the rate-limit headers before WP Core calls error_to_response.
+        if (is_wp_error($response)) {
+            $error_data = $response->get_error_data();
+            $status     = isset($error_data['status']) ? (int) $error_data['status'] : 500;
+            $response   = new WP_REST_Response([
+                'code'    => $response->get_error_code(),
+                'message' => $response->get_error_message(),
+                'data'    => $error_data,
+            ], $status);
+        }
+        if (method_exists($response, 'header')) {
+            foreach (self::$rate_limit_headers as $header => $value) {
+                $response->header($header, $value);
+            }
         }
         return $response;
     }
@@ -1783,8 +1798,8 @@ class WPSG_REST {
             return new WP_Error('wpsg_analytics_disabled', 'Analytics disabled', ['status' => 403]);
         }
 
-        $campaign_id = intval($request->get_param('campaignId') ?? $request->get_param('campaign_id'));
-        $event_type  = sanitize_text_field($request->get_param('eventType') ?? $request->get_param('event_type') ?? 'view');
+        $campaign_id = intval($request->get_param('campaign_id'));
+        $event_type  = sanitize_text_field($request->get_param('event_type') ?? 'view');
 
         if ($campaign_id <= 0) {
             return new WP_Error('wpsg_invalid_campaign_id', 'Invalid campaignId', ['status' => 400]);
@@ -1798,7 +1813,7 @@ class WPSG_REST {
             $event_type = 'view';
         }
 
-        $media_id_raw = $request->get_param('mediaId') ?? $request->get_param('media_id') ?? null;
+        $media_id_raw = $request->get_param('media_id') ?? null;
         $media_id     = ($media_id_raw !== null && $media_id_raw !== '')
             ? sanitize_text_field($media_id_raw)
             : null;
@@ -3108,37 +3123,37 @@ class WPSG_REST {
         $raw_key = sanitize_text_field($request->get_param('magic_key') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            self::magic_link_redirect('invalid');
+            return self::magic_link_redirect('invalid');
         }
 
         $data = WPSG_DB::get_access_request($token);
         if (!$data || intval($data['campaign_id']) !== $post_id) {
-            self::magic_link_redirect('invalid');
+            return self::magic_link_redirect('invalid');
         }
 
         if ($raw_key === '' || empty($data['magic_key_hash'])) {
-            self::magic_link_redirect('invalid');
+            return self::magic_link_redirect('invalid');
         }
 
         // Constant-time hash comparison prevents timing attacks.
         $expected_hash = hash('sha256', $raw_key);
         if (!hash_equals($data['magic_key_hash'], $expected_hash)) {
-            self::magic_link_redirect('invalid');
+            return self::magic_link_redirect('invalid');
         }
 
         // Check TTL.
         if (!empty($data['magic_key_expires_at']) && strtotime($data['magic_key_expires_at']) < time()) {
-            self::magic_link_redirect('expired');
+            return self::magic_link_redirect('expired');
         }
 
         // Check replay (key already consumed).
         if (!empty($data['magic_key_used_at'])) {
-            self::magic_link_redirect('used');
+            return self::magic_link_redirect('used');
         }
 
         // Request already resolved by another means.
         if ($data['status'] !== 'pending') {
-            self::magic_link_redirect('used');
+            return self::magic_link_redirect('used');
         }
 
         // Mark consumed BEFORE processing to close the replay window.
@@ -3146,25 +3161,28 @@ class WPSG_REST {
 
         $result = self::do_approve_request($post_id, $token, $data);
         if (is_wp_error($result)) {
-            self::magic_link_redirect('invalid');
+            return self::magic_link_redirect('invalid');
         }
 
-        self::magic_link_redirect('approved');
+        return self::magic_link_redirect('approved');
     }
 
     /**
-     * Redirect the browser to the configured magic-link landing page, appending
-     * ?wpsg_result=<result>. Falls back to inline HTML if no page is configured.
-     * Always terminates via exit() — never returns.
+     * Build a WP_REST_Response for the magic-link result. When a landing page is
+     * configured a 302 redirect is returned; otherwise a 200 HTML response is
+     * returned. Returns rather than calling header()/exit() so the handler is
+     * testable and compatible with rest_do_request().
      */
-    private static function magic_link_redirect(string $result): void {
+    private static function magic_link_redirect(string $result): WP_REST_Response {
         $settings = get_option('wpsg_settings', []);
         $page_id  = intval($settings['magic_link_landing_page_id'] ?? 0);
         $page_url = $page_id ? get_permalink($page_id) : null;
 
         if ($page_url) {
-            wp_redirect(add_query_arg('wpsg_result', rawurlencode($result), $page_url), 302);
-            exit;
+            $redirect_url = add_query_arg('wpsg_result', rawurlencode($result), $page_url);
+            $response = new WP_REST_Response(null, 302);
+            $response->header('Location', $redirect_url);
+            return $response;
         }
 
         // Inline HTML fallback — used when no landing page is configured.
@@ -3181,16 +3199,16 @@ class WPSG_REST {
         $message_e  = esc_html($message);
         $admin_url  = esc_url(admin_url());
 
-        status_header(200);
-        header('Content-Type: text/html; charset=utf-8');
         // phpcs:disable
-        echo "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">
+        $html = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">
 <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">
 <title>{$title_e} — {$site_name}</title>
 <style>*{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f4f4f5}.card{max-width:420px;width:100%;margin:1rem;padding:2rem;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}h1{margin:0 0 .75rem;font-size:1.4rem;color:{$color}}p{margin:0 0 1.5rem;color:#555;line-height:1.5}a{color:#3b82f6;text-decoration:none;font-weight:500}a:hover{text-decoration:underline}</style>
 </head><body><div class=\"card\"><h1>{$title_e}</h1><p>{$message_e}</p><a href=\"{$admin_url}\">Go to Admin Panel</a></div></body></html>";
         // phpcs:enable
-        exit;
+        $response = new WP_REST_Response($html, 200);
+        $response->header('Content-Type', 'text/html; charset=utf-8');
+        return $response;
     }
 
     /**

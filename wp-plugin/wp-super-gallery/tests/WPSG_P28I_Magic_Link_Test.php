@@ -93,24 +93,16 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         ['token' => $token, 'raw_key' => $raw_key] = $this->insert_request_with_magic_key($campaign_id);
 
-        // Intercept the redirect instead of following it.
-        $this->expectOutputRegex('//');  // suppress echo
-        add_filter('wp_redirect', function ($location) use (&$redirect_url) {
-            $redirect_url = $location;
-            return false;  // prevent actual header()
-        });
-
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
-        rest_do_request($request);
+        $response = rest_do_request($request);
 
-        // Row should now be approved.
+        // Handler returns 302 (redirect) or 200 (inline HTML), never an error.
+        $this->assertContains($response->get_status(), [200, 302], 'Valid magic-link should yield a success response.');
+
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('approved', $updated['status'], 'Status should be approved after valid magic-link use.');
         $this->assertNotEmpty($updated['magic_key_used_at'], 'magic_key_used_at should be set after use.');
-
-        // The redirect URL should contain wpsg_result=approved (if a page is configured)
-        // or we see the inline HTML output. Either way the approval must have fired.
     }
 
     // =========================================================================
@@ -125,17 +117,17 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
             -1  // already expired
         );
 
-        ob_start();
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
-        rest_do_request($request);
-        $output = ob_get_clean();
+        $response = rest_do_request($request);
 
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('pending', $updated['status'], 'Expired key must not change request status.');
 
-        // Either a redirect with "expired" or inline HTML with "Expired" was produced.
-        $this->assertMatchesRegularExpression('/expired|Expired/i', $output . ($GLOBALS['_test_redirect'] ?? ''));
+        // Body (inline HTML) or Location header must indicate "expired".
+        $body     = is_string($response->get_data()) ? $response->get_data() : '';
+        $location = $response->get_headers()['Location'] ?? '';
+        $this->assertMatchesRegularExpression('/expired|Expired/i', $body . $location);
     }
 
     // =========================================================================
@@ -149,15 +141,16 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
         // Pre-mark as used.
         WPSG_DB::mark_magic_key_used($token);
 
-        ob_start();
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
-        rest_do_request($request);
-        $output = ob_get_clean();
+        $response = rest_do_request($request);
 
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('pending', $updated['status'], 'Pre-used key must not approve request.');
-        $this->assertMatchesRegularExpression('/used|Used|Processed/i', $output . ($GLOBALS['_test_redirect'] ?? ''));
+
+        $body     = is_string($response->get_data()) ? $response->get_data() : '';
+        $location = $response->get_headers()['Location'] ?? '';
+        $this->assertMatchesRegularExpression('/used|Used|Processed/i', $body . $location);
     }
 
     // =========================================================================
@@ -169,12 +162,10 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
         $campaign_b = $this->create_campaign();
         ['token' => $token, 'raw_key' => $raw_key] = $this->insert_request_with_magic_key($campaign_a);
 
-        ob_start();
         // Use campaign_b's ID in the URL — should fail even though key is valid.
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_b}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
         rest_do_request($request);
-        $output = ob_get_clean();
 
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('pending', $updated['status'], 'Wrong campaign ID must not approve request.');
@@ -188,11 +179,9 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         ['token' => $token] = $this->insert_request_with_magic_key($campaign_id);
 
-        ob_start();
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', 'aabbccdd' . str_repeat('00', 28));  // wrong key
         rest_do_request($request);
-        ob_get_clean();
 
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('pending', $updated['status'], 'Wrong key value must not approve request.');
@@ -206,10 +195,8 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         ['token' => $token] = $this->insert_request_with_magic_key($campaign_id);
 
-        ob_start();
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         rest_do_request($request);
-        ob_get_clean();
 
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('pending', $updated['status'], 'Missing magic_key must not approve request.');

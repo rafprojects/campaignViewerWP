@@ -32,10 +32,14 @@ class WPSG_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
         return (int) $campaign_id;
     }
 
-    private function create_temp_gif(): string {
+    private function create_temp_gif(int $variant = 0): string {
         $tmp_path = tempnam(sys_get_temp_dir(), 'wpsg-gif-');
-        file_put_contents($tmp_path, base64_decode('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='));
-
+        $base = base64_decode('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==');
+        // Append a GIF comment extension to produce a distinct MD5 per variant.
+        // Comment block: 0x21 0xFE <len> <data> 0x00
+        $comment = str_pad((string) $variant, 4, '0', STR_PAD_LEFT);
+        $data = $base . "\x21\xFE" . chr(strlen($comment)) . $comment . "\x00";
+        file_put_contents($tmp_path, $data);
         return $tmp_path;
     }
 
@@ -67,8 +71,8 @@ class WPSG_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
         };
         add_filter('wpsg_allow_non_http_uploads', $allow_non_http_uploads, 10, 2);
 
-        $tmp_one = $this->create_temp_gif();
-        $tmp_two = $this->create_temp_gif();
+        $tmp_one = $this->create_temp_gif(0);
+        $tmp_two = $this->create_temp_gif(1);
         $tmp_bad = tempnam(sys_get_temp_dir(), 'wpsg-bad-');
         file_put_contents($tmp_bad, 'not-an-image');
 

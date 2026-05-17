@@ -40,16 +40,23 @@ class WPSG_P28H_Analytics_Test extends WP_UnitTestCase {
     }
 
     public function setUp(): void {
+        // DDL must run before parent::setUp() starts WP's transaction.
+        // If it runs after, the implicit commit from CREATE TABLE would
+        // commit update_option too, preventing parent::tearDown()'s ROLLBACK
+        // from cleaning it up.
+        WPSG_DB::maybe_create_analytics_table();
         parent::setUp();
         $this->enable_analytics();
-        WPSG_DB::maybe_create_analytics_table();
     }
 
     public function tearDown(): void {
         global $wpdb;
         $table = WPSG_DB::get_analytics_table();
-        $wpdb->query("TRUNCATE TABLE {$table}");
+        $wpdb->query("DELETE FROM {$table}");
         parent::tearDown();
+        // delete_option after parent::tearDown() runs outside any WP transaction,
+        // ensuring it commits immediately regardless of autocommit state.
+        delete_option('wpsg_settings');
         wp_set_current_user(0);
     }
 
@@ -63,9 +70,9 @@ class WPSG_P28H_Analytics_Test extends WP_UnitTestCase {
         $table = WPSG_DB::get_analytics_table();
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
-        $request->set_param('campaignId', $campaign_id);
-        $request->set_param('eventType', 'view');
-        $request->set_param('mediaId', 'media-abc-123');
+        $request->set_param('campaign_id', $campaign_id);
+        $request->set_param('event_type', 'view');
+        $request->set_param('media_id', 'media-abc-123');
         $response = rest_do_request($request);
 
         $this->assertEquals(201, $response->get_status(), 'Event with media_id should be recorded.');
@@ -81,7 +88,7 @@ class WPSG_P28H_Analytics_Test extends WP_UnitTestCase {
         $table = WPSG_DB::get_analytics_table();
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
-        $request->set_param('campaignId', $campaign_id);
+        $request->set_param('campaign_id', $campaign_id);
         $response = rest_do_request($request);
 
         $this->assertEquals(201, $response->get_status());
@@ -96,9 +103,9 @@ class WPSG_P28H_Analytics_Test extends WP_UnitTestCase {
         $table = WPSG_DB::get_analytics_table();
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
-        $request->set_param('campaignId', $campaign_id);
-        $request->set_param('eventType', 'lightbox_open');
-        $request->set_param('mediaId', 'media-xyz');
+        $request->set_param('campaign_id', $campaign_id);
+        $request->set_param('event_type', 'lightbox_open');
+        $request->set_param('media_id', 'media-xyz');
         $response = rest_do_request($request);
 
         $this->assertEquals(201, $response->get_status(), 'lightbox_open event should be accepted.');
@@ -117,9 +124,9 @@ class WPSG_P28H_Analytics_Test extends WP_UnitTestCase {
         }, 10, 4);
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
-        $request->set_param('campaignId', $campaign_id);
-        $request->set_param('eventType', 'view');
-        $request->set_param('mediaId', 'hook-test-media');
+        $request->set_param('campaign_id', $campaign_id);
+        $request->set_param('event_type', 'view');
+        $request->set_param('media_id', 'hook-test-media');
         rest_do_request($request);
 
         $this->assertNotEmpty($fired_args, 'wpsg_analytics_event action must have fired.');
