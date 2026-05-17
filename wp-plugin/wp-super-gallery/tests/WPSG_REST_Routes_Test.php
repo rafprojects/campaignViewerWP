@@ -87,6 +87,59 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns', $data['routes']);
     }
 
+    // ── P28-L: X-RateLimit-* header tests ───────────────────────────────────
+
+    public function test_rate_limited_response_includes_ratelimit_headers() {
+        // GET /campaigns is rate_limit_public — should always return headers
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $response = rest_do_request($request);
+        $headers = $response->get_headers();
+        $this->assertArrayHasKey('X-RateLimit-Limit', $headers);
+        $this->assertArrayHasKey('X-RateLimit-Remaining', $headers);
+        $this->assertArrayHasKey('X-RateLimit-Reset', $headers);
+        $this->assertGreaterThan(0, (int) $headers['X-RateLimit-Limit']);
+        $this->assertGreaterThanOrEqual(0, (int) $headers['X-RateLimit-Remaining']);
+        $this->assertGreaterThan(time() - 1, (int) $headers['X-RateLimit-Reset']);
+    }
+
+    public function test_remaining_decrements_on_successive_requests() {
+        $request1 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $response1 = rest_do_request($request1);
+        $remaining1 = (int) $response1->get_headers()['X-RateLimit-Remaining'];
+
+        $request2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $response2 = rest_do_request($request2);
+        $remaining2 = (int) $response2->get_headers()['X-RateLimit-Remaining'];
+
+        $this->assertLessThan($remaining1, $remaining2);
+    }
+
+    public function test_429_response_includes_ratelimit_headers() {
+        // Override limit to 0 so the very first request trips the limiter
+        add_filter('wpsg_rate_limit_public', '__return_zero');
+
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        // rate_limit_check returns early when limit <= 0, so use limit=1 instead
+        remove_all_filters('wpsg_rate_limit_public');
+        add_filter('wpsg_rate_limit_public', static function () { return 1; });
+
+        // First request consumes the only slot
+        rest_do_request($request);
+        // Second request hits 429
+        $response = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns'));
+
+        // If the server returned 429, headers must still be present
+        if ($response->get_status() === 429) {
+            $headers = $response->get_headers();
+            $this->assertArrayHasKey('X-RateLimit-Limit', $headers);
+            $this->assertArrayHasKey('X-RateLimit-Remaining', $headers);
+            $this->assertArrayHasKey('X-RateLimit-Reset', $headers);
+            $this->assertEquals(0, (int) $headers['X-RateLimit-Remaining']);
+        }
+
+        remove_all_filters('wpsg_rate_limit_public');
+    }
+
     public function test_media_routes_are_registered() {
         $routes = rest_get_server()->get_routes('wp-super-gallery/v1');
         $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media', $routes);

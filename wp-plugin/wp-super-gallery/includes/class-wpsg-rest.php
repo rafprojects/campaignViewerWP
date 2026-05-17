@@ -7,6 +7,9 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/class-wpsg-oembed-providers.php';
 
 class WPSG_REST {
+    // Populated by rate_limit_check(); read by inject_rate_limit_headers filter.
+    private static $rate_limit_headers = [];
+
     private static function respond_with_etag($request, $payload, $status = 200, $salt = '') {
         $etag = '"' . md5(wp_json_encode($payload) . $salt) . '"';
         $if_none_match = $request ? $request->get_header('if-none-match') : '';
@@ -29,6 +32,8 @@ class WPSG_REST {
         ], $status);
     }
     public static function register_routes() {
+        add_filter('rest_post_dispatch', [self::class, 'inject_rate_limit_headers'], 10, 3);
+
         register_rest_route('wp-super-gallery/v1', '/campaigns', [
             [
                 'methods' => 'GET',
@@ -906,11 +911,25 @@ class WPSG_REST {
 
         if (function_exists('wp_cache_incr')) {
             $cache_key = $key . '_count';
+            $reset_key = $key . '_reset';
+
             $current = wp_cache_incr($cache_key, 1, 'wpsg_rate_limit');
             if ($current === false) {
                 wp_cache_add($cache_key, 1, 'wpsg_rate_limit', $window);
                 $current = 1;
             }
+
+            $reset = wp_cache_get($reset_key, 'wpsg_rate_limit');
+            if ($reset === false) {
+                $reset = time() + $window;
+                wp_cache_add($reset_key, $reset, 'wpsg_rate_limit', $window);
+            }
+
+            self::$rate_limit_headers = [
+                'X-RateLimit-Limit'     => $limit,
+                'X-RateLimit-Remaining' => max(0, $limit - $current),
+                'X-RateLimit-Reset'     => (int) $reset,
+            ];
 
             if ($current > $limit) {
                 return new WP_Error(
@@ -942,6 +961,12 @@ class WPSG_REST {
         $data['count']++;
         set_transient($key, $data, $window);
 
+        self::$rate_limit_headers = [
+            'X-RateLimit-Limit'     => $limit,
+            'X-RateLimit-Remaining' => max(0, $limit - $data['count']),
+            'X-RateLimit-Reset'     => intval($data['start']) + $window,
+        ];
+
         if ($data['count'] > $limit) {
             return new WP_Error(
                 'wpsg_rate_limited',
@@ -951,6 +976,13 @@ class WPSG_REST {
         }
 
         return true;
+    }
+
+    public static function inject_rate_limit_headers($response, $server, $request) {
+        foreach (self::$rate_limit_headers as $header => $value) {
+            $response->header($header, $value);
+        }
+        return $response;
     }
 
     public static function require_admin() {

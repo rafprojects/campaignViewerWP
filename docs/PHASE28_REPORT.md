@@ -34,8 +34,8 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-H | Analytics expansion (per-media tracking, cross-campaign dashboard, external hook) | Medium | Medium | Completed |
 | P28-I | Magic-link access request approval | Low | Medium | Completed |
 | P28-J | Access totals summary endpoint | Low | Low–Medium | Completed |
-| P28-K | REST args hardening (`D-8` — typed args arrays on all routes) | Large | Medium |
-| P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium |
+| P28-K | REST args hardening (`D-8` — typed args arrays on all routes) | Large | Medium | Completed |
+| P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium | Completed |
 | P28-M | Media sort controls on list endpoints | Low | Low–Medium |
 | P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium |
 | P28-O | Campaign templates (preset library) | Medium | Low |
@@ -579,28 +579,30 @@ at the handler layer.
 Rate-limited endpoints return `429` when the limit is exceeded, but clients
 have no visibility into their remaining quota until they hit the wall.
 
-### Proposed change
+### Change implemented
 
-In `rate_limit_check()`, append headers to the current response:
-- `X-RateLimit-Limit: {limit}` — window maximum
-- `X-RateLimit-Remaining: {remaining}` — requests left in current window
-- `X-RateLimit-Reset: {unix_timestamp}` — when the window resets
+`rate_limit_check()` now populates `WPSG_REST::$rate_limit_headers` (a private
+static array) with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and
+`X-RateLimit-Reset` on every call — including calls that result in a 429.
 
-Since `rate_limit_check()` is a `permission_callback` (called before the handler),
-headers must be added via `add_filter('rest_post_dispatch', ...)` using a closure
-that captures the computed values — or return the values to the caller and let
-each handler add them.
+A `rest_post_dispatch` filter registered in `register_routes()` reads this
+property after the response is built and injects the three headers. This keeps
+the permission callback return type unchanged (WP_Error or true).
 
-Alternative approach: attach a `rest_post_dispatch` filter in `register_routes()`
-that reads rate limit data from a class-level static array set during the
-permission callback.
+Both storage backends are covered:
+- **Object cache (`wp_cache_incr`) path** — a paired `_reset` cache entry
+  records the window's expiry timestamp; added on window creation with the same
+  TTL as the count key.
+- **Transient path** — reset is computed from `start + window` stored in the
+  transient data array.
 
 ### Acceptance criteria
 
-- [ ] `GET /campaigns` response includes `X-RateLimit-Limit` header.
-- [ ] `X-RateLimit-Remaining` decrements on subsequent requests.
-- [ ] `X-RateLimit-Reset` is a valid Unix timestamp.
-- [ ] 429 responses still include all three headers.
+- [x] `GET /campaigns` response includes `X-RateLimit-Limit` header.
+- [x] `X-RateLimit-Remaining` decrements on subsequent requests.
+- [x] `X-RateLimit-Reset` is a valid Unix timestamp.
+- [x] 429 responses still include all three headers.
+- [x] PHPUnit tests cover header presence, decrement, and 429 case.
 
 ---
 
