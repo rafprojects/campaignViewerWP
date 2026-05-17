@@ -38,7 +38,7 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium | Completed |
 | P28-M | Media sort controls on list endpoints | Low | Low–Medium | Completed |
 | P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium | Completed |
-| P28-O | Campaign templates (preset library) | Medium | Low |
+| P28-O | Campaign templates (preset library) | Medium | Low | Completed |
 | P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low | Completed |
 | P28-Q | Hierarchical campaign categories | Low | Low | Completed |
 | P28-R | Campaign category TreeSelect UI (P28-Q frontend) | Low | Low |
@@ -755,10 +755,27 @@ post meta. This reuses existing CPT infrastructure.
 
 ### Acceptance criteria
 
-- [ ] `GET /campaign-templates` returns built-in + user templates.
-- [ ] `POST /campaign-templates/{id}/instantiate` creates a new campaign pre-populated with template settings.
-- [ ] Built-in templates cannot be deleted.
-- [ ] PHPUnit: list, instantiate, delete user template, attempt delete builtin (403).
+- [x] `GET /campaign-templates` returns built-in + user templates.
+- [x] `POST /campaign-templates/{id}/instantiate` creates a new campaign pre-populated with template settings.
+- [x] Built-in templates cannot be deleted.
+- [x] PHPUnit: list, instantiate, delete user template, attempt delete builtin (403).
+
+### Implementation notes
+
+- New `class-wpsg-campaign-templates.php`: holds `BUILTIN` constant array (2 first-party
+  templates: `builtin_blank`, `builtin_public_showcase`), plus helpers `get_builtins()`,
+  `is_builtin()`, `get_builtin()`, `post_to_template()`, `get_user_templates()`.
+- User templates stored as `wpsg_campaign` posts with `_wpsg_is_template = 1` post meta.
+  No media items — templates are blank prototypes.
+- `POST /campaign-templates` accepts optional `from_campaign_id` to seed visibility and
+  gallery overrides from an existing campaign; falls back to safe defaults.
+- `POST /campaign-templates/{id}/instantiate` works for both builtin IDs
+  (`builtin_*` strings) and numeric user template IDs; returns a full campaign object
+  via `format_campaign()`. Instantiated campaigns do NOT carry `_wpsg_is_template`.
+- `DELETE /campaign-templates/{id}` returns 403 for any builtin ID.
+- Route ID pattern: `[a-zA-Z0-9_]+` covers both `builtin_blank` and numeric post IDs.
+- Frontend picker (template modal before "New Campaign") deferred to a future track.
+- 11 PHPUnit tests across list, create (scratch + from campaign), delete, and instantiate paths.
 
 ---
 

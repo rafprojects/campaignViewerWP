@@ -44,6 +44,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rate-limiter.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-image-optimizer.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-layout-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-duplicator.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-overlay-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 

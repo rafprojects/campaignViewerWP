@@ -267,6 +267,59 @@ class WPSG_REST {
             ],
         ]);
 
+        // P28-O: Campaign Templates
+        register_rest_route('wp-super-gallery/v1', '/campaign-templates', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_campaign_templates'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_campaign_template'],
+                'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'name' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'description' => [
+                        'type'              => 'string',
+                        'default'           => '',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'from_campaign_id' => [
+                        'type'    => 'integer',
+                        'minimum' => 1,
+                    ],
+                ],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaign-templates/(?P<id>[a-zA-Z0-9_]+)', [
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_campaign_template'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/campaign-templates/(?P<id>[a-zA-Z0-9_]+)/instantiate', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'instantiate_campaign_template'],
+                'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'name' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ]);
+
         // P18-F: Analytics
         register_rest_route('wp-super-gallery/v1', '/analytics/event', [
             [
@@ -5610,6 +5663,118 @@ class WPSG_REST {
     }
 
     // ── P28-C: Taxonomy CRUD Handlers ────────────────────────
+
+    // ── P28-O: Campaign Templates ────────────────────────────────────────────
+
+    public static function list_campaign_templates($request) {
+        $builtins = WPSG_Campaign_Templates::get_builtins();
+        $user     = WPSG_Campaign_Templates::get_user_templates();
+        return new WP_REST_Response(['items' => array_merge($builtins, $user)], 200);
+    }
+
+    public static function create_campaign_template($request) {
+        $name        = sanitize_text_field($request->get_param('name'));
+        $description = sanitize_text_field($request->get_param('description') ?? '');
+        $from_id     = intval($request->get_param('from_campaign_id') ?? 0);
+
+        $meta = [
+            'visibility'       => 'private',
+            'gallery_overrides' => null,
+            'layout_template_id' => null,
+        ];
+
+        if ($from_id > 0) {
+            $source = get_post($from_id);
+            if (!$source || $source->post_type !== 'wpsg_campaign') {
+                return new WP_Error('wpsg_campaign_not_found', 'Source campaign not found', ['status' => 404]);
+            }
+            $meta['visibility']           = get_post_meta($from_id, 'visibility', true) ?: 'private';
+            $meta['gallery_overrides']    = get_post_meta($from_id, '_wpsg_gallery_overrides', true) ?: null;
+            $meta['layout_template_id']   = get_post_meta($from_id, '_wpsg_layout_binding_template_id', true) ?: null;
+        }
+
+        $post_id = wp_insert_post([
+            'post_type'    => 'wpsg_campaign',
+            'post_title'   => $name,
+            'post_content' => $description,
+            'post_status'  => 'publish',
+        ], true);
+
+        if (is_wp_error($post_id)) {
+            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
+        }
+
+        update_post_meta($post_id, WPSG_Campaign_Templates::META_IS_TEMPLATE, '1');
+        update_post_meta($post_id, 'visibility', $meta['visibility']);
+        if ($meta['gallery_overrides'] !== null) {
+            update_post_meta($post_id, '_wpsg_gallery_overrides', $meta['gallery_overrides']);
+        }
+        if ($meta['layout_template_id'] !== null) {
+            update_post_meta($post_id, '_wpsg_layout_binding_template_id', $meta['layout_template_id']);
+        }
+
+        $post = get_post($post_id);
+        return new WP_REST_Response(WPSG_Campaign_Templates::post_to_template($post), 201);
+    }
+
+    public static function delete_campaign_template($request) {
+        $id = sanitize_text_field($request->get_param('id'));
+
+        if (WPSG_Campaign_Templates::is_builtin($id)) {
+            return new WP_Error('wpsg_forbidden', 'Built-in templates cannot be deleted', ['status' => 403]);
+        }
+
+        $post_id = intval($id);
+        $post    = get_post($post_id);
+        if (!$post || $post->post_type !== 'wpsg_campaign') {
+            return new WP_Error('wpsg_not_found', 'Template not found', ['status' => 404]);
+        }
+        if (!get_post_meta($post_id, WPSG_Campaign_Templates::META_IS_TEMPLATE, true)) {
+            return new WP_Error('wpsg_not_found', 'Template not found', ['status' => 404]);
+        }
+
+        wp_delete_post($post_id, true);
+        return new WP_REST_Response(['deleted' => true, 'id' => $id], 200);
+    }
+
+    public static function instantiate_campaign_template($request) {
+        $id   = sanitize_text_field($request->get_param('id'));
+        $name = sanitize_text_field($request->get_param('name'));
+
+        if (WPSG_Campaign_Templates::is_builtin($id)) {
+            $tpl = WPSG_Campaign_Templates::get_builtin($id);
+        } else {
+            $post_id = intval($id);
+            $post    = get_post($post_id);
+            if (!$post || $post->post_type !== 'wpsg_campaign' || !get_post_meta($post_id, WPSG_Campaign_Templates::META_IS_TEMPLATE, true)) {
+                return new WP_Error('wpsg_not_found', 'Template not found', ['status' => 404]);
+            }
+            $tpl = WPSG_Campaign_Templates::post_to_template($post);
+        }
+
+        $settings = $tpl['settings'] ?? [];
+
+        $new_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_title'  => $name,
+            'post_status' => 'publish',
+        ], true);
+
+        if (is_wp_error($new_id)) {
+            return new WP_Error('wpsg_internal_error', $new_id->get_error_message(), ['status' => 500]);
+        }
+
+        update_post_meta($new_id, 'visibility', $settings['visibility'] ?? 'private');
+        update_post_meta($new_id, 'status', 'draft');
+        if (!empty($settings['galleryOverrides'])) {
+            update_post_meta($new_id, '_wpsg_gallery_overrides', $settings['galleryOverrides']);
+        }
+        if (!empty($settings['layoutTemplateId'])) {
+            update_post_meta($new_id, '_wpsg_layout_binding_template_id', $settings['layoutTemplateId']);
+        }
+
+        return new WP_REST_Response(self::format_campaign(get_post($new_id)), 201);
+    }
 
     private static function format_term($term) {
         return [
