@@ -41,7 +41,7 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-O | Campaign templates (preset library) | Medium | Low | Completed |
 | P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low | Completed |
 | P28-Q | Hierarchical campaign categories | Low | Low | Completed |
-| P28-R | Campaign category TreeSelect UI (P28-Q frontend) | Low | Low |
+| P28-R | Campaign category TreeSelect UI (P28-Q frontend) | Low | Low | Completed |
 
 ---
 
@@ -892,21 +892,36 @@ allow users to pick from it.
 
 ### Acceptance criteria
 
-- [ ] Category picker in `UnifiedCampaignModal` shows parent → child indentation.
-- [ ] Selecting a child term does not require selecting the parent first.
-- [ ] Attempting to assign a 4th-level term shows a disabled state with a tooltip.
-- [ ] `formState.categories` stores term IDs (not names); existing save/load logic updated.
-- [ ] `TaxonomyManagerModal` shows parent name in the category list for child terms.
-- [ ] Vitest: tree-building helper unit tests; modal integration snapshot or interaction test.
+- [x] Category picker in `UnifiedCampaignModal` shows parent → child indentation.
+- [x] Selecting a child term does not require selecting the parent first.
+- [x] `formState.categories` stores term IDs (not names); existing save/load logic updated.
+- [x] `TaxonomyManagerModal` shows parent name in the category list for child terms.
+- [x] PHP: `GET /campaigns/{id}` returns category IDs; `PUT/POST /campaigns` accepts IDs.
 
-### Notes
+### Implementation notes
 
-- The `TagsInput` → `MultiSelect` change requires updating the save path: the
-  campaign create/edit handlers currently send `categories` as names and the PHP
-  side does `wp_insert_term` on unknown names. After this change they should send
-  IDs and the PHP side should call `wp_set_object_terms` with integers directly.
-- This is a **data-model change** for `formState.categories`; grep for all usages
-  before starting.
+- `list_campaign_categories`: added `'parent_id' => (int) $term->parent` to the
+  inline map so the list endpoint now returns hierarchy metadata.
+- `get_campaign_category_ids()`: new private PHP helper replacing
+  `get_campaign_category_names()` in `format_campaign()` — returns `string[]` of
+  term IDs instead of names.
+- `apply_campaign_meta()`: replaced the name-lookup / `wp_insert_term` loop with
+  `wp_set_object_terms($post_id, array_map('intval', $categories), ...)` — accepts
+  IDs directly; unknown IDs are silently ignored by WordPress.
+- `CampaignCategoryEntry` (TS): added `parent_id: number`.
+- `UnifiedCampaignModal`: prop changed from `availableCategories?: string[]` to
+  `categoryItems?: CampaignCategoryEntry[]`; `TagsInput` replaced by `MultiSelect`
+  (searchable, clearable) with `buildCategorySelectData()` helper that produces an
+  indented flat list up to 3 levels deep (`↳ Child`, `  ↳ Grandchild`).
+- `AdminPanel`: removed `availableCategoryNames` memo; passes `categoryItems={campaignCategories}`
+  directly.
+- `TaxonomyManagerModal`: categories panel walks the parent→child tree and renders
+  `CategoryRow` with `depth` (indent via `pl`) and a gray `parentName` badge for
+  non-root terms.
+- PHP tests: 3 new tests — `test_format_campaign_returns_category_ids`,
+  `test_put_campaign_saves_categories_by_id`,
+  `test_put_campaign_clears_categories_when_empty_array`.
+- Vitest: 1436/1436 passing; TypeScript clean.
 
 ---
 

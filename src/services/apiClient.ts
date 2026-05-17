@@ -649,6 +649,7 @@ export interface CampaignCategoryEntry {
   name: string;
   slug: string;
   count: number;
+  parent_id: number;
 }
 
 export interface CampaignTemplate {

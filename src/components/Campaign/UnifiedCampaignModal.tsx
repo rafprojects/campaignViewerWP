@@ -1,8 +1,9 @@
 import { Suspense, lazy, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
-  Modal, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
+  Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
+import type { CampaignCategoryEntry } from '@/services/apiClient';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
@@ -61,6 +62,31 @@ function getCampaignBreakpointAdapterId(
   return galleryOverrides?.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? null;
 }
 
+function buildCategorySelectData(items: CampaignCategoryEntry[]): { value: string; label: string }[] {
+  const result: { value: string; label: string }[] = [];
+  const byParent = new Map<number, CampaignCategoryEntry[]>();
+  for (const c of items) {
+    const pid = c.parent_id ?? 0;
+    if (pid !== 0) {
+      const list = byParent.get(pid) ?? [];
+      list.push(c);
+      byParent.set(pid, list);
+    }
+  }
+  const roots = items.filter((c) => (c.parent_id ?? 0) === 0);
+
+  function addLevel(cats: CampaignCategoryEntry[], depth: number) {
+    if (depth >= 3) return;
+    for (const cat of cats) {
+      const prefix = depth === 0 ? '' : '  '.repeat(depth) + '↳ ';
+      result.push({ value: cat.id, label: `${prefix}${cat.name}` });
+      addLevel(byParent.get(parseInt(cat.id, 10)) ?? [], depth + 1);
+    }
+  }
+  addLevel(roots, 0);
+  return result;
+}
+
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
   galleryBehaviorSettings?: GalleryBehaviorSettings;
@@ -70,8 +96,8 @@ interface UnifiedCampaignModalProps {
   layoutTemplates?: LayoutTemplate[];
   /** Called when user clicks "Edit Layout" for the selected template. */
   onEditLayout?: (templateId: string) => void;
-  /** All existing category names for autocomplete. */
-  availableCategories?: string[];
+  /** All existing categories for the hierarchical picker. */
+  categoryItems?: CampaignCategoryEntry[];
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -210,7 +236,7 @@ interface UnifiedCampaignSettingsPanelProps {
   cardBorderMode?: 'single' | 'auto' | 'individual' | undefined;
   formState: UnifiedCampaignFormState;
   updateForm: UnifiedCampaignUpdateForm;
-  availableCategories: string[];
+  categoryItems: CampaignCategoryEntry[];
   onClose: () => void;
   onSave: () => void;
   isSaving: boolean;
@@ -234,7 +260,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   cardBorderMode,
   formState,
   updateForm,
-  availableCategories,
+  categoryItems,
   onClose,
   onSave,
   isSaving,
@@ -278,15 +304,15 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
         value={formState.tags}
         onChange={(e) => updateForm({ ...formState, tags: e.currentTarget.value })}
       />
-      <TagsInput
+      <MultiSelect
         label="Categories"
-        placeholder="Type and press Enter or comma to add"
+        placeholder="Select categories"
         description="Assign this campaign to one or more categories"
         value={formState.categories}
         onChange={(v) => updateForm({ ...formState, categories: v })}
-        data={availableCategories}
+        data={buildCategorySelectData(categoryItems)}
+        searchable
         clearable
-        splitChars={[',']}
       />
       <Group grow wrap="wrap" gap="sm">
         <TextInput
@@ -482,7 +508,7 @@ export function UnifiedCampaignModal({
   cardBorderMode,
   layoutTemplates = [],
   onEditLayout,
-  availableCategories = [],
+  categoryItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const {
@@ -605,7 +631,7 @@ export function UnifiedCampaignModal({
             cardBorderMode={cardBorderMode}
             formState={formState}
             updateForm={updateForm}
-            availableCategories={availableCategories}
+            categoryItems={categoryItems}
             onClose={guardedClose}
             onSave={handleSave}
             isSaving={isSaving}

@@ -196,7 +196,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     () => companies.find((c) => String(c.id) === selectedCompanyId) ?? null,
     [selectedCompanyId, companies],
   );
-  const availableCategoryNames = useMemo(() => campaignCategories.map((c) => c.name), [campaignCategories]);
 
   // Reset to page 1 whenever any filter changes.
   useEffect(() => { setCampaignPage(1); }, [categoryFilter, tagFilter, sortOrder, includeArchived]);
@@ -343,7 +342,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           modal={unifiedModal}
           layoutTemplates={layoutTemplates ?? []}
           onEditLayout={(id) => { unifiedModal.close(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
-          availableCategories={availableCategoryNames}
+          categoryItems={campaignCategories}
         />
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">

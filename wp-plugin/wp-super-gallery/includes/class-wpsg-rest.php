@@ -2067,6 +2067,11 @@ class WPSG_REST {
         return is_array($terms) && !is_wp_error($terms) ? array_values($terms) : [];
     }
 
+    private static function get_campaign_category_ids($post_id) {
+        $terms = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'ids']);
+        return is_array($terms) && !is_wp_error($terms) ? array_values(array_map('strval', $terms)) : [];
+    }
+
     // ── P28-F: Pagination helpers ────────────────────────────────────────────
 
     private static function parse_pagination($request, int $default_per_page = 50, int $max_per_page = 200): array {
@@ -2110,10 +2115,11 @@ class WPSG_REST {
 
         $items = array_map(function ($term) {
             return [
-                'id'    => strval($term->term_id),
-                'name'  => $term->name,
-                'slug'  => $term->slug,
-                'count' => (int) $term->count,
+                'id'        => strval($term->term_id),
+                'name'      => $term->name,
+                'slug'      => $term->slug,
+                'count'     => (int) $term->count,
+                'parent_id' => (int) $term->parent,
             ];
         }, $terms);
 
@@ -5148,7 +5154,7 @@ class WPSG_REST {
             'status' => (string) get_post_meta($post->ID, 'status', true) ?: 'draft',
             'visibility' => (string) get_post_meta($post->ID, 'visibility', true) ?: 'private',
             'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
-            'categories' => self::get_campaign_category_names($post->ID),
+            'categories' => self::get_campaign_category_ids($post->ID),
             'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
             'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
             'layoutTemplateId' => get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: null,
@@ -5203,25 +5209,10 @@ class WPSG_REST {
             update_post_meta($post_id, 'tags', array_values(array_map('sanitize_text_field', $tags)));
         }
 
-        // P18-H: Campaign categories — resolve names to term IDs, creating missing terms.
+        // P28-R: Campaign categories — accept integer term IDs sent from the frontend picker.
         $categories = $request->get_param('categories');
         if (is_array($categories)) {
-            $term_ids = [];
-            foreach ($categories as $cat_name) {
-                $cat_name = sanitize_text_field($cat_name);
-                if ($cat_name === '') {
-                    continue;
-                }
-                $term = get_term_by('name', $cat_name, 'wpsg_campaign_category');
-                if ($term && !is_wp_error($term)) {
-                    $term_ids[] = $term->term_id;
-                } else {
-                    $new_term = wp_insert_term($cat_name, 'wpsg_campaign_category');
-                    if (!is_wp_error($new_term)) {
-                        $term_ids[] = $new_term['term_id'];
-                    }
-                }
-            }
+            $term_ids = array_values(array_filter(array_map('intval', $categories)));
             wp_set_object_terms($post_id, $term_ids, 'wpsg_campaign_category');
         }
         if (!is_null($cover_image_param)) {

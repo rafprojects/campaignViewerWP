@@ -34,12 +34,14 @@ interface TaxonomyManagerModalProps {
 
 interface CategoryRowProps {
   cat: CampaignCategoryEntry;
+  depth: number;
+  parentName?: string | undefined;
   apiClient: ApiClient;
   onNotify: (msg: { type: 'error' | 'success'; text: string }) => void;
   onMutate: () => void;
 }
 
-function CategoryRow({ cat, apiClient, onNotify, onMutate }: CategoryRowProps) {
+function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: CategoryRowProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(cat.name);
   const [saving, setSaving] = useState(false);
@@ -74,7 +76,7 @@ function CategoryRow({ cat, apiClient, onNotify, onMutate }: CategoryRowProps) {
 
   if (editing) {
     return (
-      <Group gap="xs" align="center">
+      <Group gap="xs" align="center" pl={depth * 16}>
         <TextInput
           value={value}
           onChange={(e) => setValue(e.currentTarget.value)}
@@ -95,9 +97,11 @@ function CategoryRow({ cat, apiClient, onNotify, onMutate }: CategoryRowProps) {
   }
 
   return (
-    <Group gap="xs" justify="space-between">
+    <Group gap="xs" justify="space-between" pl={depth * 16}>
       <Group gap="xs">
+        {depth > 0 && <Text size="xs" c="dimmed">↳</Text>}
         <Text size="sm">{cat.name}</Text>
+        {parentName && <Badge size="xs" variant="light" color="gray">{parentName}</Badge>}
         {cat.count > 0 && <Badge size="xs" variant="light">{cat.count}</Badge>}
       </Group>
       <Group gap={4}>
@@ -276,15 +280,38 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
             {campaignCategories.length === 0 && (
               <Text size="sm" c="dimmed">No categories yet.</Text>
             )}
-            {campaignCategories.map((cat) => (
-              <CategoryRow
-                key={cat.id}
-                cat={cat}
-                apiClient={apiClient}
-                onNotify={onNotify}
-                onMutate={invalidateCategories}
-              />
-            ))}
+            {(() => {
+              const byId = new Map(campaignCategories.map((c) => [c.id, c]));
+              const byParent = new Map<number, CampaignCategoryEntry[]>();
+              for (const c of campaignCategories) {
+                if ((c.parent_id ?? 0) !== 0) {
+                  const list = byParent.get(c.parent_id) ?? [];
+                  list.push(c);
+                  byParent.set(c.parent_id, list);
+                }
+              }
+              const roots = campaignCategories.filter((c) => (c.parent_id ?? 0) === 0);
+              const rows: { cat: CampaignCategoryEntry; depth: number }[] = [];
+              function walk(cats: CampaignCategoryEntry[], depth: number) {
+                if (depth >= 3) return;
+                for (const cat of cats) {
+                  rows.push({ cat, depth });
+                  walk(byParent.get(parseInt(cat.id, 10)) ?? [], depth + 1);
+                }
+              }
+              walk(roots, 0);
+              return rows.map(({ cat, depth }) => (
+                <CategoryRow
+                  key={cat.id}
+                  cat={cat}
+                  depth={depth}
+                  parentName={depth > 0 ? byId.get(String(cat.parent_id))?.name : undefined}
+                  apiClient={apiClient}
+                  onNotify={onNotify}
+                  onMutate={invalidateCategories}
+                />
+              ));
+            })()}
             <AddTermForm placeholder="New category name" onAdd={handleAddCategory} />
           </Stack>
         </Tabs.Panel>

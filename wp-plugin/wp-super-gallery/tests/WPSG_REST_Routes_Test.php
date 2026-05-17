@@ -428,6 +428,82 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
         wp_delete_term($child_id,  'wpsg_campaign_category');
         wp_delete_term($parent_id, 'wpsg_campaign_category');
     }
+
+    // ── P28-R: categories saved and returned as term IDs ─────────────────────
+
+    public function test_format_campaign_returns_category_ids() {
+        $term    = wp_insert_term('ID Cat', 'wpsg_campaign_category');
+        $term_id = (int) $term['term_id'];
+
+        $post_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_status' => 'publish',
+            'post_title'  => 'Cat ID Test',
+        ]);
+        update_post_meta($post_id, 'status', 'active');
+        wp_set_object_terms($post_id, [$term_id], 'wpsg_campaign_category');
+
+        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $response = rest_do_request($request);
+        $data     = $response->get_data();
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertContains(strval($term_id), $data['categories']);
+
+        wp_delete_post($post_id, true);
+        wp_delete_term($term_id, 'wpsg_campaign_category');
+    }
+
+    public function test_put_campaign_saves_categories_by_id() {
+        $term    = wp_insert_term('Save By ID', 'wpsg_campaign_category');
+        $term_id = (int) $term['term_id'];
+
+        $post_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_status' => 'publish',
+            'post_title'  => 'Save Cat Test',
+        ]);
+        update_post_meta($post_id, 'status', 'active');
+
+        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_param('title', 'Save Cat Test');
+        $request->set_param('categories', [strval($term_id)]);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertContains(strval($term_id), $response->get_data()['categories']);
+
+        $assigned = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'ids']);
+        $this->assertContains($term_id, $assigned);
+
+        wp_delete_post($post_id, true);
+        wp_delete_term($term_id, 'wpsg_campaign_category');
+    }
+
+    public function test_put_campaign_clears_categories_when_empty_array() {
+        $term    = wp_insert_term('Clear Cat', 'wpsg_campaign_category');
+        $term_id = (int) $term['term_id'];
+
+        $post_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_status' => 'publish',
+            'post_title'  => 'Clear Cat Test',
+        ]);
+        update_post_meta($post_id, 'status', 'active');
+        wp_set_object_terms($post_id, [$term_id], 'wpsg_campaign_category');
+
+        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $request->set_param('title', 'Clear Cat Test');
+        $request->set_param('categories', []);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertEmpty($response->get_data()['categories']);
+
+        wp_delete_post($post_id, true);
+        wp_delete_term($term_id, 'wpsg_campaign_category');
+    }
 }
 
 // Simple regex validation tests that can run without WordPress test environment
