@@ -527,7 +527,7 @@ class WPSG_DB {
             action       VARCHAR(128) NOT NULL,
             actor_id     BIGINT UNSIGNED NOT NULL DEFAULT 0,
             actor_login  VARCHAR(60) NOT NULL DEFAULT '',
-            details      LONGTEXT NOT NULL DEFAULT '{}',
+            details      LONGTEXT NOT NULL,
             created_at   DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY campaign_created (campaign_id, created_at),
