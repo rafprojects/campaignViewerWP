@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import type { ApiClient } from '@/services/apiClient';
+import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings } from '@tabler/icons-react';
@@ -11,6 +11,8 @@ import { AuditTab } from './AuditTab';
 import { GlobalAuditTab } from './GlobalAuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
+import { TemplatePickerModal } from './TemplatePickerModal';
+import { TemplatesTab } from './TemplatesTab';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies, useAuditEntries,
@@ -71,6 +73,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [sortOrder, setSortOrder] = useState<CampaignFilters['sort']>('created_desc');
   const [includeArchived, setIncludeArchived] = useState(false);
   const [taxonomyManagerOpen, setTaxonomyManagerOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [campaignPage, setCampaignPage] = useState(1);
   const CAMPAIGNS_PER_PAGE = 20;
 
@@ -106,10 +109,24 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     apiClient, isAdmin: true, onMutate: campaignsMutator, onNotify,
   });
 
+  const handleTemplateSelected = useCallback((template: CampaignTemplate | null) => {
+    if (!template) {
+      unifiedModal.openForCreate();
+      return;
+    }
+    const { settings } = template;
+    unifiedModal.openForCreate({
+      visibility: settings.visibility,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      galleryOverrides: (settings.galleryOverrides as any) ?? undefined,
+      layoutTemplateId: settings.layoutTemplateId ?? '',
+    });
+  }, [unifiedModal]);
+
   const campaignActions = useAdminCampaignActions({
     apiClient, campaigns, onMutate: campaignsMutator, onCampaignsUpdated, onNotify,
     onOpenEdit: unifiedModal.openForEdit,
-    onOpenCreate: unifiedModal.openForCreate,
+    onOpenCreate: () => setTemplatePickerOpen(true),
     createModalOpen: unifiedModal.opened,
   });
 
@@ -228,6 +245,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
           <Tabs.Tab value="media">Media</Tabs.Tab>
           <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
+          <Tabs.Tab value="templates">Templates</Tabs.Tab>
           <Tabs.Tab value="access">Access</Tabs.Tab>
           <Tabs.Tab value="audit">Audit</Tabs.Tab>
           <Tabs.Tab value="globalAudit">Global Audit</Tabs.Tab>
@@ -314,6 +332,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           })()}
         </Tabs.Panel>
 
+        <TemplatePickerModal
+          opened={templatePickerOpen}
+          onClose={() => setTemplatePickerOpen(false)}
+          apiClient={apiClient}
+          onSelect={handleTemplateSelected}
+        />
+
         <UnifiedCampaignModal
           modal={unifiedModal}
           layoutTemplates={layoutTemplates ?? []}
@@ -356,6 +381,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
           <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} initialTemplateId={pendingEditLayoutId ?? undefined} />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="templates" pt="md">
+          <TemplatesTab apiClient={apiClient} campaigns={allCampaigns} onNotify={onNotify} />
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">

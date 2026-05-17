@@ -447,6 +447,21 @@ export class ApiClient {
     return this.delete<{ deleted: boolean; id: string }>(`/wp-json/wp-super-gallery/v1/tags/campaign/${id}`);
   }
 
+  // ── P28-O: Campaign Templates ────────────────────────────────────────────
+
+  async listCampaignTemplates(): Promise<CampaignTemplate[]> {
+    const response = await this.get<{ items: CampaignTemplate[] }>('/wp-json/wp-super-gallery/v1/campaign-templates');
+    return response.items ?? [];
+  }
+
+  async createCampaignTemplate(data: { name: string; description?: string; from_campaign_id?: number }): Promise<CampaignTemplate> {
+    return this.post<CampaignTemplate>('/wp-json/wp-super-gallery/v1/campaign-templates', data);
+  }
+
+  async deleteCampaignTemplate(id: string): Promise<void> {
+    await this.delete(`/wp-json/wp-super-gallery/v1/campaign-templates/${id}`);
+  }
+
   // ── P28-C: Media Tags ────────────────────────────────────────────────────
 
   async listMediaTags(): Promise<TagEntry[]> {
@@ -634,6 +649,20 @@ export interface CampaignCategoryEntry {
   name: string;
   slug: string;
   count: number;
+}
+
+export interface CampaignTemplate {
+  id: string;
+  name: string;
+  description: string;
+  source: 'builtin' | 'user';
+  editable: boolean;
+  settings: {
+    visibility: 'public' | 'private';
+    galleryOverrides: Record<string, unknown> | null;
+    layoutTemplateId: string | null;
+  };
+  createdAt: string | null;
 }
 
 export interface TagEntry {

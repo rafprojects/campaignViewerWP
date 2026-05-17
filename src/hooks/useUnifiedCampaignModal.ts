@@ -171,10 +171,10 @@ export function useUnifiedCampaignModal({
     }
   }, [isAdmin, apiClient, onNotify]);
 
-  const openForCreate = useCallback(() => {
+  const openForCreate = useCallback((initialValues?: Partial<UnifiedCampaignFormState>) => {
     setMode('create');
     setEditingCampaignId(null);
-    setFormState({ ...emptyForm });
+    setFormState({ ...emptyForm, ...initialValues });
     setCoverImageChanged(false);
     setMediaItems([]);
     setActiveTab('details');

@@ -1,0 +1,87 @@
+import { useEffect, useState } from 'react';
+import { Modal, SimpleGrid, Card, Text, Badge, Stack, Group, Loader, Center } from '@mantine/core';
+import { IconLayoutGrid } from '@tabler/icons-react';
+import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
+
+interface Props {
+  opened: boolean;
+  onClose: () => void;
+  apiClient: ApiClient;
+  /** Null = "Start Blank" selected. */
+  onSelect: (template: CampaignTemplate | null) => void;
+}
+
+export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Props) {
+  const [templates, setTemplates] = useState<CampaignTemplate[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!opened) return;
+    setLoading(true);
+    apiClient.listCampaignTemplates()
+      .then(setTemplates)
+      .catch(() => setTemplates([]))
+      .finally(() => setLoading(false));
+  }, [opened, apiClient]);
+
+  const pick = (template: CampaignTemplate | null) => {
+    onSelect(template);
+    onClose();
+  };
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Choose a starting point"
+      size="lg"
+      centered
+    >
+      {loading ? (
+        <Center py="xl"><Loader size="sm" /></Center>
+      ) : (
+        <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="sm">
+          {/* Always-first "Start Blank" card */}
+          <Card
+            withBorder
+            radius="md"
+            padding="md"
+            style={{ cursor: 'pointer' }}
+            onClick={() => pick(null)}
+          >
+            <Stack gap={4}>
+              <Group gap="xs" wrap="nowrap">
+                <IconLayoutGrid size={16} />
+                <Text fw={600} size="sm" truncate>Start Blank</Text>
+              </Group>
+              <Text size="xs" c="dimmed">No pre-configured settings.</Text>
+            </Stack>
+          </Card>
+
+          {templates.map((tpl) => (
+            <Card
+              key={tpl.id}
+              withBorder
+              radius="md"
+              padding="md"
+              style={{ cursor: 'pointer' }}
+              onClick={() => pick(tpl)}
+            >
+              <Stack gap={4}>
+                <Group gap="xs" wrap="nowrap" justify="space-between">
+                  <Text fw={600} size="sm" truncate style={{ flex: 1 }}>{tpl.name}</Text>
+                  <Badge size="xs" variant="light" color={tpl.source === 'builtin' ? 'blue' : 'gray'}>
+                    {tpl.source === 'builtin' ? 'Built-in' : 'Custom'}
+                  </Badge>
+                </Group>
+                {tpl.description && (
+                  <Text size="xs" c="dimmed" lineClamp={2}>{tpl.description}</Text>
+                )}
+              </Stack>
+            </Card>
+          ))}
+        </SimpleGrid>
+      )}
+    </Modal>
+  );
+}
