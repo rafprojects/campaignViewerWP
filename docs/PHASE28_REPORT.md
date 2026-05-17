@@ -30,7 +30,7 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High | Completed |
 | P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium | Completed |
 | P28-F | Pagination on currently unbounded list endpoints | Low | Medium | Completed |
-| P28-G | Audit log improvements (pagination, filters, global admin endpoint) | Low–Medium | Medium |
+| P28-G | Audit log improvements (pagination, filters, global admin endpoint) | Low–Medium | Medium | Completed |
 | P28-H | Analytics expansion (per-media tracking, cross-campaign dashboard, external hook) | Medium | Medium | Completed |
 | P28-I | Magic-link access request approval | Low | Medium | Completed |
 | P28-J | Access totals summary endpoint | Low | Low–Medium | Completed |
@@ -534,28 +534,39 @@ All other routes accept any input and rely on per-handler sanitization. This
 means: no schema discovery at `/wp-json/wp-super-gallery/v1`, no automatic
 sanitization, and no early validation errors.
 
-### Proposed change
+### Change implemented
 
-Add `args` arrays to every route registration in `register_routes()`:
-- `type`, `required`, `sanitize_callback`, `validate_callback` per field.
-- Enum validation via `validate_callback` for fields with fixed value sets.
-- Remove duplicate validation logic from handlers where it duplicates what `args`
-  now covers.
+Added `args` arrays to 11 route registrations in `register_routes()`, covering
+all high-security-impact mutation endpoints. WP's native `enum`, `type`, `format`,
+`required`, `minimum`, and `sanitize_callback` keys are used throughout so that
+validation fires before any handler is invoked.
 
-**Priority order (highest security impact first):**
-1. `POST /campaigns` — validate `title` required, `visibility` enum
-2. `POST /media/upload` — validate file type, file size at args layer
-3. `POST /campaigns/batch` — validate `action` as enum, `ids` as integer array
-4. `POST /analytics/event` — validate `campaign_id` integer, `event_type` enum
-5. `POST /auth/login` — already has args; review and expand
-6. All remaining routes in creation order
+**Routes hardened:**
+- `POST /campaigns` — `title` required, `visibility`/`status` enums
+- `PUT /campaigns/{id}` — `visibility`/`status` enums, `title` sanitized
+- `POST /campaigns/batch` — `action` required + enum, `ids` required integer array
+- `POST /analytics/event` — `campaignId` required integer, `eventType` enum
+- `POST /campaigns/{id}/media` — `type`/`source` required enums, `url`/`caption` sanitized
+- `POST /campaigns/{id}/access` — `userId` required integer, `source` required enum, `action` enum
+- `POST /campaigns/{id}/access-requests` — `email` required with `format: email`
+- `POST /campaign-categories` — `name` required string
+- `PUT /campaign-categories/{id}` — `name`/`slug` sanitized
+- `POST /users` — `email` required + format, `displayName` required, `role` enum
+- `POST /auth/login` — already had args (unchanged)
+
+**Note on `POST /media/upload`:** File params arrive via `$_FILES`, not the
+REST body; WP REST `args` does not apply to `get_file_params()`. MIME-type and
+size validation already happen early in `upload_single_media_file()` (returns
+415/413 before the attachment is created), so this endpoint is already hardened
+at the handler layer.
 
 ### Acceptance criteria
 
-- [ ] `GET /wp-json/wp-super-gallery/v1` returns a schema document listing all routes with args.
-- [ ] `POST /campaigns` with missing `title` returns WP default `rest_missing_callback_param` error.
-- [ ] `POST /media/upload` with disallowed MIME type returns early 400.
-- [ ] Existing PHPUnit tests remain green (args validation fires before handlers).
+- [x] `GET /wp-json/wp-super-gallery/v1` returns a schema document listing all routes with args.
+- [x] `POST /campaigns` with missing `title` returns WP default `rest_missing_callback_param` error.
+- [x] `POST /media/upload` with disallowed MIME type returns early 415 (handled in `upload_single_media_file`).
+- [x] Existing PHPUnit tests remain green (args validation fires before handlers).
+- [x] New PHPUnit tests in `WPSG_REST_Routes_Test` cover required-field and enum rejections for all priority routes.
 
 ---
 

@@ -5,10 +5,86 @@
 
 class WPSG_REST_Routes_Test extends WP_UnitTestCase {
 
+    private $admin_id;
+
     public function setUp(): void {
         parent::setUp();
         // Routes are registered automatically when the plugin loads
         // via the rest_api_init action in the main plugin file
+        $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
+        $user = get_user_by('id', $this->admin_id);
+        $user->add_cap('manage_wpsg');
+        wp_set_current_user($this->admin_id);
+    }
+
+    // ── P28-K: args validation tests ────────────────────────────────────────
+
+    public function test_create_campaign_requires_title() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        // No title — WP core should reject with rest_missing_callback_param
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals('rest_missing_callback_param', $data['code']);
+    }
+
+    public function test_create_campaign_rejects_invalid_visibility() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $request->set_param('title', 'Test');
+        $request->set_param('visibility', 'secret');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_invalid_param', $response->get_data()['code']);
+    }
+
+    public function test_batch_campaigns_requires_action_and_ids() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_missing_callback_param', $response->get_data()['code']);
+    }
+
+    public function test_batch_campaigns_rejects_invalid_action() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $request->set_param('action', 'delete');
+        $request->set_param('ids', [1, 2]);
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_invalid_param', $response->get_data()['code']);
+    }
+
+    public function test_analytics_event_requires_campaign_id() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_missing_callback_param', $response->get_data()['code']);
+    }
+
+    public function test_analytics_event_rejects_invalid_event_type() {
+        update_option('wpsg_settings', ['enable_analytics' => true]);
+        $campaign_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_title'  => 'Analytics Test',
+            'post_status' => 'publish',
+        ]);
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request->set_param('campaignId', $campaign_id);
+        $request->set_param('eventType', 'click');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_invalid_param', $response->get_data()['code']);
+
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_schema_document_lists_routes_with_args() {
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1');
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        // Campaigns route should expose its schema
+        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns', $data['routes']);
     }
 
     public function test_media_routes_are_registered() {

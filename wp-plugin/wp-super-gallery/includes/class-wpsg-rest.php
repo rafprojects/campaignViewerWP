@@ -36,9 +36,28 @@ class WPSG_REST {
                 'permission_callback' => [self::class, 'rate_limit_public'],
             ],
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'create_campaign'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_campaign'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'title'       => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'description' => [
+                        'type'    => 'string',
+                        'default' => '',
+                    ],
+                    'visibility'  => [
+                        'type' => 'string',
+                        'enum' => ['public', 'private'],
+                    ],
+                    'status'      => [
+                        'type' => 'string',
+                        'enum' => ['draft', 'active', 'archived'],
+                    ],
+                ],
             ],
         ]);
 
@@ -83,9 +102,23 @@ class WPSG_REST {
                 },
             ],
             [
-                'methods' => 'PUT',
-                'callback' => [self::class, 'update_campaign'],
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'update_campaign'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'title'      => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'visibility' => [
+                        'type' => 'string',
+                        'enum' => ['public', 'private'],
+                    ],
+                    'status'     => [
+                        'type' => 'string',
+                        'enum' => ['draft', 'active', 'archived'],
+                    ],
+                ],
             ],
             [
                 'methods' => 'DELETE',
@@ -122,9 +155,21 @@ class WPSG_REST {
         // P18-B: Bulk campaign actions (archive/restore)
         register_rest_route('wp-super-gallery/v1', '/campaigns/batch', [
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'batch_campaigns'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'batch_campaigns'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'action' => [
+                        'required' => true,
+                        'type'     => 'string',
+                        'enum'     => ['archive', 'restore'],
+                    ],
+                    'ids'    => [
+                        'required' => true,
+                        'type'     => 'array',
+                        'items'    => ['type' => 'integer'],
+                    ],
+                ],
             ],
         ]);
 
@@ -163,26 +208,47 @@ class WPSG_REST {
         // P18-H: Campaign categories
         register_rest_route('wp-super-gallery/v1', '/campaign-categories', [
             [
-                'methods' => 'GET',
-                'callback' => [self::class, 'list_campaign_categories'],
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_campaign_categories'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'create_campaign_category'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_campaign_category'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'name' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'slug' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_title',
+                    ],
+                ],
             ],
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/campaign-categories/(?P<id>\d+)', [
             [
-                'methods' => 'PUT',
-                'callback' => [self::class, 'update_campaign_category'],
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'update_campaign_category'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'name' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'slug' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_title',
+                    ],
+                ],
             ],
             [
-                'methods' => 'DELETE',
-                'callback' => [self::class, 'delete_campaign_category'],
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_campaign_category'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -190,9 +256,25 @@ class WPSG_REST {
         // P18-F: Analytics
         register_rest_route('wp-super-gallery/v1', '/analytics/event', [
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'record_analytics_event'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'record_analytics_event'],
                 'permission_callback' => [self::class, 'rate_limit_public'],
+                'args'                => [
+                    'campaignId' => [
+                        'required' => true,
+                        'type'     => 'integer',
+                        'minimum'  => 1,
+                    ],
+                    'eventType'  => [
+                        'type'    => 'string',
+                        'enum'    => ['view', 'lightbox_open'],
+                        'default' => 'view',
+                    ],
+                    'mediaId'    => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
             ],
         ]);
         register_rest_route('wp-super-gallery/v1', '/analytics/campaigns/(?P<id>\d+)', [
@@ -221,14 +303,34 @@ class WPSG_REST {
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
-                'methods' => 'GET',
-                'callback' => [self::class, 'list_media'],
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_media'],
                 'permission_callback' => [self::class, 'rate_limit_public'],
             ],
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'create_media'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_media'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'type'   => [
+                        'required' => true,
+                        'type'     => 'string',
+                        'enum'     => ['image', 'video'],
+                    ],
+                    'source' => [
+                        'required' => true,
+                        'type'     => 'string',
+                        'enum'     => ['upload', 'external', 'library'],
+                    ],
+                    'url'    => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'esc_url_raw',
+                    ],
+                    'caption' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
             ],
         ]);
 
@@ -281,14 +383,35 @@ class WPSG_REST {
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access', [
             [
-                'methods' => 'GET',
-                'callback' => [self::class, 'list_access'],
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_access'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'grant_access'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'grant_access'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'userId'     => [
+                        'required' => true,
+                        'type'     => 'integer',
+                        'minimum'  => 1,
+                    ],
+                    'source'     => [
+                        'required' => true,
+                        'type'     => 'string',
+                        'enum'     => ['company', 'campaign'],
+                    ],
+                    'action'     => [
+                        'type'    => 'string',
+                        'enum'    => ['grant', 'deny'],
+                        'default' => 'grant',
+                    ],
+                    'expires_at' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
             ],
         ]);
 
@@ -303,13 +426,21 @@ class WPSG_REST {
         // P18-I: Access Request Workflow
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests', [
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'submit_access_request'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'submit_access_request'],
                 'permission_callback' => [self::class, 'rate_limit_public'],
+                'args'                => [
+                    'email' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'format'            => 'email',
+                        'sanitize_callback' => 'sanitize_email',
+                    ],
+                ],
             ],
             [
-                'methods' => 'GET',
-                'callback' => [self::class, 'list_access_requests'],
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_access_requests'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -433,9 +564,31 @@ class WPSG_REST {
 
         register_rest_route('wp-super-gallery/v1', '/users', [
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'create_user'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_user'],
                 'permission_callback' => [self::class, 'rate_limit_authenticated'],
+                'args'                => [
+                    'email'       => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'format'            => 'email',
+                        'sanitize_callback' => 'sanitize_email',
+                    ],
+                    'displayName' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'role'        => [
+                        'type'    => 'string',
+                        'enum'    => ['subscriber', 'wpsg_admin'],
+                        'default' => 'subscriber',
+                    ],
+                    'campaignId'  => [
+                        'type'    => 'integer',
+                        'minimum' => 1,
+                    ],
+                ],
             ],
         ]);
 
