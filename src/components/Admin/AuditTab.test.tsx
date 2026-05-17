@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@/test/test-utils';
 import { AuditTab } from './AuditTab';
 
+// Define default filters to avoid undefined error
+const defaultFilters = {
+  from: '',
+  to: '',
+  action: '',
+};
+
 describe('AuditTab', () => {
     const baseProps = {
         campaignSelectData: [{ value: '1', label: 'Campaign 1' }],
@@ -10,6 +17,8 @@ describe('AuditTab', () => {
         auditLoading: false,
         auditEntriesCount: 0,
         auditRows: null,
+        filters: defaultFilters,
+        onFiltersChange: vi.fn(),
     };
 
     it('renders without crashing', () => {
