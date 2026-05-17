@@ -3,9 +3,9 @@
  * Plugin Name:       WP Super Gallery
  * Plugin URI:        https://github.com/rafprojects/wp-super-gallery
  * Description:       Embeddable campaign gallery with Shadow DOM rendering.
- * Version:           0.24.0
- * Requires at least: 6.0
- * Tested up to:      6.7
+ * Version:           0.25.0
+ * Requires at least: 8.1
+ * Tested up to:      8.4
  * Requires PHP:      8.2
  * Author:            WP Super Gallery
  * Author URI:        https://github.com/rafprojects/wp-super-gallery
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.24.0');
+define('WPSG_VERSION', '0.25.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 

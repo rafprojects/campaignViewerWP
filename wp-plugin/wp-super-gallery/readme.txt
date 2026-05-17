@@ -1,10 +1,10 @@
 === WP Super Gallery ===
 Contributors: wpsupergallery
 Tags: gallery, media, campaign, layout-builder, embed
-Requires at least: 6.0
-Tested up to: 6.7
+Requires at least: 8.2
+Tested up to: 8.4
 Requires PHP: 8.2
-Stable tag: 0.24.0
+Stable tag: 0.25.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,7 +38,7 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 = Requirements =
 
 * WordPress 6.0 or later
-* PHP 8.0 or later
+* PHP 8.2 or later
 * MySQL 5.7 / MariaDB 10.3 or later
 
 == Frequently Asked Questions ==
@@ -69,15 +69,33 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 
 == Changelog ==
 
+= 0.25.0 =
+**Phase 28 — API Capability Expansion & Backend Hardening**
+
+* Added: Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) with confirmation guard
+* Added: Time-limited access grants with `expires_at` support
+* Added: Taxonomy CRUD endpoints for campaign categories and tags (create/update/delete)
+* Added: Batch media upload support (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`)
+* Added: Campaign filtering enhancements (category, tag, sort, include_archived, template_id)
+* Added: Pagination on unbounded list endpoints (companies, categories, tags, roles, access grants, audit logs)
+* Added: Audit log improvements with dedicated table and global view
+* Added: Analytics expansion with per-media tracking and summary dashboard
+* Added: Magic-link access request approval with one-click email integration
+* Added: Access totals summary endpoint for aggregate views
+* Added: REST args hardening with typed parameters for better validation
+* Added: Rate-limit status headers for quota visibility
+* Added: Media sort controls for better organization
+* Added: Duplicate media detection on upload with MD5-based checks
+* Added: Campaign templates with preset library support
+* Added: Settings ETag support and PATCH method for partial updates
+* Added: Hierarchical campaign categories with tree-based UI
+
 = 0.24.0 =
 **Phase 25 — Settings UX follow-through and query architecture**
 
 * Added: live campaign gallery preview with cancel-to-revert behavior, per-breakpoint unified adapter selection, accordionized campaign gallery config, shared upload/external media entry, and higher-level card/gallery scale and positioning controls.
 * Changed: Settings moved to a regrouped drawer workflow; app/admin/layout data fetching now uses TanStack Query and the nested `galleryConfig` / `galleryOverrides` contract only.
 * Fixed: classic WordPress settings partial saves no longer reset nested gallery settings; modal stacking correctness when opening Settings above an active campaign viewer.
-
-**Phase 26 — React 19 and Mantine 9 migration**
-
 * Changed: upgraded the frontend runtime to React 19.2.6 and Mantine 9.1.1; removed unused `react-window` packages; applied React 19 type fixes (nullable refs, timer ref initialization, ReactElement return types).
 * Fixed: portal-heavy viewer/admin surfaces now stay inside the active tree in both shadow and non-shadow mounts; `Notifications` component configured with `withinPortal={false}` to prevent shadow DOM escape.
 
