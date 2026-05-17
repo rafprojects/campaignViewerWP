@@ -311,6 +311,13 @@ class WPSG_REST {
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_media'],
                 'permission_callback' => [self::class, 'rate_limit_public'],
+                'args'                => [
+                    'sort' => [
+                        'type'    => 'string',
+                        'enum'    => ['order_asc', 'order_desc', 'title_asc', 'title_desc', 'created_asc', 'created_desc', 'size_asc', 'size_desc'],
+                        'default' => 'order_asc',
+                    ],
+                ],
             ],
             [
                 'methods'             => 'POST',
@@ -493,9 +500,16 @@ class WPSG_REST {
 
         register_rest_route('wp-super-gallery/v1', '/media/library', [
             [
-                'methods' => 'GET',
-                'callback' => [self::class, 'list_media_library'],
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_media_library'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'sort' => [
+                        'type'    => 'string',
+                        'enum'    => ['order_asc', 'order_desc', 'title_asc', 'title_desc', 'created_asc', 'created_desc', 'size_asc', 'size_desc'],
+                        'default' => 'created_desc',
+                    ],
+                ],
             ],
         ]);
 
@@ -2061,20 +2075,60 @@ class WPSG_REST {
             ]);
         }
 
+        $sort = sanitize_text_field($request->get_param('sort') ?? 'order_asc');
+        $media_items = self::sort_media_items($media_items, $sort);
+
         $payload = [
             'items' => $media_items,
             'meta' => [
                 'typesUpdated' => $updated_count,
                 'total' => count($media_items),
+                'sort' => $sort,
             ],
         ];
 
-        $response = self::respond_with_etag($request, $payload, 200, (string) $post_id);
+        $response = self::respond_with_etag($request, $payload, 200, $post_id . ':' . $sort);
         self::log_slow_rest('media.list', $start, [
             'campaignId' => $post_id,
             'total' => count($media_items),
         ]);
         return $response;
+    }
+
+    private static function sort_media_items(array $items, string $sort): array {
+        usort($items, static function ($a, $b) use ($sort) {
+            switch ($sort) {
+                case 'order_desc':
+                    return intval($b['order'] ?? 0) <=> intval($a['order'] ?? 0);
+
+                case 'title_asc':
+                    return strnatcasecmp($a['caption'] ?? $a['title'] ?? '', $b['caption'] ?? $b['title'] ?? '');
+
+                case 'title_desc':
+                    return strnatcasecmp($b['caption'] ?? $b['title'] ?? '', $a['caption'] ?? $a['title'] ?? '');
+
+                case 'created_asc':
+                    $ta = strtotime($a['dateUploaded'] ?? '') ?: intval($a['order'] ?? 0);
+                    $tb = strtotime($b['dateUploaded'] ?? '') ?: intval($b['order'] ?? 0);
+                    return $ta <=> $tb;
+
+                case 'created_desc':
+                    $ta = strtotime($a['dateUploaded'] ?? '') ?: intval($a['order'] ?? 0);
+                    $tb = strtotime($b['dateUploaded'] ?? '') ?: intval($b['order'] ?? 0);
+                    return $tb <=> $ta;
+
+                case 'size_asc':
+                    return intval($a['filesize'] ?? 0) <=> intval($b['filesize'] ?? 0);
+
+                case 'size_desc':
+                    return intval($b['filesize'] ?? 0) <=> intval($a['filesize'] ?? 0);
+
+                case 'order_asc':
+                default:
+                    return intval($a['order'] ?? 0) <=> intval($b['order'] ?? 0);
+            }
+        });
+        return $items;
     }
 
     private static function resolve_campaign_id_from_request($request) {
@@ -3948,16 +4002,32 @@ class WPSG_REST {
         $per_page = intval($request->get_param('per_page') ?? 50);
         $page = intval($request->get_param('page') ?? 1);
         $search = sanitize_text_field($request->get_param('search') ?? '');
+        $sort = sanitize_text_field($request->get_param('sort') ?? 'created_desc');
+
+        $sort_map = [
+            'order_asc'    => ['orderby' => 'menu_order', 'order' => 'ASC'],
+            'order_desc'   => ['orderby' => 'menu_order', 'order' => 'DESC'],
+            'title_asc'    => ['orderby' => 'title',      'order' => 'ASC'],
+            'title_desc'   => ['orderby' => 'title',      'order' => 'DESC'],
+            'created_asc'  => ['orderby' => 'date',       'order' => 'ASC'],
+            'created_desc' => ['orderby' => 'date',       'order' => 'DESC'],
+            'size_asc'     => ['orderby' => 'meta_value_num', 'meta_key' => '_wp_attachment_metadata', 'order' => 'ASC'],
+            'size_desc'    => ['orderby' => 'meta_value_num', 'meta_key' => '_wp_attachment_metadata', 'order' => 'DESC'],
+        ];
+        $sort_opts = $sort_map[$sort] ?? $sort_map['created_desc'];
 
         $args = [
-            'post_type' => 'attachment',
-            'post_status' => 'inherit',
+            'post_type'      => 'attachment',
+            'post_status'    => 'inherit',
             'posts_per_page' => min($per_page, 100),
-            'paged' => max($page, 1),
-            'orderby' => 'date',
-            'order' => 'DESC',
+            'paged'          => max($page, 1),
+            'orderby'        => $sort_opts['orderby'],
+            'order'          => $sort_opts['order'],
             'post_mime_type' => ['image', 'video'],
         ];
+        if (isset($sort_opts['meta_key'])) {
+            $args['meta_key'] = $sort_opts['meta_key'];
+        }
 
         if (!empty($search)) {
             $args['s'] = $search;
@@ -4009,7 +4079,7 @@ class WPSG_REST {
             'page' => $page,
         ];
 
-        return self::respond_with_etag($request, $payload, 200, sprintf('%d:%d:%s', $page, $per_page, $search));
+        return self::respond_with_etag($request, $payload, 200, sprintf('%d:%d:%s:%s', $page, $per_page, $search, $sort));
     }
 
     public static function proxy_oembed($request) {

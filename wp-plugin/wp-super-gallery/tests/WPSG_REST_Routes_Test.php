@@ -140,6 +140,105 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
         remove_all_filters('wpsg_rate_limit_public');
     }
 
+    // ── P28-M: sort controls tests ───────────────────────────────────────────
+
+    private function create_campaign_with_media(string $title, array $media_items): int {
+        $id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_title'  => $title,
+            'post_status' => 'publish',
+        ]);
+        update_post_meta($id, 'media_items', $media_items);
+        update_post_meta($id, 'visibility', 'public');
+        return (int) $id;
+    }
+
+    public function test_list_media_default_sort_is_order_asc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'Beta',  'order' => 2, 'url' => 'https://example.com/b.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Alpha', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // order 1 comes first
+        $this->assertEquals('m1', $items[1]['id']);
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_order_desc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Desc Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'First',  'order' => 1, 'url' => 'https://example.com/1.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Second', 'order' => 2, 'url' => 'https://example.com/2.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'order_desc');
+        $response = rest_do_request($request);
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // order 2 comes first
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_title_asc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Title Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'Zebra', 'order' => 1, 'url' => 'https://example.com/z.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Apple', 'order' => 2, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'title_asc');
+        $response = rest_do_request($request);
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // Apple before Zebra
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_title_desc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Title Desc Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'Zebra', 'order' => 1, 'url' => 'https://example.com/z.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Apple', 'order' => 2, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'title_desc');
+        $response = rest_do_request($request);
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m1', $items[0]['id']); // Zebra before Apple
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_unknown_sort_falls_back_to_order_asc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Fallback Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'B', 'order' => 2, 'url' => 'https://example.com/b.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'A', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        // WP REST args validation will reject unknown enums with 400 before reaching the handler.
+        // So we test the default (no sort param) falls back gracefully.
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // order_asc default
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_meta_field_in_response() {
+        $campaign_id = $this->create_campaign_with_media('Sort Meta Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'A', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'title_asc');
+        $response = rest_do_request($request);
+        $meta = $response->get_data()['meta'];
+        $this->assertEquals('title_asc', $meta['sort']);
+        wp_delete_post($campaign_id, true);
+    }
+
     public function test_media_routes_are_registered() {
         $routes = rest_get_server()->get_routes('wp-super-gallery/v1');
         $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media', $routes);

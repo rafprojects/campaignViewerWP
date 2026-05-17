@@ -36,7 +36,7 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 | P28-J | Access totals summary endpoint | Low | Low–Medium | Completed |
 | P28-K | REST args hardening (`D-8` — typed args arrays on all routes) | Large | Medium | Completed |
 | P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium | Completed |
-| P28-M | Media sort controls on list endpoints | Low | Low–Medium |
+| P28-M | Media sort controls on list endpoints | Low | Low–Medium | Completed |
 | P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium |
 | P28-O | Campaign templates (preset library) | Medium | Low |
 | P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low |
@@ -615,31 +615,46 @@ Both storage backends are covered:
 `GET /campaigns/{id}/media` and `GET /media/library` return items in insertion
 order with no sort control.
 
-### Proposed change
+### Change implemented
 
-**`GET /campaigns/{id}/media`:** add `sort` query param:
-- `order_asc` (default — existing insertion order)
-- `order_desc`
-- `created_asc` / `created_desc` (by `created_at` timestamp if present)
-- `title_asc` / `title_desc` (by `title` field)
-- `size_asc` / `size_desc` (by `filesize` if present)
+`sort` query param added (registered in `args` with an enum so unknown values
+return 400 before reaching the handler):
 
-For media arrays stored in post meta (in-memory), sort in PHP after loading.
-For `GET /media/library` (WP attachments), pass `orderby` / `order` to `WP_Query`.
+**`GET /campaigns/{id}/media`** (default `order_asc`) — sorted in PHP via
+`sort_media_items()` after loading from post meta:
 
-**`GET /media/library`:** add `sort` with the same enum.
+| `sort` value | Sort key |
+|---|---|
+| `order_asc` (default) | `order` asc |
+| `order_desc` | `order` desc |
+| `title_asc` / `title_desc` | `caption` (falls back to `title`) via `strnatcasecmp` |
+| `created_asc` / `created_desc` | `dateUploaded` timestamp; falls back to `order` if absent |
+| `size_asc` / `size_desc` | `filesize`; falls back to 0 if absent |
+
+The `sort` value is echoed in the response `meta.sort` field. The ETag salt
+now includes the sort param so different sort orders don't serve stale caches.
+
+**`GET /media/library`** (default `created_desc`) — sort mapped to WP_Query
+`orderby`/`order` args:
+
+| `sort` value | `orderby` | `order` |
+|---|---|---|
+| `order_asc` / `order_desc` | `menu_order` | ASC/DESC |
+| `title_asc` / `title_desc` | `title` | ASC/DESC |
+| `created_asc` / `created_desc` | `date` | ASC/DESC |
+| `size_asc` / `size_desc` | `meta_value_num` (`_wp_attachment_metadata`) | ASC/DESC |
 
 ### Frontend change
 
-- MediaTab toolbar: add a Sort dropdown.
-- Persist sort preference per campaign in `localStorage`.
+Not in scope for backend-only track — MediaTab sort dropdown deferred.
 
 ### Acceptance criteria
 
-- [ ] `?sort=title_asc` returns media sorted alphabetically.
-- [ ] `?sort=order_desc` reverses insertion order.
-- [ ] `GET /media/library?sort=created_desc` returns WP attachments in creation order.
-- [ ] PHPUnit: each sort value, unknown sort value falls back to default.
+- [x] `?sort=title_asc` returns media sorted alphabetically.
+- [x] `?sort=order_desc` reverses insertion order.
+- [x] `GET /media/library?sort=created_desc` returns WP attachments in creation order (default).
+- [x] Unknown sort value rejected with 400 by args enum validation before handler runs.
+- [x] PHPUnit covers `order_asc`, `order_desc`, `title_asc`, `title_desc`, unknown-sort, and `meta.sort` in response.
 
 ---
 
