@@ -559,33 +559,35 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
     // ─────────────────────────────────────────────────────────────────────────
 
     public function test_archive_writes_audit_entry(): void {
+        WPSG_DB::maybe_upgrade();
         $id = $this->create_campaign( 'Audit Test' );
         $this->cli->campaign_archive( [ (string) $id ], [] );
 
-        $log = get_post_meta( $id, 'audit_log', true );
-        $this->assertIsArray( $log );
-        $events = array_column( $log, 'action' );
+        $result = WPSG_DB::list_audit_entries( [ 'campaign_id' => $id ] );
+        $events = array_column( $result['items'], 'action' );
         $this->assertContains( 'campaign.archived', $events );
     }
 
     public function test_restore_writes_audit_entry(): void {
+        WPSG_DB::maybe_upgrade();
         $id = $this->create_campaign( 'Audit Restore', 'archived' );
         $this->cli->campaign_restore( [ (string) $id ], [] );
 
-        $log    = get_post_meta( $id, 'audit_log', true );
-        $events = array_column( is_array( $log ) ? $log : [], 'action' );
+        $result = WPSG_DB::list_audit_entries( [ 'campaign_id' => $id ] );
+        $events = array_column( $result['items'], 'action' );
         $this->assertContains( 'campaign.restored', $events );
     }
 
     public function test_duplicate_writes_audit_entry_on_new_campaign(): void {
+        WPSG_DB::maybe_upgrade();
         $id = $this->create_campaign( 'Audit Dup Source' );
         $this->cli->campaign_duplicate( [ (string) $id ], [] );
 
         preg_match( '/New ID: (\d+)/', $this->last_success(), $m );
         $new_id = intval( $m[1] ?? 0 );
 
-        $log    = get_post_meta( $new_id, 'audit_log', true );
-        $events = array_column( is_array( $log ) ? $log : [], 'action' );
+        $result = WPSG_DB::list_audit_entries( [ 'campaign_id' => $new_id ] );
+        $events = array_column( $result['items'], 'action' );
         $this->assertContains( 'campaign.duplicated', $events );
     }
 }

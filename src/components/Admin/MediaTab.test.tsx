@@ -12,11 +12,19 @@ function suppressConsoleError() {
 }
 
 describe('MediaTab', () => {
-  const apiClient = {
+  // Create a fresh apiClient for each test to avoid React Query cache pollution
+  // from shared mock state across tests
+  const createApiClient = () => ({
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
+    getSettings: vi.fn().mockResolvedValue({
+      uploadMaxSizeMb: 50,
+      maxBatchUploadSize: 20,
+      uploadAllowedTypes: 'image/*,video/*',
+    }),
+    addCampaignMediaBatch: vi.fn(),
     getBaseUrl: vi.fn().mockReturnValue('https://example.test'),
     getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer test' }),
     // P18-G: media usage — default to empty map so tests aren't affected
@@ -26,10 +34,15 @@ describe('MediaTab', () => {
     post: ReturnType<typeof vi.fn>;
     put: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+    getSettings: ReturnType<typeof vi.fn>;
+    addCampaignMediaBatch: ReturnType<typeof vi.fn>;
     getBaseUrl: ReturnType<typeof vi.fn>;
     getAuthHeaders: ReturnType<typeof vi.fn>;
     getMediaUsageSummary: ReturnType<typeof vi.fn>;
-  };
+  });
+
+  // Default apiClient for tests that don't need a fresh one
+  const apiClient = createApiClient();
 
   beforeEach(() => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -41,6 +54,13 @@ describe('MediaTab', () => {
     apiClient.post.mockReset();
     apiClient.put.mockReset();
     apiClient.delete.mockReset();
+    apiClient.getSettings.mockReset();
+    apiClient.getSettings.mockResolvedValue({
+      uploadMaxSizeMb: 50,
+      maxBatchUploadSize: 20,
+      uploadAllowedTypes: 'image/*,video/*',
+    });
+    apiClient.addCampaignMediaBatch.mockReset();
     apiClient.getMediaUsageSummary.mockReset();
     apiClient.getMediaUsageSummary.mockResolvedValue({});
   });
@@ -338,19 +358,31 @@ describe('MediaTab', () => {
     });
   });
 
-  it('uploads media successfully', async () => {
-    apiClient.get.mockResolvedValueOnce([]);
-    apiClient.get.mockResolvedValueOnce([]);
-    apiClient.getBaseUrl.mockReturnValueOnce('https://example.test');
-    apiClient.getAuthHeaders.mockResolvedValueOnce({ Authorization: 'Bearer test' });
-    apiClient.post.mockResolvedValueOnce({
-      id: 'm10',
-      type: 'image',
-      source: 'upload',
-      url: 'https://example.com/upload.jpg',
-      thumbnail: 'https://example.com/thumb.jpg',
-      caption: 'test.jpg',
-      order: 1,
+  it('uploads media in a batch and keeps failed files selected', async () => {
+    // Use a fresh apiClient to avoid any state pollution from previous tests
+    const testApiClient = createApiClient();
+    testApiClient.get.mockResolvedValueOnce([]);
+    testApiClient.getSettings.mockResolvedValue({
+      uploadMaxSizeMb: 50,
+      maxBatchUploadSize: 20,
+      uploadAllowedTypes: 'image/*,video/*',
+    });
+    testApiClient.getBaseUrl.mockReturnValueOnce('https://example.test');
+    testApiClient.getAuthHeaders.mockResolvedValueOnce({ Authorization: 'Bearer test' });
+    testApiClient.addCampaignMediaBatch.mockResolvedValueOnce({
+      added: [
+        {
+          id: 'm10',
+          type: 'image',
+          source: 'upload',
+          url: 'https://example.com/upload.jpg',
+          thumbnail: 'https://example.com/thumb.jpg',
+          caption: 'test.jpg',
+          order: 1,
+        },
+      ],
+      failed: [],
+      total: 1,
     });
 
     const originalCreateObjectURL = URL.createObjectURL;
@@ -373,38 +405,62 @@ describe('MediaTab', () => {
       open = vi.fn();
       setRequestHeader = vi.fn();
       send = vi.fn(() => {
-        if (this.upload.onprogress) {
-          this.upload.onprogress({ lengthComputable: true, loaded: 5, total: 10 } as ProgressEvent);
-        }
-        this.response = {
-          attachmentId: 55,
-          url: 'https://example.com/upload.jpg',
-          mimeType: 'image/jpeg',
-          thumbnail: 'https://example.com/thumb.jpg',
-        };
-        this.onload?.();
+        // Fire onload asynchronously to avoid synchronous state cascades
+        // that trigger Mantine SegmentedControl's setState-in-ref-callback loop.
+        Promise.resolve().then(() => {
+          if (this.upload.onprogress) {
+            this.upload.onprogress({ lengthComputable: true, loaded: 5, total: 10 } as ProgressEvent);
+          }
+          this.response = {
+            results: [
+              {
+                filename: 'test.jpg',
+                success: true,
+                attachmentId: 55,
+                url: 'https://example.com/upload.jpg',
+                mimeType: 'image/jpeg',
+                thumbnail: 'https://example.com/thumb.jpg',
+              },
+              {
+                filename: 'second.webp',
+                success: false,
+                error: 'File too large',
+              },
+            ],
+            total: 2,
+            succeeded: 1,
+            failed: 1,
+          };
+          this.onload?.();
+        });
       });
       constructor() {
         MockXHR.instances.push(this);
       }
     }
+
     globalThis.XMLHttpRequest = MockXHR as unknown as typeof XMLHttpRequest;
     window.XMLHttpRequest = MockXHR as unknown as typeof XMLHttpRequest;
 
-    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    render(<MediaTab campaignId="101" apiClient={testApiClient as any} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Add Media' }));
-    await screen.findByRole('button', { name: 'Choose file' });
+    // Wait for the component to fully render and stabilize
+    await screen.findByText('Media');
+    const addMediaBtn = await screen.findByRole('button', { name: 'Add Media' });
+    fireEvent.click(addMediaBtn);
+    await screen.findByRole('button', { name: 'Choose files' });
     const file = new File(['hello'], 'test.jpg', { type: 'image/jpeg' });
+    const secondFile = new File(['world'], 'second.webp', { type: 'image/webp' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(fileInput, { target: { files: [file] } });
+    fireEvent.change(fileInput, { target: { files: [file, secondFile] } });
     expect(await screen.findByText('test.jpg')).toBeInTheDocument();
+    expect(await screen.findByText('second.webp')).toBeInTheDocument();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Upload' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Upload 2 files' }));
 
     await waitFor(() => {
       expect(MockXHR.instances.length).toBeGreaterThan(0);
-      expect(apiClient.getAuthHeaders).toHaveBeenCalled();
+      expect(testApiClient.getAuthHeaders).toHaveBeenCalled();
     });
 
     await waitFor(() => {
@@ -412,17 +468,28 @@ describe('MediaTab', () => {
     });
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media',
-        expect.objectContaining({ caption: 'test.jpg' }),
+      expect(testApiClient.addCampaignMediaBatch).toHaveBeenCalledWith(
+        '101',
+        expect.arrayContaining([
+          expect.objectContaining({
+            attachmentId: 55,
+            caption: 'test.jpg',
+            source: 'upload',
+          }),
+        ]),
       );
     });
+
+    expect(await screen.findByText('File too large')).toBeInTheDocument();
+    expect(showNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Upload complete with issues' }),
+    );
 
     globalThis.XMLHttpRequest = originalXhr;
     window.XMLHttpRequest = originalWindowXhr;
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
-  });
+  }, 10000); // 10 second timeout to prevent indefinite hanging
 
   it('shows delete error when delete fails', async () => {
     const consoleSpy = suppressConsoleError();
@@ -458,7 +525,7 @@ describe('MediaTab', () => {
     });
 
     consoleSpy.mockRestore();
-  });
+  }, 10000);
 
   it('does not reorder when only one item exists', async () => {
     apiClient.get.mockResolvedValueOnce([

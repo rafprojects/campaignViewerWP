@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '5';
+    const DB_VERSION = '8';
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
@@ -17,6 +17,7 @@ class WPSG_DB {
         self::maybe_create_analytics_table();
         self::maybe_create_media_refs_table();
         self::maybe_create_access_requests_table();
+        self::maybe_create_audit_log_table();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -34,8 +35,10 @@ class WPSG_DB {
             event_type   VARCHAR(32) NOT NULL DEFAULT 'view',
             visitor_hash CHAR(64) NOT NULL,
             occurred_at  DATETIME NOT NULL,
+            media_id     VARCHAR(191) NULL DEFAULT NULL,
             PRIMARY KEY  (id),
-            KEY campaign_occurred (campaign_id, occurred_at)
+            KEY campaign_occurred (campaign_id, occurred_at),
+            KEY media_id (media_id)
         ) {$charset};";
 
         dbDelta($sql);
@@ -279,13 +282,16 @@ class WPSG_DB {
         $charset = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$table} (
-            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            token        VARCHAR(36) NOT NULL,
-            campaign_id  BIGINT UNSIGNED NOT NULL,
-            email        VARCHAR(255) NOT NULL,
-            status       VARCHAR(20) NOT NULL DEFAULT 'pending',
-            requested_at DATETIME NOT NULL,
-            resolved_at  DATETIME DEFAULT NULL,
+            id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            token                VARCHAR(36)  NOT NULL,
+            campaign_id          BIGINT UNSIGNED NOT NULL,
+            email                VARCHAR(255) NOT NULL,
+            status               VARCHAR(20)  NOT NULL DEFAULT 'pending',
+            requested_at         DATETIME     NOT NULL,
+            resolved_at          DATETIME     DEFAULT NULL,
+            magic_key_hash       VARCHAR(64)  NULL DEFAULT NULL,
+            magic_key_expires_at DATETIME     NULL DEFAULT NULL,
+            magic_key_used_at    DATETIME     NULL DEFAULT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY token (token),
             KEY campaign_status (campaign_id, status),
@@ -412,6 +418,42 @@ class WPSG_DB {
     }
 
     /**
+     * Store a magic key hash and expiry against an access request token.
+     * Resets used_at so a freshly generated key is treated as unused.
+     */
+    public static function set_magic_key(string $token, string $hash, string $expires_at): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            [
+                'magic_key_hash'       => $hash,
+                'magic_key_expires_at' => $expires_at,
+                'magic_key_used_at'    => null,
+            ],
+            ['token' => $token],
+            ['%s', '%s', null],
+            ['%s']
+        );
+    }
+
+    /**
+     * Mark the magic key for a request as consumed.
+     * Called immediately before processing approval to prevent replay.
+     */
+    public static function mark_magic_key_used(string $token): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            ['magic_key_used_at' => current_time('mysql', true)],
+            ['token' => $token],
+            ['%s'],
+            ['%s']
+        );
+    }
+
+    /**
      * List access requests for a campaign, optionally filtered by status.
      *
      * @return array Array of associative arrays, newest first.
@@ -468,6 +510,143 @@ class WPSG_DB {
         global $wpdb;
         $table = self::get_access_requests_table();
         $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
+    }
+
+    // ── P28-G: Audit log table ──────────────────────────────────────────────
+
+    public static function maybe_create_audit_log_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_audit_log_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            campaign_id  BIGINT UNSIGNED NOT NULL,
+            action       VARCHAR(128) NOT NULL,
+            actor_id     BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            actor_login  VARCHAR(60) NOT NULL DEFAULT '',
+            details      LONGTEXT NOT NULL,
+            created_at   DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY campaign_created (campaign_id, created_at),
+            KEY action (action),
+            KEY created_at (created_at)
+        ) {$charset};";
+
+        dbDelta($sql);
+    }
+
+    public static function get_audit_log_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'wpsg_audit_log';
+    }
+
+    public static function insert_audit_entry(array $data): void {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+        $wpdb->insert($table, [
+            'campaign_id' => intval($data['campaign_id']),
+            'action'      => sanitize_text_field($data['action']),
+            'actor_id'    => intval($data['actor_id'] ?? 0),
+            'actor_login' => sanitize_text_field($data['actor_login'] ?? ''),
+            'details'     => is_array($data['details']) ? wp_json_encode($data['details']) : '{}',
+            'created_at'  => $data['created_at'] ?? gmdate('Y-m-d H:i:s'),
+        ], ['%d', '%s', '%d', '%s', '%s', '%s']);
+    }
+
+    /**
+     * Backfill audit entries from post meta into the DB table for a campaign.
+     * Called on first `list_audit` request when the table has no entries for that campaign.
+     */
+    public static function backfill_audit_entries(int $campaign_id, array $legacy_entries): void {
+        foreach ($legacy_entries as $entry) {
+            $created_raw = $entry['createdAt'] ?? $entry['created_at'] ?? '';
+            $created_at  = $created_raw
+                ? gmdate('Y-m-d H:i:s', strtotime($created_raw))
+                : gmdate('Y-m-d H:i:s');
+
+            self::insert_audit_entry([
+                'campaign_id' => $campaign_id,
+                'action'      => $entry['action'] ?? 'unknown',
+                'actor_id'    => intval($entry['userId'] ?? 0),
+                'actor_login' => '',
+                'details'     => $entry['details'] ?? [],
+                'created_at'  => $created_at,
+            ]);
+        }
+    }
+
+    /**
+     * Query audit log entries with filtering and pagination.
+     *
+     * @param array $args {
+     *   campaign_id?: int,
+     *   from?: string  (ISO date string),
+     *   to?:   string  (ISO date string),
+     *   action?: string,
+     *   page?: int,
+     *   per_page?: int,
+     * }
+     * @return array { total: int, items: array }
+     */
+    public static function list_audit_entries(array $args): array {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+
+        $where  = ['1=1'];
+        $values = [];
+
+        if (!empty($args['campaign_id'])) {
+            $where[]  = 'campaign_id = %d';
+            $values[] = intval($args['campaign_id']);
+        }
+        if (!empty($args['from'])) {
+            $where[]  = 'created_at >= %s';
+            $values[] = gmdate('Y-m-d H:i:s', strtotime($args['from']));
+        }
+        if (!empty($args['to'])) {
+            $where[]  = 'created_at <= %s';
+            $values[] = gmdate('Y-m-d H:i:s', strtotime($args['to'] . ' 23:59:59'));
+        }
+        if (!empty($args['action'])) {
+            $where[]  = 'action = %s';
+            $values[] = $args['action'];
+        }
+
+        $where_sql = implode(' AND ', $where);
+        $page      = max(1, intval($args['page'] ?? 1));
+        $per_page  = max(1, intval($args['per_page'] ?? 50));
+        $offset    = ($page - 1) * $per_page;
+
+        $count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}";
+        $total     = empty($values)
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            ? (int) $wpdb->get_var($count_sql)
+            : (int) $wpdb->get_var($wpdb->prepare($count_sql, $values));
+
+        $items_sql      = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d";
+        $items_values   = array_merge($values, [$per_page, $offset]);
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $wpdb->get_results($wpdb->prepare($items_sql, $items_values), ARRAY_A);
+
+        return [
+            'total' => $total,
+            'items' => array_map([self::class, 'format_audit_entry'], $rows ?: []),
+        ];
+    }
+
+    public static function format_audit_entry(array $row): array {
+        return [
+            'id'         => strval($row['id']),
+            'campaignId' => strval($row['campaign_id']),
+            'action'     => $row['action'],
+            'userId'     => intval($row['actor_id']),
+            'actorLogin' => $row['actor_login'],
+            'details'    => json_decode($row['details'], true) ?? [],
+            'createdAt'  => str_replace(' ', 'T', $row['created_at']) . 'Z',
+        ];
     }
 
     private static function add_indexes() {

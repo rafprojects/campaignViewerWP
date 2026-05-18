@@ -3,9 +3,9 @@
  * Plugin Name:       WP Super Gallery
  * Plugin URI:        https://github.com/rafprojects/wp-super-gallery
  * Description:       Embeddable campaign gallery with Shadow DOM rendering.
- * Version:           0.24.0
- * Requires at least: 6.0
- * Tested up to:      6.7
+ * Version:           0.25.0
+ * Requires at least: 8.1
+ * Tested up to:      8.4
  * Requires PHP:      8.2
  * Author:            WP Super Gallery
  * Author URI:        https://github.com/rafprojects/wp-super-gallery
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.24.0');
+define('WPSG_VERSION', '0.25.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -44,6 +44,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rate-limiter.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-image-optimizer.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-layout-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-duplicator.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-overlay-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 
@@ -62,6 +63,7 @@ function wpsg_deactivate() {
     wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
     wp_clear_scheduled_hook(WPSG_Maintenance::TRASH_PURGE_HOOK);
     wp_clear_scheduled_hook(WPSG_Maintenance::ANALYTICS_PURGE_HOOK);
+    wp_clear_scheduled_hook(WPSG_Maintenance::EXPIRED_GRANTS_HOOK);
     wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
     wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
     wp_clear_scheduled_hook(WPSG_Alerts::CRON_HOOK);
@@ -110,6 +112,9 @@ add_action('init', function () {
 }, 0);
 add_action('init', ['WPSG_CPT', 'register']);
 add_action('rest_api_init', ['WPSG_REST', 'register_routes']);
+// Register early (at plugin load, not inside rest_api_init) so WP's test-framework
+// _restore_hooks() does not strip it after the first REST request initialises the server.
+add_filter('rest_request_after_callbacks', ['WPSG_REST', 'inject_rate_limit_headers'], 10, 3);
 add_action('init', ['WPSG_Embed', 'register_shortcode']);
 add_action('wp_enqueue_scripts', ['WPSG_Embed', 'register_assets']);
 add_action('init', ['WPSG_DB', 'maybe_upgrade']);

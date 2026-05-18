@@ -54,6 +54,13 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
                   min={1}
                   max={500}
                 />
+                <NumberInput
+                  label={tooltipLabel('Max Batch Upload Size', 'maxBatchUploadSize')}
+                  value={settings.maxBatchUploadSize}
+                  onChange={(value) => updateSetting('maxBatchUploadSize', typeof value === 'number' ? value : 20)}
+                  min={1}
+                  max={100}
+                />
                 <TextInput
                   label={tooltipLabel('Allowed Upload Types', 'uploadAllowedTypes')}
                   description="Comma-separated MIME patterns (e.g. image/*,video/*)"

@@ -77,7 +77,7 @@ class WPSG_CPT {
             'show_ui'           => true,
             'show_in_rest'      => true,
             'rest_base'         => 'campaign-categories',
-            'hierarchical'      => false,
+            'hierarchical'      => true,
             'show_admin_column' => true,
         ]);
 

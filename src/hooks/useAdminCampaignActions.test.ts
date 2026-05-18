@@ -14,6 +14,7 @@ function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     duplicateCampaign: vi.fn().mockResolvedValue({ id: 200 }),
     exportCampaign: vi.fn().mockResolvedValue({ version: 1, campaign: {}, media_references: [] }),
     importCampaign: vi.fn().mockResolvedValue({ id: 300 }),
+    deleteCampaign: vi.fn().mockResolvedValue({ message: 'Campaign deleted', id: 1 }),
     ...overrides,
   } as unknown as ApiClient;
 }
@@ -179,6 +180,43 @@ describe('useAdminCampaignActions', () => {
     });
     expect(onNotify).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'success', text: '"Copy Campaign" created' }),
+    );
+  });
+
+  it('deleteCampaign calls apiClient.deleteCampaign with default purgeAnalytics=false', async () => {
+    const deleteCampaign = vi.fn().mockResolvedValue({ message: 'Campaign deleted', id: 1 });
+    const apiClient = makeApiClient({ deleteCampaign });
+    const { result } = renderHook(() =>
+      useAdminCampaignActions({ apiClient, ...baseOptions }),
+    );
+    await act(async () => { await result.current.deleteCampaign(mockCampaign, { purgeAnalytics: false }); });
+    expect(deleteCampaign).toHaveBeenCalledWith('1', { purgeAnalytics: false });
+  });
+
+  it('deleteCampaign forwards purgeAnalytics flag and notifies success', async () => {
+    const deleteCampaign = vi.fn().mockResolvedValue({ message: 'Campaign deleted', id: 1 });
+    const onNotify = vi.fn();
+    const apiClient = makeApiClient({ deleteCampaign });
+    const { result } = renderHook(() =>
+      useAdminCampaignActions({ apiClient, ...baseOptions, onNotify }),
+    );
+    await act(async () => { await result.current.deleteCampaign(mockCampaign, { purgeAnalytics: true }); });
+    expect(deleteCampaign).toHaveBeenCalledWith('1', { purgeAnalytics: true });
+    expect(onNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'success', text: '"Test Campaign" deleted.' }),
+    );
+  });
+
+  it('deleteCampaign notifies failure when the API rejects', async () => {
+    const deleteCampaign = vi.fn().mockRejectedValue(new Error('boom'));
+    const onNotify = vi.fn();
+    const apiClient = makeApiClient({ deleteCampaign });
+    const { result } = renderHook(() =>
+      useAdminCampaignActions({ apiClient, ...baseOptions, onNotify }),
+    );
+    await act(async () => { await result.current.deleteCampaign(mockCampaign, { purgeAnalytics: false }); });
+    expect(onNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'error', text: 'boom' }),
     );
   });
 

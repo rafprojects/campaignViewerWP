@@ -158,6 +158,7 @@ interface CampaignViewerGalleryContentProps {
   settings: GalleryBehaviorSettings;
   breakpoint: CampaignViewerBreakpoint;
   isAdmin: boolean;
+  apiClient?: ApiClient | undefined;
 }
 
 function CampaignViewerGalleryContent({
@@ -167,6 +168,7 @@ function CampaignViewerGalleryContent({
   settings,
   breakpoint,
   isAdmin,
+  apiClient,
 }: CampaignViewerGalleryContentProps) {
   if (!hasAccess || (displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0)) {
     return null;
@@ -198,9 +200,9 @@ function CampaignViewerGalleryContent({
       }>
         <Stack gap={galleryShellLayout.galleryGap} style={{ width: '100%' }}>
           {galleryShellLayout.galleryMode === 'unified' ? (
-            <UnifiedGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} />
+            <UnifiedGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} apiClient={apiClient} />
           ) : (
-            <PerTypeGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} />
+            <PerTypeGallerySection campaign={displayedCampaign} settings={settings} breakpoint={breakpoint} isAdmin={isAdmin} apiClient={apiClient} />
           )}
         </Stack>
       </Suspense>
@@ -545,6 +547,7 @@ export function CampaignViewer({
             settings={galleryBehaviorSettings}
             breakpoint={breakpoint}
             isAdmin={isAdmin}
+            apiClient={apiClient}
           />
 
           {hasAccess && displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0 && (

@@ -12,6 +12,8 @@ export interface SettingsData extends GalleryBehaviorSettings {
   itemsPerPage: number;
   enableLightbox: boolean;
   enableAnimations: boolean;
+  /** Page ID for magic-link approve results (0 = no page configured). */
+  magicLinkLandingPageId?: number | undefined;
 }
 
 export type SettingsDataInput = Partial<GalleryBehaviorSettings> & {
@@ -20,6 +22,7 @@ export type SettingsDataInput = Partial<GalleryBehaviorSettings> & {
   itemsPerPage?: number | undefined;
   enableLightbox?: boolean | undefined;
   enableAnimations?: boolean | undefined;
+  magicLinkLandingPageId?: number | undefined;
 };
 
 export const DEFAULT_SETTINGS_DATA: SettingsData = {
@@ -38,6 +41,7 @@ export function mapResponseToSettings(response: SettingsDataInput): SettingsData
     itemsPerPage: response.itemsPerPage ?? DEFAULT_SETTINGS_DATA.itemsPerPage,
     enableLightbox: response.enableLightbox ?? DEFAULT_SETTINGS_DATA.enableLightbox,
     enableAnimations: response.enableAnimations ?? DEFAULT_SETTINGS_DATA.enableAnimations,
+    magicLinkLandingPageId: response.magicLinkLandingPageId ?? 0,
   };
 }
 

@@ -1,5 +1,10 @@
 import type { AuthProvider } from '@/services/auth/AuthProvider';
-import type { GalleryBehaviorSettings, LayoutTemplate } from '@/types';
+import type {
+  CampaignMediaBatchRequestItem,
+  CampaignMediaBatchResponse,
+  GalleryBehaviorSettings,
+  LayoutTemplate,
+} from '@/types';
 
 export interface ApiClientOptions {
   baseUrl: string;
@@ -232,6 +237,13 @@ export class ApiClient {
     });
   }
 
+  // WordPress core pages (used by magic-link landing page selector)
+  async listWpPages(): Promise<WpPageSummary[]> {
+    return this.get<WpPageSummary[]>(
+      '/wp-json/wp/v2/pages?per_page=100&status=publish&_fields=id,title,link',
+    );
+  }
+
   // Settings API methods
   async getSettings(): Promise<SettingsResponse> {
     return this.get<SettingsResponse>('/wp-json/wp-super-gallery/v1/settings');
@@ -292,6 +304,21 @@ export class ApiClient {
     );
   }
 
+  // ── P28-A: Campaign hard-delete ─────────────────────────────────────────
+
+  async deleteCampaign(
+    id: string,
+    options: { purgeAnalytics?: boolean } = {},
+  ): Promise<{ message: string; id: number }> {
+    const params = new URLSearchParams({ confirm: 'true' });
+    if (options.purgeAnalytics) {
+      params.set('purge_analytics', 'true');
+    }
+    return this.delete<{ message: string; id: number }>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}?${params.toString()}`,
+    );
+  }
+
   // ── P18-B: Bulk campaign actions ────────────────────────────────────────
 
   async batchCampaigns(
@@ -301,6 +328,16 @@ export class ApiClient {
     return this.post<{ success: string[]; failed: Array<{ id: string; reason: string }> }>(
       '/wp-json/wp-super-gallery/v1/campaigns/batch',
       { action, ids },
+    );
+  }
+
+  async addCampaignMediaBatch(
+    campaignId: string,
+    items: CampaignMediaBatchRequestItem[],
+  ): Promise<CampaignMediaBatchResponse> {
+    return this.post<CampaignMediaBatchResponse>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(campaignId)}/media/batch`,
+      { items },
     );
   }
 
@@ -316,10 +353,11 @@ export class ApiClient {
 
   // ── P18-F: Analytics ────────────────────────────────────────────────────
 
-  async recordAnalyticsEvent(campaignId: string, eventType = 'view'): Promise<void> {
+  async recordAnalyticsEvent(campaignId: string, eventType = 'view', mediaId?: string): Promise<void> {
     await this.post('/wp-json/wp-super-gallery/v1/analytics/event', {
       campaignId,
       eventType,
+      ...(mediaId ? { mediaId } : {}),
     });
   }
 
@@ -335,6 +373,28 @@ export class ApiClient {
     return this.get<CampaignAnalyticsResponse>(
       `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}${qs}`,
     );
+  }
+
+  async getCampaignMediaAnalytics(
+    campaignId: string,
+    from?: string,
+    to?: string,
+  ): Promise<MediaAnalyticsResponse> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.get<MediaAnalyticsResponse>(
+      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}/media${qs}`,
+    );
+  }
+
+  async getAnalyticsSummary(from?: string, to?: string): Promise<AnalyticsSummaryResponse> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.get<AnalyticsSummaryResponse>(`/wp-json/wp-super-gallery/v1/analytics/summary${qs}`);
   }
 
   // ── P18-G: Media Usage Tracking ─────────────────────────────────────────
@@ -353,10 +413,68 @@ export class ApiClient {
     );
   }
 
-  // ── P18-H: Campaign Categories ───────────────────────────────────────────
+  // ── P18-H / P28-C: Campaign Categories ──────────────────────────────────
 
   async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
-    return this.get<CampaignCategoryEntry[]>('/wp-json/wp-super-gallery/v1/campaign-categories');
+    const response = await this.get<{ items: CampaignCategoryEntry[] }>('/wp-json/wp-super-gallery/v1/campaign-categories');
+    return response.items ?? [];
+  }
+
+  async createCampaignCategory(name: string, slug?: string): Promise<CampaignCategoryEntry> {
+    return this.post<CampaignCategoryEntry>('/wp-json/wp-super-gallery/v1/campaign-categories', { name, ...(slug ? { slug } : {}) });
+  }
+
+  async updateCampaignCategory(id: string, data: { name?: string; slug?: string }): Promise<CampaignCategoryEntry> {
+    return this.put<CampaignCategoryEntry>(`/wp-json/wp-super-gallery/v1/campaign-categories/${id}`, data);
+  }
+
+  async deleteCampaignCategory(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.delete<{ deleted: boolean; id: string }>(`/wp-json/wp-super-gallery/v1/campaign-categories/${id}`);
+  }
+
+  // ── P28-C: Campaign Tags ─────────────────────────────────────────────────
+
+  async listCampaignTags(): Promise<TagEntry[]> {
+    const response = await this.get<{ items: TagEntry[] }>('/wp-json/wp-super-gallery/v1/tags/campaign');
+    return response.items ?? [];
+  }
+
+  async createCampaignTag(name: string, slug?: string): Promise<TagEntry> {
+    return this.post<TagEntry>('/wp-json/wp-super-gallery/v1/tags/campaign', { name, ...(slug ? { slug } : {}) });
+  }
+
+  async deleteCampaignTag(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.delete<{ deleted: boolean; id: string }>(`/wp-json/wp-super-gallery/v1/tags/campaign/${id}`);
+  }
+
+  // ── P28-O: Campaign Templates ────────────────────────────────────────────
+
+  async listCampaignTemplates(): Promise<CampaignTemplate[]> {
+    const response = await this.get<{ items: CampaignTemplate[] }>('/wp-json/wp-super-gallery/v1/campaign-templates');
+    return response.items ?? [];
+  }
+
+  async createCampaignTemplate(data: { name: string; description?: string; from_campaign_id?: number }): Promise<CampaignTemplate> {
+    return this.post<CampaignTemplate>('/wp-json/wp-super-gallery/v1/campaign-templates', data);
+  }
+
+  async deleteCampaignTemplate(id: string): Promise<void> {
+    await this.delete(`/wp-json/wp-super-gallery/v1/campaign-templates/${id}`);
+  }
+
+  // ── P28-C: Media Tags ────────────────────────────────────────────────────
+
+  async listMediaTags(): Promise<TagEntry[]> {
+    const response = await this.get<{ items: TagEntry[] }>('/wp-json/wp-super-gallery/v1/tags/media');
+    return response.items ?? [];
+  }
+
+  async createMediaTag(name: string, slug?: string): Promise<TagEntry> {
+    return this.post<TagEntry>('/wp-json/wp-super-gallery/v1/tags/media', { name, ...(slug ? { slug } : {}) });
+  }
+
+  async deleteMediaTag(id: string): Promise<{ deleted: boolean; id: string }> {
+    return this.delete<{ deleted: boolean; id: string }>(`/wp-json/wp-super-gallery/v1/tags/media/${id}`);
   }
 
   // ── P18-I: Access Request Workflow ───────────────────────────────────────
@@ -380,6 +498,58 @@ export class ApiClient {
   async denyAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
     return this.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/deny`, {});
   }
+
+  // ── P28-J: Access Totals Summary ─────────────────────────────────────────
+
+  async getAccessSummary(page = 1, perPage = 50): Promise<AccessSummaryResponse> {
+    return this.get<AccessSummaryResponse>(
+      `/wp-json/wp-super-gallery/v1/campaigns/access-summary?page=${page}&per_page=${perPage}`,
+    );
+  }
+
+  // ── P28-G: Global audit log ───────────────────────────────────────────────
+
+  async downloadGlobalAuditCsv(params: { campaignId?: string; from?: string; to?: string; action?: string } = {}): Promise<void> {
+    const qs = new URLSearchParams();
+    if (params.campaignId) qs.set('campaign_id', params.campaignId);
+    if (params.from) qs.set('from', params.from);
+    if (params.to) qs.set('to', params.to);
+    if (params.action) qs.set('action', params.action);
+    const url = `${this.getBaseUrl()}/wp-json/wp-super-gallery/v1/admin/audit-log${qs.toString() ? `?${qs}` : ''}`;
+    const headers = await this.getAuthHeaders();
+    const res = await fetch(url, { headers: { ...headers, Accept: 'text/csv' } });
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'audit-log.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+}
+
+/** One row in the access-summary response. */
+export interface AccessSummaryItem {
+  id: number;
+  title: string;
+  grantCount: number;
+  pendingRequestCount: number;
+  /** null = unlimited (reserved for future capacity feature). */
+  capacity: number | null;
+}
+
+export interface AccessSummaryResponse {
+  items: AccessSummaryItem[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+/** Minimal WP page summary returned by the /wp/v2/pages endpoint. */
+export interface WpPageSummary {
+  id: number;
+  title: { rendered: string };
+  link: string;
 }
 
 /**
@@ -399,6 +569,8 @@ export interface SettingsResponse extends Partial<GalleryBehaviorSettings> {
   enableLightbox?: boolean;
   enableAnimations?: boolean;
   cacheTtl?: number;
+  /** P28-I: WP page ID used as magic-link result landing page (0 = none). */
+  magicLinkLandingPageId?: number | undefined;
 }
 
 /**
@@ -442,6 +614,26 @@ export interface CampaignAnalyticsResponse {
   daily: CampaignAnalyticsDayEntry[];
 }
 
+export interface MediaAnalyticsItem {
+  media_id: string;
+  views: number;
+  lightbox_opens: number;
+}
+export interface MediaAnalyticsResponse {
+  items: MediaAnalyticsItem[];
+}
+
+export interface AnalyticsSummaryTopCampaign {
+  id: string;
+  title: string;
+  views: number;
+}
+export interface AnalyticsSummaryResponse {
+  totalViews: number;
+  uniqueVisitors: number;
+  topCampaigns: AnalyticsSummaryTopCampaign[];
+}
+
 export interface MediaUsageCampaignRef {
   id: string;
   title: string;
@@ -454,6 +646,28 @@ export interface MediaUsageResponse {
 
 export interface CampaignCategoryEntry {
   id: string;
+  name: string;
+  slug: string;
+  count: number;
+  parent_id: number;
+}
+
+export interface CampaignTemplate {
+  id: string;
+  name: string;
+  description: string;
+  source: 'builtin' | 'user';
+  editable: boolean;
+  settings: {
+    visibility: 'public' | 'private';
+    galleryOverrides: Record<string, unknown> | null;
+    layoutTemplateId: string | null;
+  };
+  createdAt: string | null;
+}
+
+export interface TagEntry {
+  id: number;
   name: string;
   slug: string;
   count: number;

@@ -153,10 +153,51 @@ export interface CampaignAccessGrant {
  * Response from media upload endpoint
  */
 export interface UploadResponse {
-  attachmentId: string;
+  attachmentId: number | string;
   url: string;
   thumbnail?: string;
   mimeType?: string;
+}
+
+export interface BatchUploadResult {
+  filename: string;
+  success: boolean;
+  attachmentId?: number | string;
+  url?: string;
+  thumbnail?: string;
+  mimeType?: string;
+  error?: string;
+}
+
+export interface BatchUploadResponse {
+  results: BatchUploadResult[];
+  total: number;
+  succeeded: number;
+  failed: number;
+}
+
+export interface CampaignMediaBatchRequestItem {
+  id?: string | undefined;
+  type: 'image' | 'video';
+  source: 'upload' | 'external';
+  url?: string | undefined;
+  attachmentId?: number | string | undefined;
+  caption?: string | undefined;
+  title?: string | undefined;
+  thumbnail?: string | undefined;
+  provider?: string | undefined;
+  order?: number | undefined;
+}
+
+export interface CampaignMediaBatchFailure {
+  index: number;
+  error: string;
+}
+
+export interface CampaignMediaBatchResponse {
+  added: MediaItem[];
+  failed: CampaignMediaBatchFailure[];
+  total: number;
 }
 
 /**
@@ -725,6 +766,7 @@ export interface GalleryBehaviorSettings {
   cardPageTransitionOpacity: number;
   // P14-B: Upload / Media (advanced)
   uploadMaxSizeMb: number;
+  maxBatchUploadSize: number;
   uploadAllowedTypes: string;
   libraryPageSize: number;
   mediaListPageSize: number;
@@ -1203,6 +1245,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardPageTransitionOpacity: 0.3,
   // P14-B: Upload / Media (advanced)
   uploadMaxSizeMb: 50,
+  maxBatchUploadSize: 20,
   uploadAllowedTypes: 'image/*,video/*',
   libraryPageSize: 20,
   mediaListPageSize: 50,

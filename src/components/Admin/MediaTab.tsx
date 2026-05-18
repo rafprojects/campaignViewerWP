@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, useRef, type CSSProperties, type KeyboardEventHandler } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, memo, type CSSProperties, type KeyboardEventHandler } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch, type GridColProps } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch, type GridColProps, type Primitive } from '@mantine/core';
+
+// Mantine's SegmentedControl calls setState inside its ref callbacks, which triggers
+// React's "maximum update depth" error when the component re-renders rapidly.
+// Wrapping in memo (with stable data/onChange props) prevents re-renders during cascades.
+const StableSegmentedControl = memo(SegmentedControl);
 import {
   DndContext,
   DragOverlay,
@@ -33,7 +38,13 @@ import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDot
 import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
 import { useMediaItems, getMediaItemsQueryKey } from '@/services/adminQuery';
-import type { MediaItem, OEmbedResponse, UploadResponse } from '@/types';
+import { useGetSettings } from '@/services/settingsQuery';
+import type {
+  BatchUploadResponse,
+  CampaignMediaBatchRequestItem,
+  MediaItem,
+  OEmbedResponse,
+} from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -45,6 +56,18 @@ type DropPosition = 'before' | 'after';
 
 const LIST_MIN_WIDTH = 720;
 const LIST_PAGE_SIZE = 50;
+
+function normalizeSelectedFiles(value: File | File[] | null): File[] {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
+}
+
+function getNextMediaOrder(items: MediaItem[]): number {
+  return items.reduce((maxOrder, item) => Math.max(maxOrder, item.order ?? 0), 0) + 1;
+}
 
 type SharedSortableProps = {
   item: MediaItem;
@@ -214,11 +237,13 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // reorder, oEmbed enrichment). Query data seeds it on mount / campaign change.
   const queryClient = useQueryClient();
   const { mediaItems, mediaLoading: mediaQueryLoading, mutateMedia } = useMediaItems(apiClient, campaignId);
+  const { data: settingsResponse } = useGetSettings(apiClient);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [addOpen, setAddOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<Array<string | null>>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const { upload, isUploading: uploading, progress: uploadProgress, resetProgress } = useXhrUpload();
+  const { uploadMany, batchProgress, isUploading: uploading, resetProgress } = useXhrUpload();
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadCaption, setUploadCaption] = useState('');
   const dropRef = useRef<HTMLDivElement | null>(null);
@@ -262,6 +287,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     defaultValue: false,
     getInitialValueInEffect: false,
   });
+  const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -413,62 +439,116 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }, [mediaItems, mediaQueryLoading, campaignId, enrichOEmbedMetadata]);
 
-  async function handleUpload() {
-    if (!selectedFile) return;
+  const handleSelectFiles = useCallback((value: File | File[] | null) => {
+    const nextFiles = normalizeSelectedFiles(value);
+    const mediaFiles = nextFiles.filter((file) => file.type.startsWith('image/') || file.type.startsWith('video/'));
+    const skippedCount = nextFiles.length - mediaFiles.length;
 
-    // Client-side validation
-    const ALLOWED_TYPES = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/webm', 'video/ogg',
-    ];
-    const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
-
-    if (!ALLOWED_TYPES.includes(selectedFile.type)) {
-      showNotification({ title: 'Invalid file type', message: 'Accepted: JPEG, PNG, GIF, WebP, MP4, WebM, OGG.', color: 'red' });
-      setSelectedFile(null);
-      return;
-    }
-    if (selectedFile.size > MAX_SIZE) {
-      showNotification({ title: 'File too large', message: `File is ${Math.round(selectedFile.size / 1024 / 1024)} MB. Maximum size is 50 MB.`, color: 'red' });
-      setSelectedFile(null);
-      return;
+    if (skippedCount > 0) {
+      showNotification({
+        title: 'Some files were skipped',
+        message: `${skippedCount} non-media file${skippedCount === 1 ? '' : 's'} ${skippedCount === 1 ? 'was' : 'were'} ignored.`,
+        color: 'yellow',
+      });
     }
 
-    try {
-      // Determine media type from file
-      const mediaType = selectedFile.type.startsWith('image') ? 'image' : 'video';
+    if (mediaFiles.length > maxBatchUploadSize) {
+      showNotification({
+        title: 'Batch limit reached',
+        message: `Only the first ${maxBatchUploadSize} files were kept.`,
+        color: 'yellow',
+      });
+    }
 
-      const uploadUrl = `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`;
-      const authHeaders = await apiClient.getAuthHeaders();
-      const res = await upload<UploadResponse>({
-        url: uploadUrl,
-        file: selectedFile,
-        headers: authHeaders,
-      });
-      // Use user-provided caption or fall back to file name
-      const finalCaption = uploadCaption.trim() || uploadTitle.trim() || selectedFile.name;
-      const newMedia = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, {
-        type: mediaType,
-        source: 'upload',
-        provider: 'wordpress',
-        attachmentId: res.attachmentId,
-        url: res.url,
-        thumbnail: res.thumbnail ?? res.url,
-        caption: finalCaption,
-        title: uploadTitle.trim() || undefined,
-      });
-      setMedia((m) => [...m, newMedia]);
-      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => [...(prev ?? []), newMedia]);
-      setSelectedFile(null);
+    const limitedFiles = mediaFiles.slice(0, maxBatchUploadSize);
+    setSelectedFiles(limitedFiles);
+    setUploadErrors(Array(limitedFiles.length).fill(null));
+    if (limitedFiles.length !== 1) {
       setUploadTitle('');
       setUploadCaption('');
-      setAddOpen(false);
-      showNotification({ title: 'Uploaded', message: 'Media uploaded and added to campaign.' });
-      onCampaignsUpdated?.();
+    }
+  }, [maxBatchUploadSize]);
+
+  async function handleUpload() {
+    if (selectedFiles.length === 0) return;
+
+    try {
+      setUploadErrors(Array(selectedFiles.length).fill(null));
+
+      const authHeaders = await apiClient.getAuthHeaders();
+      const uploadResponse = await uploadMany<BatchUploadResponse>({
+        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        files: selectedFiles,
+        headers: authHeaders,
+      });
+
+      const nextOrder = getNextMediaOrder(media);
+      const successfulUploadEntries = uploadResponse.results
+        .map((result, index) => ({ result, file: selectedFiles[index] }))
+        .filter(({ result, file }) => Boolean(file) && result.success && result.attachmentId && result.url);
+
+      const batchItems: CampaignMediaBatchRequestItem[] = successfulUploadEntries.map(({ result, file }, index) => ({
+        type: file!.type.startsWith('image') ? 'image' : 'video',
+        source: 'upload',
+        provider: 'wordpress',
+        attachmentId: result.attachmentId!,
+        url: result.url!,
+        thumbnail: result.thumbnail ?? result.url,
+        caption: selectedFiles.length === 1
+          ? uploadCaption.trim() || uploadTitle.trim() || file!.name
+          : file!.name,
+        title: selectedFiles.length === 1 ? uploadTitle.trim() || undefined : undefined,
+        order: nextOrder + index,
+      }));
+
+      let addedMedia: MediaItem[] = [];
+      let batchAddFailures = 0;
+
+      if (batchItems.length > 0) {
+        const batchAddResponse = await apiClient.addCampaignMediaBatch(campaignId, batchItems);
+        addedMedia = batchAddResponse.added;
+        batchAddFailures = batchAddResponse.failed.length;
+
+        if (addedMedia.length > 0) {
+          setMedia((current) => [...current, ...addedMedia]);
+          queryClient.setQueryData<MediaItem[]>(
+            getMediaItemsQueryKey(apiClient, campaignId),
+            (prev) => [...(prev ?? []), ...addedMedia],
+          );
+          onCampaignsUpdated?.();
+        }
+      }
+
+      const failedUploadEntries = uploadResponse.results
+        .map((result, index) => ({
+          file: selectedFiles[index],
+          error: result.success ? null : (result.error ?? 'Upload failed.'),
+        }))
+        .filter((entry): entry is { file: File; error: string } => Boolean(entry.file) && Boolean(entry.error));
+
+      const uploadedCount = addedMedia.length;
+      const totalCount = selectedFiles.length;
+      const hasFailures = failedUploadEntries.length > 0 || batchAddFailures > 0;
+
+      if (failedUploadEntries.length > 0) {
+        setSelectedFiles(failedUploadEntries.map((entry) => entry.file));
+        setUploadErrors(failedUploadEntries.map((entry) => entry.error));
+      } else {
+        setSelectedFiles([]);
+        setUploadErrors([]);
+        setUploadTitle('');
+        setUploadCaption('');
+        setAddOpen(false);
+      }
+
+      showNotification({
+        title: hasFailures ? 'Upload complete with issues' : 'Upload complete',
+        message: `${uploadedCount} of ${totalCount} file${totalCount === 1 ? '' : 's'} uploaded successfully.${batchAddFailures > 0 ? ` ${batchAddFailures} file${batchAddFailures === 1 ? '' : 's'} could not be added to the campaign.` : ''}`,
+        color: hasFailures ? 'yellow' : 'blue',
+      });
     } catch (err) {
       console.error(err);
       showNotification({ title: 'Upload failed', message: getErrorMessage(err, 'Upload failed.'), color: 'red' });
-      setSelectedFile(null);
     } finally {
       resetProgress();
     }
@@ -547,8 +627,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     const onDragOver = (e: globalThis.DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
     const onDrop = (e: globalThis.DragEvent) => {
       e.preventDefault();
-      const f = e.dataTransfer?.files?.[0];
-      if (f) setSelectedFile(f);
+      const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+      if (files.length > 0) {
+        handleSelectFiles(files);
+      }
     };
     el.addEventListener('dragover', onDragOver);
     el.addEventListener('drop', onDrop);
@@ -556,17 +638,17 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       el.removeEventListener('dragover', onDragOver);
       el.removeEventListener('drop', onDrop);
     };
-  }, []);
+  }, [handleSelectFiles]);
 
   useEffect(() => {
-    if (!selectedFile) {
+    if (selectedFiles.length !== 1) {
       setPreviewUrl(null);
       return;
     }
-    const url = URL.createObjectURL(selectedFile);
+    const url = URL.createObjectURL(selectedFiles[0]!);
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
+  }, [selectedFiles]);
 
   async function handleDelete(item: MediaItem) {
     setDeleteItem(item);
@@ -798,6 +880,23 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     [activeMediaId, media],
   );
 
+  // Stable data arrays for SegmentedControl — new array references on every render can trigger
+  // Mantine's internal ref-measurement loop and cause infinite setState cycles under rapid updates.
+  const viewModeData = useMemo(() => [
+    { value: 'grid', label: <Tooltip label="Grid View"><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
+    { value: 'compact', label: <Tooltip label="Compact Grid"><Box><IconGridDots size={16} /></Box></Tooltip> },
+    { value: 'list', label: <Tooltip label="List View"><Box><IconList size={16} /></Box></Tooltip> },
+  ], []);
+
+  const cardSizeData = useMemo(() => [
+    { value: 'small', label: 'S' },
+    { value: 'medium', label: 'M' },
+    { value: 'large', label: 'L' },
+  ], []);
+
+  const handleViewModeChange = useCallback((v: Primitive) => setViewMode(v as unknown as ViewMode), [setViewMode]);
+  const handleCardSizeChange = useCallback((v: Primitive) => setCardSize(v as unknown as CardSize), [setCardSize]);
+
   // Shared props passed to both sortable sub-components (stable references prevent remounts).
   const sharedSortableProps: Omit<SharedSortableProps, 'item'> = {
     getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
@@ -813,29 +912,21 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         </Group>
         <Group gap="sm" wrap="wrap" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
           {/* View Mode Toggle */}
-          <SegmentedControl
+          <StableSegmentedControl
             size="xs"
             value={viewMode}
-            onChange={(v) => setViewMode(v as ViewMode)}
+            onChange={handleViewModeChange}
             aria-label="Media view mode"
-            data={[
-              { value: 'grid', label: <Tooltip label="Grid View"><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
-              { value: 'compact', label: <Tooltip label="Compact Grid"><Box><IconGridDots size={16} /></Box></Tooltip> },
-              { value: 'list', label: <Tooltip label="List View"><Box><IconList size={16} /></Box></Tooltip> },
-            ]}
+            data={viewModeData}
           />
           {/* Card Size (only for grid modes) */}
           {viewMode !== 'list' && (
-            <SegmentedControl
+            <StableSegmentedControl
               size="xs"
               value={cardSize}
-              onChange={(v) => setCardSize(v as CardSize)}
+              onChange={handleCardSizeChange}
               aria-label="Media card size"
-              data={[
-                { value: 'small', label: 'S' },
-                { value: 'medium', label: 'M' },
-                { value: 'large', label: 'L' },
-              ]}
+              data={cardSizeData}
             />
           )}
           <Tooltip label="Show only items exclusive to this campaign">
@@ -963,14 +1054,15 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         opened={addOpen}
         onClose={() => setAddOpen(false)}
         dropRef={dropRef}
-        selectedFile={selectedFile}
-        onSelectFile={setSelectedFile}
+        selectedFiles={selectedFiles}
+        onSelectFiles={handleSelectFiles}
         previewUrl={previewUrl}
         uploadTitle={uploadTitle}
         onUploadTitleChange={setUploadTitle}
         uploadCaption={uploadCaption}
         onUploadCaptionChange={setUploadCaption}
-        uploadProgress={uploadProgress}
+        uploadProgresses={batchProgress}
+        uploadErrors={uploadErrors}
         uploading={uploading}
         onUpload={handleUpload}
         externalUrl={externalUrl}

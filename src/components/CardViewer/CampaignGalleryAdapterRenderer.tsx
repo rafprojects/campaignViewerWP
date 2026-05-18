@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 
 import { resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
+import type { ApiClient } from '@/services/apiClient';
 import type {
   Campaign,
   ContainerDimensions,
@@ -24,6 +25,7 @@ interface CampaignGalleryAdapterRendererProps {
   containerDimensions: ContainerDimensions;
   campaign: Campaign;
   isAdmin: boolean;
+  apiClient?: ApiClient | undefined;
 }
 
 export function CampaignGalleryAdapterRenderer({
@@ -34,6 +36,7 @@ export function CampaignGalleryAdapterRenderer({
   containerDimensions,
   campaign,
   isAdmin,
+  apiClient,
 }: CampaignGalleryAdapterRendererProps) {
   if (adapterId === 'layout-builder' && campaign.layoutTemplateId) {
     return (
@@ -44,6 +47,8 @@ export function CampaignGalleryAdapterRenderer({
         templateId={campaign.layoutTemplateId}
         isAdmin={isAdmin}
         containerDimensions={containerDimensions}
+        campaignId={String(campaign.id)}
+        apiClient={apiClient}
       />
     );
   }

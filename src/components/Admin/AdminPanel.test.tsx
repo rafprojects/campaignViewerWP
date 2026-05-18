@@ -44,6 +44,7 @@ describe('AdminPanel', () => {
     const base = {
       getLayoutTemplates: vi.fn().mockResolvedValue([]),
       listCampaignCategories: vi.fn().mockResolvedValue([]),
+      getAccessSummary: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, perPage: 50, totalPages: 0 }),
       ...partial,
     };
     // Return a Proxy so any un-stubbed method returns a resolved promise
@@ -130,9 +131,13 @@ describe('AdminPanel', () => {
       />,
     );
 
-    // Open the campaign form modal (lazy-loaded — waitFor with generous timeout
-    // to handle Suspense resolution under full-suite CPU load)
+    // Click "New Campaign" — template picker appears first.
     fireEvent.click(screen.getByRole('button', { name: 'Create new campaign' }));
+    // Picker may load asynchronously; wait for the "Start Blank" option.
+    const startBlank = await screen.findByText('Start Blank', {}, { timeout: 15000 });
+
+    // Pick "Start Blank" to open the campaign form with no template.
+    fireEvent.click(startBlank);
     await waitFor(
       () => expect(screen.getByRole('heading', { name: 'New Campaign' })).toBeInTheDocument(),
       { timeout: 15000 },

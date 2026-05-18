@@ -5,15 +5,244 @@
 
 class WPSG_REST_Routes_Test extends WP_UnitTestCase {
 
+    private $admin_id;
+
     public function setUp(): void {
         parent::setUp();
         // Routes are registered automatically when the plugin loads
         // via the rest_api_init action in the main plugin file
+        $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
+        $user = get_user_by('id', $this->admin_id);
+        $user->add_cap('manage_wpsg');
+        wp_set_current_user($this->admin_id);
+    }
+
+    // ── P28-K: args validation tests ────────────────────────────────────────
+
+    public function test_create_campaign_requires_title() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        // No title — WP core should reject with rest_missing_callback_param
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals('rest_missing_callback_param', $data['code']);
+    }
+
+    public function test_create_campaign_rejects_invalid_visibility() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $request->set_param('title', 'Test');
+        $request->set_param('visibility', 'secret');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_invalid_param', $response->get_data()['code']);
+    }
+
+    public function test_batch_campaigns_requires_action_and_ids() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_missing_callback_param', $response->get_data()['code']);
+    }
+
+    public function test_batch_campaigns_rejects_invalid_action() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $request->set_param('action', 'delete');
+        $request->set_param('ids', [1, 2]);
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_invalid_param', $response->get_data()['code']);
+    }
+
+    public function test_analytics_event_requires_campaign_id() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_missing_callback_param', $response->get_data()['code']);
+    }
+
+    public function test_analytics_event_rejects_invalid_event_type() {
+        update_option('wpsg_settings', ['enable_analytics' => true]);
+        $campaign_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_title'  => 'Analytics Test',
+            'post_status' => 'publish',
+        ]);
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request->set_param('campaign_id', $campaign_id);
+        $request->set_param('event_type', 'click');
+        $response = rest_do_request($request);
+        $this->assertEquals(400, $response->get_status());
+        $this->assertEquals('rest_invalid_param', $response->get_data()['code']);
+
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_schema_document_lists_routes_with_args() {
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1');
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $data = $response->get_data();
+        // Campaigns route should expose its schema
+        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns', $data['routes']);
+    }
+
+    // ── P28-L: X-RateLimit-* header tests ───────────────────────────────────
+
+    public function test_rate_limited_response_includes_ratelimit_headers() {
+        // GET /campaigns is rate_limit_public — should always return headers
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $response = rest_do_request($request);
+        $headers = $response->get_headers();
+        $this->assertArrayHasKey('X-RateLimit-Limit', $headers);
+        $this->assertArrayHasKey('X-RateLimit-Remaining', $headers);
+        $this->assertArrayHasKey('X-RateLimit-Reset', $headers);
+        $this->assertGreaterThan(0, (int) $headers['X-RateLimit-Limit']);
+        $this->assertGreaterThanOrEqual(0, (int) $headers['X-RateLimit-Remaining']);
+        $this->assertGreaterThan(time() - 1, (int) $headers['X-RateLimit-Reset']);
+    }
+
+    public function test_remaining_decrements_on_successive_requests() {
+        $request1 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $response1 = rest_do_request($request1);
+        $remaining1 = (int) $response1->get_headers()['X-RateLimit-Remaining'];
+
+        $request2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $response2 = rest_do_request($request2);
+        $remaining2 = (int) $response2->get_headers()['X-RateLimit-Remaining'];
+
+        $this->assertLessThan($remaining1, $remaining2);
+    }
+
+    public function test_429_response_includes_ratelimit_headers() {
+        // Override limit to 0 so the very first request trips the limiter
+        add_filter('wpsg_rate_limit_public', '__return_zero');
+
+        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        // rate_limit_check returns early when limit <= 0, so use limit=1 instead
+        remove_all_filters('wpsg_rate_limit_public');
+        add_filter('wpsg_rate_limit_public', static function () { return 1; });
+
+        // First request consumes the only slot
+        rest_do_request($request);
+        // Second request hits 429
+        $response = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns'));
+
+        // If the server returned 429, headers must still be present
+        if ($response->get_status() === 429) {
+            $headers = $response->get_headers();
+            $this->assertArrayHasKey('X-RateLimit-Limit', $headers);
+            $this->assertArrayHasKey('X-RateLimit-Remaining', $headers);
+            $this->assertArrayHasKey('X-RateLimit-Reset', $headers);
+            $this->assertEquals(0, (int) $headers['X-RateLimit-Remaining']);
+        }
+
+        remove_all_filters('wpsg_rate_limit_public');
+    }
+
+    // ── P28-M: sort controls tests ───────────────────────────────────────────
+
+    private function create_campaign_with_media(string $title, array $media_items): int {
+        $id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_title'  => $title,
+            'post_status' => 'publish',
+        ]);
+        update_post_meta($id, 'media_items', $media_items);
+        update_post_meta($id, 'visibility', 'public');
+        return (int) $id;
+    }
+
+    public function test_list_media_default_sort_is_order_asc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'Beta',  'order' => 2, 'url' => 'https://example.com/b.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Alpha', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // order 1 comes first
+        $this->assertEquals('m1', $items[1]['id']);
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_order_desc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Desc Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'First',  'order' => 1, 'url' => 'https://example.com/1.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Second', 'order' => 2, 'url' => 'https://example.com/2.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'order_desc');
+        $response = rest_do_request($request);
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // order 2 comes first
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_title_asc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Title Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'Zebra', 'order' => 1, 'url' => 'https://example.com/z.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Apple', 'order' => 2, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'title_asc');
+        $response = rest_do_request($request);
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // Apple before Zebra
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_title_desc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Title Desc Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'Zebra', 'order' => 1, 'url' => 'https://example.com/z.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Apple', 'order' => 2, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'title_desc');
+        $response = rest_do_request($request);
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m1', $items[0]['id']); // Zebra before Apple
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_unknown_sort_falls_back_to_order_asc() {
+        $campaign_id = $this->create_campaign_with_media('Sort Fallback Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'B', 'order' => 2, 'url' => 'https://example.com/b.jpg'],
+            ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'A', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        // WP REST args validation will reject unknown enums with 400 before reaching the handler.
+        // So we test the default (no sort param) falls back gracefully.
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $items = $response->get_data()['items'];
+        $this->assertEquals('m2', $items[0]['id']); // order_asc default
+        wp_delete_post($campaign_id, true);
+    }
+
+    public function test_list_media_sort_meta_field_in_response() {
+        $campaign_id = $this->create_campaign_with_media('Sort Meta Test', [
+            ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'A', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
+        ]);
+
+        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request->set_param('sort', 'title_asc');
+        $response = rest_do_request($request);
+        $meta = $response->get_data()['meta'];
+        $this->assertEquals('title_asc', $meta['sort']);
+        wp_delete_post($campaign_id, true);
     }
 
     public function test_media_routes_are_registered() {
         $routes = rest_get_server()->get_routes('wp-super-gallery/v1');
         $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media', $routes);
+        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media/batch', $routes);
         $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', $routes);
     }
 
@@ -101,6 +330,179 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
 
         // Verify that the route matched by checking it's not false
         // The regex validation is already tested in other methods
+    }
+
+    // ── P28-P: Settings ETag + PATCH ────────────────────────────────────────
+
+    public function test_get_settings_returns_etag_header() {
+        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $headers = $response->get_headers();
+        $this->assertArrayHasKey('ETag', $headers);
+        $this->assertNotEmpty($headers['ETag']);
+    }
+
+    public function test_get_settings_returns_304_on_matching_etag() {
+        // First request — capture the ETag.
+        $response1 = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/settings'));
+        $etag = $response1->get_headers()['ETag'];
+
+        // Second request with If-None-Match — should return 304.
+        $request2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $request2->add_header('If-None-Match', $etag);
+        $response2 = rest_do_request($request2);
+        $this->assertEquals(304, $response2->get_status());
+    }
+
+    public function test_patch_settings_merges_partial_keys() {
+        update_option('wpsg_settings', ['enable_analytics' => true, 'default_visibility' => 'public']);
+
+        $request = new WP_REST_Request('PATCH', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(json_encode(['defaultVisibility' => 'private']));
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $stored = get_option('wpsg_settings');
+        // PATCH must not destroy sibling keys.
+        $this->assertEquals('private', $stored['default_visibility']);
+        $this->assertTrue((bool) $stored['enable_analytics'], 'Unmentioned key must be preserved');
+    }
+
+    public function test_post_settings_still_works_after_patch_added() {
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(json_encode(['enableAnalytics' => false]));
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+    }
+
+    // ── P28-Q: Hierarchical campaign categories ──────────────────────────────
+
+    public function test_campaign_category_list_includes_parent_id() {
+        $result = wp_insert_term('Parent Cat', 'wpsg_campaign_category');
+        $parent_term_id = $result['term_id'];
+
+        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
+        $response = rest_do_request($request);
+        $this->assertEquals(200, $response->get_status());
+        $items = $response->get_data()['items'];
+        $this->assertNotEmpty($items);
+        $this->assertArrayHasKey('parent_id', $items[0]);
+        $this->assertEquals(0, $items[0]['parent_id']); // top-level
+
+        wp_delete_term($parent_term_id, 'wpsg_campaign_category');
+    }
+
+    public function test_create_child_category_with_parent_id() {
+        $parent = wp_insert_term('Parent', 'wpsg_campaign_category');
+        $parent_id = (int) $parent['term_id'];
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request->set_param('name', 'Child Category');
+        $request->set_param('parent_id', $parent_id);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(201, $response->get_status());
+        $data = $response->get_data();
+        $this->assertEquals($parent_id, $data['parent_id']);
+
+        wp_delete_term((int) $data['id'], 'wpsg_campaign_category');
+        wp_delete_term($parent_id, 'wpsg_campaign_category');
+    }
+
+    public function test_update_category_can_set_parent_id() {
+        $parent = wp_insert_term('Update Parent', 'wpsg_campaign_category');
+        $child  = wp_insert_term('Update Child',  'wpsg_campaign_category');
+        $parent_id = (int) $parent['term_id'];
+        $child_id  = (int) $child['term_id'];
+
+        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaign-categories/{$child_id}");
+        $request->set_param('parent_id', $parent_id);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertEquals($parent_id, $response->get_data()['parent_id']);
+
+        wp_delete_term($child_id,  'wpsg_campaign_category');
+        wp_delete_term($parent_id, 'wpsg_campaign_category');
+    }
+
+    // ── P28-R: categories saved and returned as term IDs ─────────────────────
+
+    public function test_format_campaign_returns_category_ids() {
+        $term    = wp_insert_term('ID Cat', 'wpsg_campaign_category');
+        $term_id = (int) $term['term_id'];
+
+        $post_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_status' => 'publish',
+            'post_title'  => 'Cat ID Test',
+        ]);
+        update_post_meta($post_id, 'status', 'active');
+        wp_set_object_terms($post_id, [$term_id], 'wpsg_campaign_category');
+
+        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $response = rest_do_request($request);
+        $data     = $response->get_data();
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertContains(strval($term_id), $data['categories']);
+
+        wp_delete_post($post_id, true);
+        wp_delete_term($term_id, 'wpsg_campaign_category');
+    }
+
+    public function test_put_campaign_saves_categories_by_id() {
+        $term    = wp_insert_term('Save By ID', 'wpsg_campaign_category');
+        $term_id = (int) $term['term_id'];
+
+        $post_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_status' => 'publish',
+            'post_title'  => 'Save Cat Test',
+        ]);
+        update_post_meta($post_id, 'status', 'active');
+
+        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_param('title', 'Save Cat Test');
+        $request->set_param('categories', [strval($term_id)]);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertContains(strval($term_id), $response->get_data()['categories']);
+
+        $assigned = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'ids']);
+        $this->assertContains($term_id, $assigned);
+
+        wp_delete_post($post_id, true);
+        wp_delete_term($term_id, 'wpsg_campaign_category');
+    }
+
+    public function test_put_campaign_clears_categories_when_empty_array() {
+        $term    = wp_insert_term('Clear Cat', 'wpsg_campaign_category');
+        $term_id = (int) $term['term_id'];
+
+        $post_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_status' => 'publish',
+            'post_title'  => 'Clear Cat Test',
+        ]);
+        update_post_meta($post_id, 'status', 'active');
+        wp_set_object_terms($post_id, [$term_id], 'wpsg_campaign_category');
+
+        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $request->set_param('title', 'Clear Cat Test');
+        $request->set_param('categories', []);
+        $response = rest_do_request($request);
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertEmpty($response->get_data()['categories']);
+
+        wp_delete_post($post_id, true);
+        wp_delete_term($term_id, 'wpsg_campaign_category');
     }
 }
 

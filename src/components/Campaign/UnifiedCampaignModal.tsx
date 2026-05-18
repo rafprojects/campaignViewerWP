@@ -1,8 +1,9 @@
 import { Suspense, lazy, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
-  Modal, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
+  Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
+import type { CampaignCategoryEntry } from '@/services/apiClient';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
@@ -61,6 +62,31 @@ function getCampaignBreakpointAdapterId(
   return galleryOverrides?.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? null;
 }
 
+function buildCategorySelectData(items: CampaignCategoryEntry[]): { value: string; label: string }[] {
+  const result: { value: string; label: string }[] = [];
+  const byParent = new Map<number, CampaignCategoryEntry[]>();
+  for (const c of items) {
+    const pid = c.parent_id ?? 0;
+    if (pid !== 0) {
+      const list = byParent.get(pid) ?? [];
+      list.push(c);
+      byParent.set(pid, list);
+    }
+  }
+  const roots = items.filter((c) => (c.parent_id ?? 0) === 0);
+
+  function addLevel(cats: CampaignCategoryEntry[], depth: number) {
+    if (depth >= 3) return;
+    for (const cat of cats) {
+      const prefix = depth === 0 ? '' : '  '.repeat(depth) + '↳ ';
+      result.push({ value: cat.id, label: `${prefix}${cat.name}` });
+      addLevel(byParent.get(parseInt(cat.id, 10)) ?? [], depth + 1);
+    }
+  }
+  addLevel(roots, 0);
+  return result;
+}
+
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
   galleryBehaviorSettings?: GalleryBehaviorSettings;
@@ -70,8 +96,8 @@ interface UnifiedCampaignModalProps {
   layoutTemplates?: LayoutTemplate[];
   /** Called when user clicks "Edit Layout" for the selected template. */
   onEditLayout?: (templateId: string) => void;
-  /** All existing category names for autocomplete. */
-  availableCategories?: string[];
+  /** All existing categories for the hierarchical picker. */
+  categoryItems?: CampaignCategoryEntry[];
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -210,7 +236,7 @@ interface UnifiedCampaignSettingsPanelProps {
   cardBorderMode?: 'single' | 'auto' | 'individual' | undefined;
   formState: UnifiedCampaignFormState;
   updateForm: UnifiedCampaignUpdateForm;
-  availableCategories: string[];
+  categoryItems: CampaignCategoryEntry[];
   onClose: () => void;
   onSave: () => void;
   isSaving: boolean;
@@ -234,7 +260,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   cardBorderMode,
   formState,
   updateForm,
-  availableCategories,
+  categoryItems,
   onClose,
   onSave,
   isSaving,
@@ -278,15 +304,15 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
         value={formState.tags}
         onChange={(e) => updateForm({ ...formState, tags: e.currentTarget.value })}
       />
-      <TagsInput
+      <MultiSelect
         label="Categories"
-        placeholder="Type and press Enter or comma to add"
+        placeholder="Select categories"
         description="Assign this campaign to one or more categories"
         value={formState.categories}
         onChange={(v) => updateForm({ ...formState, categories: v })}
-        data={availableCategories}
+        data={buildCategorySelectData(categoryItems)}
+        searchable
         clearable
-        splitChars={[',']}
       />
       <Group grow wrap="wrap" gap="sm">
         <TextInput
@@ -482,7 +508,7 @@ export function UnifiedCampaignModal({
   cardBorderMode,
   layoutTemplates = [],
   onEditLayout,
-  availableCategories = [],
+  categoryItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const {
@@ -491,7 +517,7 @@ export function UnifiedCampaignModal({
     activeTab, setActiveTab,
     mediaItems, mediaLoading, handleRemoveMedia, handleAddFromLibrary,
     handleUploadMedia, handleAddExternalMedia,
-    uploadFile, uploadProgress,
+    uploadFiles, uploadErrors, uploadProgresses, uploadLoading,
     addMediaUrl, setAddMediaUrl, addMediaType, setAddMediaType,
     addMediaCaption, setAddMediaCaption, addMediaLoading,
     libraryMedia, libraryLoading, librarySearch, setLibrarySearch, loadLibraryMedia,
@@ -581,9 +607,12 @@ export function UnifiedCampaignModal({
                   onLibrarySearchChange={setLibrarySearch}
                   onLoadLibrary={loadLibraryMedia}
                   onAddFromLibrary={handleAddFromLibrary}
-                  uploadFile={uploadFile}
-                  uploadProgress={uploadProgress}
+                  uploadFiles={uploadFiles}
+                  uploadErrors={uploadErrors}
+                  uploadProgresses={uploadProgresses}
+                  uploadLoading={uploadLoading}
                   onUploadFile={handleUploadMedia}
+                  maxBatchUploadSize={galleryBehaviorSettings.maxBatchUploadSize}
                   addMediaType={addMediaType}
                   onAddMediaTypeChange={setAddMediaType}
                   addMediaUrl={addMediaUrl}
@@ -602,7 +631,7 @@ export function UnifiedCampaignModal({
             cardBorderMode={cardBorderMode}
             formState={formState}
             updateForm={updateForm}
-            availableCategories={availableCategories}
+            categoryItems={categoryItems}
             onClose={guardedClose}
             onSave={handleSave}
             isSaving={isSaving}
@@ -675,9 +704,12 @@ interface MediaTabContentProps {
   onLibrarySearchChange: (value: string) => void;
   onLoadLibrary: (search: string) => void;
   onAddFromLibrary: (media: MediaItem) => void;
-  uploadFile: File | null;
-  uploadProgress: number | null;
-  onUploadFile: (file: File) => void;
+  uploadFiles: File[];
+  uploadErrors: Array<string | null>;
+  uploadProgresses: number[] | null;
+  uploadLoading: boolean;
+  onUploadFile: (value: File | File[] | null) => void;
+  maxBatchUploadSize: number;
   addMediaType: 'video' | 'image';
   onAddMediaTypeChange: (value: 'video' | 'image') => void;
   addMediaUrl: string;
@@ -697,9 +729,12 @@ function MediaTabContent({
   onLibrarySearchChange,
   onLoadLibrary,
   onAddFromLibrary,
-  uploadFile,
-  uploadProgress,
+  uploadFiles,
+  uploadErrors,
+  uploadProgresses,
+  uploadLoading,
   onUploadFile,
+  maxBatchUploadSize,
   addMediaType,
   onAddMediaTypeChange,
   addMediaUrl,
@@ -750,14 +785,37 @@ function MediaTabContent({
       <Card withBorder>
         <Stack gap="sm">
           <Group><IconUpload size={20} /><Text fw={500}>Upload New File</Text></Group>
-          <FileButton onChange={(file) => file && void onUploadFile(file)} accept="image/*,video/*">
+          <FileButton onChange={(files) => files && void onUploadFile(files)} accept="image/*,video/*" multiple>
             {(props) => (
-              <Button {...props} variant="light" fullWidth disabled={!!uploadFile}>
-                {uploadFile ? 'Uploading...' : 'Choose file to upload'}
+              <Button {...props} variant="light" fullWidth disabled={uploadLoading}>
+                {uploadLoading ? 'Uploading...' : `Choose up to ${maxBatchUploadSize} files`}
               </Button>
             )}
           </FileButton>
-          {uploadProgress !== null && <Progress value={uploadProgress} size="md" striped animated />}
+          {uploadFiles.length > 0 && (
+            <Stack gap={4}>
+              {uploadFiles.map((file, index) => {
+                const progress = uploadProgresses?.[index] ?? null;
+                const error = uploadErrors[index] ?? null;
+                const identity = `${file.name}-${file.size}-${file.lastModified}`;
+
+                return (
+                  <Stack key={identity} gap={4}>
+                    <Group justify="space-between" wrap="nowrap" gap="sm">
+                      <Text size="sm" lineClamp={1}>{file.name}</Text>
+                      <Text size="xs" c={error ? 'red' : 'dimmed'}>
+                        {error ?? (progress !== null ? `${progress}%` : '')}
+                      </Text>
+                    </Group>
+                    {progress !== null && <Progress value={progress} size="sm" striped animated={uploadLoading && progress < 100} color={error ? 'red' : 'blue'} />}
+                  </Stack>
+                );
+              })}
+            </Stack>
+          )}
+          <Text size="xs" c="dimmed">
+            Uploaded files use their filenames as captions in this modal.
+          </Text>
         </Stack>
       </Card>
 

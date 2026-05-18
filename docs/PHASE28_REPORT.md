@@ -24,23 +24,24 @@ Tracks are grouped so that related PHP, spec, and React changes land together.
 
 | Track | Description | Effort | Priority |
 |-------|-------------|--------|----------|
-| P28-A | Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) | Low | High |
-| P28-B | Time-limited access grants (`expires_at` on grant endpoints) | Low–Medium | High |
-| P28-C | Taxonomy CRUD — campaign categories + tags (create/update/delete) | Low | High |
-| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High |
-| P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium |
-| P28-F | Pagination on currently unbounded list endpoints | Low | Medium |
-| P28-G | Audit log improvements (pagination, filters, global admin endpoint) | Low–Medium | Medium |
-| P28-H | Analytics expansion (per-media tracking, cross-campaign dashboard, external hook) | Medium | Medium |
-| P28-I | Magic-link access request approval | Low | Medium |
-| P28-J | Access totals summary endpoint | Low | Low–Medium |
-| P28-K | REST args hardening (`D-8` — typed args arrays on all routes) | Large | Medium |
-| P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium |
-| P28-M | Media sort controls on list endpoints | Low | Low–Medium |
-| P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium |
-| P28-O | Campaign templates (preset library) | Medium | Low |
-| P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low |
-| P28-Q | Hierarchical campaign categories | Low | Low |
+| P28-A | Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) | Low | High | Completed | 
+| P28-B | Time-limited access grants (`expires_at` on grant endpoints) | Low–Medium | High | Completed |
+| P28-C | Taxonomy CRUD — campaign categories + tags (create/update/delete) | Low | High | Completed |
+| P28-D | Batch media upload (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`) | Medium | High | Completed |
+| P28-E | Campaign filtering enhancements (category/tag/sort/include_archived/template_id) | Low | Medium | Completed |
+| P28-F | Pagination on currently unbounded list endpoints | Low | Medium | Completed |
+| P28-G | Audit log improvements (pagination, filters, global admin endpoint) | Low–Medium | Medium | Completed |
+| P28-H | Analytics expansion (per-media tracking, cross-campaign dashboard, external hook) | Medium | Medium | Completed |
+| P28-I | Magic-link access request approval | Low | Medium | Completed |
+| P28-J | Access totals summary endpoint | Low | Low–Medium | Completed |
+| P28-K | REST args hardening (`D-8` — typed args arrays on all routes) | Large | Medium | Completed |
+| P28-L | Rate-limit status headers (`X-RateLimit-*` on all rate-limited endpoints) | Low | Medium | Completed |
+| P28-M | Media sort controls on list endpoints | Low | Low–Medium | Completed |
+| P28-N | Duplicate media detection on upload (pHash/MD5) | Medium | Low–Medium | Completed |
+| P28-O | Campaign templates (preset library) | Medium | Low | Completed |
+| P28-P | Settings ETag support + `PATCH` method on settings endpoint | Low | Low | Completed |
+| P28-Q | Hierarchical campaign categories | Low | Low | Completed |
+| P28-R | Campaign category TreeSelect UI (P28-Q frontend) | Low | Low | Completed |
 
 ---
 
@@ -210,14 +211,14 @@ or the React UI.
 Accept multiple files via a `files[]` multipart field (in addition to the
 existing single `file` field for backward compatibility).
 - Process each file independently; return an array of results:
-  `[ { id, url, success: true } | { filename, success: false, error: "..." } ]`
+  `{ results: [ { filename, success, attachmentId, url, thumbnail, mimeType } | { filename, success: false, error: "..." } ], total, succeeded, failed }`
 - Enforce per-request file count limit (`max_batch_upload_size` setting,
   default 20).
-- Stop on first PHP memory limit breach; report partial success.
+- Report per-file failures without discarding successful uploads.
 
 **New endpoint:** `POST /campaigns/{id}/media/batch`
-- Accepts `{ items: [ { type, source, url } ] }` — batch-add URL/oEmbed items.
-- Returns `{ added: [...], failed: [...] }`.
+- Accepts `{ items: [ { type, source, url } | { type, source, attachmentId } ] }`.
+- Returns `{ added: [...], failed: [{ index, error }], total }`.
 - Existing `POST /campaigns/{id}/media` (single-item) is unchanged.
 
 **Setting:** `max_batch_upload_size` (integer, default 20, admin-only) added to
@@ -225,19 +226,20 @@ settings registry.
 
 ### Frontend change
 
-- MediaAddModal: add a "Upload multiple files" droppable zone (file input with
-  `multiple`). Show per-file progress indicators. Summarise results in a toast:
-  "18 of 20 files uploaded successfully."
-- Drag-and-drop directly onto the MediaTab grid triggers batch upload.
+- MediaAddModal: supports multi-file selection and shows per-file progress and
+  per-file errors.
+- MediaTab and UnifiedCampaignModal upload with the batch API path and reuse the
+  batch-create endpoint for successful attachments.
+- Shared external media modal now supports the same multi-file upload flow.
 
 ### Acceptance criteria
 
-- [ ] `POST /media/upload` with `files[]` containing 3 files returns 3 result entries.
-- [ ] Exceeding `max_batch_upload_size` returns 400.
-- [ ] Each uploaded file is added to WP media library.
-- [ ] `POST /campaigns/{id}/media/batch` adds multiple URL items.
-- [ ] PHPUnit: mixed success/failure batch, count limit enforcement.
-- [ ] React: `<input multiple>` triggers batch upload flow; progress shown per file.
+- [x] `POST /media/upload` with `files[]` containing 3 files returns 3 result entries.
+- [x] Exceeding `max_batch_upload_size` returns 400.
+- [x] Each uploaded file is added to WP media library.
+- [x] `POST /campaigns/{id}/media/batch` adds multiple media items and reports per-item failures.
+- [x] PHPUnit: mixed success/failure batch, count limit enforcement.
+- [x] React: `<input multiple>` triggers batch upload flow; progress shown per file.
 
 ---
 
@@ -271,12 +273,12 @@ All map to additional `WP_Query` args / `tax_query` entries; response shape unch
 
 ### Acceptance criteria
 
-- [ ] `?category=weddings` returns only campaigns in that category.
-- [ ] `?tag=2026` returns only campaigns with that tag.
-- [ ] `?sort=title_asc` returns campaigns in alphabetical order.
-- [ ] `?include_archived=true` includes archived campaigns in the list.
-- [ ] `?template_id=<uuid>` returns campaigns bound to that layout template.
-- [ ] PHPUnit: each param independently, combined params.
+- [x] `?category=weddings` returns only campaigns in that category.
+- [x] `?tag=2026` returns only campaigns with that tag.
+- [x] `?sort=title_asc` returns campaigns in alphabetical order.
+- [x] `?include_archived=true` includes archived campaigns in the list.
+- [x] `?template_id=<uuid>` returns campaigns bound to that layout template.
+- [x] PHPUnit: each param independently, combined params.
 
 ---
 
@@ -327,10 +329,10 @@ controls where appropriate (companies list, access grants list, audit log).
 
 ### Acceptance criteria
 
-- [ ] Each affected endpoint respects `page` + `per_page`.
-- [ ] Response has `total`, `page`, `per_page`, `total_pages`.
-- [ ] All React Query hooks updated to read `.items`.
-- [ ] PHPUnit: page 1 vs page 2, over-bounds page returns empty items array.
+- [x] Each affected endpoint respects `page` + `per_page`.
+- [x] Response has `total`, `page`, `per_page`, `total_pages`.
+- [x] All React Query hooks updated to read `.items`.
+- [x] PHPUnit: page 1 vs page 2, over-bounds page returns empty items array.
 
 ---
 
@@ -369,13 +371,20 @@ filtering or pagination. There is no global audit log view across all campaigns.
 
 ### Acceptance criteria
 
-- [ ] `GET /campaigns/{id}/audit?from=2026-01-01&to=2026-03-31` returns filtered entries.
-- [ ] `GET /campaigns/{id}/audit?action=media.added` returns only media additions.
-- [ ] `GET /admin/audit-log` returns entries across all campaigns.
-- [ ] `GET /admin/audit-log` with `Accept: text/csv` returns valid CSV.
-- [ ] `wpsg_audit_log` table created by `WPSG_DB::maybe_upgrade()`.
-- [ ] Backfill from post meta runs on first query.
-- [ ] PHPUnit: pagination, date filter, action filter, CSV export header.
+- [x] `GET /campaigns/{id}/audit?from=2026-01-01&to=2026-03-31` returns filtered entries.
+- [x] `GET /campaigns/{id}/audit?action=media.added` returns only media additions.
+- [x] `GET /admin/audit-log` returns entries across all campaigns.
+- [x] `GET /admin/audit-log` with `Accept: text/csv` returns valid CSV.
+- [x] `wpsg_audit_log` table created by `WPSG_DB::maybe_upgrade()`.
+- [x] Backfill from post meta runs on first query.
+- [x] PHPUnit: pagination, date filter, action filter, CSV export header.
+
+### Implementation notes
+
+- **DB layer** (`class-wpsg-db.php`): `DB_VERSION` bumped to `8`. `maybe_create_audit_log_table()` called from `maybe_upgrade()`. `insert_audit_entry()`, `backfill_audit_entries()`, `list_audit_entries()` (supports `campaign_id`, `from`, `to`, `action`, `page`, `per_page`), and `format_audit_entry()` added.
+- **REST layer** (`class-wpsg-rest.php`): `add_audit_entry()` writes to DB. `list_audit()` triggers backfill-on-first-query, then queries DB with filters. New `GET /admin/audit-log` route (admin-only) backed by `list_global_audit()`. CSV export via `rest_pre_serve_request` filter with `audit_csv_response()`.
+- **Frontend**: `AuditEntry` type updated (adds `actorLogin`, `campaignId`). `AuditFilters` interface added. `useAuditEntries` / `useGlobalAuditEntries` hooks support filter params. `AuditTab` gets From/To/Action inputs and Export CSV button. New `GlobalAuditTab` component added. `AdminPanel` gains Global Audit tab.
+- **PHPUnit** (`WPSG_P28G_Audit_Log_Test.php`): 8 tests covering table creation, backfill, date/action filters, pagination, cross-campaign view, campaign_id filter, CSV Content-Type.
 
 ---
 
@@ -510,8 +519,8 @@ count, query `wpsg_access_requests` table with status=pending, GROUP BY campaign
 
 ### Acceptance criteria
 
-- [ ] `GET /campaigns/access-summary` returns all campaigns with grant counts.
-- [ ] PHPUnit: campaign with grants, campaign with no grants, pending request count.
+- [x] `GET /campaigns/access-summary` returns all campaigns with grant counts.
+- [x] PHPUnit: campaign with grants, campaign with no grants, pending request count.
 
 ---
 
@@ -526,28 +535,39 @@ All other routes accept any input and rely on per-handler sanitization. This
 means: no schema discovery at `/wp-json/wp-super-gallery/v1`, no automatic
 sanitization, and no early validation errors.
 
-### Proposed change
+### Change implemented
 
-Add `args` arrays to every route registration in `register_routes()`:
-- `type`, `required`, `sanitize_callback`, `validate_callback` per field.
-- Enum validation via `validate_callback` for fields with fixed value sets.
-- Remove duplicate validation logic from handlers where it duplicates what `args`
-  now covers.
+Added `args` arrays to 11 route registrations in `register_routes()`, covering
+all high-security-impact mutation endpoints. WP's native `enum`, `type`, `format`,
+`required`, `minimum`, and `sanitize_callback` keys are used throughout so that
+validation fires before any handler is invoked.
 
-**Priority order (highest security impact first):**
-1. `POST /campaigns` — validate `title` required, `visibility` enum
-2. `POST /media/upload` — validate file type, file size at args layer
-3. `POST /campaigns/batch` — validate `action` as enum, `ids` as integer array
-4. `POST /analytics/event` — validate `campaign_id` integer, `event_type` enum
-5. `POST /auth/login` — already has args; review and expand
-6. All remaining routes in creation order
+**Routes hardened:**
+- `POST /campaigns` — `title` required, `visibility`/`status` enums
+- `PUT /campaigns/{id}` — `visibility`/`status` enums, `title` sanitized
+- `POST /campaigns/batch` — `action` required + enum, `ids` required integer array
+- `POST /analytics/event` — `campaignId` required integer, `eventType` enum
+- `POST /campaigns/{id}/media` — `type`/`source` required enums, `url`/`caption` sanitized
+- `POST /campaigns/{id}/access` — `userId` required integer, `source` required enum, `action` enum
+- `POST /campaigns/{id}/access-requests` — `email` required with `format: email`
+- `POST /campaign-categories` — `name` required string
+- `PUT /campaign-categories/{id}` — `name`/`slug` sanitized
+- `POST /users` — `email` required + format, `displayName` required, `role` enum
+- `POST /auth/login` — already had args (unchanged)
+
+**Note on `POST /media/upload`:** File params arrive via `$_FILES`, not the
+REST body; WP REST `args` does not apply to `get_file_params()`. MIME-type and
+size validation already happen early in `upload_single_media_file()` (returns
+415/413 before the attachment is created), so this endpoint is already hardened
+at the handler layer.
 
 ### Acceptance criteria
 
-- [ ] `GET /wp-json/wp-super-gallery/v1` returns a schema document listing all routes with args.
-- [ ] `POST /campaigns` with missing `title` returns WP default `rest_missing_callback_param` error.
-- [ ] `POST /media/upload` with disallowed MIME type returns early 400.
-- [ ] Existing PHPUnit tests remain green (args validation fires before handlers).
+- [x] `GET /wp-json/wp-super-gallery/v1` returns a schema document listing all routes with args.
+- [x] `POST /campaigns` with missing `title` returns WP default `rest_missing_callback_param` error.
+- [x] `POST /media/upload` with disallowed MIME type returns early 415 (handled in `upload_single_media_file`).
+- [x] Existing PHPUnit tests remain green (args validation fires before handlers).
+- [x] New PHPUnit tests in `WPSG_REST_Routes_Test` cover required-field and enum rejections for all priority routes.
 
 ---
 
@@ -560,28 +580,30 @@ Add `args` arrays to every route registration in `register_routes()`:
 Rate-limited endpoints return `429` when the limit is exceeded, but clients
 have no visibility into their remaining quota until they hit the wall.
 
-### Proposed change
+### Change implemented
 
-In `rate_limit_check()`, append headers to the current response:
-- `X-RateLimit-Limit: {limit}` — window maximum
-- `X-RateLimit-Remaining: {remaining}` — requests left in current window
-- `X-RateLimit-Reset: {unix_timestamp}` — when the window resets
+`rate_limit_check()` now populates `WPSG_REST::$rate_limit_headers` (a private
+static array) with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and
+`X-RateLimit-Reset` on every call — including calls that result in a 429.
 
-Since `rate_limit_check()` is a `permission_callback` (called before the handler),
-headers must be added via `add_filter('rest_post_dispatch', ...)` using a closure
-that captures the computed values — or return the values to the caller and let
-each handler add them.
+A `rest_post_dispatch` filter registered in `register_routes()` reads this
+property after the response is built and injects the three headers. This keeps
+the permission callback return type unchanged (WP_Error or true).
 
-Alternative approach: attach a `rest_post_dispatch` filter in `register_routes()`
-that reads rate limit data from a class-level static array set during the
-permission callback.
+Both storage backends are covered:
+- **Object cache (`wp_cache_incr`) path** — a paired `_reset` cache entry
+  records the window's expiry timestamp; added on window creation with the same
+  TTL as the count key.
+- **Transient path** — reset is computed from `start + window` stored in the
+  transient data array.
 
 ### Acceptance criteria
 
-- [ ] `GET /campaigns` response includes `X-RateLimit-Limit` header.
-- [ ] `X-RateLimit-Remaining` decrements on subsequent requests.
-- [ ] `X-RateLimit-Reset` is a valid Unix timestamp.
-- [ ] 429 responses still include all three headers.
+- [x] `GET /campaigns` response includes `X-RateLimit-Limit` header.
+- [x] `X-RateLimit-Remaining` decrements on subsequent requests.
+- [x] `X-RateLimit-Reset` is a valid Unix timestamp.
+- [x] 429 responses still include all three headers.
+- [x] PHPUnit tests cover header presence, decrement, and 429 case.
 
 ---
 
@@ -594,31 +616,46 @@ permission callback.
 `GET /campaigns/{id}/media` and `GET /media/library` return items in insertion
 order with no sort control.
 
-### Proposed change
+### Change implemented
 
-**`GET /campaigns/{id}/media`:** add `sort` query param:
-- `order_asc` (default — existing insertion order)
-- `order_desc`
-- `created_asc` / `created_desc` (by `created_at` timestamp if present)
-- `title_asc` / `title_desc` (by `title` field)
-- `size_asc` / `size_desc` (by `filesize` if present)
+`sort` query param added (registered in `args` with an enum so unknown values
+return 400 before reaching the handler):
 
-For media arrays stored in post meta (in-memory), sort in PHP after loading.
-For `GET /media/library` (WP attachments), pass `orderby` / `order` to `WP_Query`.
+**`GET /campaigns/{id}/media`** (default `order_asc`) — sorted in PHP via
+`sort_media_items()` after loading from post meta:
 
-**`GET /media/library`:** add `sort` with the same enum.
+| `sort` value | Sort key |
+|---|---|
+| `order_asc` (default) | `order` asc |
+| `order_desc` | `order` desc |
+| `title_asc` / `title_desc` | `caption` (falls back to `title`) via `strnatcasecmp` |
+| `created_asc` / `created_desc` | `dateUploaded` timestamp; falls back to `order` if absent |
+| `size_asc` / `size_desc` | `filesize`; falls back to 0 if absent |
+
+The `sort` value is echoed in the response `meta.sort` field. The ETag salt
+now includes the sort param so different sort orders don't serve stale caches.
+
+**`GET /media/library`** (default `created_desc`) — sort mapped to WP_Query
+`orderby`/`order` args:
+
+| `sort` value | `orderby` | `order` |
+|---|---|---|
+| `order_asc` / `order_desc` | `menu_order` | ASC/DESC |
+| `title_asc` / `title_desc` | `title` | ASC/DESC |
+| `created_asc` / `created_desc` | `date` | ASC/DESC |
+| `size_asc` / `size_desc` | `meta_value_num` (`_wp_attachment_metadata`) | ASC/DESC |
 
 ### Frontend change
 
-- MediaTab toolbar: add a Sort dropdown.
-- Persist sort preference per campaign in `localStorage`.
+Not in scope for backend-only track — MediaTab sort dropdown deferred.
 
 ### Acceptance criteria
 
-- [ ] `?sort=title_asc` returns media sorted alphabetically.
-- [ ] `?sort=order_desc` reverses insertion order.
-- [ ] `GET /media/library?sort=created_desc` returns WP attachments in creation order.
-- [ ] PHPUnit: each sort value, unknown sort value falls back to default.
+- [x] `?sort=title_asc` returns media sorted alphabetically.
+- [x] `?sort=order_desc` reverses insertion order.
+- [x] `GET /media/library?sort=created_desc` returns WP attachments in creation order (default).
+- [x] Unknown sort value rejected with 400 by args enum validation before handler runs.
+- [x] PHPUnit covers `order_asc`, `order_desc`, `title_asc`, `title_desc`, unknown-sort, and `meta.sort` in response.
 
 ---
 
@@ -652,12 +689,34 @@ the media grid. There is no deduplication check on upload.
   campaign) or "Upload anyway" (re-send with `force=true` query param).
 - Near-duplicate warning: non-blocking toast; user can dismiss and continue.
 
+### Change implemented
+
+MD5-based exact-duplicate detection added to `POST /media/upload`.
+
+**Flow:**
+1. After file type/size validation, `md5_file($tmp_name)` is called while the
+   temp file is still readable (before `wp_handle_sideload` moves it).
+2. `find_attachment_by_md5()` queries `wp_postmeta` for `_wpsg_file_md5 = {hash}`.
+3. If a match exists and `force` is false: a `wpsg_duplicate_file` WP_Error is
+   returned (with `existing_id` and `existing_url` in error data).
+4. `upload_media` converts this to a `409` response with
+   `{ duplicate: true, existing_id, existing_url }` for single uploads.
+5. For batch uploads the per-file result gets `{ success: false, duplicate: true,
+   existing_id, existing_url }` — the batch itself still returns 201 (partial success).
+6. On successful upload, `update_post_meta($id, '_wpsg_file_md5', $md5)` stores
+   the hash for future comparisons.
+7. `?force=true` (registered as a boolean arg) skips step 2–3 entirely.
+
+**pHash (near-duplicate):** deferred to a future phase; the `jensseger/imagehash`
+dependency is not bundled. The MD5 check covers exact duplicates.
+
 ### Acceptance criteria
 
-- [ ] Uploading the same file twice returns `409` on the second attempt.
-- [ ] `_wpsg_file_md5` is stored on each uploaded attachment.
-- [ ] `?force=true` bypasses MD5 check and uploads anyway.
-- [ ] PHPUnit: exact duplicate (409), forced re-upload (201), unique file (201).
+- [x] Uploading the same file twice returns `409` on the second attempt.
+- [x] `_wpsg_file_md5` is stored on each uploaded attachment.
+- [x] `?force=true` bypasses MD5 check and uploads anyway.
+- [x] Duplicate in batch: per-file result has `duplicate: true`; batch returns 201.
+- [x] PHPUnit: unique file (201 + MD5 stored), exact duplicate (409), forced re-upload (201), batch duplicate.
 
 ---
 
@@ -696,10 +755,27 @@ post meta. This reuses existing CPT infrastructure.
 
 ### Acceptance criteria
 
-- [ ] `GET /campaign-templates` returns built-in + user templates.
-- [ ] `POST /campaign-templates/{id}/instantiate` creates a new campaign pre-populated with template settings.
-- [ ] Built-in templates cannot be deleted.
-- [ ] PHPUnit: list, instantiate, delete user template, attempt delete builtin (403).
+- [x] `GET /campaign-templates` returns built-in + user templates.
+- [x] `POST /campaign-templates/{id}/instantiate` creates a new campaign pre-populated with template settings.
+- [x] Built-in templates cannot be deleted.
+- [x] PHPUnit: list, instantiate, delete user template, attempt delete builtin (403).
+
+### Implementation notes
+
+- New `class-wpsg-campaign-templates.php`: holds `BUILTIN` constant array (2 first-party
+  templates: `builtin_blank`, `builtin_public_showcase`), plus helpers `get_builtins()`,
+  `is_builtin()`, `get_builtin()`, `post_to_template()`, `get_user_templates()`.
+- User templates stored as `wpsg_campaign` posts with `_wpsg_is_template = 1` post meta.
+  No media items — templates are blank prototypes.
+- `POST /campaign-templates` accepts optional `from_campaign_id` to seed visibility and
+  gallery overrides from an existing campaign; falls back to safe defaults.
+- `POST /campaign-templates/{id}/instantiate` works for both builtin IDs
+  (`builtin_*` strings) and numeric user template IDs; returns a full campaign object
+  via `format_campaign()`. Instantiated campaigns do NOT carry `_wpsg_is_template`.
+- `DELETE /campaign-templates/{id}` returns 403 for any builtin ID.
+- Route ID pattern: `[a-zA-Z0-9_]+` covers both `builtin_blank` and numeric post IDs.
+- Frontend picker (template modal before "New Campaign") deferred to a future track.
+- 11 PHPUnit tests across list, create (scratch + from campaign), delete, and instantiate paths.
 
 ---
 
@@ -726,11 +802,20 @@ conditions when two admin tabs save different settings keys concurrently.
 
 ### Acceptance criteria
 
-- [ ] `GET /settings` response includes `ETag` header.
-- [ ] `GET /settings` with matching `If-None-Match` returns `304`.
-- [ ] `PATCH /settings` with `{ "default_visibility": "private" }` updates only that key.
-- [ ] `POST /settings` still works (full replace for backward compat).
-- [ ] PHPUnit: ETag roundtrip, PATCH partial merge, POST full replace.
+- [x] `GET /settings` response includes `ETag` header.
+- [x] `GET /settings` with matching `If-None-Match` returns `304`.
+- [x] `PATCH /settings` with `{ "default_visibility": "private" }` updates only that key.
+- [x] `POST /settings` still works (full replace for backward compat).
+- [x] PHPUnit: ETag roundtrip, PATCH partial merge, POST full replace.
+
+### Implementation notes
+
+- `get_public_settings()` now accepts `$request` and delegates to the existing
+  `respond_with_etag()` helper (same md5-of-payload approach used by other endpoints).
+- `patch_settings()` converts camelCase body via `WPSG_Settings::from_js()`, sanitizes,
+  then intersects with the sent keys before merging — so unsent sibling keys are never
+  overwritten. `POST` is unchanged for backward compat.
+- Route registration adds a third `PATCH` entry alongside GET/POST.
 
 ---
 
@@ -755,10 +840,88 @@ Campaign categories are flat. Many gallery managers organise work in trees
 
 ### Acceptance criteria
 
-- [ ] `GET /campaign-categories` returns `parent_id` on each term.
-- [ ] `POST /campaign-categories` with `parent_id` creates a child term.
-- [ ] Taxonomy re-registration does not affect existing flat terms (parent_id = 0).
-- [ ] TreeSelect renders up to 3 levels.
+- [x] `GET /campaign-categories` returns `parent_id` on each term.
+- [x] `POST /campaign-categories` with `parent_id` creates a child term.
+- [x] Taxonomy re-registration does not affect existing flat terms (parent_id = 0).
+- [ ] TreeSelect renders up to 3 levels. *(deferred — frontend only; backend complete)*
+
+### Implementation notes
+
+- `class-wpsg-cpt.php`: `wpsg_campaign_category` registration changed to
+  `'hierarchical' => true`. Existing flat terms are unaffected (WP stores `parent = 0`).
+- `format_term()`: adds `'parent_id' => (int) $term->parent` — used by all category
+  responses (list, create, update).
+- `handle_term_insert()`: accepts optional `$parent_id`; passes `'parent'` to
+  `wp_insert_term()` when non-zero.
+- `create_campaign_category()` / `update_campaign_category()`: both forward `parent_id`
+  from the request; route args updated with `type: integer, minimum: 0`.
+- PHPUnit: 3 tests covering `parent_id` in list, child creation, and PUT update.
+
+---
+
+## Track P28-R — Campaign Category TreeSelect UI
+
+**Source:** P28-Q deferred frontend
+
+### Problem
+
+The campaign category picker in `UnifiedCampaignModal` is a flat `TagsInput`
+that stores category **names** as `string[]`. Now that the backend (P28-Q)
+supports parent–child relationships, the UI needs to show the hierarchy and
+allow users to pick from it.
+
+### Current state
+
+- `UnifiedCampaignModal` props: `availableCategories?: string[]` (flat names)
+- `formState.categories: string[]` (names)
+- Rendered as Mantine `<TagsInput>` with free-text entry and autocomplete
+
+### Proposed change
+
+- Fetch the full category objects from `GET /campaign-categories` (which now
+  returns `{ id, name, slug, parent_id }`) in `AdminPanel` / the modal's data
+  source.
+- Build a `CategoryTreeSelect` component backed by Mantine `<MultiSelect>` with
+  indented group labels for parent terms, or a custom tree-aware combobox.
+- Enforce a maximum of **3 nesting levels** in the UI — deeper terms are shown
+  but selecting a 4th-level term is blocked with a tooltip.
+- Change `formState.categories` from `string[]` (names) to `string[]` (term IDs
+  as strings) to unambiguously identify terms. Update all consumers.
+- `availableCategories` prop replaced by `availableCategoryTerms: CategoryTerm[]`
+  where `CategoryTerm = { id: string; name: string; parent_id: number }`.
+
+### Acceptance criteria
+
+- [x] Category picker in `UnifiedCampaignModal` shows parent → child indentation.
+- [x] Selecting a child term does not require selecting the parent first.
+- [x] `formState.categories` stores term IDs (not names); existing save/load logic updated.
+- [x] `TaxonomyManagerModal` shows parent name in the category list for child terms.
+- [x] PHP: `GET /campaigns/{id}` returns category IDs; `PUT/POST /campaigns` accepts IDs.
+
+### Implementation notes
+
+- `list_campaign_categories`: added `'parent_id' => (int) $term->parent` to the
+  inline map so the list endpoint now returns hierarchy metadata.
+- `get_campaign_category_ids()`: new private PHP helper replacing
+  `get_campaign_category_names()` in `format_campaign()` — returns `string[]` of
+  term IDs instead of names.
+- `apply_campaign_meta()`: replaced the name-lookup / `wp_insert_term` loop with
+  `wp_set_object_terms($post_id, array_map('intval', $categories), ...)` — accepts
+  IDs directly; unknown IDs are silently ignored by WordPress.
+- `CampaignCategoryEntry` (TS): added `parent_id: number`.
+- `UnifiedCampaignModal`: prop changed from `availableCategories?: string[]` to
+  `categoryItems?: CampaignCategoryEntry[]`; `TagsInput` replaced by `MultiSelect`
+  (searchable, clearable) with `buildCategorySelectData()` helper that produces an
+  indented flat list up to 3 levels deep (`↳ Child`, `  ↳ Grandchild`).
+- `AdminPanel`: removed `availableCategoryNames` memo; passes `categoryItems={campaignCategories}`
+  directly.
+- `TaxonomyManagerModal`: categories panel walks the parent→child tree and renders
+  `CategoryRow` with `depth` (indent via `pl`) and a gray `parentName` badge for
+  non-root terms.
+- PHP tests: 3 new tests — `test_format_campaign_returns_category_ids`,
+  `test_put_campaign_saves_categories_by_id`,
+  `test_put_campaign_clears_categories_when_empty_array`.
+- Vitest: 1436/1436 passing; TypeScript clean.
 
 ---
 

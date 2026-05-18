@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   Center,
+  Checkbox,
   Combobox,
   Group,
   InputBase,
@@ -18,6 +19,7 @@ import {
   Stack,
   Table,
   Text,
+  TextInput,
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } from '@tabler/icons-react';
@@ -62,6 +64,8 @@ interface AccessTabProps {
   accessRows: ReactNode;
   accessState: AdminAccessState;
   apiClient?: ApiClient | undefined;
+  showExpiredGrants: boolean;
+  onShowExpiredGrantsChange: (value: boolean) => void;
 }
 
 export function AccessTab({
@@ -81,6 +85,8 @@ export function AccessTab({
   accessRows,
   accessState,
   apiClient,
+  showExpiredGrants,
+  onShowExpiredGrantsChange,
 }: AccessTabProps) {
   const {
     userCombobox,
@@ -101,6 +107,8 @@ export function AccessTab({
     accessSaving,
     handleOpenQuickAddUser: onQuickAddUser,
     setConfirmArchiveCompany,
+    expiresAt,
+    setExpiresAt,
   } = accessState;
 
   const onArchiveCompanyClick = (company: NonNullable<SelectedCompany>) => setConfirmArchiveCompany(company);
@@ -217,7 +225,15 @@ export function AccessTab({
                  accessViewMode === 'company' ? 'Company-Wide Access' :
                  'All Access (Company + Campaigns)'}
               </Text>
-              <Badge variant="light">{accessEntriesCount} users</Badge>
+              <Group gap="sm">
+                <Checkbox
+                  label="Show expired"
+                  size="xs"
+                  checked={showExpiredGrants}
+                  onChange={(e) => onShowExpiredGrantsChange(e.currentTarget.checked)}
+                />
+                <Badge variant="light">{accessEntriesCount} users</Badge>
+              </Group>
             </Group>
 
             {accessLoading ? (
@@ -226,7 +242,7 @@ export function AccessTab({
                   <Table.Tr>
                     <Table.Th>User</Table.Th>
                     <Table.Th>Access Type</Table.Th>
-                    <Table.Th>Granted</Table.Th>
+                    <Table.Th>Granted / Expires</Table.Th>
                     <Table.Th w={80}>Revoke</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
@@ -264,7 +280,7 @@ export function AccessTab({
                     <Table.Tr>
                       <Table.Th>User</Table.Th>
                       <Table.Th>Access Type</Table.Th>
-                      <Table.Th>Granted</Table.Th>
+                      <Table.Th>Granted / Expires</Table.Th>
                       <Table.Th w={80}>Revoke</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
@@ -410,6 +426,16 @@ export function AccessTab({
                   />
                 </>
               )}
+
+              {/* P28-B: optional expiry date-time */}
+              <TextInput
+                label={<Text size="sm" fw={500}>Expires at <Text span size="xs" c="dimmed">(optional)</Text></Text>}
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.currentTarget.value)}
+                style={{ minWidth: 200 }}
+                aria-label="Access expiry date and time"
+              />
 
               <Button
                 onClick={onGrantAccess}

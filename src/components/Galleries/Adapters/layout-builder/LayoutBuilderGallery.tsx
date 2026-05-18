@@ -16,6 +16,8 @@
  * Adapter ID: `'layout-builder'`
  */
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import type { ApiClient } from '@/services/apiClient';
+import { useRecordAnalyticsEvent } from '@/hooks/useRecordAnalyticsEvent';
 import { Box, Center, Loader, Text, Stack } from '@mantine/core';
 import { IconLayoutDashboard, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react';
 import type {
@@ -419,6 +421,10 @@ export interface LayoutBuilderGalleryProps {
   isAdmin?: boolean;
   /** Measured container dimensions from GallerySectionWrapper. */
   containerDimensions?: ContainerDimensions;
+  /** Campaign ID used to fire lightbox_open analytics events. */
+  campaignId?: string;
+  /** API client for recording analytics events. */
+  apiClient?: ApiClient | undefined;
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -431,19 +437,26 @@ export function LayoutBuilderGallery({
   slotOverrides = {},
   isAdmin = false,
   containerDimensions: _containerDimensions,
+  campaignId,
+  apiClient,
 }: LayoutBuilderGalleryProps) {
   const { template, isLoading, error } = useLayoutTemplate(templateId);
 
   // Lightbox state — navigates the full media array
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
+  const recordEvent = useRecordAnalyticsEvent(apiClient);
 
   const openAt = useCallback(
     (index: number) => {
       setCurrentIndex(index);
       setLightboxOpen(true);
+      const item = media[index];
+      if (item && campaignId) {
+        recordEvent(campaignId, 'lightbox_open', item.id);
+      }
     },
-    [setCurrentIndex],
+    [setCurrentIndex, media, campaignId, recordEvent],
   );
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
 

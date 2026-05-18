@@ -40,6 +40,8 @@ export function useAdminAccessState({
   const [accessSource, setAccessSource] = useState<'company' | 'campaign'>('campaign');
   const [accessAction, setAccessAction] = useState<'grant' | 'deny'>('grant');
   const [accessSaving, setAccessSaving] = useState(false);
+  // P28-B: optional expiry for new grants.
+  const [expiresAt, setExpiresAt] = useState<string>('');
   const accessSavingRef = useRef(false);
 
   const [confirmArchiveCompany, setConfirmArchiveCompany] = useState<CompanyInfo | null>(null);
@@ -126,10 +128,16 @@ export function useAdminAccessState({
     try {
       if (accessViewMode === 'campaign') {
         await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access`, {
-          userId, source: accessSource, action: accessSource === 'company' ? 'grant' : accessAction,
+          userId,
+          source: accessSource,
+          action: accessSource === 'company' ? 'grant' : accessAction,
+          ...(expiresAt ? { expires_at: expiresAt } : {}),
         });
       } else {
-        await apiClient.post(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access`, { userId });
+        await apiClient.post(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access`, {
+          userId,
+          ...(expiresAt ? { expires_at: expiresAt } : {}),
+        });
       }
       await mutateAccess();
       onNotify({ type: 'success', text: 'Access updated.' });
@@ -137,13 +145,14 @@ export function useAdminAccessState({
       setSelectedUser(null);
       setUserSearchQuery('');
       setAccessAction('grant');
+      setExpiresAt('');
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to update access.') });
     } finally {
       accessSavingRef.current = false;
       setAccessSaving(false);
     }
-  }, [accessViewMode, accessCampaignId, selectedCompanyId, selectedUser, accessUserId, accessSource, accessAction, apiClient, mutateAccess, onNotify]);
+  }, [accessViewMode, accessCampaignId, selectedCompanyId, selectedUser, accessUserId, accessSource, accessAction, expiresAt, apiClient, mutateAccess, onNotify]);
 
   const handleRevokeAccess = useCallback(async (entry: CompanyAccessGrantType) => {
     if (accessSavingRef.current) return;
@@ -243,6 +252,7 @@ export function useAdminAccessState({
     accessSource, setAccessSource,
     accessAction, setAccessAction,
     accessSaving,
+    expiresAt, setExpiresAt,
     confirmArchiveCompany, setConfirmArchiveCompany,
     archiveRevokeAccess, setArchiveRevokeAccess,
     userSearchQuery, setUserSearchQuery,

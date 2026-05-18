@@ -24,14 +24,15 @@ interface MediaAddModalProps {
   title?: string;
   zIndex?: number;
   dropRef: RefObject<HTMLDivElement | null>;
-  selectedFile: File | null;
-  onSelectFile: (file: File | null) => void;
+  selectedFiles: File[];
+  onSelectFiles: (files: File[]) => void;
   previewUrl: string | null;
   uploadTitle: string;
   onUploadTitleChange: (value: string) => void;
   uploadCaption: string;
   onUploadCaptionChange: (value: string) => void;
-  uploadProgress: number | null;
+  uploadProgresses: number[] | null;
+  uploadErrors?: Array<string | null>;
   uploading: boolean;
   onUpload: () => void;
   externalUrl: string;
@@ -49,14 +50,15 @@ export function MediaAddModal({
   title = 'Add Media',
   zIndex,
   dropRef,
-  selectedFile,
-  onSelectFile,
+  selectedFiles,
+  onSelectFiles,
   previewUrl,
   uploadTitle,
   onUploadTitleChange,
   uploadCaption,
   onUploadCaptionChange,
-  uploadProgress,
+  uploadProgresses,
+  uploadErrors = [],
   uploading,
   onUpload,
   externalUrl,
@@ -67,6 +69,9 @@ export function MediaAddModal({
   onAddExternal,
   externalPreview,
 }: MediaAddModalProps) {
+  const hasFiles = selectedFiles.length > 0;
+  const isBatchSelection = selectedFiles.length > 1;
+
   return (
     <Modal opened={opened} onClose={onClose} title={title} padding="md" {...(zIndex !== undefined ? { zIndex } : {})} withinPortal={false}>
       <Stack gap="md">
@@ -74,19 +79,57 @@ export function MediaAddModal({
           <Stack gap="sm">
             <Group justify="space-between" wrap="wrap" gap="sm">
               <Group>
-                <FileButton onChange={onSelectFile} accept="image/*,video/*">
-                  {(props) => <Button leftSection={<IconUpload />} {...props}>Choose file</Button>}
+                <FileButton
+                  onChange={(value) => {
+                    if (!value) {
+                      onSelectFiles([]);
+                      return;
+                    }
+                    onSelectFiles(Array.isArray(value) ? value : [value]);
+                  }}
+                  accept="image/*,video/*"
+                  multiple
+                >
+                  {(props) => <Button leftSection={<IconUpload />} {...props}>Choose files</Button>}
                 </FileButton>
-                <Text size="sm" c="dimmed">or drag & drop a file here</Text>
+                <Text size="sm" c="dimmed">or drag & drop files here</Text>
               </Group>
-              {selectedFile && <Text size="sm" c="dimmed">{selectedFile.name}</Text>}
+              {hasFiles && (
+                <Text size="sm" c="dimmed">
+                  {isBatchSelection ? `${selectedFiles.length} files selected` : selectedFiles[0]?.name}
+                </Text>
+              )}
             </Group>
 
-            {previewUrl && selectedFile?.type.startsWith('image') && (
+            {previewUrl && selectedFiles.length === 1 && selectedFiles[0]?.type.startsWith('image') && (
               <Image src={previewUrl} alt="Upload preview" mah={140} fit="contain" radius="sm" />
             )}
 
-            {selectedFile && (
+            {hasFiles && (
+              <Stack gap="xs">
+                {selectedFiles.map((file, index) => {
+                  const progress = uploadProgresses?.[index] ?? null;
+                  const error = uploadErrors[index] ?? null;
+                  const identity = `${file.name}-${file.size}-${file.lastModified}`;
+
+                  return (
+                    <Stack key={identity} gap={4}>
+                      <Group justify="space-between" wrap="nowrap" gap="sm">
+                        <Text size="sm" lineClamp={1}>{file.name}</Text>
+                        <Text size="xs" c={error ? 'red' : 'dimmed'}>
+                          {error ?? (progress !== null ? `${progress}%` : '')}
+                        </Text>
+                      </Group>
+                      {progress !== null && (
+                        <Progress value={progress} size="sm" striped animated={uploading && progress < 100} color={error ? 'red' : 'blue'} />
+                      )}
+                    </Stack>
+                  );
+                })}
+              </Stack>
+            )}
+
+            {selectedFiles.length === 1 && (
               <Stack gap="xs">
                 <TextInput
                   label="Title"
@@ -106,17 +149,21 @@ export function MediaAddModal({
               </Stack>
             )}
 
-            {uploadProgress !== null && <Progress value={uploadProgress} size="md" striped animated />}
+            {isBatchSelection && (
+              <Text size="xs" c="dimmed">
+                When uploading multiple files, each item uses its filename as the default caption.
+              </Text>
+            )}
             <Group justify="flex-end">
               <Button
                 onClick={onUpload}
                 loading={uploading}
-                disabled={!selectedFile}
+                disabled={!hasFiles}
                 variant="filled"
                 color="blue"
                 leftSection={<IconUpload size={16} />}
               >
-                Upload
+                {isBatchSelection ? `Upload ${selectedFiles.length} files` : 'Upload'}
               </Button>
             </Group>
           </Stack>

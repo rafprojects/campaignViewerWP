@@ -191,26 +191,64 @@ class WPSG_Monitoring {
             $cache_stats = WPSG_Thumbnail_Cache::get_stats();
         }
 
+        // P28-B: count grants whose expiry has passed but not yet been pruned by cron.
+        $expired_grants_pending = self::count_expired_grants_pending_cleanup();
+
         return [
-            'restRequestCount'   => $request_count,
-            'restErrorCount'     => $error_count,
-            'restErrorRate'      => $request_count > 0 ? round($error_count / $request_count * 100, 2) : 0,
-            'oembedFailureCount' => $oembed_failures,
-            'oembedProviders'    => self::get_oembed_failures(),
-            'campaigns'          => [
+            'restRequestCount'             => $request_count,
+            'restErrorCount'               => $error_count,
+            'restErrorRate'                => $request_count > 0 ? round($error_count / $request_count * 100, 2) : 0,
+            'oembedFailureCount'           => $oembed_failures,
+            'oembedProviders'              => self::get_oembed_failures(),
+            'campaigns'                    => [
                 'active'   => $active_campaigns,
                 'archived' => $archived_campaigns,
                 'draft'    => $draft_campaigns,
             ],
-            'storage'            => [
+            'storage'                      => [
                 'thumbnailCache' => $wpsg_storage,
             ],
-            'thumbnailCache'     => $cache_stats,
-            'phpVersion'         => PHP_VERSION,
-            'wpVersion'          => get_bloginfo('version'),
-            'pluginVersion'      => defined('WPSG_VERSION') ? WPSG_VERSION : 'unknown',
-            'timestamp'          => time(),
+            'thumbnailCache'               => $cache_stats,
+            'expiredGrantsPendingCleanup'  => $expired_grants_pending,
+            'phpVersion'                   => PHP_VERSION,
+            'wpVersion'                    => get_bloginfo('version'),
+            'pluginVersion'                => defined('WPSG_VERSION') ? WPSG_VERSION : 'unknown',
+            'timestamp'                    => time(),
         ];
+    }
+
+    /**
+     * Count access grants across all campaigns whose expires_at is in the past
+     * but that have not yet been removed by the daily cron job.
+     *
+     * @return int
+     */
+    private static function count_expired_grants_pending_cleanup() {
+        $now = time();
+        $count = 0;
+
+        $campaigns = get_posts([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+        ]);
+
+        foreach ($campaigns as $campaign_id) {
+            $grants = get_post_meta($campaign_id, 'access_grants', true);
+            if (!is_array($grants)) {
+                continue;
+            }
+            foreach ($grants as $entry) {
+                $expires_at = $entry['expires_at'] ?? null;
+                if ($expires_at !== null && strtotime($expires_at) < $now) {
+                    $count++;
+                }
+            }
+        }
+
+        return $count;
     }
 
     /**

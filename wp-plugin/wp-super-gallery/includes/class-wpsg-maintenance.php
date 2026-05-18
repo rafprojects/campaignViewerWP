@@ -5,9 +5,10 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_Maintenance {
-    const CLEANUP_HOOK          = 'wpsg_archive_cleanup';
-    const TRASH_PURGE_HOOK      = 'wpsg_trash_purge';
-    const ANALYTICS_PURGE_HOOK  = 'wpsg_analytics_purge';
+    const CLEANUP_HOOK              = 'wpsg_archive_cleanup';
+    const TRASH_PURGE_HOOK          = 'wpsg_trash_purge';
+    const ANALYTICS_PURGE_HOOK      = 'wpsg_analytics_purge';
+    const EXPIRED_GRANTS_HOOK       = 'wpsg_expired_grants_cleanup';
 
     /**
      * Hook cron actions and schedule events based on settings.
@@ -16,6 +17,7 @@ class WPSG_Maintenance {
         add_action(self::CLEANUP_HOOK, [self::class, 'trash_archived_campaigns']);
         add_action(self::TRASH_PURGE_HOOK, [self::class, 'purge_trashed_campaigns']);
         add_action(self::ANALYTICS_PURGE_HOOK, [self::class, 'purge_old_analytics']);
+        add_action(self::EXPIRED_GRANTS_HOOK, [self::class, 'purge_expired_grants']);
 
         // Register a weekly interval — core only ships hourly/twicedaily/daily.
         add_filter('cron_schedules', [self::class, 'add_weekly_schedule']);
@@ -46,6 +48,11 @@ class WPSG_Maintenance {
             }
         } else {
             wp_clear_scheduled_hook(self::ANALYTICS_PURGE_HOOK);
+        }
+
+        // P28-B: always schedule the expired grants cleanup — no setting gate needed.
+        if (!wp_next_scheduled(self::EXPIRED_GRANTS_HOOK)) {
+            wp_schedule_event(time(), 'daily', self::EXPIRED_GRANTS_HOOK);
         }
     }
 
@@ -156,6 +163,94 @@ class WPSG_Maintenance {
                 )
             );
         } while ($deleted === $batch_size);
+    }
+
+    // ── P28-B: Expired access grants cleanup ────────────────────────────────
+
+    /**
+     * Remove grants whose expires_at has passed from campaign and company meta.
+     * Runs daily via WP-Cron. Expired grants are logged to the audit trail
+     * before removal so the record is preserved.
+     */
+    public static function purge_expired_grants() {
+        $now = time();
+
+        // --- Campaign-level grants ---
+        $campaigns = get_posts([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+        ]);
+
+        foreach ($campaigns as $campaign_id) {
+            $grants = get_post_meta($campaign_id, 'access_grants', true);
+            if (!is_array($grants) || empty($grants)) {
+                continue;
+            }
+
+            $kept    = [];
+            $removed = [];
+            foreach ($grants as $entry) {
+                $expires_at = $entry['expires_at'] ?? null;
+                if ($expires_at !== null && strtotime($expires_at) < $now) {
+                    $removed[] = $entry;
+                } else {
+                    $kept[] = $entry;
+                }
+            }
+
+            if (empty($removed)) {
+                continue;
+            }
+
+            update_post_meta($campaign_id, 'access_grants', $kept);
+
+            foreach ($removed as $entry) {
+                if (class_exists('WPSG_REST')) {
+                    WPSG_REST::add_audit_entry($campaign_id, 'access.expired', [
+                        'userId'     => $entry['userId'] ?? null,
+                        'expires_at' => $entry['expires_at'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        // --- Company-level grants (stored in term meta) ---
+        $terms = get_terms([
+            'taxonomy'   => 'wpsg_company',
+            'hide_empty' => false,
+            'fields'     => 'ids',
+        ]);
+
+        if (is_wp_error($terms)) {
+            return;
+        }
+
+        foreach ($terms as $term_id) {
+            $grants = get_term_meta($term_id, 'access_grants', true);
+            if (!is_array($grants) || empty($grants)) {
+                continue;
+            }
+
+            $kept    = [];
+            $removed = [];
+            foreach ($grants as $entry) {
+                $expires_at = $entry['expires_at'] ?? null;
+                if ($expires_at !== null && strtotime($expires_at) < $now) {
+                    $removed[] = $entry;
+                } else {
+                    $kept[] = $entry;
+                }
+            }
+
+            if (empty($removed)) {
+                continue;
+            }
+
+            update_term_meta($term_id, 'access_grants', $kept);
+        }
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────

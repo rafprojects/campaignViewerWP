@@ -17,6 +17,7 @@ function CampaignSkeletonRows({ withCheckbox }: { withCheckbox: boolean }) {
           <Table.Td><Skeleton height={22} width={60} radius="xl" /></Table.Td>
           <Table.Td><Skeleton height={22} width={56} radius="xl" /></Table.Td>
           <Table.Td><Skeleton height={14} width={80} /></Table.Td>
+          <Table.Td><Skeleton height={22} width={40} radius="xl" /></Table.Td>
           <Table.Td>
             <Group gap="xs">
               <Skeleton height={28} width={60} radius="sm" />
@@ -110,6 +111,7 @@ export function CampaignsTab({
               <Table.Th>Status</Table.Th>
               <Table.Th>Visibility</Table.Th>
               <Table.Th>Company</Table.Th>
+              <Table.Th>Grants</Table.Th>
               <Table.Th>Actions</Table.Th>
             </Table.Tr>
           </Table.Thead>

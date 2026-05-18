@@ -37,6 +37,7 @@ export const SETTING_TOOLTIPS: Record<string, string> = {
 
   // ── Upload / Media (advanced) ──
   uploadMaxSizeMb: 'Maximum file size (MB) allowed for a single media upload.',
+  maxBatchUploadSize: 'Maximum number of files/items allowed in a single batch upload or batch media-add request.',
   uploadAllowedTypes: 'Comma-separated MIME patterns for accepted upload types (e.g. image/*,video/*).',
   libraryPageSize: 'Number of items per page in the media library picker.',
   mediaListPageSize: 'Number of items per page in the media list view.',
