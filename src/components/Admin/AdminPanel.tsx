@@ -5,7 +5,9 @@ import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings } from '@tabler/icons-react';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { CampaignsTab } from './CampaignsTab';
+import { CampaignsMobileList } from './CampaignsMobileList';
 import { BulkActionsBar } from './BulkActionsBar';
 import { AuditTab } from './AuditTab';
 import { GlobalAuditTab } from './GlobalAuditTab';
@@ -211,6 +213,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
     return new Map(accessSummaryData.items.map((item) => [item.id, item]));
   }, [accessSummaryData]);
 
+  const nullRef = useRef<HTMLElement>(null);
+  const { breakpoint } = useBreakpoint(nullRef, { source: 'viewport' });
+  const isMobile = breakpoint === 'mobile';
+
   const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
@@ -240,16 +246,36 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
       </Group>
 
       <Tabs {...getWpsgDebugProps('AdminPanel', 'tabs')} value={activeTab} onChange={setActiveTab}>
-        <Tabs.List {...getWpsgDebugProps('AdminPanel', 'tab-list')} style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-          <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
-          <Tabs.Tab value="media">Media</Tabs.Tab>
-          <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
-          <Tabs.Tab value="templates">Templates</Tabs.Tab>
-          <Tabs.Tab value="access">Access</Tabs.Tab>
-          <Tabs.Tab value="audit">Audit</Tabs.Tab>
-          <Tabs.Tab value="globalAudit">Global Audit</Tabs.Tab>
-          <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
-        </Tabs.List>
+        {isMobile ? (
+          <Select
+            {...getWpsgDebugProps('AdminPanel', 'tab-select')}
+            value={activeTab ?? 'campaigns'}
+            onChange={(v) => setActiveTab(v)}
+            data={[
+              { value: 'campaigns', label: 'Campaigns' },
+              { value: 'media', label: 'Media' },
+              { value: 'layouts', label: 'Layouts' },
+              { value: 'templates', label: 'Templates' },
+              { value: 'access', label: 'Access' },
+              { value: 'audit', label: 'Audit' },
+              { value: 'globalAudit', label: 'Global Audit' },
+              { value: 'analytics', label: 'Analytics' },
+            ]}
+            mb="sm"
+            aria-label="Select admin panel tab"
+          />
+        ) : (
+          <Tabs.List {...getWpsgDebugProps('AdminPanel', 'tab-list')} style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+            <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
+            <Tabs.Tab value="media">Media</Tabs.Tab>
+            <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
+            <Tabs.Tab value="templates">Templates</Tabs.Tab>
+            <Tabs.Tab value="access">Access</Tabs.Tab>
+            <Tabs.Tab value="audit">Audit</Tabs.Tab>
+            <Tabs.Tab value="globalAudit">Global Audit</Tabs.Tab>
+            <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
+          </Tabs.List>
+        )}
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
           <Group justify="space-between" align="flex-start" mb="sm" wrap="wrap" gap="sm">
@@ -301,21 +327,35 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
               </ActionIcon>
             </Tooltip>
           </Group>
-          <CampaignsTab
-            isLoading={isLoading}
-            error={error}
-            campaignsRows={campaignsRows}
-            selectMode={campaignActions.selectMode}
-            selectedCount={campaignActions.selectedCampaignIds.size}
-            totalCount={campaigns.length}
-            onToggleSelectMode={campaignActions.handleToggleSelectMode}
-            onSelectAll={() => campaignActions.handleSelectAll(campaigns.map((c) => String(c.id)))}
-            onDeselectAll={campaignActions.handleDeselectAll}
-            page={campaignPagination.page}
-            totalPages={campaignPagination.totalPages}
-            total={campaignPagination.total}
-            onPageChange={setCampaignPage}
-          />
+          {isMobile ? (
+            <CampaignsMobileList
+              isLoading={isLoading}
+              error={error}
+              campaigns={campaigns}
+              campaignActions={campaignActions}
+              grantSummary={grantSummary}
+              page={campaignPagination.page}
+              totalPages={campaignPagination.totalPages}
+              total={campaignPagination.total}
+              onPageChange={setCampaignPage}
+            />
+          ) : (
+            <CampaignsTab
+              isLoading={isLoading}
+              error={error}
+              campaignsRows={campaignsRows}
+              selectMode={campaignActions.selectMode}
+              selectedCount={campaignActions.selectedCampaignIds.size}
+              totalCount={campaigns.length}
+              onToggleSelectMode={campaignActions.handleToggleSelectMode}
+              onSelectAll={() => campaignActions.handleSelectAll(campaigns.map((c) => String(c.id)))}
+              onDeselectAll={campaignActions.handleDeselectAll}
+              page={campaignPagination.page}
+              totalPages={campaignPagination.totalPages}
+              total={campaignPagination.total}
+              onPageChange={setCampaignPage}
+            />
+          )}
           {campaignActions.selectMode && campaignActions.selectedCampaignIds.size > 0 && (() => {
             const sel = campaigns.filter((c) => campaignActions.selectedCampaignIds.has(String(c.id)));
             return (
@@ -406,6 +446,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
             apiClient={apiClient}
             showExpiredGrants={showExpiredGrants}
             onShowExpiredGrantsChange={setShowExpiredGrants}
+            isMobile={isMobile}
           />
         </Tabs.Panel>
 

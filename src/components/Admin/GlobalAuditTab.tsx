@@ -105,23 +105,8 @@ export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onE
         </Button>
       </Group>
       {loading ? (
-        <Table verticalSpacing="sm" aria-label="Loading global audit entries" style={{ minWidth: 720 }}>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th miw={140}>When</Table.Th>
-              <Table.Th miw={160}>Action</Table.Th>
-              <Table.Th miw={100}>Campaign</Table.Th>
-              <Table.Th miw={80}>User</Table.Th>
-              <Table.Th miw={200}>Details</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody><AuditSkeletonRows /></Table.Tbody>
-        </Table>
-      ) : entries.length === 0 ? (
-        <Text c="dimmed" role="status" aria-live="polite">No audit entries found.</Text>
-      ) : (
-        <ScrollArea offsetScrollbars type="always" scrollbars="y" className="wpsg-scrollarea" h={400}>
-          <Table verticalSpacing="sm" highlightOnHover aria-label="Global audit entries" style={{ minWidth: 720 }}>
+        <Table.ScrollContainer minWidth={720}>
+          <Table verticalSpacing="sm" aria-label="Loading global audit entries">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th miw={140}>When</Table.Th>
@@ -131,8 +116,27 @@ export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onE
                 <Table.Th miw={200}>Details</Table.Th>
               </Table.Tr>
             </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
+            <Table.Tbody><AuditSkeletonRows /></Table.Tbody>
           </Table>
+        </Table.ScrollContainer>
+      ) : entries.length === 0 ? (
+        <Text c="dimmed" role="status" aria-live="polite">No audit entries found.</Text>
+      ) : (
+        <ScrollArea offsetScrollbars type="always" scrollbars="y" className="wpsg-scrollarea" h={400}>
+          <Table.ScrollContainer minWidth={720}>
+            <Table verticalSpacing="sm" highlightOnHover aria-label="Global audit entries">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th miw={140}>When</Table.Th>
+                  <Table.Th miw={160}>Action</Table.Th>
+                  <Table.Th miw={100}>Campaign</Table.Th>
+                  <Table.Th miw={80}>User</Table.Th>
+                  <Table.Th miw={200}>Details</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{rows}</Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
         </ScrollArea>
       )}
     </>

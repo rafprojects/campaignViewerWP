@@ -66,6 +66,7 @@ interface AccessTabProps {
   apiClient?: ApiClient | undefined;
   showExpiredGrants: boolean;
   onShowExpiredGrantsChange: (value: boolean) => void;
+  isMobile?: boolean;
 }
 
 export function AccessTab({
@@ -87,6 +88,7 @@ export function AccessTab({
   apiClient,
   showExpiredGrants,
   onShowExpiredGrantsChange,
+  isMobile = false,
 }: AccessTabProps) {
   const {
     userCombobox,
@@ -237,29 +239,31 @@ export function AccessTab({
             </Group>
 
             {accessLoading ? (
-              <Table verticalSpacing="xs" aria-label="Loading access entries" style={{ minWidth: 640 }}>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>User</Table.Th>
-                    <Table.Th>Access Type</Table.Th>
-                    <Table.Th>Granted / Expires</Table.Th>
-                    <Table.Th w={80}>Revoke</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Table.Tr key={i}>
-                      <Table.Td>
-                        <Skeleton height={14} width="50%" mb={4} />
-                        <Skeleton height={10} width="70%" />
-                      </Table.Td>
-                      <Table.Td><Skeleton height={22} width={80} radius="xl" /></Table.Td>
-                      <Table.Td><Skeleton height={14} width={100} /></Table.Td>
-                      <Table.Td><Skeleton height={28} width={28} circle /></Table.Td>
+              <Table.ScrollContainer minWidth={640}>
+                <Table verticalSpacing="xs" aria-label="Loading access entries">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>User</Table.Th>
+                      <Table.Th>Access Type</Table.Th>
+                      <Table.Th>Granted / Expires</Table.Th>
+                      <Table.Th w={80}>Revoke</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Table.Tr key={i}>
+                        <Table.Td>
+                          <Skeleton height={14} width="50%" mb={4} />
+                          <Skeleton height={10} width="70%" />
+                        </Table.Td>
+                        <Table.Td><Skeleton height={22} width={80} radius="xl" /></Table.Td>
+                        <Table.Td><Skeleton height={14} width={100} /></Table.Td>
+                        <Table.Td><Skeleton height={28} width={28} circle /></Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
             ) : accessEntriesCount === 0 ? (
               <Text c="dimmed" ta="center" py="md">
                 {accessViewMode === 'campaign'
@@ -270,22 +274,23 @@ export function AccessTab({
               </Text>
             ) : (
               <ScrollArea style={{ maxHeight: 300 }} offsetScrollbars type="auto">
-                <Table
-                  verticalSpacing="xs"
-                  highlightOnHover
-                  aria-label="Current access entries"
-                  style={{ minWidth: 640 }}
-                >
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>User</Table.Th>
-                      <Table.Th>Access Type</Table.Th>
-                      <Table.Th>Granted / Expires</Table.Th>
-                      <Table.Th w={80}>Revoke</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>{accessRows}</Table.Tbody>
-                </Table>
+                <Table.ScrollContainer minWidth={640}>
+                  <Table
+                    verticalSpacing="xs"
+                    highlightOnHover
+                    aria-label="Current access entries"
+                  >
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>User</Table.Th>
+                        <Table.Th>Access Type</Table.Th>
+                        <Table.Th>Granted / Expires</Table.Th>
+                        <Table.Th w={80}>Revoke</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>{accessRows}</Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
               </ScrollArea>
             )}
           </Card>
@@ -308,7 +313,7 @@ export function AccessTab({
 
             <Group align="flex-end" gap="sm" wrap="wrap">
               {/* Unified user search with ID fallback built-in */}
-              <Box style={{ flex: 1, minWidth: 250 }}>
+              <Box style={{ flex: 1, minWidth: isMobile ? undefined : 250, width: isMobile ? '100%' : undefined }}>
                 <Combobox
                   store={userCombobox}
                   onOptionSubmit={(val) => {
@@ -410,7 +415,7 @@ export function AccessTab({
                     ]}
                     value={accessSource}
                     onChange={(v) => onAccessSourceChange((v as 'company' | 'campaign') ?? 'campaign')}
-                    style={{ minWidth: 180 }}
+                    style={{ minWidth: isMobile ? undefined : 180, width: isMobile ? '100%' : undefined }}
                   />
 
                   <Select
@@ -422,7 +427,7 @@ export function AccessTab({
                     value={accessAction}
                     onChange={(v) => onAccessActionChange((v as 'grant' | 'deny') ?? 'grant')}
                     disabled={accessSource === 'company'}
-                    style={{ minWidth: 150 }}
+                    style={{ minWidth: isMobile ? undefined : 150, width: isMobile ? '100%' : undefined }}
                   />
                 </>
               )}
@@ -433,7 +438,7 @@ export function AccessTab({
                 type="datetime-local"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.currentTarget.value)}
-                style={{ minWidth: 200 }}
+                style={{ minWidth: isMobile ? undefined : 200, width: isMobile ? '100%' : undefined }}
                 aria-label="Access expiry date and time"
               />
 

@@ -165,7 +165,7 @@ function TemplateRow({
   onDelete: (tpl: CampaignTemplate) => void;
 }) {
   return (
-    <Group justify="space-between" wrap="nowrap" px="xs" py={4}>
+    <Group justify="space-between" wrap="wrap" px="xs" py={4}>
       <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
         <Group gap="xs" wrap="nowrap">
           <Text size="sm" fw={500} truncate>{tpl.name}</Text>

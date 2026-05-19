@@ -36,7 +36,7 @@ export function BulkActionsBar({
         borderColor: 'var(--mantine-color-blue-6)',
       }}
     >
-      <Group justify="space-between" wrap="nowrap">
+      <Group justify="space-between" wrap="wrap">
         <Group gap="xs" wrap="nowrap">
           <Tooltip label="Clear selection">
             <ActionIcon

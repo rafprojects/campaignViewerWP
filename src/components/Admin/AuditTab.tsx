@@ -98,17 +98,19 @@ export function AuditTab({
         </Button>
       </Group>
       {auditLoading ? (
-        <Table verticalSpacing="sm" aria-label="Loading audit entries" style={{ minWidth: 640 }}>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th miw={140}>When</Table.Th>
-              <Table.Th miw={160}>Action</Table.Th>
-              <Table.Th miw={80}>User</Table.Th>
-              <Table.Th miw={200}>Details</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody><AuditSkeletonRows /></Table.Tbody>
-        </Table>
+        <Table.ScrollContainer minWidth={640}>
+          <Table verticalSpacing="sm" aria-label="Loading audit entries">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th miw={140}>When</Table.Th>
+                <Table.Th miw={160}>Action</Table.Th>
+                <Table.Th miw={80}>User</Table.Th>
+                <Table.Th miw={200}>Details</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody><AuditSkeletonRows /></Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
       ) : auditEntriesCount === 0 ? (
         <Text c="dimmed" role="status" aria-live="polite">No audit entries yet.</Text>
       ) : (
@@ -119,17 +121,19 @@ export function AuditTab({
           className="wpsg-scrollarea"
           h={360}
         >
-          <Table verticalSpacing="sm" highlightOnHover aria-label="Audit entries" style={{ minWidth: 640 }}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th miw={140}>When</Table.Th>
-                <Table.Th miw={160}>Action</Table.Th>
-                <Table.Th miw={80}>User</Table.Th>
-                <Table.Th miw={200}>Details</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{auditRows}</Table.Tbody>
-          </Table>
+          <Table.ScrollContainer minWidth={640}>
+            <Table verticalSpacing="sm" highlightOnHover aria-label="Audit entries">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th miw={140}>When</Table.Th>
+                  <Table.Th miw={160}>Action</Table.Th>
+                  <Table.Th miw={80}>User</Table.Th>
+                  <Table.Th miw={200}>Details</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{auditRows}</Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
         </ScrollArea>
       )}
     </>

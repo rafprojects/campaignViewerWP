@@ -12,7 +12,8 @@
 | P29-B | Add description field to Create Template modal | Complete ✅ | XS |
 | P29-C | CompactGridGallery: switch CSS Grid → Flexbox | Complete ✅ | Small |
 | P29-D | Fix campaign ID leaking into media item ID on add | Complete ✅ | Small |
-| P29-E | Admin Panel mobile responsiveness (below 768px) | New | Large |
+| P29-E | Admin Panel mobile responsiveness (below 768px) | In Progress | Large |
+| P29-F | Settings Panel: intuitive tab re-grouping | Planned | Medium |
 
 ---
 
@@ -41,6 +42,11 @@
    contain wide tables with 5-7 columns, are not adapted for mobile viewing. The tab
    navigation, filter bars, and form controls all assume horizontal space that phones
    do not provide.
+8. The Settings Panel has 280+ individual controls distributed across 6 tabs with an
+   imbalanced and inconsistent grouping — the "Gallery & Media" tab alone contains ~90
+   settings covering 5 unrelated concerns, while related settings (backgrounds,
+   navigation, tile appearance) are split across multiple tabs. This makes features hard
+   to find and increases cognitive load.
 
 ---
 
@@ -411,27 +417,30 @@ Most complex tab with multiple compounding issues:
 Use Mantine's responsive utilities and the existing `useBreakpoint` hook
 (`src/hooks/useBreakpoint.ts`) to conditionally render mobile-optimized layouts below the `sm`
 breakpoint (768px). The hook returns `{ breakpoint: 'mobile' | 'tablet' | 'desktop', width }`
-and is already tested.
+and is already tested. Use `source: 'viewport'` throughout the Admin Panel — it occupies the
+full viewport on mobile, so viewport width is the correct signal (unlike gallery widgets where
+container width matters).
 
 #### P0 — Tab Navigation
 
-Replace `<Tabs.List>` with an `<Accordion>` below `sm`. The accordion items map 1:1 to the
-tab values; clicking an accordion item sets the active tab. At `sm` and above, render the
-existing `<Tabs.List>`.
+Replace `<Tabs.List>` with a `<Select>` dropdown below `sm`. This keeps `<Tabs>` as the single
+source of truth for the active panel — the Select just calls `setActiveTab(value)` on change.
+An Accordion approach was considered but rejected: Mantine's Accordion expects panel content
+*inside* its items, whereas the tab panels live in `<Tabs.Panel>` elements outside any
+accordion, so the two systems would have to be kept in sync, which is fragile.
 
 ```tsx
-// AdminPanel.tsx
 {isMobile ? (
-  <Accordion value={activeTab ?? 'campaigns'} onChange={setActiveTab}>
-    <Accordion.Item value="campaigns">Campaigns</Accordion.Item>
-    <Accordion.Item value="media">Media</Accordion.Item>
-    <Accordion.Item value="layouts">Layouts</Accordion.Item>
-    <Accordion.Item value="templates">Templates</Accordion.Item>
-    <Accordion.Item value="access">Access</Accordion.Item>
-    <Accordion.Item value="audit">Audit</Accordion.Item>
-    <Accordion.Item value="globalAudit">Global Audit</Accordion.Item>
-    <Accordion.Item value="analytics">Analytics</Accordion.Item>
-  </Accordion>
+  <Select
+    value={activeTab ?? 'campaigns'}
+    onChange={(v) => setActiveTab(v)}
+    data={[
+      { value: 'campaigns', label: 'Campaigns' },
+      { value: 'media', label: 'Media' },
+      // ...
+    ]}
+    mb="sm"
+  />
 ) : (
   <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
     {/* existing tabs */}
@@ -439,63 +448,63 @@ existing `<Tabs.List>`.
 )}
 ```
 
-#### P0 — Tables to Cards (Campaigns, Access, Audit, Global Audit, Pending Requests)
+#### P0 — Campaigns Tab: Table → Card List
 
-For each table-heavy tab, provide a card-based mobile alternative. Each card represents one
-row and shows the key information in a stacked layout with action buttons in a footer row.
+Below `sm`, render a `<CampaignsMobileList>` component instead of `<CampaignsTab>`. Each card
+shows title, description, status/visibility/schedule badges, company, grants, and action buttons
+in a compact stacked layout. `<CampaignsTab>` (desktop table) is unchanged.
 
-**Campaigns card example:**
 ```
 ┌────────────────────────────┐
 │ Campaign Title             │
+│ Short description…         │
 │ 🟢 Active  🔒 Private  🏢 Acme │
-│ Grants: 3                  │
+│ 3 grants                   │
 │ ───────────────────────── │
-│ [Edit] [Archive] [Delete]  │
+│ [Edit] [Clone] [Export]    │
+│ [Archive] [Delete]         │
 └────────────────────────────┘
 ```
 
-**Audit card example:**
-```
-┌────────────────────────────┐
-│ May 18, 2026 14:32        │
-│ action: campaign_created   │
-│ by: admin@example.com      │
-│ details: { ... }           │
-└────────────────────────────┘
-```
+#### P1 — Access Grant Form: Remove minWidth Constraints on Mobile
 
-This replaces the table entirely below `sm`, keeping the table at `sm` and above.
+The grant form `<Group wrap="wrap">` already wraps — but `minWidth` values (250/180/150/200px)
+on each field prevent full-width stacking. Below `sm`, set `minWidth: undefined` and
+`width: '100%'` on each input so they fill the column. No structural change needed.
 
-#### P1 — Header Collapsing
+#### P1 — Access Table: Table.ScrollContainer
 
-Below `sm`, collapse "New Campaign", "Import", and keyboard shortcut into a single dropdown
-menu button (⋯ icon or "Actions" label). Keep the back arrow and "Admin Panel" title visible.
+Wrap the Current Access table (and its loading skeleton) in `<Table.ScrollContainer>` so the
+640px-wide table scrolls horizontally on narrow viewports instead of overflowing.
 
-#### P1 — Filter Bars to Collapsible Section
+#### P1 — Layouts Grid Column Reduction
 
-Wrap filter controls in a collapsible section (Mantine `<Accordion>` or `<details>` element).
-On mobile show a summary chip like "Filters (2)" that expands the controls. At `sm` and above,
-render filters inline as today.
+Below `sm`, use `gridTemplateColumns: '1fr'` (single column) instead of
+`repeat(auto-fill, minmax(220px, 1fr))`.
 
-#### P1 — Access Grant Form to Stacked Layout
+#### P1 — Templates Row + BulkActionsBar Wrapping
 
-Change the `<Group>` to `direction="column"` below `sm`. Remove all `minWidth` constraints
-on inputs (they go full-width via `style={{ width: '100%' }}`). The combobox, Selects, datetime
-input, and buttons all stack vertically.
+- Change `TemplateRow` Group from `wrap="nowrap"` to `wrap="wrap"`.
+- Change `BulkActionsBar` outer `<Group wrap="nowrap">` to `wrap="wrap"`.
 
-#### P2 — BulkActionsBar Wrapping
+#### P2 — Audit / Global Audit: Table.ScrollContainer
 
-Change `wrap="nowrap"` to `wrap="wrap"` on both inner Groups.
+Both audit tabs already use a vertical `<ScrollArea>`; adding `<Table.ScrollContainer>` around
+the inner tables enables horizontal scroll on mobile. Card-based mobile views were considered
+but rejected: audit logs are a power-user feature rarely read on mobile, and the horizontal
+scroll pattern is acceptable for tabular data in this context.
 
-#### P2 — Layouts Grid Column Reduction
+#### P2 — Header Action Buttons
 
-Below `sm`, use `gridTemplateColumns: '1fr'` (single column) or `minmax(160px)` instead of
-`minmax(220px)`.
+The header Group already has `wrap="wrap"`, so buttons fall below the title on narrow screens
+rather than overflowing. A full collapse-into-menu approach is a polish item deferred until
+after P0/P1 items are validated.
 
-#### P2 — Templates Row Wrapping
+#### P2 — Filter Bar Collapsible
 
-Change `TemplateRow` Group from `wrap="nowrap"` to `wrap="wrap"` below `sm`.
+The Campaigns filter row also has `wrap="wrap"` and doesn't overflow; it just consumes vertical
+space. A Mantine `<Collapse>` toggle (one button, ~5 lines) is sufficient when this is
+prioritised. Deferred post-P0/P1 validation.
 
 ### Acceptance criteria
 
@@ -513,27 +522,31 @@ Change `TemplateRow` Group from `wrap="nowrap"` to `wrap="wrap"` below `sm`.
 
 ### Implementation Plan
 
-**Step 1 — Shared mobile card components.** Create reusable `AdminCard` wrapper in
-`src/components/Admin/AdminCard.tsx` for consistent card layout (header, body, footer
-with action buttons).
+**Step 1 — Trivial wrapping fixes.** `BulkActionsBar` `wrap="nowrap"` → `wrap="wrap"`;
+`TemplatesTab` `TemplateRow` same change. Zero risk, immediate win.
 
-**Step 2 — Tab navigation.** Add `<Accordion>` fallback in `AdminPanel.tsx`.
+**Step 2 — Audit table horizontal scroll.** Wrap both audit tab tables in
+`<Table.ScrollContainer>`. One-liner per table, no behaviour change.
 
-**Step 3 — Header.** Collapse action buttons into dropdown menu below `sm`.
+**Step 3 — Access table horizontal scroll.** Same treatment for Current Access table and its
+loading skeleton.
 
-**Step 4 — Campaigns cards.** Add card-based mobile view in `CampaignsTab.tsx`.
+**Step 4 — Tab navigation Select.** Add `useBreakpoint` (`source: 'viewport'`) to
+`AdminPanel.tsx`. Below `sm`, render a `<Select>` that drives `setActiveTab`; at `sm+`, keep
+the existing `<Tabs.List>`.
 
-**Step 5 — Access tab.** Stack form controls, add card-based access entries.
+**Step 5 — Campaigns mobile card list.** Create `CampaignsMobileList.tsx`. `AdminPanel`
+renders it instead of `<CampaignsTab>` when `isMobile`.
 
-**Step 6 — Audit/Global Audit cards.** Card-based mobile view for both tabs.
+**Step 6 — Access grant form mobile stacking.** Pass `isMobile` to `AccessTab`; on mobile,
+remove `minWidth` constraints and set `width: '100%'` on each grant-form input.
 
-**Step 7 — PendingRequestsPanel cards.** Card-based mobile view.
+**Step 7 — Layouts grid mobile.** Add `useBreakpoint` to `LayoutTemplateList`; switch to
+`gridTemplateColumns: '1fr'` below `sm`.
 
-**Step 8 — Layouts & Templates.** Grid column reduction, row wrapping.
+**Step 8 — Analytics chart height.** Reduce `ResponsiveContainer` height on mobile.
 
-**Step 9 — BulkActionsBar.** Change `wrap` behavior.
-
-**Step 10 — Analytics.** Reduce chart height on mobile.
+**Step 9 — (P2) Header collapse + filter Collapse toggle.** Deferred post-validation.
 
 ### Validation
 
@@ -548,25 +561,294 @@ with action buttons).
 
 | File | Change |
 |------|--------|
-| `src/components/Admin/AdminPanel.tsx` | Tab list → Accordion on mobile; header collapsing |
-| `src/components/Admin/AdminCard.tsx` | **New file** — reusable mobile card component |
-| `src/components/Admin/CampaignsTab.tsx` | Table → card list on mobile |
-| `src/components/Admin/AccessTab.tsx` | Stacked form; table → cards on mobile |
-| `src/components/Admin/AuditTab.tsx` | Table → cards on mobile; collapsible filters |
-| `src/components/Admin/GlobalAuditTab.tsx` | Table → cards on mobile; collapsible filters |
-| `src/components/Admin/PendingRequestsPanel.tsx` | Table → cards on mobile |
-| `src/components/Admin/LayoutTemplateList.tsx` | Grid column reduction; collapsible toolbar |
-| `src/components/Admin/TemplatesTab.tsx` | Row wrapping on mobile |
-| `src/components/Admin/BulkActionsBar.tsx` | Change `wrap="nowrap"` → `wrap="wrap"` |
+| `src/components/Admin/AdminPanel.tsx` | `useBreakpoint`; Select tab nav on mobile; `isMobile` prop to AccessTab; conditional `CampaignsMobileList` |
+| `src/components/Admin/CampaignsMobileList.tsx` | **New file** — campaign card list for mobile |
+| `src/components/Admin/AccessTab.tsx` | `isMobile` prop; remove `minWidth` on grant form inputs; `Table.ScrollContainer` on access table |
+| `src/components/Admin/AuditTab.tsx` | `Table.ScrollContainer` around tables (horizontal scroll) |
+| `src/components/Admin/GlobalAuditTab.tsx` | `Table.ScrollContainer` around tables (horizontal scroll) |
+| `src/components/Admin/LayoutTemplateList.tsx` | `useBreakpoint`; `gridTemplateColumns: '1fr'` on mobile |
+| `src/components/Admin/TemplatesTab.tsx` | `TemplateRow` `wrap="nowrap"` → `wrap="wrap"` |
+| `src/components/Admin/BulkActionsBar.tsx` | Outer `wrap="nowrap"` → `wrap="wrap"` |
 | `src/components/Admin/AnalyticsDashboard.tsx` | Chart height reduction on mobile |
-| `src/components/Admin/MediaTab.tsx` | Campaign selector full-width on mobile; toolbar stacking |
 
 ### Effort Estimate
 
-~15-20 hours of focused work across 12 files. The core pattern (table → card swap via
-`useBreakpoint`) repeats across 6-7 tabs, so after the first 2-3 are done the remaining
-ones are mechanical replication. The most complex work is the Access tab (form stacking +
-context info reflow) and Campaigns tab (card layout with all the metadata and action buttons).
+~10-13 hours. Audit/Global Audit card conversion is dropped (horizontal scroll is sufficient
+for power-user features rarely read on mobile); PendingRequestsPanel card conversion also
+dropped (3-column table, scroll is fine). The Accordion tab-nav approach is replaced with a
+simpler Select dropdown. The remaining work — campaign cards, Access form stacking, layout grid
+reduction, wrap fixes — follows a repeating pattern.
+
+---
+
+## Track P29-F — Settings Panel: Intuitive Tab Re-grouping
+
+### Problem
+
+The Settings Panel (`SettingsPanel.tsx`) exposes 280+ individual controls across 6 tabs with an
+imbalanced, inconsistent grouping that makes features hard to find. The "Gallery & Media" tab
+alone contains approximately 90 settings covering 5 unrelated concerns.
+
+**Current tab structure:**
+
+| Current Tab | Sections (Accordion Items) | Estimated Setting Count |
+|-------------|---------------------------|------------------------|
+| Page & Theme | Theme & Layout, Page Container, Page Header, Page Background, Auth Bar, Security & Login | ~30 |
+| Campaign Cards | Card Appearance, Card Grid & Pagination, Card Internals | ~55 |
+| Gallery & Media | Viewport & Layout, Tile Appearance, Thumbnail Strip, Transitions, Navigation, Gallery Adapters, Viewport Backgrounds, Carousel Settings, Section Sizing & Spacing, Adapter Sizing | ~90 |
+| Campaign Viewer | Open Mode & Sizing, Modal Appearance, Content Visibility, Gallery Labels, Modal Background, Cover Image & Responsive | ~40 |
+| System & Admin *(hidden behind `advancedSettingsEnabled`)* | Settings Drawer, Upload/Media, Tile/Adapter, Lightbox, Navigation, System, Developer & Debugging, Data Maintenance | ~55 |
+| Typography | Font Library Manager, 16 element overrides | ~16 |
+
+**Specific problems identified:**
+
+1. **Backgrounds scattered across 4 locations.** Page-level background in `Page & Theme`,
+   gallery viewport backgrounds in `Gallery & Media`, modal background in `Campaign Viewer`.
+   These are conceptually the same kind of decision (choosing a background type/color/gradient)
+   but require jumping between 3 tabs.
+
+2. **"Gallery & Media" is a massive catch-all.** This single tab mixes: adapter selection
+   (which gallery layout per breakpoint), tile/media appearance (borders, shadows, gaps,
+   hover effects), gallery structure (section sizing, adapter sizing, carousel config),
+   navigation (arrows, dots, scroll behavior), and transitions & animations. ~90 settings
+   in one tab.
+
+3. **"Card Grid & Pagination" vs "Gallery Adapters" confusion.** Card grid layout
+   (campaign listing page) and gallery adapters (inside campaign viewer) are both grid-layout
+   concepts but live in completely different tabs. A user adjusting grid aesthetics has to
+   think: "Is this a card or a gallery tile?"
+
+4. **Navigation split between two tabs.** Gallery navigation (arrows, dots) lives in
+   `Gallery & Media -> Navigation`. Advanced navigation (arrow insets, hit targets, viewport
+   ratios, search input widths) lives in `System & Admin -> Navigation`. Same conceptual
+   domain, split by expertise level.
+
+5. **Tile Appearance (Gallery & Media) vs Tile/Adapter (System & Admin).** Both control
+   tile-level visual behavior but one is "normal" and the other is "advanced" — same
+   conceptual domain, split across tabs.
+
+6. **Security & Login buried in Page & Theme.** Session idle timeout, advanced settings
+   toggle, and tooltips toggle are operational settings, not page theming.
+
+7. **Modal sizing/appearance split.** Modal dimensions in `Campaign Viewer -> Open Mode &
+   Sizing` but close button, cover ratios, and mobile breakpoint in `Cover Image &
+   Responsive`.
+
+### Proposed New Structure
+
+Reorganize from 6 tabs to 7 visible tabs (+ 1 hidden) by splitting the bloated "Gallery &
+Media" into three focused tabs and moving operational settings to System.
+
+| New Tab | Sections (Accordion Items) | Estimated Setting Count | Source Components |
+|---------|---------------------------|------------------------|-------------------|
+| **1. Appearance** | Theme & Layout, Page Container, Page Background, Page Header, Auth Bar | ~30 | `GeneralSettingsSection` (re-parented accordion items) |
+| **2. Cards** | Card Appearance, Card Grid & Pagination, Card Internals | ~55 | `CampaignCardSettingsSection` (unchanged) |
+| **3. Gallery Layout** | Gallery Adapters, Section Sizing & Spacing, Adapter Sizing, Carousel Settings | ~35 | `GalleryLayoutSettingsSection`, `GalleryLayoutDetailSections`, `GalleryAdapterSettingsSection` |
+| **4. Gallery Style** | Viewport & Layout (lightbox toggle, viewport dimensions, border radius, shadows), Tile Appearance, Viewport Backgrounds, Transitions | ~45 | `MediaDisplaySettingsSection` (viewport, tile-appearance, transitions), `GalleryPresentationSections` |
+| **5. Gallery Navigation** | Navigation (arrows, dots, scroll), Thumbnail Strip | ~25 | `MediaDisplaySettingsSection` (navigation, thumbnail-strip) |
+| **6. Campaign Viewer** | Open Mode & Sizing, Modal Appearance, Content Visibility, Gallery Labels, Modal Background, Cover Image & Responsive | ~40 | `CampaignViewerSettingsSection` (unchanged) |
+| **7. Typography** | Font Library Manager, 16 element overrides | ~16 | `TypographySettingsSection` (unchanged) |
+| **8. System** *(hidden behind `advancedSettingsEnabled`)* | Magic Link Page Selector, Settings Drawer, Upload/Media, Tile/Adapter, Lightbox, Navigation, System, Developer & Debugging, Data Maintenance, Security & Login | ~60 | `AdvancedSettingsSection` + `Security & Login` moved from General |
+
+**Key changes:**
+
+- Split "Gallery & Media" (~90 settings) into 3 focused tabs: Gallery Layout (~35),
+  Gallery Style (~45), Gallery Navigation (~25).
+- Move "Security & Login" accordion from `GeneralSettingsSection` to `AdvancedSettingsSection`
+  in the System tab.
+- Keep all existing accordion section components unchanged — they are already well-scoped
+  internally. Only the tab-level re-parenting changes.
+- Total goes from 6 to 7 visible tabs (+ 1 hidden), but each tab is now 16-60 settings
+  instead of 16-90, making everything findable in 1-2 clicks.
+
+### Fix
+
+All changes are in `SettingsPanel.tsx`. No accordion section components need modification.
+
+**Step 1 — Rename and restructure tabs.**
+
+Replace the existing tab definitions with the new structure:
+
+```tsx
+<Tabs.List>
+  <Tabs.Tab value="appearance" leftSection={<IconSettings size={16} />}>
+    Appearance
+  </Tabs.Tab>
+  <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
+    Campaign Cards
+  </Tabs.Tab>
+  <Tabs.Tab value="gallery-layout" leftSection={<IconPhoto size={16} />}>
+    Gallery Layout
+  </Tabs.Tab>
+  <Tabs.Tab value="gallery-style" leftSection={<IconAdjustments size={16} />}>
+    Gallery Style
+  </Tabs.Tab>
+  <Tabs.Tab value="gallery-navigation" leftSection={<IconEye size={16} />}>
+    Gallery Navigation
+  </Tabs.Tab>
+  <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
+    Campaign Viewer
+  </Tabs.Tab>
+  <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
+    Typography
+  </Tabs.Tab>
+  {settings.advancedSettingsEnabled && (
+    <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
+      System & Admin
+    </Tabs.Tab>
+  )}
+</Tabs.List>
+```
+
+**Step 2 — Re-parent accordion sections under new tabs.**
+
+Move accordion items between tabs. The component imports and props remain identical.
+
+- "Appearance" tab: Render `GeneralSettingsSection` but exclude the "Security & Login"
+  accordion item (handled in Step 3).
+- "Gallery Layout" tab: Render `GalleryLayoutSettingsSection` (already contains Gallery
+  Adapters, Viewport Backgrounds, Carousel, Section Sizing, Adapter Sizing).
+- "Gallery Style" tab: Render a subset of `MediaDisplaySettingsSection` — specifically
+  the accordion items with values `viewport`, `tile-appearance`, `transitions`, plus
+  `GalleryPresentationSections`.
+- "Gallery Navigation" tab: Render a subset of `MediaDisplaySettingsSection` — specifically
+  the accordion items with values `navigation`, `thumbnail-strip`.
+
+**Step 3 — Move "Security & Login" to System tab.**
+
+In `GeneralSettingsSection.tsx`, extract the accordion item with value `gen-security`
+(Security & Login) into a separate component or render it conditionally in the System tab.
+Two approaches:
+
+- **Option A (preferred):** Extract `<Accordion.Item value="gen-security">...</Accordion.Item>`
+  into a standalone `SecuritySettingsSection` component. Render it inside the System tab
+  alongside `AdvancedSettingsSection`.
+- **Option B:** Pass a prop to `GeneralSettingsSection` to exclude the security accordion
+  item, and duplicate the accordion item in the System tab.
+
+Option A is cleaner — it avoids duplication and keeps each accordion section in exactly
+one location.
+
+**Step 4 — Update default active tab.**
+
+Change the default active tab from `'page-theme'` to `'appearance'` to match the new
+tab value.
+
+### Implementation Details
+
+**`SettingsPanel.tsx` — Tab value mapping:**
+
+| Old tab value | New tab value | Notes |
+|--------------|---------------|-------|
+| `page-theme` | `appearance` | Renamed |
+| `cards` | `cards` | Unchanged |
+| `gallery-media` | Split into `gallery-layout`, `gallery-style`, `gallery-navigation` | 1 becomes 3 |
+| `viewer` | `viewer` | Unchanged |
+| `system-admin` | `system-admin` | Unchanged (now includes Security & Login) |
+| `typography` | `typography` | Unchanged |
+
+**`MediaDisplaySettingsSection.tsx` — Splitting strategy:**
+
+Currently this component renders all accordion items together. To split it across two tabs,
+extract the accordion items into two separate render functions or sub-components:
+
+```tsx
+// In MediaDisplaySettingsSection.tsx or new files:
+export function GalleryStyleAccordion({ settings, updateSetting, tooltipLabel }) {
+  // Renders accordion items: viewport, tile-appearance, transitions
+  // Plus GalleryPresentationSections (backgrounds)
+}
+
+export function GalleryNavigationAccordion({ settings, updateSetting, tooltipLabel }) {
+  // Renders accordion items: navigation, thumbnail-strip
+}
+```
+
+Then in `SettingsPanel.tsx`:
+
+```tsx
+<Tabs.Panel value="gallery-style" pt="md">
+  <GalleryStyleAccordion
+    settings={settings}
+    updateSetting={updateSetting}
+    tooltipLabel={tt}
+  />
+</Tabs.Panel>
+
+<Tabs.Panel value="gallery-navigation" pt="md">
+  <GalleryNavigationAccordion
+    settings={settings}
+    updateSetting={updateSetting}
+    tooltipLabel={tt}
+  />
+</Tabs.Panel>
+```
+
+**`GeneralSettingsSection.tsx` — Extract Security & Login:**
+
+Extract the accordion item with value `gen-security` (contains `sessionIdleTimeoutMinutes`,
+`advancedSettingsEnabled`, `showSettingsTooltips`) into a new component:
+
+```tsx
+// New file or extracted component
+export function SecuritySettingsSection({ settings, updateSetting }) {
+  return (
+    <Accordion.Item value="gen-security">
+      <Accordion.Control>Security &amp; Login</Accordion.Control>
+      <Accordion.Panel>
+        {/* sessionIdleTimeoutMinutes, advancedSettingsEnabled, showSettingsTooltips */}
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+```
+
+Render in the System tab alongside `AdvancedSettingsSection`.
+
+**`AdvancedSettingsSection.tsx` — No changes needed** for structure, but the System tab
+will now also include the Security & Login accordion and the Magic Link Page Selector.
+
+### Acceptance criteria
+
+- All existing settings are accessible in the new tab structure with no settings lost.
+- Each tab contains 16-60 settings (no tab exceeds 60).
+- Background-related settings are co-located within their parent context (Appearance for
+  page, Gallery Style for gallery, Campaign Viewer for modal).
+- Navigation settings (both basic and advanced) are conceptually grouped.
+- Security & Login settings are in the System tab.
+- All existing accordion section components are preserved with their internal structure
+  unchanged.
+- `advancedSettingsEnabled` gate still controls visibility of the System & Admin tab.
+- No regressions in existing SettingsPanel tests (`SettingsPanel.test.tsx`).
+- E2E test `mantine8-runtime-qa.spec.ts` passes (may need tab name updates).
+
+### Validation
+
+- Manual QA: open Settings Panel, verify all 6 previously visible tabs + System tab are
+  accessible and contain the expected accordion sections.
+- Manual QA: toggle `advancedSettingsEnabled` on/off — verify System tab appears/disappears.
+- Manual QA: verify no accordion item is rendered in two places (especially Security & Login).
+- Vitest: `SettingsPanel.test.tsx` — update tab value references if any exist.
+- E2E: `mantine8-runtime-qa.spec.ts` — update tab role names if they reference
+  "Gallery & Media" or "Page & Theme".
+
+### Files Affected (proposed)
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/SettingsPanel.tsx` | Rename/restructure tabs; re-parent accordion sections; update default active tab |
+| `src/components/Settings/MediaDisplaySettingsSection.tsx` | Split into GalleryStyle + GalleryNavigation sub-components (or extract accordion items) |
+| `src/components/Settings/GeneralSettingsSection.tsx` | Extract Security & Login accordion into separate component |
+| `src/components/Settings/AdvancedSettingsSection.tsx` | No structural change; receives Security & Login in parent tab |
+| `src/components/Admin/SettingsPanel.test.tsx` | Update tab value references |
+| `e2e/mantine8-runtime-qa.spec.ts` | Update tab role names ("Gallery & Media" -> "Gallery Layout", etc.) |
+
+### Effort Estimate
+
+~4-6 hours. The work is primarily re-organizing imports, tab values, and accordion item
+placement in `SettingsPanel.tsx`. The `MediaDisplaySettingsSection` split requires
+careful extraction of accordion items but no logic changes. The Security & Login extraction
+is a simple cut-and-paste. Test updates are mechanical find-and-replace.
 
 ---
 
@@ -596,7 +878,8 @@ context info reflow) and Campaigns tab (card layout with all the metadata and ac
 ## Outcome
 
 - Four tracks shipped: P29-A, P29-B, P29-C, P29-D (all complete).
-- Nothing deferred.
+- P29-E (Admin Panel mobile responsiveness) in progress.
+- P29-F (Settings re-grouping) planned — analysis complete, implementation pending.
 - Follow-on to consider: audit whether `rescan_all_media_types` and other
   functions that call `update_post_meta('media_items', ...)` are similarly
   exposed to the `sanitize_media_items` drop-on-no-id behaviour — those paths

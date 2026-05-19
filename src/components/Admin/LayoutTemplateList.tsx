@@ -6,6 +6,7 @@
  * delete). Includes import/export JSON functionality.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ActionIcon,
@@ -113,6 +114,9 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
   const queryClient = useQueryClient();
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const nullRef = useRef<HTMLElement>(null);
+  const { breakpoint } = useBreakpoint(nullRef, { source: 'viewport' });
+  const isMobile = breakpoint === 'mobile';
   const [searchQuery, setSearchQuery] = useState('');
   const [editingTemplate, setEditingTemplate] = useState<LayoutTemplate | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -347,7 +351,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
         <Box
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))',
             gap: 16,
           }}
         >
