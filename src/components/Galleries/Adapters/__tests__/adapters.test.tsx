@@ -405,7 +405,7 @@ describe('CompactGridGallery — specific', () => {
     const { container } = render(
       <CompactGridGallery media={THREE_IMAGES} settings={customSettings} />,
     );
-    const grid = container.querySelector('div[style*="grid-template-columns"]') as HTMLDivElement | null;
+    const grid = container.querySelector('div[style*="flex-wrap"]') as HTMLDivElement | null;
     const firstCard = container.querySelector('button') as HTMLButtonElement | null;
 
     expect(container.firstChild).not.toBeNull();
