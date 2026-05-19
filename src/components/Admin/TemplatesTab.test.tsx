@@ -165,7 +165,7 @@ describe('TemplatesTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Template' }));
 
     await waitFor(() => {
-      expect(client.createCampaignTemplate).toHaveBeenCalledWith({ name: 'My New Layout' });
+      expect(client.createCampaignTemplate).toHaveBeenCalledWith({ name: 'My New Layout', description: '' });
     });
     await waitFor(() => {
       expect(onNotify).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
