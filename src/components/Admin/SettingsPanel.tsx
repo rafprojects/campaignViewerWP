@@ -26,6 +26,8 @@ import {
   IconAdjustments,
   IconTypography,
   IconEye,
+  IconPalette,
+  IconArrowsHorizontal,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
@@ -44,7 +46,7 @@ import { SettingTooltip } from './SettingTooltip';
 import type { CustomFontEntry } from '../Common/TypographyEditor';
 import type { UpdateGallerySetting } from '../Settings/GalleryAdapterSettingsSection';
 import { GeneralSettingsSection } from '../Settings/GeneralSettingsSection';
-import { MediaDisplaySettingsSection } from '../Settings/MediaDisplaySettingsSection';
+import { GalleryStyleAccordion, GalleryNavigationAccordion } from '../Settings/MediaDisplaySettingsSection';
 import { GalleryLayoutSettingsSection } from '../Settings/GalleryLayoutSettingsSection';
 import { CampaignViewerSettingsSection } from '../Settings/CampaignViewerSettingsSection';
 import { CampaignCardSettingsSection } from '../Settings/CampaignCardSettingsSection';
@@ -223,30 +225,36 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
       }}
     >
       <Tabs.List>
-        <Tabs.Tab value="page-theme" leftSection={<IconSettings size={16} />}>
-          Page & Theme
+        <Tabs.Tab value="appearance" leftSection={<IconSettings size={16} />}>
+          Appearance
         </Tabs.Tab>
         <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
           Campaign Cards
         </Tabs.Tab>
-        <Tabs.Tab value="gallery-media" leftSection={<IconPhoto size={16} />}>
-          Gallery & Media
+        <Tabs.Tab value="gallery-layout" leftSection={<IconPhoto size={16} />}>
+          Gallery Layout
+        </Tabs.Tab>
+        <Tabs.Tab value="gallery-style" leftSection={<IconPalette size={16} />}>
+          Gallery Style
+        </Tabs.Tab>
+        <Tabs.Tab value="gallery-navigation" leftSection={<IconArrowsHorizontal size={16} />}>
+          Gallery Navigation
         </Tabs.Tab>
         <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
           Campaign Viewer
+        </Tabs.Tab>
+        <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
+          Typography
         </Tabs.Tab>
         {settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
             System & Admin
           </Tabs.Tab>
         )}
-        <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
-          Typography
-        </Tabs.Tab>
       </Tabs.List>
 
-      <Tabs.Panel value="page-theme" pt="md">
-        {activeTab === 'page-theme' && (
+      <Tabs.Panel value="appearance" pt="md">
+        {activeTab === 'appearance' && (
           <GeneralSettingsSection
             settings={settings}
             updateSetting={updateSetting}
@@ -282,20 +290,33 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         )}
       </Tabs.Panel>
 
-      <Tabs.Panel value="gallery-media" pt="md">
-        {activeTab === 'gallery-media' && (
-          <Stack gap="lg">
-            <MediaDisplaySettingsSection
-              settings={settings}
-              updateSetting={updateSetting}
-              tooltipLabel={tooltipLabel}
-            />
-            <GalleryLayoutSettingsSection
-              settings={settings}
-              updateSetting={updateGallerySetting}
-              onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
-            />
-          </Stack>
+      <Tabs.Panel value="gallery-layout" pt="md">
+        {activeTab === 'gallery-layout' && (
+          <GalleryLayoutSettingsSection
+            settings={settings}
+            updateSetting={updateGallerySetting}
+            onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
+          />
+        )}
+      </Tabs.Panel>
+
+      <Tabs.Panel value="gallery-style" pt="md">
+        {activeTab === 'gallery-style' && (
+          <GalleryStyleAccordion
+            settings={settings}
+            updateSetting={updateSetting}
+            tooltipLabel={tooltipLabel}
+          />
+        )}
+      </Tabs.Panel>
+
+      <Tabs.Panel value="gallery-navigation" pt="md">
+        {activeTab === 'gallery-navigation' && (
+          <GalleryNavigationAccordion
+            settings={settings}
+            updateSetting={updateSetting}
+            tooltipLabel={tooltipLabel}
+          />
         )}
       </Tabs.Panel>
 
@@ -304,6 +325,19 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
           <CampaignViewerSettingsSection
             settings={settings}
             updateSetting={updateGallerySetting}
+          />
+        )}
+      </Tabs.Panel>
+
+      <Tabs.Panel value="typography" pt="md">
+        {activeTab === 'typography' && (
+          <TypographySettingsSection
+            apiClient={apiClient}
+            customFonts={customFonts}
+            typographyOverrides={settings.typographyOverrides}
+            onFontsChange={(fonts) => setCustomFonts(fonts)}
+            onResetAll={() => updateSetting('typographyOverrides', {})}
+            onOverrideChange={updateTypoOverride}
           />
         )}
       </Tabs.Panel>
@@ -326,19 +360,6 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
           )}
         </Tabs.Panel>
       )}
-
-      <Tabs.Panel value="typography" pt="md">
-        {activeTab === 'typography' && (
-          <TypographySettingsSection
-            apiClient={apiClient}
-            customFonts={customFonts}
-            typographyOverrides={settings.typographyOverrides}
-            onFontsChange={(fonts) => setCustomFonts(fonts)}
-            onResetAll={() => updateSetting('typographyOverrides', {})}
-            onOverrideChange={updateTypoOverride}
-          />
-        )}
-      </Tabs.Panel>
     </Tabs>
   </Stack>
 );
@@ -391,7 +412,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       ? mapResponseToSettings(fetchedSettings)
       : DEFAULT_SETTINGS_DATA;
   const [settingsStore] = useState(() => createSettingsDraftStore(seedSettings));
-  const [activeTab, setActiveTab] = useState<string | null>('page-theme');
+  const [activeTab, setActiveTab] = useState<string | null>('appearance');
   const [cardSettingsBreakpoint, setCardSettingsBreakpoint] = useState<CardConfigBreakpoint>('desktop');
   const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);

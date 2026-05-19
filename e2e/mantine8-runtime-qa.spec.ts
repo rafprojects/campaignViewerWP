@@ -198,7 +198,7 @@ test('shadow DOM settings drawer and nested gallery editor remain usable', async
   expect(tabMetrics.every((tab) => tab.flexShrink === '0')).toBe(true);
   expect(tabMetrics.some((tab) => tab.width > 90)).toBe(true);
 
-  await settingsPanel.getByRole('tab', { name: 'Gallery & Media' }).click();
+  await settingsPanel.getByRole('tab', { name: 'Gallery Layout' }).click();
   await settingsPanel.getByRole('button', { name: 'Viewport Backgrounds' }).click();
 
   await selectOption(page, settingsPanel, 'Image Gallery Background', 'Solid Color');

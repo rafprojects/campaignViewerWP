@@ -15,6 +15,7 @@
 | P29-E | Admin Panel mobile responsiveness (below 768px) | Complete ✅ | Large |
 | P29-F | Settings Panel: intuitive tab re-grouping | Planned | Medium |
 | P29-G | LayoutBuilder: UX audit, improvements & tooling | Planned | Large |
+| P29-H | Shared Grid Layout Engine | Pre-Evaluation | Medium |
 
 ---
 
@@ -55,6 +56,15 @@
    alignment/distribute tools, no media search, and no visual feedback for locked layers
    or toast notifications. A systematic audit produced 32 specific findings across
    critical issues, usability improvements, nice-to-haves, and suggested removals.
+10. Review of the current builder implementation showed that the main risk is not any
+  one missing control, but fragmented editor state: slot selection lives in the
+  builder hook while overlay/background/mask selection lives in modal-local state.
+  P29-G therefore starts with selection and workflow foundation work before layering on
+  alignment, grouping, and import/export.
+11. Several audit findings remain valuable but are no longer part of P29-G because they
+  extend the builder workspace rather than the editing model itself. Floating toolbar,
+  grid/ruler/measurement tooling, responsive preview, history-surface collapse, and
+  dedicated route/workspace migration are split into Phase 30.
 
 ---
 
@@ -66,6 +76,8 @@
 | B | Where to backfill missing IDs | Inside `list_media` on read, so legacy items are repaired automatically the first time the Media tab is opened — no separate migration script needed. |
 | C | Grid layout engine for CompactGridGallery | Switch to `flex-wrap`; `auto-fit` grid distributes columns globally so `justifyContent` has no effect on the last row, while flex wrap distributes per row. |
 | D | Remove `'id'` from the param-copy loop in `create_media` | The route `{id}` capture is the campaign post ID — removing it from the fallback loop means a missing body `id` field correctly falls through to `wp_generate_uuid4()` in `build_media_item_from_payload`. |
+| E | Where full design-tool grouping belongs | Keep it in P29-G. The app is not yet in production, so this is the right time to absorb the larger template/editor-model shift instead of deferring it into a later polish phase. |
+| F | Where builder workspace/tooling follow-ons belong | Move floating toolbar, grid/rulers/measurement tooling, responsive preview, history collapse, and route/workspace migration into Phase 30 so P29-G stays focused on the core editing model. |
 
 ---
 
@@ -657,37 +669,45 @@ alone contains approximately 90 settings covering 5 unrelated concerns.
 ### Proposed New Structure
 
 Reorganize from 6 tabs to 7 visible tabs (+ 1 hidden) by splitting the bloated "Gallery &
-Media" into three focused tabs and moving operational settings to System.
+Media" into three focused tabs.
 
 | New Tab | Sections (Accordion Items) | Estimated Setting Count | Source Components |
 |---------|---------------------------|------------------------|-------------------|
-| **1. Appearance** | Theme & Layout, Page Container, Page Background, Page Header, Auth Bar | ~30 | `GeneralSettingsSection` (re-parented accordion items) |
+| **1. Appearance** | Theme & Layout, Page Container, Page Background, Page Header, Auth Bar, Security & Login | ~30 | `GeneralSettingsSection` (unchanged) |
 | **2. Cards** | Card Appearance, Card Grid & Pagination, Card Internals | ~55 | `CampaignCardSettingsSection` (unchanged) |
-| **3. Gallery Layout** | Gallery Adapters, Section Sizing & Spacing, Adapter Sizing, Carousel Settings | ~35 | `GalleryLayoutSettingsSection`, `GalleryLayoutDetailSections`, `GalleryAdapterSettingsSection` |
-| **4. Gallery Style** | Viewport & Layout (lightbox toggle, viewport dimensions, border radius, shadows), Tile Appearance, Viewport Backgrounds, Transitions | ~45 | `MediaDisplaySettingsSection` (viewport, tile-appearance, transitions), `GalleryPresentationSections` |
-| **5. Gallery Navigation** | Navigation (arrows, dots, scroll), Thumbnail Strip | ~25 | `MediaDisplaySettingsSection` (navigation, thumbnail-strip) |
+| **3. Gallery Layout** | Gallery Adapters, Viewport Backgrounds, Section Sizing & Spacing, Adapter Sizing, Carousel Settings | ~40 | `GalleryLayoutSettingsSection` (unchanged — already contains all five) |
+| **4. Gallery Style** | Viewport & Layout (lightbox toggle, viewport dimensions, border radius, shadows), Tile Appearance, Transitions | ~35 | `GalleryStyleAccordion` extracted from `MediaDisplaySettingsSection` (items: `viewport`, `tile-appearance`, `transitions`) |
+| **5. Gallery Navigation** | Navigation (arrows, dots, scroll), Thumbnail Strip | ~25 | `GalleryNavigationAccordion` extracted from `MediaDisplaySettingsSection` (items: `navigation`, `thumbnail-strip`) |
 | **6. Campaign Viewer** | Open Mode & Sizing, Modal Appearance, Content Visibility, Gallery Labels, Modal Background, Cover Image & Responsive | ~40 | `CampaignViewerSettingsSection` (unchanged) |
 | **7. Typography** | Font Library Manager, 16 element overrides | ~16 | `TypographySettingsSection` (unchanged) |
-| **8. System** *(hidden behind `advancedSettingsEnabled`)* | Magic Link Page Selector, Settings Drawer, Upload/Media, Tile/Adapter, Lightbox, Navigation, System, Developer & Debugging, Data Maintenance, Security & Login | ~60 | `AdvancedSettingsSection` + `Security & Login` moved from General |
+| **8. System** *(hidden behind `advancedSettingsEnabled`)* | Magic Link Page Selector, Settings Drawer, Upload/Media, Tile/Adapter, Lightbox, Navigation, System, Developer & Debugging, Data Maintenance | ~55 | `AdvancedSettingsSection` (unchanged) |
 
 **Key changes:**
 
-- Split "Gallery & Media" (~90 settings) into 3 focused tabs: Gallery Layout (~35),
-  Gallery Style (~45), Gallery Navigation (~25).
-- Move "Security & Login" accordion from `GeneralSettingsSection` to `AdvancedSettingsSection`
-  in the System tab.
-- Keep all existing accordion section components unchanged — they are already well-scoped
-  internally. Only the tab-level re-parenting changes.
-- Total goes from 6 to 7 visible tabs (+ 1 hidden), but each tab is now 16-60 settings
+- Split "Gallery & Media" (~90 settings) into 3 focused tabs: Gallery Layout (~40),
+  Gallery Style (~35), Gallery Navigation (~25).
+- Security & Login stays in the Appearance tab. Moving it to System would gate the
+  `advancedSettingsEnabled` toggle behind the very tab it controls — a chicken-and-egg
+  that makes the System tab permanently unreachable when disabled.
+- Viewport Backgrounds stay in Gallery Layout (rendered by `GalleryLayoutSettingsSection`
+  unchanged). They are a viewport-level structural concern, not a tile-appearance concern,
+  and separating them would require modifying the parent/child accordion coupling inside
+  that component.
+- All existing accordion section components are unchanged — `MediaDisplaySettingsSection`
+  is split by extracting two named sub-components from it; nothing else is restructured.
+- Each tab now has a distinct icon (no duplicates).
+- Total goes from 6 to 7 visible tabs (+ 1 hidden), but each tab is now 16-55 settings
   instead of 16-90, making everything findable in 1-2 clicks.
 
 ### Fix
 
-All changes are in `SettingsPanel.tsx`. No accordion section components need modification.
+Primary change is in `SettingsPanel.tsx`. `MediaDisplaySettingsSection.tsx` is split by
+extracting two named sub-components. All other section components are untouched.
 
 **Step 1 — Rename and restructure tabs.**
 
-Replace the existing tab definitions with the new structure:
+Replace the existing tab definitions with the new structure. Use a distinct icon for every
+tab — no two tabs share the same icon:
 
 ```tsx
 <Tabs.List>
@@ -700,10 +720,10 @@ Replace the existing tab definitions with the new structure:
   <Tabs.Tab value="gallery-layout" leftSection={<IconPhoto size={16} />}>
     Gallery Layout
   </Tabs.Tab>
-  <Tabs.Tab value="gallery-style" leftSection={<IconAdjustments size={16} />}>
+  <Tabs.Tab value="gallery-style" leftSection={<IconPalette size={16} />}>
     Gallery Style
   </Tabs.Tab>
-  <Tabs.Tab value="gallery-navigation" leftSection={<IconEye size={16} />}>
+  <Tabs.Tab value="gallery-navigation" leftSection={<IconArrowsHorizontal size={16} />}>
     Gallery Navigation
   </Tabs.Tab>
   <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
@@ -722,34 +742,19 @@ Replace the existing tab definitions with the new structure:
 
 **Step 2 — Re-parent accordion sections under new tabs.**
 
-Move accordion items between tabs. The component imports and props remain identical.
+Component imports and props remain identical throughout.
 
-- "Appearance" tab: Render `GeneralSettingsSection` but exclude the "Security & Login"
-  accordion item (handled in Step 3).
-- "Gallery Layout" tab: Render `GalleryLayoutSettingsSection` (already contains Gallery
-  Adapters, Viewport Backgrounds, Carousel, Section Sizing, Adapter Sizing).
-- "Gallery Style" tab: Render a subset of `MediaDisplaySettingsSection` — specifically
-  the accordion items with values `viewport`, `tile-appearance`, `transitions`, plus
-  `GalleryPresentationSections`.
-- "Gallery Navigation" tab: Render a subset of `MediaDisplaySettingsSection` — specifically
-  the accordion items with values `navigation`, `thumbnail-strip`.
+- "Appearance" tab: Render `GeneralSettingsSection` unchanged (all 6 accordion items
+  including Security & Login stay here).
+- "Gallery Layout" tab: Render `GalleryLayoutSettingsSection` unchanged (already contains
+  Gallery Adapters, Viewport Backgrounds, Carousel Settings, Section Sizing, Adapter Sizing).
+- "Gallery Style" tab: Render `GalleryStyleAccordion` (extracted from
+  `MediaDisplaySettingsSection` — accordion items: `viewport`, `tile-appearance`,
+  `transitions`).
+- "Gallery Navigation" tab: Render `GalleryNavigationAccordion` (extracted from
+  `MediaDisplaySettingsSection` — accordion items: `navigation`, `thumbnail-strip`).
 
-**Step 3 — Move "Security & Login" to System tab.**
-
-In `GeneralSettingsSection.tsx`, extract the accordion item with value `gen-security`
-(Security & Login) into a separate component or render it conditionally in the System tab.
-Two approaches:
-
-- **Option A (preferred):** Extract `<Accordion.Item value="gen-security">...</Accordion.Item>`
-  into a standalone `SecuritySettingsSection` component. Render it inside the System tab
-  alongside `AdvancedSettingsSection`.
-- **Option B:** Pass a prop to `GeneralSettingsSection` to exclude the security accordion
-  item, and duplicate the accordion item in the System tab.
-
-Option A is cleaner — it avoids duplication and keeps each accordion section in exactly
-one location.
-
-**Step 4 — Update default active tab.**
+**Step 3 — Update default active tab.**
 
 Change the default active tab from `'page-theme'` to `'appearance'` to match the new
 tab value.
@@ -764,7 +769,7 @@ tab value.
 | `cards` | `cards` | Unchanged |
 | `gallery-media` | Split into `gallery-layout`, `gallery-style`, `gallery-navigation` | 1 becomes 3 |
 | `viewer` | `viewer` | Unchanged |
-| `system-admin` | `system-admin` | Unchanged (now includes Security & Login) |
+| `system-admin` | `system-admin` | Unchanged |
 | `typography` | `typography` | Unchanged |
 
 **`MediaDisplaySettingsSection.tsx` — Splitting strategy:**
@@ -773,10 +778,10 @@ Currently this component renders all accordion items together. To split it acros
 extract the accordion items into two separate render functions or sub-components:
 
 ```tsx
-// In MediaDisplaySettingsSection.tsx or new files:
+// Extracted from MediaDisplaySettingsSection.tsx:
 export function GalleryStyleAccordion({ settings, updateSetting, tooltipLabel }) {
   // Renders accordion items: viewport, tile-appearance, transitions
-  // Plus GalleryPresentationSections (backgrounds)
+  // Does NOT include GalleryPresentationSections (backgrounds stay in Gallery Layout)
 }
 
 export function GalleryNavigationAccordion({ settings, updateSetting, tooltipLabel }) {
@@ -804,50 +809,43 @@ Then in `SettingsPanel.tsx`:
 </Tabs.Panel>
 ```
 
-**`GeneralSettingsSection.tsx` — Extract Security & Login:**
+`GalleryPresentationSections` (backgrounds) is not moved — it continues to render as a
+child of `GalleryLayoutSettingsSection`'s accordion, which renders unchanged in the
+"Gallery Layout" tab. Extracting it would require modifying the parent/child accordion
+coupling inside `GalleryLayoutSettingsSection` and is not worth the complexity here.
 
-Extract the accordion item with value `gen-security` (contains `sessionIdleTimeoutMinutes`,
-`advancedSettingsEnabled`, `showSettingsTooltips`) into a new component:
+**`GeneralSettingsSection.tsx` — No changes needed.** Security & Login (`gen-security`)
+remains here. Moving it to System tab would create a chicken-and-egg: a user with
+`advancedSettingsEnabled = false` can never see the System tab, and therefore can never
+reach the toggle to enable it.
 
-```tsx
-// New file or extracted component
-export function SecuritySettingsSection({ settings, updateSetting }) {
-  return (
-    <Accordion.Item value="gen-security">
-      <Accordion.Control>Security &amp; Login</Accordion.Control>
-      <Accordion.Panel>
-        {/* sessionIdleTimeoutMinutes, advancedSettingsEnabled, showSettingsTooltips */}
-      </Accordion.Panel>
-    </Accordion.Item>
-  );
-}
-```
-
-Render in the System tab alongside `AdvancedSettingsSection`.
-
-**`AdvancedSettingsSection.tsx` — No changes needed** for structure, but the System tab
-will now also include the Security & Login accordion and the Magic Link Page Selector.
+**`AdvancedSettingsSection.tsx` — No changes needed.**
 
 ### Acceptance criteria
 
 - All existing settings are accessible in the new tab structure with no settings lost.
-- Each tab contains 16-60 settings (no tab exceeds 60).
+- Each tab contains 16-55 settings (no tab exceeds 55).
 - Background-related settings are co-located within their parent context (Appearance for
-  page, Gallery Style for gallery, Campaign Viewer for modal).
-- Navigation settings (both basic and advanced) are conceptually grouped.
-- Security & Login settings are in the System tab.
+  page, Gallery Layout for gallery viewport, Campaign Viewer for modal).
+- Navigation settings (arrows, dots, thumbnail strip, scroll behavior) are consolidated
+  under Gallery Navigation.
+- Security & Login accordion remains in the Appearance tab; the `advancedSettingsEnabled`
+  toggle is always reachable regardless of System tab visibility.
 - All existing accordion section components are preserved with their internal structure
-  unchanged.
+  unchanged; `MediaDisplaySettingsSection` is the only file that gains new exports.
 - `advancedSettingsEnabled` gate still controls visibility of the System & Admin tab.
+- Each tab has a distinct icon — no two tabs share the same icon.
 - No regressions in existing SettingsPanel tests (`SettingsPanel.test.tsx`).
 - E2E test `mantine8-runtime-qa.spec.ts` passes (may need tab name updates).
 
 ### Validation
 
-- Manual QA: open Settings Panel, verify all 6 previously visible tabs + System tab are
+- Manual QA: open Settings Panel, verify all 7 visible tabs (+ System when enabled) are
   accessible and contain the expected accordion sections.
 - Manual QA: toggle `advancedSettingsEnabled` on/off — verify System tab appears/disappears.
-- Manual QA: verify no accordion item is rendered in two places (especially Security & Login).
+- Manual QA: verify no accordion item is rendered in two places.
+- Manual QA: confirm Security & Login is accessible in the Appearance tab with
+  `advancedSettingsEnabled = false` (System tab not visible).
 - Vitest: `SettingsPanel.test.tsx` — update tab value references if any exist.
 - E2E: `mantine8-runtime-qa.spec.ts` — update tab role names if they reference
   "Gallery & Media" or "Page & Theme".
@@ -856,19 +854,17 @@ will now also include the Security & Login accordion and the Magic Link Page Sel
 
 | File | Change |
 |------|--------|
-| `src/components/Admin/SettingsPanel.tsx` | Rename/restructure tabs; re-parent accordion sections; update default active tab |
-| `src/components/Settings/MediaDisplaySettingsSection.tsx` | Split into GalleryStyle + GalleryNavigation sub-components (or extract accordion items) |
-| `src/components/Settings/GeneralSettingsSection.tsx` | Extract Security & Login accordion into separate component |
-| `src/components/Settings/AdvancedSettingsSection.tsx` | No structural change; receives Security & Login in parent tab |
+| `src/components/Admin/SettingsPanel.tsx` | Rename/restructure tabs; re-parent accordion sections; update default active tab; update icon imports |
+| `src/components/Settings/MediaDisplaySettingsSection.tsx` | Extract `GalleryStyleAccordion` and `GalleryNavigationAccordion` as named exports |
 | `src/components/Admin/SettingsPanel.test.tsx` | Update tab value references |
-| `e2e/mantine8-runtime-qa.spec.ts` | Update tab role names ("Gallery & Media" -> "Gallery Layout", etc.) |
+| `e2e/mantine8-runtime-qa.spec.ts` | Update tab role names ("Gallery & Media" → "Gallery Layout", "Page & Theme" → "Appearance", etc.) |
 
 ### Effort Estimate
 
-~4-6 hours. The work is primarily re-organizing imports, tab values, and accordion item
-placement in `SettingsPanel.tsx`. The `MediaDisplaySettingsSection` split requires
-careful extraction of accordion items but no logic changes. The Security & Login extraction
-is a simple cut-and-paste. Test updates are mechanical find-and-replace.
+~3-5 hours. The work is primarily re-organizing imports, tab values, and accordion section
+placement in `SettingsPanel.tsx`. The `MediaDisplaySettingsSection` split requires careful
+extraction of accordion items but no logic changes. No other section components need
+modification. Test updates are mechanical find-and-replace.
 
 ---
 
@@ -1584,7 +1580,430 @@ All sub-track acceptance criteria above must be met. Additionally:
   functions that call `update_post_meta('media_items', ...)` are similarly
   exposed to the `sanitize_media_items` drop-on-no-id behaviour — those paths
   could wipe IDs if called on data that hasn't been backfilled yet.
-- Follow-on to consider: audit whether `rescan_all_media_types` and other
-  functions that call `update_post_meta('media_items', ...)` are similarly
-  exposed to the `sanitize_media_items` drop-on-no-id behaviour — those paths
-  could wipe IDs if called on data that hasn't been backfilled yet.
+
+---
+
+## Track P29-H — Shared Grid Layout Engine
+
+### Problem
+
+`CardGallery` (the main campaign listing viewer at `src/components/CampaignGallery/CardGallery.tsx`)
+and `CompactGridGallery` (the modular adapter at
+`src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx`) both implement
+nearly identical flex-wrap grid layout engines, but with different data models and feature sets.
+
+**Duplicated layout logic (~110 lines of near-duplicate code across two files):**
+
+| Concern | CardGallery | CompactGridGallery |
+|---------|-------------|-------------------|
+| Column calculation | `effectiveColumns` + `maxCols` (resolve `cardGridColumns`, `cardMaxColumns`, `cardAutoColumnsBreakpoints`, container width via `resolveColumnsFromWidth`) | `maxColumns` from `gridCardMaxColumns` (0-8 clamped) |
+| Fixed-width branch | `fixedCardWidth` computation with `MIN_FIXED_CARD_WIDTH_PX = 120` floor, scale application, percentage-to-pixel resolution, fallback to responsive | `cardWidth` from `gridCardWidth` × `itemScale`, `cardWidthUnit` |
+| Grid maxWidth cap | `calc(N × width + (N-1) × gap)` with `marginInline: 'auto'` | Same pattern: `min(100%, calc((width × N) + gap × (N-1)))` |
+| Responsive width calc | `calc((100% - totalGap) / columns)` | `min(width, calc(50% - gap/2))` (via flexBasis) |
+| Gap handling | Row/column gap with unit support, percentage gap clamped to ≥4px minimum | Single gap value with unit |
+| Breakpoint resolution | `useBreakpoint(gridContainerRef)` → `resolveCardBreakpointSettings()` | `containerDimensions` prop (passed from `GallerySectionWrapper`) |
+| Justification | `cardGridJustification` → `justifyContent` | `common.adapterJustifyContent` → `justifyContent` |
+
+**Why they can't share the same component:**
+
+The two components solve fundamentally different problems:
+
+| Aspect | CardGallery | CompactGridGallery |
+|--------|-------------|-------------------|
+| Data model | `Campaign[]` | `MediaItem[]` |
+| Card content | Rich card with thumbnail, title, description, tags, company badge, media counts, access state, request access form | Thumbnail + hover overlay (play/zoom icon) |
+| Click action | Opens `CampaignViewer` modal (full campaign detail with galleries) | Opens `Lightbox` (single image/video carousel) |
+| Above-grid features | Filter tabs, search, pagination (load-more/paginated/show-all), access modes, admin in-context editing, header with title/subtitle/background | Gallery heading with icon, lightbox |
+| Responsibility | Full-page viewer with header, filters, grid, pagination, modal | Adapter component within a `GallerySectionWrapper` |
+
+Forcing CardGallery into the adapter system would require either making adapters accept
+arbitrary item types (breaking the clean `MediaItem[]` contract) or converting campaigns
+to media-item wrappers (adding unnecessary indirection).
+
+**The real waste is the grid layout math**, not the card rendering or click handlers.
+
+### Proposed Solution
+
+**Option A (Primary — implement now):** Extract the shared grid layout logic into a reusable
+hook that both components consume. The hook returns computed layout values; each component
+applies them to its own card rendering logic.
+
+**Option B (Investigate for future phase):** Make `CompactGridGallery` a generic grid
+shell that accepts a `renderItem` prop, allowing CardGallery to delegate the grid container
+and column wrapping to the adapter. This would require bridging the type gap and extracting
+CardGallery's above-grid features (filters, search, pagination) into separate wrapper
+components.
+
+---
+
+### Option A — Shared Grid Layout Hook (Primary Implementation)
+
+#### What to Extract
+
+From `CardGallery.tsx`, extract these pure computations:
+
+1. **Effective column resolution.** The chain: `cardGridColumns` → `cardMaxColumns` clamp →
+   `cardAutoColumnsBreakpoints` → `resolveColumnsFromWidth(containerWidth)` → final column count.
+2. **Fixed-width resolution with floor.** `cardMaxWidth` × `cardScale` → percentage-to-pixel
+   resolution → `MIN_FIXED_CARD_WIDTH_PX` (120px) floor → fallback to responsive branch.
+3. **Grid maxWidth calculation.** `calc(N × width + (N-1) × gap)` for fixed-width grids.
+4. **Responsive width calculation.** `calc((100% - totalGap) / columns)` for fluid grids.
+5. **Percentage gap clamping.** Percentage-based gaps resolved below 4px minimum.
+
+From `CompactGridGallery.tsx`, extract:
+
+1. **Max columns clamping.** `gridCardMaxColumns` (0-8 range).
+2. **Grid maxWidth calculation.** Same pattern as CardGallery.
+
+#### Hook API
+
+```ts
+// src/hooks/useGridLayout.ts
+
+interface UseGridLayoutInput {
+  /** Container width from useBreakpoint or containerDimensions. */
+  containerWidth: number;
+  /** Explicit column count (0 = auto-resolve from container). */
+  columns: number;
+  /** Maximum columns to cap auto-resolution (0 = unlimited). */
+  maxColumns: number;
+  /** Auto-columns breakpoints config (optional, CardGallery-specific). */
+  autoColumnsBreakpoints?: CardAutoColumnsBreakpoints;
+  /** Fixed card width (0 = responsive/fluid). */
+  cardWidth: number;
+  /** Unit for fixed card width. */
+  cardWidthUnit: CssWidthUnit;
+  /** Scale multiplier for card dimensions. */
+  scale: number;
+  /** Horizontal gap value. */
+  gapH: number;
+  /** Unit for horizontal gap. */
+  gapHUnit: CssWidthUnit;
+  /** Vertical gap value. */
+  gapV: number;
+  /** Unit for vertical gap. */
+  gapVUnit: CssWidthUnit;
+  /** Minimum pixel width below which fixed cards fall back to responsive. */
+  minFixedWidthPx?: number; // default: 120
+}
+
+interface GridLayoutResult {
+  /** Resolved column count. */
+  columns: number;
+  /** Whether to use fixed-width or responsive cards. */
+  isFixed: boolean;
+  /** Fixed card width in resolved unit (only when isFixed is true). */
+  fixedWidth: { value: number; unit: CssWidthUnit } | null;
+  /** Responsive card width CSS string (only when isFixed is false). */
+  responsiveWidth: string;
+  /** Grid maxWidth CSS string (for centering fixed-width grids). */
+  gridMaxWidth: string | undefined;
+  /** Horizontal gap CSS string (with percentage clamping). */
+  gapH: string;
+  /** Vertical gap CSS string. */
+  gapV: string;
+}
+
+export function useGridLayout(input: UseGridLayoutInput): GridLayoutResult;
+```
+
+#### Implementation Plan
+
+**Step 1 — Create `src/hooks/useGridLayout.ts`.**
+
+Extract the layout math into pure, memoized computations. The hook uses `useMemo` internally
+so results are stable across renders when inputs haven't changed.
+
+```ts
+import { useMemo } from 'react';
+import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
+import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+
+// ... (interface definitions above)
+
+const DEFAULT_MIN_FIXED_WIDTH_PX = 120;
+
+export function useGridLayout({
+  containerWidth,
+  columns,
+  maxColumns,
+  autoColumnsBreakpoints,
+  cardWidth,
+  cardWidthUnit,
+  scale,
+  gapH,
+  gapHUnit,
+  gapV,
+  gapVUnit,
+  minFixedWidthPx = DEFAULT_MIN_FIXED_WIDTH_PX,
+}: UseGridLayoutInput): GridLayoutResult {
+  return useMemo(() => {
+    // 1. Resolve effective columns
+    const effectiveColumns = columns > 0
+      ? columns
+      : (() => {
+          const auto = containerWidth > 0
+            ? resolveColumnsFromWidth(containerWidth, 0, autoColumnsBreakpoints)
+            : 1;
+          return maxColumns > 0 ? Math.min(auto, maxColumns) : auto;
+        })();
+
+    // 2. Resolve fixed width
+    const hasFixedWidth = cardWidth > 0;
+    const scaledWidth = scale !== 1 ? Math.round(cardWidth * scale) : cardWidth;
+
+    const fixedWidth = hasFixedWidth
+      ? (() => {
+          if (cardWidthUnit === '%' && containerWidth > 0) {
+            const resolved = Math.round((containerWidth * scaledWidth) / 100);
+            if (resolved < minFixedWidthPx) return null;
+            return { value: resolved, unit: 'px' as CssWidthUnit };
+          }
+          if (cardWidthUnit === 'px' && scaledWidth < minFixedWidthPx) return null;
+          return { value: scaledWidth, unit: cardWidthUnit };
+        })()
+      : null;
+
+    // 3. Gap resolution
+    const gapHResolved = gapHUnit === '%' && containerWidth > 0 && (containerWidth * gapH / 100) < 4
+      ? '4px'
+      : toCss(gapH, gapHUnit);
+    const gapVResolved = toCss(gapV, gapVUnit);
+
+    // 4. Grid maxWidth for fixed-width centering
+    const gridMaxWidth = fixedWidth
+      ? `calc(${toCss(effectiveColumns * fixedWidth.value, fixedWidth.unit)} + ${effectiveColumns - 1} * ${gapHResolved})`
+      : undefined;
+
+    // 5. Responsive width
+    const responsiveWidth = effectiveColumns <= 1
+      ? '100%'
+      : `calc((100% - ${toCss((effectiveColumns - 1) * gapH, gapHUnit)}) / ${effectiveColumns})`;
+
+    return {
+      columns: effectiveColumns,
+      isFixed: fixedWidth !== null,
+      fixedWidth,
+      responsiveWidth,
+      gridMaxWidth,
+      gapH: gapHResolved,
+      gapV: gapVResolved,
+    };
+  }, [
+    containerWidth, columns, maxColumns, autoColumnsBreakpoints,
+    cardWidth, cardWidthUnit, scale,
+    gapH, gapHUnit, gapV, gapVUnit,
+    minFixedWidthPx,
+  ]);
+}
+```
+
+**Step 2 — Refactor `CardGallery.tsx` to use `useGridLayout`.**
+
+Replace the inline layout computations with a single hook call:
+
+```tsx
+// Replace effectiveColumns, maxCols, fixedCardWidth, responsiveCardWidth, effectiveGapH with:
+const layout = useGridLayout({
+  containerWidth,
+  columns: s.cardGridColumns,
+  maxColumns: s.cardMaxColumns,
+  autoColumnsBreakpoints: s.cardAutoColumnsBreakpoints,
+  cardWidth: s.cardMaxWidth,
+  cardWidthUnit: s.cardMaxWidthUnit,
+  scale: s.cardScale ?? 1,
+  gapH: s.cardGapH,
+  gapHUnit,
+  gapV: s.cardGapV,
+  gapVUnit,
+});
+```
+
+Then update the grid rendering to use `layout.columns`, `layout.isFixed`,
+`layout.fixedWidth`, `layout.responsiveWidth`, `layout.gridMaxWidth`,
+`layout.gapH`, `layout.gapV`.
+
+**Step 3 — Refactor `CompactGridGallery.tsx` to use `useGridLayout`.**
+
+```tsx
+const layout = useGridLayout({
+  containerWidth: containerDimensions?.width ?? 0,
+  columns: 0, // auto-resolve
+  maxColumns: Math.max(0, Math.min(8, settings.gridCardMaxColumns ?? 0)),
+  cardWidth: settings.gridCardWidth ?? 160,
+  cardWidthUnit: settings.gridCardWidthUnit ?? 'px',
+  scale: settings.itemScale ?? 1,
+  gapH: common.adapterItemGap ?? 16,
+  gapHUnit: common.adapterItemGapUnit ?? 'px',
+  gapV: common.adapterItemGap ?? 16,
+  gapVUnit: common.adapterItemGapUnit ?? 'px',
+});
+```
+
+**Step 4 — Write tests.**
+
+Create `src/hooks/useGridLayout.test.ts` with cases for:
+
+- Responsive mode (cardWidth = 0): correct column auto-resolution, correct responsive width calc
+- Fixed mode (cardWidth > 0, px): correct grid maxWidth, fixed width application
+- Fixed mode (cardWidth > 0, %): percentage-to-pixel resolution, floor fallback
+- Scale application: `scale ≠ 1` correctly scales card width
+- Gap clamping: percentage gaps below 4px resolve to '4px'
+- Edge cases: 0 container width, 0 columns, 0 maxColumns, single column
+- Stability: same inputs produce same memoized result (reference equality)
+
+**Files affected:**
+
+| File | Change |
+|------|--------|
+| `src/hooks/useGridLayout.ts` | **New file** — shared grid layout hook |
+| `src/hooks/useGridLayout.test.ts` | **New file** — hook tests |
+| `src/components/CampaignGallery/CardGallery.tsx` | Replace inline layout math with `useGridLayout` call |
+| `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` | Replace inline layout math with `useGridLayout` call |
+
+**Acceptance criteria:**
+
+- `useGridLayout` returns correct column count, width mode, and gap values for all test cases. ( )
+- CardGallery renders identically to current behavior; no visual regression. ( )
+- CompactGridGallery renders identically to current behavior; no visual regression. ( )
+- Both components produce identical grid layouts when given equivalent inputs. ( )
+- No regressions in existing `CardGallery.test.tsx` or `adapters.test.tsx`. ( )
+- `useGridLayout` results are memoized (reference-stable) when inputs are unchanged. ( )
+- Percentage gap clamping works correctly (gaps resolving to < 4px become '4px'). ( )
+- Fixed-width floor fallback works (cards below `minFixedWidthPx` fall back to responsive). ( )
+
+**Effort:** ~4-6 hours
+
+---
+
+### Option B — Generic Grid Shell (Investigation for Future Phase)
+
+#### Premise
+
+If the grid layout is shared via `useGridLayout`, the next step would be sharing the grid
+container itself — the flex-wrap `<Box>` with `justifyContent`, `gap`, `maxWidth`, and
+the per-card wrapper `<Box>` with `flexBasis`/`maxWidth`.
+
+This would turn `CompactGridGallery` (or a new `FlexGrid` component) into a generic grid
+shell that CardGallery could delegate to, eliminating the duplicated container markup.
+
+#### Type Bridging Problem
+
+CardGallery works with `Campaign[]`; the adapter system expects `MediaItem[]`. Three approaches:
+
+**B1 — `renderItem` prop (React pattern).**
+
+Make the grid shell accept any item type via generics and a render function:
+
+```tsx
+// Conceptual API:
+<FlexGrid<Campaign>
+  items={visibleCampaigns}
+  layout={layout}
+  renderItem={(campaign, index) => <CampaignCard campaign={campaign} ... />}
+/>
+```
+
+This is the cleanest approach. The grid shell knows nothing about item types — it only
+handles layout. The card rendering is entirely delegated.
+
+**Risk:** CardGallery's cards have different wrapper requirements than CompactGridGallery's.
+CardGallery wraps responsive cards in a sizing `<Box>` with `flex: 0 0 width` and `minWidth: 0`.
+CompactGridGallery uses `flexBasis: min(width, calc(50% - gap/2))`. These are slightly
+different sizing strategies, and a unified shell would need to parameterize this.
+
+**B2 — Wrapper type (adapter pattern).**
+
+Create a thin wrapper that converts `Campaign` to an adapter-compatible shape:
+
+```ts
+interface GridItem {
+  id: string;
+  render: () => ReactNode;
+}
+```
+
+CardGallery maps campaigns to `{ id: campaign.id, render: () => <CampaignCard ... /> }`.
+
+**Risk:** Adds indirection and a new abstraction layer. The render-in-closure pattern
+is less testable and harder to debug than direct JSX.
+
+**B3 — Keep separate, share only the hook.**
+
+Don't pursue Option B. The layout hook (Option A) captures the actual duplication.
+The container markup is ~15 lines each and not particularly complex. Sharing it would
+save tokens but add cognitive overhead from abstraction.
+
+#### Feature Mismatch Problem
+
+CardGallery has features that are structurally different from any adapter:
+
+- **Pagination:** slide animation with `transitionend` observers, page state, direction tracking
+- **Load-more:** visible count state, "Load more" button
+- **Filter/search:** tab-based company filter, text search, access mode filtering
+- **Admin controls:** in-context editors, access mode toggle
+
+These are all *above* the grid — they filter and paginate the data *before* it reaches
+the grid. A generic grid shell doesn't help with these.
+
+#### Investigation Tasks
+
+Before committing to Option B in a future phase, investigate:
+
+1. **How many other adapters would benefit?** Check `MasonryGallery`, `CircularGallery`,
+   `JustifiedGallery` — do they also have hand-rolled grid math, or do they already use
+   specialized layout algorithms? If only CompactGrid and CardGallery share this pattern,
+   Option A is sufficient.
+
+2. **Can CardGallery's grid rendering be extracted to a sub-component without
+   refactoring the parent?** Try extracting just the `<Box>` grid section (lines ~280-340
+   of CardGallery.tsx) into `<CampaignCardGrid>` and measure the complexity gain vs. the
+   duplication saved.
+
+3. **Does the `renderItem` pattern work with CardGallery's fixed vs. responsive card
+   branching?** CardGallery conditionally wraps cards differently based on `fixedCardWidth`.
+   This branching logic would need to live inside the grid shell or be parameterized.
+
+4. **Would a shared grid shell make it easier to swap adapters for CardGallery?** If a
+   future requirement is "let users choose the campaign listing layout (compact grid,
+   masonry, etc.)", a shared grid shell would be foundational. If this requirement is
+   unlikely, Option A is the right stopping point.
+
+#### Recommendation
+
+**Implement Option A now.** Option B should be revisited only if:
+- A future phase requires user-selectable campaign listing layouts, or
+- More than 2 additional adapters are found to have the same grid duplication,
+- The CardGallery grid section grows significantly more complex (new layout modes, etc.)
+
+The investigation tasks above should be documented in a future phase report as a
+preliminary track if Option B is being considered.
+
+### Acceptance Criteria (Track-Level)
+
+- Option A hook is implemented, tested, and adopted by both CardGallery and CompactGridGallery. ( )
+- No visual regressions in either component. ( )
+- All existing tests pass. ( )
+- Option B investigation tasks are documented and filed for future consideration. ( )
+
+### Effort Estimate
+
+| Item | Hours |
+|------|-------|
+| Option A: Create `useGridLayout` hook | 2-3 |
+| Option A: Test the hook | 1-2 |
+| Option A: Refactor CardGallery | 1-1.5 |
+| Option A: Refactor CompactGridGallery | 0.5-1 |
+| Option B: Investigation tasks (1-4) | 1-2 |
+| **Total** | **5.5-9.5 hours** |
+
+### Files Affected (proposed)
+
+| File | Change |
+|------|--------|
+| `src/hooks/useGridLayout.ts` | **New file** — shared grid layout hook |
+| `src/hooks/useGridLayout.test.ts` | **New file** — hook tests |
+| `src/components/CampaignGallery/CardGallery.tsx` | Replace inline layout math with `useGridLayout` |
+| `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` | Replace inline layout math with `useGridLayout` |
+| `src/components/CampaignGallery/CardGallery.test.tsx` | Update selectors if DOM structure changes |
+| `src/components/Galleries/Adapters/__tests__/adapters.test.tsx` | Update selectors if DOM structure changes |
