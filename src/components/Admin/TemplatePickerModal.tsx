@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, SimpleGrid, Card, Text, Badge, Stack, Group, Loader, Center } from '@mantine/core';
 import { IconLayoutGrid } from '@tabler/icons-react';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
+import classes from './TemplatePickerModal.module.scss';
 
 interface Props {
   opened: boolean;
@@ -37,7 +38,7 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
       size="lg"
       centered
     >
-      {loading ? (
+        {loading ? (
         <Center py="xl"><Loader size="sm" /></Center>
       ) : (
         <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="sm">
@@ -46,7 +47,11 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
             withBorder
             radius="md"
             padding="md"
-            style={{ cursor: 'pointer' }}
+            className={classes.card!}
+            style={{
+              cursor: 'pointer',
+              '--wpsg-glow-color': 'var(--mantine-color-gray-6)',
+            }}
             onClick={() => pick(null)}
           >
             <Stack gap={4}>
@@ -58,14 +63,23 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
             </Stack>
           </Card>
 
-          {templates.map((tpl) => (
-            <Card
-              key={tpl.id}
-              withBorder
-              radius="md"
-              padding="md"
-              style={{ cursor: 'pointer' }}
-              onClick={() => pick(tpl)}
+          {templates.map((tpl) => {
+            const glowColor =
+              tpl.source === 'builtin'
+                ? 'var(--mantine-color-blue-6)'
+                : 'var(--mantine-color-green-6)';
+            return (
+              <Card
+                key={tpl.id}
+                withBorder
+                radius="md"
+                padding="md"
+                className={classes.card!}
+                style={{
+                  cursor: 'pointer',
+                  '--wpsg-glow-color': glowColor,
+                }}
+                onClick={() => pick(tpl)}
             >
               <Stack gap={4}>
                 <Group gap="xs" wrap="nowrap" justify="space-between">
@@ -79,7 +93,8 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
                 )}
               </Stack>
             </Card>
-          ))}
+          );
+        })}
         </SimpleGrid>
       )}
     </Modal>
