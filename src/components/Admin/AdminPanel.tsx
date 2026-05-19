@@ -2,9 +2,9 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
-import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch } from '@mantine/core';
+import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings } from '@tabler/icons-react';
+import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments } from '@tabler/icons-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { CampaignsTab } from './CampaignsTab';
 import { CampaignsMobileList } from './CampaignsMobileList';
@@ -77,6 +77,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const [taxonomyManagerOpen, setTaxonomyManagerOpen] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [campaignPage, setCampaignPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const CAMPAIGNS_PER_PAGE = 20;
 
   const campaignFilters = useMemo<CampaignFilters>(() => ({
@@ -217,6 +218,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
   const { breakpoint } = useBreakpoint(nullRef, { source: 'viewport' });
   const isMobile = breakpoint === 'mobile';
 
+  const activeFilterCount = [
+    categoryFilter !== null,
+    tagFilter !== null,
+    sortOrder !== 'created_desc',
+    includeArchived,
+  ].filter(Boolean).length;
+
   const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
@@ -230,19 +238,41 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
           </ActionIcon>
           <Title order={2} size="h3">Admin Panel</Title>
         </Group>
-        <Group gap="xs">
-          <Button leftSection={<IconPlus />} onClick={campaignActions.handleCreate} size="sm" aria-label="Create new campaign">
-            New Campaign
-          </Button>
-          <Button variant="outline" leftSection={<IconFileImport size={16} />} onClick={() => campaignActions.setImportModalOpen(true)} size="sm">
-            Import
-          </Button>
-          <Tooltip label="Keyboard shortcuts (?)">
-            <ActionIcon variant="subtle" size="lg" onClick={() => campaignActions.setShortcutHelpOpen(true)} aria-label="Keyboard shortcuts">
-              <IconKeyboard size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+        {isMobile ? (
+          <Menu shadow="md" width={200} position="bottom-end">
+            <Menu.Target>
+              <ActionIcon variant="light" size="lg" aria-label="Actions menu">
+                <IconDotsVertical size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconPlus size={14} />} onClick={campaignActions.handleCreate}>
+                New Campaign
+              </Menu.Item>
+              <Menu.Item leftSection={<IconFileImport size={14} />} onClick={() => campaignActions.setImportModalOpen(true)}>
+                Import
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item leftSection={<IconKeyboard size={14} />} onClick={() => campaignActions.setShortcutHelpOpen(true)}>
+                Keyboard shortcuts
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        ) : (
+          <Group gap="xs">
+            <Button leftSection={<IconPlus />} onClick={campaignActions.handleCreate} size="sm" aria-label="Create new campaign">
+              New Campaign
+            </Button>
+            <Button variant="outline" leftSection={<IconFileImport size={16} />} onClick={() => campaignActions.setImportModalOpen(true)} size="sm">
+              Import
+            </Button>
+            <Tooltip label="Keyboard shortcuts (?)">
+              <ActionIcon variant="subtle" size="lg" onClick={() => campaignActions.setShortcutHelpOpen(true)} aria-label="Keyboard shortcuts">
+                <IconKeyboard size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        )}
       </Group>
 
       <Tabs {...getWpsgDebugProps('AdminPanel', 'tabs')} value={activeTab} onChange={setActiveTab}>
@@ -279,48 +309,65 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }:
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
           <Group justify="space-between" align="flex-start" mb="sm" wrap="wrap" gap="sm">
-            <Group gap="xs" wrap="wrap" style={{ flex: '1 1 auto' }}>
-              {campaignCategories.length > 0 && (
-                <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
-                  <Group gap="xs" wrap="wrap">
-                    <Chip value="" variant="light" size="sm">All</Chip>
-                    {campaignCategories.map((cat) => (
-                      <Chip key={cat.id} value={cat.slug} variant="light" size="sm">{cat.name}</Chip>
-                    ))}
-                  </Group>
-                </Chip.Group>
-              )}
-              {campaignTags.length > 0 && (
-                <Select
+            <Box style={{ flex: '1 1 auto' }}>
+              {isMobile && (
+                <Button
+                  variant="subtle"
                   size="xs"
-                  placeholder="Tag"
-                  clearable
-                  data={campaignTags.map((t) => ({ value: t.slug, label: t.name }))}
-                  value={tagFilter}
-                  onChange={setTagFilter}
-                  style={{ minWidth: 120 }}
-                />
+                  mb="xs"
+                  leftSection={<IconAdjustments size={14} />}
+                  rightSection={activeFilterCount > 0 ? <Badge size="xs" circle color="blue">{activeFilterCount}</Badge> : null}
+                  onClick={() => setFiltersOpen((o) => !o)}
+                  aria-expanded={filtersOpen}
+                >
+                  {filtersOpen ? 'Hide filters' : `Filters${activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}`}
+                </Button>
               )}
-              <Select
-                size="xs"
-                data={[
-                  { value: 'created_desc', label: 'Newest first' },
-                  { value: 'created_asc', label: 'Oldest first' },
-                  { value: 'title_asc', label: 'Title A–Z' },
-                  { value: 'title_desc', label: 'Title Z–A' },
-                  { value: 'updated_desc', label: 'Recently updated' },
-                ]}
-                value={sortOrder ?? 'created_desc'}
-                onChange={(v) => setSortOrder((v as CampaignFilters['sort']) ?? 'created_desc')}
-                style={{ minWidth: 150 }}
-              />
-              <Switch
-                size="sm"
-                label="Include archived"
-                checked={includeArchived}
-                onChange={(e) => setIncludeArchived(e.currentTarget.checked)}
-              />
-            </Group>
+              <Collapse expanded={!isMobile || filtersOpen}>
+                <Group gap="xs" wrap="wrap">
+                  {campaignCategories.length > 0 && (
+                    <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
+                      <Group gap="xs" wrap="wrap">
+                        <Chip value="" variant="light" size="sm">All</Chip>
+                        {campaignCategories.map((cat) => (
+                          <Chip key={cat.id} value={cat.slug} variant="light" size="sm">{cat.name}</Chip>
+                        ))}
+                      </Group>
+                    </Chip.Group>
+                  )}
+                  {campaignTags.length > 0 && (
+                    <Select
+                      size="xs"
+                      placeholder="Tag"
+                      clearable
+                      data={campaignTags.map((t) => ({ value: t.slug, label: t.name }))}
+                      value={tagFilter}
+                      onChange={setTagFilter}
+                      style={{ minWidth: 120 }}
+                    />
+                  )}
+                  <Select
+                    size="xs"
+                    data={[
+                      { value: 'created_desc', label: 'Newest first' },
+                      { value: 'created_asc', label: 'Oldest first' },
+                      { value: 'title_asc', label: 'Title A–Z' },
+                      { value: 'title_desc', label: 'Title Z–A' },
+                      { value: 'updated_desc', label: 'Recently updated' },
+                    ]}
+                    value={sortOrder ?? 'created_desc'}
+                    onChange={(v) => setSortOrder((v as CampaignFilters['sort']) ?? 'created_desc')}
+                    style={{ minWidth: 150 }}
+                  />
+                  <Switch
+                    size="sm"
+                    label="Include archived"
+                    checked={includeArchived}
+                    onChange={(e) => setIncludeArchived(e.currentTarget.checked)}
+                  />
+                </Group>
+              </Collapse>
+            </Box>
             <Tooltip label="Manage categories & tags">
               <ActionIcon variant="subtle" size="sm" onClick={() => setTaxonomyManagerOpen(true)} aria-label="Manage taxonomy">
                 <IconSettings size={16} />
