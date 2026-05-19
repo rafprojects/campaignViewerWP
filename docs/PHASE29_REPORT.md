@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-05-18
-**Last updated:** 2026-05-18
+**Last updated:** 2026-05-19
 
 ### Tracks
 
@@ -12,8 +12,9 @@
 | P29-B | Add description field to Create Template modal | Complete ✅ | XS |
 | P29-C | CompactGridGallery: switch CSS Grid → Flexbox | Complete ✅ | Small |
 | P29-D | Fix campaign ID leaking into media item ID on add | Complete ✅ | Small |
-| P29-E | Admin Panel mobile responsiveness (below 768px) | In Progress | Large |
+| P29-E | Admin Panel mobile responsiveness (below 768px) | Complete ✅ | Large |
 | P29-F | Settings Panel: intuitive tab re-grouping | Planned | Medium |
+| P29-G | LayoutBuilder: UX audit, improvements & tooling | Planned | Large |
 
 ---
 
@@ -47,6 +48,13 @@
    settings covering 5 unrelated concerns, while related settings (backgrounds,
    navigation, tile appearance) are split across multiple tabs. This makes features hard
    to find and increases cognitive load.
+9. The LayoutBuilder (`LayoutBuilderModal` and all dockview panels) is a fully-featured
+   visual editor but has accumulated several UX gaps that increase cognitive load and
+   reduce efficiency: no canvas-level slot creation, no multi-select in the Layers panel,
+   a misleading Ctrl+V duplicate shortcut, one long ungrouped Properties scroll, no
+   alignment/distribute tools, no media search, and no visual feedback for locked layers
+   or toast notifications. A systematic audit produced 32 specific findings across
+   critical issues, usability improvements, nice-to-haves, and suggested removals.
 
 ---
 
@@ -508,54 +516,66 @@ prioritised. Deferred post-P0/P1 validation.
 
 ### Acceptance criteria
 
-- Tab navigation is usable on a 375px viewport without horizontal scrolling. ( )
+- Tab navigation is usable on a 375px viewport without horizontal scrolling. ✅
 - Campaigns tab renders as cards on mobile; each card shows title, status, visibility,
-  company, and action buttons. ( )
-- Access tab form controls stack vertically; no horizontal overflow at 375px. ( )
-- Audit and Global Audit tabs render as cards on mobile. ( )
-- Analytics stat cards remain in 2-column grid on mobile (already implemented). ( )
-- No table renders a horizontal scrollbar on a 375px viewport. ( )
-- All existing desktop and tablet layouts are unchanged. ( )
-- `useBreakpoint` hook with `source: 'viewport'` is used for all responsive decisions
-  (consistent with existing pattern in `useBreakpoint.test.tsx`). ( )
-- No regressions in existing Vitest test suites. ( )
+  company, grants, and all action buttons (Edit, Clone, Export, Archive/Restore, Delete). ✅
+- Access tab grant form controls stack to full width on mobile; no horizontal overflow. ✅
+- Audit and Global Audit tables scroll horizontally within their container on mobile;
+  no content clips or overflows the panel edge. ✅ *(card view was considered and rejected
+  in favour of horizontal scroll — audit logs are a power-user feature rarely read on mobile)*
+- Analytics stat cards remain in 2-column grid on mobile (already implemented). ✅
+- Header action buttons ("New Campaign", "Import", shortcuts) collapse into a ⋮ Menu on
+  mobile; title and back arrow remain always visible. ✅
+- Campaign filter bar collapses behind a "Filters / Filters (n)" toggle button on mobile;
+  badge shows active filter count at a glance. ✅
+- All existing desktop and tablet layouts (≥ 768px) are unchanged. ✅
+- `useBreakpoint` hook with `source: 'viewport'` is used for all responsive decisions. ✅
+- No regressions in existing Vitest test suites. ✅
+- Deployed bundle verified on live site (wordpress.lan): plugin REST API healthy, all
+  mobile code strings present in minified bundle. ✅
 
-### Implementation Plan
+### Implementation Plan (completed)
 
-**Step 1 — Trivial wrapping fixes.** `BulkActionsBar` `wrap="nowrap"` → `wrap="wrap"`;
-`TemplatesTab` `TemplateRow` same change. Zero risk, immediate win.
+**Step 1 ✅ — Trivial wrapping fixes.** `BulkActionsBar` outer `wrap="nowrap"` → `wrap="wrap"`;
+`TemplatesTab` `TemplateRow` same change.
 
-**Step 2 — Audit table horizontal scroll.** Wrap both audit tab tables in
-`<Table.ScrollContainer>`. One-liner per table, no behaviour change.
+**Step 2 ✅ — Audit table horizontal scroll.** Both audit tab tables wrapped in
+`<Table.ScrollContainer>` inside their existing vertical `<ScrollArea>`.
 
-**Step 3 — Access table horizontal scroll.** Same treatment for Current Access table and its
-loading skeleton.
+**Step 3 ✅ — Access table horizontal scroll.** Current Access table and loading skeleton
+wrapped in `<Table.ScrollContainer>`.
 
-**Step 4 — Tab navigation Select.** Add `useBreakpoint` (`source: 'viewport'`) to
-`AdminPanel.tsx`. Below `sm`, render a `<Select>` that drives `setActiveTab`; at `sm+`, keep
-the existing `<Tabs.List>`.
+**Step 4 ✅ — Tab navigation Select.** `useBreakpoint` (`source: 'viewport'`) added to
+`AdminPanel.tsx`. Below `sm`, a `<Select>` drives `setActiveTab`; at `sm+`, existing
+`<Tabs.List>` renders unchanged.
 
-**Step 5 — Campaigns mobile card list.** Create `CampaignsMobileList.tsx`. `AdminPanel`
-renders it instead of `<CampaignsTab>` when `isMobile`.
+**Step 5 ✅ — Campaigns mobile card list.** `CampaignsMobileList.tsx` created. `AdminPanel`
+renders it instead of `<CampaignsTab>` when `isMobile`. Desktop table unchanged.
 
-**Step 6 — Access grant form mobile stacking.** Pass `isMobile` to `AccessTab`; on mobile,
-remove `minWidth` constraints and set `width: '100%'` on each grant-form input.
+**Step 6 ✅ — Access grant form mobile stacking.** `isMobile` prop added to `AccessTab`;
+on mobile, `minWidth` constraints removed and `width: '100%'` applied to each grant-form input.
 
-**Step 7 — Layouts grid mobile.** Add `useBreakpoint` to `LayoutTemplateList`; switch to
-`gridTemplateColumns: '1fr'` below `sm`.
+**Step 7 ✅ — Layouts grid mobile.** `useBreakpoint` added to `LayoutTemplateList`; grid
+switches to `gridTemplateColumns: '1fr'` single-column below `sm`.
 
-**Step 8 — Analytics chart height.** Reduce `ResponsiveContainer` height on mobile.
+**Step 8 — Analytics chart height.** Deferred — low user impact, no complaints.
 
-**Step 9 — (P2) Header collapse + filter Collapse toggle.** Deferred post-validation.
+**Step 9 ✅ — Header Menu + filter Collapse toggle.** Header actions collapse into a Mantine
+`<Menu>` on mobile. Filter controls collapse behind a `<Collapse expanded>` toggle with an
+active-filter count badge.
 
 ### Validation
 
-- Manual QA: open Admin Panel in Chrome DevTools at 375px (iPhone SE), 390px (iPhone 14),
-  and 414px (iPhone Plus). Verify no horizontal scroll on any tab.
-- Manual QA: verify all 8 tabs are accessible via accordion at mobile breakpoint.
-- Manual QA: verify desktop (1440px) and tablet (768px) layouts are unchanged.
-- Vitest: ensure all existing tests pass; add snapshot or visual regression tests for
-  mobile variants if feasible.
+- **Bundle check (CLI, 2026-05-19):** key string literals confirmed in deployed
+  `AdminPanel-Dd_ZANgc.js`: `"Hide filters"`, `"Actions menu"`, `"Select admin panel tab"`,
+  `"CampaignsMobileList"`, `"AdminPanel:CampaignsMobileList"`. Build and deploy timestamps
+  both `May 19 06:21`.
+- **REST API check (CLI, 2026-05-19):** `GET /wp-json/wp-super-gallery/v1/campaigns`
+  → HTTP 200, well-formed JSON. No PHP errors in response.
+- **User QA (2026-05-19):** P0/P1 items (tab Select, campaign cards, Access form, audit
+  scroll, Layouts grid, wrap fixes) confirmed working on live site. P2 items (header Menu,
+  filter Collapse) deployed and confirmed immediately after.
+- **tsc + ESLint:** all three commit hooks passed clean.
 
 ### Files Affected (proposed)
 
@@ -852,6 +872,685 @@ is a simple cut-and-paste. Test updates are mechanical find-and-replace.
 
 ---
 
+---
+
+## Track P29-G — LayoutBuilder: UX Audit, Improvements & Tooling
+
+### Problem
+
+The LayoutBuilder (`LayoutBuilderModal` + all dockview panels under
+`src/components/Admin/LayoutBuilder/`) is a fully-featured visual editor with dockview
+panels for Layers, Media & Assets, Canvas, Properties, and History. It supports slots
+with clip-path shapes, graphic layers (overlays), mask layers, advanced backgrounds
+(color/gradient/image), media assignment, smart guides, undo/redo (50-entry history
+stack with jump), keyboard shortcuts, zoom/pan canvas, and layer lock/visibility.
+
+A comprehensive UX audit of the entire codebase identified **32 specific findings**
+organized into four severity tiers. The builder is functional and feature-complete but
+has accumulated UX gaps that increase cognitive load, reduce workflow efficiency, and
+create confusion for new users.
+
+#### Critical Issues (require immediate attention)
+
+1. **No canvas-level slot creation.** The only way to add a slot is the `+` icon in the
+   Layers panel toolbar. Users expect to be able to create slots directly on the canvas
+   (double-click or a canvas toolbar button). Media drop-to-canvas creates a slot, but
+   there is no "blank slot" creation path on the canvas itself.
+
+2. **Dead space in Properties panel when nothing is selected.** Renders
+   `"Select a layer to edit its properties."` — wasted screen real estate that could
+   show canvas-level/global properties, quick-add palette, or recently used actions.
+
+3. **No multi-select in Layers panel.** Canvas supports Shift+click multi-select, but the
+   Layers panel (where power users work) only supports single selection. Cannot select
+   multiple slots from the layer list for batch operations.
+
+4. **Duplicate uses Ctrl+V (confusing, non-standard).** The shortcut for duplicate is
+   `Ctrl+V` (paste), which conflicts with the universal Copy/Paste mental model and has
+   no corresponding Ctrl+C copy action. `Ctrl+D` is the standard duplicate shortcut in
+   Figma, VS Code, and most design tools.
+
+5. **Locked slots have no visual indicator on canvas.** Hidden slots show at 10% opacity
+   (ghost), which is correct. But locked slots have zero visual distinction on the
+   canvas — only in the Layers panel icon. Users can't tell a locked slot from an
+   unlocked one while working on the canvas.
+
+#### Usability Improvements (high impact)
+
+6. **Properties panel is one long ungrouped scroll.** `SlotPropertiesPanel` has ~15
+   sections (Name, Position, Size, Shape, Image, Focal Point, Border, Stacking,
+   Interaction, Filters × 8 sliders, Shadow, Blend, Overlay, 3D Tilt) in a single
+   vertical scroll. Users scanning for "Border" or "Z-Index" must scroll past everything.
+
+7. **No alignment/distribute tools.** Smart guides help with manual alignment, but there
+   are no "Align Left/Center/Right", "Distribute Horizontally/Vertically" buttons for
+   multi-selected slots. Standard in every design tool.
+
+8. **No grouping feature.** Users cannot group multiple slots together to move/resize
+   them as a unit. No Ctrl+G / Ctrl+Shift+G equivalent.
+
+9. **No "Fit to Screen" zoom.** Can reset zoom (double-click or press 0) and see current
+   %, but no auto-calculated "Fit to Screen" that computes the best zoom for the current
+   viewport.
+
+10. **No ruler or measurement indicators.** No horizontal/vertical rulers along canvas
+    edges showing scale and position markers.
+
+11. **Media picker has no search/filter.** For campaigns with 50+ images, finding a
+    specific image in a scrollable list is painful.
+
+12. **No thumbnail grid view in media picker.** Media items are shown as a list with
+    40×40 thumbnails only. A grid view would be more visual for image selection.
+
+13. **Auto-assign has no control.** Single button fills slots in order only. No reverse,
+    shuffle, or skip options.
+
+14. **No responsive preview.** Preview mode shows layout at canvas size only. No way to
+    preview at different viewport widths (mobile/tablet).
+
+#### Feedback & Polish (medium impact)
+
+15. **"Unsaved" indicator is subtle.** Small italic dimmed text next to Save button.
+    Standard pattern (VS Code, Figma) is a dot or asterisk next to the document name.
+
+16. **No JSON import/export.** Users can save to DB but cannot export a template for
+    sharing, backup, or cross-site transfer.
+
+17. **No grid overlay / snap-to-grid.** Snap only works to other slots (smart guides).
+    No option to show a background grid and snap to it.
+
+18. **No contextual floating toolbar.** When a slot is selected, no inline quick-actions
+    (duplicate, delete, add mask, change shape) appear near the selection.
+
+30. **No toast notifications.** Actions like "Slot added", "Media assigned", "Layer
+     deleted" have no visual feedback — only a11y announcements. Users may not know if
+     their action succeeded.
+
+31. **No error recovery message for failed saves.** If save fails, error is shown via
+     `onNotify` but no "Draft restored" message on reopen.
+
+32. **Canvas dimensions shown as plain text.** Could be a more informative overlay or
+     tooltip showing dimensions + aspect ratio.
+
+#### Suggested Removals / Simplifications
+
+25. **Remove "Save & Close" button.** Having both "Save" and "Save & Close" creates
+    decision overhead. Close already has a dirty guard. Reduces header clutter.
+
+26. **Move aspect ratio selector out of header center.** Currently in the middle of the
+    header bar — unusual location for a canvas-level property. Belongs in Properties
+    panel or Canvas footer.
+
+27. **Make slot index badges togglable (or hide by default).** Numbered badges always
+    visible on every slot, distracting for complex layouts. Layer panel already shows
+    order.
+
+28. **Reduce History panel redundancy.** History is a full dock tab AND undo/redo buttons
+    exist in header. Most users use Ctrl+Z. Consider collapsing into a header dropdown.
+
+29. **Move canvas height mode controls out of footer.** Advanced setting that clutters
+    the canvas footer bar. Belongs in Properties panel.
+
+### Fix Strategy
+
+Split into **5 sub-tracks** following the established P0/P1/P2 priority pattern from
+P29-E, ordered by impact-to-effort ratio.
+
+---
+
+#### P29-G-A — Critical UX Fixes (P0)
+
+**Scope:** Items 1-5 above. These are high-impact, low-to-medium effort changes that fix
+confusing or missing core behaviors.
+
+**1. Canvas-level slot creation.**
+
+Add a "Add Slot" button to the canvas footer bar (in `LayoutBuilderCanvasPanel.tsx`,
+next to the existing Zoom/Snap/MaxWidth controls). On click, call `builder.addSlot()`
+and center the new slot on the canvas viewport.
+
+Additionally, enable **double-click on canvas background** to create a slot at that
+position. The `handleCanvasDblClick` handler in `LayoutCanvas.tsx` currently only resets
+zoom — extend it: if `onMediaCanvasDrop` is available, create a new slot at the clicked
+position.
+
+```tsx
+// In LayoutBuilderCanvasPanel.tsx footer:
+<Button size="xs" variant="subtle" leftSection={<IconPlus size={12} />}
+  onClick={() => {
+    const id = builder.addSlot();
+    builder.selectSlot(id);
+    announce('New slot added');
+  }}
+>
+  Add Slot
+</Button>
+```
+
+**2. Properties panel — canvas-level defaults when nothing selected.**
+
+Replace the empty state in `LayoutBuilderPropertiesPanel.tsx` with a composite view:
+
+```
+┌─ CANVAS ─────────────────────────┐
+│ Background: [Color ▸]            │
+│ Aspect:    [16:9 ▸]              │
+│ Max Width: [1200 px]             │
+│ ───────────────────────────────  │
+│ Quick Add                        │
+│ [＋ Add Slot]  [＋ Add Graphic]  │
+│ ───────────────────────────────  │
+│ Recent Actions                   │
+│ • Move slot 3 ago                │
+│ • Add overlay 12 ago             │
+│ • Resize slot 18 ago             │
+└──────────────────────────────────┘
+```
+
+- Background quick-pick: maps to `builder.setBackgroundMode()` and selects the
+  Background in the Layers panel
+- Aspect ratio: same `SegmentedControl` currently in the header (enables removal from
+  header — see item 26)
+- Max width: `NumberInput` bound to `canvasMaxWidth`
+- Quick Add buttons: `builder.addSlot()`, `builder.addOverlay()` with a default asset
+- Recent Actions: last 3 entries from `builder.historyEntries` (enables eventual removal
+  of the History dock tab — see item 28)
+
+**3. Multi-select in Layers panel.**
+
+Add Ctrl/Cmd+click and Shift+click support to `LayerRow.tsx` / `LayerPanel.tsx`:
+
+- On row click, check `e.ctrlKey` / `e.metaKey` → toggle selection (add/remove from
+  `selectedSlotIds`)
+- Track last clicked index; on Shift+click, select all rows between last and current
+- Update `onSelect` callback to use `builder.toggleSlotSelection()` for Ctrl+click and
+  a new `selectRangeSlots(fromId, toId)` action in `useLayoutBuilderState`
+- Visual: selected rows already have the blue left-border + bg style
+
+**4. Fix duplicate shortcut: Ctrl+V → Ctrl+D.**
+
+In `LayoutBuilderModal.tsx` `handleKeyDown`:
+
+```diff
+- if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
++ if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+      handleDuplicateSelected();
+      e.preventDefault();
+    }
+```
+
+Update `BuilderKeyboardShortcutsModal.tsx` to show `Ctrl/⌘ + D` instead of `Ctrl/⌘ + V`.
+
+Optionally implement proper copy/paste (Ctrl+C copies slot data to internal clipboard
+state, Ctrl+V pastes it) as a follow-on, but Ctrl+D for duplicate is the minimum fix.
+
+**5. Visual indicator for locked slots on canvas.**
+
+In `LayoutSlotComponent.tsx`, when `slot.locked` is true, render a small lock icon
+overlay (similar to the index badge) in the top-right corner:
+
+```tsx
+{(slot.locked ?? false) && (
+  <div style={{
+    position: 'absolute', top: 4, right: 4,
+    background: 'rgba(0,0,0,0.6)', color: '#fff',
+    borderRadius: '50%', width: 18, height: 18,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    pointerEvents: 'none', zIndex: 3,
+  }}>
+    <IconLock size={10} />
+  </div>
+)}
+```
+
+Also dim the resize handles when locked (they already disappear via
+`enableResizing={!locked}` but the handle opacity transition is not obvious).
+
+**Files affected:**
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Add "Add Slot" button to footer |
+| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Extend `handleCanvasDblClick` for slot creation |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.tsx` | Replace empty state with canvas-level defaults view |
+| `src/components/Admin/LayoutBuilder/LayerRow.tsx` | Ctrl+click / Shift+click multi-select |
+| `src/components/Admin/LayoutBuilder/LayerPanel.tsx` | Pass multi-select handlers |
+| `src/hooks/useLayoutBuilderState.ts` | Add `selectRangeSlots` action |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Change duplicate shortcut to Ctrl+D |
+| `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcutsModal.tsx` | Update shortcut documentation |
+| `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | Lock icon overlay on canvas |
+
+**Acceptance criteria:**
+
+- Clicking "Add Slot" in canvas footer creates a new slot centered on the viewport. ( )
+- Double-clicking canvas background creates a slot at click position. ( )
+- Properties panel shows canvas-level controls and recent actions when nothing is
+  selected. ( )
+- Ctrl+click on layer rows toggles multi-selection; Shift+click selects range. ( )
+- Duplicate uses Ctrl+D; Ctrl+V no longer triggers duplicate. ( )
+- Locked slots show a lock icon overlay in the top-right corner on canvas. ( )
+
+**Effort:** ~6-8 hours
+
+---
+
+#### P29-G-B — Properties Panel Reorganization & Media Improvements (P1)
+
+**Scope:** Items 6, 11, 12, 13 above. Medium effort, high daily-use impact.
+
+**6. Properties panel: tabbed or accordion layout.**
+
+Restructure `SlotPropertiesPanel.tsx` from a single vertical scroll into an `<Accordion>`
+with 4 groups:
+
+| Accordion Item | Contains |
+|---------------|----------|
+| **Layout** | Name, Position (X/Y), Size (W/H + aspect lock), Shape (preset + custom clip-path) |
+| **Image** | Fit (object-fit), Focal Point (3×3 grid + custom), Border (radius, width, color) |
+| **Effects** | Filters (all 8 sliders), Shadow (enable, offset, blur, color), Blend Mode, Overlay (darken/lighten), 3D Tilt |
+| **Stacking & Interaction** | Z-Index + reorder buttons, Click action, Hover effect + glow config |
+
+The accordion defaults to all-open (preserving current behavior) but allows users to
+collapse sections they're not working with. Uses the existing `PropRow` and
+`SectionHeader` components — only the wrapper structure changes.
+
+**11. Media picker search.**
+
+Add a `<TextInput>` with a search icon above the media list in `MediaPickerSidebar.tsx`.
+Filter the displayed media items client-side:
+
+```tsx
+const [searchQuery, setSearchQuery] = useState('');
+const filteredMedia = useMemo(() =>
+  media.filter(m =>
+    !searchQuery ||
+    m.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.caption?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.type?.toLowerCase().includes(searchQuery.toLowerCase())
+  ),
+  [media, searchQuery],
+);
+```
+
+**12. Media picker: list/grid view toggle.**
+
+Add a small segmented control or icon button pair next to the "Auto" button in
+`MediaPickerSidebar.tsx`:
+
+- List view (current): compact rows with 40×40 thumbnail, title, dimensions
+- Grid view: 3-4 column grid with larger thumbnails (80×80), title overlay
+
+Grid view uses CSS Grid with `gridTemplateColumns: repeat(auto-fill, minmax(90px, 1fr))`
+and shows thumbnails in a more visual browsing layout.
+
+**13. Auto-assign: dropdown with options.**
+
+Replace the single "Auto" button in `MediaPickerSidebar.tsx` with a `<Menu>`:
+
+```
+[Auto ▾]
+┌─────────────────────┐
+│ Auto-fill (forward) │  ← current behavior, default
+│ Auto-fill (reverse) │  ← reverse slot order
+│ Shuffle & fill      │  ← Fisher-Yates shuffle before assign
+│ Clear all assigns   │  ← clearSlotMedia for all slots
+└─────────────────────┘
+```
+
+Implementation: add `reverseAssignMedia` and `shuffleAssignMedia` actions to
+`useLayoutBuilderState` (or handle in the panel with array manipulation before calling
+`autoAssignMedia`).
+
+**Files affected:**
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx` | Wrap sections in Accordion with 4 groups |
+| `src/components/Admin/LayoutBuilder/MediaPickerSidebar.tsx` | Add search input, list/grid toggle, auto-assign menu |
+| `src/hooks/useLayoutBuilderState.ts` | Add `reverseAssignMedia`, `shuffleAssignMedia`, `clearAllMedia` actions |
+
+**Acceptance criteria:**
+
+- Properties panel is organized into 4 collapsible accordion sections. ( )
+- All existing properties are accessible; no controls removed or renamed. ( )
+- Accordion defaults to all-open on first render. ( )
+- Media picker has a search input that filters by title, caption, and type. ( )
+- Media picker has a list/grid view toggle. ( )
+- Auto-assign button opens a dropdown with 4 options. ( )
+- Shuffle produces different assignments on each click. ( )
+
+**Effort:** ~5-7 hours
+
+---
+
+#### P29-G-C — Canvas Tooling Additions (P1/P2)
+
+**Scope:** Items 7, 8, 9, 17 above. Medium-to-high effort, medium impact.
+
+**7. Alignment and distribute tools.**
+
+Add alignment buttons to the Layers panel toolbar (visible when 2+ slots are selected):
+
+```
+[⬅ Align Left] [Center ⟵] [Align Right ➡] [Distribute ↔]
+[⬆ Align Top]  [Center ↑↓] [Align Bottom ⬇] [Distribute ↕]
+```
+
+Implementation in `LayoutBuilderLayersPanel.tsx`:
+
+- Detect `builder.selectedSlotIds.size >= 2` to show/hide the alignment toolbar
+- Compute alignment targets from the bounding box of all selected slots
+- Apply `builder.updateSlot()` for each slot with computed X/Y or W/H values
+- Use existing `builder.nudgeSlots` or direct `updateSlot` calls
+
+Helper functions in a new `src/utils/alignSlots.ts`:
+
+```ts
+export function alignSlotsLeft(slots: LayoutSlot[]): Record<string, Partial<LayoutSlot>>;
+export function alignSlotsHorizontally(slots: LayoutSlot[]): Record<string, Partial<LayoutSlot>>;
+export function distributeSlotsHorizontally(slots: LayoutSlot[], canvasWidth: number): Record<string, Partial<LayoutSlot>>;
+// ... etc for vertical
+```
+
+**8. Grouping feature.**
+
+Add slot grouping (Ctrl+G / Ctrl+Shift+G) to `useLayoutBuilderState`:
+
+- New `groups` array on `LayoutTemplate` (or as builder-local state): `{ id, slotIds,
+  name }`
+- Grouped slots share a transform origin; moving/resizing the group moves all members
+  relative to their offsets
+- In Layers panel, show groups as expandable parent rows with indented child slots
+- Visual: grouped slots get a colored handle border (different from selection blue)
+
+This is the highest-effort item in this track. Can be scoped down to "visual grouping
+only" (select multiple, group them, they move together) without full transform-inheritance.
+
+**9. Fit to Screen zoom.**
+
+Add a "Fit" button next to the zoom % display in `LayoutBuilderCanvasPanel.tsx` footer.
+
+Computes optimal scale:
+
+```ts
+const containerRect = canvasContainerRef.current?.getBoundingClientRect();
+const fitScaleX = (containerRect.width - 48) / canvasWidth;  // 48px padding
+const fitScaleY = (containerRect.height - 48) / canvasHeight;
+const fitScale = Math.min(fitScaleX, fitScaleY, 1);
+transformRef.current?.setTransform(0, 0, fitScale);
+```
+
+**17. Grid overlay with snap-to-grid.**
+
+Add a toggle in the canvas footer (next to existing Snap toggle):
+
+```
+[Grid] [Cell: 20px ▾]  [Snap to Grid ☐]
+```
+
+- Grid overlay: CSS `background-image` with `linear-gradient` creating a dot or line
+  grid pattern on the canvas background
+- Snap-to-grid: on drag stop, round slot position/size to the nearest grid cell
+- Cell size options: 10px, 20px, 25px, 50px
+
+Implementation: add `gridEnabled`, `gridSize`, `snapToGrid` state to
+`LayoutBuilderCanvasPanel`, pass to `LayoutCanvas` for rendering and snap computation.
+
+**Files affected:**
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx` | Alignment toolbar (shown when 2+ selected) |
+| `src/utils/alignSlots.ts` | **New file** — alignment/distribution computation helpers |
+| `src/hooks/useLayoutBuilderState.ts` | Group CRUD actions, group-aware move/resize |
+| `src/components/Admin/LayoutBuilder/LayerPanel.tsx` | Group rows in layer list |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Fit button, grid toggle + cell size selector |
+| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Grid overlay rendering, snap-to-grid on drag stop |
+
+**Acceptance criteria:**
+
+- Alignment toolbar appears when 2+ slots selected; 8 alignment options work correctly. ( )
+- Groups can be created (Ctrl+G), expanded/collapsed in Layers panel, and moved as a unit. ( )
+- "Fit" button zooms canvas to fit within viewport with padding. ( )
+- Grid overlay renders on canvas; snap-to-grid rounds positions on drag stop. ( )
+- Grid cell size is configurable (10/20/25/50px). ( )
+
+**Effort:** ~10-14 hours (grouping is the bulk; alignment and grid are each ~2-3h)
+
+---
+
+#### P29-G-D — Feedback, Polish & Info (P2)
+
+**Scope:** Items 15, 16, 18, 30, 31, 32 above. Low effort, incremental UX polish.
+
+**15. Move unsaved indicator to template name.**
+
+In `LayoutBuilderModal.tsx` header, add an unsaved dot next to the template name
+TextInput:
+
+```tsx
+<Group gap={2} wrap="nowrap">
+  {builder.isDirty && (
+    <Box style={{ width: 8, height: 8, borderRadius: '50%',
+      background: 'var(--mantine-color-yellow-5)', flexShrink: 0 }} />
+  )}
+  <TextInput value={builder.template.name} ... />
+</Group>
+```
+
+Remove the `<Text size="xs" c="dimmed" fs="italic">Unsaved</Text>` from the right side.
+
+**16. JSON import/export.**
+
+Add two buttons to the header (or a template dropdown menu):
+
+- **Export JSON:** `JSON.stringify(builder.template)` → `Blob` → `URL.createObjectURL`
+  → trigger download as `{template-name}.wpsg-layout.json`
+- **Import JSON:** `<input type="file" accept=".json">` → `FileReader` →
+  `JSON.parse` → validate schema → `builder.setTemplate(imported, { preserveSelection: false })`
+
+Validation: check required fields (`name`, `slots` array, `canvasAspectRatio`). Show
+error notification on invalid JSON.
+
+**18. Contextual floating toolbar (quick actions).**
+
+When a slot is selected, render a small floating bar near the slot's top-center edge
+(on the canvas, not the properties panel):
+
+```
+┌──────┬──────┬──────┬──────┐
+│ ⧉ Dup│ 🗑 Del│ 🔲 Mask│ ⬡ Shape│
+└──────┴──────┴──────┴──────┘
+```
+
+Position: computed from the slot's pixel position on canvas, rendered as an absolutely
+positioned element in `LayoutSlotComponent.tsx` or as an overlay in `LayoutCanvas.tsx`.
+
+This is a polish item — the same actions are all accessible via Layers panel toolbar
+and keyboard shortcuts. The floating toolbar reduces clicks for frequent operations.
+
+**30. Toast notifications for significant actions.**
+
+Add `@mantine/notifications` provider (if not already present) and dispatch toasts for:
+
+- Slot added / deleted / duplicated
+- Media assigned / unassigned
+- Overlay added / deleted
+- Save success / failure
+- Background changed
+
+Replace or supplement the existing `announce()` (a11y-only) calls with
+`notifications.show({ title, message, color, autoClose: 3000 })`.
+
+**31. Draft restored message on reopen.**
+
+In `LayoutBuilderModal.tsx`, when the modal opens and there's a draft in
+`localStorage` (`wpsg_layout_draft_${template.id}`), show a toast:
+`"Draft restored — you had unsaved changes from your last session."`
+
+**32. Canvas dimensions as styled overlay.**
+
+Replace the plain `<Text>` dimension label above the canvas in `LayoutCanvas.tsx` with
+a styled pill/badge:
+
+```
+┌────────────────────────┐
+│ 1200 × 675px · 16:9 · 3 slots │
+└────────────────────────┘
+```
+
+Include aspect ratio display alongside dimensions.
+
+**Files affected:**
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Unsaved dot, import/export buttons, draft restored toast |
+| `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | Floating quick-action toolbar (conditional render when selected) |
+| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Styled dimension badge with aspect ratio |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Toast notifications wrapper (if Notifications provider needed) |
+
+**Acceptance criteria:**
+
+- Unsaved dot appears next to template name; old "Unsaved" text removed. ( )
+- Export downloads a valid JSON file; Import loads it and replaces current template. ( )
+- Invalid JSON import shows error notification; does not corrupt current state. ( )
+- Floating toolbar appears near selected slot; all 4 buttons work. ( )
+- Toast notifications appear for add/delete/duplicate/assign/save actions. ( )
+- Draft restored message appears when reopening with unsaved draft. ( )
+- Canvas dimensions include aspect ratio display. ( )
+
+**Effort:** ~4-6 hours
+
+---
+
+#### P29-G-E — Cleanup & Simplification (P2)
+
+**Scope:** Items 25-29 above. Low effort, removes clutter.
+
+**25. Remove "Save & Close" button.**
+
+Remove the `<Button variant="light" onClick={handleSaveAndClose}>` from the header
+right side. Users can Save then Close in two clicks. The dirty guard on Close already
+prevents data loss.
+
+One-liner removal from `LayoutBuilderModal.tsx`.
+
+**26. Move aspect ratio selector from header to Properties panel.**
+
+Remove the `SegmentedControl` for aspect ratio from the header center. Add it to the
+canvas-level defaults view (item 2 above) or the canvas footer bar.
+
+**27. Make slot index badges togglable.**
+
+Add a switch in the canvas footer: `Show indices` (default: on). Pass as a prop through
+to `LayoutSlotComponent` to conditionally render the index badge div.
+
+**28. Collapse History into header dropdown.**
+
+Remove the History dock tab. Instead, make the Undo button in the header open a dropdown
+menu showing the last 10 history entries (from `builder.historyEntries`), with jump-to
+and undo/redo actions. This eliminates the dedicated dock panel while keeping the feature
+accessible.
+
+```tsx
+<Menu withinPortal>
+  <Menu.Target>
+    <ActionIcon onClick={builder.undo} disabled={!builder.canUndo}>
+      <IconArrowBackUp size={18} />
+    </ActionIcon>
+  </Menu.Target>
+  <Menu.Dropdown>
+    {historyEntries.slice(-10).reverse().map(entry => (
+      <Menu.Item onClick={() => builder.jumpToHistoryIndex(...)}>
+        {entry.label}
+      </Menu.Item>
+    ))}
+  </Menu.Dropdown>
+</Menu>
+```
+
+**29. Move canvas height mode controls to Properties panel.**
+
+Remove the SegmentedControl (Ratio/vh) and NumberInput (vh value) from the canvas
+footer. Add them to the canvas-level defaults view in the Properties panel (item 2).
+
+**Files affected:**
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Remove Save & Close, move aspect ratio, collapse History into dropdown |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Remove height mode controls, add "Show indices" toggle |
+| `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | Conditional index badge render |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.tsx` | Add height mode + aspect ratio to canvas-level view |
+| `src/components/Admin/LayoutBuilder/BuilderDockContext.tsx` | Remove `history` from dock components if History tab is removed |
+| `src/components/Admin/LayoutBuilder/index.ts` | Remove `BuilderHistoryPanel` export if no longer used |
+
+**Acceptance criteria:**
+
+- "Save & Close" button is removed; Save and Close remain functional. ( )
+- Aspect ratio control is in Properties panel or canvas footer, not header center. ( )
+- Slot index badges can be toggled on/off. ( )
+- History panel is removed as a dock tab; history is accessible via header dropdown. ( )
+- Canvas height mode controls are in Properties panel. ( )
+- Canvas footer is cleaner and less cluttered. ( )
+- Header is less crowded. ( )
+
+**Effort:** ~2-3 hours
+
+---
+
+### Execution Priority
+
+1. **P29-G-A** (Critical fixes) — go first. These are independent, low-risk, and fix
+   confusing or broken UX patterns.
+2. **P29-G-B** (Properties + Media) — second. Depends on G-A item 2 (canvas-level
+   Properties view) for the reorganized panel structure.
+3. **P29-G-C** (Canvas tooling) — third. Alignment and grid are independent; grouping
+   is the largest single effort item.
+4. **P29-G-D** (Feedback & polish) — can run in parallel with G-C.
+5. **P29-G-E** (Cleanup) — last. These removals make sense after the new features are
+   in place (e.g., aspect ratio moves out of header only after it's available in the
+   Properties panel).
+
+### Nice-to-Have (Deferred to Future Phase)
+
+| Item | Description | Why deferred |
+|------|-------------|-------------|
+| 10 | Ruler / measurement indicators | High effort for marginal gain; audit-only feature |
+| 14 | Responsive preview (viewport width presets) | Requires significant canvas rendering changes |
+| 19 | Slot templates / saved compositions | Requires new data model and persistence layer |
+| 20 | Before/after comparison slider in preview | Nice-to-have; not a workflow blocker |
+| 21 | Batch operations (apply filter to all selected) | Can be addressed after alignment tools land |
+| 22 | Canvas background patterns | Low-impact visual polish |
+| 23 | Slot presets (pre-configured layouts) | Requires template library; scope is a feature, not a fix |
+| 24 | Touchscreen support (pinch-to-zoom, touch drag) | Requires comprehensive pointer-event audit; mobile is not the primary use case |
+
+### Acceptance Criteria (Track-Level)
+
+All sub-track acceptance criteria above must be met. Additionally:
+
+- No regressions in existing `useLayoutBuilderState.test.ts` test suite. ( )
+- No regressions in existing LayoutBuilder component tests. ( )
+- All keyboard shortcuts documented in `BuilderKeyboardShortcutsModal` are accurate.
+  ( )
+- A11y: all new interactive elements have aria-labels; a11y announcements (`announce()`)
+  are preserved for new actions. ( )
+- Dockview layout persistence (localStorage) is not broken by tab removals. ( )
+
+### Total Effort Estimate
+
+| Sub-track | Hours |
+|-----------|-------|
+| P29-G-A (Critical fixes) | 6-8 |
+| P29-G-B (Properties + Media) | 5-7 |
+| P29-G-C (Canvas tooling) | 10-14 |
+| P29-G-D (Feedback & polish) | 4-6 |
+| P29-G-E (Cleanup) | 2-3 |
+| **Total** | **27-38 hours** |
+
+---
+
 ## Validation
 
 - Live API: `GET /campaigns/89/media` after deploy → 9/10 items assigned fresh UUIDs.
@@ -877,9 +1576,14 @@ is a simple cut-and-paste. Test updates are mechanical find-and-replace.
 
 ## Outcome
 
-- Four tracks shipped: P29-A, P29-B, P29-C, P29-D (all complete).
-- P29-E (Admin Panel mobile responsiveness) in progress.
-- P29-F (Settings re-grouping) planned — analysis complete, implementation pending.
+- Five tracks shipped: P29-A, P29-B, P29-C, P29-D, P29-E (all complete ✅).
+- P29-F (Settings Panel tab re-grouping) planned — analysis complete, implementation pending.
+- P29-G (LayoutBuilder UX audit) planned.
+- Deferred from P29-E: Analytics chart height reduction on mobile (low impact, no complaints).
+- Follow-on to consider: audit whether `rescan_all_media_types` and other
+  functions that call `update_post_meta('media_items', ...)` are similarly
+  exposed to the `sanitize_media_items` drop-on-no-id behaviour — those paths
+  could wipe IDs if called on data that hasn't been backfilled yet.
 - Follow-on to consider: audit whether `rescan_all_media_types` and other
   functions that call `update_post_meta('media_items', ...)` are similarly
   exposed to the `sanitize_media_items` drop-on-no-id behaviour — those paths
