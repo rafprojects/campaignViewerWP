@@ -2162,12 +2162,18 @@ class WPSG_REST {
         $media_items = self::enrich_media_with_dimensions($normalized['items']);
         $updated_count = $normalized['updated'];
 
-        // Backfill missing IDs so legacy items without an id field can be individually deleted.
+        // Backfill missing IDs and repair duplicate IDs.
+        // Duplicates arise when the campaign's route {id} param was mistakenly stored as every
+        // item's media ID — all items end up with the same ID, so any delete wipes the whole set.
         $ids_backfilled = 0;
+        $seen_ids = [];
         foreach ($media_items as &$item) {
-            if (empty($item['id'] ?? '')) {
+            $current_id = $item['id'] ?? '';
+            if ($current_id === '' || isset($seen_ids[$current_id])) {
                 $item['id'] = wp_generate_uuid4();
                 $ids_backfilled++;
+            } else {
+                $seen_ids[$current_id] = true;
             }
         }
         unset($item);
@@ -2595,7 +2601,10 @@ class WPSG_REST {
             $payload = [];
         }
 
-        foreach (['id', 'type', 'source', 'url', 'attachmentId', 'caption', 'order', 'thumbnail', 'provider', 'title'] as $key) {
+        // 'id' is intentionally excluded: the route's {id} capture is the campaign post ID,
+        // not a media item ID. If the client wants to supply a custom media ID it must
+        // include it in the JSON body; otherwise build_media_item_from_payload generates a UUID.
+        foreach (['type', 'source', 'url', 'attachmentId', 'caption', 'order', 'thumbnail', 'provider', 'title'] as $key) {
             if (!array_key_exists($key, $payload)) {
                 $value = $request->get_param($key);
                 if (!is_null($value)) {

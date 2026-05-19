@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef, memo, type CSSProperties, type KeyboardEventHandler } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Card, Badge, Pagination, Skeleton, Switch, type GridColProps, type Primitive } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Badge, Pagination, Skeleton, Switch, type GridColProps, type Primitive } from '@mantine/core';
 
 // Mantine's SegmentedControl calls setState inside its ref callbacks, which triggers
 // React's "maximum update depth" error when the component re-renders rapidly.
@@ -17,6 +17,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
+  type Modifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -26,7 +27,7 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { CSS, getEventCoordinates } from '@dnd-kit/utilities';
 import { MediaCard } from './MediaCard';
 import { MediaLightboxModal } from './MediaLightboxModal';
 import { MediaAddModal } from './MediaAddModal';
@@ -49,6 +50,25 @@ import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+
+// Position the DragOverlay so its top-center sits just below the cursor.
+// The overlay is 140 px wide; placing the cursor at (width/2, 12) gives a natural
+// "carrying" feel — the thumbnail hangs from the pointer rather than appearing
+// at the drag-source element's top-left corner.
+const snapThumbnailToCursor: Modifier = ({ activatorEvent, draggingNodeRect, transform }) => {
+  if (!draggingNodeRect || !activatorEvent) return transform;
+  const coords = getEventCoordinates(activatorEvent);
+  if (!coords) return transform;
+  const offsetX = coords.x - draggingNodeRect.left;
+  const offsetY = coords.y - draggingNodeRect.top;
+  const OVERLAY_W = 140;
+  const CURSOR_TOP_OFFSET = 12; // px below overlay's top edge where cursor sits
+  return {
+    ...transform,
+    x: transform.x + offsetX - OVERLAY_W / 2,
+    y: transform.y + offsetY - CURSOR_TOP_OFFSET,
+  };
+};
 
 type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
@@ -100,7 +120,7 @@ function SortableListRow({
   const rowStyle: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.7 : 1,
+    opacity: isDragging ? 0.2 : 1,
     ...getInsertionStyle(item.id, 'vertical'),
   };
   const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
@@ -204,26 +224,39 @@ function SortableGridItem({
     <Grid.Col
       ref={setNodeRef}
       data-testid={`media-draggable-${item.id}`}
-      style={{ transform: CSS.Transform.toString(transform) ?? undefined, transition: transition ?? undefined, opacity: isDragging ? 0.7 : 1 } as CSSProperties}
+      style={{ transform: CSS.Transform.toString(transform) ?? undefined, transition: transition ?? undefined } as CSSProperties}
       span={gridSpan!}
     >
       <Box style={{ position: 'relative' }}>
-        <MediaCard
-          item={item}
-          height={mediaHeight}
-          compact={isCompact}
-          showUrl={showUrl}
-          onEdit={() => openEdit(item)}
-          onDelete={() => handleDelete(item)}
-          onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
-          cardStyle={getInsertionStyle(item.id, 'horizontal')}
-          dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
-        />
-        <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
-          {usageSummaryLoading
-            ? <Skeleton width={64} height={20} radius="xl" />
-            : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
-        </Box>
+        {/* Keep card in DOM so it holds the slot height; hide it while dragging */}
+        <div style={{ opacity: isDragging ? 0 : 1, pointerEvents: isDragging ? 'none' : undefined }}>
+          <MediaCard
+            item={item}
+            height={mediaHeight}
+            compact={isCompact}
+            showUrl={showUrl}
+            onEdit={() => openEdit(item)}
+            onDelete={() => handleDelete(item)}
+            onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
+            cardStyle={getInsertionStyle(item.id, 'horizontal')}
+            dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
+          />
+          <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
+            {usageSummaryLoading
+              ? <Skeleton width={64} height={20} radius="xl" />
+              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
+          </Box>
+        </div>
+        {isDragging && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 8,
+            border: '2px dashed color-mix(in srgb, var(--mantine-color-blue-5) 55%, transparent)',
+            background: 'color-mix(in srgb, var(--mantine-color-blue-5) 5%, transparent)',
+            pointerEvents: 'none',
+          }} />
+        )}
       </Box>
     </Grid.Col>
   );
@@ -821,20 +854,22 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
 
     const position = getDropPosition(activeMediaId, overMediaId);
+    // --wpsg-color-primary is a gallery-side token; fall back to Mantine blue in the admin context.
+    const c = 'var(--wpsg-color-primary, var(--mantine-color-blue-5))';
+    const glow = `color-mix(in srgb, var(--wpsg-color-primary, var(--mantine-color-blue-5)) 40%, transparent)`;
+
     if (axis === 'horizontal') {
       return {
-        boxShadow:
-          position === 'before'
-            ? 'inset 6px 0 0 0 var(--wpsg-color-primary)'
-            : 'inset -6px 0 0 0 var(--wpsg-color-primary)',
+        boxShadow: position === 'before'
+          ? `inset 4px 0 0 0 ${c}, 0 0 10px 2px ${glow}`
+          : `inset -4px 0 0 0 ${c}, 0 0 10px 2px ${glow}`,
       };
     }
 
     return {
-      boxShadow:
-        position === 'before'
-          ? 'inset 0 6px 0 0 var(--wpsg-color-primary)'
-          : 'inset 0 -6px 0 0 var(--wpsg-color-primary)',
+      boxShadow: position === 'before'
+        ? `inset 0 4px 0 0 ${c}, 0 0 10px 2px ${glow}`
+        : `inset 0 -4px 0 0 ${c}, 0 0 10px 2px ${glow}`,
     };
   };
 
@@ -1031,11 +1066,37 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             </SortableContext>
           )}
 
-          <DragOverlay>
+          <DragOverlay modifiers={[snapThumbnailToCursor]} dropAnimation={{ duration: 180, easing: 'ease' }}>
             {activeMediaItem ? (
-              <Card withBorder shadow="sm" radius="md" p="xs" style={{ minWidth: 160, opacity: 0.95 }}>
-                <Text size="sm" lineClamp={1}>{activeMediaItem.caption || 'Dragging media'}</Text>
-              </Card>
+              <div style={{
+                width: 140,
+                borderRadius: 8,
+                overflow: 'hidden',
+                opacity: 0.82,
+                boxShadow: '0 8px 28px rgba(0,0,0,0.32)',
+                transform: 'rotate(1.5deg)',
+                pointerEvents: 'none',
+                background: 'var(--mantine-color-body)',
+              }}>
+                <img
+                  src={activeMediaItem.thumbnail ?? activeMediaItem.url ?? FALLBACK_IMAGE_SRC}
+                  alt=""
+                  style={{ display: 'block', width: '100%', height: 96, objectFit: 'cover' }}
+                />
+                {activeMediaItem.caption && (
+                  <div style={{
+                    fontSize: 11,
+                    padding: '4px 6px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    color: 'var(--mantine-color-text)',
+                    borderTop: '1px solid var(--mantine-color-default-border)',
+                  }}>
+                    {activeMediaItem.caption}
+                  </div>
+                )}
+              </div>
             ) : null}
           </DragOverlay>
         </DndContext>
