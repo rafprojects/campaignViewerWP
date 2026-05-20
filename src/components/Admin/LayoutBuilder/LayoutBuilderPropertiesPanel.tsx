@@ -1,5 +1,12 @@
 import { Box, Text, Button, Stack, Divider, SegmentedControl, NumberInput, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
+import type { IDockviewPanelProps } from 'dockview';
+import { useBuilderDock } from './BuilderDockContext';
+import { SlotPropertiesPanel } from './SlotPropertiesPanel';
+import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
+import { MaskPropertiesPanel } from './MaskPropertiesPanel';
+import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
+import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const ASPECT_PRESETS = [
   { label: '16:9', value: String(16 / 9) },
@@ -8,13 +15,6 @@ const ASPECT_PRESETS = [
   { label: '3:2', value: String(3 / 2) },
   { label: '21:9', value: String(21 / 9) },
 ] as const;
-import type { IDockviewPanelProps } from 'dockview';
-import { useBuilderDock } from './BuilderDockContext';
-import { SlotPropertiesPanel } from './SlotPropertiesPanel';
-import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
-import { MaskPropertiesPanel } from './MaskPropertiesPanel';
-import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   const {

@@ -123,6 +123,12 @@ export function LayerPanel({
     dragIdRef.current = null;
   }
 
+  function handleGroupHeaderKeyDown(event: KeyboardEvent<HTMLDivElement>, groupId: string) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onSelectGroup?.(groupId);
+  }
+
   // ── Keyboard navigation ───────────────────────────────────
   // For keyboard nav use the first selected slot as the anchor.
   const firstSelectedSlotId = selectedSlotIds && selectedSlotIds.size > 0 ? [...selectedSlotIds][0] : null;
@@ -244,7 +250,11 @@ export function LayerPanel({
                     cursor: 'pointer',
                     userSelect: 'none',
                   }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Select group ${groupItem.name || 'Group'}`}
                   onClick={() => onSelectGroup?.(groupItem.id)}
+                  onKeyDown={(event) => handleGroupHeaderKeyDown(event, groupItem.id)}
                 >
                   <ActionIcon
                     size="xs"

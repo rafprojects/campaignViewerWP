@@ -108,6 +108,24 @@ describe('LayerPanel', () => {
     expect(screen.getByText('Media Layer 2')).toBeInTheDocument();
   });
 
+  it('allows keyboard activation of a group header row', () => {
+    const onSelectGroup = vi.fn();
+    const groupedTemplate = {
+      ...template,
+      groups: [{ id: 'group-1', name: 'Grouped', memberIds: ['slot-1'], collapsed: false }],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: groupedTemplate, onSelectGroup })} />);
+
+    const groupRow = screen.getByRole('button', { name: 'Select group Grouped' });
+
+    fireEvent.keyDown(groupRow, { key: 'Enter' });
+    fireEvent.keyDown(groupRow, { key: ' ' });
+
+    expect(onSelectGroup).toHaveBeenCalledTimes(2);
+    expect(onSelectGroup).toHaveBeenCalledWith('group-1');
+  });
+
   // ── Keyboard: ArrowDown / ArrowUp ─────────────────────────────────────────
 
   it('ArrowDown moves selection to the next layer', () => {
