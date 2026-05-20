@@ -1,6 +1,6 @@
 # Phase 29 — Bug Fixes & UI Increments
 
-**Status:** In Progress
+**Status:** Complete ✅
 **Created:** 2026-05-18
 **Last updated:** 2026-05-19
 
@@ -14,7 +14,7 @@
 | P29-D | Fix campaign ID leaking into media item ID on add | Complete ✅ | Small |
 | P29-E | Admin Panel mobile responsiveness (below 768px) | Complete ✅ | Large |
 | P29-F | Settings Panel: intuitive tab re-grouping | Complete ✅ | Medium |
-| P29-G | LayoutBuilder: UX audit, improvements & tooling | Planned | Large |
+| P29-G | LayoutBuilder: UX audit, improvements & tooling | Complete ✅ | Large |
 | P29-H | Shared Grid Layout Utilities | Planned | Medium |
 
 ---
@@ -877,7 +877,7 @@ modification. Test updates are mechanical find-and-replace.
 
 ---
 
-## Track P29-G — LayoutBuilder: UX Audit, Improvements & Tooling
+## Track P29-G — LayoutBuilder: UX Audit, Improvements & Tooling ✅
 
 ### Problem
 
@@ -1008,6 +1008,21 @@ across two phases:
 - **Phase 30** handles the next workspace/tooling layer: floating toolbar,
   grid/rulers/measurement tooling, responsive preview, history-surface collapse,
   and dedicated route/workspace migration.
+
+### Completion Summary
+
+**Status:** Complete ✅ — all 5 sub-tracks delivered; 1498/1498 tests passing.
+
+| Sub-track | Delivered |
+|-----------|-----------|
+| P29-G-A | Selection model unification, canvas-click-to-add, lock overlays, keyboard nudge/z-order, history panel |
+| P29-G-B | Properties accordion (layout/image/effects/media), focal point grid, media sidebar with campaign picker, layer row context menu |
+| P29-G-C | 8-function alignment toolbar, "Fit canvas" button (F), flat LayoutGroup model, Ctrl+G group/select-in-group, Ctrl+Shift+G ungroup, layer panel group rows with collapse |
+| P29-G-D | Unsaved dot indicator, JSON import/export, draft restore/discard prompt, toast notifications for all significant actions, canvas dimensions pill badge |
+| P29-G-E | Already complete from G-A/B (Save & Close removed, aspect ratio + height mode in Properties, Indices toggle in canvas footer) |
+| Bug fix | Multi-select drag: co-selected slots now follow the dragged slot live; mousedown preserves multi-selection |
+
+Deferred to Phase 30: floating toolbar (P30-A), grid/rulers (P30-B), responsive preview (P30-C), workspace route (P30-D), history surface (P30-E), nested group hierarchy (P30-G), alignment model spike (P30-K).
 
 ---
 
@@ -1565,16 +1580,15 @@ extend the workspace/tooling layer rather than repairing the core editing model:
 
 All sub-track acceptance criteria above must be met. Additionally:
 
-- No regressions in existing `useLayoutBuilderState.test.ts` test suite. ( )
-- No regressions in existing LayoutBuilder component tests. ( )
-- All keyboard shortcuts documented in `BuilderKeyboardShortcutsModal` are accurate.
-  ( )
-- Selection state is consistent across Layers, Canvas, and Properties. ( )
+- No regressions in existing `useLayoutBuilderState.test.ts` test suite. (✓ — 1498/1498 passing)
+- No regressions in existing LayoutBuilder component tests. (✓)
+- All keyboard shortcuts documented in `BuilderKeyboardShortcutsModal` are accurate. (✓)
+- Selection state is consistent across Layers, Canvas, and Properties. (✓)
 - Group-aware save/load, undo/redo, draft restore, and JSON import/export all work
-  coherently after the schema change. ( )
+  coherently after the schema change. (✓)
 - A11y: all new interactive elements have aria-labels; a11y announcements (`announce()`)
-  are preserved for new actions. ( )
-- Existing dockview layout persistence remains stable under the unchanged panel set. ( )
+  are preserved for new actions. (✓)
+- Existing dockview layout persistence remains stable under the unchanged panel set. (✓)
 
 ### Total Effort Estimate
 
