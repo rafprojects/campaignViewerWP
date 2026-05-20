@@ -1,10 +1,22 @@
 import { useCallback } from 'react';
-import { Group, Tooltip, ActionIcon } from '@mantine/core';
-import { IconPlus, IconTrash, IconCopy, IconMask } from '@tabler/icons-react';
+import { Group, Tooltip, ActionIcon, Divider } from '@mantine/core';
+import {
+  IconPlus, IconTrash, IconCopy, IconMask,
+  IconAlignBoxLeftMiddle, IconAlignBoxCenterMiddle, IconAlignBoxRightMiddle,
+  IconAlignBoxTopCenter, IconAlignBoxBottomCenter,
+  IconLayoutDistributeHorizontal, IconLayoutDistributeVertical,
+  IconAlignBoxCenterTop,
+} from '@tabler/icons-react';
+import {
+  alignSlotsLeft, alignSlotsRight, alignSlotsTop, alignSlotsBottom,
+  centerSlotsHorizontally, centerSlotsVertically,
+  distributeSlotsHorizontally, distributeSlotsVertically,
+} from '@/utils/alignSlots';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
+import { buildLayerList } from '@/utils/layerList';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
@@ -71,6 +83,18 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
     // Auto-select the new mask sublayer so properties panel opens
     setSelectedMaskSlotId(singleSelectedSlot.id);
   }, [singleSelectedSlot, builder, setSelectedMaskSlotId]);
+
+  // Resolve the selected slots for alignment operations
+  const selectedSlots = builder.template.slots.filter((s) =>
+    builder.selectedSlotIds.has(s.id)
+  );
+
+  const applyAlignment = useCallback(
+    (updates: Record<string, Partial<import('@/types').LayoutSlot>>) => {
+      Object.entries(updates).forEach(([id, patch]) => builder.updateSlot(id, patch));
+    },
+    [builder],
+  );
 
   /** Add an empty mask sublayer to an arbitrary slot by ID — used from the layer row context menu. */
   const handleAddMaskForSlot = useCallback(
@@ -145,15 +169,66 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
         </Group>
       )}
 
+      {/* Alignment toolbar — shown when 2+ slots selected */}
+      {!builder.isPreview && builder.selectedSlotIds.size >= 2 && (
+        <Group
+          gap={2}
+          px={6}
+          py={3}
+          style={{
+            borderBottom: '1px solid var(--mantine-color-default-border)',
+            flexShrink: 0,
+          }}
+        >
+          <Tooltip label="Align left edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsLeft(selectedSlots))} aria-label="Align left edges">
+              <IconAlignBoxLeftMiddle size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Center horizontally">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(centerSlotsHorizontally(selectedSlots))} aria-label="Center horizontally">
+              <IconAlignBoxCenterMiddle size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Align right edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsRight(selectedSlots))} aria-label="Align right edges">
+              <IconAlignBoxRightMiddle size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Distribute horizontally">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(distributeSlotsHorizontally(selectedSlots))} aria-label="Distribute horizontally">
+              <IconLayoutDistributeHorizontal size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Divider orientation="vertical" />
+          <Tooltip label="Align top edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsTop(selectedSlots))} aria-label="Align top edges">
+              <IconAlignBoxTopCenter size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Center vertically">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(centerSlotsVertically(selectedSlots))} aria-label="Center vertically">
+              <IconAlignBoxCenterTop size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Align bottom edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsBottom(selectedSlots))} aria-label="Align bottom edges">
+              <IconAlignBoxBottomCenter size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Distribute vertically">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(distributeSlotsVertically(selectedSlots))} aria-label="Distribute vertically">
+              <IconLayoutDistributeVertical size={13} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      )}
+
       {/* Unified layer list */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         <LayerPanel
           template={builder.template}
-          selectedSlotId={
-            builder.selectedSlotIds.size === 1
-              ? [...builder.selectedSlotIds][0]
-              : null
-          }
+          selectedSlotIds={builder.selectedSlotIds}
           selectedOverlayId={selectedOverlayId}
           isBackgroundSelected={isBackgroundSelected}
           selectedMaskSlotId={selectedMaskSlotId}
@@ -162,6 +237,28 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
             builder.selectSlot(id);
+          }}
+          onToggleSelectSlot={(id) => {
+            setSelectedOverlayId(null);
+            setIsBackgroundSelected(false);
+            setSelectedMaskSlotId(null);
+            builder.toggleSlotSelection(id);
+          }}
+          onRangeSelectSlot={(id) => {
+            setSelectedOverlayId(null);
+            setIsBackgroundSelected(false);
+            setSelectedMaskSlotId(null);
+            const slotLayers = buildLayerList(builder.template).filter((l) => l.kind === 'slot');
+            const clickedIdx = slotLayers.findIndex((l) => l.id === id);
+            const selectedArr = [...builder.selectedSlotIds];
+            const anchorId = selectedArr.length > 0 ? selectedArr[selectedArr.length - 1] : undefined;
+            const anchorIdx = anchorId ? slotLayers.findIndex((l) => l.id === anchorId) : -1;
+            if (anchorIdx >= 0 && clickedIdx >= 0) {
+              const [from, to] = [Math.min(anchorIdx, clickedIdx), Math.max(anchorIdx, clickedIdx)];
+              builder.selectSlotsInRange(slotLayers.slice(from, to + 1).map((l) => l.id));
+            } else {
+              builder.selectSlot(id);
+            }
           }}
           onSelectOverlay={(id) => {
             setSelectedOverlayId(id);
@@ -235,6 +332,16 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           }}
           onDeleteLayer={handleDeleteLayer}
           onAddMask={handleAddMaskForSlot}
+          onSelectGroup={(groupId) => {
+            builder.selectGroup(groupId);
+            setSelectedOverlayId(null);
+            setIsBackgroundSelected(false);
+            setSelectedMaskSlotId(null);
+          }}
+          onDissolveGroup={builder.dissolveGroup}
+          onToggleGroupCollapsed={(groupId, collapsed) =>
+            builder.updateGroup(groupId, { collapsed })
+          }
         />
       </div>
     </div>

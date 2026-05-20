@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
-import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip, SegmentedControl } from '@mantine/core';
-import { IconHandGrab } from '@tabler/icons-react';
+import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip } from '@mantine/core';
+import { IconHandGrab, IconPlus, IconArrowsMaximize } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
@@ -22,6 +22,27 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     selectedMaskSlotId,
     announce,
   } = useBuilderDock();
+
+  const handleAddSlot = useCallback(() => {
+    const id = builder.addSlot();
+    builder.selectSlot(id);
+    setSelectedOverlayId(null);
+    setIsBackgroundSelected(false);
+    announce('New slot added');
+  }, [builder, setSelectedOverlayId, setIsBackgroundSelected, announce]);
+
+  const handleCanvasBgDoubleClick = useCallback(
+    (pctX: number, pctY: number) => {
+      if (builder.isPreview) return;
+      const id = builder.addSlot();
+      builder.updateSlot(id, { x: Math.max(0, pctX - 10), y: Math.max(0, pctY - 10) });
+      builder.selectSlot(id);
+      setSelectedOverlayId(null);
+      setIsBackgroundSelected(false);
+      announce('New slot added at cursor position');
+    },
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, announce],
+  );
 
   // ── Canvas drop handlers ──────────────────────────────────
   const handleAssetCanvasDrop = useCallback(
@@ -50,16 +71,38 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   // ── Zoom / pan state ──────────────────────────────────────
   const [scale, setScale] = useState(1);
   const [isHandTool, setIsHandTool] = useState(false);
+  const [showSlotIndices, setShowSlotIndices] = useState(true);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const canvasAreaRef = useRef<HTMLDivElement>(null);
 
   const handleResetZoom = useCallback(() => {
     transformRef.current?.resetTransform();
   }, []);
 
+  const handleFitCanvas = useCallback(() => {
+    const rect = canvasAreaRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const t = builder.template;
+    const MIN_PX = 400;
+    const MAX_PX = 1200;
+    const canvasW = Math.max(MIN_PX, Math.min(MAX_PX, t.canvasMaxWidth || MAX_PX));
+    const canvasH = t.canvasHeightMode === 'fixed-vh'
+      ? Math.round(window.innerHeight * ((t.canvasHeightVh || 50) / 100))
+      : Math.round(canvasW / t.canvasAspectRatio);
+    const padding = 48;
+    const fitScale = Math.min(
+      (rect.width - padding) / canvasW,
+      (rect.height - padding) / canvasH,
+      2,
+    );
+    transformRef.current?.centerView(Math.max(0.1, fitScale));
+  }, [builder.template]);
+
   const handleCanvasHotkeys = getHotkeyHandler([
     ['h', () => setIsHandTool((v) => !v)],
     ['v', () => setIsHandTool(false)],
     ['0', () => transformRef.current?.resetTransform()],
+    ['f', handleFitCanvas],
     ['=', () => transformRef.current?.zoomIn()],
     ['+', () => transformRef.current?.zoomIn()],
     ['-', () => transformRef.current?.zoomOut()],
@@ -74,6 +117,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       >
         {/* Canvas */}
         <Box
+          ref={canvasAreaRef}
           style={{
             flex: 1,
             overflow: 'hidden',
@@ -102,6 +146,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 selectedSlotIds={builder.selectedSlotIds}
                 isPreview={builder.isPreview}
                 media={media}
+                showSlotIndices={showSlotIndices}
                 snapEnabled={snapEnabled}
                 snapThresholdPx={snapThreshold}
                 onSlotMove={builder.moveSlot}
@@ -121,7 +166,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 onAnnounce={announce}
                 onOverlayMove={builder.moveOverlay}
                 onOverlayResize={builder.resizeOverlay}
-                onCanvasBgDoubleClick={handleResetZoom}
+                onCanvasBgDoubleClick={handleCanvasBgDoubleClick}
                 onSlotUpdate={(id, updates) => builder.updateSlot(id, updates)}
                 selectedMaskSlotId={selectedMaskSlotId}
                 onAssetCanvasDrop={handleAssetCanvasDrop}
@@ -178,39 +223,6 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 Fit to container
               </Button>
               <Divider orientation="vertical" />
-              {/* Height mode toggle */}
-              <Group gap={4} wrap="nowrap">
-                <Text size="xs" c="dimmed">Height:</Text>
-                <SegmentedControl
-                  size="xs"
-                  value={builder.template.canvasHeightMode || 'aspect-ratio'}
-                  onChange={(val) => {
-                    builder.setCanvasHeightMode(val as 'aspect-ratio' | 'fixed-vh');
-                  }}
-                  data={[
-                    { label: 'Ratio', value: 'aspect-ratio' },
-                    { label: 'vh', value: 'fixed-vh' },
-                  ]}
-                  aria-label="Canvas height mode"
-                />
-                {(builder.template.canvasHeightMode || 'aspect-ratio') === 'fixed-vh' && (
-                  <NumberInput
-                    value={builder.template.canvasHeightVh || 50}
-                    onChange={(val) => {
-                      const n = Number(val) || 50;
-                      builder.setCanvasHeightVh(n);
-                    }}
-                    min={1}
-                    max={100}
-                    step={5}
-                    size="xs"
-                    w={64}
-                    suffix="vh"
-                    aria-label="Canvas height in viewport units"
-                  />
-                )}
-              </Group>
-              <Divider orientation="vertical" />
               {/* Snap toggle + sensitivity */}
               <Group gap={6} wrap="nowrap">
                 <Switch
@@ -240,6 +252,26 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 )}
               </Group>
               <Divider orientation="vertical" />
+              <Switch
+                label="Indices"
+                size="xs"
+                checked={showSlotIndices}
+                onChange={(e) => setShowSlotIndices(e.currentTarget.checked)}
+                aria-label="Toggle slot index badges"
+              />
+              <Divider orientation="vertical" />
+              <Tooltip label="Add slot (or double-click canvas)">
+                <Button
+                  size="xs"
+                  variant="light"
+                  leftSection={<IconPlus size={12} />}
+                  onClick={handleAddSlot}
+                  aria-label="Add slot"
+                >
+                  Add Slot
+                </Button>
+              </Tooltip>
+              <Divider orientation="vertical" />
               {/* ── Zoom controls ───────────────────────────── */}
               <Group gap={4} wrap="nowrap">
                 <Tooltip label={isHandTool ? 'Switch to select tool' : 'Hand tool — pan canvas (H)'}>
@@ -251,6 +283,16 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     aria-pressed={isHandTool}
                   >
                     <IconHandGrab size={14} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Fit canvas to viewport (F)">
+                  <ActionIcon
+                    variant="subtle"
+                    size="sm"
+                    onClick={handleFitCanvas}
+                    aria-label="Fit canvas to viewport"
+                  >
+                    <IconArrowsMaximize size={14} />
                   </ActionIcon>
                 </Tooltip>
                 <Tooltip label="Reset zoom to 100%">

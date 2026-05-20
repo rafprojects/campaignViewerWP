@@ -523,12 +523,32 @@ export interface LayoutTemplate {
   slots: LayoutSlot[];
   /** Decorative graphic layers (P15-H). Key is `overlays` for DB compatibility. */
   overlays: LayoutGraphicLayer[];
+  /**
+   * Flat slot/overlay groups (P29-G-C). Each group is a named set of memberIds
+   * that move and can be locked/hidden as a unit. Nesting is deferred to P30-G.
+   */
+  groups?: LayoutGroup[] | undefined;
   /** ISO 8601 created timestamp */
   createdAt: string;
   /** ISO 8601 last-updated timestamp */
   updatedAt: string;
   /** Organizational tags */
   tags: string[];
+}
+
+/** A flat (non-nested) named collection of slot/overlay IDs that can be moved and managed as a unit. */
+export interface LayoutGroup {
+  id: string;
+  /** Display name shown in the Layers panel. */
+  name?: string | undefined;
+  /** IDs of slots and overlays that belong to this group. */
+  memberIds: string[];
+  /** When true the group row is collapsed in the Layers panel. */
+  collapsed?: boolean | undefined;
+  /** When true, member slots/overlays cannot be moved or resized. */
+  locked?: boolean | undefined;
+  /** When false, member slots/overlays are hidden in the editor. */
+  visible?: boolean | undefined;
 }
 
 /**

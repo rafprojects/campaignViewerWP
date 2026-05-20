@@ -7,11 +7,11 @@
  * layers panel. Also exports `getLayerName()` as the single source of truth
  * for display names throughout the builder UI.
  */
-import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-export type LayerKind = 'slot' | 'graphic' | 'background' | 'mask';
+export type LayerKind = 'slot' | 'graphic' | 'background' | 'mask' | 'group';
 
 export type SlotLayerItem = {
   kind: 'slot';
@@ -60,7 +60,19 @@ export type MaskLayerItem = {
   visible: boolean;
 };
 
-export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem | MaskLayerItem;
+export type GroupLayerItem = {
+  kind: 'group';
+  id: string;
+  /** The group data object. */
+  group: LayoutGroup;
+  zIndex: number;
+  arrayIndex: number;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+};
+
+export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem | MaskLayerItem | GroupLayerItem;
 
 // ── Name helper ──────────────────────────────────────────────────────────────
 
@@ -82,6 +94,9 @@ export function getLayerName(item: LayerItem, _template: LayoutTemplate): string
   }
   if (item.kind === 'mask') {
     return item.name || 'Mask';
+  }
+  if (item.kind === 'group') {
+    return item.name || `Group`;
   }
   if (item.name) return item.name;
   if (item.kind === 'slot') {
@@ -106,6 +121,15 @@ export function getLayerName(item: LayerItem, _template: LayoutTemplate): string
  * equal z-index values.
  */
 export function buildLayerList(template: LayoutTemplate): LayerItem[] {
+  const groups = template.groups ?? [];
+
+  // Build a reverse map: memberId → group
+  const memberGroupMap = new Map<string, LayoutGroup>();
+  groups.forEach((g) => g.memberIds.forEach((id) => memberGroupMap.set(id, g)));
+
+  // Track which group IDs have already been inserted
+  const insertedGroupIds = new Set<string>();
+
   const items: LayerItem[] = [];
 
   template.slots.forEach((slot: LayoutSlot, arrayIndex: number) => {
@@ -163,6 +187,29 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
     items.splice(i + 1, 0, maskItem);
   }
 
+  // Insert group header rows: for each item that belongs to a group, insert a group
+  // header immediately before the first member encountered (which will be the highest-z member).
+  // Iterate in reverse so splice indices stay valid.
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]!;
+    if (item.kind === 'background' || item.kind === 'group') continue;
+    const group = memberGroupMap.get(item.id);
+    if (!group || insertedGroupIds.has(group.id)) continue;
+    insertedGroupIds.add(group.id);
+    const groupItem: GroupLayerItem = {
+      kind: 'group',
+      id: group.id,
+      group,
+      zIndex: item.zIndex,
+      arrayIndex: i,
+      name: group.name ?? '',
+      visible: group.visible !== false,
+      locked: group.locked ?? false,
+    };
+    items.splice(i, 0, groupItem);
+    i++; // skip past the just-inserted group header
+  }
+
   // Background is always the bottom-most row.
   const bgItem: BackgroundLayerItem = {
     kind: 'background',
@@ -197,9 +244,9 @@ export function computeReorderedZIndices(
   draggedId: string,
   targetId: string,
 ): Map<string, number> {
-  // Work only with non-background, non-mask items
+  // Work only with non-background, non-mask, non-group items
   const movable = layers.filter((l): l is SlotLayerItem | GraphicLayerItem =>
-    l.kind !== 'background' && l.kind !== 'mask',
+    l.kind !== 'background' && l.kind !== 'mask' && l.kind !== 'group',
   );
 
   const draggedIdx = movable.findIndex((l) => l.id === draggedId);
