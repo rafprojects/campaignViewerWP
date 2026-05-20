@@ -162,9 +162,11 @@ describe('MediaPickerSidebar — auto-assign button', () => {
     expect(screen.getByRole('button', { name: /Auto/i })).toBeDisabled();
   });
 
-  it('calls onAutoAssign when Auto button is clicked', () => {
+  it('calls onAutoAssign when Auto-fill (forward) menu item is clicked', async () => {
     const { onAutoAssign } = renderSidebar();
     fireEvent.click(screen.getByRole('button', { name: /Auto/i }));
+    const menuItem = await screen.findByRole('menuitem', { name: /Auto-fill \(forward\)/i });
+    fireEvent.click(menuItem);
     expect(onAutoAssign).toHaveBeenCalledOnce();
   });
 });

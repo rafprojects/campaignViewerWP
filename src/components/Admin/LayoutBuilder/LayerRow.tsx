@@ -36,6 +36,10 @@ export interface LayerRowProps {
   template: LayoutTemplate;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  /** Called on Ctrl/Cmd+click for multi-select toggle (slot rows only). */
+  onToggleSelect?: ((id: string) => void) | undefined;
+  /** Called on Shift+click for range select (slot rows only). */
+  onRangeSelect?: ((id: string) => void) | undefined;
   onRename: (id: string, name: string) => void;
   onToggleVisible: (id: string) => void;
   onToggleLocked: (id: string) => void;
@@ -69,6 +73,8 @@ export function LayerRow({
   template,
   isSelected,
   onSelect,
+  onToggleSelect,
+  onRangeSelect,
   onRename,
   onToggleVisible,
   onToggleLocked,
@@ -135,7 +141,15 @@ export function LayerRow({
       onDragOver={handleDragOver}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
-      onClick={() => onSelect(item.id)}
+      onClick={(e) => {
+        if (!isNonInteractive && item.kind === 'slot' && (e.ctrlKey || e.metaKey)) {
+          onToggleSelect?.(item.id);
+        } else if (!isNonInteractive && item.kind === 'slot' && e.shiftKey) {
+          onRangeSelect?.(item.id);
+        } else {
+          onSelect(item.id);
+        }
+      }}
       style={{
         cursor: isNonInteractive ? 'default' : 'grab',
         // Mask sublayers are indented to show hierarchy

@@ -48,7 +48,7 @@ const template = {
 function makeProps(overrides: Partial<LayerPanelProps> = {}): LayerPanelProps {
   return {
     template,
-    selectedSlotId: null,
+    selectedSlotIds: new Set<string>(),
     selectedOverlayId: null,
     isBackgroundSelected: false,
     onSelectSlot: vi.fn(),
@@ -113,7 +113,7 @@ describe('LayerPanel', () => {
     // slot-1 (z=2) is at index 1, moving up should reach overlay-1 (z=3) at index 0
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onSelectOverlay })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onSelectOverlay })}
       />,
     );
     const kbd = getKeyboardTarget();
@@ -141,7 +141,7 @@ describe('LayerPanel', () => {
     const onToggleSlotVisible = vi.fn();
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onToggleSlotVisible })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onToggleSlotVisible })}
       />,
     );
     fireEvent.keyDown(getKeyboardTarget(), { key: ' ' });
@@ -182,7 +182,7 @@ describe('LayerPanel', () => {
     const onToggleSlotLocked = vi.fn();
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onToggleSlotLocked })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onToggleSlotLocked })}
       />,
     );
     fireEvent.keyDown(getKeyboardTarget(), { key: 'l' });
@@ -206,7 +206,7 @@ describe('LayerPanel', () => {
     const onBringToFront = vi.fn();
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onBringToFront })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onBringToFront })}
       />,
     );
     fireEvent.keyDown(getKeyboardTarget(), { key: 'f' });
