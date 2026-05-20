@@ -249,3 +249,170 @@ describe('SlotPropertiesPanel — lock size ratio', () => {
     expect(onUpdate).toHaveBeenCalledWith({ lockAspectRatio: true });
   });
 });
+
+// ── Position / size inputs ────────────────────────────────────────────────────
+
+describe('SlotPropertiesPanel — position and size inputs', () => {
+  it('calls onUpdate when name input changes', () => {
+    const { onUpdate } = renderPanel();
+    const nameInput = screen.getByPlaceholderText('Slot');
+    fireEvent.change(nameInput, { target: { value: 'Hero' } });
+    expect(onUpdate).toHaveBeenCalledWith({ name: 'Hero' });
+  });
+
+  it('calls onUpdate with undefined name when name input cleared', () => {
+    const { onUpdate } = renderPanel({ name: 'Existing' });
+    const nameInput = screen.getByPlaceholderText('Slot');
+    fireEvent.change(nameInput, { target: { value: '' } });
+    expect(onUpdate).toHaveBeenCalledWith({ name: undefined });
+  });
+
+  it('calls onUpdate when Width input changes without lock ratio', () => {
+    const { onUpdate } = renderPanel({ lockAspectRatio: false });
+    fireEvent.change(screen.getByLabelText('Width %'), { target: { value: '50' } });
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ width: 50 }));
+  });
+
+  it('calls onUpdate when Height input changes without lock ratio', () => {
+    const { onUpdate } = renderPanel({ lockAspectRatio: false });
+    fireEvent.change(screen.getByLabelText('Height %'), { target: { value: '40' } });
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ height: 40 }));
+  });
+
+  it('propagates linked height when Width changes with lock ratio enabled', () => {
+    const { onUpdate } = renderPanel({ width: 40, height: 20, lockAspectRatio: true });
+    fireEvent.change(screen.getByLabelText('Width %'), { target: { value: '80' } });
+    const call = onUpdate.mock.calls[0]![0] as Record<string, unknown>;
+    expect(call.width).toBe(80);
+    expect(typeof call.height).toBe('number');
+  });
+
+  it('propagates linked width when Height changes with lock ratio enabled', () => {
+    const { onUpdate } = renderPanel({ width: 40, height: 20, lockAspectRatio: true });
+    fireEvent.change(screen.getByLabelText('Height %'), { target: { value: '40' } });
+    const call = onUpdate.mock.calls[0]![0] as Record<string, unknown>;
+    expect(call.height).toBe(40);
+    expect(typeof call.width).toBe('number');
+  });
+
+  it('calls onUpdate when custom clip-path input changes', () => {
+    const { onUpdate } = renderPanel({ shape: 'custom' });
+    fireEvent.change(screen.getByPlaceholderText('polygon(50% 0%, 100% 50%, …)'), { target: { value: 'polygon(0 0, 100% 0, 50% 100%)' } });
+    expect(onUpdate).toHaveBeenCalledWith({ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' });
+  });
+
+  it('calls onUpdate when object-fit changes', async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderPanel({ objectFit: 'cover' });
+    const select = screen.getByText('Cover');
+    await user.click(select);
+    const containOption = await screen.findByText('Contain');
+    await user.click(containOption);
+    expect(onUpdate).toHaveBeenCalledWith({ objectFit: 'contain' });
+  });
+
+  it('calls onUpdate with custom objectPosition when text input changes', () => {
+    const { onUpdate } = renderPanel();
+    const posInput = screen.getByPlaceholderText('50% 50%');
+    fireEvent.change(posInput, { target: { value: '30% 70%' } });
+    expect(onUpdate).toHaveBeenCalledWith({ objectPosition: '30% 70%' });
+  });
+});
+
+// ── Effects section ───────────────────────────────────────────────────────────
+
+describe('SlotPropertiesPanel — shadow effect', () => {
+  it('enables shadow when On segment clicked', () => {
+    const { onUpdate } = renderPanel({ shadow: undefined });
+    // "On" appears in both shadow and tilt sections; first occurrence = shadow
+    fireEvent.click(screen.getAllByText('On')[0]!);
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ shadow: expect.any(Object) }));
+  });
+
+  it('disables shadow when Off segment clicked while shadow is active', () => {
+    const { onUpdate } = renderPanel({ shadow: { offsetX: 2, offsetY: 4, blur: 8, color: 'rgba(0,0,0,0.5)' } });
+    // first "Off" belongs to shadow section
+    fireEvent.click(screen.getAllByText('Off')[0]!);
+    expect(onUpdate).toHaveBeenCalledWith({ shadow: undefined });
+  });
+});
+
+describe('SlotPropertiesPanel — overlay effect', () => {
+  it('changes overlay mode when Darken segment clicked', () => {
+    const { onUpdate } = renderPanel();
+    // "Darken" appears in blend mode Select (hidden) and overlay SegmentedControl (visible label)
+    const darkenEls = screen.getAllByText('Darken');
+    const visibleDarken = darkenEls.find(el => el.closest('[role="radiogroup"]'));
+    fireEvent.click(visibleDarken ?? darkenEls[0]!);
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      overlayEffect: expect.objectContaining({ mode: 'darken' }),
+    }));
+  });
+
+  it('shows intensity slider and hover-only control when overlay is active', () => {
+    renderPanel({ overlayEffect: { mode: 'darken', intensity: 40, onHoverOnly: false } });
+    expect(screen.getByText('Intensity')).toBeInTheDocument();
+    expect(screen.getByText('Always')).toBeInTheDocument();
+    // "Hover" appears as both PropRow label and SegmentedControl option
+    expect(screen.getAllByText('Hover').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('changes hover-only setting to hover', () => {
+    const { onUpdate } = renderPanel({ overlayEffect: { mode: 'darken', intensity: 30, onHoverOnly: false } });
+    // Pick the "Hover" inside a radiogroup (the hover-only SegmentedControl)
+    const hoverEls = screen.getAllByText('Hover');
+    const radioHover = hoverEls.find(el => el.closest('[role="radiogroup"]'));
+    fireEvent.click(radioHover ?? hoverEls[0]!);
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      overlayEffect: expect.objectContaining({ onHoverOnly: true }),
+    }));
+  });
+
+  it('changes hover-only setting back to always', () => {
+    const { onUpdate } = renderPanel({ overlayEffect: { mode: 'darken', intensity: 30, onHoverOnly: true } });
+    fireEvent.click(screen.getByText('Always'));
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      overlayEffect: expect.objectContaining({ onHoverOnly: false }),
+    }));
+  });
+});
+
+describe('SlotPropertiesPanel — tilt effect', () => {
+  it('enables tilt when On segment in tilt section clicked', () => {
+    const { onUpdate } = renderPanel({ tilt: { enabled: false, maxAngle: 15, perspective: 1000, resetSpeed: 300 } });
+    // last "On" segment belongs to tilt (shadow On is first)
+    const onSegments = screen.getAllByText('On');
+    fireEvent.click(onSegments[onSegments.length - 1]!);
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      tilt: expect.objectContaining({ enabled: true }),
+    }));
+  });
+
+  it('shows tilt detail controls when tilt is enabled', () => {
+    renderPanel({ tilt: { enabled: true, maxAngle: 15, perspective: 1000, resetSpeed: 300 } });
+    expect(screen.getByText('Max °')).toBeInTheDocument();
+    expect(screen.getByText('Persp.')).toBeInTheDocument();
+    expect(screen.getByText('Reset')).toBeInTheDocument();
+  });
+});
+
+describe('SlotPropertiesPanel — glow hover effect', () => {
+  it('shows glow color and spread inputs when hover effect is glow', () => {
+    renderPanel({ hoverEffect: 'glow' });
+    // "Glow" appears in the hover-effect SegmentedControl and in the PropRow label
+    expect(screen.getAllByText('Glow').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('Spread')).toBeInTheDocument();
+  });
+});
+
+describe('SlotPropertiesPanel — blend mode', () => {
+  it('calls onUpdate when blend mode changes to multiply', async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderPanel({ blendMode: 'normal' });
+    const select = screen.getByText('Normal');
+    await user.click(select);
+    const option = await screen.findByText('Multiply');
+    await user.click(option);
+    expect(onUpdate).toHaveBeenCalledWith({ blendMode: 'multiply' });
+  });
+});

@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
+import userEvent from '@testing-library/user-event';
 import { GraphicLayerPropertiesPanel, type GraphicLayerPropertiesPanelProps } from './GraphicLayerPropertiesPanel';
 import type { LayoutGraphicLayer } from '@/types';
 
@@ -112,5 +113,114 @@ describe('GraphicLayerPropertiesPanel', () => {
     render(<GraphicLayerPropertiesPanel {...makeProps({ onBringToFront })} />);
     fireEvent.click(screen.getByRole('button', { name: /bring to front/i }));
     expect(onBringToFront).toHaveBeenCalledWith('g1');
+  });
+
+  it('send to back calls onSendToBack with overlay id', () => {
+    const onSendToBack = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onSendToBack })} />);
+    fireEvent.click(screen.getByRole('button', { name: /send to back/i }));
+    expect(onSendToBack).toHaveBeenCalledWith('g1');
+  });
+
+  it('send backward calls onSendBackward with overlay id', () => {
+    const onSendBackward = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onSendBackward })} />);
+    fireEvent.click(screen.getByRole('button', { name: /send backward/i }));
+    expect(onSendBackward).toHaveBeenCalledWith('g1');
+  });
+
+  it('bring forward calls onBringForward with overlay id', () => {
+    const onBringForward = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onBringForward })} />);
+    fireEvent.click(screen.getByRole('button', { name: /bring forward/i }));
+    expect(onBringForward).toHaveBeenCalledWith('g1');
+  });
+});
+
+describe('GraphicLayerPropertiesPanel — name editing', () => {
+  it('updates local state as user types in the name input', async () => {
+    const user = userEvent.setup();
+    render(<GraphicLayerPropertiesPanel {...makeProps()} />);
+    const input = screen.getByLabelText('Graphic layer name');
+    await user.clear(input);
+    await user.type(input, 'NewName');
+    expect(input).toHaveValue('NewName');
+  });
+
+  it('calls onRename on blur when name changed', async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onRename })} />);
+    const input = screen.getByLabelText('Graphic layer name');
+    await user.clear(input);
+    await user.type(input, 'Updated');
+    await user.tab();
+    expect(onRename).toHaveBeenCalledWith('g1', 'Updated');
+  });
+
+  it('resets to display name on blur when input cleared', async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onRename })} />);
+    const input = screen.getByLabelText('Graphic layer name');
+    await user.clear(input);
+    await user.tab();
+    expect(onRename).not.toHaveBeenCalled();
+    expect(input).toHaveValue('Logo');
+  });
+
+  it('commits rename on Enter key', async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onRename })} />);
+    const input = screen.getByLabelText('Graphic layer name');
+    await user.clear(input);
+    await user.type(input, 'ViaEnter');
+    await user.keyboard('{Enter}');
+    expect(onRename).toHaveBeenCalledWith('g1', 'ViaEnter');
+  });
+});
+
+describe('GraphicLayerPropertiesPanel — position/size inputs', () => {
+  it('calls onUpdate with new x when X input changes', () => {
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    const xInput = screen.getByLabelText('X %');
+    fireEvent.change(xInput, { target: { value: '25' } });
+    expect(onUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({ x: 25 }));
+  });
+
+  it('calls onUpdate with new y when Y input changes', () => {
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    const yInput = screen.getByLabelText('Y %');
+    fireEvent.change(yInput, { target: { value: '30' } });
+    expect(onUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({ y: 30 }));
+  });
+
+  it('calls onUpdate with new width when W input changes', () => {
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    const wInput = screen.getByLabelText('W %');
+    fireEvent.change(wInput, { target: { value: '60' } });
+    expect(onUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({ width: 60 }));
+  });
+
+  it('calls onUpdate with new height when H input changes', () => {
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    const hInput = screen.getByLabelText('H %');
+    fireEvent.change(hInput, { target: { value: '45' } });
+    expect(onUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({ height: 45 }));
+  });
+});
+
+describe('GraphicLayerPropertiesPanel — appearance', () => {
+  it('calls onUpdate when click-through switch is toggled', () => {
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    const sw = screen.getByRole('switch', { name: /click-through/i });
+    fireEvent.click(sw);
+    expect(onUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({ pointerEvents: expect.any(Boolean) }));
   });
 });
