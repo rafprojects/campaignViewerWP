@@ -342,10 +342,18 @@ export function LayoutBuilderModal({
             });
             return;
           }
-          builder.setTemplate(parsed as LayoutTemplate, { preserveSelection: false });
+          const defaults = createEmptyTemplate();
+          const imported: LayoutTemplate = {
+            ...defaults,
+            ...(parsed as Partial<LayoutTemplate>),
+            id: '',
+            createdAt: defaults.createdAt,
+            updatedAt: defaults.updatedAt,
+          };
+          builder.setTemplate(imported, { preserveSelection: false });
           notifications.show({
             title: 'Layout imported',
-            message: `"${(parsed as LayoutTemplate).name}" loaded successfully.`,
+            message: `"${imported.name}" loaded successfully.`,
             color: 'green',
             autoClose: 3000,
           });

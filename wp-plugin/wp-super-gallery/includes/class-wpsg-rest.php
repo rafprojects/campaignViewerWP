@@ -2170,11 +2170,13 @@ class WPSG_REST {
         foreach ($media_items as &$item) {
             $current_id = $item['id'] ?? '';
             if ($current_id === '' || isset($seen_ids[$current_id])) {
-                $item['id'] = wp_generate_uuid4();
+                do {
+                    $current_id = wp_generate_uuid4();
+                } while (isset($seen_ids[$current_id]));
+                $item['id'] = $current_id;
                 $ids_backfilled++;
-            } else {
-                $seen_ids[$current_id] = true;
             }
+            $seen_ids[$current_id] = true;
         }
         unset($item);
 

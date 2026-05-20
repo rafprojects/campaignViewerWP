@@ -55,13 +55,14 @@ const MAX_CANVAS_PX = 1200;
 
 // ── Helpers ──────────────────────────────────────────────────
 
-function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
-
 function formatAspectRatio(ratio: number): string {
-  const h = 100;
-  const w = Math.round(ratio * h);
-  const d = gcd(w, h);
-  return `${w / d}:${h / d}`;
+  let bestN = 1, bestD = 1, bestErr = Infinity;
+  for (let d = 1; d <= 99; d++) {
+    const n = Math.round(ratio * d);
+    const err = Math.abs(ratio - n / d);
+    if (err < bestErr) { bestErr = err; bestN = n; bestD = d; }
+  }
+  return `${bestN}:${bestD}`;
 }
 
 // ── Component ────────────────────────────────────────────────

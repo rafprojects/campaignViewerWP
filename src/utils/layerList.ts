@@ -123,7 +123,8 @@ export function getLayerName(item: LayerItem, _template: LayoutTemplate): string
 export function buildLayerList(template: LayoutTemplate): LayerItem[] {
   const groups = template.groups ?? [];
 
-  // Build a reverse map: memberId → group
+  // Build a reverse map: memberId → group (one entry per member; createGroup() enforces
+  // non-overlapping membership so last-write-wins is deterministic for well-formed data)
   const memberGroupMap = new Map<string, LayoutGroup>();
   groups.forEach((g) => g.memberIds.forEach((id) => memberGroupMap.set(id, g)));
 

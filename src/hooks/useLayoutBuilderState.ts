@@ -944,9 +944,13 @@ export function useLayoutBuilderState(
 
   const createGroup = useCallback((memberIds: string[]): string => {
     const id = crypto.randomUUID?.() ?? `group-${Date.now()}`;
+    const uniqueIds = [...new Set(memberIds)];
     mutate((draft) => {
-      draft.groups = [...(draft.groups ?? []), { id, memberIds }];
-    }, `Group (${memberIds.length} layers)`);
+      draft.groups = (draft.groups ?? [])
+        .map((g) => ({ ...g, memberIds: g.memberIds.filter((mid) => !uniqueIds.includes(mid)) }))
+        .filter((g) => g.memberIds.length > 0);
+      draft.groups.push({ id, memberIds: uniqueIds });
+    }, `Group (${uniqueIds.length} layers)`);
     return id;
   }, [mutate]);
 
