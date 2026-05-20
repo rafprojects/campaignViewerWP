@@ -112,6 +112,8 @@ export interface LayoutBuilderActions {
   resizeSlot: (id: string, x: number, y: number, width: number, height: number) => void;
   /** Update arbitrary slot properties. */
   updateSlot: (id: string, updates: Partial<LayoutSlot>) => void;
+  /** Update multiple slots in one history entry. */
+  updateSlots: (updatesById: Record<string, Partial<LayoutSlot>>, label?: string) => void;
   /** Nudge selected slots by a delta (arrow key). */
   nudgeSlots: (ids: string[], dx: number, dy: number) => void;
   /** Assign a specific media item to a slot (with optional cross-campaign metadata). */
@@ -468,6 +470,21 @@ export function useLayoutBuilderState(
           Object.assign(d.slots[idx]!, updates);
         }
       }, 'Update slot'),
+    [mutate],
+  );
+
+  const updateSlots = useCallback(
+    (updatesById: Record<string, Partial<LayoutSlot>>, label = 'Update slots') => {
+      const slotIds = Object.keys(updatesById);
+      if (slotIds.length === 0) return;
+      mutate((d) => {
+        const slotIdSet = new Set(slotIds);
+        for (const slot of d.slots) {
+          if (!slotIdSet.has(slot.id)) continue;
+          Object.assign(slot, updatesById[slot.id]!);
+        }
+      }, label);
+    },
     [mutate],
   );
 
@@ -1009,6 +1026,7 @@ export function useLayoutBuilderState(
     moveSlot,
     resizeSlot,
     updateSlot,
+    updateSlots,
     nudgeSlots,
     assignMediaToSlot,
     clearSlotMedia,

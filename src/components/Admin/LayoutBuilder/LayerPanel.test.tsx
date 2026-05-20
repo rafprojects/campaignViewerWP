@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@/test/test-utils';
+import { render, screen, fireEvent, waitFor } from '@/test/test-utils';
 import { LayerPanel, type LayerPanelProps } from './LayerPanel';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -91,6 +91,21 @@ describe('LayerPanel', () => {
   it('renders the section header', () => {
     render(<LayerPanel {...makeProps()} />);
     expect(screen.getByText('Layers')).toBeInTheDocument();
+  });
+
+  it('honors persisted collapsed groups on first render', async () => {
+    const groupedTemplate = {
+      ...template,
+      groups: [{ id: 'group-1', name: 'Grouped', memberIds: ['slot-1'], collapsed: true }],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: groupedTemplate })} />);
+
+    expect(screen.getByText('Grouped')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Media Layer 1')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Media Layer 2')).toBeInTheDocument();
   });
 
   // ── Keyboard: ArrowDown / ArrowUp ─────────────────────────────────────────

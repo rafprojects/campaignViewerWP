@@ -91,7 +91,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
 
   const applyAlignment = useCallback(
     (updates: Record<string, Partial<import('@/types').LayoutSlot>>) => {
-      Object.entries(updates).forEach(([id, patch]) => builder.updateSlot(id, patch));
+      builder.updateSlots(updates, 'Align slots');
     },
     [builder],
   );

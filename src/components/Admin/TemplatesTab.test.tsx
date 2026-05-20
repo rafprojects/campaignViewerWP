@@ -150,6 +150,20 @@ describe('TemplatesTab', () => {
     expect(screen.getByRole('button', { name: 'Create Template' })).toBeDisabled();
   });
 
+  it('shows a live character count for the template description field', async () => {
+    render(<TemplatesTab apiClient={makeApiClient()} campaigns={campaigns} onNotify={vi.fn()} />);
+    await screen.findByText('Classic Grid');
+
+    fireEvent.click(screen.getByRole('button', { name: /new template/i }));
+    await screen.findByRole('dialog');
+
+    expect(screen.getByText('0 characters')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText(/standard wedding campaign layout/i), {
+      target: { value: 'abc' },
+    });
+    expect(screen.getByText('3 characters')).toBeInTheDocument();
+  });
+
   it('creates a template and notifies on success', async () => {
     const client = makeApiClient();
     const onNotify = vi.fn();

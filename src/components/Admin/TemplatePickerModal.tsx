@@ -1,8 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Modal, SimpleGrid, Card, Text, Badge, Stack, Group, Loader, Center } from '@mantine/core';
 import { IconLayoutGrid } from '@tabler/icons-react';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import classes from './TemplatePickerModal.module.scss';
+
+type TemplateCardStyle = CSSProperties & Record<'--wpsg-glow-color', string>;
+
+function buildTemplateCardStyle(glowColor: string): TemplateCardStyle {
+  return {
+    cursor: 'pointer',
+    '--wpsg-glow-color': glowColor,
+  };
+}
 
 interface Props {
   opened: boolean;
@@ -48,10 +57,7 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
             radius="md"
             padding="md"
             className={classes.card!}
-            style={{
-              cursor: 'pointer',
-              '--wpsg-glow-color': 'var(--mantine-color-gray-6)',
-            }}
+            style={buildTemplateCardStyle('var(--mantine-color-gray-6)')}
             onClick={() => pick(null)}
           >
             <Stack gap={4}>
@@ -75,10 +81,7 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
                 radius="md"
                 padding="md"
                 className={classes.card!}
-                style={{
-                  cursor: 'pointer',
-                  '--wpsg-glow-color': glowColor,
-                }}
+                style={buildTemplateCardStyle(glowColor)}
                 onClick={() => pick(tpl)}
             >
               <Stack gap={4}>

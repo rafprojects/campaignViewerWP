@@ -189,7 +189,7 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
 
   // Insert group header rows: for each item that belongs to a group, insert a group
   // header immediately before the first member encountered (which will be the highest-z member).
-  // Iterate in reverse so splice indices stay valid.
+  // Iterate forward and skip over each inserted header so splice indices stay valid.
   for (let i = 0; i < items.length; i++) {
     const item = items[i]!;
     if (item.kind === 'background' || item.kind === 'group') continue;

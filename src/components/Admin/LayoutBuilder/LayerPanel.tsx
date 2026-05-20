@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { Stack, Text, ScrollArea, ActionIcon, Tooltip } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconLayersLinked, IconLayersOff } from '@tabler/icons-react';
 import { buildLayerList, type GroupLayerItem } from '@/utils/layerList';
@@ -91,6 +91,14 @@ export function LayerPanel({
   const dragIdRef = useRef<string | null>(null);
   // Local collapsed state for groups (mirrors group.collapsed but tracked here for instant UI)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setCollapsedGroups(new Set(
+      (template.groups ?? [])
+        .filter((group) => group.collapsed)
+        .map((group) => group.id),
+    ));
+  }, [template.groups]);
 
   // ── Drag handlers ─────────────────────────────────────────
 

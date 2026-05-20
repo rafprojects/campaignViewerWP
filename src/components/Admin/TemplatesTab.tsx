@@ -24,6 +24,7 @@ export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
   const [createDescription, setCreateDescription] = useState('');
   const [createSource, setCreateSource] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const descriptionCharacterCount = createDescription.length;
 
   const load = useCallback(() => {
     setLoading(true);
@@ -131,6 +132,7 @@ export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
             onChange={(e) => setCreateDescription(e.currentTarget.value)}
             minRows={2}
             maxRows={4}
+            description={`${descriptionCharacterCount} character${descriptionCharacterCount === 1 ? '' : 's'}`}
           />
           <Select
             label="Copy settings from campaign (optional)"

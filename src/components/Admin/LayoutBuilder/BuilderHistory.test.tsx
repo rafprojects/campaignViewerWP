@@ -129,6 +129,27 @@ describe('useLayoutBuilderState — history entries (P19-B)', () => {
     expect(result.current.historyEntries.at(-1)?.label).toBe('Toggle slot lock');
   });
 
+  it('updateSlots creates one custom history entry for multiple slot patches', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
+    let firstSlotId: string;
+    let secondSlotId: string;
+    act(() => { firstSlotId = result.current.addSlot(); });
+    act(() => { secondSlotId = result.current.addSlot(); });
+    const beforeCount = result.current.historyEntries.length;
+
+    act(() => {
+      result.current.updateSlots({
+        [firstSlotId!]: { x: 10 },
+        [secondSlotId!]: { x: 20 },
+      }, 'Align slots');
+    });
+
+    expect(result.current.historyEntries).toHaveLength(beforeCount + 1);
+    expect(result.current.historyEntries.at(-1)?.label).toBe('Align slots');
+    expect(result.current.template.slots.find((slot) => slot.id === firstSlotId)?.x).toBe(10);
+    expect(result.current.template.slots.find((slot) => slot.id === secondSlotId)?.x).toBe(20);
+  });
+
   it('bringForward creates "Bring forward" entry', () => {
     const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
     let slotId: string;
@@ -196,6 +217,7 @@ const {
     moveSlot: vi.fn(),
     resizeSlot: vi.fn(),
     updateSlot: vi.fn(),
+    updateSlots: vi.fn(),
     nudgeSlots: vi.fn(),
     assignMediaToSlot: vi.fn(),
     clearSlotMedia: vi.fn(),

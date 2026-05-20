@@ -274,7 +274,7 @@ export function LayoutSlotComponent({
     (e: MouseEvent) => {
       e.stopPropagation();
       wasInMultiSelectRef.current = isInMultiSelect;
-      if (e.shiftKey) {
+      if (e.metaKey || e.ctrlKey) {
         onToggleSelect(slot.id);
       } else if (!isInMultiSelect) {
         // Only collapse selection when NOT already in a multi-selection;
