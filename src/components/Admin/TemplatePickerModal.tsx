@@ -47,7 +47,7 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
       size="lg"
       centered
     >
-        {loading ? (
+      {loading ? (
         <Center py="xl"><Loader size="sm" /></Center>
       ) : (
         <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="sm">
@@ -83,21 +83,21 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
                 className={classes.card!}
                 style={buildTemplateCardStyle(glowColor)}
                 onClick={() => pick(tpl)}
-            >
-              <Stack gap={4}>
-                <Group gap="xs" wrap="nowrap" justify="space-between">
-                  <Text fw={600} size="sm" truncate style={{ flex: 1 }}>{tpl.name}</Text>
-                  <Badge size="xs" variant="light" color={tpl.source === 'builtin' ? 'blue' : 'gray'}>
-                    {tpl.source === 'builtin' ? 'Built-in' : 'Custom'}
-                  </Badge>
-                </Group>
-                {tpl.description && (
-                  <Text size="xs" c="dimmed" lineClamp={2}>{tpl.description}</Text>
-                )}
-              </Stack>
-            </Card>
-          );
-        })}
+              >
+                <Stack gap={4}>
+                  <Group gap="xs" wrap="nowrap" justify="space-between">
+                    <Text fw={600} size="sm" truncate style={{ flex: 1 }}>{tpl.name}</Text>
+                    <Badge size="xs" variant="light" color={tpl.source === 'builtin' ? 'blue' : 'gray'}>
+                      {tpl.source === 'builtin' ? 'Built-in' : 'Custom'}
+                    </Badge>
+                  </Group>
+                  {tpl.description && (
+                    <Text size="xs" c="dimmed" lineClamp={2}>{tpl.description}</Text>
+                  )}
+                </Stack>
+              </Card>
+            );
+          })}
         </SimpleGrid>
       )}
     </Modal>
