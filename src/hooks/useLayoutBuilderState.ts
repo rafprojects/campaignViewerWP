@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { produce, enableMapSet } from 'immer';
-import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, MediaItem } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 
@@ -177,8 +177,10 @@ export interface LayoutBuilderActions {
   // ── Selection ──
   /** Select a single slot (replaces selection). */
   selectSlot: (id: string) => void;
-  /** Toggle a slot in the selection (Shift+click). */
+  /** Toggle a slot in the selection (Ctrl/Cmd+click). */
   toggleSlotSelection: (id: string) => void;
+  /** Replace selection with the given set of slot IDs (Shift+click range). */
+  selectSlotsInRange: (ids: string[]) => void;
   /** Clear selection. */
   clearSelection: () => void;
 
@@ -202,6 +204,18 @@ export interface LayoutBuilderActions {
   // ── Persistence ──
   /** Mark the current state as saved (clears dirty flag). */
   markSaved: () => void;
+  /** Delete the autosaved draft for the current template from localStorage. */
+  clearDraft: () => void;
+
+  // ── Groups (P29-G-C) ──
+  /** Create a flat group from the given member IDs. Returns the new group ID. */
+  createGroup: (memberIds: string[]) => string;
+  /** Dissolve (delete) a group without removing its members. */
+  dissolveGroup: (groupId: string) => void;
+  /** Update group properties (name, locked, visible, collapsed). */
+  updateGroup: (groupId: string, updates: Partial<LayoutGroup>) => void;
+  /** Select a group: replaces selectedSlotIds with all slot member IDs of the group. */
+  selectGroup: (groupId: string) => void;
 }
 
 export type UseLayoutBuilderReturn = LayoutBuilderState & LayoutBuilderActions;
@@ -806,6 +820,11 @@ export function useLayoutBuilderState(
     [],
   );
 
+  const selectSlotsInRange = useCallback(
+    (ids: string[]) => setSelectedSlotIds(new Set(ids)),
+    [],
+  );
+
   const clearSelection = useCallback(
     () => setSelectedSlotIds(new Set()),
     [],
@@ -904,6 +923,42 @@ export function useLayoutBuilderState(
 
   const markSaved = useCallback(() => setIsDirty(false), []);
 
+  // ── Groups (P29-G-C) ──
+
+  const createGroup = useCallback((memberIds: string[]): string => {
+    const id = crypto.randomUUID?.() ?? `group-${Date.now()}`;
+    mutate((draft) => {
+      draft.groups = [...(draft.groups ?? []), { id, memberIds }];
+    }, `Group (${memberIds.length} layers)`);
+    return id;
+  }, [mutate]);
+
+  const dissolveGroup = useCallback((groupId: string) => {
+    mutate((draft) => {
+      draft.groups = (draft.groups ?? []).filter((g) => g.id !== groupId);
+    }, 'Ungroup');
+  }, [mutate]);
+
+  const updateGroup = useCallback((groupId: string, updates: Partial<LayoutGroup>) => {
+    mutate((draft) => {
+      const g = (draft.groups ?? []).find((g) => g.id === groupId);
+      if (g) Object.assign(g, updates);
+    }, 'Update group');
+  }, [mutate]);
+
+  const selectGroup = useCallback((groupId: string) => {
+    const group = (template.groups ?? []).find((g) => g.id === groupId);
+    if (!group) return;
+    setSelectedSlotIds(new Set(
+      group.memberIds.filter((id) => template.slots.some((s) => s.id === id))
+    ));
+  }, [template]);
+
+  const clearDraft = useCallback(() => {
+    if (!template.id) return;
+    try { localStorage.removeItem(STORAGE_KEY_PREFIX + template.id); } catch { /* ignore */ }
+  }, [template.id]);
+
   // ── Autosave to localStorage ──
   const templateRef = useRef(template);
   templateRef.current = template;
@@ -981,6 +1036,7 @@ export function useLayoutBuilderState(
     // Selection
     selectSlot,
     toggleSlotSelection,
+    selectSlotsInRange,
     clearSelection,
     // History
     undo,
@@ -998,5 +1054,11 @@ export function useLayoutBuilderState(
     togglePreview,
     // Persistence
     markSaved,
+    clearDraft,
+    // Groups (P29-G-C)
+    createGroup,
+    dissolveGroup,
+    updateGroup,
+    selectGroup,
   };
 }
