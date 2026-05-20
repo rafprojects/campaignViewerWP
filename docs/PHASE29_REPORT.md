@@ -1,6 +1,6 @@
 # Phase 29 — Bug Fixes & UI Increments
 
-**Status:** Complete
+**Status:** In Progress
 **Created:** 2026-05-18
 **Last updated:** 2026-05-19
 
@@ -13,9 +13,9 @@
 | P29-C | CompactGridGallery: switch CSS Grid → Flexbox | Complete ✅ | Small |
 | P29-D | Fix campaign ID leaking into media item ID on add | Complete ✅ | Small |
 | P29-E | Admin Panel mobile responsiveness (below 768px) | Complete ✅ | Large |
-| P29-F | Settings Panel: intuitive tab re-grouping | Planned | Medium |
+| P29-F | Settings Panel: intuitive tab re-grouping | Complete ✅ | Medium |
 | P29-G | LayoutBuilder: UX audit, improvements & tooling | Planned | Large |
-| P29-H | Shared Grid Layout Engine | Pre-Evaluation | Medium |
+| P29-H | Shared Grid Layout Utilities | Planned | Medium |
 
 ---
 
@@ -65,6 +65,11 @@
   extend the builder workspace rather than the editing model itself. Floating toolbar,
   grid/ruler/measurement tooling, responsive preview, history-surface collapse, and
   dedicated route/workspace migration are split into Phase 30.
+12. Review of the campaign-listing grid code showed real duplication, but not one shared
+  layout engine. `CardGallery` and `CompactGridGallery` share some fixed-width / gap /
+  row-cap math, while still diverging on column semantics, wrapper sizing, and pagination.
+  P29-H therefore stays in scope as a narrower utility-first refactor, and the deeper
+  generic grid-shell question is deferred into Phase 30.
 
 ---
 
@@ -76,8 +81,10 @@
 | B | Where to backfill missing IDs | Inside `list_media` on read, so legacy items are repaired automatically the first time the Media tab is opened — no separate migration script needed. |
 | C | Grid layout engine for CompactGridGallery | Switch to `flex-wrap`; `auto-fit` grid distributes columns globally so `justifyContent` has no effect on the last row, while flex wrap distributes per row. |
 | D | Remove `'id'` from the param-copy loop in `create_media` | The route `{id}` capture is the campaign post ID — removing it from the fallback loop means a missing body `id` field correctly falls through to `wp_generate_uuid4()` in `build_media_item_from_payload`. |
-| E | Where full design-tool grouping belongs | Keep it in P29-G. The app is not yet in production, so this is the right time to absorb the larger template/editor-model shift instead of deferring it into a later polish phase. |
+| E | Where grouping work is split | Flat groups (P29-G-C) in P29-G — group creation, move-as-unit, lock/visibility, Layers panel rows. Nested group hierarchy (parent/child coordinate chains, recursive transform inheritance on resize) deferred to P30-G. Flat groups provide the primary workflow value; nested hierarchy carries the structural coordinate-space complexity that belongs after the flat model proves stable. |
 | F | Where builder workspace/tooling follow-ons belong | Move floating toolbar, grid/rulers/measurement tooling, responsive preview, history collapse, and route/workspace migration into Phase 30 so P29-G stays focused on the core editing model. |
+| G | How to scope P29-H | Keep it as a shared-utilities refactor, not a single shared layout hook. Preserve `CompactGridGallery` behavior and keep component-specific column / wrapper logic local. |
+| H | What to do with the deeper generic grid-shell idea | Defer it into Phase 30 as a separate pre-evaluation track so P29-H can stay low-risk and behavior-preserving apart from one explicit `CardGallery` row-cap cleanup. |
 
 ---
 
@@ -989,26 +996,46 @@ create confusion for new users.
 
 ### Fix Strategy
 
-Split into **5 sub-tracks** following the established P0/P1/P2 priority pattern from
-P29-E, ordered by impact-to-effort ratio.
+Split into **5 sub-tracks** with one architectural rule: stabilize editor selection,
+canvas-level workflow, and persistence first, then layer advanced behaviors on top.
+
+The original audit remains valid, but several findings are now intentionally split
+across two phases:
+
+- **P29-G** handles the core editing model: selection cleanup, canvas entry,
+  properties/media workflow, alignment, flat grouping, draft restore,
+  import/export, and builder chrome simplification.
+- **Phase 30** handles the next workspace/tooling layer: floating toolbar,
+  grid/rulers/measurement tooling, responsive preview, history-surface collapse,
+  and dedicated route/workspace migration.
 
 ---
 
-#### P29-G-A — Critical UX Fixes (P0)
+#### P29-G-A — Builder Foundation, Selection Model & Core UX (P0)
 
-**Scope:** Items 1-5 above. These are high-impact, low-to-medium effort changes that fix
-confusing or missing core behaviors.
+**Scope:** Items 1-5 above, plus the selection/state cleanup needed to keep the rest of
+the phase coherent.
+
+The current builder mixes two selection models:
+
+- `useLayoutBuilderState` owns `selectedSlotIds`
+- `LayoutBuilderModal` owns `selectedOverlayId`, `isBackgroundSelected`, and
+  `selectedMaskSlotId`
+
+That split works for the current builder, but it becomes the primary source of risk once
+multi-select, grouping, import/export, and richer canvas actions are added. P29-G-A
+therefore starts by normalizing the editor's active-selection surface so Layers,
+Canvas, and Properties can reason about one consistent editing state.
 
 **1. Canvas-level slot creation.**
 
 Add a "Add Slot" button to the canvas footer bar (in `LayoutBuilderCanvasPanel.tsx`,
-next to the existing Zoom/Snap/MaxWidth controls). On click, call `builder.addSlot()`
-and center the new slot on the canvas viewport.
+next to the existing zoom/snap controls). On click, call `builder.addSlot()` and select
+the new slot immediately.
 
-Additionally, enable **double-click on canvas background** to create a slot at that
-position. The `handleCanvasDblClick` handler in `LayoutCanvas.tsx` currently only resets
-zoom — extend it: if `onMediaCanvasDrop` is available, create a new slot at the clicked
-position.
+Additionally, repurpose **double-click on canvas background** from reset-zoom to blank
+slot creation at the clicked position. Zoom reset remains available from the zoom button
+and `0` keyboard shortcut.
 
 ```tsx
 // In LayoutBuilderCanvasPanel.tsx footer:
@@ -1043,25 +1070,29 @@ Replace the empty state in `LayoutBuilderPropertiesPanel.tsx` with a composite v
 └──────────────────────────────────┘
 ```
 
-- Background quick-pick: maps to `builder.setBackgroundMode()` and selects the
-  Background in the Layers panel
-- Aspect ratio: same `SegmentedControl` currently in the header (enables removal from
-  header — see item 26)
-- Max width: `NumberInput` bound to `canvasMaxWidth`
-- Quick Add buttons: `builder.addSlot()`, `builder.addOverlay()` with a default asset
-- Recent Actions: last 3 entries from `builder.historyEntries` (enables eventual removal
-  of the History dock tab — see item 28)
+- Background quick-pick maps to `builder.setBackgroundMode()` and can jump focus to the
+  Background row in Layers.
+- Aspect ratio and canvas height controls move here from the header/footer later in the
+  phase.
+- Max width remains editable here without forcing canvas layout controls into the footer.
+- Quick Add buttons expose the most common canvas-start actions directly.
+- Recent Actions reuse `builder.historyEntries` without changing history semantics yet.
 
-**3. Multi-select in Layers panel.**
+**3. Selection model normalization + Layers-panel multi-select.**
 
-Add Ctrl/Cmd+click and Shift+click support to `LayerRow.tsx` / `LayerPanel.tsx`:
+Refactor the builder's editor-selection surface so the modal/context exposes a coherent
+active-selection model rather than several unrelated flags. Keep `selectedSlotIds` as the
+slot-selection set, but adapt `LayerPanel`/`BuilderDockContext`/`LayoutBuilderPropertiesPanel`
+to consume a normalized active selection.
 
-- On row click, check `e.ctrlKey` / `e.metaKey` → toggle selection (add/remove from
-  `selectedSlotIds`)
-- Track last clicked index; on Shift+click, select all rows between last and current
-- Update `onSelect` callback to use `builder.toggleSlotSelection()` for Ctrl+click and
-  a new `selectRangeSlots(fromId, toId)` action in `useLayoutBuilderState`
-- Visual: selected rows already have the blue left-border + bg style
+Then add Ctrl/Cmd+click and Shift+click support to `LayerRow.tsx` / `LayerPanel.tsx`:
+
+- Ctrl/Cmd+click toggles a slot row in `selectedSlotIds`
+- Shift+click selects a range of slot rows
+- Background, mask, and overlay selections remain single-target unless cross-layer
+  multi-select proves tractable after the foundation cleanup
+- `LayerPanel` must stop assuming a single selected slot ID for all rendering and
+  keyboard-navigation behavior
 
 **4. Fix duplicate shortcut: Ctrl+V → Ctrl+D.**
 
@@ -1077,13 +1108,14 @@ In `LayoutBuilderModal.tsx` `handleKeyDown`:
 
 Update `BuilderKeyboardShortcutsModal.tsx` to show `Ctrl/⌘ + D` instead of `Ctrl/⌘ + V`.
 
-Optionally implement proper copy/paste (Ctrl+C copies slot data to internal clipboard
-state, Ctrl+V pastes it) as a follow-on, but Ctrl+D for duplicate is the minimum fix.
+Proper copy/paste remains a follow-on; P29-G only corrects duplicate to the standard
+shortcut.
 
 **5. Visual indicator for locked slots on canvas.**
 
 In `LayoutSlotComponent.tsx`, when `slot.locked` is true, render a small lock icon
-overlay (similar to the index badge) in the top-right corner:
+overlay (similar to the index badge) in the top-right corner and dim any visible
+selection/resize affordances so the locked state reads clearly:
 
 ```tsx
 {(slot.locked ?? false) && (
@@ -1099,34 +1131,40 @@ overlay (similar to the index badge) in the top-right corner:
 )}
 ```
 
-Also dim the resize handles when locked (they already disappear via
-`enableResizing={!locked}` but the handle opacity transition is not obvious).
-
 **Files affected:**
 
 | File | Change |
 |------|--------|
 | `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Add "Add Slot" button to footer |
 | `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Extend `handleCanvasDblClick` for slot creation |
-| `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.tsx` | Replace empty state with canvas-level defaults view |
-| `src/components/Admin/LayoutBuilder/LayerRow.tsx` | Ctrl+click / Shift+click multi-select |
-| `src/components/Admin/LayoutBuilder/LayerPanel.tsx` | Pass multi-select handlers |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.tsx` | Replace empty state with canvas-level defaults view and normalized selection routing |
+| `src/components/Admin/LayoutBuilder/BuilderDockContext.tsx` | Normalize editor-selection surface shared by dock panels |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Selection orchestration, duplicate shortcut, and state wiring cleanup |
+| `src/components/Admin/LayoutBuilder/LayerRow.tsx` | Ctrl/Cmd-click and Shift-click selection behavior |
+| `src/components/Admin/LayoutBuilder/LayerPanel.tsx` | Multi-select-aware rendering and keyboard behavior |
 | `src/hooks/useLayoutBuilderState.ts` | Add `selectRangeSlots` action |
-| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Change duplicate shortcut to Ctrl+D |
 | `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcutsModal.tsx` | Update shortcut documentation |
 | `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | Lock icon overlay on canvas |
 
 **Acceptance criteria:**
 
-- Clicking "Add Slot" in canvas footer creates a new slot centered on the viewport. ( )
+- Layers, Canvas, and Properties all react consistently to the same active selection
+  model; no panel relies on stale modal-local selection state. ( )
+- Clicking "Add Slot" in canvas footer creates a new slot and selects it. ( )
 - Double-clicking canvas background creates a slot at click position. ( )
 - Properties panel shows canvas-level controls and recent actions when nothing is
   selected. ( )
-- Ctrl+click on layer rows toggles multi-selection; Shift+click selects range. ( )
+- Ctrl/Cmd+click on layer rows toggles slot selection; Shift+click selects a range. ( )
 - Duplicate uses Ctrl+D; Ctrl+V no longer triggers duplicate. ( )
 - Locked slots show a lock icon overlay in the top-right corner on canvas. ( )
 
-**Effort:** ~6-8 hours
+**Effort:** ~8-10 hours
+
+**Bug fixed (P29-G-A follow-on, resolved after P29-G-E):** Multi-slot drag now works correctly.
+
+- `LayoutSlotComponent`: added `isInMultiSelect` prop. `handleMouseDown` skips `onSelect` when the slot is already part of a multi-selection (no shift key), preserving all co-selected slots so the drag moves them together. A tiny-movement "click" on a multi-selected slot collapses to single selection on `onDragStop`.
+- `LayoutCanvas`: added `liveDragDelta` + `draggingSlotId` state. `handleDragFrame` tracks the pixel delta (`currentPx - originalPx`) and stores it; co-selected slots have the delta applied to their `pixelX/pixelY` props so they follow the dragged slot visually. `handleSlotDragStop` commits moves for ALL selected slots using the same % delta (snapping applied only to the primary dragged slot).
+- Uses `selectedSlotIdsRef` / `templateSlotsRef` so neither `handleDragFrame` nor `handleSlotDragStop` recreate on every selection change.
 
 ---
 
@@ -1193,9 +1231,9 @@ Replace the single "Auto" button in `MediaPickerSidebar.tsx` with a `<Menu>`:
 └─────────────────────┘
 ```
 
-Implementation: add `reverseAssignMedia` and `shuffleAssignMedia` actions to
-`useLayoutBuilderState` (or handle in the panel with array manipulation before calling
-`autoAssignMedia`).
+Implementation: prefer panel-level orchestration for reverse/shuffle/clear behavior
+unless a strong reuse case emerges, so `useLayoutBuilderState` does not accumulate
+UI-specific menu commands unnecessarily.
 
 **Files affected:**
 
@@ -1203,7 +1241,6 @@ Implementation: add `reverseAssignMedia` and `shuffleAssignMedia` actions to
 |------|--------|
 | `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx` | Wrap sections in Accordion with 4 groups |
 | `src/components/Admin/LayoutBuilder/MediaPickerSidebar.tsx` | Add search input, list/grid toggle, auto-assign menu |
-| `src/hooks/useLayoutBuilderState.ts` | Add `reverseAssignMedia`, `shuffleAssignMedia`, `clearAllMedia` actions |
 
 **Acceptance criteria:**
 
@@ -1219,9 +1256,11 @@ Implementation: add `reverseAssignMedia` and `shuffleAssignMedia` actions to
 
 ---
 
-#### P29-G-C — Canvas Tooling Additions (P1/P2)
+#### P29-G-C — Alignment, Fit & Flat Grouping (P1/P2)
 
-**Scope:** Items 7, 8, 9, 17 above. Medium-to-high effort, medium impact.
+**Scope:** Items 7, 8, 9 above. Item 17 (grid overlay / snap-to-grid) is now moved to
+Phase 30 because it belongs with rulers and measurement overlays as one deliberate
+canvas-tooling design.
 
 **7. Alignment and distribute tools.**
 
@@ -1248,19 +1287,26 @@ export function distributeSlotsHorizontally(slots: LayoutSlot[], canvasWidth: nu
 // ... etc for vertical
 ```
 
-**8. Grouping feature.**
+**8. Flat group model.**
 
-Add slot grouping (Ctrl+G / Ctrl+Shift+G) to `useLayoutBuilderState`:
+Add first-level grouping to the builder. Groups are flat: all member positions stay in
+canvas coordinates. Nested group hierarchy (parent/child coordinate chains, recursive
+transform inheritance on resize) is deferred to P30-G.
 
-- New `groups` array on `LayoutTemplate` (or as builder-local state): `{ id, slotIds,
-  name }`
-- Grouped slots share a transform origin; moving/resizing the group moves all members
-  relative to their offsets
-- In Layers panel, show groups as expandable parent rows with indented child slots
-- Visual: grouped slots get a colored handle border (different from selection blue)
-
-This is the highest-effort item in this track. Can be scoped down to "visual grouping
-only" (select multiple, group them, they move together) without full transform-inheritance.
+- New `groups` array on `LayoutTemplate`, each entry storing member IDs (slots and
+  graphic layers), a `name`, `locked`, and `visible` flag.
+- Background and mask sublayers remain non-groupable; they already have dedicated
+  hierarchy rules.
+- `Ctrl/⌘ + G` groups the current compatible selection.
+- `Ctrl/⌘ + Shift + G` ungroups the active group.
+- Selecting a group selects the group as an entity with a computed bounding box (union
+  of member bounds in canvas coordinates).
+- Moving a group translates all members by the same delta.
+- Resizing a group scales member positions proportionally relative to the group origin;
+  individual member sizes do not change in this version.
+- Layers panel renders expandable group rows with lock/visibility affordances and drag
+  reordering.
+- Undo/redo, draft restore, save/load, and JSON import/export all become group-aware.
 
 **9. Fit to Screen zoom.**
 
@@ -1276,48 +1322,55 @@ const fitScale = Math.min(fitScaleX, fitScaleY, 1);
 transformRef.current?.setTransform(0, 0, fitScale);
 ```
 
-**17. Grid overlay with snap-to-grid.**
-
-Add a toggle in the canvas footer (next to existing Snap toggle):
-
-```
-[Grid] [Cell: 20px ▾]  [Snap to Grid ☐]
-```
-
-- Grid overlay: CSS `background-image` with `linear-gradient` creating a dot or line
-  grid pattern on the canvas background
-- Snap-to-grid: on drag stop, round slot position/size to the nearest grid cell
-- Cell size options: 10px, 20px, 25px, 50px
-
-Implementation: add `gridEnabled`, `gridSize`, `snapToGrid` state to
-`LayoutBuilderCanvasPanel`, pass to `LayoutCanvas` for rendering and snap computation.
-
 **Files affected:**
 
 | File | Change |
 |------|--------|
 | `src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx` | Alignment toolbar (shown when 2+ selected) |
 | `src/utils/alignSlots.ts` | **New file** — alignment/distribution computation helpers |
-| `src/hooks/useLayoutBuilderState.ts` | Group CRUD actions, group-aware move/resize |
-| `src/components/Admin/LayoutBuilder/LayerPanel.tsx` | Group rows in layer list |
-| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Fit button, grid toggle + cell size selector |
-| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Grid overlay rendering, snap-to-grid on drag stop |
+| `src/hooks/useLayoutBuilderState.ts` | Group CRUD actions, nested-group state, group-aware move/resize/history |
+| `src/components/Admin/LayoutBuilder/LayerPanel.tsx` | Group rows, nesting, drag reorder, and selection behavior |
+| `src/components/Admin/LayoutBuilder/LayerRow.tsx` | Group row affordances and nesting visuals |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Fit button and group-aware canvas actions |
+| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Group selection bounds and group transform handling |
+| `src/types/index.ts` | Group data model added to `LayoutTemplate` |
+| `src/utils/layerList.ts` | Group-aware layer flattening / ordering |
 
 **Acceptance criteria:**
 
-- Alignment toolbar appears when 2+ slots selected; 8 alignment options work correctly. ( )
-- Groups can be created (Ctrl+G), expanded/collapsed in Layers panel, and moved as a unit. ( )
-- "Fit" button zooms canvas to fit within viewport with padding. ( )
-- Grid overlay renders on canvas; snap-to-grid rounds positions on drag stop. ( )
-- Grid cell size is configurable (10/20/25/50px). ( )
+- Alignment toolbar appears when 2+ slots selected; 8 alignment options work correctly. (✓)
+- Groups can be created (Ctrl/⌘+G), expanded/collapsed in Layers panel. (✓)
+- Group header row in Layers panel shows member count, collapse toggle, and ungroup button. (✓)
+- Selecting a group header selects all its slot members. (✓)
+- Resizing a group proportionally repositions members relative to the group origin. (deferred → P30-G)
+- Moving a group as a unit on canvas deferred to P29-G multi-select drag fix (tracked under P29-G-A bug). (deferred)
+- Groups can contain slots and graphic layers; nesting groups inside groups is not
+  supported in this version (deferred to P30-G). (✓)
+- "Fit" button zooms canvas to fit within viewport with padding. (✓)
+- Grouped templates persist through save/load, draft restore, undo/redo, and JSON
+  import/export — groups live on `LayoutTemplate.groups` which is serialized/restored with the template. (✓)
 
-**Effort:** ~10-14 hours (grouping is the bulk; alignment and grid are each ~2-3h)
+**Implemented:**
+- `src/utils/alignSlots.ts` — 8 pure alignment/distribution functions (left, right, top, bottom, center-H, center-V, distribute-H, distribute-V)
+- `LayoutBuilderLayersPanel.tsx` — alignment toolbar conditionally shown when `selectedSlotIds.size >= 2`
+- `LayoutBuilderCanvasPanel.tsx` — "Fit" button (`IconArrowsMaximize`) + `F` keyboard shortcut using `centerView(fitScale)` from react-zoom-pan-pinch
+- `src/types/index.ts` — `LayoutGroup` interface + `groups?: LayoutGroup[]` on `LayoutTemplate`
+- `src/hooks/useLayoutBuilderState.ts` — `createGroup`, `dissolveGroup`, `updateGroup`, `selectGroup` actions + history
+- `LayoutBuilderModal.tsx` — Ctrl/⌘+G (group OR expand-to-group) and Ctrl/⌘+Shift+G (ungroup) keyboard shortcuts; Ctrl+G when any selected slot is already in a group selects all group members instead of creating a new group
+- `src/utils/layerList.ts` — `GroupLayerItem` type + group header rows in `buildLayerList` output
+- `LayerPanel.tsx` — group header rows with expand/collapse, member count, ungroup button; member rows indented
+
+**Effort:** ~5h actual
 
 ---
 
-#### P29-G-D — Feedback, Polish & Info (P2)
+---
 
-**Scope:** Items 15, 16, 18, 30, 31, 32 above. Low effort, incremental UX polish.
+#### P29-G-D — Draft Recovery, Notifications, Import/Export & Feedback (P1/P2)
+
+**Scope:** Items 15, 16, 30, 31, 32 above. Item 18 (floating toolbar) is moved to
+Phase 30 because it builds on the stabilized selection/grouping model rather than fixing
+the model itself.
 
 **15. Move unsaved indicator to template name.**
 
@@ -1348,26 +1401,10 @@ Add two buttons to the header (or a template dropdown menu):
 Validation: check required fields (`name`, `slots` array, `canvasAspectRatio`). Show
 error notification on invalid JSON.
 
-**18. Contextual floating toolbar (quick actions).**
-
-When a slot is selected, render a small floating bar near the slot's top-center edge
-(on the canvas, not the properties panel):
-
-```
-┌──────┬──────┬──────┬──────┐
-│ ⧉ Dup│ 🗑 Del│ 🔲 Mask│ ⬡ Shape│
-└──────┴──────┴──────┴──────┘
-```
-
-Position: computed from the slot's pixel position on canvas, rendered as an absolutely
-positioned element in `LayoutSlotComponent.tsx` or as an overlay in `LayoutCanvas.tsx`.
-
-This is a polish item — the same actions are all accessible via Layers panel toolbar
-and keyboard shortcuts. The floating toolbar reduces clicks for frequent operations.
-
 **30. Toast notifications for significant actions.**
 
-Add `@mantine/notifications` provider (if not already present) and dispatch toasts for:
+Reuse the existing `@mantine/notifications` mount that already exists at the app shell.
+Do **not** add a second provider. Dispatch toasts for:
 
 - Slot added / deleted / duplicated
 - Media assigned / unassigned
@@ -1380,9 +1417,13 @@ Replace or supplement the existing `announce()` (a11y-only) calls with
 
 **31. Draft restored message on reopen.**
 
-In `LayoutBuilderModal.tsx`, when the modal opens and there's a draft in
-`localStorage` (`wpsg_layout_draft_${template.id}`), show a toast:
-`"Draft restored — you had unsaved changes from your last session."`
+The builder already autosaves drafts. P29-G adds the missing reopen behavior:
+
+- detect `wpsg_layout_draft_${template.id}` on builder open
+- compare draft/template freshness
+- prompt the user to restore or discard the draft rather than silently applying it
+- clear the stored draft on explicit discard or successful save
+- show a visible notification when a draft is restored
 
 **32. Canvas dimensions as styled overlay.**
 
@@ -1401,28 +1442,36 @@ Include aspect ratio display alongside dimensions.
 
 | File | Change |
 |------|--------|
-| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Unsaved dot, import/export buttons, draft restored toast |
-| `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | Floating quick-action toolbar (conditional render when selected) |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Unsaved dot, import/export buttons, draft restore/discard prompt, high-signal notifications |
 | `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Styled dimension badge with aspect ratio |
-| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Toast notifications wrapper (if Notifications provider needed) |
+| `src/hooks/useLayoutBuilderState.ts` | Draft cleanup hooks if needed after save/restore/discard |
 
 **Acceptance criteria:**
 
-- Unsaved dot appears next to template name; old "Unsaved" text removed. ( )
-- Export downloads a valid JSON file; Import loads it and replaces current template. ( )
-- Invalid JSON import shows error notification; does not corrupt current state. ( )
-- Floating toolbar appears near selected slot; all 4 buttons work. ( )
-- Toast notifications appear for add/delete/duplicate/assign/save actions. ( )
-- Draft restored message appears when reopening with unsaved draft. ( )
-- Canvas dimensions include aspect ratio display. ( )
+- Unsaved dot appears next to template name; old "Unsaved" text removed. (✓)
+- Export downloads a valid JSON file; Import loads it and replaces current template. (✓)
+- Invalid JSON import shows error notification; does not corrupt current state. (✓)
+- Draft reopen flow prompts to restore or discard when a draft exists. (✓)
+- Restoring a draft shows a visible success notification; discarding clears the draft. (✓)
+- Toast notifications appear for delete/duplicate/assign/overlay-upload/bg-upload/save actions. (✓)
+- Canvas dimensions include aspect ratio display. (✓)
 
-**Effort:** ~4-6 hours
+**Implemented:**
+| File | Change |
+|------|--------|
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Unsaved dot next to name; removed old italic text; export/import buttons with hidden file input; `notifications.show()` for delete, duplicate, auto-assign, overlay upload, bg upload, save success/failure; draft restore/discard prompt on open; `clearDraft()` called after successful save |
+| `src/components/Admin/LayoutBuilder/LayoutCanvas.tsx` | Pill badge with `{w}×{h}px · {ratio} · {n} slots`; `Text` import removed; `formatAspectRatio(ratio)` helper using GCD |
+| `src/hooks/useLayoutBuilderState.ts` | `clearDraft()` action added to interface and return object |
+
+**Effort:** ~5-7 hours
 
 ---
 
-#### P29-G-E — Cleanup & Simplification (P2)
+#### P29-G-E — Header/Footer Simplification & Finishing Controls (P2)
 
-**Scope:** Items 25-29 above. Low effort, removes clutter.
+**Scope:** Items 25, 26, 27, and 29 above. Item 28 (History collapse) is moved to
+Phase 30 because it changes the dock/workspace surface after the richer editor model
+has settled.
 
 **25. Remove "Save & Close" button.**
 
@@ -1430,41 +1479,15 @@ Remove the `<Button variant="light" onClick={handleSaveAndClose}>` from the head
 right side. Users can Save then Close in two clicks. The dirty guard on Close already
 prevents data loss.
 
-One-liner removal from `LayoutBuilderModal.tsx`.
-
 **26. Move aspect ratio selector from header to Properties panel.**
 
 Remove the `SegmentedControl` for aspect ratio from the header center. Add it to the
-canvas-level defaults view (item 2 above) or the canvas footer bar.
+canvas-level defaults view created in P29-G-A.
 
 **27. Make slot index badges togglable.**
 
 Add a switch in the canvas footer: `Show indices` (default: on). Pass as a prop through
 to `LayoutSlotComponent` to conditionally render the index badge div.
-
-**28. Collapse History into header dropdown.**
-
-Remove the History dock tab. Instead, make the Undo button in the header open a dropdown
-menu showing the last 10 history entries (from `builder.historyEntries`), with jump-to
-and undo/redo actions. This eliminates the dedicated dock panel while keeping the feature
-accessible.
-
-```tsx
-<Menu withinPortal>
-  <Menu.Target>
-    <ActionIcon onClick={builder.undo} disabled={!builder.canUndo}>
-      <IconArrowBackUp size={18} />
-    </ActionIcon>
-  </Menu.Target>
-  <Menu.Dropdown>
-    {historyEntries.slice(-10).reverse().map(entry => (
-      <Menu.Item onClick={() => builder.jumpToHistoryIndex(...)}>
-        {entry.label}
-      </Menu.Item>
-    ))}
-  </Menu.Dropdown>
-</Menu>
-```
 
 **29. Move canvas height mode controls to Properties panel.**
 
@@ -1475,46 +1498,62 @@ footer. Add them to the canvas-level defaults view in the Properties panel (item
 
 | File | Change |
 |------|--------|
-| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Remove Save & Close, move aspect ratio, collapse History into dropdown |
-| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Remove height mode controls, add "Show indices" toggle |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Remove Save & Close and move aspect ratio out of header |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx` | Remove height mode controls from footer and add "Show indices" toggle |
 | `src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx` | Conditional index badge render |
 | `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.tsx` | Add height mode + aspect ratio to canvas-level view |
-| `src/components/Admin/LayoutBuilder/BuilderDockContext.tsx` | Remove `history` from dock components if History tab is removed |
-| `src/components/Admin/LayoutBuilder/index.ts` | Remove `BuilderHistoryPanel` export if no longer used |
 
 **Acceptance criteria:**
 
-- "Save & Close" button is removed; Save and Close remain functional. ( )
-- Aspect ratio control is in Properties panel or canvas footer, not header center. ( )
-- Slot index badges can be toggled on/off. ( )
-- History panel is removed as a dock tab; history is accessible via header dropdown. ( )
-- Canvas height mode controls are in Properties panel. ( )
-- Canvas footer is cleaner and less cluttered. ( )
-- Header is less crowded. ( )
+- "Save & Close" button is removed; Save and Close remain functional. (✓ — was already absent; removed in P29-G-A)
+- Aspect ratio control is in Properties panel or canvas footer, not header center. (✓ — in canvas-level Properties panel view)
+- Slot index badges can be toggled on/off. (✓ — Indices switch in canvas footer)
+- Canvas height mode controls are in Properties panel. (✓ — Ratio/vh SegmentedControl + vh NumberInput in canvas-level Properties view)
+- Canvas footer is cleaner and less cluttered. (✓)
+- Header is less crowded. (✓)
+
+**Note:** All P29-G-E items were already complete from P29-G-A/B work. No new code changes required.
 
 **Effort:** ~2-3 hours
 
 ---
 
+### Explicit Phase 30 Deferrals
+
+The following audit findings remain valid, but are now tracked in Phase 30 because they
+extend the workspace/tooling layer rather than repairing the core editing model:
+
+| Audit item | Deferred to | Reason |
+|------------|-------------|--------|
+| 10 — Rulers / measurement indicators | `P30-B` | Best designed together with grid and snap priority |
+| 14 — Responsive preview | `P30-C` | Preview workspace is a shell/tooling feature rather than core editing-model work |
+| 17 — Grid overlay / snap-to-grid | `P30-B` | Needs to be coordinated with rulers and measurement overlays |
+| 18 — Floating contextual toolbar | `P30-A` | Builds on the stabilized selection/grouping model |
+| 28 — History collapse | `P30-E` | Better after grouping/history semantics settle |
+| Dedicated builder route/workspace | `P30-D` | App-shell and WordPress-admin integration task, not local builder UX |
+| 8 (nested group hierarchy) | `P30-G` | Parent/child coordinate chains and recursive transform inheritance belong after the flat group model (P29-G-C) proves stable |
+
+---
+
 ### Execution Priority
 
-1. **P29-G-A** (Critical fixes) — go first. These are independent, low-risk, and fix
-   confusing or broken UX patterns.
-2. **P29-G-B** (Properties + Media) — second. Depends on G-A item 2 (canvas-level
-   Properties view) for the reorganized panel structure.
-3. **P29-G-C** (Canvas tooling) — third. Alignment and grid are independent; grouping
-   is the largest single effort item.
-4. **P29-G-D** (Feedback & polish) — can run in parallel with G-C.
-5. **P29-G-E** (Cleanup) — last. These removals make sense after the new features are
-   in place (e.g., aspect ratio moves out of header only after it's available in the
-   Properties panel).
+1. **P29-G-A** — foundation first. Normalize selection/state and land the canvas-entry
+  fixes before any deeper builder features are layered on top.
+2. **P29-G-E** — once canvas-level properties exist, remove Save & Close and move
+  aspect/height controls out of header/footer clutter.
+3. **P29-G-B** — reorganize properties and media flows after the selection and canvas
+  foundation is stable.
+4. **P29-G-C** — land alignment, fit, and flat grouping on top of the now-stable
+  selection model.
+5. **P29-G-D** — complete visible feedback, draft recovery, and schema-aware
+  import/export after the grouping model is settled.
+6. **Phase 30** — workspace/tooling follow-ons begin only after P29-G stabilizes the
+  core editing model.
 
 ### Nice-to-Have (Deferred to Future Phase)
 
 | Item | Description | Why deferred |
 |------|-------------|-------------|
-| 10 | Ruler / measurement indicators | High effort for marginal gain; audit-only feature |
-| 14 | Responsive preview (viewport width presets) | Requires significant canvas rendering changes |
 | 19 | Slot templates / saved compositions | Requires new data model and persistence layer |
 | 20 | Before/after comparison slider in preview | Nice-to-have; not a workflow blocker |
 | 21 | Batch operations (apply filter to all selected) | Can be addressed after alignment tools land |
@@ -1530,20 +1569,23 @@ All sub-track acceptance criteria above must be met. Additionally:
 - No regressions in existing LayoutBuilder component tests. ( )
 - All keyboard shortcuts documented in `BuilderKeyboardShortcutsModal` are accurate.
   ( )
+- Selection state is consistent across Layers, Canvas, and Properties. ( )
+- Group-aware save/load, undo/redo, draft restore, and JSON import/export all work
+  coherently after the schema change. ( )
 - A11y: all new interactive elements have aria-labels; a11y announcements (`announce()`)
   are preserved for new actions. ( )
-- Dockview layout persistence (localStorage) is not broken by tab removals. ( )
+- Existing dockview layout persistence remains stable under the unchanged panel set. ( )
 
 ### Total Effort Estimate
 
 | Sub-track | Hours |
 |-----------|-------|
-| P29-G-A (Critical fixes) | 6-8 |
+| P29-G-A (Foundation + core UX) | 8-10 |
 | P29-G-B (Properties + Media) | 5-7 |
-| P29-G-C (Canvas tooling) | 10-14 |
-| P29-G-D (Feedback & polish) | 4-6 |
+| P29-G-C (Alignment + fit + flat grouping) | 6-9 |
+| P29-G-D (Draft recovery + feedback + import/export) | 5-7 |
 | P29-G-E (Cleanup) | 2-3 |
-| **Total** | **27-38 hours** |
+| **Total** | **26-36 hours** |
 
 ---
 
@@ -1573,8 +1615,13 @@ All sub-track acceptance criteria above must be met. Additionally:
 ## Outcome
 
 - Five tracks shipped: P29-A, P29-B, P29-C, P29-D, P29-E (all complete ✅).
-- P29-F (Settings Panel tab re-grouping) planned — analysis complete, implementation pending.
-- P29-G (LayoutBuilder UX audit) planned.
+- P29-F (Settings Panel tab re-grouping) complete ✅ — 6-tab structure reorganized into 8 tabs (7 visible + 1 hidden); `MediaDisplaySettingsSection` split into `GalleryStyleAccordion` and `GalleryNavigationAccordion`; all 54 unit tests passing; e2e updated.
+- P29-G (LayoutBuilder UX audit) planned — recalibrated to start with
+  selection/workflow foundation; flat grouping (move-as-unit, Layers rows, group-aware
+  persistence) lands in P29-G-C while nested group hierarchy defers to P30-G.
+- Phase 30 is established for the deferred builder workspace/tooling follow-ons:
+  floating toolbar, grid/rulers/measurement tooling, responsive preview, history
+  collapse, and dedicated builder workspace routing.
 - Deferred from P29-E: Analytics chart height reduction on mobile (low impact, no complaints).
 - Follow-on to consider: audit whether `rescan_all_media_types` and other
   functions that call `update_post_meta('media_items', ...)` are similarly
@@ -1583,427 +1630,176 @@ All sub-track acceptance criteria above must be met. Additionally:
 
 ---
 
-## Track P29-H — Shared Grid Layout Engine
+## Track P29-H — Shared Grid Layout Utilities
 
 ### Problem
 
-`CardGallery` (the main campaign listing viewer at `src/components/CampaignGallery/CardGallery.tsx`)
-and `CompactGridGallery` (the modular adapter at
-`src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx`) both implement
-nearly identical flex-wrap grid layout engines, but with different data models and feature sets.
+The earlier P29-H draft correctly identified duplication between `CardGallery`
+and `CompactGridGallery`, but it overstated the amount of behavior that should
+be unified in one abstraction.
 
-**Duplicated layout logic (~110 lines of near-duplicate code across two files):**
+The two components share some low-level layout math:
 
-| Concern | CardGallery | CompactGridGallery |
-|---------|-------------|-------------------|
-| Column calculation | `effectiveColumns` + `maxCols` (resolve `cardGridColumns`, `cardMaxColumns`, `cardAutoColumnsBreakpoints`, container width via `resolveColumnsFromWidth`) | `maxColumns` from `gridCardMaxColumns` (0-8 clamped) |
-| Fixed-width branch | `fixedCardWidth` computation with `MIN_FIXED_CARD_WIDTH_PX = 120` floor, scale application, percentage-to-pixel resolution, fallback to responsive | `cardWidth` from `gridCardWidth` × `itemScale`, `cardWidthUnit` |
-| Grid maxWidth cap | `calc(N × width + (N-1) × gap)` with `marginInline: 'auto'` | Same pattern: `min(100%, calc((width × N) + gap × (N-1)))` |
-| Responsive width calc | `calc((100% - totalGap) / columns)` | `min(width, calc(50% - gap/2))` (via flexBasis) |
-| Gap handling | Row/column gap with unit support, percentage gap clamped to ≥4px minimum | Single gap value with unit |
-| Breakpoint resolution | `useBreakpoint(gridContainerRef)` → `resolveCardBreakpointSettings()` | `containerDimensions` prop (passed from `GallerySectionWrapper`) |
-| Justification | `cardGridJustification` → `justifyContent` | `common.adapterJustifyContent` → `justifyContent` |
+- fixed-width scaling and optional percent-to-pixel resolution
+- fixed-row `maxWidth` calculation
+- gap formatting / optional normalization
 
-**Why they can't share the same component:**
+They do **not** share one layout model:
 
-The two components solve fundamentally different problems:
+- `CardGallery` is column-driven, breakpoint-aware, and pagination-sensitive.
+- `CompactGridGallery` is width-driven and relies on its current
+  `flexBasis: min(width, calc(50% - gap / 2))` strategy rather than resolved
+  breakpoint columns.
+- `CardGallery` has a fixed-vs-responsive branch with a 120px fallback floor.
+- `CompactGridGallery` has one continuous flex-wrap layout with optional
+  container capping via `gridCardMaxColumns`.
 
-| Aspect | CardGallery | CompactGridGallery |
-|--------|-------------|-------------------|
-| Data model | `Campaign[]` | `MediaItem[]` |
-| Card content | Rich card with thumbnail, title, description, tags, company badge, media counts, access state, request access form | Thumbnail + hover overlay (play/zoom icon) |
-| Click action | Opens `CampaignViewer` modal (full campaign detail with galleries) | Opens `Lightbox` (single image/video carousel) |
-| Above-grid features | Filter tabs, search, pagination (load-more/paginated/show-all), access modes, admin in-context editing, header with title/subtitle/background | Gallery heading with icon, lightbox |
-| Responsibility | Full-page viewer with header, filters, grid, pagination, modal | Adapter component within a `GallerySectionWrapper` |
+A single shared `useGridLayout` hook would therefore either accumulate strategy
+flags until it stopped being clear, or it would change `CompactGridGallery`
+behavior by introducing a column-resolution model it does not use today.
 
-Forcing CardGallery into the adapter system would require either making adapters accept
-arbitrary item types (breaking the clean `MediaItem[]` contract) or converting campaigns
-to media-item wrappers (adding unnecessary indirection).
+### Decision
 
-**The real waste is the grid layout math**, not the card rendering or click handlers.
+Keep P29-H, but narrow it.
 
-### Proposed Solution
+- Use pure shared utilities under `src/utils`, not a new React hook under
+  `src/hooks`.
+- Preserve current `CompactGridGallery` behavior in this phase.
+- Keep `CardGallery` column resolution, pagination math, and responsive wrapper
+  sizing local to `CardGallery`.
+- Intentionally normalize `CardGallery` fixed-width row `maxWidth` to the
+  resolved `effectiveColumns` count instead of the broader `maxCols` cap. This
+  is the one deliberate behavior change in the track.
+- Defer the deeper generic grid-shell / `renderItem` investigation into Phase 30
+  Track P30-F.
 
-**Option A (Primary — implement now):** Extract the shared grid layout logic into a reusable
-hook that both components consume. The hook returns computed layout values; each component
-applies them to its own card rendering logic.
+### Scope
 
-**Option B (Investigate for future phase):** Make `CompactGridGallery` a generic grid
-shell that accepts a `renderItem` prop, allowing CardGallery to delegate the grid container
-and column wrapping to the adapter. This would require bridging the type gap and extracting
-CardGallery's above-grid features (filters, search, pagination) into separate wrapper
-components.
+#### Shared now
 
----
+Extract only the layout math that is genuinely reusable:
 
-### Option A — Shared Grid Layout Hook (Primary Implementation)
+1. Fixed-width scaling and unit resolution.
+2. Optional percent-to-pixel width resolution.
+3. Optional minimum-width fallback for fixed cards.
+4. Fixed-row `maxWidth` CSS generation.
+5. Gap CSS formatting with optional minimum pixel floor.
 
-#### What to Extract
+#### Keep local
 
-From `CardGallery.tsx`, extract these pure computations:
+Do **not** extract these into the shared layer in P29-H:
 
-1. **Effective column resolution.** The chain: `cardGridColumns` → `cardMaxColumns` clamp →
-   `cardAutoColumnsBreakpoints` → `resolveColumnsFromWidth(containerWidth)` → final column count.
-2. **Fixed-width resolution with floor.** `cardMaxWidth` × `cardScale` → percentage-to-pixel
-   resolution → `MIN_FIXED_CARD_WIDTH_PX` (120px) floor → fallback to responsive branch.
-3. **Grid maxWidth calculation.** `calc(N × width + (N-1) × gap)` for fixed-width grids.
-4. **Responsive width calculation.** `calc((100% - totalGap) / columns)` for fluid grids.
-5. **Percentage gap clamping.** Percentage-based gaps resolved below 4px minimum.
+1. `CardGallery` effective-column resolution.
+2. `CardGallery` pagination, `cardsPerPage`, and slide state.
+3. `CardGallery` responsive wrapper sizing.
+4. `CompactGridGallery` `flexBasis` strategy.
+5. `CompactGridGallery` max-column clamping semantics beyond the existing local
+   container-cap usage.
 
-From `CompactGridGallery.tsx`, extract:
+#### Non-goals
 
-1. **Max columns clamping.** `gridCardMaxColumns` (0-8 range).
-2. **Grid maxWidth calculation.** Same pattern as CardGallery.
+- No `useGridLayout` hook.
+- No generic `FlexGrid` / shared shell component.
+- No attempt to make both components produce identical layouts from equivalent
+  inputs.
+- No adapter-wide campaign-listing abstraction in Phase 29.
 
-#### Hook API
+### Implementation Plan
 
-```ts
-// src/hooks/useGridLayout.ts
+**Step 1 — Add pure grid-layout utilities under `src/utils`.**
 
-interface UseGridLayoutInput {
-  /** Container width from useBreakpoint or containerDimensions. */
-  containerWidth: number;
-  /** Explicit column count (0 = auto-resolve from container). */
-  columns: number;
-  /** Maximum columns to cap auto-resolution (0 = unlimited). */
-  maxColumns: number;
-  /** Auto-columns breakpoints config (optional, CardGallery-specific). */
-  autoColumnsBreakpoints?: CardAutoColumnsBreakpoints;
-  /** Fixed card width (0 = responsive/fluid). */
-  cardWidth: number;
-  /** Unit for fixed card width. */
-  cardWidthUnit: CssWidthUnit;
-  /** Scale multiplier for card dimensions. */
-  scale: number;
-  /** Horizontal gap value. */
-  gapH: number;
-  /** Unit for horizontal gap. */
-  gapHUnit: CssWidthUnit;
-  /** Vertical gap value. */
-  gapV: number;
-  /** Unit for vertical gap. */
-  gapVUnit: CssWidthUnit;
-  /** Minimum pixel width below which fixed cards fall back to responsive. */
-  minFixedWidthPx?: number; // default: 120
-}
+Create a shared utility module for the math both components actually reuse. The
+exact exported names can change, but the responsibilities should stay narrow:
 
-interface GridLayoutResult {
-  /** Resolved column count. */
-  columns: number;
-  /** Whether to use fixed-width or responsive cards. */
-  isFixed: boolean;
-  /** Fixed card width in resolved unit (only when isFixed is true). */
-  fixedWidth: { value: number; unit: CssWidthUnit } | null;
-  /** Responsive card width CSS string (only when isFixed is false). */
-  responsiveWidth: string;
-  /** Grid maxWidth CSS string (for centering fixed-width grids). */
-  gridMaxWidth: string | undefined;
-  /** Horizontal gap CSS string (with percentage clamping). */
-  gapH: string;
-  /** Vertical gap CSS string. */
-  gapV: string;
-}
+- resolve scaled fixed width from value + unit + scale
+- optionally resolve percent widths against container width
+- optionally enforce a minimum fixed-width floor
+- generate fixed-row `maxWidth` CSS from item width, column count, and gap CSS
+- format gap CSS with an optional minimum pixel floor
 
-export function useGridLayout(input: UseGridLayoutInput): GridLayoutResult;
-```
+This module should remain React-free and testable without hooks.
 
-#### Implementation Plan
+**Step 2 — Refactor `CardGallery.tsx`.**
 
-**Step 1 — Create `src/hooks/useGridLayout.ts`.**
+Keep the current `effectiveColumns` logic local because it drives both layout and
+pagination. Replace only the duplicated fixed-width and gap math with the shared
+utilities.
 
-Extract the layout math into pure, memoized computations. The hook uses `useMemo` internally
-so results are stable across renders when inputs haven't changed.
+While doing this, intentionally change fixed-width row `maxWidth` from:
 
 ```ts
-import { useMemo } from 'react';
-import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
-import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
-
-// ... (interface definitions above)
-
-const DEFAULT_MIN_FIXED_WIDTH_PX = 120;
-
-export function useGridLayout({
-  containerWidth,
-  columns,
-  maxColumns,
-  autoColumnsBreakpoints,
-  cardWidth,
-  cardWidthUnit,
-  scale,
-  gapH,
-  gapHUnit,
-  gapV,
-  gapVUnit,
-  minFixedWidthPx = DEFAULT_MIN_FIXED_WIDTH_PX,
-}: UseGridLayoutInput): GridLayoutResult {
-  return useMemo(() => {
-    // 1. Resolve effective columns
-    const effectiveColumns = columns > 0
-      ? columns
-      : (() => {
-          const auto = containerWidth > 0
-            ? resolveColumnsFromWidth(containerWidth, 0, autoColumnsBreakpoints)
-            : 1;
-          return maxColumns > 0 ? Math.min(auto, maxColumns) : auto;
-        })();
-
-    // 2. Resolve fixed width
-    const hasFixedWidth = cardWidth > 0;
-    const scaledWidth = scale !== 1 ? Math.round(cardWidth * scale) : cardWidth;
-
-    const fixedWidth = hasFixedWidth
-      ? (() => {
-          if (cardWidthUnit === '%' && containerWidth > 0) {
-            const resolved = Math.round((containerWidth * scaledWidth) / 100);
-            if (resolved < minFixedWidthPx) return null;
-            return { value: resolved, unit: 'px' as CssWidthUnit };
-          }
-          if (cardWidthUnit === 'px' && scaledWidth < minFixedWidthPx) return null;
-          return { value: scaledWidth, unit: cardWidthUnit };
-        })()
-      : null;
-
-    // 3. Gap resolution
-    const gapHResolved = gapHUnit === '%' && containerWidth > 0 && (containerWidth * gapH / 100) < 4
-      ? '4px'
-      : toCss(gapH, gapHUnit);
-    const gapVResolved = toCss(gapV, gapVUnit);
-
-    // 4. Grid maxWidth for fixed-width centering
-    const gridMaxWidth = fixedWidth
-      ? `calc(${toCss(effectiveColumns * fixedWidth.value, fixedWidth.unit)} + ${effectiveColumns - 1} * ${gapHResolved})`
-      : undefined;
-
-    // 5. Responsive width
-    const responsiveWidth = effectiveColumns <= 1
-      ? '100%'
-      : `calc((100% - ${toCss((effectiveColumns - 1) * gapH, gapHUnit)}) / ${effectiveColumns})`;
-
-    return {
-      columns: effectiveColumns,
-      isFixed: fixedWidth !== null,
-      fixedWidth,
-      responsiveWidth,
-      gridMaxWidth,
-      gapH: gapHResolved,
-      gapV: gapVResolved,
-    };
-  }, [
-    containerWidth, columns, maxColumns, autoColumnsBreakpoints,
-    cardWidth, cardWidthUnit, scale,
-    gapH, gapHUnit, gapV, gapVUnit,
-    minFixedWidthPx,
-  ]);
-}
+maxCols * fixedCardWidth
 ```
 
-**Step 2 — Refactor `CardGallery.tsx` to use `useGridLayout`.**
-
-Replace the inline layout computations with a single hook call:
-
-```tsx
-// Replace effectiveColumns, maxCols, fixedCardWidth, responsiveCardWidth, effectiveGapH with:
-const layout = useGridLayout({
-  containerWidth,
-  columns: s.cardGridColumns,
-  maxColumns: s.cardMaxColumns,
-  autoColumnsBreakpoints: s.cardAutoColumnsBreakpoints,
-  cardWidth: s.cardMaxWidth,
-  cardWidthUnit: s.cardMaxWidthUnit,
-  scale: s.cardScale ?? 1,
-  gapH: s.cardGapH,
-  gapHUnit,
-  gapV: s.cardGapV,
-  gapVUnit,
-});
-```
-
-Then update the grid rendering to use `layout.columns`, `layout.isFixed`,
-`layout.fixedWidth`, `layout.responsiveWidth`, `layout.gridMaxWidth`,
-`layout.gapH`, `layout.gapV`.
-
-**Step 3 — Refactor `CompactGridGallery.tsx` to use `useGridLayout`.**
-
-```tsx
-const layout = useGridLayout({
-  containerWidth: containerDimensions?.width ?? 0,
-  columns: 0, // auto-resolve
-  maxColumns: Math.max(0, Math.min(8, settings.gridCardMaxColumns ?? 0)),
-  cardWidth: settings.gridCardWidth ?? 160,
-  cardWidthUnit: settings.gridCardWidthUnit ?? 'px',
-  scale: settings.itemScale ?? 1,
-  gapH: common.adapterItemGap ?? 16,
-  gapHUnit: common.adapterItemGapUnit ?? 'px',
-  gapV: common.adapterItemGap ?? 16,
-  gapVUnit: common.adapterItemGapUnit ?? 'px',
-});
-```
-
-**Step 4 — Write tests.**
-
-Create `src/hooks/useGridLayout.test.ts` with cases for:
-
-- Responsive mode (cardWidth = 0): correct column auto-resolution, correct responsive width calc
-- Fixed mode (cardWidth > 0, px): correct grid maxWidth, fixed width application
-- Fixed mode (cardWidth > 0, %): percentage-to-pixel resolution, floor fallback
-- Scale application: `scale ≠ 1` correctly scales card width
-- Gap clamping: percentage gaps below 4px resolve to '4px'
-- Edge cases: 0 container width, 0 columns, 0 maxColumns, single column
-- Stability: same inputs produce same memoized result (reference equality)
-
-**Files affected:**
-
-| File | Change |
-|------|--------|
-| `src/hooks/useGridLayout.ts` | **New file** — shared grid layout hook |
-| `src/hooks/useGridLayout.test.ts` | **New file** — hook tests |
-| `src/components/CampaignGallery/CardGallery.tsx` | Replace inline layout math with `useGridLayout` call |
-| `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` | Replace inline layout math with `useGridLayout` call |
-
-**Acceptance criteria:**
-
-- `useGridLayout` returns correct column count, width mode, and gap values for all test cases. ( )
-- CardGallery renders identically to current behavior; no visual regression. ( )
-- CompactGridGallery renders identically to current behavior; no visual regression. ( )
-- Both components produce identical grid layouts when given equivalent inputs. ( )
-- No regressions in existing `CardGallery.test.tsx` or `adapters.test.tsx`. ( )
-- `useGridLayout` results are memoized (reference-stable) when inputs are unchanged. ( )
-- Percentage gap clamping works correctly (gaps resolving to < 4px become '4px'). ( )
-- Fixed-width floor fallback works (cards below `minFixedWidthPx` fall back to responsive). ( )
-
-**Effort:** ~4-6 hours
-
----
-
-### Option B — Generic Grid Shell (Investigation for Future Phase)
-
-#### Premise
-
-If the grid layout is shared via `useGridLayout`, the next step would be sharing the grid
-container itself — the flex-wrap `<Box>` with `justifyContent`, `gap`, `maxWidth`, and
-the per-card wrapper `<Box>` with `flexBasis`/`maxWidth`.
-
-This would turn `CompactGridGallery` (or a new `FlexGrid` component) into a generic grid
-shell that CardGallery could delegate to, eliminating the duplicated container markup.
-
-#### Type Bridging Problem
-
-CardGallery works with `Campaign[]`; the adapter system expects `MediaItem[]`. Three approaches:
-
-**B1 — `renderItem` prop (React pattern).**
-
-Make the grid shell accept any item type via generics and a render function:
-
-```tsx
-// Conceptual API:
-<FlexGrid<Campaign>
-  items={visibleCampaigns}
-  layout={layout}
-  renderItem={(campaign, index) => <CampaignCard campaign={campaign} ... />}
-/>
-```
-
-This is the cleanest approach. The grid shell knows nothing about item types — it only
-handles layout. The card rendering is entirely delegated.
-
-**Risk:** CardGallery's cards have different wrapper requirements than CompactGridGallery's.
-CardGallery wraps responsive cards in a sizing `<Box>` with `flex: 0 0 width` and `minWidth: 0`.
-CompactGridGallery uses `flexBasis: min(width, calc(50% - gap/2))`. These are slightly
-different sizing strategies, and a unified shell would need to parameterize this.
-
-**B2 — Wrapper type (adapter pattern).**
-
-Create a thin wrapper that converts `Campaign` to an adapter-compatible shape:
+to:
 
 ```ts
-interface GridItem {
-  id: string;
-  render: () => ReactNode;
-}
+effectiveColumns * fixedCardWidth
 ```
 
-CardGallery maps campaigns to `{ id: campaign.id, render: () => <CampaignCard ... /> }`.
+That makes the row cap match the same resolved column count used for pagination,
+responsive width branching, and rendered card density.
 
-**Risk:** Adds indirection and a new abstraction layer. The render-in-closure pattern
-is less testable and harder to debug than direct JSX.
+**Step 3 — Refactor `CompactGridGallery.tsx`.**
 
-**B3 — Keep separate, share only the hook.**
+Adopt only the shared utilities that match its existing behavior:
 
-Don't pursue Option B. The layout hook (Option A) captures the actual duplication.
-The container markup is ~15 lines each and not particularly complex. Sharing it would
-save tokens but add cognitive overhead from abstraction.
+- width scaling / formatting
+- fixed-row `maxWidth` generation for the existing container cap
+- gap CSS formatting when it does not change runtime behavior
 
-#### Feature Mismatch Problem
+Keep all of these local to `CompactGridGallery`:
 
-CardGallery has features that are structurally different from any adapter:
+- width-driven `flexBasis: min(width, calc(50% - gap / 2))`
+- width-first card sizing model
+- current `gridCardMaxColumns` interpretation as an optional container cap
+- absence of `resolveColumnsFromWidth()`
 
-- **Pagination:** slide animation with `transitionend` observers, page state, direction tracking
-- **Load-more:** visible count state, "Load more" button
-- **Filter/search:** tab-based company filter, text search, access mode filtering
-- **Admin controls:** in-context editors, access mode toggle
+**Step 4 — Expand tests.**
 
-These are all *above* the grid — they filter and paginate the data *before* it reaches
-the grid. A generic grid shell doesn't help with these.
+Add targeted utility tests plus explicit regression coverage for the one intended
+`CardGallery` behavior change and for preserved `CompactGridGallery` semantics.
 
-#### Investigation Tasks
+### Acceptance Criteria
 
-Before committing to Option B in a future phase, investigate:
+- Shared grid-layout math is extracted into a pure utility module, not a React
+  hook. ( )
+- `CardGallery` keeps its current fixed-width floor fallback, gap clamp, and
+  responsive-wrapper behavior. ( )
+- `CardGallery` fixed-width row `maxWidth` uses resolved `effectiveColumns`, not
+  the broader `maxCols` cap. ( )
+- `CompactGridGallery` keeps its current width-driven flex-wrap behavior and
+  does not gain `resolveColumnsFromWidth()`-style column auto-resolution. ( )
+- Existing `CardGallery.test.tsx` and adapter smoke tests still pass. ( )
+- New utility tests cover width resolution, optional floor fallback, and gap
+  formatting / clamping behavior. ( )
+- The deeper generic grid-shell investigation is deferred into Phase 30 Track
+  P30-F rather than folded into this refactor. ( )
 
-1. **How many other adapters would benefit?** Check `MasonryGallery`, `CircularGallery`,
-   `JustifiedGallery` — do they also have hand-rolled grid math, or do they already use
-   specialized layout algorithms? If only CompactGrid and CardGallery share this pattern,
-   Option A is sufficient.
+### Validation
 
-2. **Can CardGallery's grid rendering be extracted to a sub-component without
-   refactoring the parent?** Try extracting just the `<Box>` grid section (lines ~280-340
-   of CardGallery.tsx) into `<CampaignCardGrid>` and measure the complexity gain vs. the
-   duplication saved.
-
-3. **Does the `renderItem` pattern work with CardGallery's fixed vs. responsive card
-   branching?** CardGallery conditionally wraps cards differently based on `fixedCardWidth`.
-   This branching logic would need to live inside the grid shell or be parameterized.
-
-4. **Would a shared grid shell make it easier to swap adapters for CardGallery?** If a
-   future requirement is "let users choose the campaign listing layout (compact grid,
-   masonry, etc.)", a shared grid shell would be foundational. If this requirement is
-   unlikely, Option A is the right stopping point.
-
-#### Recommendation
-
-**Implement Option A now.** Option B should be revisited only if:
-- A future phase requires user-selectable campaign listing layouts, or
-- More than 2 additional adapters are found to have the same grid duplication,
-- The CardGallery grid section grows significantly more complex (new layout modes, etc.)
-
-The investigation tasks above should be documented in a future phase report as a
-preliminary track if Option B is being considered.
-
-### Acceptance Criteria (Track-Level)
-
-- Option A hook is implemented, tested, and adopted by both CardGallery and CompactGridGallery. ( )
-- No visual regressions in either component. ( )
-- All existing tests pass. ( )
-- Option B investigation tasks are documented and filed for future consideration. ( )
+- Vitest: targeted utility tests for width resolution, gap formatting, and
+  fixed-row `maxWidth` generation.
+- Vitest: `CardGallery.test.tsx` coverage for the resolved-columns row-cap
+  change, percent-width fallback, and percent-gap clamp.
+- Vitest: `adapters.test.tsx` plus any new CompactGrid assertions needed to
+  confirm its flex-basis and container-cap behavior stay intact.
+- Manual QA: compare `CardGallery` at narrow / tablet / wide widths in both
+  fixed-width and responsive modes.
+- Manual QA: compare `CompactGridGallery` at narrow and wide widths to confirm
+  row fill remains width-driven rather than breakpoint-column-driven.
 
 ### Effort Estimate
 
-| Item | Hours |
-|------|-------|
-| Option A: Create `useGridLayout` hook | 2-3 |
-| Option A: Test the hook | 1-2 |
-| Option A: Refactor CardGallery | 1-1.5 |
-| Option A: Refactor CompactGridGallery | 0.5-1 |
-| Option B: Investigation tasks (1-4) | 1-2 |
-| **Total** | **5.5-9.5 hours** |
+~4-6 hours.
 
 ### Files Affected (proposed)
 
 | File | Change |
 |------|--------|
-| `src/hooks/useGridLayout.ts` | **New file** — shared grid layout hook |
-| `src/hooks/useGridLayout.test.ts` | **New file** — hook tests |
-| `src/components/CampaignGallery/CardGallery.tsx` | Replace inline layout math with `useGridLayout` |
-| `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` | Replace inline layout math with `useGridLayout` |
-| `src/components/CampaignGallery/CardGallery.test.tsx` | Update selectors if DOM structure changes |
-| `src/components/Galleries/Adapters/__tests__/adapters.test.tsx` | Update selectors if DOM structure changes |
+| `src/utils/gridLayout.ts` | **New file** — pure shared layout utilities |
+| `src/utils/gridLayout.test.ts` | **New file** — utility tests |
+| `src/components/CampaignGallery/CardGallery.tsx` | Replace duplicated fixed-width / gap math; normalize row cap to resolved columns |
+| `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` | Replace only the duplicated utility-level math while preserving current layout behavior |
+| `src/components/CampaignGallery/CardGallery.test.tsx` | Extend coverage for resolved-columns row cap and preserved width / gap behavior |
+| `src/components/Galleries/Adapters/__tests__/adapters.test.tsx` | Add CompactGrid-specific assertions if the shared utility extraction changes style generation |
