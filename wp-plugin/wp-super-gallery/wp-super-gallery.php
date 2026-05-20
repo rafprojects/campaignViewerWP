@@ -151,6 +151,107 @@ function wpsg_register_schedule_cron() {
     }
 }
 
+/**
+ * Fallback archive path using the standard metadata API.
+ *
+ * @param int[] $post_ids Campaign IDs to archive.
+ * @return int Number of campaigns processed.
+ */
+function wpsg_archive_campaign_status_batch_fallback(array $post_ids) {
+    $processed = 0;
+
+    foreach ($post_ids as $post_id) {
+        update_post_meta($post_id, 'status', 'archived');
+        $processed++;
+    }
+
+    return $processed;
+}
+
+/**
+ * Archive a batch of campaigns with batched postmeta writes.
+ *
+ * Updates existing `status` rows in one query, inserts missing rows in one
+ * query, and falls back to the standard metadata API if either batched query
+ * fails.
+ *
+ * @param int[] $post_ids Campaign IDs to archive.
+ * @return int Number of campaigns processed.
+ */
+function wpsg_archive_campaign_status_batch(array $post_ids) {
+    global $wpdb;
+
+    $post_ids = array_values(array_unique(array_map('intval', $post_ids)));
+    $post_ids = array_values(array_filter($post_ids, static function ($post_id) {
+        return $post_id > 0;
+    }));
+
+    if (empty($post_ids)) {
+        return 0;
+    }
+
+    $placeholders = implode(', ', array_fill(0, count($post_ids), '%d'));
+    $existing_ids = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id IN ($placeholders)",
+            array_merge(['status'], $post_ids)
+        )
+    );
+
+    if (!is_array($existing_ids)) {
+        return wpsg_archive_campaign_status_batch_fallback($post_ids);
+    }
+
+    $existing_ids = array_values(array_unique(array_map('intval', $existing_ids)));
+
+    if (!empty($existing_ids)) {
+        $existing_placeholders = implode(', ', array_fill(0, count($existing_ids), '%d'));
+        $updated = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->postmeta}
+                SET meta_value = %s
+                WHERE meta_key = %s
+                  AND post_id IN ($existing_placeholders)",
+                array_merge(['archived', 'status'], $existing_ids)
+            )
+        );
+
+        if ($updated === false) {
+            return wpsg_archive_campaign_status_batch_fallback($post_ids);
+        }
+    }
+
+    $missing_ids = array_values(array_diff($post_ids, $existing_ids));
+
+    if (!empty($missing_ids)) {
+        $value_placeholders = implode(', ', array_fill(0, count($missing_ids), '(%d, %s, %s)'));
+        $insert_args = [];
+
+        foreach ($missing_ids as $post_id) {
+            $insert_args[] = $post_id;
+            $insert_args[] = 'status';
+            $insert_args[] = 'archived';
+        }
+
+        $inserted = $wpdb->query(
+            $wpdb->prepare(
+                "INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES $value_placeholders",
+                $insert_args
+            )
+        );
+
+        if ($inserted === false) {
+            return wpsg_archive_campaign_status_batch_fallback($post_ids);
+        }
+    }
+
+    foreach ($post_ids as $post_id) {
+        clean_post_cache($post_id);
+    }
+
+    return count($post_ids);
+}
+
 function wpsg_run_schedule_auto_archive() {
     $now = gmdate('Y-m-d H:i:s'); // UTC datetime — matches stored format
     $archived_count = 0;
@@ -184,9 +285,8 @@ function wpsg_run_schedule_auto_archive() {
             ],
         ]);
 
-        foreach ($query->posts as $post_id) {
-            update_post_meta($post_id, 'status', 'archived');
-            $archived_count++;
+        if (!empty($query->posts)) {
+            $archived_count += wpsg_archive_campaign_status_batch($query->posts);
         }
     } while (!empty($query->posts));
 
