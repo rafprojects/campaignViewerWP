@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { Text } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
 import type { LayoutSlot, MaskLayer, MediaItem } from '@/types';
 import { getClipPath } from '@/utils/clipPath';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
@@ -219,6 +220,10 @@ export interface LayoutSlotComponentProps {
   onSlotUpdate?: ((slotId: string, updates: Partial<LayoutSlot>) => void) | undefined;
   /** Whether this slot's mask sublayer is selected in the Layers panel. */
   isMaskSelected?: boolean | undefined;
+  /** Whether to render the slot index badge (default: true). */
+  showSlotIndices?: boolean | undefined;
+  /** True when this slot is part of a multi-selection (2+ slots selected). Prevents mousedown from collapsing the selection before a drag. */
+  isInMultiSelect?: boolean | undefined;
 }
 
 // ── Minimum slot size (px) ───────────────────────────────────
@@ -248,9 +253,14 @@ export function LayoutSlotComponent({
   onMediaDrop,
   onSlotUpdate,
   isMaskSelected,
+  showSlotIndices = true,
+  isInMultiSelect = false,
 }: LayoutSlotComponentProps) {
   const rndRef = useRef<Rnd>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Tracks whether this slot was part of a multi-select at mousedown, so dragStop
+  // can collapse the selection on a tiny-movement "click".
+  const wasInMultiSelectRef = useRef(false);
   const clipPath = getClipPath(slot);
   const { scale, isHandTool } = useCanvasTransform();
 
@@ -263,13 +273,16 @@ export function LayoutSlotComponent({
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
       e.stopPropagation();
+      wasInMultiSelectRef.current = isInMultiSelect;
       if (e.shiftKey) {
         onToggleSelect(slot.id);
-      } else {
+      } else if (!isInMultiSelect) {
+        // Only collapse selection when NOT already in a multi-selection;
+        // if multi-selected, preserve it so the coming drag moves all slots.
         onSelect(slot.id);
       }
     },
-    [slot.id, onSelect, onToggleSelect],
+    [slot.id, onSelect, onToggleSelect, isInMultiSelect],
   );
 
   // ── Drag frame handler (for smart guides) ──
@@ -561,7 +574,11 @@ export function LayoutSlotComponent({
           const dy = data.y - start.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           if (distance < DRAG_COMMIT_THRESHOLD_PX) {
-            // Treat tiny movement as a click/focus, not a committed reposition.
+            // Tiny movement = click, not a real drag.
+            if (wasInMultiSelectRef.current) {
+              // User clicked a selected slot without dragging — collapse to single selection.
+              onSelect(slot.id);
+            }
             return;
           }
         }
@@ -716,28 +733,53 @@ export function LayoutSlotComponent({
           )}
 
           {/* 4. Index badge – at bounding-box level so always visible */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 4,
-              left: 4,
-              background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 700,
-              width: 18,
-              height: 18,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
-              userSelect: 'none',
-              zIndex: 3,
-            }}
-          >
-            {index + 1}
-          </div>
+          {showSlotIndices && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 4,
+                left: 4,
+                background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                zIndex: 3,
+              }}
+            >
+              {index + 1}
+            </div>
+          )}
+
+          {/* Lock badge */}
+          {(slot.locked ?? false) && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 4,
+                right: 4,
+                background: 'rgba(0,0,0,0.65)',
+                color: '#fff',
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                zIndex: 3,
+              }}
+            >
+              <IconLock size={10} />
+            </div>
+          )}
         </div>
       ) : (
         /* ── Rectangle: CSS border + overflow ────────────────────────────── */
@@ -820,27 +862,52 @@ export function LayoutSlotComponent({
           )}
 
           {/* Index badge */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 4,
-              left: 4,
-              background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 700,
-              width: 18,
-              height: 18,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
-              userSelect: 'none',
-            }}
-          >
-            {index + 1}
-          </div>
+          {showSlotIndices && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 4,
+                left: 4,
+                background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                userSelect: 'none',
+              }}
+            >
+              {index + 1}
+            </div>
+          )}
+
+          {/* Lock badge */}
+          {(slot.locked ?? false) && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 4,
+                right: 4,
+                background: 'rgba(0,0,0,0.65)',
+                color: '#fff',
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                zIndex: 3,
+              }}
+            >
+              <IconLock size={10} />
+            </div>
+          )}
 
           {/* Live dimensions overlay during drag / resize */}
           {liveInfo && (
