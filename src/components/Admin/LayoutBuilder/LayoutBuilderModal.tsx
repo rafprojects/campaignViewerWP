@@ -10,7 +10,6 @@ import {
   Tooltip,
   Divider,
   Box,
-  SegmentedControl,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import {
@@ -19,7 +18,10 @@ import {
   IconArrowForwardUp,
   IconEye,
   IconEyeOff,
+  IconDownload,
+  IconUpload,
 } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import type { LayoutTemplate } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import {
@@ -53,15 +55,6 @@ const dockComponents = {
   history: BuilderHistoryPanel,
 };
 
-// ── Aspect ratio presets ─────────────────────────────────────
-
-const ASPECT_PRESETS = [
-  { label: '16:9', value: String(16 / 9) },
-  { label: '4:3', value: String(4 / 3) },
-  { label: '1:1', value: '1' },
-  { label: '3:2', value: String(3 / 2) },
-  { label: '21:9', value: String(21 / 9) },
-] as const;
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -88,6 +81,7 @@ export function LayoutBuilderModal({
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const dockApiRef = useRef<DockviewApi | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   // ── Fetch campaign list for the media picker ──
   const campaignOptions = useAllCampaignOptions(apiClient, opened);
@@ -153,6 +147,69 @@ export function LayoutBuilderModal({
   const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
   const [selectedMaskSlotId, setSelectedMaskSlotId] = useState<string | null>(null);
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
+  // Track whether we've already checked for a draft this open session
+  const draftCheckedRef = useRef(false);
+
+  // ── Draft restore/discard prompt ──
+  useEffect(() => {
+    if (!opened) {
+      draftCheckedRef.current = false;
+      return;
+    }
+    if (draftCheckedRef.current) return;
+    draftCheckedRef.current = true;
+
+    const templateId = initialTemplate?.id;
+    if (!templateId) return;
+
+    const stored = (() => {
+      try { return localStorage.getItem(`wpsg_layout_draft_${templateId}`); } catch { return null; }
+    })();
+    if (!stored) return;
+
+    let draft: LayoutTemplate | null = null;
+    try { draft = JSON.parse(stored) as LayoutTemplate; } catch { return; }
+    if (!draft) return;
+
+    // Only prompt if the draft is newer than the initial template
+    const draftTime = draft.updatedAt ? new Date(draft.updatedAt).getTime() : 0;
+    const savedTime = initialTemplate?.updatedAt ? new Date(initialTemplate.updatedAt).getTime() : 0;
+    if (draftTime <= savedTime) {
+      // Draft is stale — clear silently
+      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
+      return;
+    }
+
+    const draftSnapshot = draft;
+    modals.openConfirmModal({
+      title: 'Unsaved draft found',
+      children: (
+        <Text size="sm">
+          An autosaved draft from a previous session was found. Would you like to restore it?
+        </Text>
+      ),
+      labels: { confirm: 'Restore draft', cancel: 'Discard' },
+      confirmProps: { color: 'blue' },
+      onConfirm: () => {
+        builder.setTemplate(draftSnapshot, { preserveSelection: false });
+        notifications.show({
+          title: 'Draft restored',
+          message: 'Your previous session has been restored.',
+          color: 'blue',
+          autoClose: 4000,
+        });
+      },
+      onCancel: () => {
+        builder.clearDraft();
+        notifications.show({
+          message: 'Draft discarded.',
+          color: 'gray',
+          autoClose: 3000,
+        });
+      },
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened]);
 
   // ── Close with dirty guard ──
   const handleClose = useCallback(() => {
@@ -201,31 +258,31 @@ export function LayoutBuilderModal({
 
       builder.setTemplate(saved, { preserveSelection: true });
       builder.markSaved();
+      builder.clearDraft();
       onSaved?.(saved);
       onNotify?.({ type: 'success', text: `Layout "${saved.name}" saved` });
+      notifications.show({ message: `Layout "${saved.name}" saved`, color: 'green', autoClose: 3000 });
       return true;
     } catch (err) {
-      onNotify?.({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to save layout',
-      });
+      const errMsg = err instanceof Error ? err.message : 'Failed to save layout';
+      onNotify?.({ type: 'error', text: errMsg });
+      notifications.show({ title: 'Save failed', message: errMsg, color: 'red', autoClose: 5000 });
       return false;
     } finally {
       setIsSaving(false);
     }
   }, [builder, apiClient, onSaved, onNotify]);
 
-  // ── Save & Close ──
-  const handleSaveAndClose = useCallback(async () => {
-    const saved = await handleSave();
-    if (saved) onClose();
-  }, [handleSave, onClose]);
-
   // ── Delete selected slots ──
   const handleDeleteSelected = useCallback(() => {
     const ids = Array.from(builder.selectedSlotIds);
     if (ids.length === 0) return;
     builder.removeSlots(ids);
+    notifications.show({
+      message: `${ids.length} slot${ids.length !== 1 ? 's' : ''} deleted`,
+      color: 'gray',
+      autoClose: 2500,
+    });
   }, [builder]);
 
   // ── Duplicate selected slots ──
@@ -233,6 +290,11 @@ export function LayoutBuilderModal({
     const ids = Array.from(builder.selectedSlotIds);
     if (ids.length === 0) return;
     builder.duplicateSlots(ids);
+    notifications.show({
+      message: `${ids.length} slot${ids.length !== 1 ? 's' : ''} duplicated`,
+      color: 'blue',
+      autoClose: 2500,
+    });
   }, [builder]);
 
   // ── A11y announce helper ──
@@ -241,6 +303,76 @@ export function LayoutBuilderModal({
     // Clear after screen reader has time to read it
     setTimeout(() => setA11yAnnouncement(''), 3000);
   }, []);
+
+  // ── JSON export ──
+  const handleExportJson = useCallback(() => {
+    const json = JSON.stringify(builder.template, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeName = builder.template.name.replace(/[^a-z0-9_-]/gi, '-') || 'layout';
+    a.href = url;
+    a.download = `${safeName}.wpsg-layout.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [builder.template]);
+
+  // ── JSON import ──
+  const handleImportJson = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target?.result as string) as unknown;
+          if (
+            typeof parsed !== 'object' ||
+            parsed === null ||
+            !('name' in parsed) ||
+            !('slots' in parsed) ||
+            !Array.isArray((parsed as { slots: unknown }).slots) ||
+            !('canvasAspectRatio' in parsed)
+          ) {
+            notifications.show({
+              title: 'Invalid layout file',
+              message: 'The file is missing required fields (name, slots, canvasAspectRatio).',
+              color: 'red',
+              autoClose: 5000,
+            });
+            return;
+          }
+          const defaults = createEmptyTemplate();
+          const imported: LayoutTemplate = {
+            ...defaults,
+            ...(parsed as Partial<LayoutTemplate>),
+            id: '',
+            createdAt: defaults.createdAt,
+            updatedAt: defaults.updatedAt,
+          };
+          builder.setTemplate(imported, { preserveSelection: false });
+          notifications.show({
+            title: 'Layout imported',
+            message: `"${imported.name}" loaded successfully.`,
+            color: 'green',
+            autoClose: 3000,
+          });
+        } catch {
+          notifications.show({
+            title: 'Import failed',
+            message: 'Could not parse JSON file.',
+            color: 'red',
+            autoClose: 5000,
+          });
+        } finally {
+          // Reset so same file can be re-imported
+          if (importFileRef.current) importFileRef.current.value = '';
+        }
+      };
+      reader.readAsText(file);
+    },
+    [builder],
+  );
 
   // ── Overlay library handlers ──
   const handleUploadOverlay = useCallback(
@@ -258,11 +390,11 @@ export function LayoutBuilderModal({
         await refetchOverlayLibrary();
         builder.addOverlay(entry.url);
         announce('Overlay uploaded and added to canvas');
+        notifications.show({ message: 'Overlay added to canvas', color: 'blue', autoClose: 3000 });
       } catch (err) {
-        onNotify?.({
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Overlay upload failed',
-        });
+        const errMsg = err instanceof Error ? err.message : 'Overlay upload failed';
+        onNotify?.({ type: 'error', text: errMsg });
+        notifications.show({ title: 'Overlay upload failed', message: errMsg, color: 'red', autoClose: 5000 });
       } finally {
         setIsUploadingOverlay(false);
       }
@@ -300,11 +432,11 @@ export function LayoutBuilderModal({
         );
         builder.setBackgroundImage(entry.url);
         announce('Background image uploaded and applied');
+        notifications.show({ message: 'Background image applied', color: 'blue', autoClose: 3000 });
       } catch (err) {
-        onNotify?.({
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Background image upload failed',
-        });
+        const errMsg = err instanceof Error ? err.message : 'Background image upload failed';
+        onNotify?.({ type: 'error', text: errMsg });
+        notifications.show({ title: 'Background upload failed', message: errMsg, color: 'red', autoClose: 5000 });
       } finally {
         setIsUploadingBg(false);
       }
@@ -340,7 +472,13 @@ export function LayoutBuilderModal({
   const handleAutoAssign = useCallback(() => {
     const mediaIds = media.map((m) => m.id);
     builder.autoAssignMedia(mediaIds, media);
-    announce(`Auto-assigned ${Math.min(mediaIds.length, builder.template.slots.length)} media items`);
+    const assignedCount = Math.min(mediaIds.length, builder.template.slots.length);
+    announce(`Auto-assigned ${assignedCount} media items`);
+    notifications.show({
+      message: `${assignedCount} media item${assignedCount !== 1 ? 's' : ''} assigned`,
+      color: 'blue',
+      autoClose: 3000,
+    });
   }, [builder, media, announce]);
 
   // ── Keyboard shortcuts ──
@@ -370,8 +508,35 @@ export function LayoutBuilderModal({
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
         // Copy is handled via duplicateSlots on paste
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
         handleDuplicateSelected();
+        e.preventDefault();
+      }
+      // Group / select-in-group
+      if ((e.metaKey || e.ctrlKey) && e.key === 'g' && !e.shiftKey) {
+        const ids = [...builder.selectedSlotIds];
+        const groups = builder.template.groups ?? [];
+        const touchedGroup = groups.find((g) =>
+          g.memberIds.some((id) => builder.selectedSlotIds.has(id))
+        );
+        if (touchedGroup) {
+          // Any selected slot belongs to a group — expand selection to all members.
+          builder.selectGroup(touchedGroup.id);
+          announce(`Group selected (${touchedGroup.memberIds.length} slots)`);
+        } else if (ids.length >= 2) {
+          builder.createGroup(ids);
+          announce(`Group created (${ids.length} slots)`);
+        }
+        e.preventDefault();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'g' && e.shiftKey) {
+        const groups = builder.template.groups ?? [];
+        const selectedIds = builder.selectedSlotIds;
+        const targetGroup = groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
+        if (targetGroup) {
+          builder.dissolveGroup(targetGroup.id);
+          announce('Ungrouped');
+        }
         e.preventDefault();
       }
       if (e.key === 'Escape') {
@@ -550,21 +715,35 @@ export function LayoutBuilderModal({
           <Group justify="space-between" wrap="nowrap">
             {/* Left: name + undo/redo */}
             <Group gap="sm" wrap="nowrap">
-              <TextInput
-                value={builder.template.name}
-                onChange={(e) => builder.setName(e.currentTarget.value)}
-                variant="unstyled"
-                size="lg"
-                styles={{
-                  input: {
-                    fontWeight: 700,
-                    fontSize: 'var(--mantine-font-size-lg)',
-                    padding: '0 4px',
-                    height: 'auto',
-                  },
-                }}
-                aria-label="Template name"
-              />
+              <Group gap={4} wrap="nowrap" align="center">
+                {builder.isDirty && (
+                  <Box
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: 'var(--mantine-color-yellow-5)',
+                      flexShrink: 0,
+                    }}
+                    aria-label="Unsaved changes"
+                  />
+                )}
+                <TextInput
+                  value={builder.template.name}
+                  onChange={(e) => builder.setName(e.currentTarget.value)}
+                  variant="unstyled"
+                  size="lg"
+                  styles={{
+                    input: {
+                      fontWeight: 700,
+                      fontSize: 'var(--mantine-font-size-lg)',
+                      padding: '0 4px',
+                      height: 'auto',
+                    },
+                  }}
+                  aria-label="Template name"
+                />
+              </Group>
               <Divider orientation="vertical" />
               <Tooltip label="Undo (Ctrl+Z)">
                 <ActionIcon
@@ -588,24 +767,23 @@ export function LayoutBuilderModal({
               </Tooltip>
             </Group>
 
-            {/* Center: aspect ratio */}
-            <Group gap="xs" wrap="nowrap">
-              <Text size="xs" c="dimmed">
-                Aspect:
-              </Text>
-              <SegmentedControl
-                size="xs"
-                value={String(builder.template.canvasAspectRatio)}
-                onChange={(val) => builder.setAspectRatio(Number(val))}
-                data={ASPECT_PRESETS.map((p) => ({
-                  label: p.label,
-                  value: p.value,
-                }))}
-              />
-            </Group>
-
-            {/* Right: preview + save + close */}
+            {/* Right: import/export + preview + save + close */}
             <Group gap="sm" wrap="nowrap">
+              <Tooltip label="Export layout as JSON">
+                <ActionIcon variant="subtle" onClick={handleExportJson} aria-label="Export JSON">
+                  <IconDownload size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Import layout from JSON">
+                <ActionIcon
+                  variant="subtle"
+                  onClick={() => importFileRef.current?.click()}
+                  aria-label="Import JSON"
+                >
+                  <IconUpload size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Divider orientation="vertical" />
               <Tooltip label={builder.isPreview ? 'Edit mode' : 'Preview mode'}>
                 <ActionIcon
                   variant={builder.isPreview ? 'filled' : 'subtle'}
@@ -619,11 +797,6 @@ export function LayoutBuilderModal({
                   )}
                 </ActionIcon>
               </Tooltip>
-              {builder.isDirty && (
-                <Text size="xs" c="dimmed" fs="italic">
-                  Unsaved
-                </Text>
-              )}
               <Button
                 leftSection={<IconDeviceFloppy size={16} />}
                 onClick={handleSave}
@@ -632,15 +805,6 @@ export function LayoutBuilderModal({
                 size="sm"
               >
                 Save
-              </Button>
-              <Button
-                variant="light"
-                onClick={handleSaveAndClose}
-                loading={isSaving}
-                disabled={!builder.isDirty}
-                size="sm"
-              >
-                Save &amp; Close
               </Button>
               <Button variant="subtle" onClick={handleClose} size="sm">
                 Close
@@ -664,6 +828,15 @@ export function LayoutBuilderModal({
         <BuilderKeyboardShortcutsModal
           opened={builderShortcutsOpen}
           onClose={() => setBuilderShortcutsOpen(false)}
+        />
+
+        {/* Hidden file input for JSON import */}
+        <input
+          ref={importFileRef}
+          type="file"
+          accept=".json,application/json"
+          style={{ display: 'none' }}
+          onChange={handleImportJson}
         />
 
         {/* ARIA live region for screen reader announcements */}

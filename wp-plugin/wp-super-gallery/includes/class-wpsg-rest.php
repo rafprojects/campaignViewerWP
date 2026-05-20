@@ -432,7 +432,7 @@ class WPSG_REST {
         ]);
 
         // Generic mediaId route must come AFTER specific sub-routes
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)', [
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)', [
             [
                 'methods' => 'PUT',
                 'callback' => [self::class, 'update_media'],
@@ -2162,11 +2162,36 @@ class WPSG_REST {
         $media_items = self::enrich_media_with_dimensions($normalized['items']);
         $updated_count = $normalized['updated'];
 
-        if ($updated_count > 0) {
+        // Backfill missing IDs and repair duplicate IDs.
+        // Duplicates arise when the campaign's route {id} param was mistakenly stored as every
+        // item's media ID — all items end up with the same ID, so any delete wipes the whole set.
+        $ids_backfilled = 0;
+        $seen_ids = [];
+        foreach ($media_items as &$item) {
+            $current_id = $item['id'] ?? '';
+            if ($current_id === '' || isset($seen_ids[$current_id])) {
+                do {
+                    $current_id = wp_generate_uuid4();
+                } while (isset($seen_ids[$current_id]));
+                $item['id'] = $current_id;
+                $ids_backfilled++;
+            }
+            $seen_ids[$current_id] = true;
+        }
+        unset($item);
+
+        if ($updated_count > 0 || $ids_backfilled > 0) {
             update_post_meta($post_id, 'media_items', $media_items);
-            self::add_audit_entry($post_id, 'media.types_rescanned', [
-                'updated' => $updated_count,
-            ]);
+            if ($updated_count > 0) {
+                self::add_audit_entry($post_id, 'media.types_rescanned', [
+                    'updated' => $updated_count,
+                ]);
+            }
+            if ($ids_backfilled > 0) {
+                self::add_audit_entry($post_id, 'media.ids_backfilled', [
+                    'count' => $ids_backfilled,
+                ]);
+            }
         }
 
         $sort = sanitize_text_field($request->get_param('sort') ?? 'order_asc');
@@ -2278,7 +2303,7 @@ class WPSG_REST {
         }
 
         $custom_media_id = sanitize_text_field($payload['id'] ?? '');
-        if ($custom_media_id !== '' && !preg_match('/^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*$/', $custom_media_id)) {
+        if ($custom_media_id !== '' && !preg_match('/^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/', $custom_media_id)) {
             return new WP_Error('wpsg_invalid_media_id', 'Invalid media ID', ['status' => 400]);
         }
 
@@ -2578,7 +2603,10 @@ class WPSG_REST {
             $payload = [];
         }
 
-        foreach (['id', 'type', 'source', 'url', 'attachmentId', 'caption', 'order', 'thumbnail', 'provider', 'title'] as $key) {
+        // 'id' is intentionally excluded: the route's {id} capture is the campaign post ID,
+        // not a media item ID. If the client wants to supply a custom media ID it must
+        // include it in the JSON body; otherwise build_media_item_from_payload generates a UUID.
+        foreach (['type', 'source', 'url', 'attachmentId', 'caption', 'order', 'thumbnail', 'provider', 'title'] as $key) {
             if (!array_key_exists($key, $payload)) {
                 $value = $request->get_param($key);
                 if (!is_null($value)) {
@@ -3957,11 +3985,21 @@ class WPSG_REST {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
+        if (empty($media_id)) {
+            return new WP_Error('wpsg_invalid_media_id', 'mediaId is required', ['status' => 400]);
+        }
+
         $media_items = get_post_meta($post_id, 'media_items', true);
         $media_items = is_array($media_items) ? $media_items : [];
+        $before_count = count($media_items);
         $media_items = array_values(array_filter($media_items, function ($item) use ($media_id) {
             return ($item['id'] ?? '') !== $media_id;
         }));
+
+        if (count($media_items) === $before_count) {
+            return new WP_Error('wpsg_media_not_found', 'Media item not found', ['status' => 404]);
+        }
+
         update_post_meta($post_id, 'media_items', $media_items);
 
         self::add_audit_entry($post_id, 'media.deleted', [

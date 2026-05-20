@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
-import { Text } from '@mantine/core';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@/utils/smartGuides';
@@ -35,8 +34,8 @@ export interface LayoutCanvasProps {
   onOverlayResize?: (id: string, x: number, y: number, w: number, h: number) => void;
   /** Snap detection distance in canvas pixels (default: 5). Higher = snaps from further away. */
   snapThresholdPx?: number;
-  /** Called on double-click on canvas background — used to reset zoom. */
-  onCanvasBgDoubleClick?: () => void;
+  /** Called on double-click on canvas background with click position as canvas %. */
+  onCanvasBgDoubleClick?: (pctX: number, pctY: number) => void;
   /** Generic slot property update callback (e.g. mask layer drag). */
   onSlotUpdate?: (slotId: string, updates: Partial<import('@/types').LayoutSlot>) => void;
   /** Slot ID whose mask sublayer is currently selected (for mask drag overlay). */
@@ -45,12 +44,26 @@ export interface LayoutCanvasProps {
   onAssetCanvasDrop?: (assetUrl: string, x: number, y: number) => void;
   /** Called when campaign media is dropped on the canvas background. x,y are canvas %. */
   onMediaCanvasDrop?: (mediaId: string, meta: { attachmentId?: number | undefined; url?: string | undefined }, x: number, y: number) => void;
+  /** Whether to render slot index badges (default: true). */
+  showSlotIndices?: boolean;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
 
 const MIN_CANVAS_PX = 400;
 const MAX_CANVAS_PX = 1200;
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function formatAspectRatio(ratio: number): string {
+  let bestN = 1, bestD = 1, bestErr = Infinity;
+  for (let d = 1; d <= 99; d++) {
+    const n = Math.round(ratio * d);
+    const err = Math.abs(ratio - n / d);
+    if (err < bestErr) { bestErr = err; bestN = n; bestD = d; }
+  }
+  return `${bestN}:${bestD}`;
+}
 
 // ── Component ────────────────────────────────────────────────
 
@@ -75,6 +88,7 @@ export function LayoutCanvas({
   selectedMaskSlotId,
   onAssetCanvasDrop,
   onMediaCanvasDrop,
+  showSlotIndices = true,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -131,15 +145,35 @@ export function LayoutCanvas({
   const [activeGuides, setActiveGuides] = useState<GuideLine[]>([]);
   const lastGuideResultRef = useRef<{ snapX?: number | undefined; snapY?: number | undefined }>({});
 
+  // ── Multi-select drag state ────────────────────────────────
+  // Live pixel delta applied to co-selected slots while the primary slot is dragged.
+  const [liveDragDelta, setLiveDragDelta] = useState<{ dx: number; dy: number } | null>(null);
+  const [draggingSlotId, setDraggingSlotId] = useState<string | null>(null);
+  // Refs so drag-stop callback reads latest values without recreating on every selection change.
+  const selectedSlotIdsRef = useRef(selectedSlotIds);
+  selectedSlotIdsRef.current = selectedSlotIds;
+  const templateSlotsRef = useRef(template.slots);
+  templateSlotsRef.current = template.slots;
+
   /** Called on every drag frame from a slot. */
   const handleDragFrame = useCallback(
     (slotId: string, pxX: number, pxY: number) => {
+      // Track live delta for co-selected slots in multi-drag.
+      if (selectedSlotIdsRef.current.size > 1 && selectedSlotIdsRef.current.has(slotId)) {
+        const draggedSlot = templateSlotsRef.current.find((s) => s.id === slotId);
+        if (draggedSlot) {
+          const origPx = pctToPx(draggedSlot.x, draggedSlot.y);
+          setLiveDragDelta({ dx: pxX - origPx.x, dy: pxY - origPx.y });
+          setDraggingSlotId(slotId);
+        }
+      }
+
       if (!snapEnabled || isPreview) {
         setActiveGuides([]);
         return;
       }
 
-      const slot = template.slots.find((s) => s.id === slotId);
+      const slot = templateSlotsRef.current.find((s) => s.id === slotId);
       if (!slot) return;
 
       const pct = pxToPct(pxX, pxY);
@@ -150,7 +184,7 @@ export function LayoutCanvas({
         width: slot.width,
         height: slot.height,
       };
-      const others: SlotRect[] = template.slots
+      const others: SlotRect[] = templateSlotsRef.current
         .filter((s) => s.id !== slotId)
         .map((s) => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
 
@@ -158,13 +192,16 @@ export function LayoutCanvas({
       lastGuideResultRef.current = { snapX: result.snapX, snapY: result.snapY };
       setActiveGuides(result.guides);
     },
-    [snapEnabled, isPreview, template.slots, pxToPct, canvasWidth, canvasHeight, snapThresholdPx],
+    [snapEnabled, isPreview, pxToPct, pctToPx, canvasWidth, canvasHeight, snapThresholdPx],
   );
 
-  /** On drag stop: apply snapping then commit. */
+  /** On drag stop: apply snapping, commit dragged slot, then move all co-selected slots by the same delta. */
   const handleSlotDragStop = useCallback(
     (slotId: string, pxX: number, pxY: number) => {
       setActiveGuides([]);
+      setLiveDragDelta(null);
+      setDraggingSlotId(null);
+
       const snap = lastGuideResultRef.current;
       const pct = pxToPct(pxX, pxY);
       const finalX = snap.snapX !== undefined ? snap.snapX : pct.x;
@@ -172,7 +209,23 @@ export function LayoutCanvas({
       onSlotMove(slotId, finalX, finalY);
       lastGuideResultRef.current = {};
 
-      // Announce for a11y
+      // Move co-selected slots by the same % delta.
+      const ids = selectedSlotIdsRef.current;
+      const slots = templateSlotsRef.current;
+      if (ids.size > 1) {
+        const draggedSlot = slots.find((s) => s.id === slotId);
+        if (draggedSlot) {
+          const dxPct = finalX - draggedSlot.x;
+          const dyPct = finalY - draggedSlot.y;
+          ids.forEach((id) => {
+            if (id === slotId) return;
+            const s = slots.find((ts) => ts.id === id);
+            if (!s) return;
+            onSlotMove(id, s.x + dxPct, s.y + dyPct);
+          });
+        }
+      }
+
       onAnnounce?.(`Slot moved to ${finalX.toFixed(1)}%, ${finalY.toFixed(1)}%`);
     },
     [pxToPct, onSlotMove, onAnnounce],
@@ -207,7 +260,11 @@ export function LayoutCanvas({
   const handleCanvasDblClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) {
-        onCanvasBgDoubleClick?.();
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) { onCanvasBgDoubleClick?.(50, 50); return; }
+        const pctX = Math.max(0, Math.min(90, ((e.clientX - rect.left) / rect.width) * 100));
+        const pctY = Math.max(0, Math.min(90, ((e.clientY - rect.top) / rect.height) * 100));
+        onCanvasBgDoubleClick?.(pctX, pctY);
       }
     },
     [onCanvasBgDoubleClick],
@@ -271,19 +328,31 @@ export function LayoutCanvas({
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Canvas dimensions label */}
+      {/* Canvas dimensions badge */}
       {!isPreview && (
-        <Text
-          size="xs"
-          c="dimmed"
-          ta="center"
-          mb={4}
-          style={{ userSelect: 'none' }}
-        >
-          {canvasWidth} × {canvasHeight}px
-          {' · '}
-          {template.slots.length} slot{template.slots.length !== 1 ? 's' : ''}
-        </Text>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '2px 10px',
+              borderRadius: 99,
+              background: 'var(--mantine-color-default-hover)',
+              border: '1px solid var(--mantine-color-default-border)',
+              userSelect: 'none',
+              fontSize: 'var(--mantine-font-size-xs)',
+              color: 'var(--mantine-color-dimmed)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span>{canvasWidth} × {canvasHeight}px</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span>{formatAspectRatio(template.canvasAspectRatio)}</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span>{template.slots.length} slot{template.slots.length !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
       )}
 
       {/* The canvas itself */}
@@ -352,18 +421,30 @@ export function LayoutCanvas({
           const pos = pctToPx(slot.x, slot.y, slot.width, slot.height);
           const assignedMedia = mediaAssignments.get(slot.id);
 
+          // Apply live drag delta to co-selected (non-dragging) slots so they move in sync.
+          const isCoSelectedDrag =
+            liveDragDelta !== null &&
+            draggingSlotId !== null &&
+            slot.id !== draggingSlotId &&
+            selectedSlotIds.has(slot.id);
+          const effectivePxX = isCoSelectedDrag ? pos.x + liveDragDelta!.dx : pos.x;
+          const effectivePxY = isCoSelectedDrag ? pos.y + liveDragDelta!.dy : pos.y;
+
+          const isSlotSelected = selectedSlotIds.has(slot.id);
+
           return (
             <LayoutSlotComponent
               key={slot.id}
               slot={slot}
               index={index}
-              pixelX={pos.x}
-              pixelY={pos.y}
+              pixelX={effectivePxX}
+              pixelY={effectivePxY}
               pixelWidth={pos.width!}
               pixelHeight={pos.height!}
               canvasWidth={canvasWidth}
               canvasHeight={canvasHeight}
-              isSelected={selectedSlotIds.has(slot.id)}
+              isSelected={isSlotSelected}
+              isInMultiSelect={isSlotSelected && selectedSlotIds.size > 1}
               isPreview={isPreview}
               mediaItem={assignedMedia}
               onDragStop={handleSlotDragStop}
@@ -374,6 +455,7 @@ export function LayoutCanvas({
               onMediaDrop={onMediaDrop}
               onSlotUpdate={onSlotUpdate}
               isMaskSelected={selectedMaskSlotId === slot.id}
+              showSlotIndices={showSlotIndices}
             />
           );
         })}

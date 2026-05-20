@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { produce, enableMapSet } from 'immer';
-import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, MediaItem } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 
@@ -112,6 +112,8 @@ export interface LayoutBuilderActions {
   resizeSlot: (id: string, x: number, y: number, width: number, height: number) => void;
   /** Update arbitrary slot properties. */
   updateSlot: (id: string, updates: Partial<LayoutSlot>) => void;
+  /** Update multiple slots in one history entry. */
+  updateSlots: (updatesById: Record<string, Partial<LayoutSlot>>, label?: string) => void;
   /** Nudge selected slots by a delta (arrow key). */
   nudgeSlots: (ids: string[], dx: number, dy: number) => void;
   /** Assign a specific media item to a slot (with optional cross-campaign metadata). */
@@ -177,8 +179,10 @@ export interface LayoutBuilderActions {
   // ── Selection ──
   /** Select a single slot (replaces selection). */
   selectSlot: (id: string) => void;
-  /** Toggle a slot in the selection (Shift+click). */
+  /** Toggle a slot in the selection (Ctrl/Cmd+click). */
   toggleSlotSelection: (id: string) => void;
+  /** Replace selection with the given set of slot IDs (Shift+click range). */
+  selectSlotsInRange: (ids: string[]) => void;
   /** Clear selection. */
   clearSelection: () => void;
 
@@ -202,6 +206,18 @@ export interface LayoutBuilderActions {
   // ── Persistence ──
   /** Mark the current state as saved (clears dirty flag). */
   markSaved: () => void;
+  /** Delete the autosaved draft for the current template from localStorage. */
+  clearDraft: () => void;
+
+  // ── Groups (P29-G-C) ──
+  /** Create a flat group from the given member IDs. Returns the new group ID. */
+  createGroup: (memberIds: string[]) => string;
+  /** Dissolve (delete) a group without removing its members. */
+  dissolveGroup: (groupId: string) => void;
+  /** Update group properties (name, locked, visible, collapsed). */
+  updateGroup: (groupId: string, updates: Partial<LayoutGroup>) => void;
+  /** Select a group: replaces selectedSlotIds with all slot member IDs of the group. */
+  selectGroup: (groupId: string) => void;
 }
 
 export type UseLayoutBuilderReturn = LayoutBuilderState & LayoutBuilderActions;
@@ -454,6 +470,21 @@ export function useLayoutBuilderState(
           Object.assign(d.slots[idx]!, updates);
         }
       }, 'Update slot'),
+    [mutate],
+  );
+
+  const updateSlots = useCallback(
+    (updatesById: Record<string, Partial<LayoutSlot>>, label = 'Update slots') => {
+      const slotIds = Object.keys(updatesById);
+      if (slotIds.length === 0) return;
+      mutate((d) => {
+        const slotIdSet = new Set(slotIds);
+        for (const slot of d.slots) {
+          if (!slotIdSet.has(slot.id)) continue;
+          Object.assign(slot, updatesById[slot.id]!);
+        }
+      }, label);
+    },
     [mutate],
   );
 
@@ -806,6 +837,11 @@ export function useLayoutBuilderState(
     [],
   );
 
+  const selectSlotsInRange = useCallback(
+    (ids: string[]) => setSelectedSlotIds(new Set(ids)),
+    [],
+  );
+
   const clearSelection = useCallback(
     () => setSelectedSlotIds(new Set()),
     [],
@@ -904,6 +940,46 @@ export function useLayoutBuilderState(
 
   const markSaved = useCallback(() => setIsDirty(false), []);
 
+  // ── Groups (P29-G-C) ──
+
+  const createGroup = useCallback((memberIds: string[]): string => {
+    const id = crypto.randomUUID?.() ?? `group-${Date.now()}`;
+    const uniqueIds = [...new Set(memberIds)];
+    mutate((draft) => {
+      draft.groups = (draft.groups ?? [])
+        .map((g) => ({ ...g, memberIds: g.memberIds.filter((mid) => !uniqueIds.includes(mid)) }))
+        .filter((g) => g.memberIds.length > 0);
+      draft.groups.push({ id, memberIds: uniqueIds });
+    }, `Group (${uniqueIds.length} layers)`);
+    return id;
+  }, [mutate]);
+
+  const dissolveGroup = useCallback((groupId: string) => {
+    mutate((draft) => {
+      draft.groups = (draft.groups ?? []).filter((g) => g.id !== groupId);
+    }, 'Ungroup');
+  }, [mutate]);
+
+  const updateGroup = useCallback((groupId: string, updates: Partial<LayoutGroup>) => {
+    mutate((draft) => {
+      const g = (draft.groups ?? []).find((g) => g.id === groupId);
+      if (g) Object.assign(g, updates);
+    }, 'Update group');
+  }, [mutate]);
+
+  const selectGroup = useCallback((groupId: string) => {
+    const group = (template.groups ?? []).find((g) => g.id === groupId);
+    if (!group) return;
+    setSelectedSlotIds(new Set(
+      group.memberIds.filter((id) => template.slots.some((s) => s.id === id))
+    ));
+  }, [template]);
+
+  const clearDraft = useCallback(() => {
+    if (!template.id) return;
+    try { localStorage.removeItem(STORAGE_KEY_PREFIX + template.id); } catch { /* ignore */ }
+  }, [template.id]);
+
   // ── Autosave to localStorage ──
   const templateRef = useRef(template);
   templateRef.current = template;
@@ -954,6 +1030,7 @@ export function useLayoutBuilderState(
     moveSlot,
     resizeSlot,
     updateSlot,
+    updateSlots,
     nudgeSlots,
     assignMediaToSlot,
     clearSlotMedia,
@@ -981,6 +1058,7 @@ export function useLayoutBuilderState(
     // Selection
     selectSlot,
     toggleSlotSelection,
+    selectSlotsInRange,
     clearSelection,
     // History
     undo,
@@ -998,5 +1076,11 @@ export function useLayoutBuilderState(
     togglePreview,
     // Persistence
     markSaved,
+    clearDraft,
+    // Groups (P29-G-C)
+    createGroup,
+    dissolveGroup,
+    updateGroup,
+    selectGroup,
   };
 }

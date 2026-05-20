@@ -1,0 +1,17 @@
+// Hover glow for template-picker cards.
+// Color is set via CSS custom property --wpsg-glow-color on each card element.
+.card {
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--wpsg-glow-color);
+    box-shadow:
+      0 0 0 1px var(--wpsg-glow-color),
+      0 4px 20px color-mix(in srgb, var(--wpsg-glow-color) 25%, transparent),
+      0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+}

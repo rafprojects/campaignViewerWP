@@ -28,7 +28,11 @@ const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
     rows: [
       { keys: ['Delete'], description: 'Remove selected slot(s)' },
       { keys: ['Escape'], description: 'Deselect all' },
-      { keys: ['Ctrl / ⌘', 'V'], description: 'Duplicate selected slot(s)' },
+      { keys: ['Ctrl / ⌘', 'D'], description: 'Duplicate selected slot(s)' },
+      { keys: ['Ctrl / ⌘', 'G'], description: 'Group selected (2+) · or select all in group when already grouped' },
+      { keys: ['Ctrl / ⌘', 'Shift', 'G'], description: 'Ungroup selected group' },
+      { keys: ['Ctrl / ⌘', 'click'], description: 'Toggle slot in selection (layers panel)' },
+      { keys: ['Shift', 'click'], description: 'Range select (layers panel)' },
     ],
   },
   {
@@ -52,6 +56,7 @@ const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
     rows: [
       { keys: ['H'], description: 'Toggle hand / pan tool' },
       { keys: ['V'], description: 'Return to select tool' },
+      { keys: ['F'], description: 'Fit canvas to viewport' },
       { keys: ['0'], description: 'Reset zoom to 100%' },
       { keys: ['+'], description: 'Zoom in' },
       { keys: ['-'], description: 'Zoom out' },

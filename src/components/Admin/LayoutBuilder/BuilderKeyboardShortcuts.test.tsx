@@ -105,6 +105,7 @@ const {
     addSlot: vi.fn(),
     removeSlot: vi.fn(),
     updateSlot: vi.fn(),
+    updateSlots: vi.fn(),
     addGraphicLayer: vi.fn(),
     removeGraphicLayer: vi.fn(),
     updateGraphicLayer: vi.fn(),

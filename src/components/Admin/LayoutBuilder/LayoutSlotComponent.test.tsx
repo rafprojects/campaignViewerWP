@@ -255,6 +255,15 @@ describe('LayoutSlotComponent — edit mode', () => {
     const labels = getAllByText('1');
     expect(labels.length).toBeGreaterThanOrEqual(1);
   });
+
+  it('uses Ctrl/Cmd+mousedown for multi-select toggle', () => {
+    const onToggleSelect = vi.fn();
+    renderEditSlot({}, { onToggleSelect });
+
+    fireEvent.mouseDown(screen.getByRole('img', { name: /Slot 1/ }), { ctrlKey: true });
+
+    expect(onToggleSelect).toHaveBeenCalledWith('slot-1');
+  });
 });
 
 // ── Drop events ───────────────────────────────────────────────────────────────

@@ -1,7 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Modal, SimpleGrid, Card, Text, Badge, Stack, Group, Loader, Center } from '@mantine/core';
 import { IconLayoutGrid } from '@tabler/icons-react';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
+import classes from './TemplatePickerModal.module.scss';
+
+type TemplateCardStyle = CSSProperties & Record<'--wpsg-glow-color', string>;
+
+function buildTemplateCardStyle(glowColor: string): TemplateCardStyle {
+  return {
+    cursor: 'pointer',
+    '--wpsg-glow-color': glowColor,
+  };
+}
 
 interface Props {
   opened: boolean;
@@ -46,7 +56,8 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
             withBorder
             radius="md"
             padding="md"
-            style={{ cursor: 'pointer' }}
+            className={classes.card!}
+            style={buildTemplateCardStyle('var(--mantine-color-gray-6)')}
             onClick={() => pick(null)}
           >
             <Stack gap={4}>
@@ -58,28 +69,35 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
             </Stack>
           </Card>
 
-          {templates.map((tpl) => (
-            <Card
-              key={tpl.id}
-              withBorder
-              radius="md"
-              padding="md"
-              style={{ cursor: 'pointer' }}
-              onClick={() => pick(tpl)}
-            >
-              <Stack gap={4}>
-                <Group gap="xs" wrap="nowrap" justify="space-between">
-                  <Text fw={600} size="sm" truncate style={{ flex: 1 }}>{tpl.name}</Text>
-                  <Badge size="xs" variant="light" color={tpl.source === 'builtin' ? 'blue' : 'gray'}>
-                    {tpl.source === 'builtin' ? 'Built-in' : 'Custom'}
-                  </Badge>
-                </Group>
-                {tpl.description && (
-                  <Text size="xs" c="dimmed" lineClamp={2}>{tpl.description}</Text>
-                )}
-              </Stack>
-            </Card>
-          ))}
+          {templates.map((tpl) => {
+            const glowColor =
+              tpl.source === 'builtin'
+                ? 'var(--mantine-color-blue-6)'
+                : 'var(--mantine-color-green-6)';
+            return (
+              <Card
+                key={tpl.id}
+                withBorder
+                radius="md"
+                padding="md"
+                className={classes.card!}
+                style={buildTemplateCardStyle(glowColor)}
+                onClick={() => pick(tpl)}
+              >
+                <Stack gap={4}>
+                  <Group gap="xs" wrap="nowrap" justify="space-between">
+                    <Text fw={600} size="sm" truncate style={{ flex: 1 }}>{tpl.name}</Text>
+                    <Badge size="xs" variant="light" color={tpl.source === 'builtin' ? 'blue' : 'gray'}>
+                      {tpl.source === 'builtin' ? 'Built-in' : 'Custom'}
+                    </Badge>
+                  </Group>
+                  {tpl.description && (
+                    <Text size="xs" c="dimmed" lineClamp={2}>{tpl.description}</Text>
+                  )}
+                </Stack>
+              </Card>
+            );
+          })}
         </SimpleGrid>
       )}
     </Modal>

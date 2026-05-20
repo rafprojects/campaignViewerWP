@@ -15,6 +15,7 @@ import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/Typogra
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
 import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
+import { resolveFixedCardWidth, gridRowMaxWidthCss, formatGapCss } from '@/utils/gridLayout';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -93,15 +94,6 @@ export function CardGallery({
       : 1;
     return max > 0 ? Math.min(auto, max) : auto;
   }, [s.cardGridColumns, s.cardMaxColumns, containerWidth, s.cardAutoColumnsBreakpoints]);
-
-  /** Max columns for fixed-width (flex) branch — used to compute row maxWidth. */
-  const maxCols = useMemo((): number => {
-    const cols = s.cardGridColumns;
-    if (cols > 0) return cols;
-    const max = s.cardMaxColumns || 0;
-    if (max > 0) return max;
-    return effectiveColumns;
-  }, [s.cardGridColumns, s.cardMaxColumns, effectiveColumns]);
 
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
@@ -251,10 +243,7 @@ export function CardGallery({
   const cardGridOffsetY = s.cardGalleryOffsetY || 0;
   const cardGapHUnit = s.cardGapHUnit ?? 'px';
   const cardGapVUnit = s.cardGapVUnit ?? 'px';
-  // Clamp percentage-based horizontal gaps to a minimum visible pixel value
-  const effectiveGapH = cardGapHUnit === '%' && containerWidth > 0 && (containerWidth * s.cardGapH / 100) < 4
-    ? '4px'
-    : toCss(s.cardGapH, cardGapHUnit);
+  const effectiveGapH = formatGapCss(s.cardGapH, cardGapHUnit, containerWidth, 4);
   const responsiveCardWidth = useMemo(() => {
     if (effectiveColumns <= 1) {
       return '100%';
@@ -266,24 +255,13 @@ export function CardGallery({
 
   const fixedCardWidth = useMemo<{ value: number; unit: CssWidthUnit } | null>(() => {
     if (!hasFixedCardWidth) return null;
-
-    const scale = s.cardScale ?? 1;
-    const scaledValue = scale !== 1 ? Math.round(s.cardMaxWidth * scale) : s.cardMaxWidth;
-
-    if (s.cardMaxWidthUnit === '%' && containerWidth > 0) {
-      const resolved = Math.round((containerWidth * scaledValue) / 100);
-      // Fall back to responsive branch when resolved width is too small
-      if (resolved < MIN_FIXED_CARD_WIDTH_PX) return null;
-      return { value: resolved, unit: 'px' };
-    }
-
-    // For absolute units, check against the floor when we can resolve to px
-    if (s.cardMaxWidthUnit === 'px' && scaledValue < MIN_FIXED_CARD_WIDTH_PX) return null;
-
-    return {
-      value: scaledValue,
-      unit: s.cardMaxWidthUnit,
-    };
+    return resolveFixedCardWidth(
+      s.cardMaxWidth,
+      s.cardMaxWidthUnit,
+      s.cardScale ?? 1,
+      containerWidth,
+      MIN_FIXED_CARD_WIDTH_PX,
+    );
   }, [hasFixedCardWidth, s.cardMaxWidth, s.cardMaxWidthUnit, s.cardScale, containerWidth]);
 
   // P21-D: Dynamic viewer background
@@ -466,7 +444,7 @@ export function CardGallery({
                 ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, s.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, s.cardGalleryOffsetYUnit)})` } : {}),
                 width: '100%',
                 ...(fixedCardWidth ? {
-                  maxWidth: `calc(${toCss(maxCols * fixedCardWidth.value, fixedCardWidth.unit)} + ${(maxCols - 1)} * ${effectiveGapH})`,
+                  maxWidth: gridRowMaxWidthCss(fixedCardWidth.value, fixedCardWidth.unit, effectiveColumns, effectiveGapH),
                   marginInline: 'auto',
                 } : {}),
               }}

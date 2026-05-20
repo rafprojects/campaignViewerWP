@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Stack, Group, Button, Text, Badge, ActionIcon, Tooltip,
-  Modal, TextInput, Select, Title, Divider, Loader, Center,
+  Modal, TextInput, Select, Title, Divider, Loader, Center, Textarea,
 } from '@mantine/core';
 import { IconTrash, IconPlus } from '@tabler/icons-react';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
@@ -21,8 +21,10 @@ export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
   const [createSource, setCreateSource] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const descriptionCharacterCount = createDescription.length;
 
   const load = useCallback(() => {
     setLoading(true);
@@ -53,11 +55,13 @@ export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
     try {
       await apiClient.createCampaignTemplate({
         name: createName.trim(),
+        description: createDescription.trim(),
         ...(createSource ? { from_campaign_id: parseInt(createSource, 10) } : {}),
       });
       onNotify({ type: 'success', text: 'Template created.' });
       setCreateOpen(false);
       setCreateName('');
+      setCreateDescription('');
       setCreateSource(null);
       load();
     } catch (err) {
@@ -65,7 +69,7 @@ export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
     } finally {
       setIsCreating(false);
     }
-  }, [apiClient, createName, createSource, onNotify, load]);
+  }, [apiClient, createName, createDescription, createSource, onNotify, load]);
 
   const campaignOptions = campaigns.map((c) => ({ value: c.id, label: c.title }));
 
@@ -108,7 +112,7 @@ export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
 
       <Modal
         opened={createOpen}
-        onClose={() => { setCreateOpen(false); setCreateName(''); setCreateSource(null); }}
+        onClose={() => { setCreateOpen(false); setCreateName(''); setCreateDescription(''); setCreateSource(null); }}
         title="New Template"
         size="sm"
         centered
@@ -120,6 +124,15 @@ export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
             value={createName}
             onChange={(e) => setCreateName(e.currentTarget.value)}
             required
+          />
+          <Textarea
+            label="Description (optional)"
+            placeholder="e.g. Our standard wedding campaign layout"
+            value={createDescription}
+            onChange={(e) => setCreateDescription(e.currentTarget.value)}
+            minRows={2}
+            maxRows={4}
+            description={`${descriptionCharacterCount} character${descriptionCharacterCount === 1 ? '' : 's'}`}
           />
           <Select
             label="Copy settings from campaign (optional)"
@@ -154,7 +167,7 @@ function TemplateRow({
   onDelete: (tpl: CampaignTemplate) => void;
 }) {
   return (
-    <Group justify="space-between" wrap="nowrap" px="xs" py={4}>
+    <Group justify="space-between" wrap="wrap" px="xs" py={4}>
       <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
         <Group gap="xs" wrap="nowrap">
           <Text size="sm" fw={500} truncate>{tpl.name}</Text>

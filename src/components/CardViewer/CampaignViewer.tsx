@@ -457,6 +457,8 @@ export function CampaignViewer({
       opened={opened}
       onClose={onClose}
       withinPortal={false}
+      closeOnEscape={true}
+      closeOnClickOutside={true}
       size={modalSize}
       padding={0}
       withCloseButton

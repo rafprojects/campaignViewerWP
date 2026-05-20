@@ -405,12 +405,13 @@ describe('CompactGridGallery — specific', () => {
     const { container } = render(
       <CompactGridGallery media={THREE_IMAGES} settings={customSettings} />,
     );
-    const grid = container.querySelector('div[style*="grid-template-columns"]') as HTMLDivElement | null;
+    const grid = container.querySelector('div[style*="flex-wrap"]') as HTMLDivElement | null;
     const firstCard = container.querySelector('button') as HTMLButtonElement | null;
 
     expect(container.firstChild).not.toBeNull();
-    expect(grid?.style.maxWidth).toContain('200px');
-    expect(grid?.style.maxWidth).toContain('* 3');
+    // 3 cols × 200px + 2 gaps × 16px — format: min(100%, calc(600px + 2 * 16px))
+    expect(grid?.style.maxWidth).toContain('600px');
+    expect(grid?.style.maxWidth).toContain('2 * 16px');
     expect(firstCard?.style.aspectRatio).toBe('3 / 4');
     expect(firstCard?.style.minHeight).toBe('220px');
   });

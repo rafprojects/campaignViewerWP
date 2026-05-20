@@ -39,10 +39,12 @@ Version bumps are handled automatically by the **GitHub Actions release workflow
 **Manual version bump** (if needed):
 1. Update version in `package.json`
 2. Update version in `wp-plugin/wp-super-gallery/wp-super-gallery.php` (header + constant)
-3. Update `VERSION_HISTORY.md` with release notes
-4. Create git tag: `git tag v{version}`
-5. Push tag: `git push origin v{version}`
-6. Update version in `wp-plugin/wp-super-gallery/readme.txt`
+3. Update `docs/VERSION_HISTORY.md` with release notes
+4. Update `CHANGELOG.md` with a new `[{version}]` section following Keep a Changelog format
+5. Update version in `wp-plugin/wp-super-gallery/readme.txt` (`Stable tag`)
+6. Commit all version-bump changes
+7. Create git tag: `git tag v{version}`
+8. Push tag: `git push origin v{version}`
 
 
 The auto-compute logic lives in `scripts/compute-version.sh`.

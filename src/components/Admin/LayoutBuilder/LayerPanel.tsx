@@ -1,6 +1,7 @@
-import { useRef, type DragEvent, type KeyboardEvent } from 'react';
-import { Stack, Text, ScrollArea } from '@mantine/core';
-import { buildLayerList } from '@/utils/layerList';
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
+import { Stack, Text, ScrollArea, ActionIcon, Tooltip } from '@mantine/core';
+import { IconChevronDown, IconChevronRight, IconLayersLinked, IconLayersOff } from '@tabler/icons-react';
+import { buildLayerList, type GroupLayerItem } from '@/utils/layerList';
 import { LayerRow } from './LayerRow';
 import type { LayoutTemplate } from '@/types';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -9,8 +10,8 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface LayerPanelProps {
   template: LayoutTemplate;
-  /** ID of the currently-selected slot (from builder state). */
-  selectedSlotId?: string | null | undefined;
+  /** Set of currently-selected slot IDs (from builder state). */
+  selectedSlotIds?: Set<string> | null | undefined;
   /** ID of the currently-selected graphic layer / overlay (local modal state). */
   selectedOverlayId?: string | null | undefined;
   /** Whether the Background row is currently selected. */
@@ -18,6 +19,10 @@ export interface LayerPanelProps {
   /** Slot ID whose mask sublayer is currently selected. */
   selectedMaskSlotId?: string | null | undefined;
   onSelectSlot: (id: string) => void;
+  /** Called on Ctrl/Cmd+click for multi-select toggle. */
+  onToggleSelectSlot?: ((id: string) => void) | undefined;
+  /** Called on Shift+click with the target ID; consumer computes and applies range. */
+  onRangeSelectSlot?: ((id: string) => void) | undefined;
   onSelectOverlay: (id: string) => void;
   /** Called when the user clicks the Background row. */
   onSelectBackground?: () => void;
@@ -41,17 +46,25 @@ export interface LayerPanelProps {
   onDeleteLayer?: (id: string, kind: 'slot' | 'graphic' | 'mask') => void;
   /** Add an empty mask sublayer to a slot. */
   onAddMask?: (slotId: string) => void;
+  /** Called when the user clicks a group row — should select all group slot members. */
+  onSelectGroup?: (groupId: string) => void;
+  /** Called to dissolve a group by ID. */
+  onDissolveGroup?: (groupId: string) => void;
+  /** Called to toggle a group's collapsed state. */
+  onToggleGroupCollapsed?: (groupId: string, collapsed: boolean) => void;
 }
 
 // ── Component ────────────────────────────────────────────────
 
 export function LayerPanel({
   template,
-  selectedSlotId,
+  selectedSlotIds,
   selectedOverlayId,
   isBackgroundSelected,
   selectedMaskSlotId,
   onSelectSlot,
+  onToggleSelectSlot,
+  onRangeSelectSlot,
   onSelectOverlay,
   onSelectBackground,
   onSelectMask,
@@ -70,9 +83,22 @@ export function LayerPanel({
   onSendBackward,
   onDeleteLayer,
   onAddMask,
+  onSelectGroup,
+  onDissolveGroup,
+  onToggleGroupCollapsed,
 }: LayerPanelProps) {
   const layers = buildLayerList(template);
   const dragIdRef = useRef<string | null>(null);
+  // Local collapsed state for groups (mirrors group.collapsed but tracked here for instant UI)
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setCollapsedGroups(new Set(
+      (template.groups ?? [])
+        .filter((group) => group.collapsed)
+        .map((group) => group.id),
+    ));
+  }, [template.groups]);
 
   // ── Drag handlers ─────────────────────────────────────────
 
@@ -97,9 +123,16 @@ export function LayerPanel({
     dragIdRef.current = null;
   }
 
+  function handleGroupHeaderKeyDown(event: KeyboardEvent<HTMLDivElement>, groupId: string) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onSelectGroup?.(groupId);
+  }
+
   // ── Keyboard navigation ───────────────────────────────────
-  // Determine the single active ID across all layer types for navigation.
-  const activeLayerId = selectedMaskSlotId ? `mask-${selectedMaskSlotId}` : selectedSlotId ?? selectedOverlayId ?? (isBackgroundSelected ? 'background' : null);
+  // For keyboard nav use the first selected slot as the anchor.
+  const firstSelectedSlotId = selectedSlotIds && selectedSlotIds.size > 0 ? [...selectedSlotIds][0] : null;
+  const activeLayerId = selectedMaskSlotId ? `mask-${selectedMaskSlotId}` : firstSelectedSlotId ?? selectedOverlayId ?? (isBackgroundSelected ? 'background' : null);
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const selectedIndex = layers.findIndex((l) => l.id === activeLayerId);
@@ -194,51 +227,134 @@ export function LayerPanel({
       >
         <Stack gap={0} py={4}>
           {layers.map((item) => {
+            // ── Group header row ─────────────────────────────
+            if (item.kind === 'group') {
+              const groupItem = item as GroupLayerItem;
+              const isCollapsed = collapsedGroups.has(groupItem.id);
+              const allSlotIds = groupItem.group.memberIds.filter(
+                (id) => template.slots.some((s) => s.id === id)
+              );
+              const isGroupSelected = allSlotIds.length > 0 && allSlotIds.every((id) => selectedSlotIds?.has(id));
+              return (
+                <div
+                  key={groupItem.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '2px 6px 2px 4px',
+                    background: isGroupSelected
+                      ? 'var(--mantine-color-blue-light)'
+                      : 'var(--mantine-color-default-hover)',
+                    borderLeft: '3px solid var(--mantine-color-blue-5)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Select group ${groupItem.name || 'Group'}`}
+                  onClick={() => onSelectGroup?.(groupItem.id)}
+                  onKeyDown={(event) => handleGroupHeaderKeyDown(event, groupItem.id)}
+                >
+                  <ActionIcon
+                    size="xs"
+                    variant="transparent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCollapsedGroups((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(groupItem.id)) next.delete(groupItem.id);
+                        else next.add(groupItem.id);
+                        return next;
+                      });
+                      onToggleGroupCollapsed?.(groupItem.id, !isCollapsed);
+                    }}
+                    aria-label={isCollapsed ? 'Expand group' : 'Collapse group'}
+                  >
+                    {isCollapsed ? <IconChevronRight size={12} /> : <IconChevronDown size={12} />}
+                  </ActionIcon>
+                  <IconLayersLinked size={13} style={{ flexShrink: 0, color: 'var(--mantine-color-blue-5)' }} />
+                  <Text size="xs" fw={500} style={{ flex: 1 }} truncate>
+                    {groupItem.name || 'Group'}
+                  </Text>
+                  <Text size="xs" c="dimmed">{groupItem.group.memberIds.length}</Text>
+                  {onDissolveGroup && (
+                    <Tooltip label="Ungroup">
+                      <ActionIcon
+                        size="xs"
+                        variant="transparent"
+                        c="dimmed"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDissolveGroup(groupItem.id);
+                        }}
+                        aria-label="Ungroup"
+                      >
+                        <IconLayersOff size={12} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                </div>
+              );
+            }
+
+            // ── Normal layer rows ────────────────────────────
             const isBackground = item.kind === 'background';
             const isMask = item.kind === 'mask';
+
+            // Hide members of collapsed groups
+            const memberGroup = (template.groups ?? []).find((g) => g.memberIds.includes(item.id));
+            if (memberGroup && collapsedGroups.has(memberGroup.id)) return null;
+
+            // Indent members of any group
+            const indented = !!memberGroup;
+
             const isSelected =
-              (item.kind === 'slot' && item.id === selectedSlotId && !selectedMaskSlotId) ||
+              (item.kind === 'slot' && (selectedSlotIds?.has(item.id) ?? false) && !selectedMaskSlotId) ||
               (item.kind === 'graphic' && item.id === selectedOverlayId) ||
               (item.kind === 'background' && !!isBackgroundSelected) ||
               (item.kind === 'mask' && item.parentSlotId === selectedMaskSlotId);
             return (
-              <LayerRow
-                key={item.id}
-                item={item}
-                template={template}
-                isSelected={isSelected}
-                onSelect={(_id) => {
-                  if (isBackground) onSelectBackground?.();
-                  else if (isMask) onSelectMask?.(item.parentSlotId);
-                  else if (item.kind === 'graphic') onSelectOverlay(item.id);
-                  else onSelectSlot(item.id);
-                }}
-                onRename={(id, name) => {
-                  if (item.kind === 'slot') onRenameSlot(id, name);
-                  else if (item.kind === 'graphic') onRenameOverlay(id, name);
-                }}
-                onToggleVisible={(id) => {
-                  if (item.kind === 'slot') onToggleSlotVisible(id);
-                  else if (item.kind === 'graphic') onToggleOverlayVisible(id);
-                  else if (item.kind === 'mask') onToggleMaskVisible?.(item.parentSlotId);
-                }}
-                onToggleLocked={(id) => {
-                  if (item.kind === 'slot') onToggleSlotLocked(id);
-                  else if (item.kind === 'graphic') onToggleOverlayLocked(id);
-                }}
-                onBringToFront={onBringToFront}
-                onSendToBack={onSendToBack}
-                onBringForward={onBringForward}
-                onSendBackward={onSendBackward}
-                onDelete={onDeleteLayer ? (id) => {
-                  if (item.kind === 'mask') onDeleteLayer(item.parentSlotId, 'mask');
-                  else onDeleteLayer(id, item.kind === 'graphic' ? 'graphic' : 'slot');
-                } : undefined}
-                onAddMask={onAddMask}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              />
+              <div key={item.id} style={indented ? { paddingLeft: 12 } : undefined}>
+                <LayerRow
+                  item={item}
+                  template={template}
+                  isSelected={isSelected}
+                  onSelect={(_id) => {
+                    if (isBackground) onSelectBackground?.();
+                    else if (isMask) onSelectMask?.(item.parentSlotId);
+                    else if (item.kind === 'graphic') onSelectOverlay(item.id);
+                    else onSelectSlot(item.id);
+                  }}
+                  onToggleSelect={item.kind === 'slot' ? onToggleSelectSlot : undefined}
+                  onRangeSelect={item.kind === 'slot' ? onRangeSelectSlot : undefined}
+                  onRename={(id, name) => {
+                    if (item.kind === 'slot') onRenameSlot(id, name);
+                    else if (item.kind === 'graphic') onRenameOverlay(id, name);
+                  }}
+                  onToggleVisible={(id) => {
+                    if (item.kind === 'slot') onToggleSlotVisible(id);
+                    else if (item.kind === 'graphic') onToggleOverlayVisible(id);
+                    else if (item.kind === 'mask') onToggleMaskVisible?.(item.parentSlotId);
+                  }}
+                  onToggleLocked={(id) => {
+                    if (item.kind === 'slot') onToggleSlotLocked(id);
+                    else if (item.kind === 'graphic') onToggleOverlayLocked(id);
+                  }}
+                  onBringToFront={onBringToFront}
+                  onSendToBack={onSendToBack}
+                  onBringForward={onBringForward}
+                  onSendBackward={onSendBackward}
+                  onDelete={onDeleteLayer ? (id) => {
+                    if (item.kind === 'mask') onDeleteLayer(item.parentSlotId, 'mask');
+                    else onDeleteLayer(id, item.kind === 'graphic' ? 'graphic' : 'slot');
+                  } : undefined}
+                  onAddMask={onAddMask}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                />
+              </div>
             );
           })}
         </Stack>

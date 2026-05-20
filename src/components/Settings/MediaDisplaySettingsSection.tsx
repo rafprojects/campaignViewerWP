@@ -40,8 +40,11 @@ interface MediaDisplaySettingsSectionProps {
   tooltipLabel: (label: string, key: string) => ReactNode;
 }
 
-export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLabel }: MediaDisplaySettingsSectionProps) {
-  const { mounted, onChange } = useLazyAccordion('viewport');
+// Shared helpers used by both sub-components.
+function useAdapterHelpers(
+  settings: MediaDisplaySettingsData,
+  updateSetting: MediaDisplaySettingsSectionProps['updateSetting'],
+) {
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const resolvedAdapterSettings = collectGalleryAdapterSettingValues(resolvedGalleryConfig);
   const gallerySizingMode = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'gallerySizingMode') as GalleryBehaviorSettings['gallerySizingMode'] | undefined;
@@ -65,6 +68,15 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
       value as GalleryCommonSettings[typeof key],
     ));
   };
+
+  return { gallerySizingMode, galleryManualHeight, getAdapterSettingValue, updateAdapterSetting, updateViewerCommonSetting };
+}
+
+/** Accordion items: Viewport & Layout, Tile Appearance, Transitions. */
+export function GalleryStyleAccordion({ settings, updateSetting, tooltipLabel }: MediaDisplaySettingsSectionProps) {
+  const { mounted, onChange } = useLazyAccordion('viewport');
+  const { gallerySizingMode, galleryManualHeight, getAdapterSettingValue, updateAdapterSetting, updateViewerCommonSetting } =
+    useAdapterHelpers(settings, updateSetting);
 
   return (
     <Accordion variant="separated" defaultValue="viewport" onChange={onChange}>
@@ -272,6 +284,77 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
         </Accordion.Panel>
       </Accordion.Item>
 
+      <Accordion.Item value="transitions">
+        <Accordion.Control>Transitions</Accordion.Control>
+        <Accordion.Panel>
+          {mounted.has('transitions') && <Stack gap="md">
+            <Switch
+              label="Transition Fade"
+              description="Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
+              checked={getAdapterSettingValue('transitionFadeEnabled')}
+              onChange={(event) => updateAdapterSetting('transitionFadeEnabled', event.currentTarget.checked)}
+            />
+
+            <ModalSelect
+              label="Transition Type"
+              description="How gallery media slides between items: fade only, slide only, or combined slide-fade."
+              value={getAdapterSettingValue('scrollTransitionType')}
+              onChange={(value) => updateAdapterSetting('scrollTransitionType', (value as ScrollTransitionType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType)}
+              data={[
+                { value: 'slide-fade', label: 'Slide + Fade' },
+                { value: 'slide', label: 'Slide' },
+                { value: 'fade', label: 'Fade' },
+              ]}
+            />
+
+            <ModalSelect
+              label="Scroll Animation Style"
+              description="Navigation scroll behavior for gallery thumbnail strips."
+              value={getAdapterSettingValue('scrollAnimationStyle')}
+              onChange={(value) => updateAdapterSetting('scrollAnimationStyle', (value as ScrollAnimationStyle) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle)}
+              data={[
+                { value: 'smooth', label: 'Smooth' },
+                { value: 'instant', label: 'Instant' },
+              ]}
+            />
+
+            <NumberInput
+              label="Animation Duration (ms)"
+              description="Duration for gallery transition and thumbnail highlight animations."
+              value={getAdapterSettingValue('scrollAnimationDurationMs')}
+              onChange={(value) => updateAdapterSetting('scrollAnimationDurationMs', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs)}
+              min={0}
+              max={2000}
+              step={10}
+            />
+
+            <ModalSelect
+              label="Animation Easing"
+              description="Timing function used for gallery transitions."
+              value={getAdapterSettingValue('scrollAnimationEasing')}
+              onChange={(value) => updateAdapterSetting('scrollAnimationEasing', (value as ScrollAnimationEasing) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing)}
+              data={[
+                { value: 'ease', label: 'Ease' },
+                { value: 'linear', label: 'Linear' },
+                { value: 'ease-in', label: 'Ease In' },
+                { value: 'ease-out', label: 'Ease Out' },
+                { value: 'ease-in-out', label: 'Ease In Out' },
+              ]}
+            />
+          </Stack>}
+        </Accordion.Panel>
+      </Accordion.Item>
+    </Accordion>
+  );
+}
+
+/** Accordion items: Navigation (arrows, dots), Thumbnail Strip. */
+export function GalleryNavigationAccordion({ settings, updateSetting, tooltipLabel: _tooltipLabel }: MediaDisplaySettingsSectionProps) {
+  const { mounted, onChange } = useLazyAccordion('navigation');
+  const { getAdapterSettingValue, updateAdapterSetting } = useAdapterHelpers(settings, updateSetting);
+
+  return (
+    <Accordion variant="separated" defaultValue="navigation" onChange={onChange}>
       <Accordion.Item value="thumbnail-strip">
         <Accordion.Control>Thumbnail Strip</Accordion.Control>
         <Accordion.Panel>
@@ -347,67 +430,6 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
               description="Show left/right scroll buttons on the thumbnail strip edges."
               checked={getAdapterSettingValue('thumbnailScrollButtonsVisible')}
               onChange={(event) => updateAdapterSetting('thumbnailScrollButtonsVisible', event.currentTarget.checked)}
-            />
-          </Stack>}
-        </Accordion.Panel>
-      </Accordion.Item>
-
-      <Accordion.Item value="transitions">
-        <Accordion.Control>Transitions</Accordion.Control>
-        <Accordion.Panel>
-          {mounted.has('transitions') && <Stack gap="md">
-            <Switch
-              label="Transition Fade"
-              description="Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
-              checked={getAdapterSettingValue('transitionFadeEnabled')}
-              onChange={(event) => updateAdapterSetting('transitionFadeEnabled', event.currentTarget.checked)}
-            />
-
-            <ModalSelect
-              label="Transition Type"
-              description="How gallery media slides between items: fade only, slide only, or combined slide-fade."
-              value={getAdapterSettingValue('scrollTransitionType')}
-              onChange={(value) => updateAdapterSetting('scrollTransitionType', (value as ScrollTransitionType) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollTransitionType)}
-              data={[
-                { value: 'slide-fade', label: 'Slide + Fade' },
-                { value: 'slide', label: 'Slide' },
-                { value: 'fade', label: 'Fade' },
-              ]}
-            />
-
-            <ModalSelect
-              label="Scroll Animation Style"
-              description="Navigation scroll behavior for gallery thumbnail strips."
-              value={getAdapterSettingValue('scrollAnimationStyle')}
-              onChange={(value) => updateAdapterSetting('scrollAnimationStyle', (value as ScrollAnimationStyle) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationStyle)}
-              data={[
-                { value: 'smooth', label: 'Smooth' },
-                { value: 'instant', label: 'Instant' },
-              ]}
-            />
-
-            <NumberInput
-              label="Animation Duration (ms)"
-              description="Duration for gallery transition and thumbnail highlight animations."
-              value={getAdapterSettingValue('scrollAnimationDurationMs')}
-              onChange={(value) => updateAdapterSetting('scrollAnimationDurationMs', typeof value === 'number' ? value : DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationDurationMs)}
-              min={0}
-              max={2000}
-              step={10}
-            />
-
-            <ModalSelect
-              label="Animation Easing"
-              description="Timing function used for gallery transitions."
-              value={getAdapterSettingValue('scrollAnimationEasing')}
-              onChange={(value) => updateAdapterSetting('scrollAnimationEasing', (value as ScrollAnimationEasing) ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS.scrollAnimationEasing)}
-              data={[
-                { value: 'ease', label: 'Ease' },
-                { value: 'linear', label: 'Linear' },
-                { value: 'ease-in', label: 'Ease In' },
-                { value: 'ease-out', label: 'Ease Out' },
-                { value: 'ease-in-out', label: 'Ease In Out' },
-              ]}
             />
           </Stack>}
         </Accordion.Panel>
@@ -589,5 +611,15 @@ export function MediaDisplaySettingsSection({ settings, updateSetting, tooltipLa
         </Accordion.Panel>
       </Accordion.Item>
     </Accordion>
+  );
+}
+
+/** @deprecated Use GalleryStyleAccordion and GalleryNavigationAccordion directly. */
+export function MediaDisplaySettingsSection(props: MediaDisplaySettingsSectionProps) {
+  return (
+    <>
+      <GalleryStyleAccordion {...props} />
+      <GalleryNavigationAccordion {...props} />
+    </>
   );
 }

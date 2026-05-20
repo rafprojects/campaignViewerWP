@@ -5,6 +5,47 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0] - 2026-05-19
+
+### Added - Phase 29: Bug Fixes & UI Increments
+
+- **P29-B** Description field added to the Create Template modal with live character-count feedback.
+- **P29-E** Admin Panel is fully responsive below 768 px — collapsible header menu, stacked filter controls, and touch-friendly layout throughout.
+- **P29-F** Settings Panel tabs re-grouped around logical workflows; redundant nesting removed.
+- **P29-G** LayoutBuilder comprehensive UX overhaul: selection model unification, canvas-click-to-add, lock overlays, keyboard nudge/z-order/history, Properties accordion, focal point grid, media sidebar with campaign picker, 8-function alignment toolbar, Fit Canvas shortcut (`F`), flat `LayoutGroup` model, `Ctrl+G` group/select-in-group, layer panel group rows, unsaved dot indicator, JSON import/export, draft restore/discard prompt, per-action toast notifications, canvas dimensions badge.
+
+### Changed - Phase 29: Refactors
+
+- **P29-C** CompactGridGallery migrated from CSS Grid to Flexbox for reliable wrapping across all breakpoints.
+- **P29-H** Shared grid-layout utility module (`src/utils/gridLayout.ts`) extracted from `CardGallery` and `CompactGridGallery`; CardGallery row `maxWidth` now uses resolved `effectiveColumns` instead of the broader `maxCols` cap.
+
+### Fixed - Phase 29: Bug Fixes
+
+- **P29-A** Campaign media delete now removes only the targeted item; previously it wiped the entire media array.
+- **P29-D** Campaign ID no longer leaks into new media item IDs when adding media through the editor.
+- **P29-G** Multi-select drag in the LayoutBuilder now moves all co-selected slots in sync; mousedown no longer collapses multi-selection before a drag can begin.
+
+## [0.25.0] - 2026-05-17
+
+### Added - Phase 28: API Capability Expansion & Backend Hardening
+
+- Campaign hard-delete endpoint (`DELETE /campaigns/{id}`) with confirmation guard.
+- Time-limited access grants with `expires_at` support.
+- Taxonomy CRUD endpoints for campaign categories and tags (create/update/delete).
+- Batch media upload support (`POST /media/upload` multi-file + `POST /campaigns/{id}/media/batch`).
+- Campaign filtering enhancements (category, tag, sort, include_archived, template_id).
+- Pagination on unbounded list endpoints (companies, categories, tags, roles, access grants, audit logs).
+- Audit log improvements with dedicated table and global view.
+- Analytics expansion with per-media tracking and summary dashboard.
+- Magic-link access request approval with one-click email integration.
+- Access totals summary endpoint for aggregate views.
+- REST args hardening with typed parameters for better validation.
+- Rate-limit status headers for quota visibility.
+- Media sort controls and duplicate media detection via MD5-based checks.
+- Campaign templates with preset library support.
+- Settings ETag support and PATCH method for partial updates.
+- Hierarchical campaign categories with tree-based UI.
+
 ## [0.24.0] - 2026-05-14
 
 ### Added - Phase 25: Settings UX, Gallery Editing, And Contract Cleanup

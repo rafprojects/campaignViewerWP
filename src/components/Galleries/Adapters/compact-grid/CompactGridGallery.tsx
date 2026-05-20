@@ -1,7 +1,7 @@
 /**
  * P12-C: Compact Grid Gallery Adapter
  *
- * Responsive CSS grid with playing-card–proportioned media tiles
+ * Responsive flex-wrap grid with playing-card–proportioned media tiles
  * (configurable width/height, default 160×224 px — a 5:7 ratio).
  * Accepts a unified media array (images + videos). Image tiles open the
  * shared Portal-based Lightbox; video tiles show a play-button overlay
@@ -20,6 +20,7 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { gridRowMaxWidthCss } from '@/utils/gridLayout';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -69,7 +70,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   const gapUnit = common.adapterItemGapUnit ?? 'px';
   const cardWidthCss = toCss(cardWidth, cardWidthUnit);
   const gridMaxWidth = maxColumns > 0
-    ? `min(100%, calc((${cardWidthCss} * ${maxColumns}) + ${toCss(gap * Math.max(0, maxColumns - 1), gapUnit)}))`
+    ? `min(100%, ${gridRowMaxWidthCss(cardWidth, cardWidthUnit, maxColumns, toCss(gap, gapUnit))})`
     : undefined;
 
   const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
@@ -87,29 +88,38 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
         </Title>
       )}
 
-      {/* auto-fit collapses empty tracks so justify-content can distribute items */}
+      {/* Flex-wrap grid — justify-content distributes items per-row, so
+          partially filled last rows can be center/space-between/etc. */}
       <Box
         {...getWpsgDebugProps('CompactGridGallery', 'grid')}
         style={{
-          display: 'grid',
+          display: 'flex',
+          flexWrap: 'wrap',
           width: '100%',
           maxWidth: gridMaxWidth,
           marginInline: gridMaxWidth ? 'auto' : undefined,
-          gridTemplateColumns: `repeat(auto-fit, minmax(min(${cardWidthCss}, calc(50% - ${toCss(gap / 2, gapUnit)})), ${cardWidthCss}))`,
           gap: toCss(gap, gapUnit),
           justifyContent: common.adapterJustifyContent || 'center',
         }}
       >
         {media.map((item, index) => (
-          <GridCard
+          <Box
             key={item.id}
-            item={item}
-            index={index}
-            aspectRatio={aspectRatio}
-            minHeight={minCardHeight > 0 ? toCssOrNumber(minCardHeight, 'px') : undefined}
-            borderRadius={item.type === 'video' ? toCssOrNumber(settings.videoBorderRadius, settings.videoBorderRadiusUnit) : borderRadius}
-            onOpen={openAt}
-          />
+            style={{
+              flexBasis: `min(${cardWidthCss}, calc(50% - ${toCss(gap / 2, gapUnit)}))`,
+              maxWidth: cardWidthCss,
+              minWidth: 0,
+            }}
+          >
+            <GridCard
+              item={item}
+              index={index}
+              aspectRatio={aspectRatio}
+              minHeight={minCardHeight > 0 ? toCssOrNumber(minCardHeight, 'px') : undefined}
+              borderRadius={item.type === 'video' ? toCssOrNumber(settings.videoBorderRadius, settings.videoBorderRadiusUnit) : borderRadius}
+              onOpen={openAt}
+            />
+          </Box>
         ))}
       </Box>
 

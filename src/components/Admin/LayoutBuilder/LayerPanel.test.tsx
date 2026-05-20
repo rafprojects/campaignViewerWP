@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@/test/test-utils';
+import { render, screen, fireEvent, waitFor } from '@/test/test-utils';
 import { LayerPanel, type LayerPanelProps } from './LayerPanel';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ const template = {
 function makeProps(overrides: Partial<LayerPanelProps> = {}): LayerPanelProps {
   return {
     template,
-    selectedSlotId: null,
+    selectedSlotIds: new Set<string>(),
     selectedOverlayId: null,
     isBackgroundSelected: false,
     onSelectSlot: vi.fn(),
@@ -93,6 +93,39 @@ describe('LayerPanel', () => {
     expect(screen.getByText('Layers')).toBeInTheDocument();
   });
 
+  it('honors persisted collapsed groups on first render', async () => {
+    const groupedTemplate = {
+      ...template,
+      groups: [{ id: 'group-1', name: 'Grouped', memberIds: ['slot-1'], collapsed: true }],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: groupedTemplate })} />);
+
+    expect(screen.getByText('Grouped')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Media Layer 1')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Media Layer 2')).toBeInTheDocument();
+  });
+
+  it('allows keyboard activation of a group header row', () => {
+    const onSelectGroup = vi.fn();
+    const groupedTemplate = {
+      ...template,
+      groups: [{ id: 'group-1', name: 'Grouped', memberIds: ['slot-1'], collapsed: false }],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: groupedTemplate, onSelectGroup })} />);
+
+    const groupRow = screen.getByRole('button', { name: 'Select group Grouped' });
+
+    fireEvent.keyDown(groupRow, { key: 'Enter' });
+    fireEvent.keyDown(groupRow, { key: ' ' });
+
+    expect(onSelectGroup).toHaveBeenCalledTimes(2);
+    expect(onSelectGroup).toHaveBeenCalledWith('group-1');
+  });
+
   // ── Keyboard: ArrowDown / ArrowUp ─────────────────────────────────────────
 
   it('ArrowDown moves selection to the next layer', () => {
@@ -113,7 +146,7 @@ describe('LayerPanel', () => {
     // slot-1 (z=2) is at index 1, moving up should reach overlay-1 (z=3) at index 0
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onSelectOverlay })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onSelectOverlay })}
       />,
     );
     const kbd = getKeyboardTarget();
@@ -141,7 +174,7 @@ describe('LayerPanel', () => {
     const onToggleSlotVisible = vi.fn();
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onToggleSlotVisible })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onToggleSlotVisible })}
       />,
     );
     fireEvent.keyDown(getKeyboardTarget(), { key: ' ' });
@@ -182,7 +215,7 @@ describe('LayerPanel', () => {
     const onToggleSlotLocked = vi.fn();
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onToggleSlotLocked })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onToggleSlotLocked })}
       />,
     );
     fireEvent.keyDown(getKeyboardTarget(), { key: 'l' });
@@ -206,7 +239,7 @@ describe('LayerPanel', () => {
     const onBringToFront = vi.fn();
     render(
       <LayerPanel
-        {...makeProps({ selectedSlotId: 'slot-1', onBringToFront })}
+        {...makeProps({ selectedSlotIds: new Set(['slot-1']), onBringToFront })}
       />,
     );
     fireEvent.keyDown(getKeyboardTarget(), { key: 'f' });

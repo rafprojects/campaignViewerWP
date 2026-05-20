@@ -277,9 +277,13 @@ export function useUnifiedCampaignModal({
 
   const handleRemoveMedia = useCallback(async (mediaItem: MediaItem) => {
     if (!editingCampaignId) return;
+    if (!mediaItem.id) {
+      onNotify({ type: 'error', text: 'Cannot remove media: missing item ID. Please reload and try again.' });
+      return;
+    }
     try {
       await apiClient.delete(
-        `/wp-json/wp-super-gallery/v1/campaigns/${editingCampaignId}/media/${mediaItem.id}`,
+        `/wp-json/wp-super-gallery/v1/campaigns/${editingCampaignId}/media/${encodeURIComponent(mediaItem.id)}`,
       );
       setMediaItems((prev) => prev.filter((m) => m.id !== mediaItem.id));
       onNotify({ type: 'success', text: 'Media removed from campaign.' });
