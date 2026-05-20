@@ -4,7 +4,7 @@ Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 8.2
 Tested up to: 8.4
 Requires PHP: 8.2
-Stable tag: 0.25.0
+Stable tag: 0.26.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 

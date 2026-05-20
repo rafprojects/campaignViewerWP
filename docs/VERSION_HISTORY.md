@@ -1,7 +1,20 @@
 ## Version History
 
-### Unreleased (May 14, 2026)
-- No post-v0.24.0 changes recorded yet.
+### v0.26.0 (May 19, 2026)
+- **MINOR**: Phase 29 — Bug Fixes & UI Increments
+  - **P29-A** (fix): Campaign media delete now removes only the targeted item instead of wiping the entire media array.
+  - **P29-B** (feat): Description field added to the Create Template modal with live character-count feedback.
+  - **P29-C** (refactor): CompactGridGallery migrated from CSS Grid to Flexbox for reliable wrapping across all breakpoints.
+  - **P29-D** (fix): Campaign ID no longer leaks into new media item IDs when adding media through the editor.
+  - **P29-E** (feat): Admin Panel is fully responsive below 768 px — collapsible header menu, stacked filter controls, and mobile-friendly layout throughout.
+  - **P29-F** (feat): Settings Panel tabs re-grouped around logical workflows; redundant nesting removed.
+  - **P29-G** (feat): LayoutBuilder comprehensive UX overhaul —
+    - Selection model unification; canvas-click-to-add; lock overlays; keyboard nudge, z-order & history panel.
+    - Properties accordion (layout / image / effects / media), focal point grid, media sidebar with campaign picker, layer-row context menu.
+    - 8-function alignment toolbar, Fit Canvas shortcut (`F`), flat `LayoutGroup` model, `Ctrl+G` group / select-in-group dual behavior, `Ctrl+Shift+G` ungroup, layer panel group rows with collapse.
+    - Unsaved dot indicator, JSON import/export, draft restore/discard prompt, per-action toast notifications, canvas dimensions pill badge.
+    - Multi-select drag bug fixed: co-selected slots follow the dragged slot live; mousedown preserves multi-selection.
+  - **P29-H** (refactor): Shared grid-layout utility module (`src/utils/gridLayout.ts`) — `resolveFixedCardWidth`, `gridRowMaxWidthCss`, `formatGapCss`; CardGallery row `maxWidth` now uses resolved `effectiveColumns`.
 
 ### v0.25.0 (May 17, 2026)
 - **MINOR**: Phase 28 — API Capability Expansion & Backend Hardening
