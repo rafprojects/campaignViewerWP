@@ -409,8 +409,9 @@ describe('CompactGridGallery — specific', () => {
     const firstCard = container.querySelector('button') as HTMLButtonElement | null;
 
     expect(container.firstChild).not.toBeNull();
-    expect(grid?.style.maxWidth).toContain('200px');
-    expect(grid?.style.maxWidth).toContain('* 3');
+    // 3 cols × 200px + 2 gaps × 16px — format: min(100%, calc(600px + 2 * 16px))
+    expect(grid?.style.maxWidth).toContain('600px');
+    expect(grid?.style.maxWidth).toContain('2 * 16px');
     expect(firstCard?.style.aspectRatio).toBe('3 / 4');
     expect(firstCard?.style.minHeight).toBe('220px');
   });

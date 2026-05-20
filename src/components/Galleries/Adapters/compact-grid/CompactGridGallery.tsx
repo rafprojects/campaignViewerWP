@@ -20,6 +20,7 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { gridRowMaxWidthCss } from '@/utils/gridLayout';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -69,7 +70,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   const gapUnit = common.adapterItemGapUnit ?? 'px';
   const cardWidthCss = toCss(cardWidth, cardWidthUnit);
   const gridMaxWidth = maxColumns > 0
-    ? `min(100%, calc((${cardWidthCss} * ${maxColumns}) + ${toCss(gap * Math.max(0, maxColumns - 1), gapUnit)}))`
+    ? `min(100%, ${gridRowMaxWidthCss(cardWidth, cardWidthUnit, maxColumns, toCss(gap, gapUnit))})`
     : undefined;
 
   const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));

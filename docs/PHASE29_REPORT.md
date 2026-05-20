@@ -15,7 +15,7 @@
 | P29-E | Admin Panel mobile responsiveness (below 768px) | Complete ✅ | Large |
 | P29-F | Settings Panel: intuitive tab re-grouping | Complete ✅ | Medium |
 | P29-G | LayoutBuilder: UX audit, improvements & tooling | Complete ✅ | Large |
-| P29-H | Shared Grid Layout Utilities | Planned | Medium |
+| P29-H | Shared Grid Layout Utilities | Complete ✅ | Medium |
 
 ---
 
@@ -1644,7 +1644,7 @@ All sub-track acceptance criteria above must be met. Additionally:
 
 ---
 
-## Track P29-H — Shared Grid Layout Utilities
+## Track P29-H — Shared Grid Layout Utilities ✅
 
 ### Problem
 
@@ -1777,18 +1777,29 @@ Add targeted utility tests plus explicit regression coverage for the one intende
 ### Acceptance Criteria
 
 - Shared grid-layout math is extracted into a pure utility module, not a React
-  hook. ( )
+  hook. (✓)
 - `CardGallery` keeps its current fixed-width floor fallback, gap clamp, and
-  responsive-wrapper behavior. ( )
+  responsive-wrapper behavior. (✓)
 - `CardGallery` fixed-width row `maxWidth` uses resolved `effectiveColumns`, not
-  the broader `maxCols` cap. ( )
+  the broader `maxCols` cap. (✓)
 - `CompactGridGallery` keeps its current width-driven flex-wrap behavior and
-  does not gain `resolveColumnsFromWidth()`-style column auto-resolution. ( )
-- Existing `CardGallery.test.tsx` and adapter smoke tests still pass. ( )
+  does not gain `resolveColumnsFromWidth()`-style column auto-resolution. (✓)
+- Existing `CardGallery.test.tsx` and adapter smoke tests still pass. (✓)
 - New utility tests cover width resolution, optional floor fallback, and gap
-  formatting / clamping behavior. ( )
+  formatting / clamping behavior. (✓)
 - The deeper generic grid-shell investigation is deferred into Phase 30 Track
-  P30-F rather than folded into this refactor. ( )
+  P30-F rather than folded into this refactor. (✓)
+
+### Implementation
+
+| Item | Delivered |
+|------|-----------|
+| `src/utils/gridLayout.ts` | New module: `resolveFixedCardWidth`, `gridRowMaxWidthCss`, `formatGapCss` |
+| `src/utils/gridLayout.test.ts` | 20 utility tests covering width resolution, floor fallback, gap formatting |
+| `CardGallery.tsx` | Replaced inline math with shared utilities; `maxWidth` now uses `effectiveColumns` (removed `maxCols` memo) |
+| `CompactGridGallery.tsx` | `gridMaxWidth` uses `gridRowMaxWidthCss`; flex-basis and column-cap semantics unchanged |
+| `adapters.test.tsx` | Updated assertions to match new `calc(600px + 2 * 16px)` format |
+| 1518/1518 tests passing | No regressions |
 
 ### Validation
 
