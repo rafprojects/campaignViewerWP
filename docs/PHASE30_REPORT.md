@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-05-19
-**Last updated:** 2026-05-21 (P30-D complete — all tracks done)
+**Last updated:** 2026-05-21 (P30-D complete — all tracks done; PR review addressed)
 
 ### Tracks
 
@@ -1302,3 +1302,178 @@ This is a **research and design spike**, not an implementation track. The output
 - Theme visual regression is explicitly phased: Phase 1 commits to a 14-snapshot
   matrix, and Phase 2 expands to a 38-snapshot matrix only after stability is
   proven.
+
+---
+
+## PR Review — Copilot Feedback (PR #46, 2026-05-21)
+
+The Phase 30 branch received a Copilot automated review on PR #46. Five threads
+were raised, all targeting P30-G nested group logic. Assessments and outcomes are
+recorded below.
+
+### Summary
+
+| # | File | Finding | Decision |
+|---|------|---------|----------|
+| 1 | `ContextualToolbar.tsx` | `getSelectedGroup()` exact `memberIds` match breaks with nested groups | **Fixed** |
+| 2 | `ContextualToolbar.tsx` | Visibility toggle passes wrong value (`isGroupHidden` vs `!isGroupHidden`) | **Rejected** — existing code is correct |
+| 3 | `LayoutBuilderModal.tsx` | `handleUngroupSelected` uses `memberIds` overlap; misses nested parent groups | **Fixed** |
+| 4 | `useLayoutBuilderState.ts` | `createGroup()` missing `refreshGroupRects` after stripping members from existing groups | **Fixed** |
+| 5 | `useLayoutBuilderState.ts` | `dissolveGroup()` missing `refreshGroupRects` after dissolving group hierarchy | **Fixed** |
+
+All fixes are in commit `51394c1`. All 5 threads resolved on GitHub. A follow-up
+Copilot review was requested.
+
+---
+
+### Thread 1 — `getSelectedGroup()` wrong for nested groups (Fixed)
+
+**File:** `src/components/Admin/LayoutBuilder/ContextualToolbar.tsx`
+
+**Issue:** The toolbar determines whether the current selection represents a group
+using an exact `memberIds` set match:
+
+```ts
+// Before
+return groups.find(
+  (g) => g.memberIds.length === ids.length && ids.every((id) => g.memberIds.includes(id)),
+);
+```
+
+In the P30-G nested model, `selectGroup(id)` expands the selection to all
+*descendant* slots — including slots inside child groups — via
+`collectDescendantSlotIds`. A parent group's `memberIds` only holds its *direct*
+child group IDs and direct slot IDs, not the full recursive set. So the exact
+equality check always fails for any group that has child groups, causing the
+toolbar to show the wrong action set (group controls replaced by slot controls).
+
+**Fix:** Import `buildGroupMap` + `collectDescendantSlotIds` and match against
+the full descendant set:
+
+```ts
+// After
+const groupMap = buildGroupMap(groups);
+return groups.find((g) => {
+  const descIds = collectDescendantSlotIds(g.id, groupMap);
+  return (
+    descIds.length > 0 &&
+    descIds.length === selectedSlotIds.size &&
+    descIds.every((id) => selectedSlotIds.has(id))
+  );
+});
+```
+
+---
+
+### Thread 2 — Visibility toggle value (Rejected)
+
+**File:** `src/components/Admin/LayoutBuilder/ContextualToolbar.tsx`
+
+**Copilot suggestion:** Pass `!isGroupHidden` instead of `isGroupHidden` to
+`onGroupVisibilityToggle`.
+
+**Rejection rationale:** The callback signature is
+`onGroupVisibilityToggle(groupId, visible)` where `visible` is the *new* desired
+visibility state. `isGroupHidden` is defined as:
+
+```ts
+const isGroupHidden = selectedGroup?.visible === false;
+```
+
+That is, `isGroupHidden = !currentVisible`. By coincidence this equals
+`nextVisible` — the toggle target — in both directions:
+
+| Current state | `isGroupHidden` | Passed as `visible` | Effect |
+|---|---|---|---|
+| Visible (`visible=true`) | `false` | `false` | Group becomes hidden ✓ |
+| Hidden (`visible=false`) | `true` | `true` | Group becomes visible ✓ |
+
+Applying `!isGroupHidden` would have produced the *opposite* behavior, making
+both Show and Hide no-ops. No change made.
+
+---
+
+### Thread 3 — `handleUngroupSelected` wrong for nested groups (Fixed)
+
+**File:** `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`
+
+**Issue:** The same root cause as Thread 1. `handleUngroupSelected` located the
+target group with a `memberIds.some()` overlap check:
+
+```ts
+// Before
+const targetGroup = groups.find((g) =>
+  g.memberIds.some((id) => builder.selectedSlotIds.has(id)),
+);
+```
+
+Parent groups in the P30-G model have `memberIds=[]`; their content lives in
+`childGroupIds`. When a parent group is selected (selection = all descendant
+slots), the overlap check finds the *wrong* group — typically a child group
+rather than the one the user intends to ungroup.
+
+**Fix:** Apply exact-descendant matching with a member-overlap fallback for edge
+cases (partial selections). The same fix was applied to the Ctrl+Shift+G keyboard
+shortcut handler, which had the identical bug:
+
+```ts
+// After (handleUngroupSelected and Ctrl+Shift+G handler)
+const groupMap = buildGroupMap(groups);
+const targetGroup =
+  groups.find((g) => {
+    const descIds = collectDescendantSlotIds(g.id, groupMap);
+    return (
+      descIds.length > 0 &&
+      descIds.length === selectedIds.size &&
+      descIds.every((id) => selectedIds.has(id))
+    );
+  }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
+```
+
+---
+
+### Thread 4 — `createGroup()` stale group rects after member removal (Fixed)
+
+**File:** `src/hooks/useLayoutBuilderState.ts`
+
+**Issue:** When `createGroup` creates a new group, it first strips the member
+slot IDs from any existing group that held them. This changes those groups'
+membership but leaves their cached `x/y/width/height` union rects unchanged.
+Only the new group's rect was computed; the groups that lost members were left
+with stale geometry. `wrapInGroup` already called `refreshGroupRects` for the
+same reason.
+
+**Fix:** Remove the ad-hoc per-new-group bounding box computation and replace it
+with a single `refreshGroupRects(draft.groups, draft.slots)` call at the end of
+the mutate, covering all groups with changed membership — including the new one.
+The now-unused `computeGroupRect` import was also removed.
+
+```ts
+// After (end of createGroup mutate block)
+draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+draft.groups.push(newGroup);
+refreshGroupRects(draft.groups, draft.slots);
+```
+
+---
+
+### Thread 5 — `dissolveGroup()` stale group rects after dissolve (Fixed)
+
+**File:** `src/hooks/useLayoutBuilderState.ts`
+
+**Issue:** `dissolveGroupInHierarchy` promotes child groups to the dissolved
+group's parent and moves orphaned slot members up the hierarchy. After this
+operation, the parent groups that absorbed promoted members have new membership
+sets but their cached union rects reflect the old membership.
+
+**Fix:** Add `refreshGroupRects(draft.groups, draft.slots)` at the end of the
+mutate callback, after the cleanup filter:
+
+```ts
+// After
+draft.groups = dissolveGroupInHierarchy(groupId, draft.groups ?? []);
+draft.groups = draft.groups.filter(
+  (g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0,
+);
+refreshGroupRects(draft.groups, draft.slots);
+```
