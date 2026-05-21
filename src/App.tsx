@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
@@ -19,6 +19,7 @@ import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
 import { sortByOrder } from './utils/sortByOrder';
+import { useBuilderDeepLink } from './hooks/useBuilderDeepLink';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
@@ -96,6 +97,19 @@ function AppContent({
   });
   const isAdmin = user?.role === 'admin';
   const [campaignLoadProgress, setCampaignLoadProgress] = useState<{ total: number; completed: number }>({ total: 0, completed: 0 });
+
+  // ── P30-D: Builder deep-link bootstrap ─────────────────────────────────────
+  // When the page loads with `?builder=<templateId>`, auto-open the admin panel
+  // so the builder launches directly without manual navigation.
+  const { initialBuilderTemplateId } = useBuilderDeepLink();
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current) return;
+    if (!initialBuilderTemplateId) return;
+    if (!isReady || !isAdmin) return;
+    deepLinkHandledRef.current = true;
+    openAdminPanel();
+  }, [initialBuilderTemplateId, isReady, isAdmin, openAdminPanel]);
 
   // Close admin-only panels when the user signs out or loses admin privileges.
   useEffect(() => {
@@ -273,6 +287,7 @@ function AppContent({
                   onClose={closeAdminPanel}
                   onCampaignsUpdated={() => void mutateCampaigns()}
                   onNotify={handleAdminNotify}
+                  initialBuilderTemplateId={initialBuilderTemplateId ?? undefined}
                 />
               </Suspense>
             </ErrorBoundary>

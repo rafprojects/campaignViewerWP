@@ -111,6 +111,21 @@ const {
     updateGraphicLayer: vi.fn(),
     setSlotLocked: vi.fn(),
     setSlotVisible: vi.fn(),
+    // P30-G group methods
+    createGroup: vi.fn().mockReturnValue('mock-group-id'),
+    wrapInGroup: vi.fn().mockReturnValue('mock-group-id'),
+    dissolveGroup: vi.fn(),
+    updateGroup: vi.fn(),
+    selectGroup: vi.fn(),
+    moveGroup: vi.fn(),
+    reparentGroup: vi.fn(),
+    migrateGroupsIfNeeded: vi.fn(),
+    // Additional methods needed by LayoutBuilderModal
+    clearDraft: vi.fn(),
+    historyEntries: [],
+    historyCurrentIndex: -1,
+    jumpToHistoryIndex: vi.fn(),
+    selectSlotsInRange: vi.fn(),
   };
   return {
     mockUndo, mockRedo, mockNudgeSlots, mockRemoveSlots, mockClearSelection,

@@ -1,6 +1,18 @@
 export { LayoutBuilderModal } from './LayoutBuilderModal';
 export type { LayoutBuilderModalProps } from './LayoutBuilderModal';
+export type { PreviewPreset } from './LayoutBuilderCanvasPanel';
+export { ContextualToolbar } from './ContextualToolbar';
+export type { ContextualToolbarCallbacks, ContextualToolbarProps, SelectionRect } from './ContextualToolbar';
+export { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
+export type { BuilderHistoryDropdownProps, HistoryEntry } from './BuilderHistoryDropdown';
 export { LayoutCanvas } from './LayoutCanvas';
+export type { LayoutCanvasProps } from './LayoutCanvas';
+export { CanvasGrid } from './CanvasGrid';
+export type { CanvasGridProps } from './CanvasGrid';
+export { CanvasRulers } from './CanvasRulers';
+export type { CanvasRulersProps } from './CanvasRulers';
+export { MeasurementOverlay } from './MeasurementOverlay';
+export type { MeasurementOverlayProps } from './MeasurementOverlay';
 export { LayoutSlotComponent } from './LayoutSlotComponent';
 export { SlotPropertiesPanel } from './SlotPropertiesPanel';
 export { SmartGuides } from './SmartGuides';

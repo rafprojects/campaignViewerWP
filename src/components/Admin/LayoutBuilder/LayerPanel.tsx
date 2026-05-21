@@ -52,7 +52,16 @@ export interface LayerPanelProps {
   onDissolveGroup?: (groupId: string) => void;
   /** Called to toggle a group's collapsed state. */
   onToggleGroupCollapsed?: (groupId: string, collapsed: boolean) => void;
+  /**
+   * Called when a group is dragged onto another group row to reparent it.
+   * Dragging groupA onto groupB calls onReparentGroup(groupA, groupB).
+   * P30-G: drag-reparent in the layer panel.
+   */
+  onReparentGroup?: (groupId: string, newParentId: string) => void;
 }
+
+// ── Indent per nesting depth (px) ────────────────────────────
+const INDENT_PX = 12;
 
 // ── Component ────────────────────────────────────────────────
 
@@ -86,6 +95,7 @@ export function LayerPanel({
   onSelectGroup,
   onDissolveGroup,
   onToggleGroupCollapsed,
+  onReparentGroup,
 }: LayerPanelProps) {
   const layers = buildLayerList(template);
   const dragIdRef = useRef<string | null>(null);
@@ -118,7 +128,17 @@ export function LayerPanel({
     e.preventDefault();
     const draggedId = dragIdRef.current;
     if (draggedId && draggedId !== targetId) {
-      onReorderLayers(draggedId, targetId);
+      // P30-G: group → group drop = reparent; slot → slot = z-index reorder.
+      // Cross-type drops (group→slot or slot→group) are a no-op: computeReorderedZIndices
+      // ignores group IDs, so falling through would record a phantom history entry.
+      const draggedIsGroup = layers.some((l) => l.kind === 'group' && l.id === draggedId);
+      const targetIsGroup = layers.some((l) => l.kind === 'group' && l.id === targetId);
+      if (draggedIsGroup && targetIsGroup && onReparentGroup) {
+        onReparentGroup(draggedId, targetId);
+      } else if (!draggedIsGroup && !targetIsGroup) {
+        onReorderLayers(draggedId, targetId);
+      }
+      // else: cross-type drop — no-op
     }
     dragIdRef.current = null;
   }
@@ -227,27 +247,42 @@ export function LayerPanel({
       >
         <Stack gap={0} py={4}>
           {layers.map((item) => {
-            // ── Group header row ─────────────────────────────
+            // ── Hide items whose ancestor group is collapsed ──────────
+            const isHiddenByCollapse = item.ancestorGroupIds.some(
+              (gid) => collapsedGroups.has(gid),
+            );
+            if (isHiddenByCollapse) return null;
+
+            // ── Indentation based on depth ────────────────────────────
+            const indentLeft = item.depth * INDENT_PX;
+
+            // ── Group header row ──────────────────────────────────────
             if (item.kind === 'group') {
               const groupItem = item as GroupLayerItem;
               const isCollapsed = collapsedGroups.has(groupItem.id);
-              const allSlotIds = groupItem.group.memberIds.filter(
-                (id) => template.slots.some((s) => s.id === id)
-              );
-              const isGroupSelected = allSlotIds.length > 0 && allSlotIds.every((id) => selectedSlotIds?.has(id));
+              // P30-G: use descendantSlotIds for selection check
+              const isGroupSelected =
+                groupItem.descendantSlotIds.length > 0 &&
+                groupItem.descendantSlotIds.every((id) => selectedSlotIds?.has(id));
+
               return (
                 <div
                   key={groupItem.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e as DragEvent<HTMLDivElement>, groupItem.id)}
+                  onDragOver={(e) => handleDragOver(e as DragEvent<HTMLDivElement>, groupItem.id)}
+                  onDrop={(e) => handleDrop(e as DragEvent<HTMLDivElement>, groupItem.id)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
                     padding: '2px 6px 2px 4px',
+                    paddingLeft: 4 + indentLeft,
                     background: isGroupSelected
                       ? 'var(--mantine-color-blue-light)'
                       : 'var(--mantine-color-default-hover)',
                     borderLeft: '3px solid var(--mantine-color-blue-5)',
-                    cursor: 'pointer',
+                    cursor: 'grab',
                     userSelect: 'none',
                   }}
                   role="button"
@@ -277,7 +312,8 @@ export function LayerPanel({
                   <Text size="xs" fw={500} style={{ flex: 1 }} truncate>
                     {groupItem.name || 'Group'}
                   </Text>
-                  <Text size="xs" c="dimmed">{groupItem.group.memberIds.length}</Text>
+                  {/* P30-G: show total descendant count (not just direct members) */}
+                  <Text size="xs" c="dimmed">{groupItem.totalDescendantCount}</Text>
                   {onDissolveGroup && (
                     <Tooltip label="Ungroup">
                       <ActionIcon
@@ -302,20 +338,24 @@ export function LayerPanel({
             const isBackground = item.kind === 'background';
             const isMask = item.kind === 'mask';
 
-            // Hide members of collapsed groups
-            const memberGroup = (template.groups ?? []).find((g) => g.memberIds.includes(item.id));
-            if (memberGroup && collapsedGroups.has(memberGroup.id)) return null;
-
-            // Indent members of any group
-            const indented = !!memberGroup;
-
             const isSelected =
               (item.kind === 'slot' && (selectedSlotIds?.has(item.id) ?? false) && !selectedMaskSlotId) ||
               (item.kind === 'graphic' && item.id === selectedOverlayId) ||
               (item.kind === 'background' && !!isBackgroundSelected) ||
               (item.kind === 'mask' && item.parentSlotId === selectedMaskSlotId);
+
             return (
-              <div key={item.id} style={indented ? { paddingLeft: 12 } : undefined}>
+              <div
+                key={item.id}
+                style={
+                  // Mask sublayers get an extra fixed indent on top of depth-based indent
+                  isMask
+                    ? { paddingLeft: indentLeft + INDENT_PX }
+                    : indentLeft > 0
+                      ? { paddingLeft: indentLeft }
+                      : undefined
+                }
+              >
                 <LayerRow
                   item={item}
                   template={template}

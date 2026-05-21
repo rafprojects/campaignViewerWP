@@ -311,4 +311,234 @@ describe('LayerPanel', () => {
 
     expect(onReorderLayers).toHaveBeenCalledWith('overlay-1', 'slot-1');
   });
+
+  // ── P30-G: nested group tree rendering ───────────────────────────────────
+
+  it('renders child group headers under their parent group', () => {
+    const nestedTemplate = {
+      ...template,
+      slots: [
+        ...template.slots,
+        {
+          id: 'slot-3',
+          x: 0, y: 0, width: 10, height: 10, zIndex: 5,
+          shape: 'rectangle' as const,
+          borderRadius: 0, borderWidth: 0, borderColor: '#fff',
+          objectFit: 'cover' as const, objectPosition: '50% 50%',
+          clickAction: 'lightbox' as const, hoverEffect: 'none' as const,
+        },
+      ],
+      groups: [
+        {
+          id: 'gParent',
+          name: 'Parent Group',
+          memberIds: [] as string[],
+          childGroupIds: ['gChild'],
+          parentGroupId: null as null,
+          x: 0, y: 0, width: 100, height: 100,
+        },
+        {
+          id: 'gChild',
+          name: 'Child Group',
+          memberIds: ['slot-3'],
+          childGroupIds: [] as string[],
+          parentGroupId: 'gParent' as string,
+          x: 0, y: 0, width: 10, height: 10,
+        },
+      ],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: nestedTemplate })} />);
+
+    expect(screen.getByText('Parent Group')).toBeInTheDocument();
+    expect(screen.getByText('Child Group')).toBeInTheDocument();
+  });
+
+  it('collapsing parent group hides child group and its member slots', async () => {
+    const nestedTemplate = {
+      ...template,
+      slots: [
+        ...template.slots,
+        {
+          id: 'slot-3',
+          x: 0, y: 0, width: 10, height: 10, zIndex: 5,
+          shape: 'rectangle' as const,
+          borderRadius: 0, borderWidth: 0, borderColor: '#fff',
+          objectFit: 'cover' as const, objectPosition: '50% 50%',
+          clickAction: 'lightbox' as const, hoverEffect: 'none' as const,
+          name: 'Slot Three',
+        },
+      ],
+      groups: [
+        {
+          id: 'gParent',
+          name: 'Parent Group',
+          memberIds: [] as string[],
+          childGroupIds: ['gChild'],
+          parentGroupId: null as null,
+          collapsed: false,
+        },
+        {
+          id: 'gChild',
+          name: 'Child Group',
+          memberIds: ['slot-3'],
+          childGroupIds: [] as string[],
+          parentGroupId: 'gParent' as string,
+        },
+      ],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: nestedTemplate })} />);
+
+    // Initially visible
+    expect(screen.getByText('Child Group')).toBeInTheDocument();
+    expect(screen.getByText('Slot Three')).toBeInTheDocument();
+
+    // Click the collapse button on the parent group header (first collapse button = topmost group)
+    const collapseBtns = screen.getAllByRole('button', { name: 'Collapse group' });
+    fireEvent.click(collapseBtns[0]!);
+
+    // Child group and its slot should now be hidden
+    await waitFor(() => {
+      expect(screen.queryByText('Child Group')).not.toBeInTheDocument();
+      expect(screen.queryByText('Slot Three')).not.toBeInTheDocument();
+    });
+    // Parent group header itself should still be visible
+    expect(screen.getByText('Parent Group')).toBeInTheDocument();
+  });
+
+  it('shows total descendant count (not just direct member count)', () => {
+    // gParent has 0 direct members but 1 nested slot in gChild
+    const nestedTemplate = {
+      ...template,
+      slots: [
+        ...template.slots,
+        {
+          id: 'slot-3',
+          x: 0, y: 0, width: 10, height: 10, zIndex: 5,
+          shape: 'rectangle' as const,
+          borderRadius: 0, borderWidth: 0, borderColor: '#fff',
+          objectFit: 'cover' as const, objectPosition: '50% 50%',
+          clickAction: 'lightbox' as const, hoverEffect: 'none' as const,
+        },
+      ],
+      groups: [
+        {
+          id: 'gParent',
+          name: 'Parent Group',
+          memberIds: [] as string[],
+          childGroupIds: ['gChild'],
+          parentGroupId: null as null,
+        },
+        {
+          id: 'gChild',
+          name: 'Child Group',
+          memberIds: ['slot-3'],
+          childGroupIds: [] as string[],
+          parentGroupId: 'gParent' as string,
+        },
+      ],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: nestedTemplate })} />);
+
+    // The Parent Group row should show "1" (one descendant slot), not "0"
+    const parentHeader = screen.getByRole('button', { name: /Select group Parent Group/ });
+    expect(parentHeader).toBeInTheDocument();
+    // The count badge should show "1"
+    // Check the text content of the header includes "1"
+    expect(parentHeader.textContent).toContain('1');
+  });
+
+  // ── P30-G: drag-reparent ─────────────────────────────────────────────────
+
+  it('dropping a group onto another group calls onReparentGroup', () => {
+    const onReparentGroup = vi.fn();
+    const onReorderLayers = vi.fn();
+    const twoGroupTemplate = {
+      ...template,
+      groups: [
+        {
+          id: 'gA',
+          name: 'Group A',
+          memberIds: ['slot-1'],
+          childGroupIds: [] as string[],
+          parentGroupId: null as null,
+        },
+        {
+          id: 'gB',
+          name: 'Group B',
+          memberIds: ['slot-2'],
+          childGroupIds: [] as string[],
+          parentGroupId: null as null,
+        },
+      ],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: twoGroupTemplate, onReparentGroup, onReorderLayers })} />);
+
+    // Both group headers are draggable
+    const groupRows = document.querySelectorAll<HTMLElement>('[draggable="true"][role="button"]');
+    expect(groupRows.length).toBeGreaterThanOrEqual(2);
+
+    const dragSource = groupRows[0]; // gA or gB depending on z-order
+    const dropTarget = groupRows[1];
+
+    fireEvent.dragStart(dragSource, { dataTransfer: { setData: vi.fn(), effectAllowed: '' } });
+    fireEvent.dragOver(dropTarget, { dataTransfer: { dropEffect: '' } });
+    fireEvent.drop(dropTarget, { dataTransfer: {} });
+
+    expect(onReparentGroup).toHaveBeenCalledTimes(1);
+    expect(onReorderLayers).not.toHaveBeenCalled();
+  });
+
+  // ── P30-G: isGroupSelected uses descendant slots ──────────────────────────
+
+  it('group header shows selected style when all descendant slots are selected', () => {
+    const nestedTemplate = {
+      ...template,
+      slots: [
+        ...template.slots,
+        {
+          id: 'slot-3',
+          x: 0, y: 0, width: 10, height: 10, zIndex: 5,
+          shape: 'rectangle' as const,
+          borderRadius: 0, borderWidth: 0, borderColor: '#fff',
+          objectFit: 'cover' as const, objectPosition: '50% 50%',
+          clickAction: 'lightbox' as const, hoverEffect: 'none' as const,
+        },
+      ],
+      groups: [
+        {
+          id: 'gParent',
+          name: 'Parent Group',
+          memberIds: [] as string[],
+          childGroupIds: ['gChild'],
+          parentGroupId: null as null,
+        },
+        {
+          id: 'gChild',
+          name: 'Child Group',
+          memberIds: ['slot-3'],
+          childGroupIds: [] as string[],
+          parentGroupId: 'gParent' as string,
+        },
+      ],
+    } satisfies import('@/types').LayoutTemplate;
+
+    // Select the descendant slot (slot-3) — parent group should show selected state
+    const { container } = render(
+      <LayerPanel
+        {...makeProps({
+          template: nestedTemplate,
+          selectedSlotIds: new Set(['slot-3']),
+        })}
+      />,
+    );
+
+    const parentHeader = container.querySelector('[aria-label="Select group Parent Group"]');
+    expect(parentHeader).toBeInTheDocument();
+    // Parent header should have blue-light background (selected)
+    expect(parentHeader).toHaveStyle('background: var(--mantine-color-blue-light)');
+  });
 });

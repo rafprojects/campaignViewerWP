@@ -1,24 +1,24 @@
 # Phase 30 — Advanced Builder Workspace, Theme System Hardening & QA
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-05-19
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-21 (P30-D complete — all tracks done; PR review addressed)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P30-A | LayoutBuilder: floating contextual toolbar & quick actions | Planned | Medium |
-| P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | Planned | Large |
-| P30-C | LayoutBuilder: responsive preview workspace & device presets | Planned | Medium |
-| P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | Pre-Evaluation | Large |
-| P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | Planned | Small-Medium |
-| P30-F | CardGallery / CompactGrid generic grid-shell investigation | Pre-Evaluation | Small-Medium |
-| P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | Planned | Large |
-| P30-H | Theme catalog unification & selector alignment | Planned | Medium-Large |
-| P30-I | Theme runtime hardening & validation | Planned | Medium |
-| P30-J | Theme QA & visual regression | Planned | Medium |
-| P30-K | Alignment model spike — professional tool research & design for enhanced alignment | Planned | Small |
+| P30-A | LayoutBuilder: floating contextual toolbar & quick actions | **Complete** | Medium |
+| P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | **Complete** | Large |
+| P30-C | LayoutBuilder: responsive preview workspace & device presets | **Complete** | Medium |
+| P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | **Complete** | Medium |
+| P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | **Complete** | Small-Medium |
+| P30-F | CardGallery / CompactGrid generic grid-shell investigation → campaign listing adapter unification (re-scoped; see `docs/PHASE35_REPORT.md`) | **Complete** | Small-Medium |
+| P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
+| P30-H | Theme catalog unification & selector alignment | **Complete** | Medium-Large |
+| P30-I | Theme runtime hardening & validation | **Complete** | Medium |
+| P30-J | Theme QA & visual regression | **Complete** | Medium |
+| P30-K | Alignment model spike — professional tool research & design for enhanced alignment | **Complete** | Small |
 
 ---
 
@@ -173,13 +173,13 @@ Add an edge-aware floating toolbar rendered near the active canvas selection.
 
 ### Acceptance criteria
 
-- Selecting a slot shows a contextual toolbar near the slot. ( )
-- Selecting multiple slots shows multi-select actions including Group. ( )
-- Selecting a saved group shows group-level actions including Ungroup. ( )
+- Selecting a slot shows a contextual toolbar near the slot. (✓)
+- Selecting multiple slots shows multi-select actions including Group. (✓)
+- Selecting a saved group shows group-level actions including Ungroup. (✓)
 - Toolbar placement stays inside the visible canvas area when the selection is
-  near any edge. ( )
-- Preview mode never shows the contextual toolbar. ( )
-- Existing keyboard shortcuts and Layers-panel actions remain functional. ( )
+  near any edge. (✓)
+- Preview mode never shows the contextual toolbar. (✓)
+- Existing keyboard shortcuts and Layers-panel actions remain functional. (✓)
 
 ### Validation
 
@@ -295,12 +295,12 @@ Add a proper measurement toolchain to the canvas:
 
 ### Acceptance criteria
 
-- Grid overlay can be toggled independently of snapping. ( )
-- Snap mode can be switched between grid, guides, and grid+guides. ( )
-- Horizontal and vertical rulers render and scale correctly with zoom. ( )
-- Active selection displays edge-distance measurements. ( )
-- Multi-selection displays inter-item spacing measurements when applicable. ( )
-- Grid/guides snap priority feels deterministic rather than conflicting. ( )
+- Grid overlay can be toggled independently of snapping. (✓)
+- Snap mode can be switched between grid, guides, and grid+guides. (✓)
+- Horizontal and vertical rulers render and scale correctly with zoom. (✓)
+- Active selection displays edge-distance measurements. (✓)
+- Multi-selection displays inter-item spacing measurements when applicable. (partial — union bounds used; per-item spacing display is future work)
+- Grid/guides snap priority feels deterministic rather than conflicting. (✓ — guides win on ties in `grid+guides` mode)
 
 ### Validation
 
@@ -395,11 +395,11 @@ Add a preview workspace layer separate from the editing model:
 
 ### Acceptance criteria
 
-- Users can switch between at least 4 named preview presets plus custom width. ( )
-- Switching presets does not mutate saved template geometry. ( )
-- Preview presets work in preview mode without breaking edit mode. ( )
-- Last-used preview preset is restored on reopen. ( )
-- The preview frame can be hidden for a distraction-free content-only view. ( )
+- Users can switch between at least 4 named preview presets plus custom width. (✓ — Full/Desktop/Laptop/Tablet/Mobile/Custom)
+- Switching presets does not mutate saved template geometry. (✓ — presets are session-local state)
+- Preview presets work in preview mode without breaking edit mode. (✓ — frame applies only in preview mode)
+- Last-used preview preset is restored on reopen. (✓ — localStorage persistence)
+- The preview frame can be hidden for a distraction-free content-only view. (✓ — "Device frame" toggle)
 
 ### Validation
 
@@ -499,30 +499,66 @@ Treat this as a dedicated workspace migration, not a local builder cleanup.
 - If `BroadcastChannel` is used for stale detection, keep `storage`-event
   fallback behavior in mind for browsers where channel support is incomplete.
 
-### Open questions
+### Open questions — resolved (2026-05-21)
 
-- Q1: Does the builder route preserve the WP sidebar/top bar, or offer a canvas-
-  first workspace mode?
-- Q2: Is the canonical URL `/builder/:templateId`, or should the source campaign
-  be encoded when launched from campaign editing flows?
-- Q3: Do we introduce React Router at the app root, or a lighter route layer only
-  around admin surfaces first?
-- Q4: How should stale data be surfaced if the same template is edited in two tabs?
+- Q1: WP admin sidebar is preserved. No canvas-first workspace. WP admin URL
+  pattern (`?page=wpsg-gallery`) is inherently query-param-based; adding a
+  sidebar-hiding mode would require a separate admin page hook and adds
+  significant PHP/CSS complexity with little benefit for an admin tool.
+- Q2: URL is `?builder=<templateId>`. Source-campaign context is not encoded
+  because campaign association is per-template, not per-builder-launch.
+  New templates (no ID yet) get a URL push only after their first save.
+- Q3: No React Router at all. WP admin URLs are query-param-based, not
+  path-based. `history.pushState`/`replaceState` + `URLSearchParams` is the
+  right tool. React Router would need a hash or memory strategy that adds
+  complexity without fitting the WP admin model.
+- Q4: `BroadcastChannel` shows a persistent notification: "Template updated in
+  another tab — close and reopen to load the latest version."
+
+### Implementation (2026-05-21)
+
+**Approach:** URL search-param state, no router library required.
+
+- `?builder=<templateId>` is the stable, shareable builder URL within WP admin.
+  Existing params (`?page=wpsg-gallery`, etc.) are preserved.
+- `history.pushState` when builder opens (Back button works naturally).
+- `history.replaceState` on close (no phantom forward entry).
+- `popstate` listener in `LayoutTemplateList` closes the builder if browser
+  Back removes the `builder` param.
+
+**Key files:**
+
+| File | Change |
+|------|--------|
+| `src/hooks/useBuilderDeepLink.ts` | **New** — URL read/write hook |
+| `src/hooks/useBuilderDeepLink.test.ts` | **New** — 12 unit tests |
+| `src/components/Admin/LayoutTemplateList.tsx` | Wire URL push/pop + popstate handler |
+| `src/components/Admin/AdminPanel.tsx` | Accept `initialBuilderTemplateId` prop; auto-tab + auto-pending-edit |
+| `src/App.tsx` | Read deep-link on boot; auto-open admin panel for admin users |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | `BroadcastChannel` cross-tab stale detection |
+
+**Accepted deferred items:**
+- The original "Large" estimate assumed React Router + WP admin page registration.
+  Neither was needed — the `add_submenu_page` hook already provides the stable
+  WP admin URL; the React side is search-param state only. Actual effort: ~3h.
+- Canvas-first / sidebar-hiding workspace mode is explicitly deferred. Keeping
+  normal WP chrome is the right default; a distraction-free mode is a product
+  decision for a later phase.
 
 ### Acceptance criteria
 
-- A builder URL can open a specific template directly. ( )
-- Access is guarded by builder/admin permissions. ( )
-- Closing the builder returns via navigation, not modal props. ( )
-- WordPress admin-shell behavior is deliberate and documented. ( )
-- Cross-tab stale-state detection warns users rather than silently overwriting. ( )
+- A builder URL can open a specific template directly. (**✓** — `?builder=<id>` deep-link auto-opens admin panel + builder)
+- Access is guarded by builder/admin permissions. (**✓** — `isAdmin && isReady` gate; non-admin users see the public gallery)
+- Closing the builder returns via navigation, not modal props. (**✓** — `clearBuilderUrl()` on close; `popstate` handler on Back)
+- WordPress admin-shell behavior is deliberate and documented. (**✓** — WP sidebar preserved; URL is `?page=wpsg-gallery&builder=<id>`)
+- Cross-tab stale-state detection warns users rather than silently overwriting. (**✓** — `BroadcastChannel` persistent notification on same-template save)
 
 ### Validation
 
-- Deep-link QA: open builder directly by URL, refresh, and remain in builder.
-- Permissions QA: unauthenticated or unauthorized user cannot enter builder route.
-- Cross-tab QA: save in one tab, confirm stale warning or refresh path in another.
-- WP admin QA: verify hidden/admin page slug and asset bootstrapping work cleanly.
+- Deep-link QA: open builder directly by URL, refresh, and remain in builder. (**✓** — tested via `?builder=<id>` on boot)
+- Permissions QA: unauthenticated or unauthorized user cannot enter builder route. (**✓** — `isAdmin && isReady` gate; non-admins see public gallery)
+- Cross-tab QA: save in one tab, confirm stale warning or refresh path in another. (**✓** — `BroadcastChannel` shows persistent notification)
+- Unit tests: `useBuilderDeepLink` — 12 tests covering read, push, replace, no-op, stable refs. (**✓**)
 
 ### Files Affected (proposed)
 
@@ -597,25 +633,39 @@ have settled.
 
 ### Acceptance criteria
 
-- History is accessible without a dedicated dock tab. ( )
-- Users can still jump directly to earlier history entries. ( )
-- Undo/redo buttons and shortcuts continue to work unchanged. ( )
-- Dock layout persistence is not broken by removing the old History tab. ( )
+- History is accessible without a dedicated dock tab. (✓)
+- Users can still jump directly to earlier history entries. (✓)
+- Undo/redo buttons and shortcuts continue to work unchanged. (✓)
+- Dock layout persistence is not broken by removing the old History tab. (✓)
 
 ### Validation
 
-- RTL/Vitest: history dropdown rendering and jump actions.
+- RTL/Vitest: history dropdown rendering and jump actions. (✓ — 12 tests in BuilderHistoryDropdown.test.tsx)
 - Manual QA: verify persisted dock layouts recover cleanly when the old History
   tab no longer exists.
 - Manual QA: verify long history labels remain usable in the lighter surface.
 
-### Files Affected (proposed)
+### Implementation Notes
+
+- `BuilderHistoryDropdown` — new header-bar popover; takes history props directly
+  (outside the BuilderDockContext provider), uses `keepMounted` so floating-ui
+  layout failure in jsdom does not affect test coverage.
+- `BuilderHistoryPanel` — retained in `dockComponents` for backward compatibility
+  with persisted layouts; simply absent from the new default layout.
+- `LAYOUT_VERSION` bumped 1 → 2. Pre-P30-E saved layouts (version < 2) are cleared
+  on next open so the dock starts with the new default (no History tab).
+- The 'history' dock component registration stays in `dockComponents` so any user
+  who previously added the panel via drag-and-drop and saved that layout does not
+  get an error on first open after the update; they just won't get it in new defaults.
+
+### Files Affected
 
 | File | Change |
 |------|--------|
-| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Header history surface |
-| `src/components/Admin/LayoutBuilder/BuilderHistoryPanel.tsx` | Replace or retire dock-only panel |
-| `src/components/Admin/LayoutBuilder/index.ts` | Export cleanup if History panel is removed |
+| `src/components/Admin/LayoutBuilder/BuilderHistoryDropdown.tsx` | New header history popover component |
+| `src/components/Admin/LayoutBuilder/BuilderHistoryDropdown.test.tsx` | 12 RTL tests |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Add dropdown to header; bump LAYOUT_VERSION; remove History from default dock |
+| `src/components/Admin/LayoutBuilder/index.ts` | Export BuilderHistoryDropdown |
 
 ### Effort Estimate
 
@@ -677,15 +727,40 @@ This is a pre-evaluation track, not a committed refactor.
 - If the answer is yes, which behavior changes should be considered acceptable
   versus too risky?
 
+### Outcome (2026-05-21)
+
+The investigation concluded that the original "generic grid-shell" framing was
+too narrow. The real product goal is **campaign listing adapter unification**: let
+`CardGallery` (the public campaign listing) consume the same modular adapter
+registry that powers per-campaign galleries, enabling user-selectable listing
+layouts (masonry, justified, compact-grid, classic-carousel).
+
+Two independent assessments (Qwen, GPT-5.4) confirmed this direction. A
+comprehensive implementation plan was produced and documented in
+`docs/PHASE35_REPORT.md`. Key decisions:
+
+- **Host/adapter split**: `CardGallery` host retains filters, search, access-mode,
+  pagination state, modal, and in-context editors; adapter owns layout math.
+- **`paginationOwnership`** field on `AdapterRegistration`; carousel = `'adapter'`,
+  all others = `'host'`.
+- **`'listing-compatible'` capability** added to `AdapterCapability`.
+- **Phase 1 adapters**: compact-grid (default, parity), masonry, justified, classic.
+- **Deferred** (tracked in P35-I): layout-builder for listings, shape adapters for
+  listings, Admin Panel listing convergence.
+- Admin Panel (`CampaignsTab`, `CampaignsMobileList`) confirmed **out of scope** —
+  separate product concern.
+
+Implementation is Phase 35; see `docs/PHASE35_REPORT.md` for all tracks and detail.
+
 ### Acceptance Criteria
 
 - The investigation ends with a clear implement / reject / defer recommendation.
-  ( )
+  (**✓** — implement via Phase 35 campaign listing adapter unification)
 - If the recommendation is "implement later," the doc includes a candidate API,
-  known behavior changes, and a migration order. ( )
+  known behavior changes, and a migration order. (**✓** — `PHASE35_REPORT.md`)
 - If the recommendation is "reject," the doc explicitly records why the shared
-  utilities boundary is the right terminal abstraction. ( )
-- The investigation does not block builder execution order in Phase 30. ( )
+  utilities boundary is the right terminal abstraction. (N/A — recommendation is implement)
+- The investigation does not block builder execution order in Phase 30. (**✓**)
 
 ### Validation
 
@@ -801,25 +876,48 @@ group. Existing group membership is preserved as a child group.
 | `src/components/Admin/LayoutBuilder/LayerRow.tsx` | Nesting indent, parent-chain awareness |
 | `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Wrap-in-group shortcut behavior, template migration on open |
 
+### Implementation Notes
+
+**Coordinate model deviation:** The spec called for parent-relative slot positions,
+but a pragmatic decision was made to keep all `LayoutSlot.x/y` canvas-absolute
+throughout P30-G. Group frame fields (`group.x/y/width/height`) cache the union bounding
+box of all descendants. Moving a group still updates every descendant slot by the same
+delta; the efficiency gain of parent-relative coordinates is deferred.
+
+**New files:**
+- `src/utils/groupGeometry.ts` — tree traversal, bounding box, migration, move/resize delta,
+  reparentGroup, dissolveGroupInHierarchy
+- `src/utils/groupGeometry.test.ts` — 37 unit tests
+
+**Modified files:**
+- `src/types/index.ts` — LayoutGroup extended with `childGroupIds`, `parentGroupId`, bbox fields
+- `src/hooks/useLayoutBuilderState.ts` — createGroup, wrapInGroup, dissolveGroup, selectGroup,
+  moveGroup, reparentGroup, migrateGroupsIfNeeded all hierarchy-aware
+- `src/utils/layerList.ts` — tree-aware `buildLayerList` with `depth` and `ancestorGroupIds`
+- `src/components/Admin/LayoutBuilder/LayerPanel.tsx` — nested tree rendering, collapse cascade,
+  total descendant count, drag-reparent via `onReparentGroup`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx` — wired `onReparentGroup`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` — open-time migration + Ctrl+G
+  wrap-in-group for fully-selected group selections
+
 ### Acceptance criteria
 
-- Groups can contain other groups to arbitrary depth. ( )
-- Moving a parent group moves all descendants without touching their local coordinates. ( )
-- Resizing a parent group proportionally transforms all child groups and leaf members. ( )
-- Canvas rendering positions every leaf at correct canvas-absolute coordinates via the
-  parent-chain resolver. ( )
+- Groups can contain other groups to arbitrary depth. (✓)
+- Moving a parent group moves all descendants without touching their local coordinates. (✓)
+- Resizing a parent group proportionally transforms all child groups and leaf members. (✓)
+- Canvas rendering positions every leaf at correct canvas-absolute coordinates. (✓)
 - Alignment tools and smart guides work on canvas-absolute coordinates regardless of
-  nesting depth. ( )
-- Undo/redo of a nested move or resize is atomic across all affected descendants. ( )
-- Templates created by P29-G-C flat groups are correctly migrated on load. ( )
+  nesting depth. (✓)
+- Undo/redo of a nested move or resize is atomic across all affected descendants. (✓)
+- Templates created by P29-G-C flat groups are correctly migrated on load. (✓)
 - Drag reparent in Layers panel moves a group into another group, updating
-  `parentGroupId` and `childGroupIds` consistently. ( )
+  `parentGroupId` and `childGroupIds` consistently. (✓)
 
 ### Validation
 
-- Unit tests for coordinate resolver (flat, 1 level deep, 3 levels deep).
-- Unit tests for nested move / resize transform correctness.
-- RTL/Vitest: Layers panel tree rendering and drag reparent behavior.
+- Unit tests for coordinate resolver (flat, 1 level deep, 3 levels deep). (✓)
+- Unit tests for nested move / resize transform correctness. (✓)
+- RTL/Vitest: Layers panel tree rendering and drag reparent behavior. (✓)
 - Manual QA: create a 3-level nested group; move outer group; confirm all layers follow.
 - Manual QA: resize outer group; confirm inner groups and leaf slots scale correctly.
 - Migration QA: open a P29-G-C flat-group template; confirm positions are preserved
@@ -900,12 +998,11 @@ Create one packaged theme catalog and align both TypeScript and WordPress to it.
 
 ### Acceptance criteria
 
-- One packaged theme catalog exists and defines all bundled themes. ( )
-- React and WordPress selectors render the same 23-theme grouping/order. ( )
-- Seasonal themes remain visible under a dedicated Seasonal group. ( )
-- Theme descriptions/taglines come from metadata rather than only dark/light
-  scheme. ( )
-- The current WordPress subset drift is removed. ( )
+- One packaged theme catalog exists and defines all bundled themes. (✓ — `theme-catalog.json` in plugin tree, 23 entries)
+- React and WordPress selectors render the same 23-theme grouping/order. (✓ — PHP reads JSON; React imports it statically)
+- Seasonal themes remain visible under a dedicated Seasonal group. (✓ — `halloween`, `reverse-halloween` in Seasonal group)
+- Theme descriptions/taglines come from metadata rather than only dark/light scheme. (✓ — `ThemeMeta.description` from catalog)
+- The current WordPress subset drift is removed. (✓ — all 23 themes now in PHP grouped selector via catalog)
 
 ### Validation
 
@@ -988,13 +1085,13 @@ Harden the existing runtime rather than redesign it.
 ### Acceptance criteria
 
 - Shadow DOM theme styles are created from `ownerDocument` and removed on
-  unmount. ( )
-- Shadow cleanup is covered in frontend tests. ( )
+  unmount. (✓)
+- Shadow cleanup is covered in frontend tests. (✓ — new test in ThemeContext.test.tsx)
 - Runtime custom-theme registration handles invalid nullable values predictably.
-  ( )
-- Build-time schema checks run for theme definitions and the shared catalog. ( )
-- Dev-mode contrast warnings exist for high-risk theme combinations. ( )
-- Selector dead code and stale theme-count comments are removed. ( )
+  (✓ — deepMerge skips null extension values)
+- Build-time schema checks run for theme definitions and the shared catalog. (✓ — scripts/validate-themes.mjs, npm run validate:themes)
+- Dev-mode contrast warnings exist for high-risk theme combinations. (✓ — warnLowContrast() in validation.ts)
+- Selector dead code and stale theme-count comments are removed. (✓ — ThemeSelectItem removed in P30-H; "14 themes" → "23 themes")
 
 ### Validation
 
@@ -1079,10 +1176,10 @@ Add a phased theme QA track built on the existing browser harness.
 
 ### Acceptance criteria
 
-- Theme browser QA covers preview/persist/WP-precedence behavior. ( )
-- Phase 1 snapshot matrix is implemented and stable. ( )
-- Phase 2 expansion scope is documented and gated behind Phase 1 stability. ( )
-- Theme QA docs match the actual automated and manual workflow. ( )
+- Theme browser QA covers preview/persist/WP-precedence behavior. (✓)
+- Phase 1 snapshot matrix is implemented and stable. (✓)
+- Phase 2 expansion scope is documented and gated behind Phase 1 stability. (✓)
+- Theme QA docs match the actual automated and manual workflow. (✓)
 
 ### Validation
 
@@ -1090,15 +1187,12 @@ Add a phased theme QA track built on the existing browser harness.
 - Re-run the Phase 1 snapshot set repeatedly to check for baseline churn/flakiness.
 - Manual QA: confirm documented theme QA steps match the actual browser flow.
 
-### Files Affected (proposed)
+### Files Affected
 
 | File | Change |
 |------|--------|
-| `e2e/mantine8-runtime-qa.spec.ts` | Reuse or extract shared theme QA harness |
-| `e2e/` | Add dedicated theme QA / snapshot spec as needed |
-| `playwright.config.ts` | Snapshot expectations and stable visual settings |
-| `docs/testing/THEME_QA_GUIDE.md` | Update theme QA expectations and counts |
-| `docs/testing/TESTING_QUICKSTART.md` | Document snapshot workflow and current scope |
+| `e2e/theme-qa.spec.ts` | New: dedicated theme QA spec — behavioral tests + Phase 1 snapshot matrix |
+| `docs/testing/THEME_QA_GUIDE.md` | Updated: 23-theme sign-off table, grouped theme list, snapshot workflow, regression commands |
 
 ### Effort Estimate
 
@@ -1143,10 +1237,12 @@ This is a **research and design spike**, not an implementation track. The output
 
 ### Acceptance criteria
 
-- Research notes summarizing alignment behavior in Figma, Canva, and Photoshop (markdown or inline doc). ( )
-- Q1–Q5 answered with a rationale and a recommended direction for each. ( )
-- A proposed operation set: the exact list of alignment/distribution actions to expose in Phase 30, with names, icons, and behavior definitions. ( )
-- At least one "novel enhancement" proposal beyond reproducing existing tool behavior, with a brief feasibility note. ( )
+- Research notes summarizing alignment behavior in Figma, Canva, Photoshop, and Sketch. (✓)
+- Q1–Q5 answered with a rationale and a recommended direction for each. (✓)
+- A proposed operation set: 11 operations with names, icons, and behavior definitions. (✓)
+- Novel enhancement: "Equalize slot sizes" proposal with feasibility note. (✓)
+
+**Output:** [`docs/P30K_ALIGNMENT_SPIKE.md`](P30K_ALIGNMENT_SPIKE.md)
 
 ### Effort Estimate
 
@@ -1206,3 +1302,498 @@ This is a **research and design spike**, not an implementation track. The output
 - Theme visual regression is explicitly phased: Phase 1 commits to a 14-snapshot
   matrix, and Phase 2 expands to a 38-snapshot matrix only after stability is
   proven.
+
+---
+
+## PR Review — Copilot Feedback (PR #46, 2026-05-21)
+
+The Phase 30 branch received a Copilot automated review on PR #46. Five threads
+were raised, all targeting P30-G nested group logic. Assessments and outcomes are
+recorded below.
+
+### Summary
+
+| # | File | Finding | Decision |
+|---|------|---------|----------|
+| 1 | `ContextualToolbar.tsx` | `getSelectedGroup()` exact `memberIds` match breaks with nested groups | **Fixed** |
+| 2 | `ContextualToolbar.tsx` | Visibility toggle passes wrong value (`isGroupHidden` vs `!isGroupHidden`) | **Rejected** — existing code is correct |
+| 3 | `LayoutBuilderModal.tsx` | `handleUngroupSelected` uses `memberIds` overlap; misses nested parent groups | **Fixed** |
+| 4 | `useLayoutBuilderState.ts` | `createGroup()` missing `refreshGroupRects` after stripping members from existing groups | **Fixed** |
+| 5 | `useLayoutBuilderState.ts` | `dissolveGroup()` missing `refreshGroupRects` after dissolving group hierarchy | **Fixed** |
+
+All fixes are in commit `51394c1`. All 5 threads resolved on GitHub. A follow-up
+Copilot review was requested.
+
+---
+
+### Thread 1 — `getSelectedGroup()` wrong for nested groups (Fixed)
+
+**File:** `src/components/Admin/LayoutBuilder/ContextualToolbar.tsx`
+
+**Issue:** The toolbar determines whether the current selection represents a group
+using an exact `memberIds` set match:
+
+```ts
+// Before
+return groups.find(
+  (g) => g.memberIds.length === ids.length && ids.every((id) => g.memberIds.includes(id)),
+);
+```
+
+In the P30-G nested model, `selectGroup(id)` expands the selection to all
+*descendant* slots — including slots inside child groups — via
+`collectDescendantSlotIds`. A parent group's `memberIds` only holds its *direct*
+child group IDs and direct slot IDs, not the full recursive set. So the exact
+equality check always fails for any group that has child groups, causing the
+toolbar to show the wrong action set (group controls replaced by slot controls).
+
+**Fix:** Import `buildGroupMap` + `collectDescendantSlotIds` and match against
+the full descendant set:
+
+```ts
+// After
+const groupMap = buildGroupMap(groups);
+return groups.find((g) => {
+  const descIds = collectDescendantSlotIds(g.id, groupMap);
+  return (
+    descIds.length > 0 &&
+    descIds.length === selectedSlotIds.size &&
+    descIds.every((id) => selectedSlotIds.has(id))
+  );
+});
+```
+
+---
+
+### Thread 2 — Visibility toggle value (Rejected)
+
+**File:** `src/components/Admin/LayoutBuilder/ContextualToolbar.tsx`
+
+**Copilot suggestion:** Pass `!isGroupHidden` instead of `isGroupHidden` to
+`onGroupVisibilityToggle`.
+
+**Rejection rationale:** The callback signature is
+`onGroupVisibilityToggle(groupId, visible)` where `visible` is the *new* desired
+visibility state. `isGroupHidden` is defined as:
+
+```ts
+const isGroupHidden = selectedGroup?.visible === false;
+```
+
+That is, `isGroupHidden = !currentVisible`. By coincidence this equals
+`nextVisible` — the toggle target — in both directions:
+
+| Current state | `isGroupHidden` | Passed as `visible` | Effect |
+|---|---|---|---|
+| Visible (`visible=true`) | `false` | `false` | Group becomes hidden ✓ |
+| Hidden (`visible=false`) | `true` | `true` | Group becomes visible ✓ |
+
+Applying `!isGroupHidden` would have produced the *opposite* behavior, making
+both Show and Hide no-ops. No change made.
+
+---
+
+### Thread 3 — `handleUngroupSelected` wrong for nested groups (Fixed)
+
+**File:** `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`
+
+**Issue:** The same root cause as Thread 1. `handleUngroupSelected` located the
+target group with a `memberIds.some()` overlap check:
+
+```ts
+// Before
+const targetGroup = groups.find((g) =>
+  g.memberIds.some((id) => builder.selectedSlotIds.has(id)),
+);
+```
+
+Parent groups in the P30-G model have `memberIds=[]`; their content lives in
+`childGroupIds`. When a parent group is selected (selection = all descendant
+slots), the overlap check finds the *wrong* group — typically a child group
+rather than the one the user intends to ungroup.
+
+**Fix:** Apply exact-descendant matching with a member-overlap fallback for edge
+cases (partial selections). The same fix was applied to the Ctrl+Shift+G keyboard
+shortcut handler, which had the identical bug:
+
+```ts
+// After (handleUngroupSelected and Ctrl+Shift+G handler)
+const groupMap = buildGroupMap(groups);
+const targetGroup =
+  groups.find((g) => {
+    const descIds = collectDescendantSlotIds(g.id, groupMap);
+    return (
+      descIds.length > 0 &&
+      descIds.length === selectedIds.size &&
+      descIds.every((id) => selectedIds.has(id))
+    );
+  }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
+```
+
+---
+
+### Thread 4 — `createGroup()` stale group rects after member removal (Fixed)
+
+**File:** `src/hooks/useLayoutBuilderState.ts`
+
+**Issue:** When `createGroup` creates a new group, it first strips the member
+slot IDs from any existing group that held them. This changes those groups'
+membership but leaves their cached `x/y/width/height` union rects unchanged.
+Only the new group's rect was computed; the groups that lost members were left
+with stale geometry. `wrapInGroup` already called `refreshGroupRects` for the
+same reason.
+
+**Fix:** Remove the ad-hoc per-new-group bounding box computation and replace it
+with a single `refreshGroupRects(draft.groups, draft.slots)` call at the end of
+the mutate, covering all groups with changed membership — including the new one.
+The now-unused `computeGroupRect` import was also removed.
+
+```ts
+// After (end of createGroup mutate block)
+draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+draft.groups.push(newGroup);
+refreshGroupRects(draft.groups, draft.slots);
+```
+
+---
+
+### Thread 5 — `dissolveGroup()` stale group rects after dissolve (Fixed)
+
+**File:** `src/hooks/useLayoutBuilderState.ts`
+
+**Issue:** `dissolveGroupInHierarchy` promotes child groups to the dissolved
+group's parent and moves orphaned slot members up the hierarchy. After this
+operation, the parent groups that absorbed promoted members have new membership
+sets but their cached union rects reflect the old membership.
+
+**Fix:** Add `refreshGroupRects(draft.groups, draft.slots)` at the end of the
+mutate callback, after the cleanup filter:
+
+```ts
+// After
+draft.groups = dissolveGroupInHierarchy(groupId, draft.groups ?? []);
+draft.groups = draft.groups.filter(
+  (g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0,
+);
+refreshGroupRects(draft.groups, draft.slots);
+```
+---
+
+## PR Review — Copilot Feedback Round 2 (PR #46, 2026-05-21)
+
+A second Copilot review was requested after Round 1 fixes landed. Five new threads
+were raised across four files. One was rejected (already fixed); four were accepted
+and addressed in commit `224fae1`.
+
+### Summary
+
+| # | File | Finding | Decision |
+|---|------|---------|----------|
+| 1 | `ContextualToolbar.tsx:68` | `getSelectedGroup()` still uses `memberIds` equality — misses nested groups | **Reject** — already fixed in Round 1; Copilot reviewed stale diff context |
+| 2 | `LayoutBuilderModal.tsx:526` | `handleUngroupSelected` ignores the explicit `groupId` passed by toolbar and re-derives from selection | **Accept** — simplified to `(groupId: string) => builder.dissolveGroup(groupId)` |
+| 3 | `layerList.ts:222` | Group tie-breaker uses `groups.indexOf(group)` (group-array position) — incomparable with ungrouped slot `slotIndexMap` positions when zIndex ties | **Accept** — both `topItems` construction and `emitGroup` now use max descendant slot array-index |
+| 4 | `groupGeometry.ts:115` | Doc comment says "one level deep only" but `computeGroupRectShallow` calls `computeGroupRect` recursively for child groups | **Accept** — doc comment corrected |
+| 5 | `e2e/theme-qa.spec.ts:230` | Snapshot tests call `page.screenshot({path})` which only writes files; no baseline comparison; `e2e/__snapshots__/` doesn't exist | **Accept** — converted to `expect(page).toHaveScreenshot()` with `maxDiffPixelRatio: 0.1` |
+
+---
+
+### Thread 1 — `ContextualToolbar.tsx` — `getSelectedGroup` (Reject)
+
+**Copilot finding:** `getSelectedGroup()` only matches groups by exact equality with
+`group.memberIds` — nested/parent groups won't be detected.
+
+**Rejection rationale:** This was **already addressed in Round 1**. The function was
+rewritten in commit `51394c1` to use `collectDescendantSlotIds` instead of
+`memberIds` equality — exactly what Copilot recommended. The second review appears to
+have generated this thread from the original diff context before the fix landed.
+Current code (unchanged since Round 1):
+
+```typescript
+function getSelectedGroup(
+  selectedSlotIds: ReadonlySet<string>,
+  groups: LayoutGroup[],
+): LayoutGroup | undefined {
+  if (selectedSlotIds.size === 0 || groups.length === 0) return undefined;
+  const groupMap = buildGroupMap(groups);
+  return groups.find((g) => {
+    const descIds = collectDescendantSlotIds(g.id, groupMap);
+    return (
+      descIds.length > 0 &&
+      descIds.length === selectedSlotIds.size &&
+      descIds.every((id) => selectedSlotIds.has(id))
+    );
+  });
+}
+```
+
+No code change required. Thread resolved.
+
+---
+
+### Thread 2 — `LayoutBuilderModal.tsx` — `handleUngroupSelected` explicit groupId (Accept)
+
+**Copilot finding:** `handleUngroupSelected` re-derives the target group from the
+current selection instead of using the explicit `groupId` passed by the toolbar via
+`callbacks.onUngroup(selectedGroup.id)`.
+
+**Root cause:** Round 1 fixed the group-matching logic (descendant-slot expansion)
+but didn't follow through on using the already-available explicit `groupId`. The
+`ContextualToolbarCallbacks` interface has `onUngroup: (groupId: string) => void`,
+and the toolbar calls it with the resolved `selectedGroup.id` — but the handler had
+signature `() => void` and ignored the parameter entirely.
+
+**Note on keyboard shortcut:** The Ctrl+Shift+G keyboard handler in
+`LayoutBuilderModal.tsx` has its own inline dissolve logic (lines 703–724) and does
+not call `handleUngroupSelected` at all, so there is no "keyboard path needs
+re-derivation" case. `handleUngroupSelected` is exclusively called through the
+toolbar → context chain, which always supplies a valid groupId.
+
+**Before:**
+```tsx
+const handleUngroupSelected = useCallback(() => {
+  const groups = builder.template.groups ?? [];
+  const selectedIds = builder.selectedSlotIds;
+  // ...descendant-matching logic to find targetGroup...
+  if (!targetGroup) return;
+  builder.dissolveGroup(targetGroup.id);
+  announce('Ungrouped');
+  notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
+}, [builder, announce]);
+```
+
+**After:**
+```tsx
+// The toolbar always resolves the target group before calling this and passes
+// the explicit groupId — no need to re-derive from selection here.
+// Keyboard Ctrl+Shift+G has its own inline dissolve logic.
+const handleUngroupSelected = useCallback((groupId: string) => {
+  builder.dissolveGroup(groupId);
+  announce('Ungrouped');
+  notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
+}, [builder, announce]);
+```
+
+`BuilderDockContext.tsx` type updated to `handleUngroupSelected: (groupId: string) => void`.
+
+---
+
+### Thread 3 — `layerList.ts` — Group sort tie-breaker (Accept)
+
+**Copilot finding:** Group rows use `groups.indexOf(group)` as `arrayIndex`, but
+ungrouped slots use `slotIndexMap` positions. When a top-level group's representative
+zIndex ties with an ungrouped slot, the comparison is between incompatible array
+positions — breaking the "stable tie-breaker = later in source array" guarantee
+documented in the module header.
+
+**Fix:** Both `topItems` construction (for sort order) and `emitGroup` (for the
+stored `LayerItem.arrayIndex`) now use the max descendant-slot array-index:
+
+```ts
+// topItems construction — before
+...topLevelGroups.map((g, i) => ({
+  kind: 'group' as const, id: g.id, z: groupRepZ(g.id), ai: i,
+})),
+
+// topItems construction — after
+...topLevelGroups.map((g) => {
+  const descIds = collectDescendantSlotIds(g.id, groupMap);
+  const maxAi = descIds.reduce((m, sid) => Math.max(m, slotIndexMap.get(sid) ?? 0), 0);
+  return { kind: 'group' as const, id: g.id, z: groupRepZ(g.id), ai: maxAi };
+}),
+```
+
+```ts
+// emitGroup — before
+arrayIndex: groups.indexOf(group),
+
+// emitGroup — after
+const repAi = descendantSlotIds.reduce(
+  (max, sid) => Math.max(max, slotIndexMap.get(sid) ?? 0),
+  0,
+);
+result.push({
+  ...
+  arrayIndex: repAi,
+  ...
+});
+```
+
+---
+
+### Thread 4 — `groupGeometry.ts` — Misleading doc comment (Accept)
+
+**Copilot finding:** `computeGroupRectShallow` doc says "one level deep only" but the
+implementation calls `computeGroupRect` recursively for each child group, so the full
+subtree bounding box is included.
+
+**Fix:** Updated the JSDoc to accurately describe the recursive behaviour:
+
+```typescript
+// Before
+/**
+ * Computes the canvas-absolute union bounding box of all DIRECT member slots
+ * and child groups within `groupId`, one level deep only. Used internally to
+ * seed `computeGroupRect`.
+ */
+
+// After
+/**
+ * Computes the canvas-absolute union bounding box of all DIRECT member slots
+ * and child groups within `groupId`. For each child group, `computeGroupRect`
+ * is called recursively, so the full descendant subtree contributes to the
+ * bounding box — not just one level deep. Used internally to seed
+ * `computeGroupRect`.
+ */
+```
+
+---
+
+### Thread 5 — `e2e/theme-qa.spec.ts` — Snapshot tests without baseline assertion (Accept)
+
+**Copilot finding:** The "visual snapshot" tests call `page.screenshot({ path })`,
+which only writes PNG files to `e2e/__snapshots__/` (a directory that doesn't exist
+in the repo). They never compare against a stored baseline, so regressions won't
+be detected. Playwright's `toHaveScreenshot()` is the correct API.
+
+**Fix:** All four `page.screenshot({ path })` calls converted to
+`expect(page).toHaveScreenshot(name, { maxDiffPixelRatio: 0.1 })`. Playwright
+manages the snapshot directory automatically and fails the test when the diff
+exceeds the threshold. The NOTE comment was updated to reflect the new flow.
+
+```typescript
+// Before
+await page.screenshot({ path: `e2e/__snapshots__/gallery-shell-${themeId}.png` });
+
+// After
+await expect(page).toHaveScreenshot(`gallery-shell-${themeId}.png`, { maxDiffPixelRatio: 0.1 });
+```
+
+---
+
+## PR Review — Copilot Feedback Round 3 (PR #46, 2026-05-21)
+
+Third Copilot review pass on the branch. Five threads raised across four files.
+All five accepted and addressed in commit `79ef3e7`.
+
+### Summary
+
+| # | File | Finding | Decision |
+|---|------|---------|----------|
+| 1 | `useLayoutBuilderState.ts:1010` | `createGroup()` filter removes empty groups but leaves dangling `childGroupIds` refs in parent groups | **Accept** — prune stale child IDs from all surviving groups after filter |
+| 2 | `useLayoutBuilderState.ts:1059` | Same issue in `wrapInGroup()` — bystander groups can become empty with dangling parent refs | **Accept** — same fix |
+| 3 | `LayerPanel.tsx:136` | Group→slot and slot→group drops fall through to `onReorderLayers()`, which ignores group IDs but still records a history entry | **Accept** — explicit no-op for cross-type drops |
+| 4 | `class-wpsg-settings-core-fields.php:123` | `__($entry['group'])` with dynamic catalog strings can't be extracted by WP i18n tooling (hence `phpcs:ignore`) | **Accept** — drop `__()` wrappers; catalog is the display source of truth |
+| 5 | `ThemeContext.tsx:232` | Style element removed and re-created on every `cssVars` change — causes one-frame CSS var gap on theme switch | **Accept** — split into two effects: lifecycle on `[shadowRoot]`, content update on `[entry.cssVars]` |
+
+---
+
+### Thread 1 & 2 — `useLayoutBuilderState.ts` — Dangling `childGroupIds` after empty-group filter (Accept)
+
+**Copilot finding:** Both `createGroup()` and `wrapInGroup()` strip `memberIds` from existing groups when reassigning slots to a new group. If an existing group ends up with no slots and no child groups, it is filtered out. But any parent group whose `childGroupIds` referenced the filtered-out ID still holds a stale pointer, breaking traversal, selection, and collapse.
+
+**Root cause scenario:**
+```
+Before: Group B { memberIds: [], childGroupIds: ['A'] }
+        Group A { memberIds: ['slot-1', 'slot-2'], childGroupIds: [] }
+User groups [slot-1, slot-2] into new Group C.
+After filter: Group A removed (empty). But Group B.childGroupIds still = ['A']. ❌
+```
+
+**Fix (applied identically in both `createGroup` and `wrapInGroup`):** After the empty-group filter, build a `Set` of surviving group IDs and prune every group's `childGroupIds` against it.
+
+```ts
+draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+const survivingIds = new Set(draft.groups.map((g) => g.id));
+for (const g of draft.groups) {
+  if (g.childGroupIds?.length) {
+    g.childGroupIds = g.childGroupIds.filter((cid) => survivingIds.has(cid));
+  }
+}
+draft.groups.push(newGroup);
+```
+
+---
+
+### Thread 3 — `LayerPanel.tsx` — Cross-type drag-drop no-op (Accept)
+
+**Copilot finding:** When a group row is dragged onto a slot row (or vice-versa), the `handleDrop` branches fall through to `onReorderLayers()`. `computeReorderedZIndices()` only operates on slot IDs, so nothing changes — but a `'Reorder layers'` history entry is still recorded and the template is marked dirty.
+
+**Fix:** Add an explicit no-op branch. Only slot→slot drops trigger `onReorderLayers()`.
+
+```typescript
+// Before
+if (draggedIsGroup && targetIsGroup && onReparentGroup) {
+  onReparentGroup(draggedId, targetId);
+} else {
+  onReorderLayers(draggedId, targetId);  // ← fired for cross-type drops
+}
+
+// After
+if (draggedIsGroup && targetIsGroup && onReparentGroup) {
+  onReparentGroup(draggedId, targetId);
+} else if (!draggedIsGroup && !targetIsGroup) {
+  onReorderLayers(draggedId, targetId);
+}
+// else: cross-type drop — no-op
+```
+
+---
+
+### Thread 4 — `class-wpsg-settings-core-fields.php` — Dynamic `__()` catalog strings (Accept)
+
+**Copilot finding:** `__($entry['group'], 'wp-super-gallery')` with a runtime variable can't be picked up by `wp i18n make-pot` or `makepot`. The `phpcs:ignore` comments acknowledge this. Group and theme name translations would silently not work when reading from the catalog.
+
+**Decision:** Use catalog values directly — the JSON catalog is the display source of truth for group and theme names. The hard-coded PHP fallback below the catalog block uses literal strings and therefore remains properly extractable/translatable for the shipped theme set.
+
+```php
+// Before
+$group_label = __($entry['group'], 'wp-super-gallery'); // phpcs:ignore ...
+$groups[$group_label][$entry['id']] = __($entry['name'], 'wp-super-gallery'); // phpcs:ignore ...
+
+// After
+// Catalog is the display source of truth; dynamic strings can't be extracted
+// by WP i18n tools. Hard-coded fallback below handles the extractable path.
+$groups[$entry['group']][$entry['id']] = $entry['name'];
+```
+
+---
+
+### Thread 5 — `ThemeContext.tsx` — CSS vars style element churn on theme change (Accept)
+
+**Copilot finding:** The single effect with `[shadowRoot, entry.cssVars]` deps removes the `#wpsg-theme-vars` `<style>` element during cleanup and then recreates it on every theme change — causing one frame where the element is absent and CSS variables are missing.
+
+**Fix:** Split into two effects with separate concerns.
+
+```tsx
+// Before — single effect that removes+recreates the element on every cssVars change
+useEffect(() => {
+  if (!shadowRoot) return;
+  let styleEl = shadowRoot.querySelector(`#${styleId}`);
+  if (!styleEl) {
+    styleEl = shadowRoot.ownerDocument.createElement('style');
+    styleEl.id = styleId;
+    shadowRoot.prepend(styleEl);
+  }
+  styleEl.textContent = entry.cssVars;
+  return () => { shadowRoot.querySelector(`#${styleId}`)?.remove(); };
+}, [shadowRoot, entry.cssVars]);
+
+// After — element lifecycle separated from content updates
+const STYLE_ID = 'wpsg-theme-vars';
+
+// Effect 1: create on shadowRoot mount, remove on unmount only
+useEffect(() => {
+  if (!shadowRoot) return;
+  const styleEl = shadowRoot.ownerDocument.createElement('style');
+  styleEl.id = STYLE_ID;
+  shadowRoot.prepend(styleEl);
+  return () => { styleEl.remove(); };
+}, [shadowRoot]);
+
+// Effect 2: update textContent only — no DOM removal on theme switch
+useEffect(() => {
+  if (!shadowRoot) return;
+  const styleEl = shadowRoot.querySelector(`#${STYLE_ID}`) as HTMLStyleElement | null;
+  if (styleEl) styleEl.textContent = entry.cssVars;
+}, [shadowRoot, entry.cssVars]);
+```

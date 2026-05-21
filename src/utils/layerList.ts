@@ -6,8 +6,17 @@
  * single sorted layer array — identical to how Figma/Photoshop render a
  * layers panel. Also exports `getLayerName()` as the single source of truth
  * for display names throughout the builder UI.
+ *
+ * P30-G update: the function is now tree-aware. When `template.groups`
+ * contains a nested hierarchy (via `childGroupIds` / `parentGroupId`), the
+ * output reflects the full group tree — each group header is followed
+ * immediately by its child groups and leaf-member slots (indented by depth),
+ * then ungrouped items follow at depth 0. Every item carries a `depth` field
+ * (0 = top-level) and `ancestorGroupIds` so the panel can collapse entire
+ * subtrees without rescanning the tree on every render.
  */
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup } from '@/types';
+import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -24,6 +33,10 @@ export type SlotLayerItem = {
   name: string;
   visible: boolean;
   locked: boolean;
+  /** Nesting depth (0 = top-level / ungrouped, 1 = inside a group, …). P30-G */
+  depth: number;
+  /** IDs of ancestor groups from immediate parent up to root. P30-G */
+  ancestorGroupIds: string[];
 };
 
 export type GraphicLayerItem = {
@@ -36,6 +49,10 @@ export type GraphicLayerItem = {
   visible: boolean;
   locked: boolean;
   opacity: number;
+  /** Nesting depth. Overlays are not yet group-aware so this is always 0. P30-G */
+  depth: number;
+  /** Always empty for overlays. P30-G */
+  ancestorGroupIds: string[];
 };
 
 export type BackgroundLayerItem = {
@@ -45,6 +62,10 @@ export type BackgroundLayerItem = {
   arrayIndex: -1;
   name: string;
   visible: boolean;
+  /** Always 0. P30-G */
+  depth: number;
+  /** Always empty. P30-G */
+  ancestorGroupIds: string[];
 };
 
 export type MaskLayerItem = {
@@ -58,6 +79,10 @@ export type MaskLayerItem = {
   arrayIndex: -1;
   name: string;
   visible: boolean;
+  /** depth of parent slot + 1. P30-G */
+  depth: number;
+  /** Ancestors of the parent slot. P30-G */
+  ancestorGroupIds: string[];
 };
 
 export type GroupLayerItem = {
@@ -70,6 +95,20 @@ export type GroupLayerItem = {
   name: string;
   visible: boolean;
   locked: boolean;
+  /** Nesting depth (0 = top-level group). P30-G */
+  depth: number;
+  /** IDs of ancestor groups (empty for top-level groups). P30-G */
+  ancestorGroupIds: string[];
+  /**
+   * Total count of all descendant SLOT members (direct + via child groups). P30-G
+   * Use this instead of `group.memberIds.length` for display labels.
+   */
+  totalDescendantCount: number;
+  /**
+   * All descendant slot IDs (direct + via child groups). P30-G
+   * Used by LayerPanel to compute `isGroupSelected` without re-traversing.
+   */
+  descendantSlotIds: string[];
 };
 
 export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem | MaskLayerItem | GroupLayerItem;
@@ -109,120 +148,245 @@ export function getLayerName(item: LayerItem, _template: LayoutTemplate): string
 // ── buildLayerList ───────────────────────────────────────────────────────────
 
 /**
- * Builds a unified, sorted layer list from a `LayoutTemplate`.
+ * Builds a unified, tree-ordered layer list from a `LayoutTemplate`.
  *
- * Sort order: **descending by zIndex** (highest z-index = top of panel = in
- * front visually), matching the Photoshop/Figma convention. The background
- * row is always appended last regardless of z-index values.
+ * **Tree order:** Group headers appear first, immediately followed by their
+ * child groups and leaf-member slots in descending z-index order (same as
+ * Figma). Ungrouped slots and overlays are sorted into the flat list by
+ * z-index alongside top-level group positions.
  *
- * **Stable sort**: when two elements have equal zIndex, the one that appears
- * later in its source array is placed higher (secondary sort: arrayIndex
- * descending). This prevents unexpected row swaps after a drag that produces
- * equal z-index values.
+ * **Sort within a level:** descending by zIndex; array-index descending as a
+ * stable tie-breaker (later in the source array = higher in the panel).
+ *
+ * **Backward-compatible:** templates without `groups` (or with flat P29-G-C
+ * groups that lack `childGroupIds`) behave identically to the pre-P30-G
+ * implementation: groups are emitted with depth=0 and empty ancestorGroupIds.
  */
 export function buildLayerList(template: LayoutTemplate): LayerItem[] {
   const groups = template.groups ?? [];
+  const groupMap = buildGroupMap(groups);
 
-  // Build a reverse map: memberId → group (one entry per member; createGroup() enforces
-  // non-overlapping membership so last-write-wins is deterministic for well-formed data)
-  const memberGroupMap = new Map<string, LayoutGroup>();
-  groups.forEach((g) => g.memberIds.forEach((id) => memberGroupMap.set(id, g)));
+  // Stable index lookups for slots
+  const slotMap = new Map<string, LayoutSlot>(template.slots.map((s) => [s.id, s]));
+  const slotIndexMap = new Map<string, number>(template.slots.map((s, i) => [s.id, i]));
 
-  // Track which group IDs have already been inserted
-  const insertedGroupIds = new Set<string>();
-
-  const items: LayerItem[] = [];
-
-  template.slots.forEach((slot: LayoutSlot, arrayIndex: number) => {
-    items.push({
-      kind: 'slot',
-      id: slot.id,
-      zIndex: slot.zIndex,
-      arrayIndex,
-      index: arrayIndex,
-      name: slot.name ?? '',
-      visible: slot.visible ?? true,
-      locked: slot.locked ?? false,
-    });
-  });
-
-  template.overlays.forEach((overlay: LayoutGraphicLayer, arrayIndex: number) => {
-    items.push({
-      kind: 'graphic',
-      id: overlay.id,
-      zIndex: overlay.zIndex,
-      arrayIndex,
-      name: overlay.name ?? '',
-      visible: overlay.visible ?? true,
-      locked: overlay.locked ?? false,
-      opacity: overlay.opacity,
-    });
-  });
-
-  // Sort descending by zIndex; use arrayIndex descending as stable tie-breaker.
-  items.sort((a, b) => {
-    const zDiff = b.zIndex - a.zIndex;
-    if (zDiff !== 0) return zDiff;
-    return b.arrayIndex - a.arrayIndex;
-  });
-
-  // Insert mask sublayers right after their parent slot entries.
-  // We iterate in reverse so splice indices stay valid.
-  const slotMap = new Map<string, LayoutSlot>(
-    template.slots.map((s) => [s.id, s]),
-  );
-  for (let i = items.length - 1; i >= 0; i--) {
-    const item = items[i]!;
-    if (item.kind !== 'slot') continue;
-    const slot = slotMap.get(item.id);
-    if (!slot?.maskLayer) continue;
-    const maskItem: MaskLayerItem = {
-      kind: 'mask',
-      id: `mask-${slot.id}`,
-      parentSlotId: slot.id,
-      zIndex: item.zIndex,
-      arrayIndex: -1,
-      name: 'Mask',
-      visible: slot.maskLayer.visible !== false,
-    };
-    items.splice(i + 1, 0, maskItem);
+  // ── Compute representative z-index for a group ────────────────────────────
+  // = max zIndex of all descendant slots (0 if group has no resolvable slots).
+  const groupRepZCache = new Map<string, number>();
+  function groupRepZ(groupId: string): number {
+    const cached = groupRepZCache.get(groupId);
+    if (cached !== undefined) return cached;
+    const slotIds = collectDescendantSlotIds(groupId, groupMap);
+    let maxZ = 0;
+    for (const sid of slotIds) {
+      const slot = slotMap.get(sid);
+      if (slot && slot.zIndex > maxZ) maxZ = slot.zIndex;
+    }
+    groupRepZCache.set(groupId, maxZ);
+    return maxZ;
   }
 
-  // Insert group header rows: for each item that belongs to a group, insert a group
-  // header immediately before the first member encountered (which will be the highest-z member).
-  // Iterate forward and skip over each inserted header so splice indices stay valid.
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i]!;
-    if (item.kind === 'background' || item.kind === 'group') continue;
-    const group = memberGroupMap.get(item.id);
-    if (!group || insertedGroupIds.has(group.id)) continue;
-    insertedGroupIds.add(group.id);
-    const groupItem: GroupLayerItem = {
+  // ── Find all slot IDs that belong to any group hierarchy ─────────────────
+  const allGroupedSlotIds = new Set<string>();
+  for (const g of groups) {
+    for (const sid of collectDescendantSlotIds(g.id, groupMap)) {
+      allGroupedSlotIds.add(sid);
+    }
+  }
+
+  // ── Top-level groups (no parent) ──────────────────────────────────────────
+  const topLevelGroups = groups.filter((g) => !g.parentGroupId);
+
+  // ── Ungrouped items ───────────────────────────────────────────────────────
+  const ungroupedSlots = template.slots.filter((s) => !allGroupedSlotIds.has(s.id));
+
+  // ── Result accumulator ────────────────────────────────────────────────────
+  const result: LayerItem[] = [];
+
+  // ── DFS group emitter ─────────────────────────────────────────────────────
+  function emitGroup(groupId: string, depth: number, ancestorGroupIds: string[]): void {
+    const group = groupMap.get(groupId);
+    if (!group) return;
+
+    const repZ = groupRepZ(groupId);
+    const descendantSlotIds = collectDescendantSlotIds(groupId, groupMap).filter(
+      (sid) => slotMap.has(sid),
+    );
+    // Use the highest slot array-index among all descendants as the tie-breaker,
+    // so group rows sort consistently with ungrouped slots (both reference
+    // template.slots position — backward-compatible with the pre-P30-G order).
+    const repAi = descendantSlotIds.reduce(
+      (max, sid) => Math.max(max, slotIndexMap.get(sid) ?? 0),
+      0,
+    );
+
+    result.push({
       kind: 'group',
-      id: group.id,
+      id: groupId,
       group,
-      zIndex: item.zIndex,
-      arrayIndex: i,
+      zIndex: repZ,
+      arrayIndex: repAi,
       name: group.name ?? '',
       visible: group.visible !== false,
       locked: group.locked ?? false,
-    };
-    items.splice(i, 0, groupItem);
-    i++; // skip past the just-inserted group header
+      depth,
+      ancestorGroupIds,
+      totalDescendantCount: descendantSlotIds.length,
+      descendantSlotIds,
+    });
+
+    const myAncestors = [...ancestorGroupIds, groupId];
+
+    // ── Build interleaved child list (child groups + direct member slots) ───
+    type ChildEntry =
+      | { kind: 'group'; id: string; z: number; ai: number }
+      | { kind: 'slot'; slot: LayoutSlot; ai: number };
+
+    const childGroups: ChildEntry[] = (group.childGroupIds ?? []).map((cid, i) => ({
+      kind: 'group' as const,
+      id: cid,
+      z: groupRepZ(cid),
+      ai: i,
+    }));
+
+    const memberSlots: ChildEntry[] = group.memberIds
+      .map((mid): ChildEntry | null => {
+        const slot = slotMap.get(mid);
+        if (!slot) return null;
+        return { kind: 'slot' as const, slot, ai: slotIndexMap.get(mid) ?? 0 };
+      })
+      .filter((e): e is ChildEntry => e !== null);
+
+    const children = [...childGroups, ...memberSlots];
+    children.sort((a, b) => {
+      const za = a.kind === 'group' ? a.z : a.slot.zIndex;
+      const zb = b.kind === 'group' ? b.z : b.slot.zIndex;
+      if (za !== zb) return zb - za;
+      return b.ai - a.ai; // stable: higher array-index wins
+    });
+
+    for (const child of children) {
+      if (child.kind === 'group') {
+        emitGroup(child.id, depth + 1, myAncestors);
+      } else {
+        const { slot, ai } = child;
+        result.push({
+          kind: 'slot',
+          id: slot.id,
+          zIndex: slot.zIndex,
+          arrayIndex: ai,
+          index: ai,
+          name: slot.name ?? '',
+          visible: slot.visible ?? true,
+          locked: slot.locked ?? false,
+          depth: depth + 1,
+          ancestorGroupIds: myAncestors,
+        });
+        if (slot.maskLayer) {
+          result.push({
+            kind: 'mask',
+            id: `mask-${slot.id}`,
+            parentSlotId: slot.id,
+            zIndex: slot.zIndex,
+            arrayIndex: -1,
+            name: 'Mask',
+            visible: slot.maskLayer.visible !== false,
+            depth: depth + 2,
+            ancestorGroupIds: myAncestors,
+          });
+        }
+      }
+    }
+  }
+
+  // ── Build sortable top-level list ─────────────────────────────────────────
+  type TopItem =
+    | { kind: 'group'; id: string; z: number; ai: number }
+    | { kind: 'slot'; slot: LayoutSlot; ai: number; z: number }
+    | { kind: 'graphic'; overlay: LayoutGraphicLayer; ai: number; z: number };
+
+  const topItems: TopItem[] = [
+    ...topLevelGroups.map((g) => {
+      // Tie-breaker = max slot array-index among all descendants (same semantic
+      // as ungrouped slots) so zIndex ties resolve consistently across types.
+      const descIds = collectDescendantSlotIds(g.id, groupMap);
+      const maxAi = descIds.reduce((m, sid) => Math.max(m, slotIndexMap.get(sid) ?? 0), 0);
+      return { kind: 'group' as const, id: g.id, z: groupRepZ(g.id), ai: maxAi };
+    }),
+    ...ungroupedSlots.map((s) => {
+      const ai = slotIndexMap.get(s.id) ?? 0;
+      return { kind: 'slot' as const, slot: s, ai, z: s.zIndex };
+    }),
+    ...template.overlays.map((o, ai) => ({
+      kind: 'graphic' as const, overlay: o, ai, z: o.zIndex,
+    })),
+  ];
+
+  topItems.sort((a, b) => {
+    if (a.z !== b.z) return b.z - a.z;
+    return b.ai - a.ai; // stable: higher array-index wins
+  });
+
+  for (const item of topItems) {
+    if (item.kind === 'group') {
+      emitGroup(item.id, 0, []);
+    } else if (item.kind === 'slot') {
+      const { slot, ai } = item;
+      result.push({
+        kind: 'slot',
+        id: slot.id,
+        zIndex: slot.zIndex,
+        arrayIndex: ai,
+        index: ai,
+        name: slot.name ?? '',
+        visible: slot.visible ?? true,
+        locked: slot.locked ?? false,
+        depth: 0,
+        ancestorGroupIds: [],
+      });
+      if (slot.maskLayer) {
+        result.push({
+          kind: 'mask',
+          id: `mask-${slot.id}`,
+          parentSlotId: slot.id,
+          zIndex: slot.zIndex,
+          arrayIndex: -1,
+          name: 'Mask',
+          visible: slot.maskLayer.visible !== false,
+          depth: 1,
+          ancestorGroupIds: [],
+        });
+      }
+    } else {
+      const { overlay, ai } = item;
+      result.push({
+        kind: 'graphic',
+        id: overlay.id,
+        zIndex: overlay.zIndex,
+        arrayIndex: ai,
+        name: overlay.name ?? '',
+        visible: overlay.visible ?? true,
+        locked: overlay.locked ?? false,
+        opacity: overlay.opacity,
+        depth: 0,
+        ancestorGroupIds: [],
+      });
+    }
   }
 
   // Background is always the bottom-most row.
-  const bgItem: BackgroundLayerItem = {
+  result.push({
     kind: 'background',
     id: 'background',
     zIndex: 0,
     arrayIndex: -1,
     name: 'Background',
     visible: true,
-  };
-  items.push(bgItem);
+    depth: 0,
+    ancestorGroupIds: [],
+  });
 
-  return items;
+  return result;
 }
 
 // ── Reorder helper ───────────────────────────────────────────────────────────

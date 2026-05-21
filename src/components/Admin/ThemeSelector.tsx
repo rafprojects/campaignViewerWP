@@ -2,9 +2,12 @@
  * ThemeSelector — Admin theme picker with live preview swatches
  *
  * Reads available themes from useTheme().availableThemes and renders a
- * Select dropdown with color-swatch previews. Selecting a theme calls
- * setTheme() for instant switching (no save button needed — theme is
- * persisted to localStorage by ThemeProvider).
+ * grouped Select dropdown with color-swatch previews and metadata-backed
+ * descriptions. Selecting a theme calls setTheme() for instant switching
+ * (no save button needed — theme is persisted to localStorage by ThemeProvider).
+ *
+ * Groups and descriptions come from the shared theme-catalog.json so the
+ * React selector and the WordPress settings field stay in sync.
  *
  * Usage:
  * ```tsx
@@ -14,7 +17,7 @@
  * Gold source: docs/THEME_SYSTEM_ASSESSMENT.md §12
  */
 
-import { forwardRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Select,
   Group,
@@ -25,42 +28,8 @@ import {
 } from '@mantine/core';
 import { useTheme } from '@/hooks/useTheme';
 import type { ThemeMeta } from '@/themes/types';
-import { getTheme } from '@/themes/index';
+import { getTheme, getAllThemeMetaGrouped } from '@/themes/index';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-
-// ---------------------------------------------------------------------------
-// Swatch-based item renderer
-// ---------------------------------------------------------------------------
-
-interface ThemeItemProps extends React.ComponentPropsWithoutRef<'div'> {
-  label: string;
-  description: string;
-  swatches: string[];
-}
-
-const ThemeSelectItem = forwardRef<HTMLDivElement, ThemeItemProps>(
-  ({ label, description, swatches, ...others }, ref) => (
-    <div ref={ref} {...others}>
-      <Group gap="sm" wrap="nowrap">
-        <Group gap={4}>
-          {swatches.map((color, i) => (
-            <ColorSwatch key={i} color={color} size={14} />
-          ))}
-        </Group>
-        <Stack gap={0}>
-          <Text size="sm" fw={500}>
-            {label}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {description}
-          </Text>
-        </Stack>
-      </Group>
-    </div>
-  ),
-);
-
-setWpsgDebugDisplayName(ThemeSelectItem, 'ThemeSelectItem');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -73,7 +42,7 @@ function colorStr(c: string | { base: string; shades: number } | undefined): str
   return c.base;
 }
 
-/** Build display swatches from a theme's definition colors */
+/** Build representative display swatches from a theme's definition */
 function getSwatches(themeId: string): string[] {
   const entry = getTheme(themeId);
   if (!entry) return [];
@@ -81,9 +50,26 @@ function getSwatches(themeId: string): string[] {
   return [c.background, colorStr(c.primary), colorStr(c.accent), c.success, c.error];
 }
 
-/** Produce a description string for a theme */
-function getDescription(meta: ThemeMeta): string {
-  return meta.colorScheme === 'dark' ? 'Dark theme' : 'Light theme';
+// ---------------------------------------------------------------------------
+// Grouped Select data builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Build Mantine Select data in grouped format:
+ * [{ group: 'Default', items: [{ value, label }] }, ...]
+ */
+function buildSelectData(availableThemes: ThemeMeta[]): SelectProps['data'] {
+  const availableIds = new Set(availableThemes.map((m) => m.id));
+  const grouped = getAllThemeMetaGrouped();
+
+  return grouped
+    .map(({ group, themes }) => ({
+      group,
+      items: themes
+        .filter((t) => availableIds.has(t.id))
+        .map((t) => ({ value: t.id, label: t.name })),
+    }))
+    .filter((g) => g.items.length > 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -122,28 +108,26 @@ export function ThemeSelector({
   // Keep in sync when context themeId changes externally (e.g. on reset)
   useEffect(() => { setLocalValue(resolvedValue); }, [resolvedValue]);
 
-  const data = availableThemes.map((meta) => ({
-    value: meta.id,
-    label: meta.name,
-  }));
+  const data = buildSelectData(availableThemes);
 
   const renderOption: SelectProps['renderOption'] = ({ option }) => {
     const swatches = getSwatches(option.value);
     const meta = availableThemes.find((m) => m.id === option.value);
-    const desc = meta ? getDescription(meta) : '';
+    // Use catalog-backed description; fall back to scheme hint
+    const desc = meta?.description ?? (meta?.colorScheme === 'dark' ? 'Dark theme' : 'Light theme');
 
     return (
       <Group gap="sm" wrap="nowrap">
-        <Group gap={4}>
+        <Group gap={4} style={{ flexShrink: 0 }}>
           {swatches.map((color, i) => (
             <ColorSwatch key={i} color={color} size={14} />
           ))}
         </Group>
-        <Stack gap={0}>
-          <Text size="sm" fw={500}>
+        <Stack gap={0} style={{ minWidth: 0 }}>
+          <Text size="sm" fw={500} truncate>
             {option.label}
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text size="xs" c="dimmed" truncate>
             {desc}
           </Text>
         </Stack>
@@ -163,7 +147,7 @@ export function ThemeSelector({
           onThemeChange?.(value);
         }
       }}
-      data={data}
+      data={data ?? []}
       renderOption={renderOption}
       allowDeselect={false}
       // Keep the dropdown in the same tree as the shadow-root modal so

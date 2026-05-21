@@ -28,7 +28,19 @@ Repeat for each theme in the selector dropdown.
 | 1.7 | Refresh the page | Same theme persists (loaded from `localStorage`) | |
 | 1.8 | Switch to a different theme, then back | No visual artifacts or stale colors | |
 
-**Theme IDs to test:** `default-dark`, `default-light`, `material-dark`, `material-light`, `darcula`, `nord`, `solarized-dark`, `solarized-light`, `high-contrast`, `catppuccin-mocha`, `tokyo-night`, `gruvbox-dark`, `cyberpunk`, `synthwave`
+**Theme IDs to test (all 23):**
+
+| Group | Theme IDs |
+|-------|-----------|
+| Default | `default-dark`, `default-light` |
+| Material | `material-dark`, `material-light` |
+| Classic | `darcula`, `nord` |
+| Solarized | `solarized-dark`, `solarized-light` |
+| Accessibility | `high-contrast` |
+| Community | `catppuccin-mocha`, `catppuccin-latte`, `tokyo-night`, `gruvbox-dark`, `github-light` |
+| Neon | `cyberpunk`, `synthwave` |
+| Artistic | `sunset-boulevard`, `ocean-breeze`, `crimson-canvas`, `forest-whisper`, `midnight-rose` |
+| Seasonal | `halloween`, `reverse-halloween` |
 
 ---
 
@@ -163,7 +175,7 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 
 | # | Test | Expected | ✅ |
 |---|------|----------|----|
-| 6.1 | WP Admin → Settings → Theme dropdown | Shows all 14 themes in grouped categories | |
+| 6.1 | WP Admin → Settings → Theme dropdown | Shows all 23 themes in 9 grouped categories | |
 | 6.2 | Select `material-dark` and save | Settings saved successfully | |
 | 6.3 | Visit front-end with `[super-gallery]` shortcode | Gallery loads with `material-dark` theme | |
 | 6.4 | View page source | `window.__wpsgThemeId = "material-dark"` present in config script | |
@@ -198,7 +210,7 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 |---|------|----------|----|
 | 8.1 | Open DevTools → Performance tab | Ready to record | |
 | 8.2 | Record while switching themes 5 times rapidly | Each switch completes in <16ms (no dropped frames) | |
-| 8.3 | Check console at startup | `[WPSG Theme] Registry initialized: 14/14 themes in Xms` — should be <50ms | |
+| 8.3 | Check console at startup | `[WPSG Theme] Registry initialized: 23/23 themes in Xms` — should be <100ms | |
 | 8.4 | Memory tab: take heap snapshot | No leaked DOM nodes after 10 theme switches | |
 | 8.5 | Network tab while switching | **Zero** network requests — all themes pre-computed at startup | |
 | 8.6 | Lighthouse performance score | No regression from theme system (bundle ~13KB chroma.js addition) | |
@@ -250,6 +262,9 @@ Use DevTools to verify CSS variables are present and correct.
 ## Quick Regression Command
 
 ```bash
+# Validate all 23 theme JSON files and catalog
+npm run validate:themes
+
 # Run all automated theme tests
 npx vitest run src/themes/__tests__/
 
@@ -261,7 +276,27 @@ npx tsc --noEmit
 
 # Production build
 npx vite build
+
+# Theme browser behavior tests (Playwright)
+npx playwright test theme-qa --project=chromium
+
+# Capture Phase 1 visual baselines (run once before asserting snapshots)
+npx playwright test theme-qa --project=chromium --update-snapshots
 ```
+
+### Visual Snapshot Workflow
+
+Phase 1 baselines (14 screenshots) must be captured once before the snapshot
+tests run in assertion mode:
+
+1. Ensure dev server is running: `npm run dev`
+2. Capture baselines: `npx playwright test theme-qa/phase-1 --update-snapshots`
+3. Commit the generated `.png` files in `e2e/__snapshots__/`
+4. CI will now compare against those baselines on subsequent runs
+
+Phase 2 expansion (38 snapshots total) is documented in `e2e/theme-qa.spec.ts`
+but **not yet enabled**. Enable only after Phase 1 baselines are stable across
+3+ consecutive CI runs.
 
 ---
 
@@ -279,7 +314,16 @@ npx vite build
 | solarized-light | | | | | | | | |
 | high-contrast | | | | | | | | |
 | catppuccin-mocha | | | | | | | | |
+| catppuccin-latte | | | | | | | | |
 | tokyo-night | | | | | | | | |
 | gruvbox-dark | | | | | | | | |
+| github-light | | | | | | | | |
 | cyberpunk | | | | | | | | |
 | synthwave | | | | | | | | |
+| sunset-boulevard | | | | | | | | |
+| ocean-breeze | | | | | | | | |
+| crimson-canvas | | | | | | | | |
+| forest-whisper | | | | | | | | |
+| midnight-rose | | | | | | | | |
+| halloween | | | | | | | | |
+| reverse-halloween | | | | | | | | |

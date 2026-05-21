@@ -205,23 +205,30 @@ export function ThemeProvider({
     }
   }, [forcedThemeId]);
 
-  // Inject custom WPSG CSS variables into either the shadow root or a
-  // scoped document-level style tag for normal DOM mounts.
+  // Inject custom WPSG CSS variables into the shadow root.
+  // Split into two effects so the style element is only created/removed when
+  // the shadowRoot changes (mount/unmount), while cssVars changes only update
+  // textContent — avoiding remove+recreate DOM churn and brief CSS var gaps on
+  // theme switches.
+  const STYLE_ID = 'wpsg-theme-vars';
   useEffect(() => {
-    if (shadowRoot) {
-      const styleId = 'wpsg-theme-vars';
-      let styleEl = shadowRoot.querySelector(`#${styleId}`) as HTMLStyleElement | null;
+    if (!shadowRoot) return;
+    // Use ownerDocument rather than the ambient `document` so the element
+    // is created in the same document as the shadow host (important in
+    // cross-frame scenarios and avoids AdoptedStyleSheets quirks).
+    const styleEl = shadowRoot.ownerDocument.createElement('style');
+    styleEl.id = STYLE_ID;
+    shadowRoot.prepend(styleEl);
+    return () => {
+      // Remove on shadowRoot unmount so styles don't leak after gallery teardown.
+      styleEl.remove();
+    };
+  }, [shadowRoot]);
 
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = styleId;
-        shadowRoot.prepend(styleEl);
-      }
-
-      styleEl.textContent = entry.cssVars;
-    }
-
-    return;
+  useEffect(() => {
+    if (!shadowRoot) return;
+    const styleEl = shadowRoot.querySelector(`#${STYLE_ID}`) as HTMLStyleElement | null;
+    if (styleEl) styleEl.textContent = entry.cssVars;
   }, [shadowRoot, entry.cssVars]);
 
   useEffect(() => {

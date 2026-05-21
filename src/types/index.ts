@@ -524,10 +524,10 @@ export interface LayoutTemplate {
   /** Decorative graphic layers (P15-H). Key is `overlays` for DB compatibility. */
   overlays: LayoutGraphicLayer[];
   /**
-   * Flat slot/overlay groups (P29-G-C). Each group is a named set of memberIds
-   * that can be locked/hidden as a unit. Nesting is deferred to P30-G.
-   * Note: group-level move/select operations currently apply to slot members only;
-   * overlay members are stored but not yet moveable as a group (deferred to a future phase).
+   * Nested slot/overlay groups (P30-G). Each group has direct leaf members
+   * (memberIds) and optional child groups (childGroupIds), forming a tree.
+   * All slot positions are canvas-absolute; group frame geometry (x/y/width/height)
+   * is derived from the union of all descendants and stored for resolver efficiency.
    */
   groups?: LayoutGroup[] | undefined;
   /** ISO 8601 created timestamp */
@@ -538,13 +538,41 @@ export interface LayoutTemplate {
   tags: string[];
 }
 
-/** A flat (non-nested) named collection of slot/overlay IDs that can be locked/hidden as a unit. Slot members support group-level move/select; overlay members are stored but group movement is deferred. */
+/**
+ * Named group of slots/overlays that can be locked/hidden/moved as a unit.
+ * Groups form a tree via parentGroupId / childGroupIds (P30-G). Flat groups
+ * from P29-G-C are migrated on load: parentGroupId = null, childGroupIds = [].
+ *
+ * Slot positions are always canvas-absolute (0–100%). The group's own
+ * x/y/width/height is the union bounding box of all descendant slots in canvas
+ * space — kept up-to-date after every move/resize/regroup operation so callers
+ * can read it without re-deriving from the full slot tree.
+ */
 export interface LayoutGroup {
   id: string;
   /** Display name shown in the Layers panel. */
   name?: string | undefined;
-  /** IDs of slots and overlays that belong to this group. */
+  /** IDs of DIRECT leaf slot/overlay members (not child groups). */
   memberIds: string[];
+  /**
+   * IDs of immediate child groups (P30-G).
+   * Absent on pre-P30-G data; treated as empty on read.
+   */
+  childGroupIds?: string[] | undefined;
+  /**
+   * ID of the parent group, or null for a top-level group (P30-G).
+   * Absent on pre-P30-G data; treated as null on read.
+   */
+  parentGroupId?: string | null | undefined;
+  /**
+   * Union bounding box of all descendants in canvas % coordinates (P30-G).
+   * Derived and stored after each structural change for read efficiency.
+   * May be absent on legacy data — call `computeGroupRect()` to derive on demand.
+   */
+  x?: number | undefined;
+  y?: number | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
   /** When true the group row is collapsed in the Layers panel. */
   collapsed?: boolean | undefined;
   /** When true, member slots/overlays cannot be moved or resized. */

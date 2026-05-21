@@ -41,9 +41,20 @@ import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
+import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
 import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
+import type { SnapMode } from '@/utils/canvasMeasurement';
+
+// ── P30-D: Cross-tab stale detection ─────────────────────────────────────────
+const BUILDER_BC_CHANNEL = 'wpsg-layout-builder';
+
+interface BuilderBroadcastMessage {
+  type: 'template-saved';
+  templateId: string;
+}
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -131,8 +142,31 @@ export function LayoutBuilderModal({
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
 
-  const [snapEnabled, setSnapEnabled] = useState(true);
+  // ── P30-B workspace preferences (persisted in localStorage) ──
+  const [snapMode, setSnapMode] = useState<SnapMode>(() => {
+    try { return (safeLocalStorage.getItem('wpsg_builder_snap_mode') as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
+  });
   const [snapThreshold, setSnapThreshold] = useState(5);
+  const [showGrid, setShowGrid] = useState(() => {
+    try { return safeLocalStorage.getItem('wpsg_builder_show_grid') === 'true'; } catch { return false; }
+  });
+  const [gridSizePx, setGridSizePx] = useState(() => {
+    try { return Number(safeLocalStorage.getItem('wpsg_builder_grid_size')) || 20; } catch { return 20; }
+  });
+  const [showRulers, setShowRulers] = useState(() => {
+    try { return safeLocalStorage.getItem('wpsg_builder_show_rulers') === 'true'; } catch { return false; }
+  });
+  const [showMeasurements, setShowMeasurements] = useState(() => {
+    try { return safeLocalStorage.getItem('wpsg_builder_show_measurements') === 'true'; } catch { return false; }
+  });
+
+  // Persist P30-B workspace preferences.
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_snap_mode', snapMode); }, [snapMode]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_grid', String(showGrid)); }, [showGrid]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_grid_size', String(gridSizePx)); }, [gridSizePx]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_rulers', String(showRulers)); }, [showRulers]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_measurements', String(showMeasurements)); }, [showMeasurements]);
+
   const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem('wpsg_builder_design_assets_open');
@@ -149,6 +183,35 @@ export function LayoutBuilderModal({
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
   // Track whether we've already checked for a draft this open session
   const draftCheckedRef = useRef(false);
+
+  // ── P30-D: Cross-tab stale detection via BroadcastChannel ─────────────────
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel(BUILDER_BC_CHANNEL);
+    bcRef.current = channel;
+    channel.onmessage = (event: MessageEvent<BuilderBroadcastMessage>) => {
+      const data = event.data;
+      if (
+        data?.type === 'template-saved' &&
+        data.templateId &&
+        initialTemplate?.id &&
+        data.templateId === initialTemplate.id
+      ) {
+        notifications.show({
+          title: 'Template updated in another tab',
+          message: 'This template was saved elsewhere. Close and reopen to load the latest version.',
+          color: 'yellow',
+          autoClose: 0, // Persistent — user must dismiss
+        });
+      }
+    };
+    return () => {
+      channel.close();
+      bcRef.current = null;
+    };
+   
+  }, [initialTemplate?.id]);
 
   // ── Draft restore/discard prompt ──
   useEffect(() => {
@@ -211,6 +274,17 @@ export function LayoutBuilderModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened]);
 
+  // ── P30-G: migrate flat P29-G-C groups to hierarchical format on open ──
+  // The ref keeps a stable pointer to the latest `migrateGroupsIfNeeded` so
+  // the effect dep array stays minimal (only [opened]).
+  const migrateGroupsRef = useRef(builder.migrateGroupsIfNeeded);
+  migrateGroupsRef.current = builder.migrateGroupsIfNeeded;
+  useEffect(() => {
+    if (!opened) return;
+    migrateGroupsRef.current();
+     
+  }, [opened]);
+
   // ── Close with dirty guard ──
   const handleClose = useCallback(() => {
     if (builder.isDirty) {
@@ -262,6 +336,10 @@ export function LayoutBuilderModal({
       onSaved?.(saved);
       onNotify?.({ type: 'success', text: `Layout "${saved.name}" saved` });
       notifications.show({ message: `Layout "${saved.name}" saved`, color: 'green', autoClose: 3000 });
+      // P30-D: Notify other tabs that this template was saved
+      try {
+        bcRef.current?.postMessage({ type: 'template-saved', templateId: saved.id } satisfies BuilderBroadcastMessage);
+      } catch { /* BroadcastChannel may be unavailable in some environments */ }
       return true;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to save layout';
@@ -468,6 +546,66 @@ export function LayoutBuilderModal({
     [apiClient, announce, onNotify],
   );
 
+  // ── Group actions (used by contextual toolbar) ──
+  const handleCreateGroup = useCallback(() => {
+    const ids = [...builder.selectedSlotIds];
+    if (ids.length < 2) return;
+    builder.createGroup(ids);
+    announce(`Group created (${ids.length} slots)`);
+    notifications.show({ message: `Group created (${ids.length} slots)`, color: 'blue', autoClose: 2500 });
+  }, [builder, announce]);
+
+  // The toolbar always resolves the target group before calling this and passes
+  // the explicit groupId — no need to re-derive from selection here.
+  // Keyboard Ctrl+Shift+G has its own inline dissolve logic.
+  const handleUngroupSelected = useCallback((groupId: string) => {
+    builder.dissolveGroup(groupId);
+    announce('Ungrouped');
+    notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
+  }, [builder, announce]);
+
+  const handleGroupLockToggle = useCallback(
+    (groupId: string, locked: boolean) => {
+      builder.updateGroup(groupId, { locked });
+      announce(locked ? 'Group locked' : 'Group unlocked');
+    },
+    [builder, announce],
+  );
+
+  const handleGroupVisibilityToggle = useCallback(
+    (groupId: string, visible: boolean) => {
+      builder.updateGroup(groupId, { visible });
+      announce(visible ? 'Group shown' : 'Group hidden');
+    },
+    [builder, announce],
+  );
+
+  const handleGroupRename = useCallback(
+    (groupId: string, name: string) => {
+      builder.updateGroup(groupId, { name });
+      announce(`Group renamed`);
+    },
+    [builder, announce],
+  );
+
+  const handleBringForwardSelected = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      builder.bringForward(ids);
+      announce('Brought forward');
+    },
+    [builder, announce],
+  );
+
+  const handleSendBackwardSelected = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      builder.sendBackward(ids);
+      announce('Sent backward');
+    },
+    [builder, announce],
+  );
+
   // ── Auto-assign media ──
   const handleAutoAssign = useCallback(() => {
     const mediaIds = media.map((m) => m.id);
@@ -512,30 +650,61 @@ export function LayoutBuilderModal({
         handleDuplicateSelected();
         e.preventDefault();
       }
-      // Group / select-in-group
+      // Group / wrap-in-group / select-in-group (P30-G)
       if ((e.metaKey || e.ctrlKey) && e.key === 'g' && !e.shiftKey) {
         const ids = [...builder.selectedSlotIds];
         const groups = builder.template.groups ?? [];
-        const touchedGroup = groups.find((g) =>
-          g.memberIds.some((id) => builder.selectedSlotIds.has(id))
-        );
-        if (touchedGroup) {
-          // Any selected slot belongs to a group — expand selection to all members.
-          builder.selectGroup(touchedGroup.id);
-          announce(`Group selected (${touchedGroup.memberIds.length} slots)`);
-        } else if (ids.length >= 2) {
-          builder.createGroup(ids);
-          announce(`Group created (${ids.length} slots)`);
+        const groupMap = buildGroupMap(groups);
+
+        // P30-G: detect if selection is exactly one complete group's descendants
+        const fullySelectedGroup = groups.find((g) => {
+          const descIds = collectDescendantSlotIds(g.id, groupMap);
+          return (
+            descIds.length > 0 &&
+            descIds.length === builder.selectedSlotIds.size &&
+            descIds.every((id) => builder.selectedSlotIds.has(id))
+          );
+        });
+
+        if (fullySelectedGroup) {
+          // Wrap the full group in a new parent group
+          const newId = builder.wrapInGroup([fullySelectedGroup.id]);
+          builder.selectGroup(newId);
+          announce('Group wrapped in parent group');
+        } else {
+          const touchedGroup = groups.find((g) =>
+            g.memberIds.some((id) => builder.selectedSlotIds.has(id))
+          );
+          if (touchedGroup) {
+            // Any selected slot belongs to a group — expand selection to all descendants.
+            builder.selectGroup(touchedGroup.id);
+            announce(`Group selected`);
+          } else if (ids.length >= 2) {
+            builder.createGroup(ids);
+            announce(`Group created (${ids.length} slots)`);
+          }
         }
         e.preventDefault();
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'g' && e.shiftKey) {
         const groups = builder.template.groups ?? [];
         const selectedIds = builder.selectedSlotIds;
-        const targetGroup = groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
-        if (targetGroup) {
-          builder.dissolveGroup(targetGroup.id);
-          announce('Ungrouped');
+        if (groups.length > 0 && selectedIds.size > 0) {
+          const shiftGGroupMap = buildGroupMap(groups);
+          // P30-G fix: match by full descendant set, fall back to member overlap
+          const targetGroup =
+            groups.find((g) => {
+              const descIds = collectDescendantSlotIds(g.id, shiftGGroupMap);
+              return (
+                descIds.length > 0 &&
+                descIds.length === selectedIds.size &&
+                descIds.every((id) => selectedIds.has(id))
+              );
+            }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
+          if (targetGroup) {
+            builder.dissolveGroup(targetGroup.id);
+            announce('Ungrouped');
+          }
         }
         e.preventDefault();
       }
@@ -635,7 +804,10 @@ export function LayoutBuilderModal({
   const handleDockReady = useCallback((event: DockviewReadyEvent) => {
     dockApiRef.current = event.api;
     const LAYOUT_KEY = 'wpsg_builder_layout';
-    const LAYOUT_VERSION = 1;
+    // P30-E: bumped from 1 → 2. Version 1 layouts include a History dock tab
+    // that is now surfaced in the header; they are cleared so users get the
+    // clean default layout without the redundant History tab.
+    const LAYOUT_VERSION = 2;
     const persistLayout = () => {
       try {
         localStorage.setItem(LAYOUT_KEY, JSON.stringify({ version: LAYOUT_VERSION, layout: event.api.toJSON() }));
@@ -644,15 +816,21 @@ export function LayoutBuilderModal({
     const saved = localStorage.getItem(LAYOUT_KEY);
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        // Accept both versioned { version, layout } and legacy bare-JSON saves.
-        const layout =
-          parsed && typeof parsed === 'object' && 'layout' in parsed
-            ? (parsed as { layout: unknown }).layout
-            : parsed;
-        event.api.fromJSON(layout as Parameters<typeof event.api.fromJSON>[0]);
-        event.api.onDidLayoutChange(persistLayout);
-        return;
+        const parsed = JSON.parse(saved) as { version?: number; layout?: unknown } | null;
+        const savedVersion = parsed && typeof parsed === 'object' ? (parsed.version ?? 0) : 0;
+        if (savedVersion < LAYOUT_VERSION) {
+          // Old layout (pre-P30-E) — clear and fall through to the new default.
+          try { localStorage.removeItem(LAYOUT_KEY); } catch { /* ignore */ }
+        } else {
+          // Accept both versioned { version, layout } and legacy bare-JSON saves.
+          const layout =
+            parsed && typeof parsed === 'object' && 'layout' in parsed
+              ? parsed.layout
+              : parsed;
+          event.api.fromJSON(layout as Parameters<typeof event.api.fromJSON>[0]);
+          event.api.onDidLayoutChange(persistLayout);
+          return;
+        }
       } catch {
         // Saved layout is invalid or incompatible — clear it so every
         // subsequent open doesn't repeat the same try/catch failure.
@@ -660,10 +838,10 @@ export function LayoutBuilderModal({
         // fall through to default layout
       }
     }
-    // Default layout: Layers+Media+History tabs left | Canvas centre | Properties right
+    // Default layout (P30-E): Layers+Media tabs left | Canvas centre | Properties right
+    // History is now in the header dropdown — no History dock tab in the default.
     const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
     event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
-    event.api.addPanel({ id: 'history', component: 'history', title: 'History', position: { direction: 'within', referencePanel: layersPanel } });
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);
@@ -676,12 +854,17 @@ export function LayoutBuilderModal({
     selectedSlot, selectedOverlayId, setSelectedOverlayId, selectedOverlay,
     selectedOverlayIndex, isBackgroundSelected, setIsBackgroundSelected,
     selectedMaskSlotId, setSelectedMaskSlotId,
-    snapEnabled, setSnapEnabled, snapThreshold, setSnapThreshold,
+    snapMode, setSnapMode, snapThreshold, setSnapThreshold,
+    showGrid, setShowGrid, gridSizePx, setGridSizePx,
+    showRulers, setShowRulers, showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen, bgSectionRef, dockApiRef,
     announce,
     handleSave, handleClose, handleAutoAssign, handleUploadOverlay,
     handleDeleteLibraryOverlay, handleUploadBgImage,
     handleDeleteSelected, handleDuplicateSelected, handleUploadMask,
+    handleCreateGroup, handleUngroupSelected,
+    handleGroupLockToggle, handleGroupVisibilityToggle, handleGroupRename,
+    handleBringForwardSelected, handleSendBackwardSelected,
   };
 
   return (
@@ -765,6 +948,13 @@ export function LayoutBuilderModal({
                   <IconArrowForwardUp size={18} />
                 </ActionIcon>
               </Tooltip>
+              {/* P30-E: history dropdown replaces the dock tab */}
+              <BuilderHistoryDropdown
+                historyEntries={builder.historyEntries}
+                historyCurrentIndex={builder.historyCurrentIndex}
+                isHistoryTrimmed={builder.isHistoryTrimmed}
+                onJump={builder.jumpToHistoryIndex}
+              />
             </Group>
 
             {/* Right: import/export + preview + save + close */}

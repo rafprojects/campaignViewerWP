@@ -3,10 +3,21 @@ import { Rnd } from 'react-rnd';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@/utils/smartGuides';
+import {
+  type SnapMode,
+  snapToGrid,
+  gridSizeToPct,
+  selectionUnionRect,
+  type PctRect,
+} from '@/utils/canvasMeasurement';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
+import { ContextualToolbar, type ContextualToolbarCallbacks } from './ContextualToolbar';
+import { CanvasGrid } from './CanvasGrid';
+import { CanvasRulers } from './CanvasRulers';
+import { MeasurementOverlay } from './MeasurementOverlay';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { ASSET_MIME } from './DesignAssetsGrid';
@@ -19,7 +30,8 @@ export interface LayoutCanvasProps {
   selectedSlotIds: Set<string>;
   isPreview: boolean;
   media: MediaItem[];
-  snapEnabled: boolean;
+  /** Snap mode: 'off' | 'guides' | 'grid' | 'grid+guides' (P30-B). */
+  snapMode: SnapMode;
   onSlotMove: (id: string, x: number, y: number) => void;
   onSlotResize: (id: string, x: number, y: number, w: number, h: number) => void;
   onSlotSelect: (id: string) => void;
@@ -46,6 +58,17 @@ export interface LayoutCanvasProps {
   onMediaCanvasDrop?: (mediaId: string, meta: { attachmentId?: number | undefined; url?: string | undefined }, x: number, y: number) => void;
   /** Whether to render slot index badges (default: true). */
   showSlotIndices?: boolean;
+  /** When provided, renders the contextual floating toolbar on selection. */
+  contextualToolbarCallbacks?: ContextualToolbarCallbacks | undefined;
+  // ── P30-B overlays ──────────────────────────────────────────
+  /** Show the grid overlay (P30-B). */
+  showGrid?: boolean;
+  /** Grid cell size in canvas pixels (P30-B). */
+  gridSizePx?: number;
+  /** Show ruler strips at top and left edges (P30-B). */
+  showRulers?: boolean;
+  /** Show edge-distance measurement lines on selection (P30-B). */
+  showMeasurements?: boolean;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -72,7 +95,7 @@ export function LayoutCanvas({
   selectedSlotIds,
   isPreview,
   media,
-  snapEnabled,
+  snapMode,
   onSlotMove,
   onSlotResize,
   onSlotSelect,
@@ -89,6 +112,11 @@ export function LayoutCanvas({
   onAssetCanvasDrop,
   onMediaCanvasDrop,
   showSlotIndices = true,
+  contextualToolbarCallbacks,
+  showGrid = false,
+  gridSizePx = 20,
+  showRulers = false,
+  showMeasurements = false,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -140,6 +168,29 @@ export function LayoutCanvas({
     [canvasWidth, canvasHeight],
   );
 
+  // ── Contextual toolbar: union bounding rect of selected slots ─
+
+  const selectionRect = useMemo(() => {
+    if (isPreview || selectedSlotIds.size === 0 || !contextualToolbarCallbacks) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const slot of template.slots) {
+      if (!selectedSlotIds.has(slot.id)) continue;
+      const px = pctToPx(slot.x, slot.y, slot.width, slot.height);
+      minX = Math.min(minX, px.x);
+      minY = Math.min(minY, px.y);
+      maxX = Math.max(maxX, px.x + (px.width ?? 0));
+      maxY = Math.max(maxY, px.y + (px.height ?? 0));
+    }
+    if (!isFinite(minX)) return null;
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }, [isPreview, selectedSlotIds, template.slots, pctToPx, contextualToolbarCallbacks]);
+
+  // ── P30-B: selection bounding rect in canvas-% for rulers & measurements ──
+  const selectionPct = useMemo<PctRect | null>(() => {
+    if (isPreview || selectedSlotIds.size === 0) return null;
+    return selectionUnionRect(selectedSlotIds, template.slots);
+  }, [isPreview, selectedSlotIds, template.slots]);
+
   // ── Smart guides state ─────────────────────────────────────
 
   const [activeGuides, setActiveGuides] = useState<GuideLine[]>([]);
@@ -168,8 +219,9 @@ export function LayoutCanvas({
         }
       }
 
-      if (!snapEnabled || isPreview) {
+      if (snapMode === 'off' || isPreview) {
         setActiveGuides([]);
+        lastGuideResultRef.current = {};
         return;
       }
 
@@ -177,22 +229,42 @@ export function LayoutCanvas({
       if (!slot) return;
 
       const pct = pxToPct(pxX, pxY);
-      const dragging: SlotRect = {
-        id: slotId,
-        x: pct.x,
-        y: pct.y,
-        width: slot.width,
-        height: slot.height,
-      };
-      const others: SlotRect[] = templateSlotsRef.current
-        .filter((s) => s.id !== slotId)
-        .map((s) => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
+      let snapX: number | undefined;
+      let snapY: number | undefined;
 
-      const result = computeGuides(dragging, others, { width: canvasWidth, height: canvasHeight }, snapThresholdPx);
-      lastGuideResultRef.current = { snapX: result.snapX, snapY: result.snapY };
-      setActiveGuides(result.guides);
+      // ── Smart guides (modes: 'guides', 'grid+guides') ─────────
+      if (snapMode === 'guides' || snapMode === 'grid+guides') {
+        const dragging: SlotRect = {
+          id: slotId,
+          x: pct.x,
+          y: pct.y,
+          width: slot.width,
+          height: slot.height,
+        };
+        const others: SlotRect[] = templateSlotsRef.current
+          .filter((s) => s.id !== slotId)
+          .map((s) => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
+
+        const result = computeGuides(dragging, others, { width: canvasWidth, height: canvasHeight }, snapThresholdPx);
+        snapX = result.snapX;
+        snapY = result.snapY;
+        setActiveGuides(result.guides);
+      } else {
+        setActiveGuides([]);
+      }
+
+      // ── Grid snap (modes: 'grid', 'grid+guides') ──────────────
+      // Grid applies to axes where guide snap found nothing — guides win on ties.
+      if (snapMode === 'grid' || snapMode === 'grid+guides') {
+        const gridPctX = gridSizeToPct(gridSizePx, canvasWidth);
+        const gridPctY = gridSizeToPct(gridSizePx, canvasHeight);
+        if (snapX === undefined) snapX = snapToGrid(pct.x, gridPctX);
+        if (snapY === undefined) snapY = snapToGrid(pct.y, gridPctY);
+      }
+
+      lastGuideResultRef.current = { snapX, snapY };
     },
-    [snapEnabled, isPreview, pxToPct, pctToPx, canvasWidth, canvasHeight, snapThresholdPx],
+    [snapMode, isPreview, pxToPct, pctToPx, canvasWidth, canvasHeight, snapThresholdPx, gridSizePx],
   );
 
   /** On drag stop: apply snapping, commit dragged slot, then move all co-selected slots by the same delta. */
@@ -552,12 +624,51 @@ export function LayoutCanvas({
           );
         })}
 
+        {/* P30-B: Grid overlay */}
+        {!isPreview && showGrid && gridSizePx > 0 && (
+          <CanvasGrid
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            gridSizePx={gridSizePx}
+          />
+        )}
+
+        {/* P30-B: Ruler strips */}
+        {!isPreview && showRulers && (
+          <CanvasRulers
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            selectionPct={selectionPct}
+          />
+        )}
+
+        {/* P30-B: Edge-distance measurement overlay */}
+        {!isPreview && showMeasurements && selectionPct && (
+          <MeasurementOverlay
+            selectionPct={selectionPct}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+          />
+        )}
+
         {/* Smart guide overlay */}
         {!isPreview && activeGuides.length > 0 && (
           <SmartGuides
             guides={activeGuides}
             canvasWidth={canvasWidth}
             canvasHeight={canvasHeight}
+          />
+        )}
+
+        {/* Contextual floating toolbar */}
+        {!isPreview && contextualToolbarCallbacks && (
+          <ContextualToolbar
+            selectionRect={selectionRect}
+            selectedSlotIds={selectedSlotIds}
+            groups={template.groups ?? []}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            callbacks={contextualToolbarCallbacks}
           />
         )}
       </div>

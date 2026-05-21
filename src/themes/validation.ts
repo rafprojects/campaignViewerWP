@@ -245,3 +245,51 @@ export function isValidTheme(theme: unknown): theme is ThemeDefinition {
     return false;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Dev-mode contrast warnings
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute WCAG relative luminance for a CSS color string.
+ * Returns null if the color cannot be parsed.
+ */
+function relativeLuminance(color: string): number | null {
+  try {
+    const [r, g, b] = chroma(color).rgb();
+    const lin = (c: number) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Emit a dev-mode warning if a critical text/background contrast pair
+ * fails WCAG AA (4.5:1 for normal text).
+ *
+ * This is a best-effort advisory — it does not block theme registration.
+ * Only runs in development (`import.meta.env.DEV`).
+ */
+export function warnLowContrast(themeId: string, textColor: string, bgColor: string): void {
+  if (!import.meta.env.DEV) return;
+
+  const textL = relativeLuminance(textColor);
+  const bgL = relativeLuminance(bgColor);
+
+  if (textL === null || bgL === null) return;
+
+  const lighter = Math.max(textL, bgL);
+  const darker = Math.min(textL, bgL);
+  const ratio = (lighter + 0.05) / (darker + 0.05);
+
+  if (ratio < 4.5) {
+    console.warn(
+      `[WPSG Theme] "${themeId}": text/background contrast ratio ${ratio.toFixed(2)} is below WCAG AA threshold (4.5:1). ` +
+      `Consider adjusting colors.text or colors.background.`,
+    );
+  }
+}
