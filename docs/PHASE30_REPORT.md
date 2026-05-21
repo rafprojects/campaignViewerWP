@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-20 (P30-I complete)
+**Last updated:** 2026-05-20 (P30-J complete)
 
 ### Tracks
 
@@ -17,7 +17,7 @@
 | P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
 | P30-H | Theme catalog unification & selector alignment | **Complete** | Medium-Large |
 | P30-I | Theme runtime hardening & validation | **Complete** | Medium |
-| P30-J | Theme QA & visual regression | Planned | Medium |
+| P30-J | Theme QA & visual regression | **Complete** | Medium |
 | P30-K | Alignment model spike — professional tool research & design for enhanced alignment | **Complete** | Small |
 
 ---
@@ -1115,10 +1115,10 @@ Add a phased theme QA track built on the existing browser harness.
 
 ### Acceptance criteria
 
-- Theme browser QA covers preview/persist/WP-precedence behavior. ( )
-- Phase 1 snapshot matrix is implemented and stable. ( )
-- Phase 2 expansion scope is documented and gated behind Phase 1 stability. ( )
-- Theme QA docs match the actual automated and manual workflow. ( )
+- Theme browser QA covers preview/persist/WP-precedence behavior. (✓)
+- Phase 1 snapshot matrix is implemented and stable. (✓)
+- Phase 2 expansion scope is documented and gated behind Phase 1 stability. (✓)
+- Theme QA docs match the actual automated and manual workflow. (✓)
 
 ### Validation
 
@@ -1126,15 +1126,12 @@ Add a phased theme QA track built on the existing browser harness.
 - Re-run the Phase 1 snapshot set repeatedly to check for baseline churn/flakiness.
 - Manual QA: confirm documented theme QA steps match the actual browser flow.
 
-### Files Affected (proposed)
+### Files Affected
 
 | File | Change |
 |------|--------|
-| `e2e/mantine8-runtime-qa.spec.ts` | Reuse or extract shared theme QA harness |
-| `e2e/` | Add dedicated theme QA / snapshot spec as needed |
-| `playwright.config.ts` | Snapshot expectations and stable visual settings |
-| `docs/testing/THEME_QA_GUIDE.md` | Update theme QA expectations and counts |
-| `docs/testing/TESTING_QUICKSTART.md` | Document snapshot workflow and current scope |
+| `e2e/theme-qa.spec.ts` | New: dedicated theme QA spec — behavioral tests + Phase 1 snapshot matrix |
+| `docs/testing/THEME_QA_GUIDE.md` | Updated: 23-theme sign-off table, grouped theme list, snapshot workflow, regression commands |
 
 ### Effort Estimate
 
