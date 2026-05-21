@@ -1667,3 +1667,133 @@ await page.screenshot({ path: `e2e/__snapshots__/gallery-shell-${themeId}.png` }
 // After
 await expect(page).toHaveScreenshot(`gallery-shell-${themeId}.png`, { maxDiffPixelRatio: 0.1 });
 ```
+
+---
+
+## PR Review — Copilot Feedback Round 3 (PR #46, 2026-05-21)
+
+Third Copilot review pass on the branch. Five threads raised across four files.
+All five accepted and addressed in commit `79ef3e7`.
+
+### Summary
+
+| # | File | Finding | Decision |
+|---|------|---------|----------|
+| 1 | `useLayoutBuilderState.ts:1010` | `createGroup()` filter removes empty groups but leaves dangling `childGroupIds` refs in parent groups | **Accept** — prune stale child IDs from all surviving groups after filter |
+| 2 | `useLayoutBuilderState.ts:1059` | Same issue in `wrapInGroup()` — bystander groups can become empty with dangling parent refs | **Accept** — same fix |
+| 3 | `LayerPanel.tsx:136` | Group→slot and slot→group drops fall through to `onReorderLayers()`, which ignores group IDs but still records a history entry | **Accept** — explicit no-op for cross-type drops |
+| 4 | `class-wpsg-settings-core-fields.php:123` | `__($entry['group'])` with dynamic catalog strings can't be extracted by WP i18n tooling (hence `phpcs:ignore`) | **Accept** — drop `__()` wrappers; catalog is the display source of truth |
+| 5 | `ThemeContext.tsx:232` | Style element removed and re-created on every `cssVars` change — causes one-frame CSS var gap on theme switch | **Accept** — split into two effects: lifecycle on `[shadowRoot]`, content update on `[entry.cssVars]` |
+
+---
+
+### Thread 1 & 2 — `useLayoutBuilderState.ts` — Dangling `childGroupIds` after empty-group filter (Accept)
+
+**Copilot finding:** Both `createGroup()` and `wrapInGroup()` strip `memberIds` from existing groups when reassigning slots to a new group. If an existing group ends up with no slots and no child groups, it is filtered out. But any parent group whose `childGroupIds` referenced the filtered-out ID still holds a stale pointer, breaking traversal, selection, and collapse.
+
+**Root cause scenario:**
+```
+Before: Group B { memberIds: [], childGroupIds: ['A'] }
+        Group A { memberIds: ['slot-1', 'slot-2'], childGroupIds: [] }
+User groups [slot-1, slot-2] into new Group C.
+After filter: Group A removed (empty). But Group B.childGroupIds still = ['A']. ❌
+```
+
+**Fix (applied identically in both `createGroup` and `wrapInGroup`):** After the empty-group filter, build a `Set` of surviving group IDs and prune every group's `childGroupIds` against it.
+
+```ts
+draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+const survivingIds = new Set(draft.groups.map((g) => g.id));
+for (const g of draft.groups) {
+  if (g.childGroupIds?.length) {
+    g.childGroupIds = g.childGroupIds.filter((cid) => survivingIds.has(cid));
+  }
+}
+draft.groups.push(newGroup);
+```
+
+---
+
+### Thread 3 — `LayerPanel.tsx` — Cross-type drag-drop no-op (Accept)
+
+**Copilot finding:** When a group row is dragged onto a slot row (or vice-versa), the `handleDrop` branches fall through to `onReorderLayers()`. `computeReorderedZIndices()` only operates on slot IDs, so nothing changes — but a `'Reorder layers'` history entry is still recorded and the template is marked dirty.
+
+**Fix:** Add an explicit no-op branch. Only slot→slot drops trigger `onReorderLayers()`.
+
+```typescript
+// Before
+if (draggedIsGroup && targetIsGroup && onReparentGroup) {
+  onReparentGroup(draggedId, targetId);
+} else {
+  onReorderLayers(draggedId, targetId);  // ← fired for cross-type drops
+}
+
+// After
+if (draggedIsGroup && targetIsGroup && onReparentGroup) {
+  onReparentGroup(draggedId, targetId);
+} else if (!draggedIsGroup && !targetIsGroup) {
+  onReorderLayers(draggedId, targetId);
+}
+// else: cross-type drop — no-op
+```
+
+---
+
+### Thread 4 — `class-wpsg-settings-core-fields.php` — Dynamic `__()` catalog strings (Accept)
+
+**Copilot finding:** `__($entry['group'], 'wp-super-gallery')` with a runtime variable can't be picked up by `wp i18n make-pot` or `makepot`. The `phpcs:ignore` comments acknowledge this. Group and theme name translations would silently not work when reading from the catalog.
+
+**Decision:** Use catalog values directly — the JSON catalog is the display source of truth for group and theme names. The hard-coded PHP fallback below the catalog block uses literal strings and therefore remains properly extractable/translatable for the shipped theme set.
+
+```php
+// Before
+$group_label = __($entry['group'], 'wp-super-gallery'); // phpcs:ignore ...
+$groups[$group_label][$entry['id']] = __($entry['name'], 'wp-super-gallery'); // phpcs:ignore ...
+
+// After
+// Catalog is the display source of truth; dynamic strings can't be extracted
+// by WP i18n tools. Hard-coded fallback below handles the extractable path.
+$groups[$entry['group']][$entry['id']] = $entry['name'];
+```
+
+---
+
+### Thread 5 — `ThemeContext.tsx` — CSS vars style element churn on theme change (Accept)
+
+**Copilot finding:** The single effect with `[shadowRoot, entry.cssVars]` deps removes the `#wpsg-theme-vars` `<style>` element during cleanup and then recreates it on every theme change — causing one frame where the element is absent and CSS variables are missing.
+
+**Fix:** Split into two effects with separate concerns.
+
+```tsx
+// Before — single effect that removes+recreates the element on every cssVars change
+useEffect(() => {
+  if (!shadowRoot) return;
+  let styleEl = shadowRoot.querySelector(`#${styleId}`);
+  if (!styleEl) {
+    styleEl = shadowRoot.ownerDocument.createElement('style');
+    styleEl.id = styleId;
+    shadowRoot.prepend(styleEl);
+  }
+  styleEl.textContent = entry.cssVars;
+  return () => { shadowRoot.querySelector(`#${styleId}`)?.remove(); };
+}, [shadowRoot, entry.cssVars]);
+
+// After — element lifecycle separated from content updates
+const STYLE_ID = 'wpsg-theme-vars';
+
+// Effect 1: create on shadowRoot mount, remove on unmount only
+useEffect(() => {
+  if (!shadowRoot) return;
+  const styleEl = shadowRoot.ownerDocument.createElement('style');
+  styleEl.id = STYLE_ID;
+  shadowRoot.prepend(styleEl);
+  return () => { styleEl.remove(); };
+}, [shadowRoot]);
+
+// Effect 2: update textContent only — no DOM removal on theme switch
+useEffect(() => {
+  if (!shadowRoot) return;
+  const styleEl = shadowRoot.querySelector(`#${STYLE_ID}`) as HTMLStyleElement | null;
+  if (styleEl) styleEl.textContent = entry.cssVars;
+}, [shadowRoot, entry.cssVars]);
+```
