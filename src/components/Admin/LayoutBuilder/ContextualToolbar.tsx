@@ -15,6 +15,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import type { LayoutGroup } from '@/types';
+import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Types ────────────────────────────────────────────────────
@@ -57,15 +58,27 @@ const TOOLBAR_MIN_WIDTH = 180;
 
 // ── Helpers ──────────────────────────────────────────────────
 
+/**
+ * Returns the group whose full descendant slot set exactly matches
+ * `selectedSlotIds`. Works correctly with the P30-G nested group model where
+ * `selectGroup()` expands selection to ALL descendant slots, not just direct
+ * `memberIds` — so a plain memberIds equality check would always miss
+ * parent groups.
+ */
 function getSelectedGroup(
   selectedSlotIds: ReadonlySet<string>,
   groups: LayoutGroup[],
 ): LayoutGroup | undefined {
   if (selectedSlotIds.size === 0 || groups.length === 0) return undefined;
-  const ids = [...selectedSlotIds];
-  return groups.find(
-    (g) => g.memberIds.length === ids.length && ids.every((id) => g.memberIds.includes(id)),
-  );
+  const groupMap = buildGroupMap(groups);
+  return groups.find((g) => {
+    const descIds = collectDescendantSlotIds(g.id, groupMap);
+    return (
+      descIds.length > 0 &&
+      descIds.length === selectedSlotIds.size &&
+      descIds.every((id) => selectedSlotIds.has(id))
+    );
+  });
 }
 
 // ── Toolbar divider ──────────────────────────────────────────

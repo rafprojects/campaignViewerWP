@@ -6,7 +6,6 @@ import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 import {
   buildGroupMap,
   collectDescendantSlotIds,
-  computeGroupRect,
   migrateGroupsToP30G,
   refreshGroupRects,
   reparentGroup as reparentGroupInHierarchy,
@@ -1005,17 +1004,12 @@ export function useLayoutBuilderState(
         childGroupIds: [],
         parentGroupId: null,
       };
-      // Compute bounding box
-      const slotMap = new Map(draft.slots.map((s) => [s.id, s]));
-      const groupMap = buildGroupMap([...groups, newGroup]);
-      const rect = computeGroupRect(id, slotMap, groupMap);
-      if (rect) {
-        newGroup.x = rect.x; newGroup.y = rect.y;
-        newGroup.width = rect.width; newGroup.height = rect.height;
-      }
-      // Remove empty groups
+      // Remove empty groups; push new group
       draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
       draft.groups.push(newGroup);
+      // Refresh all group rects: covers the new group AND any existing groups
+      // that had members removed above (their cached union rects are now stale).
+      refreshGroupRects(draft.groups, draft.slots);
     }, `Group (${uniqueIds.length} layers)`);
     return id;
   }, [mutate]);
@@ -1074,6 +1068,9 @@ export function useLayoutBuilderState(
       draft.groups = draft.groups.filter(
         (g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0,
       );
+      // Refresh cached group rects: parent groups that absorbed promoted children
+      // have a new membership set and their cached union rects are now stale.
+      refreshGroupRects(draft.groups, draft.slots);
     }, 'Ungroup');
   }, [mutate]);
 

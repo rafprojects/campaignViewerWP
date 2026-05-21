@@ -557,9 +557,21 @@ export function LayoutBuilderModal({
 
   const handleUngroupSelected = useCallback(() => {
     const groups = builder.template.groups ?? [];
-    const targetGroup = groups.find((g) =>
-      g.memberIds.some((id) => builder.selectedSlotIds.has(id)),
-    );
+    const selectedIds = builder.selectedSlotIds;
+    if (selectedIds.size === 0 || groups.length === 0) return;
+    const groupMap = buildGroupMap(groups);
+    // P30-G fix: find the group whose FULL descendant set matches the selection.
+    // Exact-descendant match is checked first; fall back to any-member overlap so
+    // partial selections (edge case) still ungroup the closest matching group.
+    const targetGroup =
+      groups.find((g) => {
+        const descIds = collectDescendantSlotIds(g.id, groupMap);
+        return (
+          descIds.length > 0 &&
+          descIds.length === selectedIds.size &&
+          descIds.every((id) => selectedIds.has(id))
+        );
+      }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
     if (!targetGroup) return;
     builder.dissolveGroup(targetGroup.id);
     announce('Ungrouped');
@@ -691,10 +703,22 @@ export function LayoutBuilderModal({
       if ((e.metaKey || e.ctrlKey) && e.key === 'g' && e.shiftKey) {
         const groups = builder.template.groups ?? [];
         const selectedIds = builder.selectedSlotIds;
-        const targetGroup = groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
-        if (targetGroup) {
-          builder.dissolveGroup(targetGroup.id);
-          announce('Ungrouped');
+        if (groups.length > 0 && selectedIds.size > 0) {
+          const shiftGGroupMap = buildGroupMap(groups);
+          // P30-G fix: match by full descendant set, fall back to member overlap
+          const targetGroup =
+            groups.find((g) => {
+              const descIds = collectDescendantSlotIds(g.id, shiftGGroupMap);
+              return (
+                descIds.length > 0 &&
+                descIds.length === selectedIds.size &&
+                descIds.every((id) => selectedIds.has(id))
+              );
+            }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
+          if (targetGroup) {
+            builder.dissolveGroup(targetGroup.id);
+            announce('Ungrouped');
+          }
         }
         e.preventDefault();
       }
