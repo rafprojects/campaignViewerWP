@@ -70,6 +70,20 @@ export interface BuilderDockContextValue {
   handleDuplicateSelected: () => void;
   /** Upload a mask image (PNG/SVG) and return the URL to assign to a slot. */
   handleUploadMask: (file: File) => Promise<string | null>;
+  /** Create a group from the currently selected slots. */
+  handleCreateGroup: () => void;
+  /** Dissolve the group that contains the currently selected slots. */
+  handleUngroupSelected: () => void;
+  /** Toggle lock on a specific group. */
+  handleGroupLockToggle: (groupId: string, locked: boolean) => void;
+  /** Toggle visibility on a specific group. */
+  handleGroupVisibilityToggle: (groupId: string, visible: boolean) => void;
+  /** Rename a specific group. */
+  handleGroupRename: (groupId: string, name: string) => void;
+  /** Bring currently selected slots forward one z-index step. */
+  handleBringForwardSelected: (ids: string[]) => void;
+  /** Send currently selected slots backward one z-index step. */
+  handleSendBackwardSelected: (ids: string[]) => void;
 }
 
 // ── Context + hook ────────────────────────────────────────────

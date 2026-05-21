@@ -7,6 +7,7 @@ import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
+import { ContextualToolbar, type ContextualToolbarCallbacks } from './ContextualToolbar';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
 import { sanitizeCssUrl } from '@/utils/sanitizeCss';
 import { ASSET_MIME } from './DesignAssetsGrid';
@@ -46,6 +47,8 @@ export interface LayoutCanvasProps {
   onMediaCanvasDrop?: (mediaId: string, meta: { attachmentId?: number | undefined; url?: string | undefined }, x: number, y: number) => void;
   /** Whether to render slot index badges (default: true). */
   showSlotIndices?: boolean;
+  /** When provided, renders the contextual floating toolbar on selection. */
+  contextualToolbarCallbacks?: ContextualToolbarCallbacks | undefined;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -89,6 +92,7 @@ export function LayoutCanvas({
   onAssetCanvasDrop,
   onMediaCanvasDrop,
   showSlotIndices = true,
+  contextualToolbarCallbacks,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -139,6 +143,23 @@ export function LayoutCanvas({
     }),
     [canvasWidth, canvasHeight],
   );
+
+  // ── Contextual toolbar: union bounding rect of selected slots ─
+
+  const selectionRect = useMemo(() => {
+    if (isPreview || selectedSlotIds.size === 0 || !contextualToolbarCallbacks) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const slot of template.slots) {
+      if (!selectedSlotIds.has(slot.id)) continue;
+      const px = pctToPx(slot.x, slot.y, slot.width, slot.height);
+      minX = Math.min(minX, px.x);
+      minY = Math.min(minY, px.y);
+      maxX = Math.max(maxX, px.x + (px.width ?? 0));
+      maxY = Math.max(maxY, px.y + (px.height ?? 0));
+    }
+    if (!isFinite(minX)) return null;
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }, [isPreview, selectedSlotIds, template.slots, pctToPx, contextualToolbarCallbacks]);
 
   // ── Smart guides state ─────────────────────────────────────
 
@@ -558,6 +579,18 @@ export function LayoutCanvas({
             guides={activeGuides}
             canvasWidth={canvasWidth}
             canvasHeight={canvasHeight}
+          />
+        )}
+
+        {/* Contextual floating toolbar */}
+        {!isPreview && contextualToolbarCallbacks && (
+          <ContextualToolbar
+            selectionRect={selectionRect}
+            selectedSlotIds={selectedSlotIds}
+            groups={template.groups ?? []}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            callbacks={contextualToolbarCallbacks}
           />
         )}
       </div>

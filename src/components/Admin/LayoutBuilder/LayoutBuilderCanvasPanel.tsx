@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip } from '@mantine/core';
 import { IconHandGrab, IconPlus, IconArrowsMaximize } from '@tabler/icons-react';
@@ -6,6 +6,7 @@ import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayoutCanvas } from './LayoutCanvas';
+import type { ContextualToolbarCallbacks } from './ContextualToolbar';
 import { CanvasTransformContext } from '@/contexts/CanvasTransformContext';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -21,7 +22,37 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     setIsBackgroundSelected,
     selectedMaskSlotId,
     announce,
+    handleDeleteSelected,
+    handleDuplicateSelected,
+    handleCreateGroup,
+    handleUngroupSelected,
+    handleGroupLockToggle,
+    handleGroupVisibilityToggle,
+    handleGroupRename,
+    handleBringForwardSelected,
+    handleSendBackwardSelected,
   } = useBuilderDock();
+
+  const contextualToolbarCallbacks = useMemo<ContextualToolbarCallbacks>(
+    () => ({
+      onDuplicate: handleDuplicateSelected,
+      onDelete: handleDeleteSelected,
+      onCreateGroup: handleCreateGroup,
+      onUngroup: handleUngroupSelected,
+      onGroupLockToggle: handleGroupLockToggle,
+      onGroupVisibilityToggle: handleGroupVisibilityToggle,
+      onGroupRename: handleGroupRename,
+      onBringForward: handleBringForwardSelected,
+      onSendBackward: handleSendBackwardSelected,
+      announce,
+    }),
+    [
+      handleDuplicateSelected, handleDeleteSelected,
+      handleCreateGroup, handleUngroupSelected,
+      handleGroupLockToggle, handleGroupVisibilityToggle, handleGroupRename,
+      handleBringForwardSelected, handleSendBackwardSelected, announce,
+    ],
+  );
 
   const handleAddSlot = useCallback(() => {
     const id = builder.addSlot();
@@ -171,6 +202,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 selectedMaskSlotId={selectedMaskSlotId}
                 onAssetCanvasDrop={handleAssetCanvasDrop}
                 onMediaCanvasDrop={handleMediaCanvasDrop}
+                contextualToolbarCallbacks={contextualToolbarCallbacks}
               />
             </TransformComponent>
           </TransformWrapper>
