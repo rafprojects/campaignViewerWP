@@ -48,6 +48,14 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
 import type { SnapMode } from '@/utils/canvasMeasurement';
 
+// ── P30-D: Cross-tab stale detection ─────────────────────────────────────────
+const BUILDER_BC_CHANNEL = 'wpsg-layout-builder';
+
+interface BuilderBroadcastMessage {
+  type: 'template-saved';
+  templateId: string;
+}
+
 // ── Dockview panel components (stable reference outside component) ──────────
 
 const dockComponents = {
@@ -176,6 +184,35 @@ export function LayoutBuilderModal({
   // Track whether we've already checked for a draft this open session
   const draftCheckedRef = useRef(false);
 
+  // ── P30-D: Cross-tab stale detection via BroadcastChannel ─────────────────
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel(BUILDER_BC_CHANNEL);
+    bcRef.current = channel;
+    channel.onmessage = (event: MessageEvent<BuilderBroadcastMessage>) => {
+      const data = event.data;
+      if (
+        data?.type === 'template-saved' &&
+        data.templateId &&
+        initialTemplate?.id &&
+        data.templateId === initialTemplate.id
+      ) {
+        notifications.show({
+          title: 'Template updated in another tab',
+          message: 'This template was saved elsewhere. Close and reopen to load the latest version.',
+          color: 'yellow',
+          autoClose: 0, // Persistent — user must dismiss
+        });
+      }
+    };
+    return () => {
+      channel.close();
+      bcRef.current = null;
+    };
+   
+  }, [initialTemplate?.id]);
+
   // ── Draft restore/discard prompt ──
   useEffect(() => {
     if (!opened) {
@@ -299,6 +336,10 @@ export function LayoutBuilderModal({
       onSaved?.(saved);
       onNotify?.({ type: 'success', text: `Layout "${saved.name}" saved` });
       notifications.show({ message: `Layout "${saved.name}" saved`, color: 'green', autoClose: 3000 });
+      // P30-D: Notify other tabs that this template was saved
+      try {
+        bcRef.current?.postMessage({ type: 'template-saved', templateId: saved.id } satisfies BuilderBroadcastMessage);
+      } catch { /* BroadcastChannel may be unavailable in some environments */ }
       return true;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to save layout';

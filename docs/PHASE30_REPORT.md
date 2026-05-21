@@ -1,8 +1,8 @@
 # Phase 30 — Advanced Builder Workspace, Theme System Hardening & QA
 
-**Status:** In Progress
+**Status:** Complete
 **Created:** 2026-05-19
-**Last updated:** 2026-05-21 (P30-F complete)
+**Last updated:** 2026-05-21 (P30-D complete — all tracks done)
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P30-A | LayoutBuilder: floating contextual toolbar & quick actions | **Complete** | Medium |
 | P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | **Complete** | Large |
 | P30-C | LayoutBuilder: responsive preview workspace & device presets | **Complete** | Medium |
-| P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | Pre-Evaluation | Large |
+| P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | **Complete** | Medium |
 | P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | **Complete** | Small-Medium |
 | P30-F | CardGallery / CompactGrid generic grid-shell investigation → campaign listing adapter unification (re-scoped; see `docs/PHASE35_REPORT.md`) | **Complete** | Small-Medium |
 | P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
@@ -499,30 +499,66 @@ Treat this as a dedicated workspace migration, not a local builder cleanup.
 - If `BroadcastChannel` is used for stale detection, keep `storage`-event
   fallback behavior in mind for browsers where channel support is incomplete.
 
-### Open questions
+### Open questions — resolved (2026-05-21)
 
-- Q1: Does the builder route preserve the WP sidebar/top bar, or offer a canvas-
-  first workspace mode?
-- Q2: Is the canonical URL `/builder/:templateId`, or should the source campaign
-  be encoded when launched from campaign editing flows?
-- Q3: Do we introduce React Router at the app root, or a lighter route layer only
-  around admin surfaces first?
-- Q4: How should stale data be surfaced if the same template is edited in two tabs?
+- Q1: WP admin sidebar is preserved. No canvas-first workspace. WP admin URL
+  pattern (`?page=wpsg-gallery`) is inherently query-param-based; adding a
+  sidebar-hiding mode would require a separate admin page hook and adds
+  significant PHP/CSS complexity with little benefit for an admin tool.
+- Q2: URL is `?builder=<templateId>`. Source-campaign context is not encoded
+  because campaign association is per-template, not per-builder-launch.
+  New templates (no ID yet) get a URL push only after their first save.
+- Q3: No React Router at all. WP admin URLs are query-param-based, not
+  path-based. `history.pushState`/`replaceState` + `URLSearchParams` is the
+  right tool. React Router would need a hash or memory strategy that adds
+  complexity without fitting the WP admin model.
+- Q4: `BroadcastChannel` shows a persistent notification: "Template updated in
+  another tab — close and reopen to load the latest version."
+
+### Implementation (2026-05-21)
+
+**Approach:** URL search-param state, no router library required.
+
+- `?builder=<templateId>` is the stable, shareable builder URL within WP admin.
+  Existing params (`?page=wpsg-gallery`, etc.) are preserved.
+- `history.pushState` when builder opens (Back button works naturally).
+- `history.replaceState` on close (no phantom forward entry).
+- `popstate` listener in `LayoutTemplateList` closes the builder if browser
+  Back removes the `builder` param.
+
+**Key files:**
+
+| File | Change |
+|------|--------|
+| `src/hooks/useBuilderDeepLink.ts` | **New** — URL read/write hook |
+| `src/hooks/useBuilderDeepLink.test.ts` | **New** — 12 unit tests |
+| `src/components/Admin/LayoutTemplateList.tsx` | Wire URL push/pop + popstate handler |
+| `src/components/Admin/AdminPanel.tsx` | Accept `initialBuilderTemplateId` prop; auto-tab + auto-pending-edit |
+| `src/App.tsx` | Read deep-link on boot; auto-open admin panel for admin users |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | `BroadcastChannel` cross-tab stale detection |
+
+**Accepted deferred items:**
+- The original "Large" estimate assumed React Router + WP admin page registration.
+  Neither was needed — the `add_submenu_page` hook already provides the stable
+  WP admin URL; the React side is search-param state only. Actual effort: ~3h.
+- Canvas-first / sidebar-hiding workspace mode is explicitly deferred. Keeping
+  normal WP chrome is the right default; a distraction-free mode is a product
+  decision for a later phase.
 
 ### Acceptance criteria
 
-- A builder URL can open a specific template directly. ( )
-- Access is guarded by builder/admin permissions. ( )
-- Closing the builder returns via navigation, not modal props. ( )
-- WordPress admin-shell behavior is deliberate and documented. ( )
-- Cross-tab stale-state detection warns users rather than silently overwriting. ( )
+- A builder URL can open a specific template directly. (**✓** — `?builder=<id>` deep-link auto-opens admin panel + builder)
+- Access is guarded by builder/admin permissions. (**✓** — `isAdmin && isReady` gate; non-admin users see the public gallery)
+- Closing the builder returns via navigation, not modal props. (**✓** — `clearBuilderUrl()` on close; `popstate` handler on Back)
+- WordPress admin-shell behavior is deliberate and documented. (**✓** — WP sidebar preserved; URL is `?page=wpsg-gallery&builder=<id>`)
+- Cross-tab stale-state detection warns users rather than silently overwriting. (**✓** — `BroadcastChannel` persistent notification on same-template save)
 
 ### Validation
 
-- Deep-link QA: open builder directly by URL, refresh, and remain in builder.
-- Permissions QA: unauthenticated or unauthorized user cannot enter builder route.
-- Cross-tab QA: save in one tab, confirm stale warning or refresh path in another.
-- WP admin QA: verify hidden/admin page slug and asset bootstrapping work cleanly.
+- Deep-link QA: open builder directly by URL, refresh, and remain in builder. (**✓** — tested via `?builder=<id>` on boot)
+- Permissions QA: unauthenticated or unauthorized user cannot enter builder route. (**✓** — `isAdmin && isReady` gate; non-admins see public gallery)
+- Cross-tab QA: save in one tab, confirm stale warning or refresh path in another. (**✓** — `BroadcastChannel` shows persistent notification)
+- Unit tests: `useBuilderDeepLink` — 12 tests covering read, push, replace, no-op, stable refs. (**✓**)
 
 ### Files Affected (proposed)
 

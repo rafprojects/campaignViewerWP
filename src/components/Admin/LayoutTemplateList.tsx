@@ -55,6 +55,7 @@ import {
   useLayoutTemplates,
 } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useBuilderDeepLink } from '@/hooks/useBuilderDeepLink';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -124,6 +125,9 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
   const [presetGalleryOpen, setPresetGalleryOpen] = useState(false);
   const resetRef = useRef<() => void>(null);
 
+  // ── P30-D: URL deep-link state ────────────────────────────────────────────
+  const { pushBuilderUrl, clearBuilderUrl } = useBuilderDeepLink();
+
   // ── Data fetching ─────────────────────────────────────────────────────────
   const { data: templates, isLoading, refetch: refetchTemplates } = useLayoutTemplates(apiClient);
 
@@ -136,8 +140,23 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
       handledInitialRef.current = true;
       setEditingTemplate(target);
       setBuilderOpen(true);
+      // Don't push URL here — the URL already contains the param (we got here via deep-link)
     }
   }, [initialTemplateId, templates]);
+
+  // ── P30-D: Close builder when browser Back removes the ?builder= param ────
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('builder') && builderOpen) {
+        // Back button removed the builder param — close without pushing history again
+        setBuilderOpen(false);
+        setEditingTemplate(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [builderOpen]);
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -156,6 +175,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
   const handleCreate = useCallback(() => {
     setEditingTemplate(null);
     setBuilderOpen(true);
+    // New templates have no ID yet — no URL push until first save
   }, []);
 
   const handleCreateFromPreset = useCallback((preset: LayoutPreset) => {
@@ -169,12 +189,15 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
     t.tags = [...preset.tags];
     setEditingTemplate(t as LayoutTemplate);
     setBuilderOpen(true);
+    // New templates from presets have no ID yet — URL pushed on first save
   }, []);
 
   const handleEdit = useCallback((t: LayoutTemplate) => {
     setEditingTemplate(t);
     setBuilderOpen(true);
-  }, []);
+    // Push shareable builder URL (P30-D)
+    pushBuilderUrl(t.id);
+  }, [pushBuilderUrl]);
 
   const handleBuilderSaved = useCallback(
     (saved: LayoutTemplate) => {
@@ -191,14 +214,18 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
           return [...current, saved];
         },
       );
+      // P30-D: If this was a new template that just received its first ID, push the URL now
+      pushBuilderUrl(saved.id);
     },
-    [apiClient, queryClient],
+    [apiClient, queryClient, pushBuilderUrl],
   );
 
   const handleBuilderClose = useCallback(() => {
     setBuilderOpen(false);
     setEditingTemplate(null);
-  }, []);
+    // P30-D: Remove builder URL param on close
+    clearBuilderUrl();
+  }, [clearBuilderUrl]);
 
   const handleDuplicate = useCallback(
     async (t: LayoutTemplate) => {

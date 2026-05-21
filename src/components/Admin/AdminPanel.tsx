@@ -51,17 +51,27 @@ interface AdminPanelProps {
   onClose: () => void;
   onCampaignsUpdated: () => void;
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
+  /**
+   * P30-D: If set, navigate to the Layouts tab and pre-open the builder for
+   * this template ID as soon as templates data is available.
+   * Used when the user arrives via a shareable builder URL (?builder=<id>).
+   */
+  initialBuilderTemplateId?: string | undefined;
 }
 
-export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify }: AdminPanelProps) {
+export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId }: AdminPanelProps) {
   const queryClient = useQueryClient();
+  // P30-D: If arriving via a deep-link builder URL, start on the layouts tab
   const [activeTab, setActiveTab] = useLocalStorage<string | null>({
     key: 'wpsg_admin_active_tab',
-    defaultValue: 'campaigns',
+    defaultValue: initialBuilderTemplateId ? 'layouts' : 'campaigns',
     getInitialValueInEffect: false,
   });
   const [mediaCampaignId, setMediaCampaignId] = useState('');
-  const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(null);
+  // P30-D: seed pendingEditLayoutId from deep-link (stable initializer only runs once)
+  const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(
+    () => initialBuilderTemplateId ?? null,
+  );
   const [accessCampaignId, setAccessCampaignId] = useState('');
   const [accessViewMode, setAccessViewMode] = useState<'campaign' | 'company' | 'all'>('campaign');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
