@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-20 (P30-B complete)
+**Last updated:** 2026-05-20 (P30-C complete)
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P30-A | LayoutBuilder: floating contextual toolbar & quick actions | **Complete** | Medium |
 | P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | **Complete** | Large |
-| P30-C | LayoutBuilder: responsive preview workspace & device presets | Planned | Medium |
+| P30-C | LayoutBuilder: responsive preview workspace & device presets | **Complete** | Medium |
 | P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | Pre-Evaluation | Large |
 | P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | **Complete** | Small-Medium |
 | P30-F | CardGallery / CompactGrid generic grid-shell investigation | Pre-Evaluation | Small-Medium |
@@ -395,11 +395,11 @@ Add a preview workspace layer separate from the editing model:
 
 ### Acceptance criteria
 
-- Users can switch between at least 4 named preview presets plus custom width. ( )
-- Switching presets does not mutate saved template geometry. ( )
-- Preview presets work in preview mode without breaking edit mode. ( )
-- Last-used preview preset is restored on reopen. ( )
-- The preview frame can be hidden for a distraction-free content-only view. ( )
+- Users can switch between at least 4 named preview presets plus custom width. (✓ — Full/Desktop/Laptop/Tablet/Mobile/Custom)
+- Switching presets does not mutate saved template geometry. (✓ — presets are session-local state)
+- Preview presets work in preview mode without breaking edit mode. (✓ — frame applies only in preview mode)
+- Last-used preview preset is restored on reopen. (✓ — localStorage persistence)
+- The preview frame can be hidden for a distraction-free content-only view. (✓ — "Device frame" toggle)
 
 ### Validation
 

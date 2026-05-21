@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
 import {
   Box, Group, Text, NumberInput, Switch, Slider,
@@ -12,12 +12,38 @@ import { LayoutCanvas } from './LayoutCanvas';
 import type { ContextualToolbarCallbacks } from './ContextualToolbar';
 import { CanvasTransformContext } from '@/contexts/CanvasTransformContext';
 import { SNAP_MODE_LABELS, type SnapMode } from '@/utils/canvasMeasurement';
+import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
-// Build SegmentedControl data from SnapMode labels
+// ── P30-C: Device preview presets ────────────────────────────────────────────
+
+export type PreviewPreset = 'none' | 'desktop' | 'laptop' | 'tablet' | 'mobile' | 'custom';
+
+interface PresetDef {
+  label: string;
+  width: number | null; // null = unconstrained
+}
+
+const PRESET_DEFS: Record<PreviewPreset, PresetDef> = {
+  none:    { label: 'Full',    width: null },
+  desktop: { label: 'Desktop', width: 1280 },
+  laptop:  { label: 'Laptop',  width: 1024 },
+  tablet:  { label: 'Tablet',  width: 768  },
+  mobile:  { label: 'Mobile',  width: 390  },
+  custom:  { label: 'Custom',  width: null }, // width set by customPreviewWidth
+};
+
+const PRESET_SEGMENTED_DATA = (Object.entries(PRESET_DEFS) as [PreviewPreset, PresetDef][]).map(
+  ([value, { label }]) => ({ value, label }),
+);
+
+// ── P30-B: Snap mode ─────────────────────────────────────────────────────────
+
 const SNAP_MODE_DATA = (Object.entries(SNAP_MODE_LABELS) as [SnapMode, string][]).map(
   ([value, label]) => ({ value, label }),
 );
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   const {
@@ -92,7 +118,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     [builder, setSelectedOverlayId, setIsBackgroundSelected, announce],
   );
 
-  // ── Canvas drop handlers ──────────────────────────────────
+  // ── Canvas drop handlers ──────────────────────────────────────────────────
   const handleAssetCanvasDrop = useCallback(
     (assetUrl: string, x: number, y: number) => {
       const id = builder.addOverlay(assetUrl);
@@ -116,7 +142,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     [builder, setIsBackgroundSelected, announce],
   );
 
-  // ── Zoom / pan state ──────────────────────────────────────
+  // ── Zoom / pan state ──────────────────────────────────────────────────────
   const [scale, setScale] = useState(1);
   const [isHandTool, setIsHandTool] = useState(false);
   const [showSlotIndices, setShowSlotIndices] = useState(true);
@@ -156,6 +182,28 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     ['-', () => transformRef.current?.zoomOut()],
   ]);
 
+  // ── P30-C: Device preview presets ────────────────────────────────────────
+  const [previewPreset, setPreviewPreset] = useState<PreviewPreset>(() =>
+    (safeLocalStorage.getItem('wpsg_builder_preview_preset') as PreviewPreset | null) ?? 'none',
+  );
+  const [customPreviewWidth, setCustomPreviewWidth] = useState<number>(() =>
+    Number(safeLocalStorage.getItem('wpsg_builder_custom_preview_width')) || 800,
+  );
+  const [showPreviewFrame, setShowPreviewFrame] = useState<boolean>(
+    () => safeLocalStorage.getItem('wpsg_builder_show_preview_frame') === 'true',
+  );
+
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_preview_preset', previewPreset); }, [previewPreset]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_custom_preview_width', String(customPreviewWidth)); }, [customPreviewWidth]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_preview_frame', String(showPreviewFrame)); }, [showPreviewFrame]);
+
+  /** Resolved pixel width of the active device preset (null = unconstrained). */
+  const activePresetWidth = useMemo<number | null>(() => {
+    if (!builder.isPreview) return null;
+    if (previewPreset === 'custom') return Math.max(200, Math.min(3840, customPreviewWidth));
+    return PRESET_DEFS[previewPreset].width;
+  }, [builder.isPreview, previewPreset, customPreviewWidth]);
+
   return (
     <CanvasTransformContext.Provider value={{ scale, isHandTool }}>
       <Box
@@ -163,73 +211,94 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
         onKeyDown={handleCanvasHotkeys}
         style={{ display: 'flex', flexDirection: 'column', height: '100%', outline: 'none' }}
       >
-        {/* Canvas */}
+        {/* Canvas area */}
         <Box
           ref={canvasAreaRef}
           style={{
             flex: 1,
             overflow: 'hidden',
             background: 'var(--mantine-color-dark-8)',
+            // Centre the preview frame when a preset constrains width
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: activePresetWidth ? 'center' : undefined,
           }}
         >
-          <TransformWrapper
-            ref={transformRef}
-            minScale={0.25}
-            maxScale={4}
-            wheel={{ step: 0.1 }}
-            panning={{ disabled: !isHandTool }}
-            onTransformed={(_ref, state) => setScale(state.scale)}
+          {/* P30-C: Device frame wrapper — only rendered when a preset is active in preview mode */}
+          <Box
+            style={{
+              flex: 1,
+              width: activePresetWidth ? Math.min(activePresetWidth, canvasAreaRef.current?.clientWidth ?? activePresetWidth) : '100%',
+              maxWidth: activePresetWidth ?? undefined,
+              overflow: 'hidden',
+              // Device chrome frame
+              ...(activePresetWidth && showPreviewFrame ? {
+                border: '8px solid var(--mantine-color-dark-4)',
+                borderRadius: 12,
+                boxShadow: '0 0 0 2px var(--mantine-color-dark-3), 0 8px 32px rgba(0,0,0,0.5)',
+                margin: '12px 0',
+              } : {}),
+            }}
           >
-            <TransformComponent
-              wrapperStyle={{ width: '100%', height: '100%' }}
-              contentStyle={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '24px',
-              }}
+            <TransformWrapper
+              ref={transformRef}
+              minScale={0.25}
+              maxScale={4}
+              wheel={{ step: 0.1 }}
+              panning={{ disabled: !isHandTool }}
+              onTransformed={(_ref, state) => setScale(state.scale)}
             >
-              <LayoutCanvas
-                template={builder.template}
-                selectedSlotIds={builder.selectedSlotIds}
-                isPreview={builder.isPreview}
-                media={media}
-                showSlotIndices={showSlotIndices}
-                snapMode={snapMode}
-                snapThresholdPx={snapThreshold}
-                showGrid={showGrid}
-                gridSizePx={gridSizePx}
-                showRulers={showRulers}
-                showMeasurements={showMeasurements}
-                onSlotMove={builder.moveSlot}
-                onSlotResize={builder.resizeSlot}
-                onSlotSelect={(id) => {
-                  setSelectedOverlayId(null);
-                  setIsBackgroundSelected(false);
-                  builder.selectSlot(id);
+              <TransformComponent
+                wrapperStyle={{ width: '100%', height: '100%' }}
+                contentStyle={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '24px',
                 }}
-                onSlotToggleSelect={builder.toggleSlotSelection}
-                onCanvasClick={() => {
-                  setSelectedOverlayId(null);
-                  setIsBackgroundSelected(false);
-                  builder.clearSelection();
-                }}
-                onMediaDrop={builder.assignMediaToSlot}
-                onAnnounce={announce}
-                onOverlayMove={builder.moveOverlay}
-                onOverlayResize={builder.resizeOverlay}
-                onCanvasBgDoubleClick={handleCanvasBgDoubleClick}
-                onSlotUpdate={(id, updates) => builder.updateSlot(id, updates)}
-                selectedMaskSlotId={selectedMaskSlotId}
-                onAssetCanvasDrop={handleAssetCanvasDrop}
-                onMediaCanvasDrop={handleMediaCanvasDrop}
-                contextualToolbarCallbacks={contextualToolbarCallbacks}
-              />
-            </TransformComponent>
-          </TransformWrapper>
+              >
+                <LayoutCanvas
+                  template={builder.template}
+                  selectedSlotIds={builder.selectedSlotIds}
+                  isPreview={builder.isPreview}
+                  media={media}
+                  showSlotIndices={showSlotIndices}
+                  snapMode={snapMode}
+                  snapThresholdPx={snapThreshold}
+                  showGrid={showGrid}
+                  gridSizePx={gridSizePx}
+                  showRulers={showRulers}
+                  showMeasurements={showMeasurements}
+                  onSlotMove={builder.moveSlot}
+                  onSlotResize={builder.resizeSlot}
+                  onSlotSelect={(id) => {
+                    setSelectedOverlayId(null);
+                    setIsBackgroundSelected(false);
+                    builder.selectSlot(id);
+                  }}
+                  onSlotToggleSelect={builder.toggleSlotSelection}
+                  onCanvasClick={() => {
+                    setSelectedOverlayId(null);
+                    setIsBackgroundSelected(false);
+                    builder.clearSelection();
+                  }}
+                  onMediaDrop={builder.assignMediaToSlot}
+                  onAnnounce={announce}
+                  onOverlayMove={builder.moveOverlay}
+                  onOverlayResize={builder.resizeOverlay}
+                  onCanvasBgDoubleClick={handleCanvasBgDoubleClick}
+                  onSlotUpdate={(id, updates) => builder.updateSlot(id, updates)}
+                  selectedMaskSlotId={selectedMaskSlotId}
+                  onAssetCanvasDrop={handleAssetCanvasDrop}
+                  onMediaCanvasDrop={handleMediaCanvasDrop}
+                  contextualToolbarCallbacks={contextualToolbarCallbacks}
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          </Box>
         </Box>
 
-        {/* Footer: canvas size controls */}
+        {/* ── Edit-mode footer ─────────────────────────────────── */}
         {!builder.isPreview && (
           <Box
             px="md"
@@ -277,7 +346,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               </Button>
               <Divider orientation="vertical" />
 
-              {/* ── P30-B: Snap mode selector ──────────────────── */}
+              {/* ── Snap mode selector ──────────────────────────── */}
               <Group gap={6} wrap="nowrap" align="center">
                 <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>Snap:</Text>
                 <SegmentedControl
@@ -308,7 +377,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               </Group>
               <Divider orientation="vertical" />
 
-              {/* ── P30-B: Grid overlay ────────────────────────── */}
+              {/* ── Grid overlay ────────────────────────────────── */}
               <Group gap={6} wrap="nowrap" align="center">
                 <Switch
                   label="Grid"
@@ -333,7 +402,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               </Group>
               <Divider orientation="vertical" />
 
-              {/* ── P30-B: Rulers & measurements ──────────────── */}
+              {/* ── Rulers & measurements ───────────────────────── */}
               <Group gap={6} wrap="nowrap">
                 <Switch
                   label="Rulers"
@@ -372,7 +441,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 </Button>
               </Tooltip>
               <Divider orientation="vertical" />
-              {/* ── Zoom controls ───────────────────────────── */}
+              {/* ── Zoom controls ────────────────────────────────── */}
               <Group gap={4} wrap="nowrap">
                 <Tooltip label={isHandTool ? 'Switch to select tool' : 'Hand tool — pan canvas (H)'}>
                   <ActionIcon
@@ -385,6 +454,84 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     <IconHandGrab size={14} />
                   </ActionIcon>
                 </Tooltip>
+                <Tooltip label="Fit canvas to viewport (F)">
+                  <ActionIcon
+                    variant="subtle"
+                    size="sm"
+                    onClick={handleFitCanvas}
+                    aria-label="Fit canvas to viewport"
+                  >
+                    <IconArrowsMaximize size={14} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Reset zoom to 100%">
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    onClick={handleResetZoom}
+                    style={{ minWidth: 52, fontVariantNumeric: 'tabular-nums' }}
+                    aria-label={`Zoom ${Math.round(scale * 100)}%, click to reset`}
+                  >
+                    {Math.round(scale * 100)}%
+                  </Button>
+                </Tooltip>
+              </Group>
+            </Group>
+          </Box>
+        )}
+
+        {/* ── P30-C: Preview-mode device preset controls ───────── */}
+        {builder.isPreview && (
+          <Box
+            px="md"
+            py={6}
+            data-testid="preview-preset-bar"
+            style={{
+              borderTop: '1px solid var(--mantine-color-default-border)',
+              background: 'var(--mantine-color-body)',
+              flexShrink: 0,
+            }}
+          >
+            <Group gap="md" justify="center" wrap="nowrap">
+              <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>Preview:</Text>
+              <SegmentedControl
+                data={PRESET_SEGMENTED_DATA}
+                value={previewPreset}
+                onChange={(v) => setPreviewPreset(v as PreviewPreset)}
+                size="xs"
+                aria-label="Device preview preset"
+                data-testid="preview-preset-selector"
+              />
+              {previewPreset === 'custom' && (
+                <NumberInput
+                  value={customPreviewWidth}
+                  onChange={(val) => setCustomPreviewWidth(Math.max(200, Math.min(3840, Number(val) || 800)))}
+                  min={200}
+                  max={3840}
+                  step={10}
+                  size="xs"
+                  w={90}
+                  suffix="px"
+                  aria-label="Custom preview width"
+                  data-testid="custom-preview-width-input"
+                />
+              )}
+              {previewPreset !== 'none' && (
+                <>
+                  <Divider orientation="vertical" />
+                  <Switch
+                    label="Device frame"
+                    size="xs"
+                    checked={showPreviewFrame}
+                    onChange={(e) => setShowPreviewFrame(e.currentTarget.checked)}
+                    aria-label="Toggle device frame chrome"
+                    data-testid="preview-frame-toggle"
+                  />
+                </>
+              )}
+              <Divider orientation="vertical" />
+              {/* Zoom controls visible in preview mode too */}
+              <Group gap={4} wrap="nowrap">
                 <Tooltip label="Fit canvas to viewport (F)">
                   <ActionIcon
                     variant="subtle"

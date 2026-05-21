@@ -1,5 +1,6 @@
 export { LayoutBuilderModal } from './LayoutBuilderModal';
 export type { LayoutBuilderModalProps } from './LayoutBuilderModal';
+export type { PreviewPreset } from './LayoutBuilderCanvasPanel';
 export { ContextualToolbar } from './ContextualToolbar';
 export type { ContextualToolbarCallbacks, ContextualToolbarProps, SelectionRect } from './ContextualToolbar';
 export { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
