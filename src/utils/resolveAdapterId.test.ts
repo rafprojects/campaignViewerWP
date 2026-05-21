@@ -427,6 +427,63 @@ describe('resolveGallerySectionRuntime', () => {
   });
 });
 
+// ── Phase 24 regression alignment (P31-B) ────────────────────────────────────
+//
+// These tests mirror the integration scenarios in GallerySections.test.tsx at
+// the utility layer. They validate that the resolver chain correctly isolates
+// per-breakpoint campaign overrides and does not bleed them across breakpoints.
+
+describe('resolveAdapterId — campaign override isolation across breakpoints', () => {
+  it('campaign override at desktop does not affect tablet or mobile resolution', () => {
+    const s = makeSettings({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: { image: { adapterId: 'masonry' } },
+          tablet:  { image: { adapterId: 'justified' } },
+          mobile:  { image: { adapterId: 'compact-grid' } },
+        },
+      },
+    });
+
+    const campaignOverrides: GalleryConfig = {
+      breakpoints: {
+        desktop: { image: { adapterId: 'diamond' } },
+        // tablet and mobile intentionally absent — global settings must apply.
+      },
+    };
+
+    // Desktop override wins.
+    expect(resolveAdapterId(s, 'image', 'desktop', { galleryOverrides: campaignOverrides })).toBe('diamond');
+    // Tablet and mobile fall through to the global per-breakpoint setting.
+    expect(resolveAdapterId(s, 'image', 'tablet', { galleryOverrides: campaignOverrides })).toBe('justified');
+    expect(resolveAdapterId(s, 'image', 'mobile', { galleryOverrides: campaignOverrides })).toBe('compact-grid');
+  });
+
+  it('campaign override at desktop does not affect unified resolution at other breakpoints', () => {
+    const s = makeSettings({
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: { unified: { adapterId: 'masonry' } },
+          tablet:  { unified: { adapterId: 'justified' } },
+          mobile:  { unified: { adapterId: 'compact-grid' } },
+        },
+      },
+    });
+
+    const campaignOverrides: GalleryConfig = {
+      breakpoints: {
+        desktop: { unified: { adapterId: 'diamond' } },
+      },
+    };
+
+    expect(resolveUnifiedAdapterId(s, 'desktop', { galleryOverrides: campaignOverrides })).toBe('diamond');
+    expect(resolveUnifiedAdapterId(s, 'tablet',  { galleryOverrides: campaignOverrides })).toBe('justified');
+    expect(resolveUnifiedAdapterId(s, 'mobile',  { galleryOverrides: campaignOverrides })).toBe('compact-grid');
+  });
+});
+
 describe('applyResolvedGalleryAdapterSettings', () => {
   it('keeps resolved common settings nested-only', () => {
     const s = makeSettings({
