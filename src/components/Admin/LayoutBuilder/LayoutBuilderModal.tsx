@@ -46,6 +46,7 @@ import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
 import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
+import type { SnapMode } from '@/utils/canvasMeasurement';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -133,8 +134,31 @@ export function LayoutBuilderModal({
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
 
-  const [snapEnabled, setSnapEnabled] = useState(true);
+  // ── P30-B workspace preferences (persisted in localStorage) ──
+  const [snapMode, setSnapMode] = useState<SnapMode>(() => {
+    try { return (safeLocalStorage.getItem('wpsg_builder_snap_mode') as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
+  });
   const [snapThreshold, setSnapThreshold] = useState(5);
+  const [showGrid, setShowGrid] = useState(() => {
+    try { return safeLocalStorage.getItem('wpsg_builder_show_grid') === 'true'; } catch { return false; }
+  });
+  const [gridSizePx, setGridSizePx] = useState(() => {
+    try { return Number(safeLocalStorage.getItem('wpsg_builder_grid_size')) || 20; } catch { return 20; }
+  });
+  const [showRulers, setShowRulers] = useState(() => {
+    try { return safeLocalStorage.getItem('wpsg_builder_show_rulers') === 'true'; } catch { return false; }
+  });
+  const [showMeasurements, setShowMeasurements] = useState(() => {
+    try { return safeLocalStorage.getItem('wpsg_builder_show_measurements') === 'true'; } catch { return false; }
+  });
+
+  // Persist P30-B workspace preferences.
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_snap_mode', snapMode); }, [snapMode]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_grid', String(showGrid)); }, [showGrid]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_grid_size', String(gridSizePx)); }, [gridSizePx]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_rulers', String(showRulers)); }, [showRulers]);
+  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_measurements', String(showMeasurements)); }, [showMeasurements]);
+
   const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem('wpsg_builder_design_assets_open');
@@ -779,7 +803,9 @@ export function LayoutBuilderModal({
     selectedSlot, selectedOverlayId, setSelectedOverlayId, selectedOverlay,
     selectedOverlayIndex, isBackgroundSelected, setIsBackgroundSelected,
     selectedMaskSlotId, setSelectedMaskSlotId,
-    snapEnabled, setSnapEnabled, snapThreshold, setSnapThreshold,
+    snapMode, setSnapMode, snapThreshold, setSnapThreshold,
+    showGrid, setShowGrid, gridSizePx, setGridSizePx,
+    showRulers, setShowRulers, showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen, bgSectionRef, dockApiRef,
     announce,
     handleSave, handleClose, handleAutoAssign, handleUploadOverlay,

@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
-import { Box, Group, Text, NumberInput, Switch, Slider, Button, Divider, ActionIcon, Tooltip } from '@mantine/core';
+import {
+  Box, Group, Text, NumberInput, Switch, Slider,
+  Button, Divider, ActionIcon, Tooltip, SegmentedControl,
+} from '@mantine/core';
 import { IconHandGrab, IconPlus, IconArrowsMaximize } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import type { IDockviewPanelProps } from 'dockview';
@@ -8,16 +11,30 @@ import { useBuilderDock } from './BuilderDockContext';
 import { LayoutCanvas } from './LayoutCanvas';
 import type { ContextualToolbarCallbacks } from './ContextualToolbar';
 import { CanvasTransformContext } from '@/contexts/CanvasTransformContext';
+import { SNAP_MODE_LABELS, type SnapMode } from '@/utils/canvasMeasurement';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+
+// Build SegmentedControl data from SnapMode labels
+const SNAP_MODE_DATA = (Object.entries(SNAP_MODE_LABELS) as [SnapMode, string][]).map(
+  ([value, label]) => ({ value, label }),
+);
 
 export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   const {
     builder,
     media,
-    snapEnabled,
-    setSnapEnabled,
+    snapMode,
+    setSnapMode,
     snapThreshold,
     setSnapThreshold,
+    showGrid,
+    setShowGrid,
+    gridSizePx,
+    setGridSizePx,
+    showRulers,
+    setShowRulers,
+    showMeasurements,
+    setShowMeasurements,
     setSelectedOverlayId,
     setIsBackgroundSelected,
     selectedMaskSlotId,
@@ -178,8 +195,12 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 isPreview={builder.isPreview}
                 media={media}
                 showSlotIndices={showSlotIndices}
-                snapEnabled={snapEnabled}
+                snapMode={snapMode}
                 snapThresholdPx={snapThreshold}
+                showGrid={showGrid}
+                gridSizePx={gridSizePx}
+                showRulers={showRulers}
+                showMeasurements={showMeasurements}
                 onSlotMove={builder.moveSlot}
                 onSlotResize={builder.resizeSlot}
                 onSlotSelect={(id) => {
@@ -255,16 +276,18 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 Fit to container
               </Button>
               <Divider orientation="vertical" />
-              {/* Snap toggle + sensitivity */}
-              <Group gap={6} wrap="nowrap">
-                <Switch
-                  label="Snap"
+
+              {/* ── P30-B: Snap mode selector ──────────────────── */}
+              <Group gap={6} wrap="nowrap" align="center">
+                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>Snap:</Text>
+                <SegmentedControl
+                  data={SNAP_MODE_DATA}
+                  value={snapMode}
+                  onChange={(v) => setSnapMode(v as SnapMode)}
                   size="xs"
-                  checked={snapEnabled}
-                  onChange={(e) => setSnapEnabled(e.currentTarget.checked)}
-                  aria-label="Toggle snap guides"
+                  aria-label="Snap mode"
                 />
-                {snapEnabled && (
+                {snapMode !== 'off' && (
                   <>
                     <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
                       Sensitivity:
@@ -284,6 +307,51 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 )}
               </Group>
               <Divider orientation="vertical" />
+
+              {/* ── P30-B: Grid overlay ────────────────────────── */}
+              <Group gap={6} wrap="nowrap" align="center">
+                <Switch
+                  label="Grid"
+                  size="xs"
+                  checked={showGrid}
+                  onChange={(e) => setShowGrid(e.currentTarget.checked)}
+                  aria-label="Toggle grid overlay"
+                />
+                {showGrid && (
+                  <NumberInput
+                    value={gridSizePx}
+                    onChange={(val) => setGridSizePx(Number(val) || 20)}
+                    min={4}
+                    max={200}
+                    step={4}
+                    size="xs"
+                    w={68}
+                    suffix="px"
+                    aria-label="Grid cell size"
+                  />
+                )}
+              </Group>
+              <Divider orientation="vertical" />
+
+              {/* ── P30-B: Rulers & measurements ──────────────── */}
+              <Group gap={6} wrap="nowrap">
+                <Switch
+                  label="Rulers"
+                  size="xs"
+                  checked={showRulers}
+                  onChange={(e) => setShowRulers(e.currentTarget.checked)}
+                  aria-label="Toggle canvas rulers"
+                />
+                <Switch
+                  label="Measure"
+                  size="xs"
+                  checked={showMeasurements}
+                  onChange={(e) => setShowMeasurements(e.currentTarget.checked)}
+                  aria-label="Toggle measurement overlay"
+                />
+              </Group>
+              <Divider orientation="vertical" />
+
               <Switch
                 label="Indices"
                 size="xs"

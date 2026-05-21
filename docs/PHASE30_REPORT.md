@@ -2,14 +2,14 @@
 
 **Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-20 (P30-E complete)
+**Last updated:** 2026-05-20 (P30-B complete)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P30-A | LayoutBuilder: floating contextual toolbar & quick actions | **Complete** | Medium |
-| P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | Planned | Large |
+| P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | **Complete** | Large |
 | P30-C | LayoutBuilder: responsive preview workspace & device presets | Planned | Medium |
 | P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | Pre-Evaluation | Large |
 | P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | **Complete** | Small-Medium |
@@ -295,12 +295,12 @@ Add a proper measurement toolchain to the canvas:
 
 ### Acceptance criteria
 
-- Grid overlay can be toggled independently of snapping. ( )
-- Snap mode can be switched between grid, guides, and grid+guides. ( )
-- Horizontal and vertical rulers render and scale correctly with zoom. ( )
-- Active selection displays edge-distance measurements. ( )
-- Multi-selection displays inter-item spacing measurements when applicable. ( )
-- Grid/guides snap priority feels deterministic rather than conflicting. ( )
+- Grid overlay can be toggled independently of snapping. (✓)
+- Snap mode can be switched between grid, guides, and grid+guides. (✓)
+- Horizontal and vertical rulers render and scale correctly with zoom. (✓)
+- Active selection displays edge-distance measurements. (✓)
+- Multi-selection displays inter-item spacing measurements when applicable. (partial — union bounds used; per-item spacing display is future work)
+- Grid/guides snap priority feels deterministic rather than conflicting. (✓ — guides win on ties in `grid+guides` mode)
 
 ### Validation
 
