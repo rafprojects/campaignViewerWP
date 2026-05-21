@@ -415,3 +415,100 @@ describe('mergeSettingsWithDefaults', () => {
     expect((merged as Record<string, unknown>).gallerySelectionMode).toBeUndefined();
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// Typed-merge regression cases (P31-A)
+// Verify that removal of `as any` did not change runtime behaviour.
+// ═══════════════════════════════════════════════════════════════
+
+describe('mergeSettingsWithDefaults – typed assignment regressions', () => {
+  it('accepts a valid typographyOverrides object and preserves its fields', () => {
+    const merged = mergeSettingsWithDefaults({
+      typographyOverrides: {
+        title: {
+          fontFamily: 'Inter',
+          fontSize: '2rem',
+          fontWeight: 700,
+          color: '#111',
+        },
+      },
+    });
+
+    expect(merged.typographyOverrides.title?.fontFamily).toBe('Inter');
+    expect(merged.typographyOverrides.title?.fontSize).toBe('2rem');
+    expect(merged.typographyOverrides.title?.fontWeight).toBe(700);
+    expect(merged.typographyOverrides.title?.color).toBe('#111');
+  });
+
+  it('accepts typographyOverrides as a JSON string (PHP API path)', () => {
+    const merged = mergeSettingsWithDefaults({
+      typographyOverrides: JSON.stringify({
+        caption: { fontStyle: 'italic', letterSpacing: '0.05em' },
+      }),
+    } as Record<string, unknown>);
+
+    expect(merged.typographyOverrides.caption?.fontStyle).toBe('italic');
+    expect(merged.typographyOverrides.caption?.letterSpacing).toBe('0.05em');
+  });
+
+  it('falls back to empty typographyOverrides on an invalid payload', () => {
+    const merged = mergeSettingsWithDefaults({
+      typographyOverrides: 'not-valid-json-and-not-an-object',
+    } as Record<string, unknown>);
+
+    // Invalid input — the warn path fires and the default (empty object) is kept.
+    expect(merged.typographyOverrides).toEqual(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.typographyOverrides);
+  });
+
+  it('rejects a legacy string viewerBgGradient and falls back to the default', () => {
+    const merged = mergeSettingsWithDefaults({
+      viewerBgGradient: 'linear-gradient(to right, #000, #fff)',
+    } as Record<string, unknown>);
+
+    expect(merged.viewerBgGradient).toEqual(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.viewerBgGradient);
+  });
+
+  it('rejects a PHP empty-array viewerBgGradient and falls back to the default', () => {
+    const merged = mergeSettingsWithDefaults({
+      viewerBgGradient: [] as unknown as GalleryBehaviorSettings['viewerBgGradient'],
+    });
+
+    expect(merged.viewerBgGradient).toEqual(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.viewerBgGradient);
+  });
+
+  it('accepts a valid viewerBgGradient object', () => {
+    const gradient: GalleryBehaviorSettings['viewerBgGradient'] = {
+      type: 'linear',
+      angle: 135,
+      stops: [
+        { color: '#000000', position: 0 },
+        { color: '#ffffff', position: 100 },
+      ],
+    };
+
+    const merged = mergeSettingsWithDefaults({ viewerBgGradient: gradient });
+    expect(merged.viewerBgGradient).toEqual(gradient);
+  });
+
+  it('setSettingsField path: correctly assigns a standard boolean field', () => {
+    // Exercises the general setSettingsField() helper (the non-typographyOverrides,
+    // non-viewerBgGradient path) to ensure no regression from removing as any.
+    const merged = mergeSettingsWithDefaults({
+      transitionFadeEnabled: false,
+      showGalleryTitle: true,
+    });
+
+    expect(merged.transitionFadeEnabled).toBe(false);
+    expect(merged.showGalleryTitle).toBe(true);
+  });
+
+  it('setSettingsField path: correctly assigns a standard number field', () => {
+    const merged = mergeSettingsWithDefaults({
+      imageBorderRadius: 16,
+      carouselVisibleCards: 3,
+    });
+
+    expect(merged.imageBorderRadius).toBe(16);
+    expect(merged.carouselVisibleCards).toBe(3);
+  });
+});

@@ -1,4 +1,38 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+// ── Module-level body-scroll lock manager ────────────────────────────────────
+//
+// A single reference counter coordinates body-scroll locking across multiple
+// concurrent lightbox hook instances. This prevents one closing consumer from
+// unlocking the body while another is still open, and avoids the "double-lock"
+// that occurred when each instance managed its own overflow write.
+//
+// Invariants:
+//   lockCount ≥ 0 at all times (releaseScrollLock clamps at zero)
+//   previousOverflow is snapshotted only on the 0 → 1 transition
+//   overflow is restored only on the 1 → 0 transition
+
+let lockCount = 0;
+let previousOverflow = '';
+
+function acquireScrollLock(): void {
+  if (lockCount === 0) {
+    previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  lockCount++;
+}
+
+function releaseScrollLock(): void {
+  if (lockCount <= 0) return; // clamp: prevent going negative
+  lockCount--;
+  if (lockCount === 0) {
+    document.body.style.overflow = previousOverflow;
+    previousOverflow = '';
+  }
+}
+
+// ── Hook ─────────────────────────────────────────────────────────────────────
 
 interface UseLightboxOptions {
   initialOpen?: boolean;
@@ -25,48 +59,31 @@ export function useLightbox(options: UseLightboxOptions = {}): UseLightboxResult
 
   const [isOpen, setIsOpen] = useState(initialOpen);
 
-  const lockBodyScroll = useCallback(() => {
-    const body = document.body;
-    body.style.overflow = 'hidden';
-  }, []);
-
-  const unlockBodyScroll = useCallback(() => {
-    const body = document.body;
-    body.style.overflow = '';
-  }, []);
-
   const open = useCallback(() => {
-    lockBodyScroll();
     setIsOpen(true);
-  }, [lockBodyScroll]);
+  }, []);
 
   const close = useCallback(() => {
     setIsOpen(false);
-    unlockBodyScroll();
-  }, [unlockBodyScroll]);
+  }, []);
 
   const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
 
+  // Manage body-scroll lock through the shared module-level manager.
+  //
+  // Using an effect (rather than calling acquire/release directly from open/close)
+  // ensures a single, canonical lock/unlock per open→close or close→open
+  // transition and coordinates correctly with other concurrent lightbox
+  // consumers regardless of close or unmount order.
   useEffect(() => {
     if (!isOpen) return;
-    lockBodyScroll();
-
+    acquireScrollLock();
     return () => {
-      unlockBodyScroll();
+      releaseScrollLock();
     };
-  }, [isOpen, lockBodyScroll, unlockBodyScroll]);
+  }, [isOpen]);
 
-  // Keep a ref to the latest unlockBodyScroll so the unmount cleanup is never stale.
-  const unlockRef = useRef(unlockBodyScroll);
-  useEffect(() => { unlockRef.current = unlockBodyScroll; }, [unlockBodyScroll]);
-
-  // Ensure scroll is unlocked on unmount regardless of isOpen state
-  useEffect(() => {
-    return () => {
-      unlockRef.current();
-    };
-  }, []);
-
+  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
 

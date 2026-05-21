@@ -11,6 +11,22 @@ import { normalizeCardConfigSettings, parseCardConfig } from './cardConfig';
 import { parseTypographyOverridesInput } from '@/types/settingsSchemas';
 
 /**
+ * Assigns a runtime-validated settings field without widening to `any`.
+ *
+ * The caller iterates only over keys that exist in `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`
+ * and guards against `null`/`undefined`, so the dynamic write is correct at runtime.
+ * The cast narrows to `Record<keyof GalleryBehaviorSettings, unknown>` rather than
+ * `any` to keep the type surface as small as possible.
+ */
+function setSettingsField(
+  target: GalleryBehaviorSettings,
+  key: keyof GalleryBehaviorSettings,
+  value: unknown,
+): void {
+  (target as Record<keyof GalleryBehaviorSettings, unknown>)[key] = value;
+}
+
+/**
  * Merge a partial settings response with the full defaults.
  *
  * Uses `??` semantics: only `null` and `undefined` values fall through to the
@@ -42,8 +58,9 @@ export function mergeSettingsWithDefaults(
       if (key === 'typographyOverrides') {
         const parsedTypographyOverrides = parseTypographyOverridesInput(incoming);
         if (parsedTypographyOverrides) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (result as any)[key] = parsedTypographyOverrides;
+          // TypeScript narrows `key` to 'typographyOverrides' here, so we can
+          // assign directly without a cast.
+          result.typographyOverrides = parsedTypographyOverrides;
         } else {
           console.warn('[WPSG] Failed to parse typographyOverrides payload:', incoming);
         }
@@ -56,8 +73,7 @@ export function mergeSettingsWithDefaults(
           continue;
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (result as any)[key] = incoming;
+      setSettingsField(result, key, incoming);
     }
   }
 
