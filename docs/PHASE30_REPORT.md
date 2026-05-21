@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-20 (P30-H complete)
+**Last updated:** 2026-05-20 (P30-I complete)
 
 ### Tracks
 
@@ -16,7 +16,7 @@
 | P30-F | CardGallery / CompactGrid generic grid-shell investigation | Pre-Evaluation | Small-Medium |
 | P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
 | P30-H | Theme catalog unification & selector alignment | **Complete** | Medium-Large |
-| P30-I | Theme runtime hardening & validation | Planned | Medium |
+| P30-I | Theme runtime hardening & validation | **Complete** | Medium |
 | P30-J | Theme QA & visual regression | Planned | Medium |
 | P30-K | Alignment model spike — professional tool research & design for enhanced alignment | **Complete** | Small |
 
@@ -1024,13 +1024,13 @@ Harden the existing runtime rather than redesign it.
 ### Acceptance criteria
 
 - Shadow DOM theme styles are created from `ownerDocument` and removed on
-  unmount. ( )
-- Shadow cleanup is covered in frontend tests. ( )
+  unmount. (✓)
+- Shadow cleanup is covered in frontend tests. (✓ — new test in ThemeContext.test.tsx)
 - Runtime custom-theme registration handles invalid nullable values predictably.
-  ( )
-- Build-time schema checks run for theme definitions and the shared catalog. ( )
-- Dev-mode contrast warnings exist for high-risk theme combinations. ( )
-- Selector dead code and stale theme-count comments are removed. ( )
+  (✓ — deepMerge skips null extension values)
+- Build-time schema checks run for theme definitions and the shared catalog. (✓ — scripts/validate-themes.mjs, npm run validate:themes)
+- Dev-mode contrast warnings exist for high-risk theme combinations. (✓ — warnLowContrast() in validation.ts)
+- Selector dead code and stale theme-count comments are removed. (✓ — ThemeSelectItem removed in P30-H; "14 themes" → "23 themes")
 
 ### Validation
 

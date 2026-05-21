@@ -18,7 +18,7 @@
 import type { MantineThemeOverride } from '@mantine/core';
 import type { ThemeDefinition, ThemeExtension, ThemeMeta, ThemeCatalogEntry } from './types';
 import { adaptTheme } from './adapter';
-import { isValidTheme } from './validation';
+import { isValidTheme, warnLowContrast } from './validation';
 import { generateCssVariables } from './cssVariables';
 import { resolveColors } from './colorGen';
 import catalogData from '../../wp-plugin/wp-super-gallery/theme-catalog.json';
@@ -95,10 +95,15 @@ function deepMerge<T extends Record<string, unknown>>(
 
   for (const key of Object.keys(extension)) {
     const extVal = (extension as Record<string, unknown>)[key];
+
+    // Treat null extension values as "use base default" so third-party
+    // theme extensions cannot punch holes through the base palette by
+    // passing null for required object sections (e.g. colors, typography).
+    if (extVal === null) continue;
+
     const baseVal = result[key];
 
     if (
-      extVal !== null &&
       typeof extVal === 'object' &&
       !Array.isArray(extVal) &&
       baseVal !== null &&
@@ -155,6 +160,9 @@ function registerTheme(extension: ThemeExtension): boolean {
   const rc = resolveColors(def.colors, def.colorScheme);
   const cssVars = generateCssVariables(rc, def);
 
+  // 4a. Dev-mode contrast advisory (non-blocking)
+  warnLowContrast(def.id, rc.text, rc.background);
+
   // 5. Build metadata — enrich with catalog data when available
   const catalogEntry = catalog.get(def.id);
   const meta: ThemeMeta = {
@@ -179,7 +187,7 @@ function registerTheme(extension: ThemeExtension): boolean {
  * Initialize all bundled themes. Called once at module load.
  *
  * Performance note: each theme takes ~1-5ms to adapt (chroma.js color
- * generation + component override assembly). With 14 themes this is
+ * generation + component override assembly). With 23 themes this is
  * well under 100ms total, run once at startup.
  */
 function initializeRegistry(): void {

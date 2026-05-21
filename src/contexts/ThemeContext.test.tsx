@@ -222,6 +222,28 @@ describe('ThemeProvider', () => {
     host.remove();
   });
 
+  it('removes shadow DOM theme style element on unmount', () => {
+    const host = document.createElement('div');
+    const shadowRoot = host.attachShadow({ mode: 'open' });
+    document.body.appendChild(host);
+
+    const shadowWrapper = ({ children }: { children: ReactNode }) => (
+      <ThemeProvider shadowRoot={shadowRoot}>{children}</ThemeProvider>
+    );
+
+    const { unmount } = renderHook(() => useTheme(), { wrapper: shadowWrapper });
+
+    // Verify the style element was injected
+    expect(shadowRoot.querySelector('#wpsg-theme-vars')).not.toBeNull();
+
+    unmount();
+
+    // Verify the style element was removed on unmount
+    expect(shadowRoot.querySelector('#wpsg-theme-vars')).toBeNull();
+
+    host.remove();
+  });
+
   it('removes scoped document CSS variables on unmount', () => {
     const host = document.createElement('div');
     host.dataset.wpsgThemeScope = 'cleanup-scope';

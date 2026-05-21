@@ -208,20 +208,27 @@ export function ThemeProvider({
   // Inject custom WPSG CSS variables into either the shadow root or a
   // scoped document-level style tag for normal DOM mounts.
   useEffect(() => {
-    if (shadowRoot) {
-      const styleId = 'wpsg-theme-vars';
-      let styleEl = shadowRoot.querySelector(`#${styleId}`) as HTMLStyleElement | null;
+    if (!shadowRoot) return;
 
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = styleId;
-        shadowRoot.prepend(styleEl);
-      }
+    const styleId = 'wpsg-theme-vars';
+    let styleEl = shadowRoot.querySelector(`#${styleId}`) as HTMLStyleElement | null;
 
-      styleEl.textContent = entry.cssVars;
+    if (!styleEl) {
+      // Use ownerDocument rather than the ambient `document` so the element
+      // is created in the same document as the shadow host (important in
+      // cross-frame scenarios and avoids AdoptedStyleSheets quirks).
+      styleEl = shadowRoot.ownerDocument.createElement('style');
+      styleEl.id = styleId;
+      shadowRoot.prepend(styleEl);
     }
 
-    return;
+    styleEl.textContent = entry.cssVars;
+
+    return () => {
+      // Remove the injected style element on unmount so styles don't
+      // leak after the gallery is torn down.
+      shadowRoot.querySelector(`#${styleId}`)?.remove();
+    };
   }, [shadowRoot, entry.cssVars]);
 
   useEffect(() => {

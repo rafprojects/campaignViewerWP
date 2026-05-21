@@ -173,7 +173,7 @@
   {
     "id": "forest-whisper",
     "name": "Forest Whisper",
-    "colorScheme": "dark",
+    "colorScheme": "light",
     "group": "Artistic",
     "description": "Natural earthy greens — calm and grounded",
     "displayOrder": 20,
