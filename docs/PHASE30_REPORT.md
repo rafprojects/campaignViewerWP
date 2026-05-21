@@ -1477,3 +1477,193 @@ draft.groups = draft.groups.filter(
 );
 refreshGroupRects(draft.groups, draft.slots);
 ```
+---
+
+## PR Review — Copilot Feedback Round 2 (PR #46, 2026-05-21)
+
+A second Copilot review was requested after Round 1 fixes landed. Five new threads
+were raised across four files. One was rejected (already fixed); four were accepted
+and addressed in commit `224fae1`.
+
+### Summary
+
+| # | File | Finding | Decision |
+|---|------|---------|----------|
+| 1 | `ContextualToolbar.tsx:68` | `getSelectedGroup()` still uses `memberIds` equality — misses nested groups | **Reject** — already fixed in Round 1; Copilot reviewed stale diff context |
+| 2 | `LayoutBuilderModal.tsx:526` | `handleUngroupSelected` ignores the explicit `groupId` passed by toolbar and re-derives from selection | **Accept** — simplified to `(groupId: string) => builder.dissolveGroup(groupId)` |
+| 3 | `layerList.ts:222` | Group tie-breaker uses `groups.indexOf(group)` (group-array position) — incomparable with ungrouped slot `slotIndexMap` positions when zIndex ties | **Accept** — both `topItems` construction and `emitGroup` now use max descendant slot array-index |
+| 4 | `groupGeometry.ts:115` | Doc comment says "one level deep only" but `computeGroupRectShallow` calls `computeGroupRect` recursively for child groups | **Accept** — doc comment corrected |
+| 5 | `e2e/theme-qa.spec.ts:230` | Snapshot tests call `page.screenshot({path})` which only writes files; no baseline comparison; `e2e/__snapshots__/` doesn't exist | **Accept** — converted to `expect(page).toHaveScreenshot()` with `maxDiffPixelRatio: 0.1` |
+
+---
+
+### Thread 1 — `ContextualToolbar.tsx` — `getSelectedGroup` (Reject)
+
+**Copilot finding:** `getSelectedGroup()` only matches groups by exact equality with
+`group.memberIds` — nested/parent groups won't be detected.
+
+**Rejection rationale:** This was **already addressed in Round 1**. The function was
+rewritten in commit `51394c1` to use `collectDescendantSlotIds` instead of
+`memberIds` equality — exactly what Copilot recommended. The second review appears to
+have generated this thread from the original diff context before the fix landed.
+Current code (unchanged since Round 1):
+
+```typescript
+function getSelectedGroup(
+  selectedSlotIds: ReadonlySet<string>,
+  groups: LayoutGroup[],
+): LayoutGroup | undefined {
+  if (selectedSlotIds.size === 0 || groups.length === 0) return undefined;
+  const groupMap = buildGroupMap(groups);
+  return groups.find((g) => {
+    const descIds = collectDescendantSlotIds(g.id, groupMap);
+    return (
+      descIds.length > 0 &&
+      descIds.length === selectedSlotIds.size &&
+      descIds.every((id) => selectedSlotIds.has(id))
+    );
+  });
+}
+```
+
+No code change required. Thread resolved.
+
+---
+
+### Thread 2 — `LayoutBuilderModal.tsx` — `handleUngroupSelected` explicit groupId (Accept)
+
+**Copilot finding:** `handleUngroupSelected` re-derives the target group from the
+current selection instead of using the explicit `groupId` passed by the toolbar via
+`callbacks.onUngroup(selectedGroup.id)`.
+
+**Root cause:** Round 1 fixed the group-matching logic (descendant-slot expansion)
+but didn't follow through on using the already-available explicit `groupId`. The
+`ContextualToolbarCallbacks` interface has `onUngroup: (groupId: string) => void`,
+and the toolbar calls it with the resolved `selectedGroup.id` — but the handler had
+signature `() => void` and ignored the parameter entirely.
+
+**Note on keyboard shortcut:** The Ctrl+Shift+G keyboard handler in
+`LayoutBuilderModal.tsx` has its own inline dissolve logic (lines 703–724) and does
+not call `handleUngroupSelected` at all, so there is no "keyboard path needs
+re-derivation" case. `handleUngroupSelected` is exclusively called through the
+toolbar → context chain, which always supplies a valid groupId.
+
+**Before:**
+```tsx
+const handleUngroupSelected = useCallback(() => {
+  const groups = builder.template.groups ?? [];
+  const selectedIds = builder.selectedSlotIds;
+  // ...descendant-matching logic to find targetGroup...
+  if (!targetGroup) return;
+  builder.dissolveGroup(targetGroup.id);
+  announce('Ungrouped');
+  notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
+}, [builder, announce]);
+```
+
+**After:**
+```tsx
+// The toolbar always resolves the target group before calling this and passes
+// the explicit groupId — no need to re-derive from selection here.
+// Keyboard Ctrl+Shift+G has its own inline dissolve logic.
+const handleUngroupSelected = useCallback((groupId: string) => {
+  builder.dissolveGroup(groupId);
+  announce('Ungrouped');
+  notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
+}, [builder, announce]);
+```
+
+`BuilderDockContext.tsx` type updated to `handleUngroupSelected: (groupId: string) => void`.
+
+---
+
+### Thread 3 — `layerList.ts` — Group sort tie-breaker (Accept)
+
+**Copilot finding:** Group rows use `groups.indexOf(group)` as `arrayIndex`, but
+ungrouped slots use `slotIndexMap` positions. When a top-level group's representative
+zIndex ties with an ungrouped slot, the comparison is between incompatible array
+positions — breaking the "stable tie-breaker = later in source array" guarantee
+documented in the module header.
+
+**Fix:** Both `topItems` construction (for sort order) and `emitGroup` (for the
+stored `LayerItem.arrayIndex`) now use the max descendant-slot array-index:
+
+```ts
+// topItems construction — before
+...topLevelGroups.map((g, i) => ({
+  kind: 'group' as const, id: g.id, z: groupRepZ(g.id), ai: i,
+})),
+
+// topItems construction — after
+...topLevelGroups.map((g) => {
+  const descIds = collectDescendantSlotIds(g.id, groupMap);
+  const maxAi = descIds.reduce((m, sid) => Math.max(m, slotIndexMap.get(sid) ?? 0), 0);
+  return { kind: 'group' as const, id: g.id, z: groupRepZ(g.id), ai: maxAi };
+}),
+```
+
+```ts
+// emitGroup — before
+arrayIndex: groups.indexOf(group),
+
+// emitGroup — after
+const repAi = descendantSlotIds.reduce(
+  (max, sid) => Math.max(max, slotIndexMap.get(sid) ?? 0),
+  0,
+);
+result.push({
+  ...
+  arrayIndex: repAi,
+  ...
+});
+```
+
+---
+
+### Thread 4 — `groupGeometry.ts` — Misleading doc comment (Accept)
+
+**Copilot finding:** `computeGroupRectShallow` doc says "one level deep only" but the
+implementation calls `computeGroupRect` recursively for each child group, so the full
+subtree bounding box is included.
+
+**Fix:** Updated the JSDoc to accurately describe the recursive behaviour:
+
+```typescript
+// Before
+/**
+ * Computes the canvas-absolute union bounding box of all DIRECT member slots
+ * and child groups within `groupId`, one level deep only. Used internally to
+ * seed `computeGroupRect`.
+ */
+
+// After
+/**
+ * Computes the canvas-absolute union bounding box of all DIRECT member slots
+ * and child groups within `groupId`. For each child group, `computeGroupRect`
+ * is called recursively, so the full descendant subtree contributes to the
+ * bounding box — not just one level deep. Used internally to seed
+ * `computeGroupRect`.
+ */
+```
+
+---
+
+### Thread 5 — `e2e/theme-qa.spec.ts` — Snapshot tests without baseline assertion (Accept)
+
+**Copilot finding:** The "visual snapshot" tests call `page.screenshot({ path })`,
+which only writes PNG files to `e2e/__snapshots__/` (a directory that doesn't exist
+in the repo). They never compare against a stored baseline, so regressions won't
+be detected. Playwright's `toHaveScreenshot()` is the correct API.
+
+**Fix:** All four `page.screenshot({ path })` calls converted to
+`expect(page).toHaveScreenshot(name, { maxDiffPixelRatio: 0.1 })`. Playwright
+manages the snapshot directory automatically and fails the test when the diff
+exceeds the threshold. The NOTE comment was updated to reflect the new flow.
+
+```typescript
+// Before
+await page.screenshot({ path: `e2e/__snapshots__/gallery-shell-${themeId}.png` });
+
+// After
+await expect(page).toHaveScreenshot(`gallery-shell-${themeId}.png`, { maxDiffPixelRatio: 0.1 });
+```
