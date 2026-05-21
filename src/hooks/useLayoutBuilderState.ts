@@ -3,6 +3,16 @@ import { produce, enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
+import {
+  buildGroupMap,
+  collectDescendantSlotIds,
+  computeGroupRect,
+  migrateGroupsToP30G,
+  refreshGroupRects,
+  reparentGroup as reparentGroupInHierarchy,
+  dissolveGroupInHierarchy,
+  computeGroupMoveDelta,
+} from '@/utils/groupGeometry';
 
 enableMapSet();
 
@@ -209,15 +219,43 @@ export interface LayoutBuilderActions {
   /** Delete the autosaved draft for the current template from localStorage. */
   clearDraft: () => void;
 
-  // ── Groups (P29-G-C) ──
-  /** Create a flat group from the given member IDs. Returns the new group ID. */
+  // ── Groups (P30-G: nested hierarchy) ──
+  /**
+   * Create a group from the given slot/overlay IDs. If any ID is already a
+   * member of another group, it is removed from that group first.
+   * Returns the new group ID.
+   */
   createGroup: (memberIds: string[]) => string;
-  /** Dissolve (delete) a group without removing its members. */
+  /**
+   * Wrap a mix of slot IDs and/or group IDs in a new parent group.
+   * Any selected group becomes a childGroup of the new parent; selected
+   * standalone slots become leaf members of the new parent.
+   * Returns the new group ID.
+   */
+  wrapInGroup: (slotAndGroupIds: string[]) => string;
+  /** Dissolve a group, promoting its child groups to its parent (or top-level). */
   dissolveGroup: (groupId: string) => void;
-  /** Update group properties (name, locked, visible, collapsed). */
+  /** Update group properties (name, locked, visible, collapsed, etc.). */
   updateGroup: (groupId: string, updates: Partial<LayoutGroup>) => void;
-  /** Select a group: replaces selectedSlotIds with all slot member IDs of the group. */
+  /** Select a group: replaces selectedSlotIds with all descendant slot member IDs. */
   selectGroup: (groupId: string) => void;
+  /**
+   * Move a group (and all its descendants) by a canvas-percentage delta.
+   * Applies the delta to every descendant slot position and refreshes the
+   * group bounding-box cache.
+   */
+  moveGroup: (groupId: string, dx: number, dy: number) => void;
+  /**
+   * Reparent a group under a new parent (or null to make it top-level).
+   * Rejects silently if the reparent would create a cycle.
+   */
+  reparentGroup: (groupId: string, newParentId: string | null) => void;
+  /**
+   * Migrate a flat P29-G-C template's groups to the P30-G hierarchical model.
+   * Called automatically when opening a template; also callable manually for
+   * testing. No-op if the groups are already in P30-G format.
+   */
+  migrateGroupsIfNeeded: () => void;
 }
 
 export type UseLayoutBuilderReturn = LayoutBuilderState & LayoutBuilderActions;
@@ -940,23 +978,102 @@ export function useLayoutBuilderState(
 
   const markSaved = useCallback(() => setIsDirty(false), []);
 
-  // ── Groups (P29-G-C) ──
+  // ── Groups (P30-G: nested hierarchy) ──
+
+  const migrateGroupsIfNeeded = useCallback(() => {
+    const groups = template.groups ?? [];
+    const needsMigration = groups.some((g) => g.childGroupIds === undefined);
+    if (!needsMigration) return;
+    mutate((draft) => {
+      draft.groups = migrateGroupsToP30G(draft.groups ?? [], draft.slots);
+    }, 'Migrate groups to P30-G');
+  }, [mutate, template.groups]);
 
   const createGroup = useCallback((memberIds: string[]): string => {
     const id = crypto.randomUUID?.() ?? `group-${Date.now()}`;
     const uniqueIds = [...new Set(memberIds)];
     mutate((draft) => {
-      draft.groups = (draft.groups ?? [])
-        .map((g) => ({ ...g, memberIds: g.memberIds.filter((mid) => !uniqueIds.includes(mid)) }))
-        .filter((g) => g.memberIds.length > 0);
-      draft.groups.push({ id, memberIds: uniqueIds });
+      const groups = draft.groups ?? [];
+      // Remove these slot IDs from any existing group's leaf members
+      for (const g of groups) {
+        g.memberIds = g.memberIds.filter((mid) => !uniqueIds.includes(mid));
+      }
+      // New group is always a top-level group (P30-G flat default)
+      const newGroup: LayoutGroup = {
+        id,
+        memberIds: uniqueIds,
+        childGroupIds: [],
+        parentGroupId: null,
+      };
+      // Compute bounding box
+      const slotMap = new Map(draft.slots.map((s) => [s.id, s]));
+      const groupMap = buildGroupMap([...groups, newGroup]);
+      const rect = computeGroupRect(id, slotMap, groupMap);
+      if (rect) {
+        newGroup.x = rect.x; newGroup.y = rect.y;
+        newGroup.width = rect.width; newGroup.height = rect.height;
+      }
+      // Remove empty groups
+      draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+      draft.groups.push(newGroup);
     }, `Group (${uniqueIds.length} layers)`);
+    return id;
+  }, [mutate]);
+
+  const wrapInGroup = useCallback((slotAndGroupIds: string[]): string => {
+    const id = crypto.randomUUID?.() ?? `group-${Date.now()}`;
+    mutate((draft) => {
+      const groups = draft.groups ?? [];
+      const groupMap = buildGroupMap(groups);
+
+      // Separate passed IDs into group IDs and slot IDs
+      const selectedGroupIds = slotAndGroupIds.filter((i) => groupMap.has(i));
+      const selectedSlotIds = slotAndGroupIds.filter((i) => !groupMap.has(i));
+
+      // Remove selected slots from existing leaf member lists
+      for (const g of groups) {
+        g.memberIds = g.memberIds.filter((mid) => !selectedSlotIds.includes(mid));
+      }
+
+      // Create new parent group
+      const newGroup: LayoutGroup = {
+        id,
+        memberIds: selectedSlotIds,
+        childGroupIds: selectedGroupIds,
+        parentGroupId: null,
+      };
+
+      // Reparent selected groups under the new parent
+      for (const gid of selectedGroupIds) {
+        const g = groups.find((g) => g.id === gid);
+        if (g) {
+          // Remove from old parent's childGroupIds
+          const oldParentId = g.parentGroupId ?? null;
+          if (oldParentId) {
+            const oldParent = groups.find((p) => p.id === oldParentId);
+            if (oldParent) {
+              oldParent.childGroupIds = (oldParent.childGroupIds ?? []).filter((c) => c !== gid);
+            }
+          }
+          g.parentGroupId = id;
+        }
+      }
+
+      // Remove empty groups
+      draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+      draft.groups.push(newGroup);
+      refreshGroupRects(draft.groups, draft.slots);
+    }, `Wrap in group`);
     return id;
   }, [mutate]);
 
   const dissolveGroup = useCallback((groupId: string) => {
     mutate((draft) => {
-      draft.groups = (draft.groups ?? []).filter((g) => g.id !== groupId);
+      draft.groups = dissolveGroupInHierarchy(groupId, draft.groups ?? []);
+      // Remove empty groups after promotion
+      draft.groups = draft.groups.filter(
+        (g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0,
+      );
     }, 'Ungroup');
   }, [mutate]);
 
@@ -968,12 +1085,33 @@ export function useLayoutBuilderState(
   }, [mutate]);
 
   const selectGroup = useCallback((groupId: string) => {
-    const group = (template.groups ?? []).find((g) => g.id === groupId);
-    if (!group) return;
-    setSelectedSlotIds(new Set(
-      group.memberIds.filter((id) => template.slots.some((s) => s.id === id))
-    ));
+    const groups = template.groups ?? [];
+    const groupMap = buildGroupMap(groups);
+    const slotIds = collectDescendantSlotIds(groupId, groupMap);
+    const validIds = slotIds.filter((id) => template.slots.some((s) => s.id === id));
+    setSelectedSlotIds(new Set(validIds));
   }, [template]);
+
+  const moveGroup = useCallback((groupId: string, dx: number, dy: number) => {
+    mutate((draft) => {
+      const groups = draft.groups ?? [];
+      const slotMap = new Map(draft.slots.map((s) => [s.id, s]));
+      const groupMap = buildGroupMap(groups);
+      const delta = computeGroupMoveDelta(groupId, dx, dy, groupMap, slotMap);
+      for (const slot of draft.slots) {
+        const upd = delta.get(slot.id);
+        if (upd) { slot.x = upd.x; slot.y = upd.y; }
+      }
+      refreshGroupRects(groups, draft.slots);
+    }, 'Move group');
+  }, [mutate]);
+
+  const reparentGroup = useCallback((groupId: string, newParentId: string | null) => {
+    mutate((draft) => {
+      draft.groups = reparentGroupInHierarchy(groupId, newParentId, draft.groups ?? []);
+      refreshGroupRects(draft.groups, draft.slots);
+    }, 'Reparent group');
+  }, [mutate]);
 
   const clearDraft = useCallback(() => {
     if (!template.id) return;
@@ -1077,10 +1215,14 @@ export function useLayoutBuilderState(
     // Persistence
     markSaved,
     clearDraft,
-    // Groups (P29-G-C)
+    // Groups (P30-G: nested hierarchy)
     createGroup,
+    wrapInGroup,
     dissolveGroup,
     updateGroup,
     selectGroup,
+    moveGroup,
+    reparentGroup,
+    migrateGroupsIfNeeded,
   };
 }

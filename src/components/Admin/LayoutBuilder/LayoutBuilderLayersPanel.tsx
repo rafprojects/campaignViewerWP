@@ -342,6 +342,9 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           onToggleGroupCollapsed={(groupId, collapsed) =>
             builder.updateGroup(groupId, { collapsed })
           }
+          onReparentGroup={(groupId, newParentId) =>
+            builder.reparentGroup(groupId, newParentId)
+          }
         />
       </div>
     </div>

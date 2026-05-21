@@ -44,6 +44,7 @@ import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
 import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -209,6 +210,17 @@ export function LayoutBuilderModal({
       },
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened]);
+
+  // ── P30-G: migrate flat P29-G-C groups to hierarchical format on open ──
+  // The ref keeps a stable pointer to the latest `migrateGroupsIfNeeded` so
+  // the effect dep array stays minimal (only [opened]).
+  const migrateGroupsRef = useRef(builder.migrateGroupsIfNeeded);
+  migrateGroupsRef.current = builder.migrateGroupsIfNeeded;
+  useEffect(() => {
+    if (!opened) return;
+    migrateGroupsRef.current();
+     
   }, [opened]);
 
   // ── Close with dirty guard ──
@@ -468,6 +480,68 @@ export function LayoutBuilderModal({
     [apiClient, announce, onNotify],
   );
 
+  // ── Group actions (used by contextual toolbar) ──
+  const handleCreateGroup = useCallback(() => {
+    const ids = [...builder.selectedSlotIds];
+    if (ids.length < 2) return;
+    builder.createGroup(ids);
+    announce(`Group created (${ids.length} slots)`);
+    notifications.show({ message: `Group created (${ids.length} slots)`, color: 'blue', autoClose: 2500 });
+  }, [builder, announce]);
+
+  const handleUngroupSelected = useCallback(() => {
+    const groups = builder.template.groups ?? [];
+    const targetGroup = groups.find((g) =>
+      g.memberIds.some((id) => builder.selectedSlotIds.has(id)),
+    );
+    if (!targetGroup) return;
+    builder.dissolveGroup(targetGroup.id);
+    announce('Ungrouped');
+    notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
+  }, [builder, announce]);
+
+  const handleGroupLockToggle = useCallback(
+    (groupId: string, locked: boolean) => {
+      builder.updateGroup(groupId, { locked });
+      announce(locked ? 'Group locked' : 'Group unlocked');
+    },
+    [builder, announce],
+  );
+
+  const handleGroupVisibilityToggle = useCallback(
+    (groupId: string, visible: boolean) => {
+      builder.updateGroup(groupId, { visible });
+      announce(visible ? 'Group shown' : 'Group hidden');
+    },
+    [builder, announce],
+  );
+
+  const handleGroupRename = useCallback(
+    (groupId: string, name: string) => {
+      builder.updateGroup(groupId, { name });
+      announce(`Group renamed`);
+    },
+    [builder, announce],
+  );
+
+  const handleBringForwardSelected = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      builder.bringForward(ids);
+      announce('Brought forward');
+    },
+    [builder, announce],
+  );
+
+  const handleSendBackwardSelected = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      builder.sendBackward(ids);
+      announce('Sent backward');
+    },
+    [builder, announce],
+  );
+
   // ── Auto-assign media ──
   const handleAutoAssign = useCallback(() => {
     const mediaIds = media.map((m) => m.id);
@@ -512,20 +586,39 @@ export function LayoutBuilderModal({
         handleDuplicateSelected();
         e.preventDefault();
       }
-      // Group / select-in-group
+      // Group / wrap-in-group / select-in-group (P30-G)
       if ((e.metaKey || e.ctrlKey) && e.key === 'g' && !e.shiftKey) {
         const ids = [...builder.selectedSlotIds];
         const groups = builder.template.groups ?? [];
-        const touchedGroup = groups.find((g) =>
-          g.memberIds.some((id) => builder.selectedSlotIds.has(id))
-        );
-        if (touchedGroup) {
-          // Any selected slot belongs to a group — expand selection to all members.
-          builder.selectGroup(touchedGroup.id);
-          announce(`Group selected (${touchedGroup.memberIds.length} slots)`);
-        } else if (ids.length >= 2) {
-          builder.createGroup(ids);
-          announce(`Group created (${ids.length} slots)`);
+        const groupMap = buildGroupMap(groups);
+
+        // P30-G: detect if selection is exactly one complete group's descendants
+        const fullySelectedGroup = groups.find((g) => {
+          const descIds = collectDescendantSlotIds(g.id, groupMap);
+          return (
+            descIds.length > 0 &&
+            descIds.length === builder.selectedSlotIds.size &&
+            descIds.every((id) => builder.selectedSlotIds.has(id))
+          );
+        });
+
+        if (fullySelectedGroup) {
+          // Wrap the full group in a new parent group
+          const newId = builder.wrapInGroup([fullySelectedGroup.id]);
+          builder.selectGroup(newId);
+          announce('Group wrapped in parent group');
+        } else {
+          const touchedGroup = groups.find((g) =>
+            g.memberIds.some((id) => builder.selectedSlotIds.has(id))
+          );
+          if (touchedGroup) {
+            // Any selected slot belongs to a group — expand selection to all descendants.
+            builder.selectGroup(touchedGroup.id);
+            announce(`Group selected`);
+          } else if (ids.length >= 2) {
+            builder.createGroup(ids);
+            announce(`Group created (${ids.length} slots)`);
+          }
         }
         e.preventDefault();
       }
@@ -682,6 +775,9 @@ export function LayoutBuilderModal({
     handleSave, handleClose, handleAutoAssign, handleUploadOverlay,
     handleDeleteLibraryOverlay, handleUploadBgImage,
     handleDeleteSelected, handleDuplicateSelected, handleUploadMask,
+    handleCreateGroup, handleUngroupSelected,
+    handleGroupLockToggle, handleGroupVisibilityToggle, handleGroupRename,
+    handleBringForwardSelected, handleSendBackwardSelected,
   };
 
   return (

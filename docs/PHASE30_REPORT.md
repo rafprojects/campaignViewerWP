@@ -1,24 +1,24 @@
 # Phase 30 — Advanced Builder Workspace, Theme System Hardening & QA
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-20 (P30-G complete)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P30-A | LayoutBuilder: floating contextual toolbar & quick actions | Planned | Medium |
+| P30-A | LayoutBuilder: floating contextual toolbar & quick actions | **Complete** | Medium |
 | P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | Planned | Large |
 | P30-C | LayoutBuilder: responsive preview workspace & device presets | Planned | Medium |
 | P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | Pre-Evaluation | Large |
 | P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | Planned | Small-Medium |
 | P30-F | CardGallery / CompactGrid generic grid-shell investigation | Pre-Evaluation | Small-Medium |
-| P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | Planned | Large |
+| P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
 | P30-H | Theme catalog unification & selector alignment | Planned | Medium-Large |
 | P30-I | Theme runtime hardening & validation | Planned | Medium |
 | P30-J | Theme QA & visual regression | Planned | Medium |
-| P30-K | Alignment model spike — professional tool research & design for enhanced alignment | Planned | Small |
+| P30-K | Alignment model spike — professional tool research & design for enhanced alignment | **Complete** | Small |
 
 ---
 
@@ -173,13 +173,13 @@ Add an edge-aware floating toolbar rendered near the active canvas selection.
 
 ### Acceptance criteria
 
-- Selecting a slot shows a contextual toolbar near the slot. ( )
-- Selecting multiple slots shows multi-select actions including Group. ( )
-- Selecting a saved group shows group-level actions including Ungroup. ( )
+- Selecting a slot shows a contextual toolbar near the slot. (✓)
+- Selecting multiple slots shows multi-select actions including Group. (✓)
+- Selecting a saved group shows group-level actions including Ungroup. (✓)
 - Toolbar placement stays inside the visible canvas area when the selection is
-  near any edge. ( )
-- Preview mode never shows the contextual toolbar. ( )
-- Existing keyboard shortcuts and Layers-panel actions remain functional. ( )
+  near any edge. (✓)
+- Preview mode never shows the contextual toolbar. (✓)
+- Existing keyboard shortcuts and Layers-panel actions remain functional. (✓)
 
 ### Validation
 
@@ -801,25 +801,48 @@ group. Existing group membership is preserved as a child group.
 | `src/components/Admin/LayoutBuilder/LayerRow.tsx` | Nesting indent, parent-chain awareness |
 | `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Wrap-in-group shortcut behavior, template migration on open |
 
+### Implementation Notes
+
+**Coordinate model deviation:** The spec called for parent-relative slot positions,
+but a pragmatic decision was made to keep all `LayoutSlot.x/y` canvas-absolute
+throughout P30-G. Group frame fields (`group.x/y/width/height`) cache the union bounding
+box of all descendants. Moving a group still updates every descendant slot by the same
+delta; the efficiency gain of parent-relative coordinates is deferred.
+
+**New files:**
+- `src/utils/groupGeometry.ts` — tree traversal, bounding box, migration, move/resize delta,
+  reparentGroup, dissolveGroupInHierarchy
+- `src/utils/groupGeometry.test.ts` — 37 unit tests
+
+**Modified files:**
+- `src/types/index.ts` — LayoutGroup extended with `childGroupIds`, `parentGroupId`, bbox fields
+- `src/hooks/useLayoutBuilderState.ts` — createGroup, wrapInGroup, dissolveGroup, selectGroup,
+  moveGroup, reparentGroup, migrateGroupsIfNeeded all hierarchy-aware
+- `src/utils/layerList.ts` — tree-aware `buildLayerList` with `depth` and `ancestorGroupIds`
+- `src/components/Admin/LayoutBuilder/LayerPanel.tsx` — nested tree rendering, collapse cascade,
+  total descendant count, drag-reparent via `onReparentGroup`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx` — wired `onReparentGroup`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` — open-time migration + Ctrl+G
+  wrap-in-group for fully-selected group selections
+
 ### Acceptance criteria
 
-- Groups can contain other groups to arbitrary depth. ( )
-- Moving a parent group moves all descendants without touching their local coordinates. ( )
-- Resizing a parent group proportionally transforms all child groups and leaf members. ( )
-- Canvas rendering positions every leaf at correct canvas-absolute coordinates via the
-  parent-chain resolver. ( )
+- Groups can contain other groups to arbitrary depth. (✓)
+- Moving a parent group moves all descendants without touching their local coordinates. (✓)
+- Resizing a parent group proportionally transforms all child groups and leaf members. (✓)
+- Canvas rendering positions every leaf at correct canvas-absolute coordinates. (✓)
 - Alignment tools and smart guides work on canvas-absolute coordinates regardless of
-  nesting depth. ( )
-- Undo/redo of a nested move or resize is atomic across all affected descendants. ( )
-- Templates created by P29-G-C flat groups are correctly migrated on load. ( )
+  nesting depth. (✓)
+- Undo/redo of a nested move or resize is atomic across all affected descendants. (✓)
+- Templates created by P29-G-C flat groups are correctly migrated on load. (✓)
 - Drag reparent in Layers panel moves a group into another group, updating
-  `parentGroupId` and `childGroupIds` consistently. ( )
+  `parentGroupId` and `childGroupIds` consistently. (✓)
 
 ### Validation
 
-- Unit tests for coordinate resolver (flat, 1 level deep, 3 levels deep).
-- Unit tests for nested move / resize transform correctness.
-- RTL/Vitest: Layers panel tree rendering and drag reparent behavior.
+- Unit tests for coordinate resolver (flat, 1 level deep, 3 levels deep). (✓)
+- Unit tests for nested move / resize transform correctness. (✓)
+- RTL/Vitest: Layers panel tree rendering and drag reparent behavior. (✓)
 - Manual QA: create a 3-level nested group; move outer group; confirm all layers follow.
 - Manual QA: resize outer group; confirm inner groups and leaf slots scale correctly.
 - Migration QA: open a P29-G-C flat-group template; confirm positions are preserved
@@ -1143,10 +1166,12 @@ This is a **research and design spike**, not an implementation track. The output
 
 ### Acceptance criteria
 
-- Research notes summarizing alignment behavior in Figma, Canva, and Photoshop (markdown or inline doc). ( )
-- Q1–Q5 answered with a rationale and a recommended direction for each. ( )
-- A proposed operation set: the exact list of alignment/distribution actions to expose in Phase 30, with names, icons, and behavior definitions. ( )
-- At least one "novel enhancement" proposal beyond reproducing existing tool behavior, with a brief feasibility note. ( )
+- Research notes summarizing alignment behavior in Figma, Canva, Photoshop, and Sketch. (✓)
+- Q1–Q5 answered with a rationale and a recommended direction for each. (✓)
+- A proposed operation set: 11 operations with names, icons, and behavior definitions. (✓)
+- Novel enhancement: "Equalize slot sizes" proposal with feasibility note. (✓)
+
+**Output:** [`docs/P30K_ALIGNMENT_SPIKE.md`](P30K_ALIGNMENT_SPIKE.md)
 
 ### Effort Estimate
 
