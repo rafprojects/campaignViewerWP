@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-20 (P30-J complete)
+**Last updated:** 2026-05-21 (P30-F complete)
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P30-C | LayoutBuilder: responsive preview workspace & device presets | **Complete** | Medium |
 | P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | Pre-Evaluation | Large |
 | P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | **Complete** | Small-Medium |
-| P30-F | CardGallery / CompactGrid generic grid-shell investigation | Pre-Evaluation | Small-Medium |
+| P30-F | CardGallery / CompactGrid generic grid-shell investigation → campaign listing adapter unification (re-scoped; see `docs/PHASE35_REPORT.md`) | **Complete** | Small-Medium |
 | P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
 | P30-H | Theme catalog unification & selector alignment | **Complete** | Medium-Large |
 | P30-I | Theme runtime hardening & validation | **Complete** | Medium |
@@ -691,15 +691,40 @@ This is a pre-evaluation track, not a committed refactor.
 - If the answer is yes, which behavior changes should be considered acceptable
   versus too risky?
 
+### Outcome (2026-05-21)
+
+The investigation concluded that the original "generic grid-shell" framing was
+too narrow. The real product goal is **campaign listing adapter unification**: let
+`CardGallery` (the public campaign listing) consume the same modular adapter
+registry that powers per-campaign galleries, enabling user-selectable listing
+layouts (masonry, justified, compact-grid, classic-carousel).
+
+Two independent assessments (Qwen, GPT-5.4) confirmed this direction. A
+comprehensive implementation plan was produced and documented in
+`docs/PHASE35_REPORT.md`. Key decisions:
+
+- **Host/adapter split**: `CardGallery` host retains filters, search, access-mode,
+  pagination state, modal, and in-context editors; adapter owns layout math.
+- **`paginationOwnership`** field on `AdapterRegistration`; carousel = `'adapter'`,
+  all others = `'host'`.
+- **`'listing-compatible'` capability** added to `AdapterCapability`.
+- **Phase 1 adapters**: compact-grid (default, parity), masonry, justified, classic.
+- **Deferred** (tracked in P35-I): layout-builder for listings, shape adapters for
+  listings, Admin Panel listing convergence.
+- Admin Panel (`CampaignsTab`, `CampaignsMobileList`) confirmed **out of scope** —
+  separate product concern.
+
+Implementation is Phase 35; see `docs/PHASE35_REPORT.md` for all tracks and detail.
+
 ### Acceptance Criteria
 
 - The investigation ends with a clear implement / reject / defer recommendation.
-  ( )
+  (**✓** — implement via Phase 35 campaign listing adapter unification)
 - If the recommendation is "implement later," the doc includes a candidate API,
-  known behavior changes, and a migration order. ( )
+  known behavior changes, and a migration order. (**✓** — `PHASE35_REPORT.md`)
 - If the recommendation is "reject," the doc explicitly records why the shared
-  utilities boundary is the right terminal abstraction. ( )
-- The investigation does not block builder execution order in Phase 30. ( )
+  utilities boundary is the right terminal abstraction. (N/A — recommendation is implement)
+- The investigation does not block builder execution order in Phase 30. (**✓**)
 
 ### Validation
 
