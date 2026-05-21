@@ -688,6 +688,12 @@ export interface GalleryBehaviorSettings {
   tileGlowSpread: number;    // px: glow spread radius
   tileHoverBounce: boolean;  // scale-up bounce on hover
   masonryColumns: number;    // 0 = auto-responsive
+  // P31-E: Spotlight / Hero adapter
+  spotlightHeroAspectRatio: string;                                          // e.g. '16:9', '4:3', '1:1'
+  spotlightThumbnailSize: number;                                            // px: thumbnail strip item size
+  spotlightThumbnailSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
+  spotlightTransitionDuration: number;                                       // ms: hero swap / border transition
+  spotlightStripPosition: 'below' | 'right';                                 // strip layout direction
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -1385,6 +1391,12 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   tileGlowSpread: 12,
   tileHoverBounce: true,
   masonryColumns: 0,
+  // P31-E: Spotlight / Hero adapter
+  spotlightHeroAspectRatio: '16:9',
+  spotlightThumbnailSize: 80,
+  spotlightThumbnailSizeUnit: 'px',
+  spotlightTransitionDuration: 250,
+  spotlightStripPosition: 'below',
   // P21-B: Card visibility toggles
   showCardCompanyName: true,
   showCardMediaCounts: true,

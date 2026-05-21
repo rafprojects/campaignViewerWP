@@ -38,6 +38,7 @@ class WPSG_CPT {
         'circular',
         'diamond',
         'layout-builder',
+        'spotlight',      // P31-E: Spotlight / Hero adapter
     ];
 
     public static function register() {

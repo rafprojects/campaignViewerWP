@@ -1,18 +1,18 @@
 # Phase 31 — Gallery Reliability, Adapter Coverage, Config Hardening & Targeted Capability Expansion
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-21
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P31-A | Gallery reliability hardening: settings merge, lightbox scroll lock, breakpoint first-render contract | Planned | Small-Medium |
-| P31-B | Adapter resolution integration coverage | Planned | Medium |
+| P31-A | Gallery reliability hardening: settings merge, lightbox scroll lock, breakpoint first-render contract | **Done** | Small-Medium |
+| P31-B | Adapter resolution integration coverage | **Done** | Medium |
 | P31-C | Gallery config editor update-path optimization | Planned | Medium |
 | P31-D | Adapter settings single-source-of-truth pre-evaluation | Pre-Evaluation | Large |
-| P31-E | Spotlight / Hero adapter delivery | Planned | Small-Medium |
+| P31-E | Spotlight / Hero adapter delivery | In Progress | Small-Medium |
 | P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | Planned | Medium |
 | P31-G | Waterfall entrance animation as a Masonry enhancement | Planned | Small |
 | P31-H | Media payload foundations for future timeline/filter work | Pre-Evaluation | Medium |
@@ -164,12 +164,27 @@ without changing public gallery behavior:
 
 ### Acceptance criteria
 
-- `mergeSettingsWithDefaults` no longer requires `as any` for field assignment. ( )
+- `mergeSettingsWithDefaults` no longer requires `as any` for field assignment. (✓)
 - Two concurrent lightbox consumers keep body scroll locked until the final one
-  closes or unmounts. ( )
+  closes or unmounts. (✓)
 - Container-sourced `useBreakpoint` produces deterministic first-render behavior
-  with documented fallback behavior when no container is available yet. ( )
-- Existing gallery hydration and runtime behavior stays backward compatible. ( )
+  with documented fallback behavior when no container is available yet. (✓)
+- Existing gallery hydration and runtime behavior stays backward compatible. (✓)
+
+### Completion notes (2026-05-21)
+
+- `mergeSettingsWithDefaults.ts`: `as any` removed; typed private helper
+  `setSettingsField()` uses `Record<keyof GalleryBehaviorSettings, unknown>` cast;
+  `typographyOverrides` branch uses direct narrowed assignment.
+- `useLightbox.ts`: module-level `acquireScrollLock`/`releaseScrollLock` with
+  `lockCount` ref-count and `previousOverflow` snapshot; single canonical effect
+  drives lock/unlock; repeated `close()` calls are clamped.
+- `useBreakpoint.ts`: depless `useLayoutEffect` (with `eslint-disable` comment)
+  handles Cases 1 & 2 synchronously before paint; `observedElementRef` identity
+  guard prevents infinite update loops; separate cleanup `useEffect([])`.
+- Tests: +8 in `defaultsAndMerge.test.ts`, +4 in `useLightbox.test.ts`, +4 in
+  `useBreakpoint.test.tsx`. All pass.
+- Committed: `feat(p31-a): gallery reliability hardening — typed merge, scroll lock, breakpoint contract`
 
 ### Validation
 
@@ -232,11 +247,23 @@ can be controlled without a full Playwright setup.
 ### Acceptance criteria
 
 - A test exercises the real adapter-resolution path without mocking the core
-  resolver chain. ( )
+  resolver chain. (✓)
 - The test validates adapter changes across at least desktop/tablet/mobile width
-  states or equivalent container-width transitions. ( )
+  states or equivalent container-width transitions. (✓)
 - The Phase 24-style regression surface is explicitly represented by a stable
-  fixture or test scenario. ( )
+  fixture or test scenario. (✓)
+
+### Completion notes (2026-05-21)
+
+- Integration tests landed in `GallerySections.test.tsx` (+9 tests across 3 new
+  describe blocks): unified mode per breakpoint, per-type image scope per
+  breakpoint, Phase 24 regression surface (campaign override precedence, settings
+  re-resolution via `rerender`).
+- Additional alignment tests in `resolveAdapterId.test.ts` (+2 tests): campaign
+  override isolation — desktop override does not bleed to tablet/mobile.
+- All core resolver utilities are real (not mocked); only `resolveAdapter`
+  (lazy-component factory) is replaced with a lightweight test double.
+- Committed: `test(p31-b): adapter resolution integration coverage`
 
 ### Validation
 

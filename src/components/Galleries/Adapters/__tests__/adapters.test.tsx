@@ -153,6 +153,7 @@ const { DiamondGallery } = await import('@/components/Galleries/Adapters/diamond
 const { HexagonalGallery } = await import('@/components/Galleries/Adapters/hexagonal/HexagonalGallery');
 const { JustifiedGallery } = await import('@/components/Galleries/Adapters/justified/JustifiedGallery');
 const { MasonryGallery } = await import('@/components/Galleries/Adapters/masonry/MasonryGallery');
+const { SpotlightGallery } = await import('@/components/Galleries/Adapters/spotlight/SpotlightGallery');
 
 // ─── Component map for parameterised tests ────────────────────────────────────
 
@@ -184,6 +185,7 @@ const ADAPTERS: [string, AdapterComponent][] = [
   ['HexagonalGallery', HexagonalGallery],
   ['JustifiedGallery', JustifiedGallery],
   ['MasonryGallery', MasonryGallery],
+  ['SpotlightGallery', SpotlightGallery],
 ];
 
 // ─── Shared test suite ────────────────────────────────────────────────────────
@@ -428,5 +430,81 @@ describe('CompactGridGallery — specific', () => {
     const buttons = Array.from(container.querySelectorAll('button')).map((button) => (button as HTMLButtonElement).style.borderRadius);
     expect(buttons).toContain('14px');
     expect(buttons).toContain('18px');
+  });
+});
+
+// ─── P31-E: SpotlightGallery-specific tests ───────────────────────────────────
+
+describe('SpotlightGallery — specific', () => {
+  it('renders a hero area and a thumbnail strip', () => {
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    // Hero: Box with role="button"
+    expect(container.querySelector('[role="button"]')).not.toBeNull();
+    // Thumbnail strip: one <button> per item
+    const thumbBtns = container.querySelectorAll('button');
+    expect(thumbBtns.length).toBe(THREE_IMAGES.length);
+  });
+
+  it('clicking a thumbnail updates the active selection indicator', () => {
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    const thumbBtns = Array.from(container.querySelectorAll('button'));
+
+    // Initially the first thumbnail is active (currentIndex=0 from mocked useCarousel)
+    expect(thumbBtns[0].getAttribute('aria-current')).toBe('true');
+    expect(thumbBtns[1].getAttribute('aria-current')).toBeNull();
+  });
+
+  it('clicking the hero opens the lightbox', () => {
+    const { container } = render(<SpotlightGallery media={THREE_IMAGES} settings={SETTINGS} />);
+    expect(screen.queryByTestId('lightbox-open')).not.toBeInTheDocument();
+
+    // The hero is a Box with role="button" (not a <button> element).
+    // This query targets it specifically — thumbnails are native <button> elements.
+    const hero = container.querySelector('[role="button"]') as HTMLElement;
+    expect(hero).not.toBeNull();
+    fireEvent.click(hero);
+
+    expect(screen.getByTestId('lightbox-open')).toBeInTheDocument();
+  });
+
+  it('respects spotlightHeroAspectRatio setting', () => {
+    const squareSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      spotlightHeroAspectRatio: '1:1',
+    };
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={squareSettings} />,
+    );
+    const hero = container.querySelector('[role="button"]') as HTMLElement | null;
+    expect(hero?.style.aspectRatio).toBe('1 / 1');
+  });
+
+  it('respects spotlightThumbnailSize setting', () => {
+    const bigThumbSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      spotlightThumbnailSize: 120,
+    };
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={bigThumbSettings} />,
+    );
+    const thumbBtns = Array.from(container.querySelectorAll('button'));
+    // All thumbnails should have width=120px
+    thumbBtns.forEach((btn) => {
+      expect((btn as HTMLButtonElement).style.width).toBe('120px');
+    });
+  });
+
+  it('renders gracefully with empty media — hero shows empty state', () => {
+    const { container } = render(
+      <SpotlightGallery media={[]} settings={SETTINGS} />,
+    );
+    // Hero still renders (empty state), no thumbnail buttons
+    expect(container.querySelector('[role="button"]')).not.toBeNull();
+    const thumbBtns = container.querySelectorAll('button');
+    expect(thumbBtns.length).toBe(0);
   });
 });
