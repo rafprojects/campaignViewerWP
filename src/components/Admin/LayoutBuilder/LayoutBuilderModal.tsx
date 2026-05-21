@@ -555,25 +555,11 @@ export function LayoutBuilderModal({
     notifications.show({ message: `Group created (${ids.length} slots)`, color: 'blue', autoClose: 2500 });
   }, [builder, announce]);
 
-  const handleUngroupSelected = useCallback(() => {
-    const groups = builder.template.groups ?? [];
-    const selectedIds = builder.selectedSlotIds;
-    if (selectedIds.size === 0 || groups.length === 0) return;
-    const groupMap = buildGroupMap(groups);
-    // P30-G fix: find the group whose FULL descendant set matches the selection.
-    // Exact-descendant match is checked first; fall back to any-member overlap so
-    // partial selections (edge case) still ungroup the closest matching group.
-    const targetGroup =
-      groups.find((g) => {
-        const descIds = collectDescendantSlotIds(g.id, groupMap);
-        return (
-          descIds.length > 0 &&
-          descIds.length === selectedIds.size &&
-          descIds.every((id) => selectedIds.has(id))
-        );
-      }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
-    if (!targetGroup) return;
-    builder.dissolveGroup(targetGroup.id);
+  // The toolbar always resolves the target group before calling this and passes
+  // the explicit groupId — no need to re-derive from selection here.
+  // Keyboard Ctrl+Shift+G has its own inline dissolve logic.
+  const handleUngroupSelected = useCallback((groupId: string) => {
+    builder.dissolveGroup(groupId);
     announce('Ungrouped');
     notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
   }, [builder, announce]);

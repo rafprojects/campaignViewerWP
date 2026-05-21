@@ -197,8 +197,10 @@ test.describe('theme behavioral tests', () => {
 
 // ── Phase 1 visual snapshot tests ────────────────────────────────────────────
 //
-// NOTE: Run `npx playwright test theme-qa --update-snapshots` to capture
-// baselines before running these in assertion mode.
+// Uses Playwright's built-in `toHaveScreenshot()` which:
+//   • auto-creates baselines on first run (no manual --update-snapshots needed)
+//   • diffs against baseline on subsequent runs and fails on regression
+//   • stores snapshots alongside the spec in a `theme-qa.spec.ts-snapshots/` dir
 //
 // Snapshot settings: Chromium only, 1280×900, animations disabled.
 // Pixel mismatch threshold: 0.1 (10% per-pixel tolerance for anti-aliasing).
@@ -226,7 +228,7 @@ test.describe('phase-1 visual snapshots', () => {
       await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
       // Disable animations for a stable snapshot
       await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
-      await page.screenshot({ path: `e2e/__snapshots__/gallery-shell-${themeId}.png` });
+      await expect(page).toHaveScreenshot(`gallery-shell-${themeId}.png`, { maxDiffPixelRatio: 0.1 });
     });
 
     test(`display settings dialog — ${themeId}`, async ({ page }) => {
@@ -236,7 +238,7 @@ test.describe('phase-1 visual snapshots', () => {
       await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
       await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
       await openDisplaySettings(page);
-      await page.screenshot({ path: `e2e/__snapshots__/display-settings-${themeId}.png` });
+      await expect(page).toHaveScreenshot(`display-settings-${themeId}.png`, { maxDiffPixelRatio: 0.1 });
     });
   }
 
@@ -248,7 +250,7 @@ test.describe('phase-1 visual snapshots', () => {
     await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
     const dialog = await openDisplaySettings(page);
     await dialog.getByRole('combobox', { name: 'Theme' }).click();
-    await page.screenshot({ path: 'e2e/__snapshots__/theme-selector-open-default-dark.png' });
+    await expect(page).toHaveScreenshot('theme-selector-open-default-dark.png', { maxDiffPixelRatio: 0.1 });
   });
 
   test('theme selector dropdown — default-light', async ({ page }) => {
@@ -259,6 +261,6 @@ test.describe('phase-1 visual snapshots', () => {
     await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
     const dialog = await openDisplaySettings(page);
     await dialog.getByRole('combobox', { name: 'Theme' }).click();
-    await page.screenshot({ path: 'e2e/__snapshots__/theme-selector-open-default-light.png' });
+    await expect(page).toHaveScreenshot('theme-selector-open-default-light.png', { maxDiffPixelRatio: 0.1 });
   });
 });

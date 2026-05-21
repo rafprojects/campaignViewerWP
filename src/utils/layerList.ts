@@ -212,13 +212,20 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
     const descendantSlotIds = collectDescendantSlotIds(groupId, groupMap).filter(
       (sid) => slotMap.has(sid),
     );
+    // Use the highest slot array-index among all descendants as the tie-breaker,
+    // so group rows sort consistently with ungrouped slots (both reference
+    // template.slots position — backward-compatible with the pre-P30-G order).
+    const repAi = descendantSlotIds.reduce(
+      (max, sid) => Math.max(max, slotIndexMap.get(sid) ?? 0),
+      0,
+    );
 
     result.push({
       kind: 'group',
       id: groupId,
       group,
       zIndex: repZ,
-      arrayIndex: groups.indexOf(group),
+      arrayIndex: repAi,
       name: group.name ?? '',
       visible: group.visible !== false,
       locked: group.locked ?? false,
@@ -299,9 +306,13 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
     | { kind: 'graphic'; overlay: LayoutGraphicLayer; ai: number; z: number };
 
   const topItems: TopItem[] = [
-    ...topLevelGroups.map((g, i) => ({
-      kind: 'group' as const, id: g.id, z: groupRepZ(g.id), ai: i,
-    })),
+    ...topLevelGroups.map((g) => {
+      // Tie-breaker = max slot array-index among all descendants (same semantic
+      // as ungrouped slots) so zIndex ties resolve consistently across types.
+      const descIds = collectDescendantSlotIds(g.id, groupMap);
+      const maxAi = descIds.reduce((m, sid) => Math.max(m, slotIndexMap.get(sid) ?? 0), 0);
+      return { kind: 'group' as const, id: g.id, z: groupRepZ(g.id), ai: maxAi };
+    }),
     ...ungroupedSlots.map((s) => {
       const ai = slotIndexMap.get(s.id) ?? 0;
       return { kind: 'slot' as const, slot: s, ai, z: s.zIndex };

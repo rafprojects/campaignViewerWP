@@ -110,8 +110,10 @@ export function getAncestorChain(
 
 /**
  * Computes the canvas-absolute union bounding box of all DIRECT member slots
- * and child groups within `groupId`, one level deep only. Used internally to
- * seed `computeGroupRect`.
+ * and child groups within `groupId`. For each child group, `computeGroupRect`
+ * is called recursively, so the full descendant subtree contributes to the
+ * bounding box — not just one level deep. Used internally to seed
+ * `computeGroupRect`.
  *
  * Returns null if the group has no resolvable members.
  */

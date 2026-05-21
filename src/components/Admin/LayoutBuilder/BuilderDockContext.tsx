@@ -83,8 +83,8 @@ export interface BuilderDockContextValue {
   handleUploadMask: (file: File) => Promise<string | null>;
   /** Create a group from the currently selected slots. */
   handleCreateGroup: () => void;
-  /** Dissolve the group that contains the currently selected slots. */
-  handleUngroupSelected: () => void;
+  /** Dissolve the group identified by `groupId` (passed explicitly from the toolbar). */
+  handleUngroupSelected: (groupId: string) => void;
   /** Toggle lock on a specific group. */
   handleGroupLockToggle: (groupId: string, locked: boolean) => void;
   /** Toggle visibility on a specific group. */
