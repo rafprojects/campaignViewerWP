@@ -219,4 +219,30 @@ export interface ThemeMeta {
   id: string;
   name: string;
   colorScheme: 'light' | 'dark';
+  /** Display group shown in the selector (e.g. "Default", "Material"). */
+  group: string;
+  /** Short tagline shown beneath the theme name in the selector. */
+  description: string;
+  /** Whether this is a seasonal / holiday theme. */
+  seasonal: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Theme catalog entry — schema for theme-catalog.json
+// ---------------------------------------------------------------------------
+
+/**
+ * One entry in theme-catalog.json. The catalog is the single source of
+ * truth for group, description, displayOrder, and seasonal flag.
+ * It is consumed by the TypeScript registry (via static import) and by
+ * the WordPress PHP settings field (via file_get_contents).
+ */
+export interface ThemeCatalogEntry {
+  id: string;
+  name: string;
+  colorScheme: 'light' | 'dark';
+  group: string;
+  description: string;
+  displayOrder: number;
+  seasonal: boolean;
 }

@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-20 (P30-C complete)
+**Last updated:** 2026-05-20 (P30-H complete)
 
 ### Tracks
 
@@ -15,7 +15,7 @@
 | P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | **Complete** | Small-Medium |
 | P30-F | CardGallery / CompactGrid generic grid-shell investigation | Pre-Evaluation | Small-Medium |
 | P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
-| P30-H | Theme catalog unification & selector alignment | Planned | Medium-Large |
+| P30-H | Theme catalog unification & selector alignment | **Complete** | Medium-Large |
 | P30-I | Theme runtime hardening & validation | Planned | Medium |
 | P30-J | Theme QA & visual regression | Planned | Medium |
 | P30-K | Alignment model spike — professional tool research & design for enhanced alignment | **Complete** | Small |
@@ -937,12 +937,11 @@ Create one packaged theme catalog and align both TypeScript and WordPress to it.
 
 ### Acceptance criteria
 
-- One packaged theme catalog exists and defines all bundled themes. ( )
-- React and WordPress selectors render the same 23-theme grouping/order. ( )
-- Seasonal themes remain visible under a dedicated Seasonal group. ( )
-- Theme descriptions/taglines come from metadata rather than only dark/light
-  scheme. ( )
-- The current WordPress subset drift is removed. ( )
+- One packaged theme catalog exists and defines all bundled themes. (✓ — `theme-catalog.json` in plugin tree, 23 entries)
+- React and WordPress selectors render the same 23-theme grouping/order. (✓ — PHP reads JSON; React imports it statically)
+- Seasonal themes remain visible under a dedicated Seasonal group. (✓ — `halloween`, `reverse-halloween` in Seasonal group)
+- Theme descriptions/taglines come from metadata rather than only dark/light scheme. (✓ — `ThemeMeta.description` from catalog)
+- The current WordPress subset drift is removed. (✓ — all 23 themes now in PHP grouped selector via catalog)
 
 ### Validation
 

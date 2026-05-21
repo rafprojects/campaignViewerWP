@@ -16,11 +16,20 @@
  */
 
 import type { MantineThemeOverride } from '@mantine/core';
-import type { ThemeDefinition, ThemeExtension, ThemeMeta } from './types';
+import type { ThemeDefinition, ThemeExtension, ThemeMeta, ThemeCatalogEntry } from './types';
 import { adaptTheme } from './adapter';
 import { isValidTheme } from './validation';
 import { generateCssVariables } from './cssVariables';
 import { resolveColors } from './colorGen';
+import catalogData from '../../wp-plugin/wp-super-gallery/theme-catalog.json';
+
+// ---------------------------------------------------------------------------
+// Catalog lookup — keyed by theme ID
+// ---------------------------------------------------------------------------
+
+const catalog = new Map<string, ThemeCatalogEntry>(
+  (catalogData as ThemeCatalogEntry[]).map((entry) => [entry.id, entry]),
+);
 
 // ---------------------------------------------------------------------------
 // JSON imports (Vite handles JSON imports natively)
@@ -146,11 +155,15 @@ function registerTheme(extension: ThemeExtension): boolean {
   const rc = resolveColors(def.colors, def.colorScheme);
   const cssVars = generateCssVariables(rc, def);
 
-  // 5. Build metadata
+  // 5. Build metadata — enrich with catalog data when available
+  const catalogEntry = catalog.get(def.id);
   const meta: ThemeMeta = {
     id: def.id,
     name: def.name,
     colorScheme: def.colorScheme,
+    group: catalogEntry?.group ?? 'Other',
+    description: catalogEntry?.description ?? (def.colorScheme === 'dark' ? 'Dark theme' : 'Light theme'),
+    seasonal: catalogEntry?.seasonal ?? false,
   };
 
   // 6. Store
@@ -257,9 +270,33 @@ export function getMantineTheme(id: string): MantineThemeOverride {
 
 /**
  * Get metadata for all registered themes. Used by the theme selector UI.
+ * Ordered by catalog displayOrder when available, then alphabetically.
  */
 export function getAllThemeMeta(): ThemeMeta[] {
-  return Array.from(registry.values()).map((entry) => entry.meta);
+  const metas = Array.from(registry.values()).map((entry) => entry.meta);
+  return metas.sort((a, b) => {
+    const ao = catalog.get(a.id)?.displayOrder ?? 999;
+    const bo = catalog.get(b.id)?.displayOrder ?? 999;
+    return ao !== bo ? ao - bo : a.name.localeCompare(b.name);
+  });
+}
+
+/**
+ * Get metadata for all registered themes, grouped for selector UI.
+ * Returns an array of groups in catalog order, each containing ordered themes.
+ */
+export function getAllThemeMetaGrouped(): Array<{ group: string; themes: ThemeMeta[] }> {
+  const grouped = new Map<string, ThemeMeta[]>();
+  for (const meta of getAllThemeMeta()) {
+    const group = meta.group;
+    const existing = grouped.get(group);
+    if (existing) {
+      existing.push(meta);
+    } else {
+      grouped.set(group, [meta]);
+    }
+  }
+  return Array.from(grouped.entries()).map(([group, themes]) => ({ group, themes }));
 }
 
 /**

@@ -29,27 +29,34 @@ vi.mock('@mantine/core', async () => {
       description?: ReactNode;
       value?: string | null;
       onChange?: (nextValue: string | null) => void;
-      data: Array<{ value: string; label: string }>;
+      // Accept both flat items and grouped items (P30-H: ThemeSelector passes grouped data)
+      data: Array<{ value: string; label: string } | { group: string; items: Array<{ value: string; label: string }> }>;
       comboboxProps?: { withinPortal?: boolean };
-    }) => (
-      (selectPropsSpy({ comboboxProps }),
-      <label>
-        {label ? <span>{label}</span> : null}
-        {description ? <span>{description}</span> : null}
-        <select
-          aria-label={typeof label === 'string' ? label : 'Theme'}
-          data-within-portal={String(comboboxProps?.withinPortal)}
-          value={value ?? ''}
-          onChange={(event) => onChange?.(event.currentTarget.value || null)}
-        >
-          {data.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </label>)
-    ),
+    }) => {
+      // Flatten grouped data to extract individual option items
+      const flatItems = data.flatMap((item) =>
+        'items' in item ? item.items : [item],
+      );
+      return (
+        selectPropsSpy({ comboboxProps }),
+        <label>
+          {label ? <span>{label}</span> : null}
+          {description ? <span>{description}</span> : null}
+          <select
+            aria-label={typeof label === 'string' ? label : 'Theme'}
+            data-within-portal={String(comboboxProps?.withinPortal)}
+            value={value ?? ''}
+            onChange={(event) => onChange?.(event.currentTarget.value || null)}
+          >
+            {flatItems.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      );
+    },
   };
 });
 

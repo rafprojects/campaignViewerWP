@@ -97,9 +97,37 @@ class WPSG_Settings_Core_Fields {
      *
      * @return void
      */
-    public static function render_theme_field() {
-        $value = WPSG_Settings::get_setting('theme');
-        $theme_groups = [
+    /**
+     * Load theme groups from the shared theme-catalog.json.
+     *
+     * Returns an associative array keyed by translated group label, each
+     * containing an associative array of theme-id => translated display name.
+     * Falls back to a hard-coded list if the catalog file is unreadable.
+     *
+     * @return array<string, array<string, string>>
+     */
+    private static function get_theme_groups(): array {
+        $catalog_path = plugin_dir_path(__FILE__) . '../../theme-catalog.json';
+        if (file_exists($catalog_path)) {
+            $json = file_get_contents($catalog_path); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+            if ($json !== false) {
+                $entries = json_decode($json, true);
+                if (is_array($entries)) {
+                    $groups = [];
+                    foreach ($entries as $entry) {
+                        if (!isset($entry['id'], $entry['name'], $entry['group'])) {
+                            continue;
+                        }
+                        $group_label = __($entry['group'], 'wp-super-gallery'); // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+                        $groups[$group_label][$entry['id']] = __($entry['name'], 'wp-super-gallery'); // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+                    }
+                    return $groups;
+                }
+            }
+        }
+
+        // Fallback: hard-coded full list matching the catalog (all 23 themes).
+        return [
             __('Default', 'wp-super-gallery') => [
                 'default-dark'  => __('Default Dark', 'wp-super-gallery'),
                 'default-light' => __('Default Light', 'wp-super-gallery'),
@@ -117,7 +145,7 @@ class WPSG_Settings_Core_Fields {
                 'solarized-light' => __('Solarized Light', 'wp-super-gallery'),
             ],
             __('Accessibility', 'wp-super-gallery') => [
-                'high-contrast' => __('High Contrast (WCAG AAA)', 'wp-super-gallery'),
+                'high-contrast' => __('High Contrast', 'wp-super-gallery'),
             ],
             __('Community', 'wp-super-gallery') => [
                 'catppuccin-mocha' => __('Catppuccin Mocha', 'wp-super-gallery'),
@@ -128,9 +156,25 @@ class WPSG_Settings_Core_Fields {
             ],
             __('Neon', 'wp-super-gallery') => [
                 'cyberpunk' => __('Cyberpunk', 'wp-super-gallery'),
-                'synthwave' => __('Synthwave \'84', 'wp-super-gallery'),
+                'synthwave' => __("Synthwave '84", 'wp-super-gallery'),
+            ],
+            __('Artistic', 'wp-super-gallery') => [
+                'sunset-boulevard' => __('Sunset Boulevard', 'wp-super-gallery'),
+                'ocean-breeze'     => __('Ocean Breeze', 'wp-super-gallery'),
+                'crimson-canvas'   => __('Crimson Canvas', 'wp-super-gallery'),
+                'forest-whisper'   => __('Forest Whisper', 'wp-super-gallery'),
+                'midnight-rose'    => __('Midnight Rose', 'wp-super-gallery'),
+            ],
+            __('Seasonal', 'wp-super-gallery') => [
+                'halloween'         => __('Halloween', 'wp-super-gallery'),
+                'reverse-halloween' => __('Reverse Halloween', 'wp-super-gallery'),
             ],
         ];
+    }
+
+    public static function render_theme_field() {
+        $value        = WPSG_Settings::get_setting('theme');
+        $theme_groups = self::get_theme_groups();
         ?>
         <select name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[theme]" id="wpsg_theme">
             <?php foreach ($theme_groups as $group_label => $options) : ?>

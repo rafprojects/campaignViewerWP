@@ -1,0 +1,209 @@
+[
+  {
+    "id": "default-dark",
+    "name": "Default Dark",
+    "colorScheme": "dark",
+    "group": "Default",
+    "description": "Clean dark baseline — the gallery's native look",
+    "displayOrder": 1,
+    "seasonal": false
+  },
+  {
+    "id": "default-light",
+    "name": "Default Light",
+    "colorScheme": "light",
+    "group": "Default",
+    "description": "Clean light baseline — minimal and neutral",
+    "displayOrder": 2,
+    "seasonal": false
+  },
+  {
+    "id": "material-dark",
+    "name": "Material Dark",
+    "colorScheme": "dark",
+    "group": "Material",
+    "description": "Google's Material Design language, dark variant",
+    "displayOrder": 3,
+    "seasonal": false
+  },
+  {
+    "id": "material-light",
+    "name": "Material Light",
+    "colorScheme": "light",
+    "group": "Material",
+    "description": "Google's Material Design language, light variant",
+    "displayOrder": 4,
+    "seasonal": false
+  },
+  {
+    "id": "darcula",
+    "name": "Darcula",
+    "colorScheme": "dark",
+    "group": "Classic",
+    "description": "JetBrains' iconic dark editor palette",
+    "displayOrder": 5,
+    "seasonal": false
+  },
+  {
+    "id": "nord",
+    "name": "Nord",
+    "colorScheme": "dark",
+    "group": "Classic",
+    "description": "Arctic colour palette — cool blues and muted tones",
+    "displayOrder": 6,
+    "seasonal": false
+  },
+  {
+    "id": "solarized-dark",
+    "name": "Solarized Dark",
+    "colorScheme": "dark",
+    "group": "Solarized",
+    "description": "Ethan Schoonover's precision palette, dark",
+    "displayOrder": 7,
+    "seasonal": false
+  },
+  {
+    "id": "solarized-light",
+    "name": "Solarized Light",
+    "colorScheme": "light",
+    "group": "Solarized",
+    "description": "Ethan Schoonover's precision palette, light",
+    "displayOrder": 8,
+    "seasonal": false
+  },
+  {
+    "id": "high-contrast",
+    "name": "High Contrast",
+    "colorScheme": "dark",
+    "group": "Accessibility",
+    "description": "WCAG AAA accessible — maximum legibility",
+    "displayOrder": 9,
+    "seasonal": false
+  },
+  {
+    "id": "catppuccin-mocha",
+    "name": "Catppuccin Mocha",
+    "colorScheme": "dark",
+    "group": "Community",
+    "description": "Soothing dark pastels — Catppuccin Mocha flavour",
+    "displayOrder": 10,
+    "seasonal": false
+  },
+  {
+    "id": "catppuccin-latte",
+    "name": "Catppuccin Latte",
+    "colorScheme": "light",
+    "group": "Community",
+    "description": "Warm cream tones — Catppuccin Latte flavour",
+    "displayOrder": 11,
+    "seasonal": false
+  },
+  {
+    "id": "tokyo-night",
+    "name": "Tokyo Night",
+    "colorScheme": "dark",
+    "group": "Community",
+    "description": "Inspired by the neon glow of Tokyo after dark",
+    "displayOrder": 12,
+    "seasonal": false
+  },
+  {
+    "id": "gruvbox-dark",
+    "name": "Gruvbox Dark",
+    "colorScheme": "dark",
+    "group": "Community",
+    "description": "Retro warm earthy tones from Gruvbox",
+    "displayOrder": 13,
+    "seasonal": false
+  },
+  {
+    "id": "github-light",
+    "name": "GitHub Light",
+    "colorScheme": "light",
+    "group": "Community",
+    "description": "GitHub's clean light code-review aesthetic",
+    "displayOrder": 14,
+    "seasonal": false
+  },
+  {
+    "id": "cyberpunk",
+    "name": "Cyberpunk",
+    "colorScheme": "dark",
+    "group": "Neon",
+    "description": "High-contrast neon for a dystopian digital future",
+    "displayOrder": 15,
+    "seasonal": false
+  },
+  {
+    "id": "synthwave",
+    "name": "Synthwave '84",
+    "colorScheme": "dark",
+    "group": "Neon",
+    "description": "Retro 80s sunset and grid — pure neon vibes",
+    "displayOrder": 16,
+    "seasonal": false
+  },
+  {
+    "id": "sunset-boulevard",
+    "name": "Sunset Boulevard",
+    "colorScheme": "light",
+    "group": "Artistic",
+    "description": "Warm golden hour gradients and muted drama",
+    "displayOrder": 17,
+    "seasonal": false
+  },
+  {
+    "id": "ocean-breeze",
+    "name": "Ocean Breeze",
+    "colorScheme": "light",
+    "group": "Artistic",
+    "description": "Cool coastal blues with crisp contrast",
+    "displayOrder": 18,
+    "seasonal": false
+  },
+  {
+    "id": "crimson-canvas",
+    "name": "Crimson Canvas",
+    "colorScheme": "dark",
+    "group": "Artistic",
+    "description": "Deep reds and artistic warmth",
+    "displayOrder": 19,
+    "seasonal": false
+  },
+  {
+    "id": "forest-whisper",
+    "name": "Forest Whisper",
+    "colorScheme": "dark",
+    "group": "Artistic",
+    "description": "Natural earthy greens — calm and grounded",
+    "displayOrder": 20,
+    "seasonal": false
+  },
+  {
+    "id": "midnight-rose",
+    "name": "Midnight Rose",
+    "colorScheme": "dark",
+    "group": "Artistic",
+    "description": "Dark indigo with a rose accent — night bloom",
+    "displayOrder": 21,
+    "seasonal": false
+  },
+  {
+    "id": "halloween",
+    "name": "Halloween",
+    "colorScheme": "dark",
+    "group": "Seasonal",
+    "description": "Pumpkin orange and midnight black — autumn spook",
+    "displayOrder": 22,
+    "seasonal": true
+  },
+  {
+    "id": "reverse-halloween",
+    "name": "Reverse Halloween",
+    "colorScheme": "light",
+    "group": "Seasonal",
+    "description": "Light pumpkin on dark — the morning after Halloween",
+    "displayOrder": 23,
+    "seasonal": true
+  }
+]
