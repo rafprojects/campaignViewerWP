@@ -119,6 +119,9 @@ export const GalleryAdapterSettingsSchema = z.object({
   // P31-G: Masonry entrance animation
   masonryEntranceAnimation: optionalString,
   masonryEntranceStagger: optionalFiniteNumber,
+  // P31-F: Vertical Scroll Snap adapter
+  scrollSnapAlignment: optionalString,
+  scrollSnapPageIndicator: optionalBoolean,
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: optionalString,
   spotlightThumbnailSize: optionalFiniteNumber,

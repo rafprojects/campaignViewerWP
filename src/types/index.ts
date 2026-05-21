@@ -691,6 +691,9 @@ export interface GalleryBehaviorSettings {
   // P31-G: Masonry entrance animation (Waterfall)
   masonryEntranceAnimation: string;   // 'none' | 'waterfall'
   masonryEntranceStagger: number;     // ms delay between successive tile animations
+  // P31-F: Vertical Scroll Snap adapter
+  scrollSnapAlignment: string;        // 'start' | 'center' | 'end'
+  scrollSnapPageIndicator: boolean;   // show slide counter (n / total)
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: string;                                          // e.g. '16:9', '4:3', '1:1'
   spotlightThumbnailSize: number;                                            // px: thumbnail strip item size
@@ -1397,6 +1400,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P31-G: Masonry entrance animation
   masonryEntranceAnimation: 'none',
   masonryEntranceStagger: 60,
+  // P31-F: Vertical Scroll Snap adapter
+  scrollSnapAlignment: 'start',
+  scrollSnapPageIndicator: true,
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: '16:9',
   spotlightThumbnailSize: 80,

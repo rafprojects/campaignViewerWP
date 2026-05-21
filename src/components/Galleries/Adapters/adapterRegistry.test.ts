@@ -174,4 +174,23 @@ describe('adapterRegistry', () => {
     const spotlight = mobileOptions.find((o) => o.value === 'spotlight');
     expect(spotlight?.disabled).toBeFalsy();
   });
+
+  // P31-F: Scroll Snap adapter registry coverage
+  it('registers the scroll-snap adapter with correct option labels', () => {
+    const options = getAdapterSelectOptions({ context: 'unified-gallery' });
+    const snap = options.find((o) => o.value === 'scroll-snap');
+    expect(snap).toBeDefined();
+    expect(snap?.label).toBe('Scroll Snap (vertical)');
+  });
+
+  it('exposes schema-driven field definitions for the scroll-snap setting group', () => {
+    const fieldKeys = getSettingGroupFieldDefinitions('scroll-snap').map((f) => f.key);
+    expect(fieldKeys).toEqual(['scrollSnapAlignment', 'scrollSnapPageIndicator']);
+  });
+
+  it('scroll-snap adapter is not disabled at mobile breakpoint', () => {
+    const mobileOptions = getAdapterSelectOptions({ context: 'per-breakpoint-gallery', breakpoint: 'mobile' });
+    const snap = mobileOptions.find((o) => o.value === 'scroll-snap');
+    expect(snap?.disabled).toBeFalsy();
+  });
 });

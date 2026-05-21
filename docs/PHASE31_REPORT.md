@@ -13,8 +13,8 @@
 | P31-C | Gallery config editor update-path optimization | Planned | Medium |
 | P31-D | Adapter settings single-source-of-truth pre-evaluation | Pre-Evaluation | Large |
 | P31-E | Spotlight / Hero adapter delivery | **Done** | Small-Medium |
-| P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | Planned | Medium |
-| P31-G | Waterfall entrance animation as a Masonry enhancement | In Progress | Small |
+| P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | In Progress | Medium |
+| P31-G | Waterfall entrance animation as a Masonry enhancement | **Done** | Small |
 | P31-H | Media payload foundations for future timeline/filter work | Pre-Evaluation | Medium |
 
 ---
@@ -642,13 +642,29 @@ registered adapter family.
 ### Acceptance criteria
 
 - Masonry can opt into a Waterfall-style entrance animation without introducing
-  a new adapter id. ( )
+  a new adapter id. (✓)
 - The animation applies only to the intended entry path and does not replay on
-  ordinary layout recalculation. ( )
-- Reduced-motion users are not forced through the effect. ( )
-- Masonry behavior is unchanged when the animation option is disabled. ( )
+  ordinary layout recalculation. (✓)
+- Reduced-motion users are not forced through the effect. (✓)
+- Masonry behavior is unchanged when the animation option is disabled. (✓)
 - New Masonry animation settings round-trip correctly through TypeScript and PHP
-  validation/sanitization. ( )
+  validation/sanitization. (✓)
+
+### Completion notes (2026-05-21)
+
+- `MasonryGallery.tsx`: when `masonryEntranceAnimation === 'waterfall'`, each tile
+  button receives class `wpsg-waterfall-tile` and inline `animationDelay` proportional
+  to its index × stagger. CSS keyframe `wpsg-waterfall-enter` (opacity + translateY)
+  is injected in the existing `<style>` block only when enabled. A
+  `@media (prefers-reduced-motion: reduce)` rule overrides `animation: none !important`
+  on the class, removing motion for users who opt out.
+- Settings: `masonryEntranceAnimation` (select: 'none'/'waterfall') and
+  `masonryEntranceStagger` (number, 0–300 ms) — wired through types, Zod, registry
+  field definitions (appended to `masonry` group), and PHP sanitizer key map.
+- Tests: +3 Masonry-specific tests in `adapters.test.tsx` covering disabled state,
+  class presence, and per-tile delay values. Registry field list updated in
+  `adapterRegistry.test.ts`. 1765 tests total, all passing.
+- Committed: `feat(p31-g): waterfall entrance animation as masonry enhancement`
 
 ### Validation
 

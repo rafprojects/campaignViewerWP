@@ -39,6 +39,7 @@ class WPSG_CPT {
         'diamond',
         'layout-builder',
         'spotlight',      // P31-E: Spotlight / Hero adapter
+        'scroll-snap',    // P31-F: Vertical Scroll Snap adapter
     ];
 
     public static function register() {

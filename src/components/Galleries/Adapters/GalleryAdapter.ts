@@ -25,7 +25,8 @@ export type GalleryAdapterId =
   | 'circular'
   | 'diamond'
   | 'layout-builder'
-  | 'spotlight';
+  | 'spotlight'
+  | 'scroll-snap';
 
 /** Declared capabilities a gallery adapter can support. */
 export type AdapterCapability =
@@ -48,7 +49,8 @@ export type AdapterSettingGroup =
   | 'masonry'
   | 'shape'
   | 'layout-builder'
-  | 'spotlight';
+  | 'spotlight'
+  | 'scroll-snap';
 
 export type AdapterSettingFieldScope = 'unified' | 'image' | 'video';
 

@@ -154,6 +154,7 @@ const { HexagonalGallery } = await import('@/components/Galleries/Adapters/hexag
 const { JustifiedGallery } = await import('@/components/Galleries/Adapters/justified/JustifiedGallery');
 const { MasonryGallery } = await import('@/components/Galleries/Adapters/masonry/MasonryGallery');
 const { SpotlightGallery } = await import('@/components/Galleries/Adapters/spotlight/SpotlightGallery');
+const { ScrollSnapGallery } = await import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery');
 
 // ─── Component map for parameterised tests ────────────────────────────────────
 
@@ -186,6 +187,7 @@ const ADAPTERS: [string, AdapterComponent][] = [
   ['JustifiedGallery', JustifiedGallery],
   ['MasonryGallery', MasonryGallery],
   ['SpotlightGallery', SpotlightGallery],
+  ['ScrollSnapGallery', ScrollSnapGallery],
 ];
 
 // ─── Shared test suite ────────────────────────────────────────────────────────
@@ -538,5 +540,75 @@ describe('SpotlightGallery — specific', () => {
     expect(container.querySelector('[role="button"]')).not.toBeNull();
     const thumbBtns = container.querySelectorAll('button');
     expect(thumbBtns.length).toBe(0);
+  });
+});
+
+// ─── P31-F: ScrollSnapGallery-specific tests ──────────────────────────────────
+
+describe('ScrollSnapGallery — specific', () => {
+  it('renders one snap slide per media item', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    const slides = container.querySelectorAll('[role="button"]');
+    expect(slides.length).toBe(THREE_IMAGES.length);
+  });
+
+  it('applies scroll-snap-type to the snap container', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    const snapContainer = container.querySelector('[data-wpsg-slot="snap-container"]') as HTMLElement | null;
+    expect(snapContainer?.style.scrollSnapType).toBe('y mandatory');
+  });
+
+  it('applies scroll-snap-align from scrollSnapAlignment setting', () => {
+    const centerSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      scrollSnapAlignment: 'center',
+    };
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={centerSettings} />,
+    );
+    const slides = Array.from(container.querySelectorAll('[role="button"]')) as HTMLElement[];
+    slides.forEach((slide) => {
+      expect(slide.style.scrollSnapAlign).toBe('center');
+    });
+  });
+
+  it('shows page indicator when scrollSnapPageIndicator is true', () => {
+    render(<ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />);
+    // Each slide shows "n / 3" — check that at least the first indicator is present
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+  });
+
+  it('hides page indicator when scrollSnapPageIndicator is false', () => {
+    const noIndicatorSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      scrollSnapPageIndicator: false,
+    };
+    render(<ScrollSnapGallery media={THREE_IMAGES} settings={noIndicatorSettings} />);
+    expect(screen.queryByText('1 / 3')).not.toBeInTheDocument();
+  });
+
+  it('clicking a slide opens the lightbox', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    expect(screen.queryByTestId('lightbox-open')).not.toBeInTheDocument();
+
+    const [firstSlide] = Array.from(container.querySelectorAll('[role="button"]'));
+    fireEvent.click(firstSlide as HTMLElement);
+
+    expect(screen.getByTestId('lightbox-open')).toBeInTheDocument();
+  });
+
+  it('renders gracefully with empty media — shows empty placeholder', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={[]} settings={SETTINGS} />,
+    );
+    expect(container.firstChild).not.toBeNull();
+    // No slide role="button" elements
+    expect(container.querySelectorAll('[role="button"]').length).toBe(0);
   });
 });

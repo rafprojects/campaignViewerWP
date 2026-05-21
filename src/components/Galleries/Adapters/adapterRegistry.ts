@@ -46,6 +46,9 @@ const DiamondGallery = lazy(() =>
 const SpotlightGallery = lazy(() =>
   import('@/components/Galleries/Adapters/spotlight/SpotlightGallery').then((m) => ({ default: m.SpotlightGallery })),
 );
+const ScrollSnapGallery = lazy(() =>
+  import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery').then((m) => ({ default: m.ScrollSnapGallery })),
+);
 function LayoutBuilderRegistryFallback(props: GalleryAdapterProps) {
   return createElement(MediaCarouselAdapter, props);
 }
@@ -115,6 +118,18 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     capabilities: ['grid-layout', 'lightbox'],
     settingGroups: ['shape', 'tile-appearance'],
     component: DiamondGallery as ComponentType<GalleryAdapterProps>,
+  },
+  {
+    id: 'scroll-snap',
+    label: 'Scroll Snap',
+    optionLabels: {
+      'unified-gallery': 'Scroll Snap (vertical)',
+      'per-type-gallery': 'Scroll Snap (vertical)',
+      'campaign-override': 'Scroll Snap',
+    },
+    capabilities: ['lightbox', 'keyboard-nav'],
+    settingGroups: ['media-frame', 'scroll-snap'],
+    component: ScrollSnapGallery as ComponentType<GalleryAdapterProps>,
   },
   {
     id: 'spotlight',
@@ -808,6 +823,31 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
           { value: 'below', label: 'Below' },
           { value: 'right', label: 'Right (wide containers)' },
         ],
+      },
+    ],
+  },
+  'scroll-snap': {
+    group: 'scroll-snap',
+    layout: 'stack',
+    fields: [
+      {
+        control: 'select',
+        key: 'scrollSnapAlignment',
+        label: 'Snap Alignment',
+        description: 'CSS scroll-snap-align value applied to each slide. Controls where each slide snaps relative to the scroll container.',
+        fallback: 'start',
+        options: [
+          { value: 'start', label: 'Start' },
+          { value: 'center', label: 'Center' },
+          { value: 'end', label: 'End' },
+        ],
+      },
+      {
+        control: 'boolean',
+        key: 'scrollSnapPageIndicator',
+        label: 'Page Indicator',
+        description: 'Show a slide counter (n / total) in the lower-right corner of each slide.',
+        fallback: true,
       },
     ],
   },
