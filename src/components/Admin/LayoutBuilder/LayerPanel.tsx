@@ -128,14 +128,17 @@ export function LayerPanel({
     e.preventDefault();
     const draggedId = dragIdRef.current;
     if (draggedId && draggedId !== targetId) {
-      // P30-G: group → group drop = reparent; otherwise z-index reorder
+      // P30-G: group → group drop = reparent; slot → slot = z-index reorder.
+      // Cross-type drops (group→slot or slot→group) are a no-op: computeReorderedZIndices
+      // ignores group IDs, so falling through would record a phantom history entry.
       const draggedIsGroup = layers.some((l) => l.kind === 'group' && l.id === draggedId);
       const targetIsGroup = layers.some((l) => l.kind === 'group' && l.id === targetId);
       if (draggedIsGroup && targetIsGroup && onReparentGroup) {
         onReparentGroup(draggedId, targetId);
-      } else {
+      } else if (!draggedIsGroup && !targetIsGroup) {
         onReorderLayers(draggedId, targetId);
       }
+      // else: cross-type drop — no-op
     }
     dragIdRef.current = null;
   }

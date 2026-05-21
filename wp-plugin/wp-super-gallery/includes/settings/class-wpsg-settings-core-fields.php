@@ -118,8 +118,11 @@ class WPSG_Settings_Core_Fields {
                         if (!isset($entry['id'], $entry['name'], $entry['group'])) {
                             continue;
                         }
-                        $group_label = __($entry['group'], 'wp-super-gallery'); // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
-                        $groups[$group_label][$entry['id']] = __($entry['name'], 'wp-super-gallery'); // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+                        // The catalog is the display source of truth for group and theme names.
+                        // Dynamic strings can't be extracted by WP i18n tools, so we use the
+                        // catalog values directly. The hard-coded fallback below covers the
+                        // extractable/translatable path for the shipped theme set.
+                        $groups[$entry['group']][$entry['id']] = $entry['name'];
                     }
                     return $groups;
                 }

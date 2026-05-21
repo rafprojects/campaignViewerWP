@@ -1004,8 +1004,16 @@ export function useLayoutBuilderState(
         childGroupIds: [],
         parentGroupId: null,
       };
-      // Remove empty groups; push new group
+      // Remove empty groups; prune any dangling childGroupIds that reference
+      // a group that was just removed (P30-G: parent groups must not hold
+      // stale child references or traversal/selection will break).
       draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+      const survivingIds = new Set(draft.groups.map((g) => g.id));
+      for (const g of draft.groups) {
+        if (g.childGroupIds?.length) {
+          g.childGroupIds = g.childGroupIds.filter((cid) => survivingIds.has(cid));
+        }
+      }
       draft.groups.push(newGroup);
       // Refresh all group rects: covers the new group AND any existing groups
       // that had members removed above (their cached union rects are now stale).
@@ -1053,8 +1061,15 @@ export function useLayoutBuilderState(
         }
       }
 
-      // Remove empty groups
+      // Remove empty groups; prune dangling childGroupIds references (same
+      // invariant as createGroup — parent groups must not reference removed IDs).
       draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
+      const survivingIds = new Set(draft.groups.map((g) => g.id));
+      for (const g of draft.groups) {
+        if (g.childGroupIds?.length) {
+          g.childGroupIds = g.childGroupIds.filter((cid) => survivingIds.has(cid));
+        }
+      }
       draft.groups.push(newGroup);
       refreshGroupRects(draft.groups, draft.slots);
     }, `Wrap in group`);
