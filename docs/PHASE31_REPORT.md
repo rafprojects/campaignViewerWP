@@ -12,9 +12,9 @@
 | P31-B | Adapter resolution integration coverage | **Done** | Medium |
 | P31-C | Gallery config editor update-path optimization | Planned | Medium |
 | P31-D | Adapter settings single-source-of-truth pre-evaluation | Pre-Evaluation | Large |
-| P31-E | Spotlight / Hero adapter delivery | In Progress | Small-Medium |
+| P31-E | Spotlight / Hero adapter delivery | **Done** | Small-Medium |
 | P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | Planned | Medium |
-| P31-G | Waterfall entrance animation as a Masonry enhancement | Planned | Small |
+| P31-G | Waterfall entrance animation as a Masonry enhancement | In Progress | Small |
 | P31-H | Media payload foundations for future timeline/filter work | Pre-Evaluation | Medium |
 
 ---
@@ -463,15 +463,30 @@ inline hero and the lightbox entry point.
 ### Acceptance criteria
 
 - The Spotlight / Hero adapter appears in the real adapter selector and resolves
-  through the normal adapter registry path. ( )
+  through the normal adapter registry path. (✓)
 - Selecting a thumbnail updates the active hero item and opens the same index in
-  the lightbox when clicked. ( )
+  the lightbox when clicked. (✓)
 - The adapter behaves correctly in unified and per-type gallery sections across
-  common widths without breaking the current viewer shell. ( )
+  common widths without breaking the current viewer shell. (✓)
 - Image and video media both render gracefully in the hero position without
-  introducing a second inline playback contract. ( )
+  introducing a second inline playback contract. (✓)
 - New Spotlight settings round-trip correctly through TypeScript and PHP
-  validation/sanitization. ( )
+  validation/sanitization. (✓)
+
+### Completion notes (2026-05-21)
+
+- `SpotlightGallery.tsx`: hero Box (role="button") + thumbnail strip (`<button>` per
+  item); `useCarousel` drives active index; `useLightbox` handles scroll lock and
+  keyboard nav; strip position toggles to 'below' when container < 480 px.
+- Settings: `spotlightHeroAspectRatio`, `spotlightThumbnailSize`,
+  `spotlightThumbnailSizeUnit`, `spotlightTransitionDuration`,
+  `spotlightStripPosition` — wired through `GalleryAdapter.ts` union,
+  `adapterRegistry.ts` field definitions, `types/index.ts`, `settingsSchemas.ts`,
+  PHP sanitizer key map, and `VALID_ADAPTERS` in both sanitizer and CPT class.
+- Tests: +5 parameterized smoke tests (SpotlightGallery in shared suite),
+  +5 specific tests in `adapters.test.tsx`, +4 registry tests in
+  `adapterRegistry.test.ts`. 1762 tests total, all passing.
+- Committed: `feat(p31-e): spotlight/hero adapter — hero+strip layout, full settings path, test coverage`
 
 ### Validation
 

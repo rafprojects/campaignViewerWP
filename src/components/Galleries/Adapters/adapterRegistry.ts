@@ -735,6 +735,28 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         fallback: '480:2,768:3,1024:4,1280:5',
         placeholder: '480:2,768:3,1024:4,1280:5',
       },
+      // P31-G: Waterfall entrance animation
+      {
+        control: 'select',
+        key: 'masonryEntranceAnimation',
+        label: 'Entrance Animation',
+        description: "Optional first-render animation for Masonry tiles. 'Waterfall' staggers each tile into view from below. Respects prefers-reduced-motion.",
+        fallback: 'none',
+        options: [
+          { value: 'none', label: 'None' },
+          { value: 'waterfall', label: 'Waterfall (stagger in)' },
+        ],
+      },
+      {
+        control: 'number',
+        key: 'masonryEntranceStagger',
+        label: 'Entrance Stagger (ms)',
+        description: 'Delay in milliseconds between successive tile animations in Waterfall mode.',
+        min: 0,
+        max: 300,
+        step: 10,
+        fallback: 60,
+      },
     ],
   },
   spotlight: {

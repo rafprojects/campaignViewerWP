@@ -110,6 +110,9 @@ class WPSG_Settings_Sanitizer {
         'photoNormalizeHeightUnit' => 'photo_normalize_height_unit',
         'masonryColumns' => 'masonry_columns',
         'masonryAutoColumnBreakpoints' => 'masonry_auto_column_breakpoints',
+        // P31-G: Masonry entrance animation
+        'masonryEntranceAnimation' => 'masonry_entrance_animation',
+        'masonryEntranceStagger' => 'masonry_entrance_stagger',
         // P31-E: Spotlight / Hero adapter
         'spotlightHeroAspectRatio' => 'spotlight_hero_aspect_ratio',
         'spotlightThumbnailSize' => 'spotlight_thumbnail_size',

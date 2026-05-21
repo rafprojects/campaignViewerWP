@@ -95,6 +95,8 @@ describe('adapterRegistry', () => {
     expect(getSettingGroupFieldDefinitions('masonry').map((field) => field.key)).toEqual([
       'masonryColumns',
       'masonryAutoColumnBreakpoints',
+      'masonryEntranceAnimation',
+      'masonryEntranceStagger',
     ]);
     expect(getSettingGroupFieldDefinitions('shape').map((field) => field.key)).toEqual([
       'tileSize',

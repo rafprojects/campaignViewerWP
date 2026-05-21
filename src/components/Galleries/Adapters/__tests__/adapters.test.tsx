@@ -380,6 +380,38 @@ describe('MasonryGallery — specific', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
+  // P31-G: Waterfall entrance animation tests
+  it('does not add waterfall class when animation is disabled (default)', () => {
+    const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={SETTINGS} />);
+    const waterfall = container.querySelectorAll('.wpsg-waterfall-tile');
+    expect(waterfall.length).toBe(0);
+  });
+
+  it('adds wpsg-waterfall-tile class to every tile when waterfall animation is enabled', () => {
+    const animSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      masonryEntranceAnimation: 'waterfall',
+    };
+    const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={animSettings} />);
+    const waterfall = container.querySelectorAll('.wpsg-waterfall-tile');
+    // One tile per photo
+    expect(waterfall.length).toBe(THREE_IMAGES.length);
+  });
+
+  it('applies staggered animation-delay per tile in waterfall mode', () => {
+    const animSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      masonryEntranceAnimation: 'waterfall',
+      masonryEntranceStagger: 80,
+    };
+    const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={animSettings} />);
+    const tiles = Array.from(container.querySelectorAll('.wpsg-waterfall-tile')) as HTMLElement[];
+    // Index 0 → 0ms, index 1 → 80ms, index 2 → 160ms
+    expect(tiles[0].style.animationDelay).toBe('0ms');
+    expect(tiles[1].style.animationDelay).toBe('80ms');
+    expect(tiles[2].style.animationDelay).toBe('160ms');
+  });
+
   it('uses media-type-specific border radii for mixed media tiles', () => {
     const mixedRadiusSettings: GalleryBehaviorSettings = {
       ...SETTINGS,

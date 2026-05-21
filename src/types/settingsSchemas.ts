@@ -116,6 +116,9 @@ export const GalleryAdapterSettingsSchema = z.object({
   photoNormalizeHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
   masonryColumns: optionalFiniteNumber,
   masonryAutoColumnBreakpoints: optionalString,
+  // P31-G: Masonry entrance animation
+  masonryEntranceAnimation: optionalString,
+  masonryEntranceStagger: optionalFiniteNumber,
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: optionalString,
   spotlightThumbnailSize: optionalFiniteNumber,
