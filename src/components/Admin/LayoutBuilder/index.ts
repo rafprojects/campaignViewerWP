@@ -2,6 +2,8 @@ export { LayoutBuilderModal } from './LayoutBuilderModal';
 export type { LayoutBuilderModalProps } from './LayoutBuilderModal';
 export { ContextualToolbar } from './ContextualToolbar';
 export type { ContextualToolbarCallbacks, ContextualToolbarProps, SelectionRect } from './ContextualToolbar';
+export { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
+export type { BuilderHistoryDropdownProps, HistoryEntry } from './BuilderHistoryDropdown';
 export { LayoutCanvas } from './LayoutCanvas';
 export { LayoutSlotComponent } from './LayoutSlotComponent';
 export { SlotPropertiesPanel } from './SlotPropertiesPanel';

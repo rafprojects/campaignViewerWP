@@ -41,6 +41,7 @@ import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
+import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
 import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -728,7 +729,10 @@ export function LayoutBuilderModal({
   const handleDockReady = useCallback((event: DockviewReadyEvent) => {
     dockApiRef.current = event.api;
     const LAYOUT_KEY = 'wpsg_builder_layout';
-    const LAYOUT_VERSION = 1;
+    // P30-E: bumped from 1 → 2. Version 1 layouts include a History dock tab
+    // that is now surfaced in the header; they are cleared so users get the
+    // clean default layout without the redundant History tab.
+    const LAYOUT_VERSION = 2;
     const persistLayout = () => {
       try {
         localStorage.setItem(LAYOUT_KEY, JSON.stringify({ version: LAYOUT_VERSION, layout: event.api.toJSON() }));
@@ -737,15 +741,21 @@ export function LayoutBuilderModal({
     const saved = localStorage.getItem(LAYOUT_KEY);
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        // Accept both versioned { version, layout } and legacy bare-JSON saves.
-        const layout =
-          parsed && typeof parsed === 'object' && 'layout' in parsed
-            ? (parsed as { layout: unknown }).layout
-            : parsed;
-        event.api.fromJSON(layout as Parameters<typeof event.api.fromJSON>[0]);
-        event.api.onDidLayoutChange(persistLayout);
-        return;
+        const parsed = JSON.parse(saved) as { version?: number; layout?: unknown } | null;
+        const savedVersion = parsed && typeof parsed === 'object' ? (parsed.version ?? 0) : 0;
+        if (savedVersion < LAYOUT_VERSION) {
+          // Old layout (pre-P30-E) — clear and fall through to the new default.
+          try { localStorage.removeItem(LAYOUT_KEY); } catch { /* ignore */ }
+        } else {
+          // Accept both versioned { version, layout } and legacy bare-JSON saves.
+          const layout =
+            parsed && typeof parsed === 'object' && 'layout' in parsed
+              ? parsed.layout
+              : parsed;
+          event.api.fromJSON(layout as Parameters<typeof event.api.fromJSON>[0]);
+          event.api.onDidLayoutChange(persistLayout);
+          return;
+        }
       } catch {
         // Saved layout is invalid or incompatible — clear it so every
         // subsequent open doesn't repeat the same try/catch failure.
@@ -753,10 +763,10 @@ export function LayoutBuilderModal({
         // fall through to default layout
       }
     }
-    // Default layout: Layers+Media+History tabs left | Canvas centre | Properties right
+    // Default layout (P30-E): Layers+Media tabs left | Canvas centre | Properties right
+    // History is now in the header dropdown — no History dock tab in the default.
     const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
     event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
-    event.api.addPanel({ id: 'history', component: 'history', title: 'History', position: { direction: 'within', referencePanel: layersPanel } });
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);
@@ -861,6 +871,13 @@ export function LayoutBuilderModal({
                   <IconArrowForwardUp size={18} />
                 </ActionIcon>
               </Tooltip>
+              {/* P30-E: history dropdown replaces the dock tab */}
+              <BuilderHistoryDropdown
+                historyEntries={builder.historyEntries}
+                historyCurrentIndex={builder.historyCurrentIndex}
+                isHistoryTrimmed={builder.isHistoryTrimmed}
+                onJump={builder.jumpToHistoryIndex}
+              />
             </Group>
 
             {/* Right: import/export + preview + save + close */}

@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-05-19
-**Last updated:** 2026-05-20 (P30-G complete)
+**Last updated:** 2026-05-20 (P30-E complete)
 
 ### Tracks
 
@@ -12,7 +12,7 @@
 | P30-B | LayoutBuilder: grid overlay, snap-to-grid, rulers & measurement overlays | Planned | Large |
 | P30-C | LayoutBuilder: responsive preview workspace & device presets | Planned | Medium |
 | P30-D | LayoutBuilder: dedicated route/workspace & shareable URLs | Pre-Evaluation | Large |
-| P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | Planned | Small-Medium |
+| P30-E | LayoutBuilder: history surface collapse & workspace chrome cleanup | **Complete** | Small-Medium |
 | P30-F | CardGallery / CompactGrid generic grid-shell investigation | Pre-Evaluation | Small-Medium |
 | P30-G | LayoutBuilder: nested group hierarchy & transform inheritance | **Complete** | Large |
 | P30-H | Theme catalog unification & selector alignment | Planned | Medium-Large |
@@ -597,25 +597,39 @@ have settled.
 
 ### Acceptance criteria
 
-- History is accessible without a dedicated dock tab. ( )
-- Users can still jump directly to earlier history entries. ( )
-- Undo/redo buttons and shortcuts continue to work unchanged. ( )
-- Dock layout persistence is not broken by removing the old History tab. ( )
+- History is accessible without a dedicated dock tab. (✓)
+- Users can still jump directly to earlier history entries. (✓)
+- Undo/redo buttons and shortcuts continue to work unchanged. (✓)
+- Dock layout persistence is not broken by removing the old History tab. (✓)
 
 ### Validation
 
-- RTL/Vitest: history dropdown rendering and jump actions.
+- RTL/Vitest: history dropdown rendering and jump actions. (✓ — 12 tests in BuilderHistoryDropdown.test.tsx)
 - Manual QA: verify persisted dock layouts recover cleanly when the old History
   tab no longer exists.
 - Manual QA: verify long history labels remain usable in the lighter surface.
 
-### Files Affected (proposed)
+### Implementation Notes
+
+- `BuilderHistoryDropdown` — new header-bar popover; takes history props directly
+  (outside the BuilderDockContext provider), uses `keepMounted` so floating-ui
+  layout failure in jsdom does not affect test coverage.
+- `BuilderHistoryPanel` — retained in `dockComponents` for backward compatibility
+  with persisted layouts; simply absent from the new default layout.
+- `LAYOUT_VERSION` bumped 1 → 2. Pre-P30-E saved layouts (version < 2) are cleared
+  on next open so the dock starts with the new default (no History tab).
+- The 'history' dock component registration stays in `dockComponents` so any user
+  who previously added the panel via drag-and-drop and saved that layout does not
+  get an error on first open after the update; they just won't get it in new defaults.
+
+### Files Affected
 
 | File | Change |
 |------|--------|
-| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Header history surface |
-| `src/components/Admin/LayoutBuilder/BuilderHistoryPanel.tsx` | Replace or retire dock-only panel |
-| `src/components/Admin/LayoutBuilder/index.ts` | Export cleanup if History panel is removed |
+| `src/components/Admin/LayoutBuilder/BuilderHistoryDropdown.tsx` | New header history popover component |
+| `src/components/Admin/LayoutBuilder/BuilderHistoryDropdown.test.tsx` | 12 RTL tests |
+| `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` | Add dropdown to header; bump LAYOUT_VERSION; remove History from default dock |
+| `src/components/Admin/LayoutBuilder/index.ts` | Export BuilderHistoryDropdown |
 
 ### Effort Estimate
 
