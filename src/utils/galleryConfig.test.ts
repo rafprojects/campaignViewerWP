@@ -7,6 +7,8 @@ import {
   parseGalleryConfig,
   resolveGalleryConfig,
   setGalleryAdapterSetting,
+  setRepresentativeGalleryCommonSetting,
+  setScopeGalleryCommonSetting,
 } from './galleryConfig';
 
 describe('galleryConfig helpers', () => {
@@ -177,5 +179,175 @@ describe('galleryConfig helpers', () => {
     expect(synced?.breakpoints?.desktop?.unified?.adapterId).toBe('compact-grid');
     expect(synced?.breakpoints?.desktop?.image?.adapterSettings?.carouselVisibleCards).toBe(4);
     expect(synced?.breakpoints?.desktop?.video?.adapterSettings?.carouselVisibleCards).toBe(4);
+  });
+
+  // P31-C: Structural sharing — identity-sensitive regression tests
+  it('setGalleryAdapterSetting preserves reference identity for unchanged breakpoints and scopes', () => {
+    const config = {
+      mode: 'per-type' as const,
+      breakpoints: {
+        desktop: {
+          image: { adapterId: 'classic' as const, adapterSettings: { carouselVisibleCards: 2 } },
+          video: { adapterId: 'masonry' as const },
+        },
+        tablet: {
+          image: { adapterId: 'classic' as const, adapterSettings: { carouselVisibleCards: 3 } },
+          video: { adapterId: 'masonry' as const },
+        },
+      },
+    };
+
+    const result = setGalleryAdapterSetting(config, 'carouselVisibleCards', 5);
+
+    // Masonry scopes do not use carouselVisibleCards — their references must be preserved.
+    expect(result.breakpoints?.desktop?.video).toBe(config.breakpoints.desktop.video);
+    expect(result.breakpoints?.tablet?.video).toBe(config.breakpoints.tablet.video);
+
+    // Changed scopes must produce new objects with the updated value.
+    expect(result.breakpoints?.desktop?.image).not.toBe(config.breakpoints.desktop.image);
+    expect(result.breakpoints?.desktop?.image?.adapterSettings?.carouselVisibleCards).toBe(5);
+    expect(result.breakpoints?.tablet?.image?.adapterSettings?.carouselVisibleCards).toBe(5);
+  });
+
+  it('setGalleryAdapterSetting returns the same config reference when the value is already equal', () => {
+    const config = {
+      mode: 'per-type' as const,
+      breakpoints: {
+        desktop: {
+          image: { adapterId: 'classic' as const, adapterSettings: { carouselVisibleCards: 4 } },
+          video: { adapterId: 'classic' as const, adapterSettings: { carouselVisibleCards: 4 } },
+        },
+      },
+    };
+
+    const result = setGalleryAdapterSetting(config, 'carouselVisibleCards', 4);
+
+    expect(result).toBe(config);
+  });
+
+  it('setRepresentativeGalleryCommonSetting writes the common key into every breakpoint and scope', () => {
+    const config = {
+      mode: 'unified' as const,
+      breakpoints: {
+        desktop: {
+          unified: { adapterId: 'classic' as const },
+          image: { adapterId: 'classic' as const },
+        },
+      },
+    };
+
+    const result = setRepresentativeGalleryCommonSetting(config, 'sectionPadding', 16);
+
+    expect(result.breakpoints?.desktop?.unified?.common?.sectionPadding).toBe(16);
+    expect(result.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(16);
+    expect(result.breakpoints?.tablet?.unified?.common?.sectionPadding).toBe(16);
+    expect(result.breakpoints?.mobile?.image?.common?.sectionPadding).toBe(16);
+  });
+
+  it('setRepresentativeGalleryCommonSetting preserves unchanged breakpoint references', () => {
+    const mobileScopeRef = { adapterId: 'classic' as const, common: { sectionPadding: 8 } };
+    const config = {
+      mode: 'per-type' as const,
+      breakpoints: {
+        desktop: {
+          image: { adapterId: 'classic' as const },
+        },
+        mobile: {
+          image: mobileScopeRef,
+        },
+      },
+    };
+
+    // Writing the value that mobile/image already has — its scope object must stay the same.
+    const result = setRepresentativeGalleryCommonSetting(config, 'sectionPadding', 8);
+
+    expect(result.breakpoints?.mobile?.image).toBe(mobileScopeRef);
+  });
+
+  it('setRepresentativeGalleryCommonSetting returns same config reference when every value is already equal', () => {
+    // All 9 combinations (3 breakpoints × 3 scopes) must carry the value for the
+    // no-op identity check to fire on every scope — including the unified scope.
+    const makeScope = (adapterId: 'classic' | 'compact-grid') =>
+      ({ adapterId, common: { sectionPadding: 24 } }) as const;
+    const config = {
+      mode: 'per-type' as const,
+      breakpoints: {
+        desktop: {
+          unified: makeScope('compact-grid'),
+          image: makeScope('classic'),
+          video: makeScope('classic'),
+        },
+        tablet: {
+          unified: makeScope('compact-grid'),
+          image: makeScope('classic'),
+          video: makeScope('classic'),
+        },
+        mobile: {
+          unified: makeScope('compact-grid'),
+          image: makeScope('classic'),
+          video: makeScope('classic'),
+        },
+      },
+    };
+
+    const result = setRepresentativeGalleryCommonSetting(config, 'sectionPadding', 24);
+
+    expect(result).toBe(config);
+  });
+
+  it('setScopeGalleryCommonSetting writes the common key only into the target scope across all breakpoints', () => {
+    const config = {
+      mode: 'per-type' as const,
+      breakpoints: {
+        desktop: {
+          image: { adapterId: 'classic' as const },
+          video: { adapterId: 'classic' as const },
+        },
+      },
+    };
+
+    const result = setScopeGalleryCommonSetting(config, 'image', 'sectionPadding', 20);
+
+    expect(result.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(20);
+    expect(result.breakpoints?.tablet?.image?.common?.sectionPadding).toBe(20);
+    expect(result.breakpoints?.mobile?.image?.common?.sectionPadding).toBe(20);
+    // Video scope must be untouched.
+    expect(result.breakpoints?.desktop?.video?.common?.sectionPadding).toBeUndefined();
+  });
+
+  it('setScopeGalleryCommonSetting preserves unchanged breakpoint scope references', () => {
+    const tabletImageRef = { adapterId: 'classic' as const, common: { sectionPadding: 32 } };
+    const config = {
+      mode: 'per-type' as const,
+      breakpoints: {
+        desktop: {
+          image: { adapterId: 'classic' as const, common: { sectionPadding: 16 } },
+        },
+        tablet: {
+          image: tabletImageRef,
+        },
+      },
+    };
+
+    // Writing 32 to image — desktop changes, tablet/image already has 32 so it stays the same ref.
+    const result = setScopeGalleryCommonSetting(config, 'image', 'sectionPadding', 32);
+
+    expect(result.breakpoints?.desktop?.image?.common?.sectionPadding).toBe(32);
+    expect(result.breakpoints?.tablet?.image).toBe(tabletImageRef);
+  });
+
+  it('setScopeGalleryCommonSetting returns same config reference when every value is already equal', () => {
+    const config = {
+      mode: 'per-type' as const,
+      breakpoints: {
+        desktop: { image: { adapterId: 'classic' as const, common: { sectionPadding: 10 } } },
+        tablet: { image: { adapterId: 'classic' as const, common: { sectionPadding: 10 } } },
+        mobile: { image: { adapterId: 'classic' as const, common: { sectionPadding: 10 } } },
+      },
+    };
+
+    const result = setScopeGalleryCommonSetting(config, 'image', 'sectionPadding', 10);
+
+    expect(result).toBe(config);
   });
 });

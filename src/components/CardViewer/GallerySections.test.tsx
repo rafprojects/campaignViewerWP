@@ -344,3 +344,214 @@ describe('PerTypeGallerySection', () => {
     expect(screen.queryByTestId('layout-builder-gallery')).not.toBeInTheDocument();
   });
 });
+
+// ── Adapter Resolution Integration Coverage (P31-B) ──────────────────────────
+//
+// These tests exercise the full adapter-resolution chain without mocking any
+// of the core resolver helpers:
+//
+//   settings → resolveGalleryConfig → resolveAdapterId → resolveAdapter → render
+//
+// The mock in this file replaces only `resolveAdapter` (the lazy-component
+// factory) so the rendered output is lightweight. All resolution logic —
+// `isAdapterSupportedAtBreakpoint`, `normalizeAdapterId`, `resolveAdapterId`,
+// `resolveUnifiedAdapterId`, `resolveGallerySectionRuntime`,
+// `applyResolvedGalleryAdapterSettings`, and the render-plan builders — runs
+// from the real implementation.
+//
+// `breakpoint` is passed directly as a prop here; in production it is supplied
+// by `useBreakpoint`, which derives it from container width. Controlling the
+// prop makes the resolution deterministic without requiring a real DOM layout.
+
+// ── Unified mode: adapter changes across breakpoints ─────────────────────────
+
+describe('Adapter resolution integration — unified mode across breakpoints', () => {
+  // One fixture; three breakpoints; three distinct adapters.
+  // This validates the desktop→tablet→mobile chain in a single settings object.
+  const settings = makeSettings({
+    galleryConfig: {
+      mode: 'unified',
+      breakpoints: {
+        desktop: { unified: { adapterId: 'masonry' } },
+        tablet: { unified: { adapterId: 'justified' } },
+        mobile: { unified: { adapterId: 'compact-grid' } },
+      },
+    },
+  });
+  const campaign = makeCampaign();
+
+  it('selects masonry at desktop width', () => {
+    renderWithSuspense(
+      <UnifiedGallerySection campaign={campaign} settings={settings} breakpoint="desktop" isAdmin={false} />,
+    );
+    expect(screen.getByTestId('adapter-masonry')).toBeInTheDocument();
+  });
+
+  it('selects justified at tablet width', () => {
+    renderWithSuspense(
+      <UnifiedGallerySection campaign={campaign} settings={settings} breakpoint="tablet" isAdmin={false} />,
+    );
+    expect(screen.getByTestId('adapter-justified')).toBeInTheDocument();
+  });
+
+  it('selects compact-grid at mobile width', () => {
+    renderWithSuspense(
+      <UnifiedGallerySection campaign={campaign} settings={settings} breakpoint="mobile" isAdmin={false} />,
+    );
+    expect(screen.getByTestId('adapter-compact-grid')).toBeInTheDocument();
+  });
+});
+
+// ── Per-type mode: image adapter changes across breakpoints ───────────────────
+
+describe('Adapter resolution integration — per-type image scope across breakpoints', () => {
+  const settings = makeSettings({
+    galleryConfig: {
+      mode: 'per-type',
+      breakpoints: {
+        desktop: { image: { adapterId: 'masonry' } },
+        tablet: { image: { adapterId: 'justified' } },
+        mobile: { image: { adapterId: 'compact-grid' } },
+      },
+    },
+  });
+  // Only images so we can assert on the single image adapter.
+  const campaign = makeCampaign({ videos: [], images: [image] });
+
+  it('selects masonry for the image section at desktop width', () => {
+    renderWithSuspense(
+      <PerTypeGallerySection campaign={campaign} settings={settings} breakpoint="desktop" isAdmin={false} />,
+    );
+    expect(screen.getByTestId('adapter-masonry')).toBeInTheDocument();
+  });
+
+  it('selects justified for the image section at tablet width', () => {
+    renderWithSuspense(
+      <PerTypeGallerySection campaign={campaign} settings={settings} breakpoint="tablet" isAdmin={false} />,
+    );
+    expect(screen.getByTestId('adapter-justified')).toBeInTheDocument();
+  });
+
+  it('selects compact-grid for the image section at mobile width', () => {
+    renderWithSuspense(
+      <PerTypeGallerySection campaign={campaign} settings={settings} breakpoint="mobile" isAdmin={false} />,
+    );
+    expect(screen.getByTestId('adapter-compact-grid')).toBeInTheDocument();
+  });
+});
+
+// ── Phase 24 regression surface ───────────────────────────────────────────────
+//
+// Phase 24 surfaced a regression where a campaign-level galleryConfig override
+// was not correctly propagating through the resolution chain in the theme-preview
+// path, causing the viewer to render the wrong adapter.
+//
+// The tests below represent that surface explicitly:
+//   global setting → adapter A, campaign override → adapter B → render shows B.
+
+describe('Adapter resolution integration — Phase 24 regression surface', () => {
+  it('per-type: campaign galleryOverrides take precedence over the global adapter setting', () => {
+    const globalSettings = makeSettings({
+      galleryConfig: {
+        mode: 'per-type',
+        breakpoints: {
+          desktop: { image: { adapterId: 'masonry' } },
+        },
+      },
+    });
+
+    const campaignWithOverride = makeCampaign({
+      videos: [],
+      images: [image],
+      galleryOverrides: {
+        breakpoints: {
+          desktop: { image: { adapterId: 'justified' } },
+        },
+      },
+    });
+
+    renderWithSuspense(
+      <PerTypeGallerySection
+        campaign={campaignWithOverride}
+        settings={globalSettings}
+        breakpoint="desktop"
+        isAdmin={false}
+      />,
+    );
+
+    // Campaign override (justified) must win over the global setting (masonry).
+    // A regression here would render adapter-masonry instead.
+    expect(screen.getByTestId('adapter-justified')).toBeInTheDocument();
+    expect(screen.queryByTestId('adapter-masonry')).not.toBeInTheDocument();
+  });
+
+  it('unified: campaign galleryOverrides take precedence over the global adapter setting', () => {
+    const globalSettings = makeSettings({
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: { unified: { adapterId: 'masonry' } },
+        },
+      },
+    });
+
+    const campaignWithOverride = makeCampaign({
+      galleryOverrides: {
+        breakpoints: {
+          desktop: { unified: { adapterId: 'diamond' } },
+        },
+      },
+    });
+
+    renderWithSuspense(
+      <UnifiedGallerySection
+        campaign={campaignWithOverride}
+        settings={globalSettings}
+        breakpoint="desktop"
+        isAdmin={false}
+      />,
+    );
+
+    expect(screen.getByTestId('adapter-diamond')).toBeInTheDocument();
+    expect(screen.queryByTestId('adapter-masonry')).not.toBeInTheDocument();
+  });
+
+  it('unified: re-resolves the adapter when settings prop changes (preview-mode path)', () => {
+    const campaign = makeCampaign();
+
+    const settingsA = makeSettings({
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: { unified: { adapterId: 'masonry' } },
+        },
+      },
+    });
+
+    const { rerender } = renderWithSuspense(
+      <UnifiedGallerySection campaign={campaign} settings={settingsA} breakpoint="desktop" isAdmin={false} />,
+    );
+
+    expect(screen.getByTestId('adapter-masonry')).toBeInTheDocument();
+
+    // Simulate the theme-preview settings update that triggered the Phase 24 regression.
+    const settingsB = makeSettings({
+      galleryConfig: {
+        mode: 'unified',
+        breakpoints: {
+          desktop: { unified: { adapterId: 'diamond' } },
+        },
+      },
+    });
+
+    rerender(
+      <Suspense fallback={<div data-testid="loading-gallery" />}>
+        <UnifiedGallerySection campaign={campaign} settings={settingsB} breakpoint="desktop" isAdmin={false} />
+      </Suspense>,
+    );
+
+    // A regression here would leave adapter-masonry in the DOM.
+    expect(screen.getByTestId('adapter-diamond')).toBeInTheDocument();
+    expect(screen.queryByTestId('adapter-masonry')).not.toBeInTheDocument();
+  });
+});

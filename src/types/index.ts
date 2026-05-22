@@ -112,6 +112,13 @@ export interface ContainerDimensions {
   height: number;
 }
 
+/** A single tag from the wpsg_media_tag taxonomy, as returned by the media REST endpoint. */
+export interface MediaTag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface MediaItem {
   id: string;
   type: 'video' | 'image' | 'other';
@@ -127,6 +134,25 @@ export interface MediaItem {
   /** Pixel dimensions supplied by server (WP attachment metadata). Used by mosaic layout. */
   width?: number | undefined;
   height?: number | undefined;
+  /**
+   * WP attachment upload date (post_date, local time, MySQL datetime format).
+   * Present only for source === 'upload' items. Undefined for external media.
+   * Reserved for future Timeline adapter and date-based sort UI.
+   */
+  dateUploaded?: string | undefined;
+  /**
+   * File size in bytes from WP attachment metadata.
+   * Present only for source === 'upload' items where the file exists on disk.
+   * Undefined for external media or items whose file cannot be stat'd.
+   */
+  filesize?: number | undefined;
+  /**
+   * Tags from the wpsg_media_tag taxonomy assigned to this attachment.
+   * Present only for source === 'upload' items that have at least one tag.
+   * Undefined (not an empty array) when no tags are assigned.
+   * Reserved for future filterable-gallery work.
+   */
+  tags?: MediaTag[] | undefined;
 }
 
 export interface User {
@@ -688,6 +714,18 @@ export interface GalleryBehaviorSettings {
   tileGlowSpread: number;    // px: glow spread radius
   tileHoverBounce: boolean;  // scale-up bounce on hover
   masonryColumns: number;    // 0 = auto-responsive
+  // P31-G: Masonry entrance animation (Waterfall)
+  masonryEntranceAnimation: string;   // 'none' | 'waterfall'
+  masonryEntranceStagger: number;     // ms delay between successive tile animations
+  // P31-F: Vertical Scroll Snap adapter
+  scrollSnapAlignment: string;        // 'start' | 'center' | 'end'
+  scrollSnapPageIndicator: boolean;   // show slide counter (n / total)
+  // P31-E: Spotlight / Hero adapter
+  spotlightHeroAspectRatio: string;                                          // e.g. '16:9', '4:3', '1:1'
+  spotlightThumbnailSize: number;                                            // px: thumbnail strip item size
+  spotlightThumbnailSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
+  spotlightTransitionDuration: number;                                       // ms: hero swap / border transition
+  spotlightStripPosition: 'below' | 'right';                                 // strip layout direction
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -1385,6 +1423,18 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   tileGlowSpread: 12,
   tileHoverBounce: true,
   masonryColumns: 0,
+  // P31-G: Masonry entrance animation
+  masonryEntranceAnimation: 'none',
+  masonryEntranceStagger: 60,
+  // P31-F: Vertical Scroll Snap adapter
+  scrollSnapAlignment: 'start',
+  scrollSnapPageIndicator: true,
+  // P31-E: Spotlight / Hero adapter
+  spotlightHeroAspectRatio: '16:9',
+  spotlightThumbnailSize: 80,
+  spotlightThumbnailSizeUnit: 'px',
+  spotlightTransitionDuration: 250,
+  spotlightStripPosition: 'below',
   // P21-B: Card visibility toggles
   showCardCompanyName: true,
   showCardMediaCounts: true,

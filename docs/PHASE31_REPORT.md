@@ -1,21 +1,21 @@
 # Phase 31 — Gallery Reliability, Adapter Coverage, Config Hardening & Targeted Capability Expansion
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-05-19
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-22
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P31-A | Gallery reliability hardening: settings merge, lightbox scroll lock, breakpoint first-render contract | Planned | Small-Medium |
-| P31-B | Adapter resolution integration coverage | Planned | Medium |
-| P31-C | Gallery config editor update-path optimization | Planned | Medium |
-| P31-D | Adapter settings single-source-of-truth pre-evaluation | Pre-Evaluation | Large |
-| P31-E | Spotlight / Hero adapter delivery | Planned | Small-Medium |
-| P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | Planned | Medium |
-| P31-G | Waterfall entrance animation as a Masonry enhancement | Planned | Small |
-| P31-H | Media payload foundations for future timeline/filter work | Pre-Evaluation | Medium |
+| P31-A | Gallery reliability hardening: settings merge, lightbox scroll lock, breakpoint first-render contract | **Done** | Small-Medium |
+| P31-B | Adapter resolution integration coverage | **Done** | Medium |
+| P31-C | Gallery config editor update-path optimization | **Done** | Medium |
+| P31-D | Adapter settings single-source-of-truth pre-evaluation | **Done** | Large |
+| P31-E | Spotlight / Hero adapter delivery | **Done** | Small-Medium |
+| P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | **Done** | Medium |
+| P31-G | Waterfall entrance animation as a Masonry enhancement | **Done** | Small |
+| P31-H | Media payload foundations for future timeline/filter work | **Done** | Medium |
 
 ---
 
@@ -164,12 +164,27 @@ without changing public gallery behavior:
 
 ### Acceptance criteria
 
-- `mergeSettingsWithDefaults` no longer requires `as any` for field assignment. ( )
+- `mergeSettingsWithDefaults` no longer requires `as any` for field assignment. (✓)
 - Two concurrent lightbox consumers keep body scroll locked until the final one
-  closes or unmounts. ( )
+  closes or unmounts. (✓)
 - Container-sourced `useBreakpoint` produces deterministic first-render behavior
-  with documented fallback behavior when no container is available yet. ( )
-- Existing gallery hydration and runtime behavior stays backward compatible. ( )
+  with documented fallback behavior when no container is available yet. (✓)
+- Existing gallery hydration and runtime behavior stays backward compatible. (✓)
+
+### Completion notes (2026-05-21)
+
+- `mergeSettingsWithDefaults.ts`: `as any` removed; typed private helper
+  `setSettingsField()` uses `Record<keyof GalleryBehaviorSettings, unknown>` cast;
+  `typographyOverrides` branch uses direct narrowed assignment.
+- `useLightbox.ts`: module-level `acquireScrollLock`/`releaseScrollLock` with
+  `lockCount` ref-count and `previousOverflow` snapshot; single canonical effect
+  drives lock/unlock; repeated `close()` calls are clamped.
+- `useBreakpoint.ts`: depless `useLayoutEffect` (with `eslint-disable` comment)
+  handles Cases 1 & 2 synchronously before paint; `observedElementRef` identity
+  guard prevents infinite update loops; separate cleanup `useEffect([])`.
+- Tests: +8 in `defaultsAndMerge.test.ts`, +4 in `useLightbox.test.ts`, +4 in
+  `useBreakpoint.test.tsx`. All pass.
+- Committed: `feat(p31-a): gallery reliability hardening — typed merge, scroll lock, breakpoint contract`
 
 ### Validation
 
@@ -232,11 +247,23 @@ can be controlled without a full Playwright setup.
 ### Acceptance criteria
 
 - A test exercises the real adapter-resolution path without mocking the core
-  resolver chain. ( )
+  resolver chain. (✓)
 - The test validates adapter changes across at least desktop/tablet/mobile width
-  states or equivalent container-width transitions. ( )
+  states or equivalent container-width transitions. (✓)
 - The Phase 24-style regression surface is explicitly represented by a stable
-  fixture or test scenario. ( )
+  fixture or test scenario. (✓)
+
+### Completion notes (2026-05-21)
+
+- Integration tests landed in `GallerySections.test.tsx` (+9 tests across 3 new
+  describe blocks): unified mode per breakpoint, per-type image scope per
+  breakpoint, Phase 24 regression surface (campaign override precedence, settings
+  re-resolution via `rerender`).
+- Additional alignment tests in `resolveAdapterId.test.ts` (+2 tests): campaign
+  override isolation — desktop override does not bleed to tablet/mobile.
+- All core resolver utilities are real (not mocked); only `resolveAdapter`
+  (lazy-component factory) is replaced with a lightweight test double.
+- Committed: `test(p31-b): adapter resolution integration coverage`
 
 ### Validation
 
@@ -294,13 +321,33 @@ breakpoints/scopes and keep the first pass focused on measurable edit-path wins.
 
 ### Acceptance criteria
 
-- Gallery-config helpers preserve current functional behavior. ( )
+- Gallery-config helpers preserve current functional behavior. (✓)
 - Untouched config branches keep stable references where the new implementation
-  allows it. ( )
+  allows it. (✓)
 - The settings edit path shows a measured reduction in unnecessary cloning or
-  update work. ( )
+  update work. (✓)
 - Existing gallery-config tests continue to pass with added regression coverage
-  for the optimized paths. ( )
+  for the optimized paths. (✓)
+
+### Completion Notes (2026-05-21)
+
+Replaced full-tree `cloneGalleryConfig` + mutate pattern in
+`setRepresentativeGalleryCommonSetting`, `setScopeGalleryCommonSetting`, and
+`setGalleryAdapterSetting` with structural-sharing implementations:
+
+- Each function now spreads only scope/breakpoint objects that actually change.
+- Scopes whose value is already equal (identity check before write) keep their
+  original object reference.
+- Unchanged breakpoints pass through via `newBreakpoints[bp] = bpConfig`
+  (original reference, not a clone).
+- When no branch changes at all, the original `config` reference is returned
+  unchanged.
+- Removed the now-unused `syncSharedCommonSettingAcrossScopes`,
+  `syncScopedCommonSettingAcrossBreakpoints`, and `getOrCreateScopeConfig`
+  helpers (TS6133 errors confirmed they were dead code).
+- `galleryConfig.test.ts` extended with 8 new identity-sensitive and behavioral
+  regression cases (15 tests total, all passing).
+- 1796 tests pass, up from 1788 before P31-C.
 
 ### Validation
 
@@ -359,11 +406,59 @@ settings source can safely generate or drive the other artifacts.
 ### Acceptance criteria
 
 - A canonical-source proposal exists with clear generated and hand-authored
-  boundaries. ( )
+  boundaries. (✓)
 - The proposal documents how TypeScript validation, runtime defaults, and PHP
-  registry data stay in sync. ( )
+  registry data stay in sync. (✓)
 - The phase ends with a go/no-go decision on generator implementation rather
-  than an assumed rollout. ( )
+  than an assumed rollout. (✓)
+
+### Completion Notes (2026-05-21)
+
+Pre-evaluation completed via `docs/P31-D_EVALUATION_052126.md`.
+
+**Canonical decisions:**
+- `adapterRegistry.ts` (`SETTING_GROUP_DEFINITIONS`) is the canonical source.
+  It already contains the richest metadata: control type, key, label,
+  description, constraints, fallback, `appliesTo`, and `unitKey`.
+- Everything else is derivable: TypeScript interface field type and default
+  value, Zod schema entry, PHP sanitizer slug (via deterministic
+  camelCase → snake_case transform).
+- Hand-authored layer stays: `SETTING_GROUP_DEFINITIONS` itself, adapter
+  component implementations, `AdapterRegistration` entries, `GalleryAdapterId`
+  type union, and all common (non-adapter) settings.
+
+**Parity audit results:** Zero drift detected. All 82 registry keys (70 field
+keys + 12 unitKey companions) are present in the PHP sanitizer map. The
+camelCase → snake_case rule is correct for every registry key.
+
+Four legacy orphan PHP entries identified (`gridCardHeight`, `gridCardHeightUnit`,
+`mosaicTargetRowHeightUnit`, `photoNormalizeHeightUnit`) — formerly-dimension
+fields whose `*Unit` companions were not pruned when the control type changed to
+`number`. Harmless today; Phase 32 generator can clean them up.
+
+**Go/No-Go decision: GO** — Proceed to generator implementation in Phase 32.
+
+**Delivered:**
+1. `scripts/validate-adapter-settings-parity.mjs` — prototype generator/validator
+   that parses registry and PHP source, applies the camelCase→snake_case
+   transform, and reports drift. Shows the exact PHP entries a generator would
+   produce for any missing keys.
+2. `npm run validate:adapter-settings` script added to `package.json`.
+3. `src/components/Galleries/Adapters/adapterSettingsParity.test.ts` — 5
+   Vitest regression tests that catch future drift in CI, including a known-
+   legacy allowlist for the 4 identified orphan entries.
+4. `docs/P31-D_EVALUATION_052126.md` — canonical source proposal, metadata
+   duplication map, generator design sketch, risk assessment.
+
+**Phase 32 prerequisites:**
+- [x] Parity validated at zero drift — clean baseline for the generator
+- [x] Transform rule proven correct across all 82 current keys
+- [x] Legacy orphan entries documented
+- [ ] Extract `SETTING_GROUP_DEFINITIONS` to `adapterSettingGroups.ts` (pure-data
+      module for Node.js generator import)
+- [ ] Implement generator with `--check` and `--write` modes
+- [ ] Add sentinel-comment boundaries to hand-authored files
+- [ ] Decide pre-build vs. manual-only invocation
 
 ### Validation
 
@@ -436,15 +531,30 @@ inline hero and the lightbox entry point.
 ### Acceptance criteria
 
 - The Spotlight / Hero adapter appears in the real adapter selector and resolves
-  through the normal adapter registry path. ( )
+  through the normal adapter registry path. (✓)
 - Selecting a thumbnail updates the active hero item and opens the same index in
-  the lightbox when clicked. ( )
+  the lightbox when clicked. (✓)
 - The adapter behaves correctly in unified and per-type gallery sections across
-  common widths without breaking the current viewer shell. ( )
+  common widths without breaking the current viewer shell. (✓)
 - Image and video media both render gracefully in the hero position without
-  introducing a second inline playback contract. ( )
+  introducing a second inline playback contract. (✓)
 - New Spotlight settings round-trip correctly through TypeScript and PHP
-  validation/sanitization. ( )
+  validation/sanitization. (✓)
+
+### Completion notes (2026-05-21)
+
+- `SpotlightGallery.tsx`: hero Box (role="button") + thumbnail strip (`<button>` per
+  item); `useCarousel` drives active index; `useLightbox` handles scroll lock and
+  keyboard nav; strip position toggles to 'below' when container < 480 px.
+- Settings: `spotlightHeroAspectRatio`, `spotlightThumbnailSize`,
+  `spotlightThumbnailSizeUnit`, `spotlightTransitionDuration`,
+  `spotlightStripPosition` — wired through `GalleryAdapter.ts` union,
+  `adapterRegistry.ts` field definitions, `types/index.ts`, `settingsSchemas.ts`,
+  PHP sanitizer key map, and `VALID_ADAPTERS` in both sanitizer and CPT class.
+- Tests: +5 parameterized smoke tests (SpotlightGallery in shared suite),
+  +5 specific tests in `adapters.test.tsx`, +4 registry tests in
+  `adapterRegistry.test.ts`. 1762 tests total, all passing.
+- Committed: `feat(p31-e): spotlight/hero adapter — hero+strip layout, full settings path, test coverage`
 
 ### Validation
 
@@ -522,15 +632,32 @@ viewport.
 ### Acceptance criteria
 
 - The Vertical Scroll Snap adapter renders a bounded snap container inside the
-  current gallery section instead of assuming full-browser viewport ownership. ( )
-- Unified and per-type gallery flows render correctly with the new adapter. ( )
+  current gallery section instead of assuming full-browser viewport ownership. (✓)
+- Unified and per-type gallery flows render correctly with the new adapter. (✓)
 - Per-type layouts opt out of side-by-side equal-height presentation when Scroll
   Snap is selected so the user does not get two competing vertical snap
-  surfaces at once. ( )
+  surfaces at once. (✓)
 - Existing click/lightbox behavior and scroll-lock behavior remain compatible
-  with the adapter. ( )
+  with the adapter. (✓)
 - New Scroll Snap settings round-trip correctly through TypeScript and PHP
-  validation/sanitization. ( )
+  validation/sanitization. (✓)
+
+### Completion notes (2026-05-21)
+
+- `ScrollSnapGallery.tsx`: snap container with `overflowY: scroll` and
+  `scrollSnapType: y mandatory`; height derived from `containerDimensions.height`
+  (falls back to 500 px); slides use `scrollSnapAlign` from setting; page indicator
+  ("n / total") optional; click opens lightbox; `useLightbox` handles scroll lock
+  and keyboard nav.
+- `shouldUseEqualHeightPerTypeLayout` updated: returns `false` when any plan uses
+  `adapterId === 'scroll-snap'`, preventing side-by-side competing snap containers.
+- Settings: `scrollSnapAlignment` (select: start/center/end) and
+  `scrollSnapPageIndicator` (boolean) — wired through all layers.
+- Tests: +8 parameterized smoke tests (ScrollSnapGallery in shared suite),
+  +6 specific tests in `adapters.test.tsx`, +3 registry tests in
+  `adapterRegistry.test.ts`, +1 per-type opt-out test in
+  `campaignGalleryRenderPlan.test.ts`. 1788 tests total, all passing.
+- Committed: `feat(p31-f): vertical scroll snap adapter — bounded section contract, per-type opt-out, settings path`
 
 ### Validation
 
@@ -600,13 +727,29 @@ registered adapter family.
 ### Acceptance criteria
 
 - Masonry can opt into a Waterfall-style entrance animation without introducing
-  a new adapter id. ( )
+  a new adapter id. (✓)
 - The animation applies only to the intended entry path and does not replay on
-  ordinary layout recalculation. ( )
-- Reduced-motion users are not forced through the effect. ( )
-- Masonry behavior is unchanged when the animation option is disabled. ( )
+  ordinary layout recalculation. (✓)
+- Reduced-motion users are not forced through the effect. (✓)
+- Masonry behavior is unchanged when the animation option is disabled. (✓)
 - New Masonry animation settings round-trip correctly through TypeScript and PHP
-  validation/sanitization. ( )
+  validation/sanitization. (✓)
+
+### Completion notes (2026-05-21)
+
+- `MasonryGallery.tsx`: when `masonryEntranceAnimation === 'waterfall'`, each tile
+  button receives class `wpsg-waterfall-tile` and inline `animationDelay` proportional
+  to its index × stagger. CSS keyframe `wpsg-waterfall-enter` (opacity + translateY)
+  is injected in the existing `<style>` block only when enabled. A
+  `@media (prefers-reduced-motion: reduce)` rule overrides `animation: none !important`
+  on the class, removing motion for users who opt out.
+- Settings: `masonryEntranceAnimation` (select: 'none'/'waterfall') and
+  `masonryEntranceStagger` (number, 0–300 ms) — wired through types, Zod, registry
+  field definitions (appended to `masonry` group), and PHP sanitizer key map.
+- Tests: +3 Masonry-specific tests in `adapters.test.tsx` covering disabled state,
+  class presence, and per-tile delay values. Registry field list updated in
+  `adapterRegistry.test.ts`. 1765 tests total, all passing.
+- Committed: `feat(p31-g): waterfall entrance animation as masonry enhancement`
 
 ### Validation
 
@@ -680,14 +823,54 @@ into a broad backend-delivery phase.
 ### Acceptance criteria
 
 - A written proposal exists for the canonical `MediaItem`/REST payload contract
-  around `dateUploaded`, `filesize`, and optional per-item media tags. ( )
+  around `dateUploaded`, `filesize`, and optional per-item media tags. (✓)
 - The proposal explicitly states which date concept future Timeline work should
-  rely on. ( )
+  rely on. (✓)
 - The proposal explicitly states whether filterable-gallery follow-on work
   should rely on `wpsg_media_tag` exposure, a wrapper-only transform, or new
-  relationship-level metadata. ( )
+  relationship-level metadata. (✓)
 - Phase 31 exits with a clear go/no-go prerequisite list for Timeline and
-  Filterable follow-on work. ( )
+  Filterable follow-on work. (✓)
+
+### Completion Notes (2026-05-21)
+
+Pre-evaluation completed via `docs/P31-H_ASSESSMENT_052126.md`; findings were
+concrete enough to deliver rather than only document.
+
+**Canonical decisions:**
+- `dateUploaded`: WP attachment `post_date` (local time). This is the canonical
+  chronology signal for a future Timeline adapter. Campaign-relationship date is
+  not tracked anywhere and would require a schema addition; skip for now.
+- `filesize`: WP attachment metadata `filesize` key (WP ≥ 6.0), with filesystem
+  fallback for older installs. Not meaningful for external media — omitted.
+- `tags`: Compact objects `{id, name, slug}` from `wpsg_media_tag` taxonomy.
+  Self-contained per item; eliminates a second round-trip for the gallery runtime.
+  Not present for untagged or external items.
+
+**Delivered:**
+1. `enrich_media_with_metadata()` replaces `enrich_media_with_dimensions()` in
+   `class-wpsg-rest.php` — per-item `get_post()`, `wp_get_attachment_metadata()`,
+   and `wp_get_object_terms()` calls with one upfront `update_meta_cache()` batch
+   to warm the post-meta cache.
+2. `enrich_media_with_dimensions()` kept as a deprecated shim delegating to the
+   new function; both existing call sites updated to call the new function directly.
+3. `MediaTag` interface and `dateUploaded`, `filesize`, `tags` optional fields
+   added to `MediaItem` in `src/types/index.ts`.
+4. 4 PHP tests added to `WPSG_REST_Extended_Test.php` covering upload-item
+   enrichment and external-item isolation.
+5. **Bug fix:** `sanitize_media_items()` in `class-wpsg-cpt.php` had a stale
+   `$valid_sources` allowlist (`['wp', 'external', 'oembed']`) that did not
+   include `'upload'` or `'library'` — source values that the REST API and
+   frontend have used since Phase 20. Any item stored with `source='upload'`
+   was silently coerced to `source='wp'` on write, causing the enrichment guard
+   in `enrich_media_with_metadata()` to skip those items. Fixed by extending
+   the allowlist to `['upload', 'library', 'wp', 'external', 'oembed']`.
+
+**Prerequisites cleared for follow-on work:**
+- [x] `dateUploaded` in REST payload and typed in TypeScript (Timeline prerequisite)
+- [x] `tags` in REST payload and typed in TypeScript (Filterable gallery prerequisite)
+- [ ] Timeline-specific chronology UI (Phase N — out of scope)
+- [ ] Client-side filter orchestration and filter UI (Phase N — out of scope)
 
 ### Validation
 
@@ -731,6 +914,20 @@ work remain follow-on candidates here.
 | Timeline adapter | Wait for `P31-H` to define canonical media chronology and payload shape before scoping frontend delivery. |
 | Mosaic / Pinterest adapter | Dense-packing value already overlaps Justified/Masonry; irregular grid assignment remains a higher-risk layout problem than this phase should take on. |
 | Filterable gallery wrapper | A valid future orchestration direction, but it depends on `P31-H` payload decisions and should not enter as an adapter track. |
+
+## PR #47 Review — Copilot Comment Rationale (2026-05-22)
+
+Seven Copilot review threads total; five implemented in commit `25766fd`, two additional threads (outdated/skipped by default tooling) implemented in a follow-up commit.
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `__dirname` in ESM test | `adapterSettingsParity.test.ts` | **Accept** | `__dirname` is not defined in ESM modules (`package.json` has `"type": "module"`); the test would throw at import time in any runtime that correctly implements the ESM spec. Replaced with `fileURLToPath(import.meta.url)` + `dirname()` — the canonical ESM-safe pattern. |
+| `wp_insert_term` WP_Error | `WPSG_REST_Extended_Test.php` | **Accept** | `wp_insert_term()` returns `WP_Error` (code `term_exists`) when a slug already exists — e.g. if the test database is not fully rolled back between runs or if a parallel test created the same term. The `assertIsArray` guard made the test order-dependent and flaky. Fixed by checking `is_wp_error()` and extracting the existing `term_id` from `get_error_data('term_exists')`, making the test idempotent. |
+| Duplicate attachment IDs | `class-wpsg-rest.php` | **Accept** | A gallery can legitimately reference the same attachment more than once (e.g. the same image in multiple positions). The ID collection loop used a plain array append, so duplicates would inflate `update_meta_cache()`. Switched to an associative-key pattern (`$ids[$aid] = $aid`) followed by `array_values()` — O(1) deduplication with no performance overhead. |
+| Space `preventDefault` — Spotlight | `SpotlightGallery.tsx` | **Accept** | ARIA spec requires that pressing Space on a `role="button"` element activates it *and* does not scroll the page. The previous handler fired the click but omitted `e.preventDefault()`, so the Space key also scrolled the viewport. Fixed by calling `e.preventDefault()` before `handleHeroClick()`. |
+| Space `preventDefault` — ScrollSnap | `ScrollSnapGallery.tsx` | **Accept** | Same issue as Spotlight, applied to the slide buttons inside the scroll-snap container. Without `preventDefault()`, Space activates the slide but also scrolls the container, producing a confusing dual-action. |
+| Stale docblock on `enrich_media_with_metadata()` | `class-wpsg-rest.php` | **Accept** | After P31-H expanded the function to cover date/filesize/tags, the original width/height-only docblock was left sitting directly above the updated one, producing two consecutive conflicting docblocks. Removed the stale block; the current single docblock accurately describes the full enrichment contract and the `$dimensions_only` escape hatch. |
+| `list_campaigns` full-enrichment overhead | `class-wpsg-rest.php` | **Accept** | `list_campaigns(include_media=1)` was calling `enrich_media_with_metadata()` with full enrichment (date, filesize, tag SQL join) to serve initial-load thumbnails — fields the campaigns list doesn't use. Added `bool $dimensions_only = false` parameter; the campaigns list passes `true` to restrict enrichment to pixel dimensions only. Full enrichment remains available through the single-gallery endpoint. |
 
 ## Implementation Notes
 

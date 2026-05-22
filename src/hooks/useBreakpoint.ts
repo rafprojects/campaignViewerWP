@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useMantineTheme } from '@mantine/core';
 import type { ResponsiveBreakpoint } from '@/types';
 
@@ -39,6 +39,32 @@ export interface UseBreakpointResult {
  * tracks `window.innerWidth`, which is a better fit for fullscreen or modal
  * viewer experiences that are intentionally width-clamped.
  *
+ * ## Container-source first-render and late-ref contract
+ *
+ * The hook explicitly handles three cases for container-sourced breakpoints:
+ *
+ * **Case 1 — ref already mounted on first render (normal path):**
+ * `useLayoutEffect` reads `containerRef.current` synchronously after the DOM
+ * commit, before the browser paints. This avoids the "flash of desktop layout"
+ * that occurred when the initial measurement was deferred to `useEffect`.
+ *
+ * **Case 2 — ref attaching after first render (late-bind path):**
+ * The `useLayoutEffect` has no dependency array, so it re-runs after every
+ * render. It tracks the last observed element in `observedElementRef`; when
+ * `containerRef.current` changes from `null` to an element (or vice-versa), the
+ * element identity check fails, the observer is torn down and rebuilt, and the
+ * correct breakpoint is measured before the next paint.
+ *
+ * **Case 3 — steady-state ResizeObserver updates:**
+ * Once the element is being observed, all ongoing size changes arrive through
+ * the `ResizeObserver` callback, which updates state without touching the DOM.
+ *
+ * **Documented fallback when no container is available:**
+ * When `containerRef.current` is `null` (element not yet in the DOM or
+ * conditionally removed), the hook resets to `breakpoint: 'desktop'` and
+ * `width: 0`. Callers that need a definitive measurement before the container
+ * is rendered should switch to `source: 'viewport'` instead.
+ *
  * Thresholds are sourced from the Mantine theme (`sm` → mobile/tablet boundary,
  * `lg` → tablet/desktop boundary) for consistency with the rest of the design system.
  *
@@ -77,42 +103,103 @@ export function useBreakpoint(
   const resolveRef = useRef(resolve);
   resolveRef.current = resolve;
 
+  // ── Viewport mode ──────────────────────────────────────────────────────────
+  // Straightforward: measure on mount, update on window resize.
+  // No late-bind concern because we're tracking the global window object.
   useEffect(() => {
-    if (source === 'viewport') {
-      const updateFromViewport = () => {
-        const w = window.innerWidth;
-        setWidth(w);
-        setBreakpoint(resolveRef.current(w));
-      };
+    if (source !== 'viewport') return;
 
-      updateFromViewport();
-      window.addEventListener('resize', updateFromViewport);
+    const updateFromViewport = () => {
+      const w = window.innerWidth;
+      setWidth(w);
+      setBreakpoint(resolveRef.current(w));
+    };
 
-      return () => {
-        window.removeEventListener('resize', updateFromViewport);
-      };
+    updateFromViewport();
+    window.addEventListener('resize', updateFromViewport);
+
+    return () => {
+      window.removeEventListener('resize', updateFromViewport);
+    };
+  }, [source]);
+
+  // ── Container mode — Cases 1 & 2 (mount and late-bind) ────────────────────
+  //
+  // No dependency array → runs after every render. The element identity check
+  // (`el === observedElementRef.current`) makes subsequent renders a cheap
+  // no-op (one reference comparison) when nothing has changed.
+  //
+  // useLayoutEffect fires synchronously after the DOM commit and before the
+  // browser paints (Case 1 & 2), eliminating the flash of the default
+  // 'desktop' breakpoint that a deferred useEffect would produce.
+  //
+  // react-hooks/exhaustive-deps: the depless form is intentional. Adding
+  // [source, containerRef] as deps would miss the null→element transition in
+  // containerRef.current (Case 2). The observedElementRef identity guard
+  // prevents any infinite update loop.
+  const observedElementRef = useRef<HTMLElement | null>(null);
+  const observerRef = useRef<ResizeObserver | null>(null);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    if (source !== 'container') {
+      // If source switched away from 'container' (e.g. to 'viewport'), tear down
+      // any lingering ResizeObserver so it doesn't keep firing and overriding
+      // viewport-derived measurements or leaking into the next render cycle.
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+        observedElementRef.current = null;
+      }
+      return;
     }
 
     const el = containerRef.current;
-    if (!el) return;
 
-    // Set initial value
-    const initialWidth = el.clientWidth;
-    setWidth(initialWidth);
-    setBreakpoint(resolveRef.current(initialWidth));
+    // Same element as last time — nothing to do.
+    if (el === observedElementRef.current) return;
 
+    // Element changed or was removed: tear down the current observer.
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    observedElementRef.current = el;
+
+    if (!el) {
+      // Documented fallback: no container available yet — reset to defaults.
+      // Callers that always need a valid width should use source:'viewport'.
+      setWidth(0);
+      setBreakpoint('desktop');
+      return;
+    }
+
+    // Case 1 & 2: Measure synchronously before the browser paints.
+    const w = el.clientWidth;
+    setWidth(w);
+    setBreakpoint(resolveRef.current(w));
+
+    // Case 3: Steady-state updates via ResizeObserver.
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const w =
+        const entryWidth =
           entry.contentBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
-        setWidth(w);
-        setBreakpoint(resolveRef.current(w));
+        setWidth(entryWidth);
+        setBreakpoint(resolveRef.current(entryWidth));
       }
     });
-
     observer.observe(el);
-    return () => observer.disconnect();
-  }, [containerRef, source]);
+    observerRef.current = observer;
+  });
+
+  // ── Cleanup on unmount ─────────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+      observedElementRef.current = null;
+    };
+  }, []);
 
   return { breakpoint, width };
 }

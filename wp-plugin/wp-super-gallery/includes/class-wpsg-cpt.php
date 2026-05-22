@@ -38,6 +38,8 @@ class WPSG_CPT {
         'circular',
         'diamond',
         'layout-builder',
+        'spotlight',      // P31-E: Spotlight / Hero adapter
+        'scroll-snap',    // P31-F: Vertical Scroll Snap adapter
     ];
 
     public static function register() {
@@ -246,7 +248,9 @@ class WPSG_CPT {
         }
 
         $valid_types    = [ 'image', 'video', 'embed' ];
-        $valid_sources  = [ 'wp', 'external', 'oembed' ];
+        // 'upload' and 'library' were added in later phases but the allowlist was
+        // never extended; all five values are used by the REST API and the frontend.
+        $valid_sources  = [ 'upload', 'library', 'wp', 'external', 'oembed' ];
         $sanitized      = [];
 
         foreach ( $value as $item ) {

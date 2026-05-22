@@ -43,6 +43,12 @@ const CircularGallery = lazy(() =>
 const DiamondGallery = lazy(() =>
   import('@/components/Galleries/Adapters/diamond/DiamondGallery').then((m) => ({ default: m.DiamondGallery })),
 );
+const SpotlightGallery = lazy(() =>
+  import('@/components/Galleries/Adapters/spotlight/SpotlightGallery').then((m) => ({ default: m.SpotlightGallery })),
+);
+const ScrollSnapGallery = lazy(() =>
+  import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery').then((m) => ({ default: m.ScrollSnapGallery })),
+);
 function LayoutBuilderRegistryFallback(props: GalleryAdapterProps) {
   return createElement(MediaCarouselAdapter, props);
 }
@@ -112,6 +118,30 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     capabilities: ['grid-layout', 'lightbox'],
     settingGroups: ['shape', 'tile-appearance'],
     component: DiamondGallery as ComponentType<GalleryAdapterProps>,
+  },
+  {
+    id: 'scroll-snap',
+    label: 'Scroll Snap',
+    optionLabels: {
+      'unified-gallery': 'Scroll Snap (vertical)',
+      'per-type-gallery': 'Scroll Snap (vertical)',
+      'campaign-override': 'Scroll Snap',
+    },
+    capabilities: ['lightbox', 'keyboard-nav'],
+    settingGroups: ['media-frame', 'scroll-snap'],
+    component: ScrollSnapGallery as ComponentType<GalleryAdapterProps>,
+  },
+  {
+    id: 'spotlight',
+    label: 'Spotlight',
+    optionLabels: {
+      'unified-gallery': 'Spotlight (Hero + Strip)',
+      'per-type-gallery': 'Spotlight (Hero + Strip)',
+      'campaign-override': 'Spotlight',
+    },
+    capabilities: ['lightbox', 'keyboard-nav'],
+    settingGroups: ['media-frame', 'spotlight'],
+    component: SpotlightGallery as ComponentType<GalleryAdapterProps>,
   },
   {
     id: 'layout-builder',
@@ -719,6 +749,105 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         description: 'Comma-separated width:columns pairs used when masonry columns are set to auto.',
         fallback: '480:2,768:3,1024:4,1280:5',
         placeholder: '480:2,768:3,1024:4,1280:5',
+      },
+      // P31-G: Waterfall entrance animation
+      {
+        control: 'select',
+        key: 'masonryEntranceAnimation',
+        label: 'Entrance Animation',
+        description: "Optional first-render animation for Masonry tiles. 'Waterfall' staggers each tile into view from below. Respects prefers-reduced-motion.",
+        fallback: 'none',
+        options: [
+          { value: 'none', label: 'None' },
+          { value: 'waterfall', label: 'Waterfall (stagger in)' },
+        ],
+      },
+      {
+        control: 'number',
+        key: 'masonryEntranceStagger',
+        label: 'Entrance Stagger (ms)',
+        description: 'Delay in milliseconds between successive tile animations in Waterfall mode.',
+        min: 0,
+        max: 300,
+        step: 10,
+        fallback: 60,
+      },
+    ],
+  },
+  spotlight: {
+    group: 'spotlight',
+    layout: 'stack',
+    fields: [
+      {
+        control: 'select',
+        key: 'spotlightHeroAspectRatio',
+        label: 'Hero Aspect Ratio',
+        description: 'Fixed aspect ratio of the hero display area.',
+        fallback: '16:9',
+        options: [
+          { value: '16:9', label: '16:9 (widescreen)' },
+          { value: '4:3', label: '4:3 (standard)' },
+          { value: '3:2', label: '3:2 (photo landscape)' },
+          { value: '1:1', label: '1:1 (square)' },
+          { value: '3:4', label: '3:4 (portrait)' },
+        ],
+      },
+      {
+        control: 'dimension',
+        key: 'spotlightThumbnailSize',
+        unitKey: 'spotlightThumbnailSizeUnit',
+        label: 'Thumbnail Size',
+        description: 'Width and height of each thumbnail strip item.',
+        allowedUnits: CSS_WIDTH_UNITS,
+        max: 200,
+        step: 4,
+        fallback: 80,
+      },
+      {
+        control: 'number',
+        key: 'spotlightTransitionDuration',
+        label: 'Transition Duration (ms)',
+        description: 'Duration of the hero swap and thumbnail highlight transitions.',
+        min: 0,
+        max: 1000,
+        step: 50,
+        fallback: 250,
+      },
+      {
+        control: 'select',
+        key: 'spotlightStripPosition',
+        label: 'Strip Position',
+        description: "Position of the thumbnail strip. 'Right' falls back to 'Below' on narrow containers.",
+        fallback: 'below',
+        options: [
+          { value: 'below', label: 'Below' },
+          { value: 'right', label: 'Right (wide containers)' },
+        ],
+      },
+    ],
+  },
+  'scroll-snap': {
+    group: 'scroll-snap',
+    layout: 'stack',
+    fields: [
+      {
+        control: 'select',
+        key: 'scrollSnapAlignment',
+        label: 'Snap Alignment',
+        description: 'CSS scroll-snap-align value applied to each slide. Controls where each slide snaps relative to the scroll container.',
+        fallback: 'start',
+        options: [
+          { value: 'start', label: 'Start' },
+          { value: 'center', label: 'Center' },
+          { value: 'end', label: 'End' },
+        ],
+      },
+      {
+        control: 'boolean',
+        key: 'scrollSnapPageIndicator',
+        label: 'Page Indicator',
+        description: 'Show a slide counter (n / total) in the lower-right corner of each slide.',
+        fallback: true,
       },
     ],
   },

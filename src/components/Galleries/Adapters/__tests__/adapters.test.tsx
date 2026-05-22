@@ -153,6 +153,8 @@ const { DiamondGallery } = await import('@/components/Galleries/Adapters/diamond
 const { HexagonalGallery } = await import('@/components/Galleries/Adapters/hexagonal/HexagonalGallery');
 const { JustifiedGallery } = await import('@/components/Galleries/Adapters/justified/JustifiedGallery');
 const { MasonryGallery } = await import('@/components/Galleries/Adapters/masonry/MasonryGallery');
+const { SpotlightGallery } = await import('@/components/Galleries/Adapters/spotlight/SpotlightGallery');
+const { ScrollSnapGallery } = await import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery');
 
 // ─── Component map for parameterised tests ────────────────────────────────────
 
@@ -184,6 +186,8 @@ const ADAPTERS: [string, AdapterComponent][] = [
   ['HexagonalGallery', HexagonalGallery],
   ['JustifiedGallery', JustifiedGallery],
   ['MasonryGallery', MasonryGallery],
+  ['SpotlightGallery', SpotlightGallery],
+  ['ScrollSnapGallery', ScrollSnapGallery],
 ];
 
 // ─── Shared test suite ────────────────────────────────────────────────────────
@@ -378,6 +382,38 @@ describe('MasonryGallery — specific', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
+  // P31-G: Waterfall entrance animation tests
+  it('does not add waterfall class when animation is disabled (default)', () => {
+    const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={SETTINGS} />);
+    const waterfall = container.querySelectorAll('.wpsg-waterfall-tile');
+    expect(waterfall.length).toBe(0);
+  });
+
+  it('adds wpsg-waterfall-tile class to every tile when waterfall animation is enabled', () => {
+    const animSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      masonryEntranceAnimation: 'waterfall',
+    };
+    const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={animSettings} />);
+    const waterfall = container.querySelectorAll('.wpsg-waterfall-tile');
+    // One tile per photo
+    expect(waterfall.length).toBe(THREE_IMAGES.length);
+  });
+
+  it('applies staggered animation-delay per tile in waterfall mode', () => {
+    const animSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      masonryEntranceAnimation: 'waterfall',
+      masonryEntranceStagger: 80,
+    };
+    const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={animSettings} />);
+    const tiles = Array.from(container.querySelectorAll('.wpsg-waterfall-tile')) as HTMLElement[];
+    // Index 0 → 0ms, index 1 → 80ms, index 2 → 160ms
+    expect(tiles[0].style.animationDelay).toBe('0ms');
+    expect(tiles[1].style.animationDelay).toBe('80ms');
+    expect(tiles[2].style.animationDelay).toBe('160ms');
+  });
+
   it('uses media-type-specific border radii for mixed media tiles', () => {
     const mixedRadiusSettings: GalleryBehaviorSettings = {
       ...SETTINGS,
@@ -428,5 +464,151 @@ describe('CompactGridGallery — specific', () => {
     const buttons = Array.from(container.querySelectorAll('button')).map((button) => (button as HTMLButtonElement).style.borderRadius);
     expect(buttons).toContain('14px');
     expect(buttons).toContain('18px');
+  });
+});
+
+// ─── P31-E: SpotlightGallery-specific tests ───────────────────────────────────
+
+describe('SpotlightGallery — specific', () => {
+  it('renders a hero area and a thumbnail strip', () => {
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    // Hero: Box with role="button"
+    expect(container.querySelector('[role="button"]')).not.toBeNull();
+    // Thumbnail strip: one <button> per item
+    const thumbBtns = container.querySelectorAll('button');
+    expect(thumbBtns.length).toBe(THREE_IMAGES.length);
+  });
+
+  it('clicking a thumbnail updates the active selection indicator', () => {
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    const thumbBtns = Array.from(container.querySelectorAll('button'));
+
+    // Initially the first thumbnail is active (currentIndex=0 from mocked useCarousel)
+    expect(thumbBtns[0].getAttribute('aria-current')).toBe('true');
+    expect(thumbBtns[1].getAttribute('aria-current')).toBeNull();
+  });
+
+  it('clicking the hero opens the lightbox', () => {
+    const { container } = render(<SpotlightGallery media={THREE_IMAGES} settings={SETTINGS} />);
+    expect(screen.queryByTestId('lightbox-open')).not.toBeInTheDocument();
+
+    // The hero is a Box with role="button" (not a <button> element).
+    // This query targets it specifically — thumbnails are native <button> elements.
+    const hero = container.querySelector('[role="button"]') as HTMLElement;
+    expect(hero).not.toBeNull();
+    fireEvent.click(hero);
+
+    expect(screen.getByTestId('lightbox-open')).toBeInTheDocument();
+  });
+
+  it('respects spotlightHeroAspectRatio setting', () => {
+    const squareSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      spotlightHeroAspectRatio: '1:1',
+    };
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={squareSettings} />,
+    );
+    const hero = container.querySelector('[role="button"]') as HTMLElement | null;
+    expect(hero?.style.aspectRatio).toBe('1 / 1');
+  });
+
+  it('respects spotlightThumbnailSize setting', () => {
+    const bigThumbSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      spotlightThumbnailSize: 120,
+    };
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={bigThumbSettings} />,
+    );
+    const thumbBtns = Array.from(container.querySelectorAll('button'));
+    // All thumbnails should have width=120px
+    thumbBtns.forEach((btn) => {
+      expect((btn as HTMLButtonElement).style.width).toBe('120px');
+    });
+  });
+
+  it('renders gracefully with empty media — hero shows empty state', () => {
+    const { container } = render(
+      <SpotlightGallery media={[]} settings={SETTINGS} />,
+    );
+    // Hero still renders (empty state), no thumbnail buttons
+    expect(container.querySelector('[role="button"]')).not.toBeNull();
+    const thumbBtns = container.querySelectorAll('button');
+    expect(thumbBtns.length).toBe(0);
+  });
+});
+
+// ─── P31-F: ScrollSnapGallery-specific tests ──────────────────────────────────
+
+describe('ScrollSnapGallery — specific', () => {
+  it('renders one snap slide per media item', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    const slides = container.querySelectorAll('[role="button"]');
+    expect(slides.length).toBe(THREE_IMAGES.length);
+  });
+
+  it('applies scroll-snap-type to the snap container', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    const snapContainer = container.querySelector('[data-wpsg-slot="snap-container"]') as HTMLElement | null;
+    expect(snapContainer?.style.scrollSnapType).toBe('y mandatory');
+  });
+
+  it('applies scroll-snap-align from scrollSnapAlignment setting', () => {
+    const centerSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      scrollSnapAlignment: 'center',
+    };
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={centerSettings} />,
+    );
+    const slides = Array.from(container.querySelectorAll('[role="button"]')) as HTMLElement[];
+    slides.forEach((slide) => {
+      expect(slide.style.scrollSnapAlign).toBe('center');
+    });
+  });
+
+  it('shows page indicator when scrollSnapPageIndicator is true', () => {
+    render(<ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />);
+    // Each slide shows "n / 3" — check that at least the first indicator is present
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+  });
+
+  it('hides page indicator when scrollSnapPageIndicator is false', () => {
+    const noIndicatorSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      scrollSnapPageIndicator: false,
+    };
+    render(<ScrollSnapGallery media={THREE_IMAGES} settings={noIndicatorSettings} />);
+    expect(screen.queryByText('1 / 3')).not.toBeInTheDocument();
+  });
+
+  it('clicking a slide opens the lightbox', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />,
+    );
+    expect(screen.queryByTestId('lightbox-open')).not.toBeInTheDocument();
+
+    const [firstSlide] = Array.from(container.querySelectorAll('[role="button"]'));
+    fireEvent.click(firstSlide as HTMLElement);
+
+    expect(screen.getByTestId('lightbox-open')).toBeInTheDocument();
+  });
+
+  it('renders gracefully with empty media — shows empty placeholder', () => {
+    const { container } = render(
+      <ScrollSnapGallery media={[]} settings={SETTINGS} />,
+    );
+    expect(container.firstChild).not.toBeNull();
+    // No slide role="button" elements
+    expect(container.querySelectorAll('[role="button"]').length).toBe(0);
   });
 });

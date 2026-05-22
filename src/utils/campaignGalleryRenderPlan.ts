@@ -150,5 +150,11 @@ export function resolvePerTypeCampaignGalleryRenderPlan(
 export function shouldUseEqualHeightPerTypeLayout(
   ...plans: Array<CampaignGallerySectionRenderPlan | null>
 ): boolean {
+  // P31-F: Scroll Snap adapters own the full section height via overflow:scroll.
+  // Placing two snap containers side-by-side creates competing vertical gesture
+  // surfaces, so we always stack them vertically when either section uses it.
+  const hasScrollSnap = plans.some((plan) => plan?.adapterId === 'scroll-snap');
+  if (hasScrollSnap) return false;
+
   return plans.some((plan) => Boolean(plan?.runtime.common.perTypeSectionEqualHeight));
 }

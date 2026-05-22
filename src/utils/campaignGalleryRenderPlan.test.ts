@@ -296,4 +296,33 @@ describe('campaignGalleryRenderPlan', () => {
 
     expect(shouldUseEqualHeightPerTypeLayout(imagePlan, null)).toBe(true);
   });
+
+  // P31-F: Scroll Snap side-by-side opt-out
+  it('opts out of equal-height side-by-side layout when any plan uses scroll-snap', () => {
+    // Image plan uses scroll-snap; perTypeSectionEqualHeight is true but must be overridden.
+    const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(
+      makeCampaign({ videos: [], images: [image] }),
+      makeSettings({
+        galleryConfig: {
+          mode: 'per-type',
+          breakpoints: {
+            desktop: {
+              image: {
+                adapterId: 'scroll-snap',
+                common: {
+                  perTypeSectionEqualHeight: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      'desktop',
+      'image',
+    );
+
+    // Scroll Snap should force stacked layout regardless of the equal-height flag.
+    expect(imagePlan?.adapterId).toBe('scroll-snap');
+    expect(shouldUseEqualHeightPerTypeLayout(imagePlan, null)).toBe(false);
+  });
 });

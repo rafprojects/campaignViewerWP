@@ -95,6 +95,8 @@ describe('adapterRegistry', () => {
     expect(getSettingGroupFieldDefinitions('masonry').map((field) => field.key)).toEqual([
       'masonryColumns',
       'masonryAutoColumnBreakpoints',
+      'masonryEntranceAnimation',
+      'masonryEntranceStagger',
     ]);
     expect(getSettingGroupFieldDefinitions('shape').map((field) => field.key)).toEqual([
       'tileSize',
@@ -141,5 +143,54 @@ describe('adapterRegistry', () => {
 
   it('falls back to the classic adapter component for unknown ids', () => {
     expect(resolveAdapter('unknown-adapter')).toBe(resolveAdapter('classic'));
+  });
+
+  // P31-E: Spotlight adapter registry coverage
+  it('registers the spotlight adapter with correct capabilities and setting groups', () => {
+    const options = getAdapterSelectOptions({ context: 'unified-gallery' });
+    const spotlight = options.find((o) => o.value === 'spotlight');
+    expect(spotlight).toBeDefined();
+    expect(spotlight?.label).toBe('Spotlight (Hero + Strip)');
+  });
+
+  it('exposes schema-driven field definitions for the spotlight setting group', () => {
+    const fieldKeys = getSettingGroupFieldDefinitions('spotlight').map((f) => f.key);
+    expect(fieldKeys).toEqual([
+      'spotlightHeroAspectRatio',
+      'spotlightThumbnailSize',
+      'spotlightTransitionDuration',
+      'spotlightStripPosition',
+    ]);
+  });
+
+  it('reports spotlight in active setting groups when the adapter is selected', () => {
+    const groups = getActiveSettingGroupDefinitions(['spotlight']);
+    expect(groups.map((g) => g.group)).toContain('spotlight');
+    expect(groups.map((g) => g.group)).toContain('media-frame');
+  });
+
+  it('spotlight is not disabled at mobile breakpoint', () => {
+    const mobileOptions = getAdapterSelectOptions({ context: 'per-breakpoint-gallery', breakpoint: 'mobile' });
+    const spotlight = mobileOptions.find((o) => o.value === 'spotlight');
+    expect(spotlight?.disabled).toBeFalsy();
+  });
+
+  // P31-F: Scroll Snap adapter registry coverage
+  it('registers the scroll-snap adapter with correct option labels', () => {
+    const options = getAdapterSelectOptions({ context: 'unified-gallery' });
+    const snap = options.find((o) => o.value === 'scroll-snap');
+    expect(snap).toBeDefined();
+    expect(snap?.label).toBe('Scroll Snap (vertical)');
+  });
+
+  it('exposes schema-driven field definitions for the scroll-snap setting group', () => {
+    const fieldKeys = getSettingGroupFieldDefinitions('scroll-snap').map((f) => f.key);
+    expect(fieldKeys).toEqual(['scrollSnapAlignment', 'scrollSnapPageIndicator']);
+  });
+
+  it('scroll-snap adapter is not disabled at mobile breakpoint', () => {
+    const mobileOptions = getAdapterSelectOptions({ context: 'per-breakpoint-gallery', breakpoint: 'mobile' });
+    const snap = mobileOptions.find((o) => o.value === 'scroll-snap');
+    expect(snap?.disabled).toBeFalsy();
   });
 });

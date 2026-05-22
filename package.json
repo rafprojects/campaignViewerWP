@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build:wp": "npm run build && node scripts/copy-wp-assets.js",
     "validate:themes": "node scripts/validate-themes.mjs",
+    "validate:adapter-settings": "node scripts/validate-adapter-settings-parity.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",

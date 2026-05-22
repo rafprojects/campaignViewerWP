@@ -914,6 +914,162 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // P31-H: Media payload enrichment (dateUploaded, filesize, tags)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Create a minimal WP attachment post and return its ID.
+     * Sets the _wp_attachment_metadata post_meta so that
+     * wp_get_attachment_metadata() returns width, height, and filesize.
+     */
+    private function create_test_attachment(
+        string $filename = 'test.jpg',
+        int $width = 800,
+        int $height = 600,
+        int $filesize = 204800
+    ): int {
+        $attachment_id = self::factory()->post->create([
+            'post_type'   => 'attachment',
+            'post_title'  => $filename,
+            'post_status' => 'inherit',
+            'post_mime_type' => 'image/jpeg',
+            'post_date'   => '2024-06-15 10:30:00',
+        ]);
+
+        update_post_meta($attachment_id, '_wp_attachment_metadata', [
+            'width'    => $width,
+            'height'   => $height,
+            'filesize' => $filesize,
+            'file'     => "2024/06/{$filename}",
+        ]);
+        update_post_meta($attachment_id, '_wp_attached_file', "2024/06/{$filename}");
+
+        return $attachment_id;
+    }
+
+    public function test_list_media_includes_date_uploaded_for_upload_items() {
+        $aid = $this->create_test_attachment();
+        $cid = $this->create_campaign('P31-H Date Test');
+        update_post_meta($cid, 'media_items', [
+            [
+                'id'           => 'u1',
+                'type'         => 'image',
+                'source'       => 'upload',
+                'url'          => 'https://example.com/test.jpg',
+                'attachmentId' => $aid,
+                'order'        => 0,
+            ],
+        ]);
+
+        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $res = rest_do_request($req);
+
+        $this->assertEquals(200, $res->get_status());
+        $data  = $res->get_data();
+        $items = $data['items'] ?? [];
+        $this->assertNotEmpty($items);
+        $item = $items[0];
+        // dateUploaded should match the attachment's post_date.
+        $this->assertEquals('2024-06-15 10:30:00', $item['dateUploaded']);
+    }
+
+    public function test_list_media_includes_filesize_for_upload_items() {
+        $aid = $this->create_test_attachment('photo.jpg', 1024, 768, 512000);
+        $cid = $this->create_campaign('P31-H Filesize Test');
+        update_post_meta($cid, 'media_items', [
+            [
+                'id'           => 'u2',
+                'type'         => 'image',
+                'source'       => 'upload',
+                'url'          => 'https://example.com/photo.jpg',
+                'attachmentId' => $aid,
+                'order'        => 0,
+            ],
+        ]);
+
+        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $res = rest_do_request($req);
+
+        $this->assertEquals(200, $res->get_status());
+        $data  = $res->get_data();
+        $items = $data['items'] ?? [];
+        $this->assertNotEmpty($items);
+        // filesize from _wp_attachment_metadata (512000 bytes set in test fixture).
+        $this->assertEquals(512000, $items[0]['filesize']);
+    }
+
+    public function test_list_media_includes_tags_for_upload_items() {
+        $aid = $this->create_test_attachment();
+
+        // Create a wpsg_media_tag term and assign it to the attachment.
+        // wp_insert_term() returns WP_Error (with 'term_exists' code) when the
+        // same slug already exists from a prior test run. Extract the existing
+        // term_id from the error data in that case so the test stays idempotent.
+        $term_result = wp_insert_term('Portrait', 'wpsg_media_tag', ['slug' => 'portrait']);
+        if (is_wp_error($term_result)) {
+            $existing_id = $term_result->get_error_data('term_exists');
+            $this->assertNotEmpty($existing_id, 'wp_insert_term failed for an unexpected reason: ' . $term_result->get_error_message());
+            $term_id = (int) $existing_id;
+        } else {
+            $this->assertIsArray($term_result);
+            $term_id = (int) $term_result['term_id'];
+        }
+        wp_set_object_terms($aid, [$term_id], 'wpsg_media_tag');
+
+        $cid = $this->create_campaign('P31-H Tags Test');
+        update_post_meta($cid, 'media_items', [
+            [
+                'id'           => 'u3',
+                'type'         => 'image',
+                'source'       => 'upload',
+                'url'          => 'https://example.com/portrait.jpg',
+                'attachmentId' => $aid,
+                'order'        => 0,
+            ],
+        ]);
+
+        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $res = rest_do_request($req);
+
+        $this->assertEquals(200, $res->get_status());
+        $data  = $res->get_data();
+        $items = $data['items'] ?? [];
+        $this->assertNotEmpty($items);
+        $item = $items[0];
+        $this->assertArrayHasKey('tags', $item);
+        $this->assertCount(1, $item['tags']);
+        $this->assertEquals($term_id, $item['tags'][0]['id']);
+        $this->assertEquals('Portrait', $item['tags'][0]['name']);
+        $this->assertEquals('portrait', $item['tags'][0]['slug']);
+    }
+
+    public function test_list_media_does_not_add_metadata_fields_to_external_items() {
+        $cid = $this->create_campaign('P31-H External Test');
+        update_post_meta($cid, 'media_items', [
+            [
+                'id'     => 'ext1',
+                'type'   => 'image',
+                'source' => 'external',
+                'url'    => 'https://cdn.example.com/img.jpg',
+                'order'  => 0,
+            ],
+        ]);
+
+        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $res = rest_do_request($req);
+
+        $this->assertEquals(200, $res->get_status());
+        $data  = $res->get_data();
+        $items = $data['items'] ?? [];
+        $this->assertNotEmpty($items);
+        $item = $items[0];
+        // External items must not receive server-derived metadata fields.
+        $this->assertArrayNotHasKey('dateUploaded', $item);
+        $this->assertArrayNotHasKey('filesize', $item);
+        $this->assertArrayNotHasKey('tags', $item);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // Layout Template Public
     // ═══════════════════════════════════════════════════════════════════════
 

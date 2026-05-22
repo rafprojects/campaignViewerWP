@@ -110,6 +110,18 @@ class WPSG_Settings_Sanitizer {
         'photoNormalizeHeightUnit' => 'photo_normalize_height_unit',
         'masonryColumns' => 'masonry_columns',
         'masonryAutoColumnBreakpoints' => 'masonry_auto_column_breakpoints',
+        // P31-G: Masonry entrance animation
+        'masonryEntranceAnimation' => 'masonry_entrance_animation',
+        'masonryEntranceStagger' => 'masonry_entrance_stagger',
+        // P31-F: Vertical Scroll Snap adapter
+        'scrollSnapAlignment' => 'scroll_snap_alignment',
+        'scrollSnapPageIndicator' => 'scroll_snap_page_indicator',
+        // P31-E: Spotlight / Hero adapter
+        'spotlightHeroAspectRatio' => 'spotlight_hero_aspect_ratio',
+        'spotlightThumbnailSize' => 'spotlight_thumbnail_size',
+        'spotlightThumbnailSizeUnit' => 'spotlight_thumbnail_size_unit',
+        'spotlightTransitionDuration' => 'spotlight_transition_duration',
+        'spotlightStripPosition' => 'spotlight_strip_position',
         'imageViewportHeight' => 'image_viewport_height',
         'imageViewportHeightUnit' => 'image_viewport_height_unit',
         'videoViewportHeight' => 'video_viewport_height',
@@ -988,7 +1000,7 @@ class WPSG_Settings_Sanitizer {
      */
     private static function get_valid_gallery_adapters() {
         return class_exists('WPSG_CPT') ? WPSG_CPT::VALID_ADAPTERS
-            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder'];
+            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder', 'spotlight', 'scroll-snap'];
     }
 
     /**

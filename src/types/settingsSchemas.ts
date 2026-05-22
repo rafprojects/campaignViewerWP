@@ -26,6 +26,12 @@ const DOT_NAV_SHAPES = ['circle', 'pill', 'square'] as const;
 const CAROUSEL_AUTOPLAY_DIRECTIONS = ['ltr', 'rtl'] as const;
 const LAYOUT_BUILDER_SCOPES = ['full', 'viewport'] as const;
 const GRID_CARD_ASPECT_RATIOS = ['auto', '16:9', '4:3', '1:1', '3:4', '9:16', '2:3', '3:2', '21:9', '5:7'] as const;
+// P31-G: masonry entrance animation values
+const MASONRY_ENTRANCE_ANIMATIONS = ['none', 'waterfall'] as const;
+// P31-F: scroll-snap CSS snap-align values
+const SCROLL_SNAP_ALIGNMENTS = ['start', 'center', 'end'] as const;
+// P31-E: spotlight strip placement options
+const SPOTLIGHT_STRIP_POSITIONS = ['below', 'right'] as const;
 
 const optionalFiniteNumber = z.number().finite().optional().catch(undefined);
 const optionalBoolean = z.boolean().optional().catch(undefined);
@@ -116,6 +122,18 @@ export const GalleryAdapterSettingsSchema = z.object({
   photoNormalizeHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
   masonryColumns: optionalFiniteNumber,
   masonryAutoColumnBreakpoints: optionalString,
+  // P31-G: Masonry entrance animation
+  masonryEntranceAnimation: optionalEnum(MASONRY_ENTRANCE_ANIMATIONS),
+  masonryEntranceStagger: optionalFiniteNumber,
+  // P31-F: Vertical Scroll Snap adapter
+  scrollSnapAlignment: optionalEnum(SCROLL_SNAP_ALIGNMENTS),
+  scrollSnapPageIndicator: optionalBoolean,
+  // P31-E: Spotlight / Hero adapter
+  spotlightHeroAspectRatio: optionalString,
+  spotlightThumbnailSize: optionalFiniteNumber,
+  spotlightThumbnailSizeUnit: optionalEnum(CSS_WIDTH_UNITS),
+  spotlightTransitionDuration: optionalFiniteNumber,
+  spotlightStripPosition: optionalEnum(SPOTLIGHT_STRIP_POSITIONS),
   imageViewportHeight: optionalFiniteNumber,
   imageViewportHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
   videoViewportHeight: optionalFiniteNumber,

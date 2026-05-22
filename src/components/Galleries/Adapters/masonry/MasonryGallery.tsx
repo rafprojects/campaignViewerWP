@@ -69,6 +69,12 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
   const gap = settings.thumbnailGap ?? 6;
   const pinned = settings.masonryColumns ?? 0;
 
+  // P31-G: Waterfall entrance animation
+  const waterfallEnabled = (settings.masonryEntranceAnimation ?? 'none') === 'waterfall';
+  const entranceStagger = Math.max(0, Math.min(300, settings.masonryEntranceStagger ?? 60));
+  // Duration for one tile's entrance (total tile anim time before next starts).
+  const ENTRANCE_DURATION_MS = 400;
+
   // Responsive column function — uses shared helper; honours user's pin when set.
   const columns = pinned > 0
     ? pinned
@@ -113,7 +119,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
         spacing={gap}
         onClick={({ index }) => openAt(index)}
         render={{
-          button({ style, className, ...props }, { photo }) {
+          button({ style, className, ...props }, { photo, index }) {
             const isVideo = (photo as RpaPhoto).item.type === 'video';
             const borderRadius = toCssOrNumber(
               isVideo ? settings.videoBorderRadius : settings.imageBorderRadius,
@@ -124,7 +130,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
               <button
                 {...props}
                 {...getWpsgDebugProps('MasonryGallery', 'tile')}
-                className={`wpsg-tile-${SCOPE} ${className ?? ''}`}
+                className={`wpsg-tile-${SCOPE}${waterfallEnabled ? ' wpsg-waterfall-tile' : ''} ${className ?? ''}`}
                 style={{
                   ...style,
                   overflow: 'hidden',
@@ -138,6 +144,8 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
                   width: '100%',
                   breakInside: 'avoid',
                   background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  // P31-G: per-tile entrance stagger delay (overridden by reduced-motion rule)
+                  ...(waterfallEnabled ? { animationDelay: `${index * entranceStagger}ms` } : {}),
                 }}
               />
             );
@@ -200,6 +208,23 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
         .react-photo-album--masonry .react-photo-album--button:hover .wpsg-mas-zoom {
           opacity: 1 !important;
         }
+        ${waterfallEnabled ? `
+        /* P31-G: Waterfall entrance animation.
+           Applies on initial mount; fill-mode 'both' keeps tiles visible after
+           completion. Reduced-motion users get no motion — opacity still fades in
+           so the tile is not permanently invisible when animation: none is applied. */
+        @keyframes wpsg-waterfall-enter {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .wpsg-waterfall-tile {
+          animation: wpsg-waterfall-enter ${ENTRANCE_DURATION_MS}ms ease both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .wpsg-waterfall-tile {
+            animation: none !important;
+          }
+        }` : ''}
       `}</style>
 
       <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
