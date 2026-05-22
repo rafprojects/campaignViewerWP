@@ -1,6 +1,6 @@
 # Phase 31 — Gallery Reliability, Adapter Coverage, Config Hardening & Targeted Capability Expansion
 
-**Status:** In Progress (P31-D, P31-H remain as pre-evaluation)
+**Status:** In Progress (P31-D pre-evaluation remaining)
 **Created:** 2026-05-19
 **Last updated:** 2026-05-21
 
@@ -15,7 +15,7 @@
 | P31-E | Spotlight / Hero adapter delivery | **Done** | Small-Medium |
 | P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | **Done** | Medium |
 | P31-G | Waterfall entrance animation as a Masonry enhancement | **Done** | Small |
-| P31-H | Media payload foundations for future timeline/filter work | Pre-Evaluation | Medium |
+| P31-H | Media payload foundations for future timeline/filter work | **Done** | Medium |
 
 ---
 
@@ -775,14 +775,46 @@ into a broad backend-delivery phase.
 ### Acceptance criteria
 
 - A written proposal exists for the canonical `MediaItem`/REST payload contract
-  around `dateUploaded`, `filesize`, and optional per-item media tags. ( )
+  around `dateUploaded`, `filesize`, and optional per-item media tags. (✓)
 - The proposal explicitly states which date concept future Timeline work should
-  rely on. ( )
+  rely on. (✓)
 - The proposal explicitly states whether filterable-gallery follow-on work
   should rely on `wpsg_media_tag` exposure, a wrapper-only transform, or new
-  relationship-level metadata. ( )
+  relationship-level metadata. (✓)
 - Phase 31 exits with a clear go/no-go prerequisite list for Timeline and
-  Filterable follow-on work. ( )
+  Filterable follow-on work. (✓)
+
+### Completion Notes (2026-05-21)
+
+Pre-evaluation completed via `docs/P31-H_ASSESSMENT_052126.md`; findings were
+concrete enough to deliver rather than only document.
+
+**Canonical decisions:**
+- `dateUploaded`: WP attachment `post_date` (local time). This is the canonical
+  chronology signal for a future Timeline adapter. Campaign-relationship date is
+  not tracked anywhere and would require a schema addition; skip for now.
+- `filesize`: WP attachment metadata `filesize` key (WP ≥ 6.0), with filesystem
+  fallback for older installs. Not meaningful for external media — omitted.
+- `tags`: Compact objects `{id, name, slug}` from `wpsg_media_tag` taxonomy.
+  Self-contained per item; eliminates a second round-trip for the gallery runtime.
+  Not present for untagged or external items.
+
+**Delivered:**
+1. `enrich_media_with_metadata()` replaces `enrich_media_with_dimensions()` in
+   `class-wpsg-rest.php` — batched batch queries (meta cache prime, `get_posts()`,
+   one tag join) avoid N+1 on the `list_media` read path.
+2. `enrich_media_with_dimensions()` kept as a deprecated shim delegating to the
+   new function; both existing call sites updated to call the new function directly.
+3. `MediaTag` interface and `dateUploaded`, `filesize`, `tags` optional fields
+   added to `MediaItem` in `src/types/index.ts`.
+4. 4 PHP tests added to `WPSG_REST_Extended_Test.php` covering upload-item
+   enrichment and external-item isolation.
+
+**Prerequisites cleared for follow-on work:**
+- [x] `dateUploaded` in REST payload and typed in TypeScript (Timeline prerequisite)
+- [x] `tags` in REST payload and typed in TypeScript (Filterable gallery prerequisite)
+- [ ] Timeline-specific chronology UI (Phase N — out of scope)
+- [ ] Client-side filter orchestration and filter UI (Phase N — out of scope)
 
 ### Validation
 
