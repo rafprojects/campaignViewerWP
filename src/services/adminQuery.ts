@@ -102,6 +102,8 @@ export interface CompanyAccessGrant {
   companyName?: string;
   expires_at?: string | null;
   is_expired?: boolean;
+  /** P33-A: Role level for this grant. Absent on legacy records → treated as 'viewer'. */
+  access_level?: import('@/types').CampaignAccessLevel | undefined;
 }
 
 const ADMIN_QUERY_STALE_TIME = 30_000;

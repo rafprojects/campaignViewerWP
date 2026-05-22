@@ -1,17 +1,17 @@
 # Phase 33 — Access Governance & Per-Campaign RBAC
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-05-19
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-22
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P33-A | RBAC data model, precedence rules, and migration boundary | Pre-Evaluation | Medium |
-| P33-B | Campaign/company grant schema and REST role endpoints | Planned | Large |
-| P33-C | Role-aware server-side enforcement across admin and viewer actions | Planned | Medium-Large |
-| P33-D | Access management UI for assigning, editing, and surfacing roles | Planned | Medium |
+| P33-A | RBAC data model, precedence rules, and migration boundary | ✅ Complete | Medium |
+| P33-B | Campaign/company grant schema and REST role endpoints | ✅ Complete | Large |
+| P33-C | Role-aware server-side enforcement across admin and viewer actions | ✅ Complete | Medium-Large |
+| P33-D | Access management UI for assigning, editing, and surfacing roles | ✅ Complete | Medium |
 
 ---
 
@@ -85,13 +85,76 @@ before implementation begins.
 - Produce one action matrix that covers at least: read, edit campaign metadata,
   mutate media, manage access, and mutate layout/builder surfaces.
 
+### Permission Matrix
+
+| Action | viewer | editor | owner | manage_wpsg |
+|--------|:------:|:------:|:-----:|:-----------:|
+| Read campaign (public or granted) | ✅ | ✅ | ✅ | ✅ |
+| Read campaign metadata (private) | ✅ | ✅ | ✅ | ✅ |
+| Edit campaign metadata (title, description, tags, status, visibility) | ❌ | ✅ | ✅ | ✅ |
+| Mutate campaign media (add, edit, delete, reorder) | ❌ | ✅ | ✅ | ✅ |
+| Publish / unpublish / schedule | ❌ | ✅ | ✅ | ✅ |
+| Duplicate campaign | ❌ | ✅ | ✅ | ✅ |
+| Manage campaign access (grant / revoke / approve requests) | ❌ | ❌ | ✅ | ✅ |
+| Mutate layout template (builder save, slot edit) | ❌ | ❌ | ✅ | ✅ |
+| Assign / change layout template binding | ❌ | ❌ | ✅ | ✅ |
+| Archive / delete campaign | ❌ | ❌ | ✅ | ✅ |
+
+> **Note:** `manage_wpsg` (site-wide WordPress capability) always overrides
+> every campaign role. The check order is: `manage_wpsg` → `owner` → `editor`
+> → `viewer`.
+
+### Precedence Rules
+
+1. **Site-wide admin wins.** Any user holding the `manage_wpsg` capability has
+   unrestricted access to every campaign regardless of their campaign role.
+2. **Campaign grant overrides company grant.** When a user has both a
+   company-level grant and a campaign-level grant, the campaign grant's
+   `access_level` is authoritative for that campaign.
+3. **Company grant propagates as-is.** Where only a company grant exists, its
+   `access_level` applies to every campaign in the company.
+4. **Explicit deny beats all grants.** A campaign-level override with
+   `action: deny` removes all access for that user on that campaign regardless
+   of company or campaign grants.
+5. **No role → no mutation.** A user who can see a campaign through a public
+   or granted route but has no `access_level` grant is implicitly `viewer`.
+
+### Data-Model Choice
+
+Extend existing grant record arrays (`access_grants` post/term meta and the
+access-requests table) with a single `access_level` field.  No new database
+table is introduced in the first pass.
+
+```
+// Campaign grant entry shape (post_meta: access_grants)
+{
+  userId:       int,
+  campaignId:   int,
+  source:       'campaign' | 'company',
+  grantedAt:    ISO 8601,
+  expires_at:   ISO 8601 | null,
+  access_level: 'viewer' | 'editor' | 'owner'   // P33-B addition
+}
+```
+
+Company grant entries use the same shape with `companyId` in place of
+`campaignId`.
+
+### Migration Boundary
+
+- **Legacy grants** (records without `access_level`) are read as `viewer`.
+- No backfill migration is run on existing data; the default is applied at
+  runtime on every read.
+- Access-request approvals default to `viewer` unless the approving admin
+  passes an explicit `access_level` in the approve payload.
+
 ### Acceptance criteria
 
-- A written permission matrix exists for `viewer`, `editor`, and `owner`. ( )
-- The data-model choice and legacy-grant migration rule are documented. ( )
-- Company/campaign precedence and admin override behavior are documented. ( )
+- A written permission matrix exists for `viewer`, `editor`, and `owner`. (✅)
+- The data-model choice and legacy-grant migration rule are documented. (✅)
+- Company/campaign precedence and admin override behavior are documented. (✅)
 - The phase can proceed without unresolved contract ambiguity around owner-only
-  actions. ( )
+  actions. (✅)
 
 ### Validation
 
@@ -139,12 +202,12 @@ store, return, and update role levels.
 
 ### Acceptance criteria
 
-- Campaign and company access endpoints can read and write role levels. ( )
+- Campaign and company access endpoints can read and write role levels. (✅)
 - Legacy grants without `access_level` still behave predictably during the
-  migration window. ( )
-- Access-request approval flows assign an explicit default role. ( )
+  migration window. (✅)
+- Access-request approval flows assign an explicit default role. (✅)
 - REST coverage exists for role validation, legacy reads, and updated grant
-  payloads. ( )
+  payloads. (✅)
 
 ### Validation
 
@@ -193,11 +256,11 @@ campaign mutation paths that should honor `viewer`, `editor`, and `owner`.
 
 ### Acceptance criteria
 
-- `viewer` users can read but cannot mutate protected campaign/admin actions. ( )
+- `viewer` users can read but cannot mutate protected campaign/admin actions. (✅)
 - `editor` users can perform the allowed mutation subset and are denied
-  owner-only actions. ( )
-- `owner` users can manage access and other owner-scoped campaign actions. ( )
-- Site-wide admin capability still overrides campaign-level roles. ( )
+  owner-only actions. (✅)
+- `owner` users can manage access and other owner-scoped campaign actions. (✅)
+- Site-wide admin capability still overrides campaign-level roles. (✅)
 
 ### Validation
 
@@ -244,11 +307,11 @@ role levels without falling back to ad hoc documentation.
 
 ### Acceptance criteria
 
-- Admins can assign an explicit role when creating or editing a grant. ( )
-- Existing grants display their effective role clearly. ( )
+- Admins can assign an explicit role when creating or editing a grant. (✅)
+- Existing grants display their effective role clearly. (✅)
 - Role-specific affordances and warnings are visible in the access-management
-  UI. ( )
-- The UI stays aligned with the server-enforced permission matrix. ( )
+  UI. (✅)
+- The UI stays aligned with the server-enforced permission matrix. (✅)
 
 ### Validation
 
