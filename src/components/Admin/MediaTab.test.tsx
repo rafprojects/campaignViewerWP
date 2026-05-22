@@ -767,7 +767,7 @@ describe('MediaTab', () => {
     });
   });
 
-  it('hides drag handles when not in order sort mode', async () => {
+  it('hides drag handles when not in order sort mode (list view)', async () => {
     // Clear any sort preference left by earlier tests
     localStorage.removeItem('wpsg_media_sortMode');
 
@@ -788,6 +788,34 @@ describe('MediaTab', () => {
     );
 
     // Switch to title sort — drag handles should disappear
+    const select = screen.getByRole('combobox', { name: /sort mode/i });
+    fireEvent.click(select);
+    fireEvent.click(await screen.findByRole('option', { name: 'Title A–Z' }));
+
+    await waitFor(() =>
+      expect(screen.queryAllByLabelText('Drag media to reorder')).toHaveLength(0),
+    );
+  });
+
+  it('hides drag handles when not in order sort mode (grid view)', async () => {
+    // Clear any sort preference left by earlier tests
+    localStorage.removeItem('wpsg_media_sortMode');
+
+    apiClient.get.mockResolvedValueOnce([
+      { id: 'g1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Gamma', order: 1 },
+      { id: 'g2', type: 'image', source: 'upload', url: '2.jpg', caption: 'Delta', order: 2 },
+    ]);
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    // Wait for grid items to populate (default view is grid)
+    await screen.findByText('Gamma');
+
+    // In grid view, drag handles should be present for order sort
+    await waitFor(() =>
+      expect(screen.getAllByLabelText('Drag media to reorder').length).toBeGreaterThan(0),
+    );
+
+    // Switch to title sort — handles should disappear from card grid too
     const select = screen.getByRole('combobox', { name: /sort mode/i });
     fireEvent.click(select);
     fireEvent.click(await screen.findByRole('option', { name: 'Title A–Z' }));

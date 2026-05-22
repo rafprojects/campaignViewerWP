@@ -955,14 +955,15 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     { value: 'large', label: 'L' },
   ], []);
 
-  // P34-B: sort selector options — stable reference
+  // P34-B: sort selector options — disable usage sort while summary is being fetched
+  // to avoid showing a misleading all-zero-count ordering before data arrives.
   const sortModeData = useMemo(() => [
     { value: 'order', label: 'Order' },
     { value: 'title', label: 'Title A–Z' },
     { value: 'created', label: 'Date uploaded' },
     { value: 'size', label: 'File size' },
-    { value: 'usage', label: 'Usage count' },
-  ], []);
+    { value: 'usage', label: 'Usage count', disabled: usageSummaryLoading },
+  ], [usageSummaryLoading]);
 
   const handleViewModeChange = useCallback((v: Primitive) => setViewMode(v as unknown as ViewMode), [setViewMode]);
   const handleCardSizeChange = useCallback((v: Primitive) => setCardSize(v as unknown as CardSize), [setCardSize]);

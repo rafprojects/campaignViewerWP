@@ -213,11 +213,19 @@ describe('MediaCard — showUrl prop', () => {
 // ─── Drag handle ────────────────────────────────────────────────────────────
 
 describe('MediaCard — drag handle', () => {
-  it('renders drag handle button', () => {
-    render(<MediaCard item={imageItem} {...defaultProps} />);
+  it('renders drag handle button when dragHandleProps is provided', () => {
+    render(<MediaCard item={imageItem} {...defaultProps} dragHandleProps={{}} />);
     expect(
       screen.getByRole('button', { name: /drag media to reorder/i }),
     ).toBeInTheDocument();
+  });
+
+  it('does not render drag handle button when dragHandleProps is absent', () => {
+    // dragHandleProps defaults to undefined — handle should be hidden (e.g. non-order sort mode)
+    render(<MediaCard item={imageItem} {...defaultProps} />);
+    expect(
+      screen.queryByRole('button', { name: /drag media to reorder/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('passes dragHandleProps to the drag handle button', () => {

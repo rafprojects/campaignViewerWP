@@ -97,15 +97,17 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 )}
               </Box>
               <Group gap={4} wrap="nowrap">
-                <ActionIcon
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  {...(dragHandleProps as any)}
-                  variant="subtle"
-                  aria-label="Drag media to reorder"
-                  style={{ cursor: 'grab' }}
-                >
-                  <IconGripVertical size={16} />
-                </ActionIcon>
+                {dragHandleProps !== undefined && (
+                  <ActionIcon
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    {...(dragHandleProps as any)}
+                    variant="subtle"
+                    aria-label="Drag media to reorder"
+                    style={{ cursor: 'grab' }}
+                  >
+                    <IconGripVertical size={16} />
+                  </ActionIcon>
+                )}
                 <ActionIcon variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
                 <ActionIcon variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
               </Group>
