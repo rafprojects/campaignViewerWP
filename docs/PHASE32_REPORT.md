@@ -1,6 +1,6 @@
 # Phase 32 — Shared Infrastructure Maintenance, Observability & API Layer Decomposition
 
-**Status:** Planned
+**Status:** Complete ✅
 **Created:** 2026-05-19
 **Last updated:** 2026-05-19
 
@@ -9,9 +9,9 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P32-A | Scheduled archive batching & cron write-path hardening | Complete ✅ | Small |
-| P32-B | WordPress settings facade simplification | Planned | Small |
-| P32-C | `ApiClient` transport extraction & domain module split | Planned | Medium |
-| P32-D | Structured server-side logging & bounded operator log surface | Planned | Medium |
+| P32-B | WordPress settings facade simplification | Complete ✅ | Small |
+| P32-C | `ApiClient` transport extraction & domain module split | Complete ✅ | Medium |
+| P32-D | Structured server-side logging & bounded operator log surface | Complete ✅ | Medium |
 
 ---
 
@@ -153,10 +153,10 @@ requiring a separate one-line wrapper for every renderer or section callback.
 
 ### Acceptance criteria
 
-- Boilerplate delegation methods in `WPSG_Settings` are materially reduced. ( )
-- Settings-page rendering behavior and callback registrations remain intact. ( )
+- Boilerplate delegation methods in `WPSG_Settings` are materially reduced. (✅)
+- Settings-page rendering behavior and callback registrations remain intact. (✅)
 - The resulting structure is easier to trace than the current wrapper-heavy
-  layout. ( )
+  layout. (✅)
 
 ### Validation
 
@@ -207,11 +207,11 @@ behavior and domain-specific API modules compose on top of it.
 
 ### Acceptance criteria
 
-- Shared transport logic is no longer coupled directly to every domain method. ( )
-- Domain-specific endpoint groups are separated into clearer modules. ( )
-- Existing consumers continue to work without broad behavioral regression. ( )
+- Shared transport logic is no longer coupled directly to every domain method. (✅)
+- Domain-specific endpoint groups are separated into clearer modules. (✅)
+- Existing consumers continue to work without broad behavioral regression. (✅)
 - The refactor materially improves testability of both transport logic and
-  endpoint groups. ( )
+  endpoint groups. (✅)
 
 ### Validation
 
@@ -293,13 +293,13 @@ turning this phase into a full telemetry-platform build-out.
 
 ### Acceptance criteria
 
-- Infrastructure log points emit one consistent structured format. ( )
+- Infrastructure log points emit one consistent structured format. (✅)
 - Slow REST, fatal PHP, oEmbed failure, and security-warning paths are covered
-  by the first-pass logger integration. ( )
+  by the first-pass logger integration. (✅)
 - Admins can inspect a bounded recent-log view without needing raw server
-  access. ( )
+  access. (✅)
 - Existing monitoring headers, health counters, and alert hooks remain
-  behavior-preserving. ( )
+  behavior-preserving. (✅)
 
 ### Validation
 
@@ -341,6 +341,48 @@ turning this phase into a full telemetry-platform build-out.
 - P32-A landed with batched `status` writes in `wp-super-gallery.php`, a
   metadata-API fallback path for DB-write failures, and focused PHPUnit
   coverage in `tests/WPSG_Auto_Archive_Cron_Test.php`.
+- P32-C split `src/services/apiClient.ts` (692 lines, mixed transport + domain)
+  into a layered structure. `src/services/http/HttpTransport.ts` defines the
+  `HttpTransport` interface and `ApiClientOptions`. `HttpTransportImpl`
+  (http/HttpTransportImpl.ts) owns all shared transport concerns: timeout +
+  AbortController, auth-header construction, nonce injection, nonce refresh on
+  403, online guard, response parsing, and 401 callback. Five domain modules
+  group endpoint concerns: `api/settingsApi.ts` (settings + connectivity probe),
+  `api/layoutTemplatesApi.ts` (layout templates CRUD), `api/analyticsApi.ts`
+  (event recording, campaign/media analytics, media usage), `api/campaignsApi.ts`
+  (campaign CRUD, categories, tags, templates, media batches, export/import,
+  access requests), and `api/adminApi.ts` (WP pages, audit CSV). `ApiClient` now
+  extends `HttpTransportImpl` and delegates each domain method to the appropriate
+  module — all existing import paths and call sites are unchanged. All types
+  previously exported from `apiClient.ts` are re-exported for backward compat.
+  New focused unit test `src/services/api/settingsApi.test.ts` (7 tests) proves
+  domain modules are independently testable with a mock transport. Full Vitest
+  suite: 133 files, 1808 tests, all green.
+- P32-D added `WPSG_Logger` (`includes/class-wpsg-logger.php`) — a static
+  facade with `info()`, `warning()`, and `error()` methods that emit one
+  consistent JSON record (timestamp, level, component, message, optional data)
+  to two sinks: the PHP error log and a bounded in-database ring buffer
+  (`wpsg_recent_logs`, default 200 entries, configurable via
+  `wpsg_log_max_entries` filter). Six ad hoc `error_log` callsites were
+  migrated: fatal-error capture in `WPSG_Monitoring`, nonce-bypass security
+  warning and both oEmbed failure paths in `WPSG_REST`, slow-REST warning in
+  `WPSG_REST`, and image-optimization failure in `WPSG_Image_Optimizer`.
+  `WPSG_Monitoring::get_health_data()` now includes a `recentLogs` key (last
+  50 entries) so admins can read structured logs from the existing
+  `/wp-super-gallery/v1/admin/health` REST endpoint without raw server access.
+  All existing monitoring headers, health counters, and alert hooks are
+  behavior-preserving. PHPUnit coverage added in `tests/WPSG_Logger_Test.php`
+  (11 tests). Full suite: 685 tests, 2294 assertions, all green.
+- P32-B removed 16 dead delegation wrappers from `WPSG_Settings` (all
+  `render_*` section/field methods, `add_menu_page`, `register_settings`,
+  `render_settings_page`, `snake_to_camel`, `extract_google_font_families`,
+  `filter_auth_provider`, and `filter_api_base`). The WP filter hooks in
+  `init()` now register directly on `WPSG_Settings_Service`. The one
+  production caller of `extract_google_font_families` in
+  `class-wpsg-embed.php` was updated to call `WPSG_Settings_Typography`
+  directly. Tests in `WPSG_Settings_Extended_Test.php` and
+  `WPSG_Settings_Test.php` were updated to call implementation classes
+  directly. Full PHPUnit suite: 674 tests, 2258 assertions, all green.
 - Structured logging was promoted into this phase during the 2026-05-19
   FUTURE_TASKS reconciliation because the monitoring foundation already exists
   and the remaining gap is operator-facing log consistency, not greenfield
