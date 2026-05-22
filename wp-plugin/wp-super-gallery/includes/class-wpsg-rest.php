@@ -1350,7 +1350,10 @@ class WPSG_REST {
                 $media_items = get_post_meta($post->ID, 'media_items', true);
                 $media_items = is_array($media_items) ? $media_items : [];
                 $normalized = self::normalize_media_items_types($media_items);
-                $media_by_campaign[$campaign_id] = self::enrich_media_with_metadata($normalized['items']);
+                // Use dimensions_only=true so the campaigns list (which serves initial
+                // app-load thumbnails) does not pay the cost of the date/filesize/tag
+                // SQL queries. Full enrichment is available via the single-gallery endpoint.
+                $media_by_campaign[$campaign_id] = self::enrich_media_with_metadata($normalized['items'], true);
             }
         }
 
@@ -3854,14 +3857,6 @@ class WPSG_REST {
     }
 
     /**
-     * Enrich media items with width/height from WP attachment metadata.
-     * Items that already carry dimensions are left unchanged.
-     * Images without stored dimensions are probed via wp_get_attachment_metadata().
-     *
-     * @param array $items Normalised media items array.
-     * @return array Items with 'width' / 'height' fields populated where possible.
-     */
-    /**
      * Enrich media items with server-derived metadata: pixel dimensions,
      * upload date, filesize, and taxonomy tags.
      *
@@ -3869,30 +3864,36 @@ class WPSG_REST {
      * date/filesize/tag enrichment. External media items receive dimension
      * enrichment only when width/height are missing (existing behaviour).
      *
-     * Batching strategy: all attachment IDs are collected upfront and processed
-     * in three batch queries (meta cache prime, post objects, tag join) so the
-     * per-item loop runs on cached data and does not trigger N+1 queries.
+     * Batching strategy: when full enrichment is requested, all attachment IDs
+     * are collected upfront and the post-meta cache is primed in one batch so
+     * the per-item loop runs on cached data and does not trigger N+1 queries.
      *
-     * @param array $items Raw media-item arrays from post_meta.
-     * @return array        Same items with additional fields populated.
+     * @param array $items          Raw media-item arrays from post_meta.
+     * @param bool  $dimensions_only When true, skip the date/filesize/tag enrichment
+     *                               and only fill in missing pixel dimensions. Use for
+     *                               lightweight list endpoints (e.g. list_campaigns)
+     *                               where the extra SQL joins would slow the response
+     *                               without benefiting the caller.
+     * @return array                 Same items with additional fields populated.
      */
-    private static function enrich_media_with_metadata(array $items): array {
-        // Collect all upload attachment IDs for a single meta-cache warm-up pass.
-        // Deduplicate so a gallery referencing the same attachment twice does not
-        // inflate the update_meta_cache() call or any future batch queries.
-        $attachment_ids = [];
-        foreach ($items as $item) {
-            $aid = intval($item['attachmentId'] ?? 0);
-            if ($aid > 0 && ($item['source'] ?? '') === 'upload') {
-                $attachment_ids[$aid] = $aid; // keyed for O(1) deduplication
+    private static function enrich_media_with_metadata(array $items, bool $dimensions_only = false): array {
+        // Collect upload attachment IDs and prime the post-meta cache in one batch.
+        // Skipped in $dimensions_only mode because only wp_get_attachment_metadata()
+        // (which reads post meta) is called there, and its cache is warm after the
+        // update_meta_cache() call at the campaigns list level.
+        if (!$dimensions_only) {
+            $attachment_ids = [];
+            foreach ($items as $item) {
+                $aid = intval($item['attachmentId'] ?? 0);
+                if ($aid > 0 && ($item['source'] ?? '') === 'upload') {
+                    $attachment_ids[$aid] = $aid; // keyed for O(1) deduplication
+                }
             }
-        }
-        $attachment_ids = array_values($attachment_ids);
+            $attachment_ids = array_values($attachment_ids);
 
-        // Prime the post-meta cache in one batch so subsequent wp_get_attachment_metadata()
-        // calls are served from cache rather than issuing individual queries.
-        if (!empty($attachment_ids)) {
-            update_meta_cache('post', $attachment_ids);
+            if (!empty($attachment_ids)) {
+                update_meta_cache('post', $attachment_ids);
+            }
         }
 
         foreach ($items as &$item) {
@@ -3910,8 +3911,9 @@ class WPSG_REST {
                 }
             }
 
-            // Metadata enrichment applies only to upload items with a valid attachment.
-            if ($source !== 'upload' || $aid <= 0) {
+            // Metadata enrichment (date/filesize/tags) applies only to upload items
+            // with a valid attachment and is skipped entirely in dimensions_only mode.
+            if ($dimensions_only || $source !== 'upload' || $aid <= 0) {
                 continue;
             }
 

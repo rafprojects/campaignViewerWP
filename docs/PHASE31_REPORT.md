@@ -917,7 +917,7 @@ work remain follow-on candidates here.
 
 ## PR #47 Review — Copilot Comment Rationale (2026-05-22)
 
-All five Copilot review threads were accepted and implemented in commit `25766fd`.
+Seven Copilot review threads total; five implemented in commit `25766fd`, two additional threads (outdated/skipped by default tooling) implemented in a follow-up commit.
 
 | Thread | File | Decision | Rationale |
 |--------|------|----------|-----------|
@@ -926,6 +926,8 @@ All five Copilot review threads were accepted and implemented in commit `25766fd
 | Duplicate attachment IDs | `class-wpsg-rest.php` | **Accept** | A gallery can legitimately reference the same attachment more than once (e.g. the same image in multiple positions). The ID collection loop used a plain array append, so duplicates would inflate `update_meta_cache()`. Switched to an associative-key pattern (`$ids[$aid] = $aid`) followed by `array_values()` — O(1) deduplication with no performance overhead. |
 | Space `preventDefault` — Spotlight | `SpotlightGallery.tsx` | **Accept** | ARIA spec requires that pressing Space on a `role="button"` element activates it *and* does not scroll the page. The previous handler fired the click but omitted `e.preventDefault()`, so the Space key also scrolled the viewport. Fixed by calling `e.preventDefault()` before `handleHeroClick()`. |
 | Space `preventDefault` — ScrollSnap | `ScrollSnapGallery.tsx` | **Accept** | Same issue as Spotlight, applied to the slide buttons inside the scroll-snap container. Without `preventDefault()`, Space activates the slide but also scrolls the container, producing a confusing dual-action. |
+| Stale docblock on `enrich_media_with_metadata()` | `class-wpsg-rest.php` | **Accept** | After P31-H expanded the function to cover date/filesize/tags, the original width/height-only docblock was left sitting directly above the updated one, producing two consecutive conflicting docblocks. Removed the stale block; the current single docblock accurately describes the full enrichment contract and the `$dimensions_only` escape hatch. |
+| `list_campaigns` full-enrichment overhead | `class-wpsg-rest.php` | **Accept** | `list_campaigns(include_media=1)` was calling `enrich_media_with_metadata()` with full enrichment (date, filesize, tag SQL join) to serve initial-load thumbnails — fields the campaigns list doesn't use. Added `bool $dimensions_only = false` parameter; the campaigns list passes `true` to restrict enrichment to pixel dimensions only. Full enrichment remains available through the single-gallery endpoint. |
 
 ## Implementation Notes
 
