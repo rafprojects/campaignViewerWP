@@ -36,6 +36,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-utils.php'
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-db.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-logger.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-monitoring.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-alerts.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-sentry.php';

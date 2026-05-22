@@ -74,7 +74,7 @@ class WPSG_Monitoring {
             'line' => $error['line'] ?? 0,
         ];
 
-        error_log('[WPSG] Fatal error: ' . wp_json_encode($payload));
+        WPSG_Logger::error('monitoring', 'Fatal PHP error', $payload);
         do_action('wpsg_php_error', $payload);
     }
 
@@ -194,6 +194,11 @@ class WPSG_Monitoring {
         // P28-B: count grants whose expiry has passed but not yet been pruned by cron.
         $expired_grants_pending = self::count_expired_grants_pending_cleanup();
 
+        // P32-D: Include the bounded recent-log buffer so admins can read
+        // structured infrastructure logs from the health endpoint without
+        // needing raw server access.
+        $recent_logs = class_exists('WPSG_Logger') ? WPSG_Logger::get_recent_logs(50) : [];
+
         return [
             'restRequestCount'             => $request_count,
             'restErrorCount'               => $error_count,
@@ -214,6 +219,7 @@ class WPSG_Monitoring {
             'wpVersion'                    => get_bloginfo('version'),
             'pluginVersion'                => defined('WPSG_VERSION') ? WPSG_VERSION : 'unknown',
             'timestamp'                    => time(),
+            'recentLogs'                   => $recent_logs,
         ];
     }
 

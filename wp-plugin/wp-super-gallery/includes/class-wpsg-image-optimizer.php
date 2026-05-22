@@ -94,7 +94,7 @@ class WPSG_Image_Optimizer {
         $result = self::constrain_image($file, $max_width, $max_height, $quality);
         if (is_wp_error($result)) {
             // Log but don't fail the upload.
-            error_log('[WPSG] Image optimization failed: ' . $result->get_error_message());
+            WPSG_Logger::warning('image-optimizer', 'Image optimization failed', ['error' => $result->get_error_message()]);
             return $upload;
         }
 
