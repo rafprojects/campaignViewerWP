@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef, memo, type CSSProperties, type KeyboardEventHandler } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Table, Box, ActionIcon, Tooltip, Badge, Pagination, Skeleton, Switch, type GridColProps, type Primitive } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Select, Table, Box, ActionIcon, Tooltip, Badge, Pagination, Skeleton, Switch, type GridColProps, type Primitive } from '@mantine/core';
 
 // Mantine's SegmentedControl calls setState inside its ref callbacks, which triggers
 // React's "maximum update depth" error when the component re-renders rapidly.
@@ -74,6 +74,10 @@ type ViewMode = 'grid' | 'list' | 'compact';
 type CardSize = 'small' | 'medium' | 'large';
 type DropPosition = 'before' | 'after';
 
+// P34-B: sort mode type + pure helper live in their own module so this file
+// stays components-only (react-refresh/only-export-components requirement).
+import { applySortMode, type MediaSortMode } from './applySortMode';
+
 const LIST_MIN_WIDTH = 720;
 const LIST_PAGE_SIZE = 50;
 
@@ -99,11 +103,13 @@ type SharedSortableProps = {
   usageSummaryLoading: boolean;
   usageSummary: Record<string, number>;
   apiClient: ApiClient;
+  /** P34-B: when true, drag-handle is hidden (active when not in 'order' sort mode). */
+  dragDisabled?: boolean;
 };
 
 function SortableListRow({
   item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
-  usageSummaryLoading, usageSummary, apiClient,
+  usageSummaryLoading, usageSummary, apiClient, dragDisabled,
 }: SharedSortableProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
@@ -175,16 +181,18 @@ function SortableListRow({
       </Table.Td>
       <Table.Td>
         <Group gap={4}>
-          <ActionIcon
-            variant="subtle"
-            aria-label="Drag media to reorder"
-            style={{ cursor: 'grab' }}
-            {...attributes}
-            {...listeners}
-            onKeyDown={onHandleKeyDown}
-          >
-            <IconGripVertical size={16} />
-          </ActionIcon>
+          {!dragDisabled && (
+            <ActionIcon
+              variant="subtle"
+              aria-label="Drag media to reorder"
+              style={{ cursor: 'grab' }}
+              {...attributes}
+              {...listeners}
+              onKeyDown={onHandleKeyDown}
+            >
+              <IconGripVertical size={16} />
+            </ActionIcon>
+          )}
           <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
           <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
         </Group>
@@ -203,7 +211,7 @@ type SortableGridItemProps = SharedSortableProps & {
 
 function SortableGridItem({
   item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
-  usageSummaryLoading, usageSummary, apiClient,
+  usageSummaryLoading, usageSummary, apiClient, dragDisabled,
   viewMode, cardSize, mediaHeight, gridSpan, showUrl,
 }: SortableGridItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
@@ -239,7 +247,7 @@ function SortableGridItem({
             onDelete={() => handleDelete(item)}
             onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
             cardStyle={getInsertionStyle(item.id, 'horizontal')}
-            dragHandleProps={{ ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
+            dragHandleProps={dragDisabled ? undefined : { ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
           />
           <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
             {usageSummaryLoading
@@ -318,6 +326,14 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [orphanFilter, setOrphanFilter] = useLocalStorage<boolean>({
     key: `wpsg_media_orphanFilter_${campaignId}`,
     defaultValue: false,
+    getInitialValueInEffect: false,
+  });
+
+  // P34-B: sort mode — shared across campaigns (single key) so the user's preferred
+  // sort style persists regardless of which campaign they switch to.
+  const [sortMode, setSortMode] = useLocalStorage<MediaSortMode>({
+    key: 'wpsg_media_sortMode',
+    defaultValue: 'order',
     getInitialValueInEffect: false,
   });
   const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
@@ -809,19 +825,29 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   }, [usageSummaryIds, apiClient]);
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
+  // P34-B: then apply the selected sort mode.
   const displayedMedia = useMemo(() => {
-    if (!orphanFilter) return media;
-    // Don't apply the filter while counts are being fetched — unknown entries
-    // would be incorrectly excluded, making items temporarily disappear.
-    if (usageSummaryLoading) return media;
-    // Only include items whose usage count is a known number ≤ 1.
-    // Items absent from the summary (partial/failed response) are excluded
-    // rather than assumed exclusive.
-    return media.filter((m) => {
-      const count = usageSummary[m.id];
-      return typeof count === 'number' && count <= 1;
-    });
-  }, [media, orphanFilter, usageSummary, usageSummaryLoading]);
+    // 1. Orphan filter
+    let items: MediaItem[];
+    if (!orphanFilter) {
+      items = media;
+    } else if (usageSummaryLoading) {
+      // Don't apply the filter while counts are being fetched — unknown entries
+      // would be incorrectly excluded, making items temporarily disappear.
+      items = media;
+    } else {
+      // Only include items whose usage count is a known number ≤ 1.
+      // Items absent from the summary (partial/failed response) are excluded
+      // rather than assumed exclusive.
+      items = media.filter((m) => {
+        const count = usageSummary[m.id];
+        return typeof count === 'number' && count <= 1;
+      });
+    }
+
+    // 2. Sort (P34-B)
+    return applySortMode(items, sortMode, usageSummary);
+  }, [media, orphanFilter, usageSummary, usageSummaryLoading, sortMode]);
 
   const mediaIds = useMemo(() => displayedMedia.map((item) => item.id), [displayedMedia]);
   const listTotalPages = useMemo(() => Math.max(1, Math.ceil(displayedMedia.length / LIST_PAGE_SIZE)), [displayedMedia.length]);
@@ -929,13 +955,26 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     { value: 'large', label: 'L' },
   ], []);
 
+  // P34-B: sort selector options — disable usage sort while summary is being fetched
+  // to avoid showing a misleading all-zero-count ordering before data arrives.
+  const sortModeData = useMemo(() => [
+    { value: 'order', label: 'Order' },
+    { value: 'title', label: 'Title A–Z' },
+    { value: 'created', label: 'Date uploaded' },
+    { value: 'size', label: 'File size' },
+    { value: 'usage', label: 'Usage count', disabled: usageSummaryLoading },
+  ], [usageSummaryLoading]);
+
   const handleViewModeChange = useCallback((v: Primitive) => setViewMode(v as unknown as ViewMode), [setViewMode]);
   const handleCardSizeChange = useCallback((v: Primitive) => setCardSize(v as unknown as CardSize), [setCardSize]);
 
   // Shared props passed to both sortable sub-components (stable references prevent remounts).
+  // P34-B: hide drag handles when a non-order sort is active (dragging would
+  // modify server-side `order` values while items are displayed in a different sequence).
   const sharedSortableProps: Omit<SharedSortableProps, 'item'> = {
     getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
     usageSummaryLoading, usageSummary, apiClient,
+    dragDisabled: sortMode !== 'order',
   };
 
   return (
@@ -964,6 +1003,16 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
               data={cardSizeData}
             />
           )}
+          {/* P34-B: sort mode selector */}
+          <Select
+            size="xs"
+            value={sortMode}
+            onChange={(v) => v && setSortMode(v as MediaSortMode)}
+            data={sortModeData}
+            style={{ minWidth: 138 }}
+            aria-label="Media sort mode"
+            comboboxProps={{ width: 160 }}
+          />
           <Tooltip label="Show only items exclusive to this campaign">
             <Switch
               size="xs"

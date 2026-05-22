@@ -18,6 +18,14 @@ vi.mock('recharts', () => ({
   ),
 }));
 
+// P34-A: stub visibility and online hooks so tests get deterministic polling state
+vi.mock('@/hooks/useTabVisibility', () => ({
+  useTabVisibility: vi.fn().mockReturnValue(true),
+}));
+vi.mock('@/hooks/useOnlineStatus', () => ({
+  useOnlineStatus: vi.fn().mockReturnValue(true),
+}));
+
 const mockAnalytics: CampaignAnalyticsResponse = {
   totalViews: 1200,
   uniqueVisitors: 430,
@@ -30,6 +38,13 @@ const mockAnalytics: CampaignAnalyticsResponse = {
 function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
     getCampaignAnalytics: vi.fn().mockResolvedValue(mockAnalytics),
+    getAnalyticsSummary: vi.fn().mockResolvedValue({
+      totalViews: 5000,
+      uniqueVisitors: 1800,
+      topCampaigns: [],
+    }),
+    getCampaignMediaAnalytics: vi.fn().mockResolvedValue({ items: [] }),
+    getBaseUrl: vi.fn().mockReturnValue('https://example.test'),
     ...overrides,
   } as unknown as ApiClient;
 }
@@ -117,5 +132,57 @@ describe('AnalyticsDashboard', () => {
     await waitFor(() => expect(getCampaignAnalytics).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByText('Last 7d'));
     await waitFor(() => expect(getCampaignAnalytics).toHaveBeenCalledTimes(2));
+  });
+
+  // ── P34-A: polling / refresh affordance ──────────────────────────────────
+
+  it('renders the manual refresh button', () => {
+    render(<AnalyticsDashboard apiClient={makeApiClient()} campaigns={campaigns} />);
+    expect(screen.getByRole('button', { name: /refresh analytics/i })).toBeInTheDocument();
+  });
+
+  it('shows an Offline badge when the browser is offline', async () => {
+    const { useOnlineStatus } = await import('@/hooks/useOnlineStatus');
+    vi.mocked(useOnlineStatus).mockReturnValue(false);
+
+    render(<AnalyticsDashboard apiClient={makeApiClient()} campaigns={campaigns} />);
+    expect(screen.getByText(/offline/i)).toBeInTheDocument();
+  });
+
+  it('does not show Offline badge when the browser is online', async () => {
+    // Explicitly (re)set to online so this test is independent of ordering
+    const { useOnlineStatus } = await import('@/hooks/useOnlineStatus');
+    vi.mocked(useOnlineStatus).mockReturnValue(true);
+
+    render(<AnalyticsDashboard apiClient={makeApiClient()} campaigns={campaigns} />);
+    expect(screen.queryByText(/offline/i)).not.toBeInTheDocument();
+  });
+
+  it('clicking refresh calls all three analytics fetches', async () => {
+    // Re-set online so this test is not affected by the offline-badge test above
+    const { useOnlineStatus } = await import('@/hooks/useOnlineStatus');
+    vi.mocked(useOnlineStatus).mockReturnValue(true);
+
+    const getCampaignAnalytics = vi.fn().mockResolvedValue(mockAnalytics);
+    const getAnalyticsSummary = vi.fn().mockResolvedValue({
+      totalViews: 5000, uniqueVisitors: 1800, topCampaigns: [],
+    });
+    const getCampaignMediaAnalytics = vi.fn().mockResolvedValue({ items: [] });
+
+    render(
+      <AnalyticsDashboard
+        apiClient={makeApiClient({ getCampaignAnalytics, getAnalyticsSummary, getCampaignMediaAnalytics })}
+        campaigns={campaigns}
+      />,
+    );
+
+    // Wait for data to be visible — confirms loading is done and the button is active
+    await waitFor(() => expect(screen.getByText('1,200')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /refresh analytics/i }));
+
+    await waitFor(() => expect(getCampaignAnalytics).toHaveBeenCalledTimes(2));
+    expect(getAnalyticsSummary).toHaveBeenCalledTimes(2);
+    expect(getCampaignMediaAnalytics).toHaveBeenCalledTimes(2);
   });
 });
