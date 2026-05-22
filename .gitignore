@@ -13,6 +13,7 @@ dist/
 docs/critiques/
 .repomix*
 repomix*
+.claude/
 
 # testing
 coverage/
