@@ -2,21 +2,25 @@
 
 /**
  * Extended Settings tests covering utility methods and filters.
+ *
+ * Render/section/field methods are tested against their implementation classes
+ * (WPSG_Settings_Core_Fields, WPSG_Settings_Renderer) directly; the facade no
+ * longer proxies those rendering concerns.
  */
 class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
     // ── snake_to_camel ─────────────────────────────────────────────────────
 
     public function test_snake_to_camel_basic() {
-        $this->assertEquals('videoViewportHeight', WPSG_Settings::snake_to_camel('video_viewport_height'));
+        $this->assertEquals('videoViewportHeight', WPSG_Settings_Utils::snake_to_camel('video_viewport_height'));
     }
 
     public function test_snake_to_camel_single_word() {
-        $this->assertEquals('theme', WPSG_Settings::snake_to_camel('theme'));
+        $this->assertEquals('theme', WPSG_Settings_Utils::snake_to_camel('theme'));
     }
 
     public function test_snake_to_camel_two_words() {
-        $this->assertEquals('authProvider', WPSG_Settings::snake_to_camel('auth_provider'));
+        $this->assertEquals('authProvider', WPSG_Settings_Utils::snake_to_camel('auth_provider'));
     }
 
     // ── get_defaults ───────────────────────────────────────────────────────
@@ -104,7 +108,7 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
     public function test_filter_auth_provider_returns_stored_value() {
         update_option('wpsg_settings', ['auth_provider' => 'jwt']);
-        $result = WPSG_Settings::filter_auth_provider('cookie');
+        $result = WPSG_Settings_Service::filter_auth_provider('cookie');
         $this->assertEquals('jwt', $result);
         delete_option('wpsg_settings');
     }
@@ -113,7 +117,7 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
     public function test_filter_api_base_returns_default_when_empty() {
         delete_option('wpsg_settings');
-        $result = WPSG_Settings::filter_api_base('http://default.test');
+        $result = WPSG_Settings_Service::filter_api_base('http://default.test');
         // Should return the stored or default API base.
         $this->assertIsString($result);
     }
@@ -227,7 +231,7 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         }
     }
 
-    // ── add_menu_page ──────────────────────────────────────────────────────
+    // ── add_menu_page (tests renderer directly) ────────────────────────────
 
     public function test_add_menu_page_does_not_error() {
         // Must be admin to add menu pages.
@@ -235,73 +239,73 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         wp_set_current_user($admin_id);
         set_current_screen('edit-wpsg_campaign');
 
-        WPSG_Settings::add_menu_page();
+        WPSG_Settings_Renderer::add_menu_page();
         $this->assertTrue(true); // No exception = pass.
     }
 
-    // ── register_settings ──────────────────────────────────────────────────
+    // ── register_settings (tests renderer directly) ────────────────────────
 
     public function test_register_settings_registers_option() {
         // Reset global to allow re-registration.
         global $new_allowed_options;
         unset($new_allowed_options['wpsg_settings_group']);
 
-        WPSG_Settings::register_settings();
+        WPSG_Settings_Renderer::register_settings();
 
         // Verify the setting was registered.
         $registered = get_registered_settings();
         $this->assertArrayHasKey('wpsg_settings', $registered);
     }
 
-    // ── render section helpers ─────────────────────────────────────────────
+    // ── render section helpers (tests core fields directly) ────────────────
 
     public function test_render_auth_section_outputs_html() {
         ob_start();
-        WPSG_Settings::render_auth_section();
+        WPSG_Settings_Core_Fields::render_auth_section();
         $html = ob_get_clean();
         $this->assertStringContainsString('<p>', $html);
     }
 
     public function test_render_display_section_outputs_html() {
         ob_start();
-        WPSG_Settings::render_display_section();
+        WPSG_Settings_Core_Fields::render_display_section();
         $html = ob_get_clean();
         $this->assertStringContainsString('<p>', $html);
     }
 
     public function test_render_performance_section_outputs_html() {
         ob_start();
-        WPSG_Settings::render_performance_section();
+        WPSG_Settings_Core_Fields::render_performance_section();
         $html = ob_get_clean();
         $this->assertStringContainsString('<p>', $html);
     }
 
-    // ── render field helpers ───────────────────────────────────────────────
+    // ── render field helpers (tests core fields directly) ──────────────────
 
     public function test_render_auth_provider_field_outputs_select() {
         ob_start();
-        WPSG_Settings::render_auth_provider_field();
+        WPSG_Settings_Core_Fields::render_auth_provider_field();
         $html = ob_get_clean();
         $this->assertStringContainsString('<select', $html);
     }
 
     public function test_render_api_base_field_outputs_input() {
         ob_start();
-        WPSG_Settings::render_api_base_field();
+        WPSG_Settings_Core_Fields::render_api_base_field();
         $html = ob_get_clean();
         $this->assertStringContainsString('<input', $html);
     }
 
     public function test_render_theme_field_outputs_markup() {
         ob_start();
-        WPSG_Settings::render_theme_field();
+        WPSG_Settings_Core_Fields::render_theme_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
     }
 
     public function test_render_allow_user_theme_override_field() {
         ob_start();
-        WPSG_Settings::render_allow_user_theme_override_field();
+        WPSG_Settings_Core_Fields::render_allow_user_theme_override_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
         $this->assertStringContainsString('type="hidden"', $html);
@@ -310,7 +314,7 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
     public function test_render_debug_component_markers_field() {
         ob_start();
-        WPSG_Settings::render_debug_component_markers_field();
+        WPSG_Settings_Core_Fields::render_debug_component_markers_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
         $this->assertStringContainsString('type="hidden"', $html);
@@ -319,21 +323,21 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
     public function test_render_layout_field_outputs_markup() {
         ob_start();
-        WPSG_Settings::render_layout_field();
+        WPSG_Settings_Core_Fields::render_layout_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
     }
 
     public function test_render_items_per_page_field_outputs_input() {
         ob_start();
-        WPSG_Settings::render_items_per_page_field();
+        WPSG_Settings_Core_Fields::render_items_per_page_field();
         $html = ob_get_clean();
         $this->assertStringContainsString('<input', $html);
     }
 
     public function test_render_lightbox_field_outputs_markup() {
         ob_start();
-        WPSG_Settings::render_lightbox_field();
+        WPSG_Settings_Core_Fields::render_lightbox_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
         $this->assertStringContainsString('type="hidden"', $html);
@@ -342,7 +346,7 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
     public function test_render_animations_field_outputs_markup() {
         ob_start();
-        WPSG_Settings::render_animations_field();
+        WPSG_Settings_Core_Fields::render_animations_field();
         $html = ob_get_clean();
         $this->assertNotEmpty($html);
         $this->assertStringContainsString('type="hidden"', $html);
@@ -351,7 +355,7 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
 
     public function test_render_cache_ttl_field_outputs_select() {
         ob_start();
-        WPSG_Settings::render_cache_ttl_field();
+        WPSG_Settings_Core_Fields::render_cache_ttl_field();
         $html = ob_get_clean();
         $this->assertStringContainsString('<select', $html);
     }
@@ -362,12 +366,12 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         wp_set_current_user($admin_id);
 
         // register_settings must be called first for settings_fields().
-        WPSG_Settings::register_settings();
+        WPSG_Settings_Renderer::register_settings();
 
         // Suppress PHP 8.3 deprecation in WP core settings_fields().
         $prev = error_reporting(E_ALL & ~E_DEPRECATED);
         ob_start();
-        WPSG_Settings::render_settings_page();
+        WPSG_Settings_Renderer::render_settings_page();
         $html = ob_get_clean();
         error_reporting($prev);
         $this->assertStringContainsString('options.php', $html);

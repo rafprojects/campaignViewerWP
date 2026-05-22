@@ -1,0 +1,403 @@
+/**
+ * Unit tests for HttpTransportImpl (P32-C).
+ *
+ * These tests exercise the transport layer in isolation using a mocked global
+ * `fetch`, covering the behaviours that no higher-level test targets:
+ *
+ *  - Request timeout enforced via AbortController
+ *  - External AbortSignal compositing (caller signal honoured alongside timeout)
+ *  - Already-aborted signal short-circuits fetch immediately
+ *  - Auth header construction (nonce + Bearer token)
+ *  - 401 callback invocation
+ *  - 403 → nonce refresh → single retry
+ *  - 403 retry suppressed when nonce refresh fails
+ *  - Offline guard
+ *  - Error message extraction from JSON response body
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { HttpTransportImpl, ApiError } from './HttpTransportImpl';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+type FetchResponse = {
+  ok: boolean;
+  status: number;
+  json: () => Promise<unknown>;
+};
+
+function makeResponse(overrides: Partial<FetchResponse> = {}): FetchResponse {
+  return {
+    ok: true,
+    status: 200,
+    json: async () => ({ result: 'ok' }),
+    ...overrides,
+  };
+}
+
+function makeTransport(overrides: Partial<ConstructorParameters<typeof HttpTransportImpl>[0]> = {}) {
+  return new HttpTransportImpl({
+    baseUrl: 'https://example.test',
+    timeout: 30_000,
+    ...overrides,
+  });
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('HttpTransportImpl', () => {
+  beforeEach(() => {
+    globalThis.fetch = vi.fn();
+    // Ensure navigator.onLine is true by default.
+    Object.defineProperty(globalThis.navigator, 'onLine', {
+      configurable: true,
+      get: () => true,
+    });
+    // Clear any window config that previous tests may have set.
+    if (typeof window !== 'undefined') {
+      delete (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__;
+      if (window.__WPSG_CONFIG__) {
+        window.__WPSG_CONFIG__.restNonce = undefined as unknown as string;
+      }
+    }
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  // ── Timeout ───────────────────────────────────────────────────────────────
+
+  describe('timeout enforcement', () => {
+    it('throws ApiError with status 0 when the request exceeds the timeout', async () => {
+      vi.useFakeTimers();
+
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+        (_url: string, init?: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () =>
+              reject(Object.assign(new Error('AbortError'), { name: 'AbortError' })),
+            );
+          }),
+      );
+
+      const transport = makeTransport({ timeout: 500 });
+      const promise = transport.get('/some-path');
+
+      // Attach the catch handler synchronously so Node.js never sees an unhandled
+      // rejection between the timer firing and the assertion.
+      const captured = promise.catch((e: unknown) => e as ApiError);
+
+      // advanceTimersByTimeAsync flushes the microtask queue between ticks, allowing
+      // the async chain inside get() to reach fetch() and attach the abort listener
+      // before the timeout fires.
+      await vi.advanceTimersByTimeAsync(600);
+
+      // ApiError is an Error subclass; name is not auto-set, so check via instanceof.
+      const err = await captured;
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).status).toBe(0);
+      expect((err as ApiError).message).toContain('timed out');
+    });
+
+    it('does not throw a timeout error when the response arrives in time', async () => {
+      vi.useFakeTimers();
+
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const transport = makeTransport({ timeout: 500 });
+      const promise = transport.get('/some-path');
+
+      await vi.advanceTimersByTimeAsync(100); // well within timeout
+
+      await expect(promise).resolves.toEqual({ result: 'ok' });
+    });
+
+    it('bypasses timeout machinery when timeout is 0', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const transport = makeTransport({ timeout: 0 });
+      await expect(transport.get('/some-path')).resolves.toEqual({ result: 'ok' });
+
+      // fetch should have been called with no AbortSignal injected by transport.
+      const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+      // init is undefined when timeout=0 and no signal provided — no interference.
+      expect(init?.signal ?? null).toBeNull();
+    });
+  });
+
+  // ── External AbortSignal compositing ─────────────────────────────────────
+
+  describe('external AbortSignal compositing', () => {
+    it('aborts the request when the caller-supplied signal is aborted', async () => {
+      // Use fake timers + advanceTimersByTimeAsync(0) to flush the async chain
+      // (getHeaders → buildAuthHeaders → fetchWithTimeout) to the point where
+      // fetch() is called and the abort listener is attached, without advancing
+      // real time far enough to trigger the 5 s transport timeout.
+      vi.useFakeTimers();
+
+      const controller = new AbortController();
+
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+        (_url: string, init?: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            if (init?.signal?.aborted) {
+              reject(Object.assign(new Error('AbortError'), { name: 'AbortError' }));
+              return;
+            }
+            init?.signal?.addEventListener('abort', () =>
+              reject(Object.assign(new Error('AbortError'), { name: 'AbortError' })),
+            );
+          }),
+      );
+
+      const transport = makeTransport({ timeout: 5000 });
+      const promise = transport.get('/some-path', { signal: controller.signal });
+
+      // Flush all pending microtasks (0 ms advance = no timer fires, but queued
+      // promises are drained) so the async chain reaches fetch() first.
+      await vi.advanceTimersByTimeAsync(0);
+      controller.abort();
+
+      // The AbortError from the caller should propagate (not wrapped as ApiError timeout).
+      await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+    });
+
+    it('short-circuits immediately when the caller signal is already aborted', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+        (_url: string, init?: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            if (init?.signal?.aborted) {
+              reject(Object.assign(new Error('AbortError'), { name: 'AbortError' }));
+            }
+          }),
+      );
+
+      const transport = makeTransport({ timeout: 5000 });
+      const promise = transport.get('/some-path', { signal: controller.signal });
+
+      await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+    });
+  });
+
+  // ── Auth header construction ──────────────────────────────────────────────
+
+  describe('auth header construction', () => {
+    it('injects X-WP-Nonce from __WPSG_REST_NONCE__ when set', async () => {
+      (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__ = 'test-nonce-123';
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const transport = makeTransport();
+      await transport.get('/some-path');
+
+      const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBe('test-nonce-123');
+    });
+
+    it('injects Bearer token from authProvider when one returns a token', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const authProvider = {
+        getAccessToken: vi.fn().mockResolvedValue('bearer-abc'),
+        init: vi.fn(),
+        login: vi.fn(),
+        logout: vi.fn(),
+        getUser: vi.fn(),
+        getPermissions: vi.fn(),
+      };
+
+      const transport = makeTransport({ authProvider });
+      await transport.get('/some-path');
+
+      const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>).Authorization).toBe('Bearer bearer-abc');
+    });
+
+    it('omits Authorization header when authProvider returns null', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const authProvider = {
+        getAccessToken: vi.fn().mockResolvedValue(null),
+        init: vi.fn(),
+        login: vi.fn(),
+        logout: vi.fn(),
+        getUser: vi.fn(),
+        getPermissions: vi.fn(),
+      };
+
+      const transport = makeTransport({ authProvider });
+      await transport.get('/some-path');
+
+      const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
+    });
+  });
+
+  // ── 401 callback ─────────────────────────────────────────────────────────
+
+  describe('401 callback', () => {
+    it('invokes onUnauthorized when a 401 response is received', async () => {
+      const onUnauthorized = vi.fn();
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeResponse({ ok: false, status: 401, json: async () => ({}) }),
+      );
+
+      const transport = makeTransport({ onUnauthorized });
+      await expect(transport.get('/some-path')).rejects.toBeInstanceOf(ApiError);
+      expect(onUnauthorized).toHaveBeenCalledOnce();
+    });
+
+    it('does not invoke onUnauthorized for non-401 errors', async () => {
+      const onUnauthorized = vi.fn();
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeResponse({ ok: false, status: 500, json: async () => ({}) }),
+      );
+
+      const transport = makeTransport({ onUnauthorized });
+      await expect(transport.get('/some-path')).rejects.toBeInstanceOf(ApiError);
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── 403 nonce refresh + retry ─────────────────────────────────────────────
+
+  describe('403 nonce refresh and retry', () => {
+    it('refreshes nonce and retries once on 403, returning the retried response', async () => {
+      const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
+
+      // Call sequence:
+      //  1. Original request → 403
+      //  2. Nonce refresh endpoint → 200 with new nonce
+      //  3. Retried original request → 200
+      mockFetch
+        .mockResolvedValueOnce(makeResponse({ ok: false, status: 403, json: async () => ({}) }))
+        .mockResolvedValueOnce(
+          makeResponse({ ok: true, status: 200, json: async () => ({ nonce: 'fresh-nonce' }) }),
+        )
+        .mockResolvedValueOnce(makeResponse({ ok: true, status: 200, json: async () => ({ data: 'retried' }) }));
+
+      const transport = makeTransport();
+      const result = await transport.get<{ data: string }>('/some-path');
+
+      expect(result).toEqual({ data: 'retried' });
+      // fetch called 3 times: original, nonce refresh, retry
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('does NOT retry when nonce refresh endpoint itself fails', async () => {
+      const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
+
+      mockFetch
+        .mockResolvedValueOnce(makeResponse({ ok: false, status: 403, json: async () => ({}) }))
+        .mockResolvedValueOnce(makeResponse({ ok: false, status: 500, json: async () => ({}) }));
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).rejects.toMatchObject({ status: 403 });
+
+      // Only 2 fetch calls: original + failed nonce refresh; no retry of the original.
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('does NOT retry on non-403 errors', async () => {
+      const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
+
+      mockFetch.mockResolvedValueOnce(
+        makeResponse({ ok: false, status: 500, json: async () => ({}) }),
+      );
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).rejects.toMatchObject({ status: 500 });
+      // Only the original request; no nonce endpoint call.
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('updates window.__WPSG_REST_NONCE__ with the refreshed nonce', async () => {
+      const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
+
+      mockFetch
+        .mockResolvedValueOnce(makeResponse({ ok: false, status: 403, json: async () => ({}) }))
+        .mockResolvedValueOnce(
+          makeResponse({ ok: true, status: 200, json: async () => ({ nonce: 'updated-nonce' }) }),
+        )
+        .mockResolvedValueOnce(makeResponse());
+
+      const transport = makeTransport();
+      await transport.get('/some-path');
+
+      expect(
+        (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__,
+      ).toBe('updated-nonce');
+    });
+  });
+
+  // ── Offline guard ─────────────────────────────────────────────────────────
+
+  describe('offline guard', () => {
+    it('throws ApiError with status 0 when navigator.onLine is false', async () => {
+      Object.defineProperty(globalThis.navigator, 'onLine', {
+        configurable: true,
+        get: () => false,
+      });
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).rejects.toMatchObject({
+        status: 0,
+        message: expect.stringContaining('offline'),
+      });
+
+      // fetch should not have been called.
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Error message extraction ──────────────────────────────────────────────
+
+  describe('error message extraction', () => {
+    it('uses the message field from the JSON response body when present', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeResponse({
+          ok: false,
+          status: 422,
+          json: async () => ({ message: 'Validation failed: title is required' }),
+        }),
+      );
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).rejects.toMatchObject({
+        status: 422,
+        message: 'Validation failed: title is required',
+      });
+    });
+
+    it('falls back to "Request failed" when the response body has no message field', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeResponse({ ok: false, status: 500, json: async () => ({}) }),
+      );
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).rejects.toMatchObject({
+        status: 500,
+        message: 'Request failed',
+      });
+    });
+  });
+
+  // ── Accessor methods ──────────────────────────────────────────────────────
+
+  describe('accessors', () => {
+    it('getBaseUrl returns the base URL with no trailing slash', () => {
+      const transport = new HttpTransportImpl({ baseUrl: 'https://example.test/' });
+      expect(transport.getBaseUrl()).toBe('https://example.test');
+    });
+
+    it('getAuthHeaders resolves to an object with X-WP-Nonce when nonce is set', async () => {
+      (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__ = 'nonce-xyz';
+      const transport = makeTransport();
+      const headers = await transport.getAuthHeaders();
+      expect(headers['X-WP-Nonce']).toBe('nonce-xyz');
+    });
+  });
+});

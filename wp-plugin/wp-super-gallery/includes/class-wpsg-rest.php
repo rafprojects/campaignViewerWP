@@ -1141,7 +1141,7 @@ class WPSG_REST {
             $is_test_env = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || defined( 'WP_TESTS_DOMAIN' );
             if ( ! $is_test_env ) {
                 // Log a critical warning — this should never be active in production.
-                error_log( '[WPSG SECURITY] WPSG_ALLOW_NONCE_BYPASS is enabled outside a recognized test environment. This is a security risk.' );
+                WPSG_Logger::warning( 'security', 'WPSG_ALLOW_NONCE_BYPASS is enabled outside a recognized test environment', [ 'constant' => 'WPSG_ALLOW_NONCE_BYPASS' ] );
             }
             if ( $is_test_env ) {
                 return true;
@@ -4543,7 +4543,7 @@ class WPSG_REST {
                 $error_payload = $result;
                 $error_payload['_wpsg_status'] = 502;
                 // Log and metric: record repeated oEmbed failures
-                error_log('WPSG oEmbed failure for ' . $url . ': ' . json_encode($attempts));
+                WPSG_Logger::warning('oembed', 'oEmbed fetch returned error payload', ['url' => $url, 'attempts' => $attempts]);
                 do_action('wpsg_oembed_failure', $url, $attempts);
                 $count = intval(get_option('wpsg_oembed_failure_count', 0));
                 update_option('wpsg_oembed_failure_count', $count + 1);
@@ -4564,7 +4564,7 @@ class WPSG_REST {
         ];
         $fallback['_wpsg_status'] = 502;
         // Log and metric: record generic fallback cache
-        error_log('WPSG oEmbed fallback cached for ' . $url . ': ' . json_encode($attempts));
+        WPSG_Logger::warning('oembed', 'oEmbed fetch failed, caching generic fallback', ['url' => $url, 'attempts' => $attempts]);
         do_action('wpsg_oembed_failure', $url, $attempts);
         $count = intval(get_option('wpsg_oembed_failure_count', 0));
         update_option('wpsg_oembed_failure_count', $count + 1);
@@ -5590,7 +5590,7 @@ class WPSG_REST {
             'context' => $context,
         ];
 
-        error_log('[WPSG] Slow REST: ' . wp_json_encode($payload));
+        WPSG_Logger::warning('rest', 'Slow REST request detected', $payload);
         do_action('wpsg_slow_rest', $payload);
     }
 

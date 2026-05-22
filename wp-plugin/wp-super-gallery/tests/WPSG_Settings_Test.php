@@ -574,7 +574,7 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     public function test_filter_auth_provider_returns_setting() {
         update_option(WPSG_Settings::OPTION_NAME, ['auth_provider' => 'none']);
 
-        $result = WPSG_Settings::filter_auth_provider('wp-jwt');
+        $result = WPSG_Settings_Service::filter_auth_provider('wp-jwt');
         $this->assertEquals('none', $result);
     }
 
@@ -584,12 +584,12 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     public function test_filter_api_base_returns_setting_or_default() {
         // Empty api_base should return the passed default.
         delete_option(WPSG_Settings::OPTION_NAME);
-        $result = WPSG_Settings::filter_api_base('https://default.com');
+        $result = WPSG_Settings_Service::filter_api_base('https://default.com');
         $this->assertEquals('https://default.com', $result);
 
         // Non-empty api_base should override.
         update_option(WPSG_Settings::OPTION_NAME, ['api_base' => 'https://custom.com']);
-        $result = WPSG_Settings::filter_api_base('https://default.com');
+        $result = WPSG_Settings_Service::filter_api_base('https://default.com');
         $this->assertEquals('https://custom.com', $result);
     }
 }

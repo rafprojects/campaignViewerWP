@@ -108,10 +108,10 @@ class WPSG_Embed {
         $enable_animations = isset($settings['enable_animations']) ? $settings['enable_animations'] : true;
 
         // Enqueue Google Fonts server-side so they load even if JS injection is blocked.
-        if (class_exists('WPSG_Settings')) {
-            $families = WPSG_Settings::extract_google_font_families($settings);
+        if (class_exists('WPSG_Settings_Typography')) {
+            $families = WPSG_Settings_Typography::extract_google_font_families($settings);
             if (!empty($families)) {
-                $specs = WPSG_Settings::GOOGLE_FONT_SPECS;
+                $specs = WPSG_Settings_Typography::GOOGLE_FONT_SPECS;
                 $params = array_map(function ($f) use ($specs) {
                     $spec = isset($specs[$f]) ? $specs[$f] : null;
                     if ($spec === null) {

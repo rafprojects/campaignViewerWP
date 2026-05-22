@@ -36,6 +36,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-utils.php'
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-db.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-logger.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-monitoring.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-alerts.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-sentry.php';
@@ -241,7 +242,8 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
         );
 
         if ($inserted === false) {
-            return wpsg_archive_campaign_status_batch_fallback($post_ids);
+            // UPDATE already succeeded for $existing_ids; only retry the missing rows.
+            return count($existing_ids) + wpsg_archive_campaign_status_batch_fallback($missing_ids);
         }
     }
 
