@@ -139,7 +139,12 @@ export function SpotlightGallery({
             'Open in lightbox'
           }
           onClick={handleHeroClick}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleHeroClick(); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault(); // Space must not scroll the page on role="button"
+              handleHeroClick();
+            }
+          }}
           {...getWpsgDebugProps('SpotlightGallery', 'hero')}
           style={{
             flex: 1,

@@ -16,10 +16,15 @@
  */
 
 import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 
 // ─── Source file paths ────────────────────────────────────────────────────────
+
+// ESM-safe equivalent of __dirname (package.json has "type": "module")
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
 
 const root = resolve(__dirname, '../../../../');
 

@@ -1002,9 +1002,18 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         $aid = $this->create_test_attachment();
 
         // Create a wpsg_media_tag term and assign it to the attachment.
+        // wp_insert_term() returns WP_Error (with 'term_exists' code) when the
+        // same slug already exists from a prior test run. Extract the existing
+        // term_id from the error data in that case so the test stays idempotent.
         $term_result = wp_insert_term('Portrait', 'wpsg_media_tag', ['slug' => 'portrait']);
-        $this->assertIsArray($term_result);
-        $term_id = $term_result['term_id'];
+        if (is_wp_error($term_result)) {
+            $existing_id = $term_result->get_error_data('term_exists');
+            $this->assertNotEmpty($existing_id, 'wp_insert_term failed for an unexpected reason: ' . $term_result->get_error_message());
+            $term_id = (int) $existing_id;
+        } else {
+            $this->assertIsArray($term_result);
+            $term_id = (int) $term_result['term_id'];
+        }
         wp_set_object_terms($aid, [$term_id], 'wpsg_media_tag');
 
         $cid = $this->create_campaign('P31-H Tags Test');

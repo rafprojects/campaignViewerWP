@@ -167,7 +167,10 @@ export function ScrollSnapGallery({
                 aria-label={item.caption || item.title || `Slide ${idx + 1} of ${media.length}`}
                 onClick={() => handleSlideClick(idx)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') handleSlideClick(idx);
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault(); // Space must not scroll the container/page on role="button"
+                    handleSlideClick(idx);
+                  }
                 }}
                 {...getWpsgDebugProps('ScrollSnapGallery', 'slide')}
                 style={{

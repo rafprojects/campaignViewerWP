@@ -3878,13 +3878,16 @@ class WPSG_REST {
      */
     private static function enrich_media_with_metadata(array $items): array {
         // Collect all upload attachment IDs for a single meta-cache warm-up pass.
+        // Deduplicate so a gallery referencing the same attachment twice does not
+        // inflate the update_meta_cache() call or any future batch queries.
         $attachment_ids = [];
         foreach ($items as $item) {
             $aid = intval($item['attachmentId'] ?? 0);
             if ($aid > 0 && ($item['source'] ?? '') === 'upload') {
-                $attachment_ids[] = $aid;
+                $attachment_ids[$aid] = $aid; // keyed for O(1) deduplication
             }
         }
+        $attachment_ids = array_values($attachment_ids);
 
         // Prime the post-meta cache in one batch so subsequent wp_get_attachment_metadata()
         // calls are served from cache rather than issuing individual queries.
