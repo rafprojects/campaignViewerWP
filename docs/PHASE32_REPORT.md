@@ -392,3 +392,193 @@ turning this phase into a full telemetry-platform build-out.
   notes into a supporting addendum instead of overloading this report.
 - Do not silently pull gallery reliability or adapter-schema work back into this
   phase; those concerns remain Phase 31 scope.
+
+---
+
+## PR Review — 2026-05-22
+
+**Reviewer:** Claude Sonnet 4.6 (automated)
+**Branch:** `feat/phase32-infrastructure-updates`
+**PR:** #48
+**Review commit:** `dcebc9e` — `fix(p32-review): address PR review findings`
+
+---
+
+### Issues Found and Resolved
+
+#### 🔴 Issue 1 — P32-A: SQL fallback on INSERT failure used the wrong ID set
+
+**File:** `wp-plugin/wp-super-gallery/wp-super-gallery.php`
+
+**What was wrong:**
+`wpsg_archive_campaign_status_batch()` processes two phases: first a batched SQL
+`UPDATE` for IDs that already have a `status` row, then a batched `INSERT` for IDs
+that do not.  If the `INSERT` failed, the fallback called
+`wpsg_archive_campaign_status_batch_fallback($post_ids)` — the full original set —
+rather than `$missing_ids` (the rows that were never written).  This meant:
+
+1. Already-archived posts had `update_post_meta('status', 'archived')` called on
+   them a second time, redundantly.
+2. WordPress fired `updated_post_meta` on those posts again.
+3. The return value overstated how many posts were newly processed, which is
+   misleading to any caller counting results.
+
+The `UPDATE` phase succeeded; only the `INSERT` rows needed retrying.
+
+**Severity:** 🔴 Red — correctness bug under partial failure (rare path, safe
+outcome, but wrong semantics and noisy hook side-effects).
+
+**Resolution:** Changed the fallback call to receive `$missing_ids` and combined
+the return values: `count($existing_ids) + wpsg_archive_campaign_status_batch_fallback($missing_ids)`.
+PHPUnit: 685/685 green (unchanged — the existing three archive-cron tests cover
+the happy path; the bug only manifests on a DB INSERT failure which the test
+environment does not simulate, so no new test was warranted here).
+
+---
+
+#### 🔴 Issue 2 — P32-C: `HttpTransportImpl` had no unit tests
+
+**Files:** `src/services/http/HttpTransportImpl.ts` (new `HttpTransportImpl.test.ts`)
+
+**What was wrong:**
+The phase plan explicitly committed to "focused unit coverage for transport
+retry/timeout/auth behavior" as part of P32-C's acceptance criteria and validation
+section.  Only `settingsApi.test.ts` was delivered, proving domain modules are
+mockable.  The transport's non-trivial internal paths — `AbortController` timeout
+compositing with external signals, 403 → nonce refresh → single retry, the
+already-aborted signal short-circuit, the offline guard, and 401 callback — had
+no isolated tests.  The pre-existing `apiClient.test.ts` exercises these
+behaviours end-to-end through `fetch` mocks, but that is integration coverage, not
+the isolated transport coverage the plan required.
+
+**Severity:** 🔴 Red — plan commitment gap.  The transport layer is the most
+complex part of P32-C and contains branching async logic (retry loop, signal
+compositing, timeout propagation) that is hard to diagnose from integration test
+failures alone.
+
+**Resolution:** Added `src/services/http/HttpTransportImpl.test.ts` (19 tests)
+covering:
+- Timeout fires → `ApiError(status: 0)` with `message.includes('timed out')`
+- No timeout when response arrives before deadline
+- `timeout: 0` bypasses `AbortController` entirely
+- External signal abort during in-flight request
+- Already-aborted signal short-circuit (no async race needed)
+- Nonce injected from `__WPSG_REST_NONCE__`
+- Bearer token injected from `authProvider`; omitted when provider returns `null`
+- 401 invokes `onUnauthorized`; non-401 errors do not
+- 403 → nonce refresh → retry returns retried response
+- 403 retry suppressed when refresh endpoint itself fails
+- Non-403 errors do not trigger the refresh path at all
+- `__WPSG_REST_NONCE__` updated with refreshed nonce after successful refresh
+- `navigator.onLine === false` throws `ApiError(status: 0)` before `fetch`
+- JSON error message extracted from response body; fallback to `'Request failed'`
+- `getBaseUrl()` and `getAuthHeaders()` accessors
+
+Two implementation notes during test authoring:
+1. `ApiError` does not set `this.name` in its constructor, so `name` is `'Error'`
+   not `'ApiError'`.  Tests use `instanceof ApiError` assertions rather than
+   matching on `name`.
+2. `vi.useFakeTimers()` + `vi.advanceTimersByTimeAsync()` is required for async
+   timer tests — `advanceTimersByTime()` fires the `setTimeout` callback before the
+   async chain has progressed to `fetch()`, causing the abort listener to be
+   attached after the signal already fired.  `advanceTimersByTimeAsync(0)` flushes
+   pending microtasks first.  The rejection capture (`const captured = promise.catch(e => e)`)
+   must also be registered synchronously before any `await` to prevent a transient
+   unhandled-rejection warning.
+
+Vitest: 1827/1827 green (+19 new).
+
+---
+
+#### 🟡 Issue 3 — P32-D: `append_to_buffer` performance cost was not documented
+
+**File:** `wp-plugin/wp-super-gallery/includes/class-wpsg-logger.php`
+
+**What was wrong:**
+Every `WPSG_Logger` call runs `get_option()` + `update_option()` synchronously on
+the request that produced the event, deserializing and re-serializing the full
+ring buffer (up to 200 entries) each time.  This cost is acceptable for rare events
+(fatal errors, oEmbed failures) but meaningful for `log_slow_rest`, which fires on
+every request exceeding the 500 ms threshold — a path that is by definition already
+under load.  Nothing in the code or comments signalled this trade-off to a future
+engineer.
+
+**Severity:** 🟡 Yellow — no regression, but an undocumented performance assumption
+in a hot path.
+
+**Resolution:** Added a `## Performance model` section to the class-level docblock
+describing the synchronous DB round-trip cost per event, when it matters, and what
+follow-on mitigation would look like (deferred/async flush).  Added a one-line
+summary comment on `append_to_buffer()` itself.
+
+---
+
+#### 🟡 Issue 4 — P32-D: Ring buffer race condition was not documented
+
+**File:** `wp-plugin/wp-super-gallery/includes/class-wpsg-logger.php`
+
+**What was wrong:**
+`append_to_buffer()` is an unguarded `get_option` → modify → `update_option`
+read-modify-write.  Concurrent PHP processes (e.g., two simultaneous slow REST
+requests both crossing the log threshold) can overwrite each other's entries; the
+last writer wins.  For an observability ring buffer this is acceptable, but nothing
+in the code stated it as a deliberate choice.  A future engineer debugging
+"missing" log entries could spend considerable time before realising the design
+does not guarantee delivery.
+
+**Severity:** 🟡 Yellow — known and acceptable concurrency trade-off, but
+undocumented.
+
+**Resolution:** Added a `## Concurrency` section to the class-level docblock
+documenting the unguarded read-modify-write and stating explicitly that the buffer
+is not suitable for audit-critical event guarantees.  Added a matching inline
+comment on `append_to_buffer()`.
+
+---
+
+#### 🟡 Issue 5 — P32-B: Inconsistent source in `class-wpsg-embed.php` after facade cleanup
+
+**File:** `wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php`
+
+**What was wrong:**
+P32-B correctly migrated the `extract_google_font_families()` call from
+`WPSG_Settings` to `WPSG_Settings_Typography`, and the guard was updated to check
+`class_exists('WPSG_Settings_Typography')`.  But the very next line read
+`$specs = WPSG_Settings::GOOGLE_FONT_SPECS`.  `WPSG_Settings::GOOGLE_FONT_SPECS` is
+a constant alias forwarded from `WPSG_Settings_Typography::GOOGLE_FONT_SPECS`, so
+it is functionally correct.  However:
+
+1. The guard checks for `WPSG_Settings_Typography` but the code then reads from
+   `WPSG_Settings`, creating a misleading dependency chain.
+2. If the alias in `WPSG_Settings` were ever removed (e.g., during a future full
+   facade removal), the embed logic would silently break while the guard still
+   passes.
+
+**Severity:** 🟡 Yellow — works correctly today, but creates a hidden dependency
+that contradicts the stated direction of P32-B.
+
+**Resolution:** Changed `$specs = WPSG_Settings::GOOGLE_FONT_SPECS` to
+`$specs = WPSG_Settings_Typography::GOOGLE_FONT_SPECS`, making both lines in the
+block consistent and directly sourced from the class the guard already checks.
+
+---
+
+### Test Results After Fixes
+
+| Suite | Before | After |
+|-------|--------|-------|
+| PHPUnit | 685 tests, 2294 assertions | 685 tests, 2294 assertions |
+| Vitest | 133 files, 1808 tests | 134 files, 1827 tests (+19 transport) |
+
+All suites green.
+
+---
+
+### Issues Not Raised (and why)
+
+| Observation | Disposition |
+|-------------|-------------|
+| `updated_post_meta` / `added_post_meta` hooks bypassed by batch SQL in P32-A | The only registered hooks in WPSG that listen to these actions filter on `meta_key === 'media_items'`, not `status`. The bypass is intentional and safe for the `status` key. No issue. |
+| `ApiClient extends HttpTransportImpl` instead of composition | Accepted trade-off for zero call-site migration. Noted as a follow-on candidate if transport swapping ever becomes necessary. Not an actionable defect now. |
+| `WPSG_Logger::clear_logs()` has no capability check | No REST endpoint exposes it; the method is only callable by internal code. A capability guard is explicitly documented as a requirement for any future endpoint that wraps it. No issue today. |
+| Ring buffer `get_option`/`update_option` adds 2 DB round-trips on slow REST | Documented (Issue 3 above). Follow-on deferred async flush is noted in the docblock. No code change needed beyond documentation. |
