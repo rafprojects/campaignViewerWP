@@ -106,8 +106,9 @@ class WPSG_REST {
             ],
             [
                 'methods'             => 'PUT',
+                // P33-C: editor and owner can update campaign metadata.
                 'callback'            => [self::class, 'update_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
                 'args'                => [
                     'title'      => [
                         'type'              => 'string',
@@ -125,24 +126,27 @@ class WPSG_REST {
             ],
             [
                 'methods' => 'DELETE',
+                // P33-C: only owner can delete a campaign.
                 'callback' => [self::class, 'delete_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
             ],
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/archive', [
             [
                 'methods' => 'POST',
+                // P33-C: only owner can archive a campaign.
                 'callback' => [self::class, 'archive_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
             ],
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/restore', [
             [
                 'methods' => 'POST',
+                // P33-C: restore is paired with archive — owner-only.
                 'callback' => [self::class, 'restore_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
             ],
         ]);
 
@@ -150,8 +154,9 @@ class WPSG_REST {
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/duplicate', [
             [
                 'methods' => 'POST',
+                // P33-C: editor and owner can duplicate a campaign.
                 'callback' => [self::class, 'duplicate_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
             ],
         ]);
 
@@ -381,8 +386,9 @@ class WPSG_REST {
             ],
             [
                 'methods'             => 'POST',
+                // P33-C: editor and owner can add media.
                 'callback'            => [self::class, 'create_media'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
                 'args'                => [
                     'type'   => [
                         'required' => true,
@@ -409,8 +415,9 @@ class WPSG_REST {
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/batch', [
             [
                 'methods' => 'POST',
+                // P33-C: editor and owner can batch-add media.
                 'callback' => [self::class, 'create_media_batch'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
             ],
         ]);
 
@@ -418,16 +425,18 @@ class WPSG_REST {
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/reorder', [
             [
                 'methods' => 'PUT',
+                // P33-C: editor and owner can reorder media.
                 'callback' => [self::class, 'reorder_media'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
             ],
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/rescan', [
             [
                 'methods' => 'POST',
+                // P33-C: editor and owner can rescan media types.
                 'callback' => [self::class, 'rescan_media_types'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
             ],
         ]);
 
@@ -435,13 +444,15 @@ class WPSG_REST {
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)', [
             [
                 'methods' => 'PUT',
+                // P33-C: editor and owner can update media items.
                 'callback' => [self::class, 'update_media'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
             ],
             [
                 'methods' => 'DELETE',
+                // P33-C: editor and owner can delete media items.
                 'callback' => [self::class, 'delete_media'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_editor'],
             ],
         ]);
 
@@ -456,13 +467,15 @@ class WPSG_REST {
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access', [
             [
                 'methods'             => 'GET',
+                // P33-C: owner can read the access list for their campaign.
                 'callback'            => [self::class, 'list_access'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
             ],
             [
                 'methods'             => 'POST',
+                // P33-C: only owner can grant access.
                 'callback'            => [self::class, 'grant_access'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
                 'args'                => [
                     'userId'     => [
                         'required' => true,
@@ -483,6 +496,12 @@ class WPSG_REST {
                         'type'              => 'string',
                         'sanitize_callback' => 'sanitize_text_field',
                     ],
+                    // P33-B: per-campaign role level.
+                    'access_level' => [
+                        'type'    => 'string',
+                        'enum'    => ['viewer', 'editor', 'owner'],
+                        'default' => 'viewer',
+                    ],
                 ],
             ],
         ]);
@@ -490,8 +509,9 @@ class WPSG_REST {
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access/(?P<userId>\d+)', [
             [
                 'methods' => 'DELETE',
+                // P33-C: only owner can revoke access.
                 'callback' => [self::class, 'revoke_access'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
             ],
         ]);
 
@@ -512,24 +532,35 @@ class WPSG_REST {
             ],
             [
                 'methods'             => 'GET',
+                // P33-C: owner can list pending access requests for their campaign.
                 'callback'            => [self::class, 'list_access_requests'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
             ],
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/approve', [
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'approve_access_request'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'methods'             => 'POST',
+                // P33-C: only owner can approve access requests.
+                'callback'            => [self::class, 'approve_access_request'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'args'                => [
+                    // P33-B: role to assign on approval. Defaults to 'viewer'.
+                    'access_level' => [
+                        'type'    => 'string',
+                        'enum'    => ['viewer', 'editor', 'owner'],
+                        'default' => 'viewer',
+                    ],
+                ],
             ],
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/deny', [
             [
                 'methods' => 'POST',
+                // P33-C: only owner can deny access requests.
                 'callback' => [self::class, 'deny_access_request'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => [self::class, 'require_campaign_owner'],
             ],
         ]);
 
@@ -701,9 +732,17 @@ class WPSG_REST {
                 'permission_callback' => [self::class, 'require_admin'],
             ],
             [
-                'methods' => 'POST',
-                'callback' => [self::class, 'grant_company_access'],
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'grant_company_access'],
                 'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    // P33-B: per-company role level propagated to all company campaigns.
+                    'access_level' => [
+                        'type'    => 'string',
+                        'enum'    => ['viewer', 'editor', 'owner'],
+                        'default' => 'viewer',
+                    ],
+                ],
             ],
         ]);
 
@@ -1093,6 +1132,166 @@ class WPSG_REST {
         }
 
         return self::verify_admin_auth();
+    }
+
+    /**
+     * P33-B: Sanitize and validate an access_level value.
+     *
+     * Returns the value unchanged if it is one of the accepted levels;
+     * falls back to 'viewer' for any other input (including null or empty).
+     * This implements the migration-default behaviour: legacy grant entries
+     * without an explicit access_level are treated as 'viewer'.
+     *
+     * @param mixed $level
+     * @return string 'viewer' | 'editor' | 'owner'
+     */
+    private static function validate_access_level($level): string {
+        return in_array($level, ['viewer', 'editor', 'owner'], true)
+            ? (string) $level
+            : 'viewer';
+    }
+
+    // ── P33-C: Role-Aware Permission Helpers ─────────────────────────────────
+
+    /**
+     * Resolve the effective access level for a user on a specific campaign.
+     *
+     * Precedence (highest → lowest):
+     *   1. manage_wpsg capability → implicitly 'owner' (site-wide admin override)
+     *   2. Explicit deny override → '' (no access)
+     *   3. Campaign-level grant (overrides company grant for this campaign)
+     *   4. Company-level grant (propagated to all company campaigns)
+     *   5. No grant found → '' (no access)
+     *
+     * Expired grants are ignored in all cases.
+     *
+     * @param int $user_id     WordPress user ID.
+     * @param int $campaign_id Post ID of the campaign.
+     * @return string 'viewer' | 'editor' | 'owner' | '' (no access)
+     */
+    private static function get_effective_campaign_level(int $user_id, int $campaign_id): string {
+        if ($user_id <= 0 || $campaign_id <= 0) {
+            return '';
+        }
+
+        // 1. Site-wide admin always wins — they are treated as owner.
+        if (current_user_can('manage_wpsg')) {
+            return 'owner';
+        }
+
+        // 2. Explicit deny override beats every grant.
+        $overrides = get_post_meta($campaign_id, 'access_overrides', true);
+        $overrides = is_array($overrides) ? $overrides : [];
+        foreach ($overrides as $entry) {
+            if (intval($entry['userId'] ?? 0) === $user_id && ($entry['action'] ?? '') === 'deny') {
+                return '';
+            }
+        }
+
+        $now = time();
+
+        // 3. Campaign-level grant (most specific, overrides company grant).
+        $campaign_grants = get_post_meta($campaign_id, 'access_grants', true);
+        $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
+        foreach ($campaign_grants as $entry) {
+            if (intval($entry['userId'] ?? 0) !== $user_id) {
+                continue;
+            }
+            // Expired grants do not confer access.
+            if (!empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+                continue;
+            }
+            return self::validate_access_level($entry['access_level'] ?? 'viewer');
+        }
+
+        // 4. Company-level grant (falls back to this when no campaign grant exists).
+        $company_term = self::get_company_term($campaign_id);
+        if ($company_term) {
+            $company_grants = get_term_meta($company_term->term_id, 'access_grants', true);
+            $company_grants = is_array($company_grants) ? $company_grants : [];
+            foreach ($company_grants as $entry) {
+                if (intval($entry['userId'] ?? 0) !== $user_id) {
+                    continue;
+                }
+                if (!empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+                    continue;
+                }
+                return self::validate_access_level($entry['access_level'] ?? 'viewer');
+            }
+        }
+
+        // 5. No grant.
+        return '';
+    }
+
+    /**
+     * P33-C: Permission callback — requires at least 'editor' role on the
+     * campaign identified by the request's `id` parameter.
+     *
+     * Site-wide manage_wpsg capability always satisfies this check.
+     * Both `editor` and `owner` campaign roles satisfy this check.
+     *
+     * @param WP_REST_Request $request
+     * @return bool
+     */
+    public static function require_campaign_editor(WP_REST_Request $request): bool {
+        // Auth integrity check (nonce or Bearer token).
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return false;
+        }
+
+        // Site-wide admin is always allowed.
+        if (current_user_can('manage_wpsg')) {
+            return true;
+        }
+
+        $campaign_id = intval($request->get_param('id'));
+        if ($campaign_id <= 0) {
+            return false;
+        }
+
+        $level = self::get_effective_campaign_level($user_id, $campaign_id);
+        return in_array($level, ['editor', 'owner'], true);
+    }
+
+    /**
+     * P33-C: Permission callback — requires at least 'owner' role on the
+     * campaign identified by the request's `id` parameter.
+     *
+     * Site-wide manage_wpsg capability always satisfies this check.
+     * Only the `owner` campaign role (or site admin) satisfies this check.
+     *
+     * @param WP_REST_Request $request
+     * @return bool
+     */
+    public static function require_campaign_owner(WP_REST_Request $request): bool {
+        // Auth integrity check (nonce or Bearer token).
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return false;
+        }
+
+        // Site-wide admin is always allowed.
+        if (current_user_can('manage_wpsg')) {
+            return true;
+        }
+
+        $campaign_id = intval($request->get_param('id'));
+        if ($campaign_id <= 0) {
+            return false;
+        }
+
+        $level = self::get_effective_campaign_level($user_id, $campaign_id);
+        return $level === 'owner';
     }
 
     /**
@@ -2785,6 +2984,8 @@ class WPSG_REST {
             $expires_at = $entry['expires_at'] ?? null;
             $entry['expires_at'] = $expires_at;
             $entry['is_expired'] = $expires_at !== null && strtotime($expires_at) < $now;
+            // P33-B: normalize legacy grants that pre-date RBAC.
+            $entry['access_level'] = self::validate_access_level($entry['access_level'] ?? 'viewer');
             return $entry;
         }, $page_items);
 
@@ -2820,12 +3021,16 @@ class WPSG_REST {
             $expires_at = gmdate('c', $ts);
         }
 
+        // P33-B: access_level for RBAC (deny entries carry no role).
+        $access_level = self::validate_access_level($request->get_param('access_level') ?? 'viewer');
+
         $entry = [
-            'userId'    => $user_id,
-            'campaignId' => $post_id,
-            'source'    => $source,
-            'grantedAt' => gmdate('c'),
-            'expires_at' => $expires_at,
+            'userId'       => $user_id,
+            'campaignId'   => $post_id,
+            'source'       => $source,
+            'grantedAt'    => gmdate('c'),
+            'expires_at'   => $expires_at,
+            'access_level' => $access_level,
         ];
 
         if ($source === 'company') {
@@ -3065,7 +3270,9 @@ class WPSG_REST {
             return new WP_Error('wpsg_request_resolved', 'Request already resolved', ['status' => 409]);
         }
 
-        $result = self::do_approve_request($post_id, $token, $data);
+        // P33-B: admin may specify a role; default to 'viewer'.
+        $access_level = self::validate_access_level($request->get_param('access_level') ?? 'viewer');
+        $result = self::do_approve_request($post_id, $token, $data, $access_level);
         if (is_wp_error($result)) {
             return $result;
         }
@@ -3079,9 +3286,10 @@ class WPSG_REST {
      * Provisions or looks up the WP user, grants campaign access, updates request
      * status, fires the audit entry, and sends the requester notification email.
      *
+     * @param string $access_level P33-B: role to assign ('viewer' | 'editor' | 'owner'). Defaults to 'viewer'.
      * @return true|WP_Error
      */
-    private static function do_approve_request(int $post_id, string $token, array $data) {
+    private static function do_approve_request(int $post_id, string $token, array $data, string $access_level = 'viewer') {
         // Provision access: look up or create a WP user for this email.
         $user = get_user_by('email', $data['email']);
         if (!$user) {
@@ -3103,14 +3311,15 @@ class WPSG_REST {
             $user = get_user_by('ID', $user_id);
         }
 
-        // Grant access (campaign-level).
+        // Grant access (campaign-level). P33-B: persist the approved role.
         $grants = get_post_meta($post_id, 'access_grants', true);
         $grants = is_array($grants) ? $grants : [];
         $grants = self::upsert_grant($grants, [
-            'userId'     => $user->ID,
-            'campaignId' => $post_id,
-            'source'     => 'campaign',
-            'grantedAt'  => gmdate('c'),
+            'userId'       => $user->ID,
+            'campaignId'   => $post_id,
+            'source'       => 'campaign',
+            'grantedAt'    => gmdate('c'),
+            'access_level' => self::validate_access_level($access_level),
         ]);
         update_post_meta($post_id, 'access_grants', $grants);
         self::clear_accessible_campaigns_cache();
@@ -3503,6 +3712,8 @@ class WPSG_REST {
             if (isset($user_map[$user_id])) {
                 $entry['user'] = $user_map[$user_id];
             }
+            // P33-B: normalize legacy grants that pre-date RBAC.
+            $entry['access_level'] = self::validate_access_level($entry['access_level'] ?? 'viewer');
             return $entry;
         }, $page_slice);
 
@@ -3542,15 +3753,19 @@ class WPSG_REST {
             $expires_at = gmdate('c', $ts);
         }
 
+        // P33-B: access_level for RBAC.
+        $access_level = self::validate_access_level($request->get_param('access_level') ?? 'viewer');
+
         $grants = get_term_meta($term_id, 'access_grants', true);
         $grants = is_array($grants) ? $grants : [];
 
         $entry = [
-            'userId'     => $user_id,
-            'companyId'  => $term_id,
-            'source'     => 'company',
-            'grantedAt'  => gmdate('c'),
-            'expires_at' => $expires_at,
+            'userId'       => $user_id,
+            'companyId'    => $term_id,
+            'source'       => 'company',
+            'grantedAt'    => gmdate('c'),
+            'expires_at'   => $expires_at,
+            'access_level' => $access_level,
         ];
 
         $grants = self::upsert_grant($grants, $entry);
