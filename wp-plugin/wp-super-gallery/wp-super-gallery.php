@@ -242,7 +242,8 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
         );
 
         if ($inserted === false) {
-            return wpsg_archive_campaign_status_batch_fallback($post_ids);
+            // UPDATE already succeeded for $existing_ids; only retry the missing rows.
+            return count($existing_ids) + wpsg_archive_campaign_status_batch_fallback($missing_ids);
         }
     }
 

@@ -16,6 +16,31 @@
  *     "data":      { ... }                   // optional structured context
  *   }
  *
+ * ## Performance model
+ *
+ * Every call to info(), warning(), or error() performs one get_option() and one
+ * update_option() to maintain the ring buffer synchronously on the same request
+ * that produced the event.  This is acceptable for low-frequency infrastructure
+ * events (fatal errors, oEmbed failures, security warnings) but incurs 2 DB
+ * round-trips for every slow REST request that crosses the configured threshold.
+ * On sites that generate sustained slow-request traffic, consider raising the
+ * slow-query threshold or routing high-frequency events through a separate,
+ * cheaper sink.  A deferred/async flush path is left as follow-on work.
+ *
+ * ## Concurrency
+ *
+ * append_to_buffer() is an unguarded read-modify-write.  Concurrent PHP
+ * processes logging simultaneously can overwrite each other's entries (last
+ * writer wins).  For an observability ring buffer the occasional lost entry
+ * is an acceptable trade-off; do not rely on this buffer for audit-critical
+ * event guarantees.
+ *
+ * ## Access control
+ *
+ * clear_logs() is intentionally public so admin tooling can reset the buffer
+ * programmatically.  Any REST endpoint that exposes it must enforce a
+ * capability check (e.g. manage_options) before calling this method.
+ *
  * @package WP_Super_Gallery
  * @since   0.32.0  P32-D
  */
@@ -132,6 +157,9 @@ class WPSG_Logger {
 
     /**
      * Prepend an entry to the ring buffer, capping at the configured maximum.
+     *
+     * Performance: one get_option + one update_option per call (synchronous).
+     * Concurrency: unguarded read-modify-write; see class docblock for trade-offs.
      *
      * @param array $entry Structured log record.
      */
