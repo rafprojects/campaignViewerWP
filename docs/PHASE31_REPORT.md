@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-05-19
-**Last updated:** 2026-05-21
+**Last updated:** 2026-05-22
 
 ### Tracks
 
@@ -849,14 +849,22 @@ concrete enough to deliver rather than only document.
 
 **Delivered:**
 1. `enrich_media_with_metadata()` replaces `enrich_media_with_dimensions()` in
-   `class-wpsg-rest.php` — batched batch queries (meta cache prime, `get_posts()`,
-   one tag join) avoid N+1 on the `list_media` read path.
+   `class-wpsg-rest.php` — per-item `get_post()`, `wp_get_attachment_metadata()`,
+   and `wp_get_object_terms()` calls with one upfront `update_meta_cache()` batch
+   to warm the post-meta cache.
 2. `enrich_media_with_dimensions()` kept as a deprecated shim delegating to the
    new function; both existing call sites updated to call the new function directly.
 3. `MediaTag` interface and `dateUploaded`, `filesize`, `tags` optional fields
    added to `MediaItem` in `src/types/index.ts`.
 4. 4 PHP tests added to `WPSG_REST_Extended_Test.php` covering upload-item
    enrichment and external-item isolation.
+5. **Bug fix:** `sanitize_media_items()` in `class-wpsg-cpt.php` had a stale
+   `$valid_sources` allowlist (`['wp', 'external', 'oembed']`) that did not
+   include `'upload'` or `'library'` — source values that the REST API and
+   frontend have used since Phase 20. Any item stored with `source='upload'`
+   was silently coerced to `source='wp'` on write, causing the enrichment guard
+   in `enrich_media_with_metadata()` to skip those items. Fixed by extending
+   the allowlist to `['upload', 'library', 'wp', 'external', 'oembed']`.
 
 **Prerequisites cleared for follow-on work:**
 - [x] `dateUploaded` in REST payload and typed in TypeScript (Timeline prerequisite)
