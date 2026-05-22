@@ -248,7 +248,9 @@ class WPSG_CPT {
         }
 
         $valid_types    = [ 'image', 'video', 'embed' ];
-        $valid_sources  = [ 'wp', 'external', 'oembed' ];
+        // 'upload' and 'library' were added in later phases but the allowlist was
+        // never extended; all five values are used by the REST API and the frontend.
+        $valid_sources  = [ 'upload', 'library', 'wp', 'external', 'oembed' ];
         $sanitized      = [];
 
         foreach ( $value as $item ) {

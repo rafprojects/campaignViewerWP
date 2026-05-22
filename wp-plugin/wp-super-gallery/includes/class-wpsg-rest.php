@@ -3877,7 +3877,7 @@ class WPSG_REST {
      * @return array        Same items with additional fields populated.
      */
     private static function enrich_media_with_metadata(array $items): array {
-        // Collect all upload attachment IDs for batching.
+        // Collect all upload attachment IDs for a single meta-cache warm-up pass.
         $attachment_ids = [];
         foreach ($items as $item) {
             $aid = intval($item['attachmentId'] ?? 0);
@@ -3886,67 +3886,20 @@ class WPSG_REST {
             }
         }
 
-        $date_by_id = [];  // attachment_id => post_date string
-        $meta_by_id = [];  // attachment_id => wp_attachment_metadata array
-        $tags_by_id = [];  // attachment_id => [['id'=>…,'name'=>…,'slug'=>…], …]
-
+        // Prime the post-meta cache in one batch so subsequent wp_get_attachment_metadata()
+        // calls are served from cache rather than issuing individual queries.
         if (!empty($attachment_ids)) {
-            // Prime post meta cache in one batch so subsequent wp_get_attachment_metadata()
-            // calls are cache hits rather than individual queries.
             update_meta_cache('post', $attachment_ids);
-
-            // Fetch all attachment post objects in one query (post_date for dateUploaded).
-            $posts = get_posts([
-                'post__in'    => $attachment_ids,
-                'post_type'   => 'attachment',
-                'post_status' => 'any',
-                'numberposts' => -1,
-            ]);
-            foreach ($posts as $post) {
-                $date_by_id[$post->ID] = $post->post_date;
-            }
-
-            // Populate attachment metadata map now that the meta cache is warm.
-            foreach ($attachment_ids as $aid) {
-                $meta_by_id[$aid] = wp_get_attachment_metadata($aid) ?: [];
-            }
-
-            // One batch join to collect all tag associations, avoiding N+1 queries.
-            global $wpdb;
-            $id_count     = count($attachment_ids);
-            $placeholders = implode(',', array_fill(0, $id_count, '%d'));
-            $query_args   = array_merge($attachment_ids, ['wpsg_media_tag']);
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders are safe %d tokens generated from intval()
-            $rows = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT tr.object_id, t.term_id, t.name, t.slug
-                     FROM {$wpdb->term_relationships} tr
-                     INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-                     INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-                     WHERE tr.object_id IN ($placeholders)
-                     AND tt.taxonomy = %s",
-                    $query_args
-                )
-            );
-            if (is_array($rows)) {
-                foreach ($rows as $row) {
-                    $tags_by_id[intval($row->object_id)][] = [
-                        'id'   => intval($row->term_id),
-                        'name' => (string) $row->name,
-                        'slug' => (string) $row->slug,
-                    ];
-                }
-            }
         }
 
         foreach ($items as &$item) {
             $source = $item['source'] ?? '';
             $aid    = intval($item['attachmentId'] ?? 0);
 
-            // Pixel dimensions (existing logic, now uses the pre-built meta map).
+            // Pixel dimensions — uses cached post meta after the batch prime above.
             if (empty($item['width']) || empty($item['height'])) {
                 if ($aid > 0 && ($item['type'] ?? '') === 'image') {
-                    $meta = $meta_by_id[$aid] ?? wp_get_attachment_metadata($aid);
+                    $meta = wp_get_attachment_metadata($aid);
                     if (!empty($meta['width']) && !empty($meta['height'])) {
                         $item['width']  = intval($meta['width']);
                         $item['height'] = intval($meta['height']);
@@ -3959,14 +3912,16 @@ class WPSG_REST {
                 continue;
             }
 
-            // dateUploaded: WP attachment post_date (local time, MySQL datetime format).
-            if (isset($date_by_id[$aid])) {
-                $item['dateUploaded'] = $date_by_id[$aid];
+            // dateUploaded: read directly from the WP_Post object. get_post() is
+            // reliable in all environments and returns from the object cache when warm.
+            $post = get_post($aid);
+            if ($post instanceof WP_Post) {
+                $item['dateUploaded'] = $post->post_date;
             }
 
             // filesize: prefer the value WP stores in attachment metadata (added in WP 6.0),
             // falling back to a direct filesystem check for older installs.
-            $meta = $meta_by_id[$aid] ?? [];
+            $meta = wp_get_attachment_metadata($aid) ?: [];
             if (!empty($meta['filesize'])) {
                 $item['filesize'] = intval($meta['filesize']);
             } else {
@@ -3977,8 +3932,20 @@ class WPSG_REST {
             }
 
             // tags: compact tag objects from the wpsg_media_tag taxonomy.
-            if (isset($tags_by_id[$aid])) {
-                $item['tags'] = $tags_by_id[$aid];
+            // wp_get_object_terms() is the canonical, cache-aware API; per-item
+            // calls are safe here because gallery sizes are typically small.
+            $terms = wp_get_object_terms($aid, 'wpsg_media_tag', ['fields' => 'all']);
+            if (!is_wp_error($terms) && !empty($terms)) {
+                $item['tags'] = array_map(
+                    static function ($t) {
+                        return [
+                            'id'   => (int) $t->term_id,
+                            'name' => (string) $t->name,
+                            'slug' => (string) $t->slug,
+                        ];
+                    },
+                    $terms
+                );
             }
         }
         unset($item);
