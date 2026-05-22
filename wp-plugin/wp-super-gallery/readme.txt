@@ -1,8 +1,8 @@
 === WP Super Gallery ===
 Contributors: wpsupergallery
 Tags: gallery, media, campaign, layout-builder, embed
-Requires at least: 8.2
-Tested up to: 8.4
+Requires at least: 6.4
+Tested up to: 7.0
 Requires PHP: 8.2
 Stable tag: 0.26.0
 License: GPLv2 or later
