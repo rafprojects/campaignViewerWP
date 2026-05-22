@@ -3877,10 +3877,16 @@ class WPSG_REST {
      * @return array                 Same items with additional fields populated.
      */
     private static function enrich_media_with_metadata(array $items, bool $dimensions_only = false): array {
-        // Collect upload attachment IDs and prime the post-meta cache in one batch.
-        // Skipped in $dimensions_only mode because only wp_get_attachment_metadata()
-        // (which reads post meta) is called there, and its cache is warm after the
-        // update_meta_cache() call at the campaigns list level.
+        // Collect upload attachment IDs, prime the post-meta cache, and batch-load
+        // taxonomy tags in three upfront queries so the per-item loop runs on cached
+        // data without N+1 queries.
+        //
+        // Skipped entirely in $dimensions_only mode: the date/filesize/tag work is
+        // not needed for lightweight endpoints. Note that the per-item dimension
+        // check below will still call wp_get_attachment_metadata() for each image —
+        // those calls may individually hit the DB unless the caller has separately
+        // pre-warmed attachment post meta.
+        $terms_by_attachment = []; // populated below when !$dimensions_only
         if (!$dimensions_only) {
             $attachment_ids = [];
             foreach ($items as $item) {
@@ -3893,6 +3899,24 @@ class WPSG_REST {
 
             if (!empty($attachment_ids)) {
                 update_meta_cache('post', $attachment_ids);
+
+                // Batch-load tags for all upload attachment IDs in a single query.
+                // 'all_with_object_id' adds an object_id property to each WP_Term
+                // so results can be grouped by attachment without a second query.
+                $all_terms = wp_get_object_terms(
+                    $attachment_ids,
+                    'wpsg_media_tag',
+                    ['fields' => 'all_with_object_id'],
+                );
+                if (!is_wp_error($all_terms)) {
+                    foreach ($all_terms as $t) {
+                        $terms_by_attachment[(int) $t->object_id][] = [
+                            'id'   => (int) $t->term_id,
+                            'name' => (string) $t->name,
+                            'slug' => (string) $t->slug,
+                        ];
+                    }
+                }
             }
         }
 
@@ -3936,21 +3960,11 @@ class WPSG_REST {
                 }
             }
 
-            // tags: compact tag objects from the wpsg_media_tag taxonomy.
-            // wp_get_object_terms() is the canonical, cache-aware API; per-item
-            // calls are safe here because gallery sizes are typically small.
-            $terms = wp_get_object_terms($aid, 'wpsg_media_tag', ['fields' => 'all']);
-            if (!is_wp_error($terms) && !empty($terms)) {
-                $item['tags'] = array_map(
-                    static function ($t) {
-                        return [
-                            'id'   => (int) $t->term_id,
-                            'name' => (string) $t->name,
-                            'slug' => (string) $t->slug,
-                        ];
-                    },
-                    $terms
-                );
+            // tags: served from the batch-loaded map built above the loop — no
+            // per-item query needed; the single wp_get_object_terms() call above
+            // already fetched all tags for all upload attachment IDs.
+            if (isset($terms_by_attachment[$aid])) {
+                $item['tags'] = $terms_by_attachment[$aid];
             }
         }
         unset($item);

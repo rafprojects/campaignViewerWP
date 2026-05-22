@@ -142,7 +142,17 @@ export function useBreakpoint(
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
-    if (source !== 'container') return;
+    if (source !== 'container') {
+      // If source switched away from 'container' (e.g. to 'viewport'), tear down
+      // any lingering ResizeObserver so it doesn't keep firing and overriding
+      // viewport-derived measurements or leaking into the next render cycle.
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+        observedElementRef.current = null;
+      }
+      return;
+    }
 
     const el = containerRef.current;
 
