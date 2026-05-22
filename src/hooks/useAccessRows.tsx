@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Table, Text, Stack, Tooltip, Badge, ActionIcon } from '@mantine/core';
+import { Table, Text, Stack, Tooltip, Badge, ActionIcon, Group } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import type { CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
+import type { CampaignAccessLevel } from '@/types';
 import type { AccessViewMode } from '@/hooks/useAdminAccessState';
 
 interface Options {
@@ -10,10 +11,21 @@ interface Options {
   onRevokeAccess: (entry: CompanyAccessGrantType) => Promise<void>;
 }
 
+// P33-D: visual config for each role level.
+const ROLE_BADGE_CONFIG: Record<CampaignAccessLevel, { label: string; color: string; tip: string }> = {
+  viewer: { label: '👁 Viewer',  color: 'gray',   tip: 'Can read campaign content only' },
+  editor: { label: '✏️ Editor',  color: 'teal',   tip: 'Can edit metadata and media; cannot manage access or builder' },
+  owner:  { label: '👑 Owner',   color: 'violet', tip: 'Full campaign control including access management and builder' },
+};
+
 export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess }: Options) {
   return useMemo(() => {
     return accessEntries.map((a) => {
       const isExpired = a.is_expired === true;
+      // P33-D: normalise access_level — server always sends one, but guard for legacy data.
+      const level = (a.access_level ?? 'viewer') as CampaignAccessLevel;
+      const roleCfg = ROLE_BADGE_CONFIG[level] ?? ROLE_BADGE_CONFIG.viewer;
+
       return (
         <Table.Tr
           key={`${a.userId}-${a.source}-${a.campaignId || 'company'}`}
@@ -46,6 +58,21 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess }:
                 <Text size="xs" c="dimmed">{a.campaignTitle}</Text>
               )}
             </Stack>
+          </Table.Td>
+          {/* P33-D: role badge column */}
+          <Table.Td>
+            <Group gap="xs" wrap="nowrap">
+              <Tooltip label={roleCfg.tip} withArrow>
+                <Badge
+                  variant="light"
+                  color={roleCfg.color}
+                  size="sm"
+                  aria-label={`Role: ${level}`}
+                >
+                  {roleCfg.label}
+                </Badge>
+              </Tooltip>
+            </Group>
           </Table.Td>
           <Table.Td>
             <Stack gap={2}>

@@ -42,6 +42,8 @@ export function useAdminAccessState({
   const [accessSaving, setAccessSaving] = useState(false);
   // P28-B: optional expiry for new grants.
   const [expiresAt, setExpiresAt] = useState<string>('');
+  // P33-D: access level for new grants.
+  const [accessLevel, setAccessLevel] = useState<'viewer' | 'editor' | 'owner'>('viewer');
   const accessSavingRef = useRef(false);
 
   const [confirmArchiveCompany, setConfirmArchiveCompany] = useState<CompanyInfo | null>(null);
@@ -131,11 +133,14 @@ export function useAdminAccessState({
           userId,
           source: accessSource,
           action: accessSource === 'company' ? 'grant' : accessAction,
+          // P33-B: only include access_level for grant actions (deny carries no role).
+          ...(accessAction !== 'deny' ? { access_level: accessLevel } : {}),
           ...(expiresAt ? { expires_at: expiresAt } : {}),
         });
       } else {
         await apiClient.post(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access`, {
           userId,
+          access_level: accessLevel,
           ...(expiresAt ? { expires_at: expiresAt } : {}),
         });
       }
@@ -145,6 +150,7 @@ export function useAdminAccessState({
       setSelectedUser(null);
       setUserSearchQuery('');
       setAccessAction('grant');
+      setAccessLevel('viewer');
       setExpiresAt('');
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to update access.') });
@@ -152,7 +158,7 @@ export function useAdminAccessState({
       accessSavingRef.current = false;
       setAccessSaving(false);
     }
-  }, [accessViewMode, accessCampaignId, selectedCompanyId, selectedUser, accessUserId, accessSource, accessAction, expiresAt, apiClient, mutateAccess, onNotify]);
+  }, [accessViewMode, accessCampaignId, selectedCompanyId, selectedUser, accessUserId, accessSource, accessAction, accessLevel, expiresAt, apiClient, mutateAccess, onNotify]);
 
   const handleRevokeAccess = useCallback(async (entry: CompanyAccessGrantType) => {
     if (accessSavingRef.current) return;
@@ -253,6 +259,7 @@ export function useAdminAccessState({
     accessAction, setAccessAction,
     accessSaving,
     expiresAt, setExpiresAt,
+    accessLevel, setAccessLevel,
     confirmArchiveCompany, setConfirmArchiveCompany,
     archiveRevokeAccess, setArchiveRevokeAccess,
     userSearchQuery, setUserSearchQuery,

@@ -111,6 +111,8 @@ export function AccessTab({
     setConfirmArchiveCompany,
     expiresAt,
     setExpiresAt,
+    accessLevel,
+    setAccessLevel: onAccessLevelChange,
   } = accessState;
 
   const onArchiveCompanyClick = (company: NonNullable<SelectedCompany>) => setConfirmArchiveCompany(company);
@@ -239,12 +241,13 @@ export function AccessTab({
             </Group>
 
             {accessLoading ? (
-              <Table.ScrollContainer minWidth={640}>
+              <Table.ScrollContainer minWidth={700}>
                 <Table verticalSpacing="xs" aria-label="Loading access entries">
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>User</Table.Th>
                       <Table.Th>Access Type</Table.Th>
+                      <Table.Th>Role</Table.Th>
                       <Table.Th>Granted / Expires</Table.Th>
                       <Table.Th w={80}>Revoke</Table.Th>
                     </Table.Tr>
@@ -257,6 +260,7 @@ export function AccessTab({
                           <Skeleton height={10} width="70%" />
                         </Table.Td>
                         <Table.Td><Skeleton height={22} width={80} radius="xl" /></Table.Td>
+                        <Table.Td><Skeleton height={22} width={70} radius="xl" /></Table.Td>
                         <Table.Td><Skeleton height={14} width={100} /></Table.Td>
                         <Table.Td><Skeleton height={28} width={28} circle /></Table.Td>
                       </Table.Tr>
@@ -274,7 +278,7 @@ export function AccessTab({
               </Text>
             ) : (
               <ScrollArea style={{ maxHeight: 300 }} offsetScrollbars type="auto">
-                <Table.ScrollContainer minWidth={640}>
+                <Table.ScrollContainer minWidth={700}>
                   <Table
                     verticalSpacing="xs"
                     highlightOnHover
@@ -284,6 +288,7 @@ export function AccessTab({
                       <Table.Tr>
                         <Table.Th>User</Table.Th>
                         <Table.Th>Access Type</Table.Th>
+                        <Table.Th>Role</Table.Th>
                         <Table.Th>Granted / Expires</Table.Th>
                         <Table.Th w={80}>Revoke</Table.Th>
                       </Table.Tr>
@@ -430,6 +435,22 @@ export function AccessTab({
                     style={{ minWidth: isMobile ? undefined : 150, width: isMobile ? '100%' : undefined }}
                   />
                 </>
+              )}
+
+              {/* P33-D: role selector — hidden when action is 'deny' (deny carries no role) */}
+              {accessAction !== 'deny' && (
+                <Select
+                  label={<Text size="sm" fw={500}>Role</Text>}
+                  data={[
+                    { value: 'viewer', label: '👁 Viewer' },
+                    { value: 'editor', label: '✏️ Editor' },
+                    { value: 'owner', label: '👑 Owner' },
+                  ]}
+                  value={accessLevel}
+                  onChange={(v) => onAccessLevelChange((v as 'viewer' | 'editor' | 'owner') ?? 'viewer')}
+                  style={{ minWidth: isMobile ? undefined : 140, width: isMobile ? '100%' : undefined }}
+                  aria-label="Access role level"
+                />
               )}
 
               {/* P28-B: optional expiry date-time */}
