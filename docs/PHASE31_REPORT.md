@@ -1,6 +1,6 @@
 # Phase 31 — Gallery Reliability, Adapter Coverage, Config Hardening & Targeted Capability Expansion
 
-**Status:** In Progress
+**Status:** In Progress (P31-D, P31-H remain as pre-evaluation)
 **Created:** 2026-05-19
 **Last updated:** 2026-05-21
 
@@ -10,10 +10,10 @@
 |-------|-------------|--------|--------|
 | P31-A | Gallery reliability hardening: settings merge, lightbox scroll lock, breakpoint first-render contract | **Done** | Small-Medium |
 | P31-B | Adapter resolution integration coverage | **Done** | Medium |
-| P31-C | Gallery config editor update-path optimization | Planned | Medium |
+| P31-C | Gallery config editor update-path optimization | **Done** | Medium |
 | P31-D | Adapter settings single-source-of-truth pre-evaluation | Pre-Evaluation | Large |
 | P31-E | Spotlight / Hero adapter delivery | **Done** | Small-Medium |
-| P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | In Progress | Medium |
+| P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | **Done** | Medium |
 | P31-G | Waterfall entrance animation as a Masonry enhancement | **Done** | Small |
 | P31-H | Media payload foundations for future timeline/filter work | Pre-Evaluation | Medium |
 
@@ -321,13 +321,33 @@ breakpoints/scopes and keep the first pass focused on measurable edit-path wins.
 
 ### Acceptance criteria
 
-- Gallery-config helpers preserve current functional behavior. ( )
+- Gallery-config helpers preserve current functional behavior. (✓)
 - Untouched config branches keep stable references where the new implementation
-  allows it. ( )
+  allows it. (✓)
 - The settings edit path shows a measured reduction in unnecessary cloning or
-  update work. ( )
+  update work. (✓)
 - Existing gallery-config tests continue to pass with added regression coverage
-  for the optimized paths. ( )
+  for the optimized paths. (✓)
+
+### Completion Notes (2026-05-21)
+
+Replaced full-tree `cloneGalleryConfig` + mutate pattern in
+`setRepresentativeGalleryCommonSetting`, `setScopeGalleryCommonSetting`, and
+`setGalleryAdapterSetting` with structural-sharing implementations:
+
+- Each function now spreads only scope/breakpoint objects that actually change.
+- Scopes whose value is already equal (identity check before write) keep their
+  original object reference.
+- Unchanged breakpoints pass through via `newBreakpoints[bp] = bpConfig`
+  (original reference, not a clone).
+- When no branch changes at all, the original `config` reference is returned
+  unchanged.
+- Removed the now-unused `syncSharedCommonSettingAcrossScopes`,
+  `syncScopedCommonSettingAcrossBreakpoints`, and `getOrCreateScopeConfig`
+  helpers (TS6133 errors confirmed they were dead code).
+- `galleryConfig.test.ts` extended with 8 new identity-sensitive and behavioral
+  regression cases (15 tests total, all passing).
+- 1796 tests pass, up from 1788 before P31-C.
 
 ### Validation
 
@@ -564,15 +584,32 @@ viewport.
 ### Acceptance criteria
 
 - The Vertical Scroll Snap adapter renders a bounded snap container inside the
-  current gallery section instead of assuming full-browser viewport ownership. ( )
-- Unified and per-type gallery flows render correctly with the new adapter. ( )
+  current gallery section instead of assuming full-browser viewport ownership. (✓)
+- Unified and per-type gallery flows render correctly with the new adapter. (✓)
 - Per-type layouts opt out of side-by-side equal-height presentation when Scroll
   Snap is selected so the user does not get two competing vertical snap
-  surfaces at once. ( )
+  surfaces at once. (✓)
 - Existing click/lightbox behavior and scroll-lock behavior remain compatible
-  with the adapter. ( )
+  with the adapter. (✓)
 - New Scroll Snap settings round-trip correctly through TypeScript and PHP
-  validation/sanitization. ( )
+  validation/sanitization. (✓)
+
+### Completion notes (2026-05-21)
+
+- `ScrollSnapGallery.tsx`: snap container with `overflowY: scroll` and
+  `scrollSnapType: y mandatory`; height derived from `containerDimensions.height`
+  (falls back to 500 px); slides use `scrollSnapAlign` from setting; page indicator
+  ("n / total") optional; click opens lightbox; `useLightbox` handles scroll lock
+  and keyboard nav.
+- `shouldUseEqualHeightPerTypeLayout` updated: returns `false` when any plan uses
+  `adapterId === 'scroll-snap'`, preventing side-by-side competing snap containers.
+- Settings: `scrollSnapAlignment` (select: start/center/end) and
+  `scrollSnapPageIndicator` (boolean) — wired through all layers.
+- Tests: +8 parameterized smoke tests (ScrollSnapGallery in shared suite),
+  +6 specific tests in `adapters.test.tsx`, +3 registry tests in
+  `adapterRegistry.test.ts`, +1 per-type opt-out test in
+  `campaignGalleryRenderPlan.test.ts`. 1788 tests total, all passing.
+- Committed: `feat(p31-f): vertical scroll snap adapter — bounded section contract, per-type opt-out, settings path`
 
 ### Validation
 

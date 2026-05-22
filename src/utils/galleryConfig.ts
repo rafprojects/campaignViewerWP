@@ -140,47 +140,7 @@ function getCollectionScopesForMode(mode?: GalleryConfig['mode']): GalleryConfig
     : ['image', 'video', 'unified'];
 }
 
-function getOrCreateScopeConfig(
-  config: GalleryConfig,
-  breakpoint: GalleryConfigBreakpoint,
-  scope: GalleryConfigScope,
-): GalleryScopeConfig {
-  config.breakpoints ??= {};
-  const breakpointConfig = config.breakpoints[breakpoint] ?? {};
-  config.breakpoints[breakpoint] = breakpointConfig;
 
-  const scopeConfig = breakpointConfig[scope] ?? {};
-  breakpointConfig[scope] = scopeConfig;
-
-  return scopeConfig;
-}
-
-function syncSharedCommonSettingAcrossScopes<K extends keyof GalleryCommonSettings>(
-  config: GalleryConfig,
-  key: K,
-  value: GalleryCommonSettings[K],
-) {
-  for (const breakpoint of GALLERY_BREAKPOINTS) {
-    for (const scope of GALLERY_SCOPES) {
-      const scopeConfig = getOrCreateScopeConfig(config, breakpoint, scope);
-      scopeConfig.common ??= {};
-      scopeConfig.common[key] = value;
-    }
-  }
-}
-
-function syncScopedCommonSettingAcrossBreakpoints<K extends keyof GalleryCommonSettings>(
-  config: GalleryConfig,
-  scope: GalleryConfigScope,
-  key: K,
-  value: GalleryCommonSettings[K],
-) {
-  for (const breakpoint of GALLERY_BREAKPOINTS) {
-    const scopeConfig = getOrCreateScopeConfig(config, breakpoint, scope);
-    scopeConfig.common ??= {};
-    scopeConfig.common[key] = value;
-  }
-}
 
 function scopeUsesAdapterSettingKey(
   adapterId: string | undefined,
@@ -307,9 +267,39 @@ export function setRepresentativeGalleryCommonSetting<K extends RepresentativeGa
   key: K,
   value: GalleryCommonSettings[K],
 ): GalleryConfig {
-  const nextConfig = cloneGalleryConfig(config) ?? { mode: 'per-type', breakpoints: {} };
-  syncSharedCommonSettingAcrossScopes(nextConfig, key, value);
-  return nextConfig;
+  // Structural-sharing update: only clone breakpoint and scope objects that actually
+  // change. Untouched branches keep their original references, avoiding unnecessary
+  // object allocation on every settings edit.
+  let configChanged = false;
+  const newBreakpoints: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>> = {};
+
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    const bpConfig = config.breakpoints?.[breakpoint];
+    let bpChanged = false;
+    const newBp: BreakpointGalleryConfig = bpConfig ? { ...bpConfig } : {};
+
+    for (const scope of GALLERY_SCOPES) {
+      const scopeConfig = bpConfig?.[scope];
+      // Skip when value is already correct — preserves reference identity.
+      if (scopeConfig !== undefined && scopeConfig.common?.[key] === value) continue;
+
+      newBp[scope] = {
+        ...scopeConfig,
+        common: { ...scopeConfig?.common, [key]: value },
+      };
+      bpChanged = true;
+    }
+
+    if (bpChanged) {
+      newBreakpoints[breakpoint] = newBp;
+      configChanged = true;
+    } else if (bpConfig !== undefined) {
+      newBreakpoints[breakpoint] = bpConfig; // unchanged — keep original reference
+    }
+  }
+
+  if (!configChanged) return config;
+  return { ...config, breakpoints: newBreakpoints };
 }
 
 export function setScopeGalleryCommonSetting<K extends ScopeSpecificGalleryCommonSettingKey>(
@@ -318,9 +308,33 @@ export function setScopeGalleryCommonSetting<K extends ScopeSpecificGalleryCommo
   key: K,
   value: GalleryCommonSettings[K],
 ): GalleryConfig {
-  const nextConfig = cloneGalleryConfig(config) ?? { mode: 'per-type', breakpoints: {} };
-  syncScopedCommonSettingAcrossBreakpoints(nextConfig, scope, key, value);
-  return nextConfig;
+  // Structural-sharing update: only clone breakpoints where the scoped common
+  // setting actually changes.
+  let configChanged = false;
+  const newBreakpoints: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>> = {};
+
+  for (const breakpoint of GALLERY_BREAKPOINTS) {
+    const bpConfig = config.breakpoints?.[breakpoint];
+    const scopeConfig = bpConfig?.[scope];
+
+    // Skip when value is already correct — preserves reference identity.
+    if (scopeConfig !== undefined && scopeConfig.common?.[key] === value) {
+      if (bpConfig !== undefined) newBreakpoints[breakpoint] = bpConfig;
+      continue;
+    }
+
+    newBreakpoints[breakpoint] = {
+      ...bpConfig,
+      [scope]: {
+        ...scopeConfig,
+        common: { ...scopeConfig?.common, [key]: value },
+      },
+    };
+    configChanged = true;
+  }
+
+  if (!configChanged) return config;
+  return { ...config, breakpoints: newBreakpoints };
 }
 
 export function setGalleryAdapterSetting<K extends keyof GalleryBehaviorSettings>(
@@ -328,21 +342,45 @@ export function setGalleryAdapterSetting<K extends keyof GalleryBehaviorSettings
   key: K,
   value: GalleryBehaviorSettings[K],
 ): GalleryConfig {
-  const nextConfig = cloneGalleryConfig(config) ?? getDefaultGalleryConfig();
+  // Structural-sharing update: only clone scope and breakpoint objects that need
+  // to change. Scopes that don't use this adapter setting key keep their original
+  // references, avoiding full-tree allocation on every adapter-setting edit.
+  const base = config ?? getDefaultGalleryConfig();
+  let configChanged = false;
+  const newBreakpoints: Partial<Record<GalleryConfigBreakpoint, BreakpointGalleryConfig>> = {};
 
   for (const breakpoint of GALLERY_BREAKPOINTS) {
+    const bpConfig = base.breakpoints?.[breakpoint];
+    let bpChanged = false;
+    const newBp: BreakpointGalleryConfig = bpConfig ? { ...bpConfig } : {};
+
     for (const scope of GALLERY_SCOPES) {
-      const scopeConfig = getOrCreateScopeConfig(nextConfig, breakpoint, scope);
-      if (!scopeUsesAdapterSettingKey(scopeConfig.adapterId, scope, key)) {
+      const scopeConfig = bpConfig?.[scope];
+      if (!scopeUsesAdapterSettingKey(scopeConfig?.adapterId, scope, key)) {
+        continue; // key not used by this scope's adapter — preserve reference unchanged
+      }
+      // Skip when the stored value is already equal — preserves reference identity.
+      if (scopeConfig?.adapterSettings?.[key] === value) {
         continue;
       }
 
-      scopeConfig.adapterSettings ??= {};
-      scopeConfig.adapterSettings[key] = value;
+      newBp[scope] = {
+        ...scopeConfig,
+        adapterSettings: { ...scopeConfig?.adapterSettings, [key]: value },
+      };
+      bpChanged = true;
+    }
+
+    if (bpChanged) {
+      newBreakpoints[breakpoint] = newBp;
+      configChanged = true;
+    } else if (bpConfig !== undefined) {
+      newBreakpoints[breakpoint] = bpConfig; // unchanged — keep original reference
     }
   }
 
-  return nextConfig;
+  if (!configChanged) return base;
+  return { ...base, breakpoints: newBreakpoints };
 }
 
 export function collectGalleryAdapterSettingValues(
