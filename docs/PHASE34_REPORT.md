@@ -8,8 +8,8 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P34-A | Analytics dashboard live refresh with visibility-aware polling | Planned | Small-Medium |
-| P34-B | Advanced media sort modes and local preference persistence | Planned | Medium |
+| P34-A | Analytics dashboard live refresh with visibility-aware polling | ✅ Complete | Small-Medium |
+| P34-B | Advanced media sort modes and local preference persistence | ✅ Complete | Medium |
 
 ---
 
