@@ -1,6 +1,6 @@
 # Phase 31 — Gallery Reliability, Adapter Coverage, Config Hardening & Targeted Capability Expansion
 
-**Status:** In Progress (P31-D pre-evaluation remaining)
+**Status:** Complete
 **Created:** 2026-05-19
 **Last updated:** 2026-05-21
 
@@ -11,7 +11,7 @@
 | P31-A | Gallery reliability hardening: settings merge, lightbox scroll lock, breakpoint first-render contract | **Done** | Small-Medium |
 | P31-B | Adapter resolution integration coverage | **Done** | Medium |
 | P31-C | Gallery config editor update-path optimization | **Done** | Medium |
-| P31-D | Adapter settings single-source-of-truth pre-evaluation | Pre-Evaluation | Large |
+| P31-D | Adapter settings single-source-of-truth pre-evaluation | **Done** | Large |
 | P31-E | Spotlight / Hero adapter delivery | **Done** | Small-Medium |
 | P31-F | Vertical Scroll Snap adapter, scoped to bounded gallery sections | **Done** | Medium |
 | P31-G | Waterfall entrance animation as a Masonry enhancement | **Done** | Small |
@@ -406,11 +406,59 @@ settings source can safely generate or drive the other artifacts.
 ### Acceptance criteria
 
 - A canonical-source proposal exists with clear generated and hand-authored
-  boundaries. ( )
+  boundaries. (✓)
 - The proposal documents how TypeScript validation, runtime defaults, and PHP
-  registry data stay in sync. ( )
+  registry data stay in sync. (✓)
 - The phase ends with a go/no-go decision on generator implementation rather
-  than an assumed rollout. ( )
+  than an assumed rollout. (✓)
+
+### Completion Notes (2026-05-21)
+
+Pre-evaluation completed via `docs/P31-D_EVALUATION_052126.md`.
+
+**Canonical decisions:**
+- `adapterRegistry.ts` (`SETTING_GROUP_DEFINITIONS`) is the canonical source.
+  It already contains the richest metadata: control type, key, label,
+  description, constraints, fallback, `appliesTo`, and `unitKey`.
+- Everything else is derivable: TypeScript interface field type and default
+  value, Zod schema entry, PHP sanitizer slug (via deterministic
+  camelCase → snake_case transform).
+- Hand-authored layer stays: `SETTING_GROUP_DEFINITIONS` itself, adapter
+  component implementations, `AdapterRegistration` entries, `GalleryAdapterId`
+  type union, and all common (non-adapter) settings.
+
+**Parity audit results:** Zero drift detected. All 82 registry keys (70 field
+keys + 12 unitKey companions) are present in the PHP sanitizer map. The
+camelCase → snake_case rule is correct for every registry key.
+
+Four legacy orphan PHP entries identified (`gridCardHeight`, `gridCardHeightUnit`,
+`mosaicTargetRowHeightUnit`, `photoNormalizeHeightUnit`) — formerly-dimension
+fields whose `*Unit` companions were not pruned when the control type changed to
+`number`. Harmless today; Phase 32 generator can clean them up.
+
+**Go/No-Go decision: GO** — Proceed to generator implementation in Phase 32.
+
+**Delivered:**
+1. `scripts/validate-adapter-settings-parity.mjs` — prototype generator/validator
+   that parses registry and PHP source, applies the camelCase→snake_case
+   transform, and reports drift. Shows the exact PHP entries a generator would
+   produce for any missing keys.
+2. `npm run validate:adapter-settings` script added to `package.json`.
+3. `src/components/Galleries/Adapters/adapterSettingsParity.test.ts` — 5
+   Vitest regression tests that catch future drift in CI, including a known-
+   legacy allowlist for the 4 identified orphan entries.
+4. `docs/P31-D_EVALUATION_052126.md` — canonical source proposal, metadata
+   duplication map, generator design sketch, risk assessment.
+
+**Phase 32 prerequisites:**
+- [x] Parity validated at zero drift — clean baseline for the generator
+- [x] Transform rule proven correct across all 82 current keys
+- [x] Legacy orphan entries documented
+- [ ] Extract `SETTING_GROUP_DEFINITIONS` to `adapterSettingGroups.ts` (pure-data
+      module for Node.js generator import)
+- [ ] Implement generator with `--check` and `--write` modes
+- [ ] Add sentinel-comment boundaries to hand-authored files
+- [ ] Decide pre-build vs. manual-only invocation
 
 ### Validation
 
