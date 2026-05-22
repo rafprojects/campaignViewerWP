@@ -915,6 +915,18 @@ work remain follow-on candidates here.
 | Mosaic / Pinterest adapter | Dense-packing value already overlaps Justified/Masonry; irregular grid assignment remains a higher-risk layout problem than this phase should take on. |
 | Filterable gallery wrapper | A valid future orchestration direction, but it depends on `P31-H` payload decisions and should not enter as an adapter track. |
 
+## PR #47 Review — Copilot Comment Rationale (2026-05-22)
+
+All five Copilot review threads were accepted and implemented in commit `25766fd`.
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `__dirname` in ESM test | `adapterSettingsParity.test.ts` | **Accept** | `__dirname` is not defined in ESM modules (`package.json` has `"type": "module"`); the test would throw at import time in any runtime that correctly implements the ESM spec. Replaced with `fileURLToPath(import.meta.url)` + `dirname()` — the canonical ESM-safe pattern. |
+| `wp_insert_term` WP_Error | `WPSG_REST_Extended_Test.php` | **Accept** | `wp_insert_term()` returns `WP_Error` (code `term_exists`) when a slug already exists — e.g. if the test database is not fully rolled back between runs or if a parallel test created the same term. The `assertIsArray` guard made the test order-dependent and flaky. Fixed by checking `is_wp_error()` and extracting the existing `term_id` from `get_error_data('term_exists')`, making the test idempotent. |
+| Duplicate attachment IDs | `class-wpsg-rest.php` | **Accept** | A gallery can legitimately reference the same attachment more than once (e.g. the same image in multiple positions). The ID collection loop used a plain array append, so duplicates would inflate `update_meta_cache()`. Switched to an associative-key pattern (`$ids[$aid] = $aid`) followed by `array_values()` — O(1) deduplication with no performance overhead. |
+| Space `preventDefault` — Spotlight | `SpotlightGallery.tsx` | **Accept** | ARIA spec requires that pressing Space on a `role="button"` element activates it *and* does not scroll the page. The previous handler fired the click but omitted `e.preventDefault()`, so the Space key also scrolled the viewport. Fixed by calling `e.preventDefault()` before `handleHeroClick()`. |
+| Space `preventDefault` — ScrollSnap | `ScrollSnapGallery.tsx` | **Accept** | Same issue as Spotlight, applied to the slide buttons inside the scroll-snap container. Without `preventDefault()`, Space activates the slide but also scrolls the container, producing a confusing dual-action. |
+
 ## Implementation Notes
 
 - Keep this phase focused on gallery correctness, coverage, targeted
