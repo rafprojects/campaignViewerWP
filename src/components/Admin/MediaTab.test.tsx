@@ -730,4 +730,70 @@ describe('MediaTab', () => {
       }
     });
   });
+
+  // ── P34-B: sort mode selector ─────────────────────────────────────────────
+
+  it('renders the sort mode selector', async () => {
+    apiClient.get.mockResolvedValueOnce([]);
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    expect(await screen.findByRole('combobox', { name: /sort mode/i })).toBeInTheDocument();
+  });
+
+  it('defaults sort mode to "Order"', async () => {
+    apiClient.get.mockResolvedValueOnce([]);
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    const select = await screen.findByRole('combobox', { name: /sort mode/i });
+    expect(select).toHaveValue('Order');
+  });
+
+  it('sorts media by title when "Title A–Z" is selected', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      { id: 'z', type: 'image', source: 'upload', url: 'z.jpg', caption: 'Zebra', order: 1 },
+      { id: 'a', type: 'image', source: 'upload', url: 'a.jpg', caption: 'Apple', order: 2 },
+    ]);
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    await screen.findByText('Zebra');
+
+    // Open the sort select and choose Title A–Z
+    const select = screen.getByRole('combobox', { name: /sort mode/i });
+    fireEvent.click(select);
+    fireEvent.click(await screen.findByRole('option', { name: 'Title A–Z' }));
+
+    // After re-sort, Apple should precede Zebra in the DOM
+    await waitFor(() => {
+      const captions = screen.getAllByText(/Apple|Zebra/);
+      expect(captions[0]).toHaveTextContent('Apple');
+    });
+  });
+
+  it('hides drag handles when not in order sort mode', async () => {
+    // Clear any sort preference left by earlier tests
+    localStorage.removeItem('wpsg_media_sortMode');
+
+    apiClient.get.mockResolvedValueOnce([
+      { id: 'm1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Alpha', order: 1 },
+      { id: 'm2', type: 'image', source: 'upload', url: '2.jpg', caption: 'Beta', order: 2 },
+    ]);
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+    // Wait for list to populate
+    await screen.findByText('Alpha');
+
+    // Switch to list view so drag handles (grip icons) are visible in the rows
+    const listRadio = document.querySelector<HTMLInputElement>('input[type="radio"][value="list"]');
+    if (listRadio) fireEvent.click(listRadio);
+    await waitFor(() =>
+      expect(screen.getAllByLabelText('Drag media to reorder').length).toBeGreaterThan(0),
+    );
+
+    // Switch to title sort — drag handles should disappear
+    const select = screen.getByRole('combobox', { name: /sort mode/i });
+    fireEvent.click(select);
+    fireEvent.click(await screen.findByRole('option', { name: 'Title A–Z' }));
+
+    await waitFor(() =>
+      expect(screen.queryAllByLabelText('Drag media to reorder')).toHaveLength(0),
+    );
+  });
 });

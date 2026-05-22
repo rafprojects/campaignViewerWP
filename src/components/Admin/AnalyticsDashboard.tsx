@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
+  ActionIcon,
   Alert,
   Badge,
   Center,
+  Group,
   Loader,
   Paper,
   ScrollArea,
@@ -13,6 +15,7 @@ import {
   Table,
   Text,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import {
   CartesianGrid,
@@ -20,7 +23,7 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as ChartTooltip,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -29,14 +32,19 @@ import {
   IconEye,
   IconInfoCircle,
   IconPhoto,
+  IconRefresh,
   IconUsers,
+  IconWifi,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
+  type AnalyticsPollingOptions,
   useAnalyticsSummary,
   useCampaignAnalytics,
   useCampaignMediaAnalytics,
 } from '@/services/adminQuery';
+import { useTabVisibility } from '@/hooks/useTabVisibility';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface SelectItem {
@@ -57,6 +65,12 @@ function getDateRange(preset: RangePreset): { from: string; to: string } {
   from.setDate(from.getDate() - parseInt(preset) + 1);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   return { from: fmt(from), to: fmt(to) };
+}
+
+/** Format a Unix-ms timestamp as a locale time string, or '' when zero. */
+function formatUpdatedAt(ts: number): string {
+  if (ts === 0) return '';
+  return new Date(ts).toLocaleTimeString();
 }
 
 function StatCard({
@@ -90,26 +104,64 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
   const [preset, setPreset] = useState<RangePreset>('30');
   const dateRange = useMemo(() => getDateRange(preset), [preset]);
 
-  const { data, isLoading, error } = useCampaignAnalytics(
+  // P34-A: visibility-aware polling
+  const isTabVisible = useTabVisibility();
+  const isOnline = useOnlineStatus();
+  const pollingOptions = useMemo<AnalyticsPollingOptions>(
+    () => ({ enabled: isTabVisible && isOnline }),
+    [isTabVisible, isOnline],
+  );
+
+  const {
+    data,
+    isLoading,
+    error,
+    dataUpdatedAt,
+    refetch: refetchAnalytics,
+  } = useCampaignAnalytics(
     apiClient,
     campaignId,
     dateRange.from,
     dateRange.to,
+    pollingOptions,
   );
 
-  const { data: summaryData } = useAnalyticsSummary(
+  const {
+    data: summaryData,
+    dataUpdatedAt: summaryUpdatedAt,
+    refetch: refetchSummary,
+  } = useAnalyticsSummary(
     apiClient,
     dateRange.from,
     dateRange.to,
     true,
+    pollingOptions,
   );
 
-  const { data: mediaData, isLoading: mediaLoading } = useCampaignMediaAnalytics(
+  const {
+    data: mediaData,
+    isLoading: mediaLoading,
+    dataUpdatedAt: mediaUpdatedAt,
+    refetch: refetchMedia,
+  } = useCampaignMediaAnalytics(
     apiClient,
     campaignId,
     dateRange.from,
     dateRange.to,
+    pollingOptions,
   );
+
+  // Oldest non-zero timestamp = last time all queries were fresh simultaneously
+  const lastUpdatedAt = useMemo(() => {
+    const times = [dataUpdatedAt, summaryUpdatedAt, mediaUpdatedAt].filter((t) => t > 0);
+    return times.length > 0 ? Math.min(...times) : 0;
+  }, [dataUpdatedAt, summaryUpdatedAt, mediaUpdatedAt]);
+
+  const handleRefreshAll = useCallback(() => {
+    void refetchAnalytics();
+    void refetchSummary();
+    void refetchMedia();
+  }, [refetchAnalytics, refetchSummary, refetchMedia]);
 
   const chartData = (data?.daily ?? []).map((d) => ({
     date: d.date.slice(5),
@@ -147,10 +199,42 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
 
       {/* ── Controls ──────────────────────────────────────────────────────── */}
       <Stack gap="xs">
-        <Title order={4} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconChartLine size={20} />
-          Campaign Analytics
-        </Title>
+        <Group justify="space-between" align="center">
+          <Title order={4} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <IconChartLine size={20} />
+            Campaign Analytics
+          </Title>
+          {/* P34-A: refresh affordance + freshness indicator */}
+          <Group gap="xs" align="center">
+            {!isOnline && (
+              <Badge
+                size="xs"
+                color="red"
+                leftSection={<IconWifi size={10} />}
+                aria-label="Browser is offline — polling paused"
+              >
+                Offline
+              </Badge>
+            )}
+            {lastUpdatedAt > 0 && (
+              <Text size="xs" c="dimmed" aria-live="polite">
+                Updated {formatUpdatedAt(lastUpdatedAt)}
+              </Text>
+            )}
+            <Tooltip label="Refresh analytics" withArrow>
+              <ActionIcon
+                variant="subtle"
+                size="sm"
+                onClick={handleRefreshAll}
+                loading={isLoading}
+                aria-label="Refresh analytics"
+              >
+                <IconRefresh size={14} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        </Group>
+
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <Select
             placeholder="Select campaign"
@@ -227,7 +311,7 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
                     axisLine={false}
                     allowDecimals={false}
                   />
-                  <Tooltip
+                  <ChartTooltip
                     contentStyle={{
                       background: 'var(--mantine-color-body)',
                       border: '1px solid var(--mantine-color-default-border)',

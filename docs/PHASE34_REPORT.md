@@ -1,8 +1,8 @@
 # Phase 34 — Admin Analytics Refresh & Advanced Media Sorting
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-05-19
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-22
 
 ### Tracks
 
@@ -69,11 +69,11 @@ Add bounded polling and explicit freshness cues to the analytics dashboard.
 
 ### Acceptance criteria
 
-- Analytics data refreshes automatically while the dashboard is visible. ( )
-- Polling pauses when the tab is hidden or the browser is offline. ( )
-- Operators can manually refresh and see when data was last updated. ( )
+- Analytics data refreshes automatically while the dashboard is visible. (✓)
+- Polling pauses when the tab is hidden or the browser is offline. (✓)
+- Operators can manually refresh and see when data was last updated. (✓)
 - Existing analytics charts and tables remain behavior-preserving outside the
-  new refresh behavior. ( )
+  new refresh behavior. (✓)
 
 ### Validation
 
@@ -119,11 +119,11 @@ Add the missing sort modes and persist the admin's last-used choice locally.
 
 ### Acceptance criteria
 
-- File-size and usage-count sort modes are available in the media UI. ( )
-- The selected sort preference persists across reloads in the same browser. ( )
+- File-size and usage-count sort modes are available in the media UI. (✓)
+- The selected sort preference persists across reloads in the same browser. (✓)
 - Large-library behavior remains responsive and does not regress current sort
-  modes. ( )
-- Existing sort options remain backward compatible. ( )
+  modes. (✓)
+- Existing sort options remain backward compatible. (✓)
 
 ### Validation
 

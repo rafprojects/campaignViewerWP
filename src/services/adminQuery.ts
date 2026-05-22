@@ -114,6 +114,22 @@ const ACCESS_REQUESTS_QUERY_STALE_TIME = 30_000;
 const PREFETCH_CONCURRENCY = 6;
 const MAX_SELECTOR_PAGES = 20;
 
+/** Default interval for visibility-aware analytics polling (P34-A). */
+export const ANALYTICS_POLL_INTERVAL_MS = 30_000;
+
+/**
+ * Options passed to analytics hooks to enable visibility-aware polling (P34-A).
+ * When `enabled` is true the hook turns on `refetchInterval`,
+ * `refetchOnWindowFocus`, and `refetchOnReconnect` so data stays fresh while
+ * the analytics surface is visible and the browser is online.
+ */
+export interface AnalyticsPollingOptions {
+  /** Activate periodic polling + focus/reconnect refetch. */
+  enabled: boolean;
+  /** Override the default 30-second poll interval. */
+  intervalMs?: number;
+}
+
 const ADMIN_QUERY_OPTIONS = {
   retry: false,
   refetchOnWindowFocus: false,
@@ -484,13 +500,18 @@ export function useCampaignAnalytics(
   campaignId: string | null,
   from: string,
   to: string,
+  polling?: AnalyticsPollingOptions,
 ) {
+  const pollingActive = Boolean(polling?.enabled && campaignId);
   return useQuery<CampaignAnalyticsResponse>({
     queryKey: getCampaignAnalyticsQueryKey(apiClient, campaignId || 'none', from, to),
     queryFn: () => apiClient.getCampaignAnalytics(campaignId!, from, to),
     enabled: Boolean(campaignId),
     staleTime: ANALYTICS_QUERY_STALE_TIME,
-    ...ADMIN_QUERY_OPTIONS,
+    retry: false,
+    refetchInterval: pollingActive ? (polling?.intervalMs ?? ANALYTICS_POLL_INTERVAL_MS) : false,
+    refetchOnWindowFocus: pollingActive,
+    refetchOnReconnect: pollingActive,
   });
 }
 
@@ -619,23 +640,38 @@ export function useCampaignMediaAnalytics(
   campaignId: string | null,
   from: string,
   to: string,
+  polling?: AnalyticsPollingOptions,
 ) {
+  const pollingActive = Boolean(polling?.enabled && campaignId);
   return useQuery<MediaAnalyticsResponse>({
     queryKey: getCampaignMediaAnalyticsQueryKey(apiClient, campaignId || 'none', from, to),
     queryFn: () => apiClient.getCampaignMediaAnalytics(campaignId!, from, to),
     enabled: Boolean(campaignId),
     staleTime: ANALYTICS_QUERY_STALE_TIME,
-    ...ADMIN_QUERY_OPTIONS,
+    retry: false,
+    refetchInterval: pollingActive ? (polling?.intervalMs ?? ANALYTICS_POLL_INTERVAL_MS) : false,
+    refetchOnWindowFocus: pollingActive,
+    refetchOnReconnect: pollingActive,
   });
 }
 
-export function useAnalyticsSummary(apiClient: ApiClient, from: string, to: string, enabled = true) {
+export function useAnalyticsSummary(
+  apiClient: ApiClient,
+  from: string,
+  to: string,
+  enabled = true,
+  polling?: AnalyticsPollingOptions,
+) {
+  const pollingActive = Boolean(polling?.enabled && enabled);
   return useQuery<AnalyticsSummaryResponse>({
     queryKey: getAnalyticsSummaryQueryKey(apiClient, from, to),
     queryFn: () => apiClient.getAnalyticsSummary(from, to),
     enabled,
     staleTime: ANALYTICS_QUERY_STALE_TIME,
-    ...ADMIN_QUERY_OPTIONS,
+    retry: false,
+    refetchInterval: pollingActive ? (polling?.intervalMs ?? ANALYTICS_POLL_INTERVAL_MS) : false,
+    refetchOnWindowFocus: pollingActive,
+    refetchOnReconnect: pollingActive,
   });
 }
 
