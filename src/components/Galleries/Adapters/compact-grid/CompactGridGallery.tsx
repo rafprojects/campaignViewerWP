@@ -28,8 +28,7 @@ import type {
 import type { ListingItem } from '../GalleryAdapter';
 import type { ReactNode } from 'react';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
-import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss } from '@/utils/gridLayout';
-import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -85,22 +84,8 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
     if (!isListingMode) return null;
     const containerWidth = containerDimensions?.width ?? 0;
 
-    // Column count — mirrors CardGallery.effectiveColumns logic.
-    // P35-C forward-compat: gridCardMaxColumns (0 = no cap) takes precedence;
-    // if unset, fall back to cardGridColumns (the legacy card-gallery knob).
-    const gridMax = settings.gridCardMaxColumns ?? 0;
-    const cardCols = settings.cardGridColumns ?? 0;
-    const explicitCols = gridMax > 0 ? gridMax : cardCols;
-    let effectiveColumns: number;
-    if (explicitCols > 0) {
-      effectiveColumns = explicitCols;
-    } else {
-      const maxColumns = settings.cardMaxColumns ?? 0;
-      const auto = containerWidth > 0
-        ? resolveColumnsFromWidth(containerWidth, 0, settings.cardAutoColumnsBreakpoints)
-        : 1;
-      effectiveColumns = maxColumns > 0 ? Math.min(auto, maxColumns) : auto;
-    }
+    // Column count — shared helper covers gridCardMaxColumns → cardGridColumns → auto chain.
+    const effectiveColumns = resolveListingColumns(settings, containerWidth);
 
     // Gap — mirrors CardGallery.effectiveGapH / cardGapV.
     const cardGapHUnit = settings.cardGapHUnit ?? 'px';

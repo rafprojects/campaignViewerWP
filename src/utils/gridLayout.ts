@@ -3,6 +3,8 @@
  * React-free and fully testable without hooks.
  */
 import { toCss, type CssWidthUnit } from './cssUnits';
+import type { GalleryBehaviorSettings } from '@/types';
+import { resolveColumnsFromWidth } from './resolveColumnsFromWidth';
 
 /**
  * Scale a card width and optionally resolve a percent width against a
@@ -48,6 +50,33 @@ export function gridRowMaxWidthCss(
   if (cols <= 0) return '100%';
   if (cols === 1) return toCss(itemWidth, itemWidthUnit);
   return `calc(${toCss(itemWidth * cols, itemWidthUnit)} + ${cols - 1} * ${gapCss})`;
+}
+
+/**
+ * P35: Resolve the effective column count for listing-mode adapters
+ * (CompactGrid, Masonry, Justified) from card settings + container width.
+ *
+ * Priority chain (highest → lowest):
+ *   1. `gridCardMaxColumns` — explicit listing-adapter cap (P35).
+ *   2. `cardGridColumns`    — legacy card-gallery column knob (forward-compat).
+ *   3. Auto from `resolveColumnsFromWidth` + optional `cardMaxColumns` cap.
+ *   4. 1 column when containerWidth is unknown (SSR / test with no dimensions).
+ */
+export function resolveListingColumns(
+  settings: GalleryBehaviorSettings,
+  containerWidth: number,
+): number {
+  const gridMax = settings.gridCardMaxColumns ?? 0;
+  const cardCols = settings.cardGridColumns ?? 0;
+  const explicitCols = gridMax > 0 ? gridMax : cardCols;
+
+  if (explicitCols > 0) return explicitCols;
+
+  const maxCols = settings.cardMaxColumns ?? 0;
+  const auto = containerWidth > 0
+    ? resolveColumnsFromWidth(containerWidth, 0, settings.cardAutoColumnsBreakpoints)
+    : 1;
+  return maxCols > 0 ? Math.min(auto, maxCols) : auto;
 }
 
 /**

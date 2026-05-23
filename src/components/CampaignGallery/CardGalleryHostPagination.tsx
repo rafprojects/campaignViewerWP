@@ -30,8 +30,6 @@ interface CardGalleryHostPaginationProps {
   settings: GalleryBehaviorSettings;
   /** Effective column count (computed from resolved settings + container width). */
   effectiveColumns: number;
-  /** Current container width in px. */
-  containerWidth: number;
   /** Active breakpoint — resets the current page when it changes. */
   breakpoint: Breakpoint;
   /**
@@ -55,7 +53,6 @@ export function CardGalleryHostPagination({
   filteredCampaigns,
   settings,
   effectiveColumns,
-  containerWidth: _containerWidth,
   breakpoint,
   gridContainerRef,
   resetKey,

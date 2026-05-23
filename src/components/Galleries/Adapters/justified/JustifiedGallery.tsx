@@ -36,7 +36,7 @@ import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
-import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+import { resolveListingColumns } from '@/utils/gridLayout';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
@@ -88,27 +88,18 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
   if (isListingMode) {
     const containerWidth = containerDimensions?.width ?? 0;
 
-    // Column count — mirrors compact-grid / masonry listing logic.
-    const gridMax = settings.gridCardMaxColumns ?? 0;
-    const cardCols = settings.cardGridColumns ?? 0;
-    const explicitCols = gridMax > 0 ? gridMax : cardCols;
-    let effectiveColumns: number;
-    if (explicitCols > 0) {
-      effectiveColumns = explicitCols;
-    } else {
-      const maxCols = settings.cardMaxColumns ?? 0;
-      const auto = containerWidth > 0
-        ? resolveColumnsFromWidth(containerWidth, 0, settings.cardAutoColumnsBreakpoints)
-        : 1;
-      effectiveColumns = maxCols > 0 ? Math.min(auto, maxCols) : auto;
-    }
+    // Column count — shared helper covers gridCardMaxColumns → cardGridColumns → auto chain.
+    const effectiveColumns = resolveListingColumns(settings, containerWidth);
 
     const gapH = settings.cardGapH ?? 16;
     const gapHUnit = settings.cardGapHUnit ?? 'px';
     const gapV = settings.cardGapV ?? 16;
     const gapVUnit = settings.cardGapVUnit ?? 'px';
-    // flex-basis computed to place `effectiveColumns` items per row;
-    // flex-grow:1 causes items to stretch and fill any leftover space.
+    // flex-basis sets the minimum width for each item per the column count.
+    // flex-grow:1 (no maxWidth cap) lets items stretch to fill any leftover
+    // space in each row — the defining "justified" behaviour.
+    // The last partial row also stretches; this is intentional for the
+    // justified aesthetic (vs. compact-grid which left-aligns partial rows).
     const flexBasis = effectiveColumns <= 1
       ? '100%'
       : `calc((100% - ${toCss((effectiveColumns - 1) * gapH, gapHUnit)}) / ${effectiveColumns})`;
@@ -130,7 +121,6 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
             data-testid="justified-listing-item"
             style={{
               flex: `1 0 ${flexBasis}`,
-              maxWidth: flexBasis,
               minWidth: 0,
             }}
           >

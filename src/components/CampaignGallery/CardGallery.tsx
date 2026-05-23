@@ -409,7 +409,6 @@ export function CardGallery({
             filteredCampaigns={filteredCampaigns}
             settings={s}
             effectiveColumns={effectiveColumns}
-            containerWidth={containerWidth}
             breakpoint={breakpoint}
             gridContainerRef={gridContainerRef}
             resetKey={resetKey}

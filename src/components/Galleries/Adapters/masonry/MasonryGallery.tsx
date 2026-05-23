@@ -37,6 +37,7 @@ import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { resolveListingColumns } from '@/utils/gridLayout';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
@@ -88,20 +89,8 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
   if (isListingMode) {
     const containerWidth = containerDimensions?.width ?? 0;
 
-    // Column count — mirrors CardGallery.effectiveColumns / compact-grid listing logic.
-    const gridMax = settings.gridCardMaxColumns ?? 0;
-    const cardCols = settings.cardGridColumns ?? 0;
-    const explicitCols = gridMax > 0 ? gridMax : cardCols;
-    let effectiveColumns: number;
-    if (explicitCols > 0) {
-      effectiveColumns = explicitCols;
-    } else {
-      const maxCols = settings.cardMaxColumns ?? 0;
-      const auto = containerWidth > 0
-        ? resolveColumnsFromWidth(containerWidth, 0, settings.cardAutoColumnsBreakpoints)
-        : 1;
-      effectiveColumns = maxCols > 0 ? Math.min(auto, maxCols) : auto;
-    }
+    // Column count — shared helper covers gridCardMaxColumns → cardGridColumns → auto chain.
+    const effectiveColumns = resolveListingColumns(settings, containerWidth);
 
     const columnGap = settings.cardGapH ?? 16;
     const columnGapUnit = settings.cardGapHUnit ?? 'px';
