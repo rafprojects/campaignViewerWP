@@ -1,12 +1,26 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select } from '@mantine/core';
+/**
+ * P35-C: CardGallery Host Shell
+ *
+ * Owns: filter tabs, search, access-mode toggle, header, in-context editors,
+ * CampaignViewer modal, and the adapter slot decision (host-paginated vs.
+ * adapter-paginated).
+ *
+ * Layout (how cards are arranged) is now fully delegated to the active listing
+ * adapter via the GalleryAdapter contract (items + renderItem, P35-A).
+ * Pagination state lives in CardGalleryHostPagination (P35-C) for adapters
+ * that use `paginationOwnership === 'host'`, and in the adapter itself (e.g.
+ * classic carousel) when `paginationOwnership === 'adapter'`.
+ */
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
-import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
-import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
+import { CardGalleryHostPagination } from './CardGalleryHostPagination';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
+import type { GalleryAdapterProps, ListingItem } from '@/components/Galleries/Adapters/GalleryAdapter';
+import { CompactGridGallery } from '@/components/Galleries/Adapters/compact-grid/CompactGridGallery';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useInContextSave } from '@/hooks/useInContextSave';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -14,10 +28,12 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
-import { toCss, toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
-import { resolveFixedCardWidth, gridRowMaxWidthCss, formatGapCss } from '@/utils/gridLayout';
+import { toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
+import { resolveFixedCardWidth } from '@/utils/gridLayout';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
+import { resolveListingAdapterId } from '@/utils/resolveListingAdapterId';
+import { adapterOwnsPagination, resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import styles from './CardGallery.module.scss';
 
@@ -48,46 +64,39 @@ export function CardGallery({
   onNotify,
   apiClient,
 }: CardGalleryProps) {
+  // ── Modal state ───────────────────────────────────────────────────────────
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  // Keep a ref to the last campaign so CampaignViewer stays mounted during close animation
+  // Keep a ref to the last campaign so CampaignViewer stays mounted during close animation.
   const lastCampaignRef = useRef<Campaign | null>(null);
   if (selectedCampaign) lastCampaignRef.current = selectedCampaign;
   const displayedCampaign = selectedCampaign ?? lastCampaignRef.current;
+
+  // ── Filter / search state ─────────────────────────────────────────────────
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // ── Typography ────────────────────────────────────────────────────────────
   const viewerTitleStyle = useTypographyStyle('viewerTitle', galleryBehaviorSettings);
   const viewerSubtitleStyle = useTypographyStyle('viewerSubtitle', galleryBehaviorSettings);
   const inContextSave = useInContextSave(apiClient, galleryBehaviorSettings);
 
-  // Load Google Fonts referenced in typography overrides
+  // Load Google Fonts referenced in typography overrides.
   useEffect(() => {
     loadGoogleFontsFromOverrides(galleryBehaviorSettings.typographyOverrides, GOOGLE_FONT_NAMES);
   }, [galleryBehaviorSettings.typographyOverrides]);
 
-  // Load-more state
-  const LOAD_MORE_SIZE = 12;
-  const [visibleCount, setVisibleCount] = useState(LOAD_MORE_SIZE);
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
+  // ── Container-based breakpoint resolution → resolved card settings ────────
   const gridContainerRef = useRef<HTMLDivElement>(null);
-
-  // Container-based breakpoint resolution → resolved card settings
   const { breakpoint, width: containerWidth } = useBreakpoint(gridContainerRef);
   const s = useMemo(
     () => resolveCardBreakpointSettings(galleryBehaviorSettings, breakpoint),
     [galleryBehaviorSettings, breakpoint],
   );
 
-  const displayMode = s.cardDisplayMode ?? 'load-more';
-
-  /** Resolve effective column count from resolved settings + container width. */
+  // ── Effective column count ────────────────────────────────────────────────
   const effectiveColumns = useMemo((): number => {
     const cols = s.cardGridColumns;
     if (cols > 0) return cols;
-    // Auto mode: use container width + cardAutoColumnsBreakpoints when available
     const max = s.cardMaxColumns || 0;
     const auto = containerWidth > 0
       ? resolveColumnsFromWidth(containerWidth, 0, s.cardAutoColumnsBreakpoints)
@@ -95,6 +104,37 @@ export function CardGallery({
     return max > 0 ? Math.min(auto, max) : auto;
   }, [s.cardGridColumns, s.cardMaxColumns, containerWidth, s.cardAutoColumnsBreakpoints]);
 
+  // ── Fixed / responsive card width ─────────────────────────────────────────
+  /** Below this resolved pixel width, fixed-width cards fall back to the responsive branch. */
+  const MIN_FIXED_CARD_WIDTH_PX = 120;
+  const hasFixedCardWidth = s.cardMaxWidth > 0;
+
+  const fixedCardWidth = useMemo<{ value: number; unit: CssWidthUnit } | null>(() => {
+    if (!hasFixedCardWidth) return null;
+    return resolveFixedCardWidth(
+      s.cardMaxWidth,
+      s.cardMaxWidthUnit,
+      s.cardScale ?? 1,
+      containerWidth,
+      MIN_FIXED_CARD_WIDTH_PX,
+    );
+  }, [hasFixedCardWidth, s.cardMaxWidth, s.cardMaxWidthUnit, s.cardScale, containerWidth]);
+
+  // cardGapHUnit is used only for the responsive wrapper, now inside the adapter.
+  // effectiveGapH and responsiveCardWidth are computed inside CompactGridGallery
+  // listing mode (P35-D) from containerDimensions + settings.
+
+  // ── Listing adapter resolution ─────────────────────────────────────────────
+  const listingAdapterId = resolveListingAdapterId(galleryBehaviorSettings, breakpoint);
+  const adapterPaginated = adapterOwnsPagination(listingAdapterId);
+  // compact-grid is imported directly (non-lazy) so its listing-mode branch renders
+  // synchronously — no Suspense suspension, no flicker, and tests stay fast.
+  // All other adapters continue through the lazy registry path.
+  const AdapterComponent: ComponentType<GalleryAdapterProps> = listingAdapterId === 'compact-grid'
+    ? CompactGridGallery
+    : resolveAdapter(listingAdapterId);
+
+  // ── Filter / access helpers ────────────────────────────────────────────────
   const companies = useMemo(() => [...new Set(campaigns.map((c) => c.company.name))], [campaigns]);
 
   const hasAccess = useCallback((campaignId: string, visibility: 'public' | 'private') => {
@@ -104,12 +144,9 @@ export function CardGallery({
   const filteredCampaigns = useMemo(() => {
     const lowerSearch = searchQuery.toLowerCase().trim();
     return campaigns.filter((campaign) => {
-      // Tab filter
       if (filter === 'accessible' && !hasAccess(campaign.id, campaign.visibility)) return false;
       if (filter !== 'all' && filter !== 'accessible' && campaign.company.name !== filter) return false;
-      // Hide mode filter
       if (accessMode === 'hide' && filter !== 'accessible' && !hasAccess(campaign.id, campaign.visibility)) return false;
-      // Text search
       if (lowerSearch) {
         const haystack = `${campaign.title} ${campaign.description} ${campaign.tags.join(' ')}`.toLowerCase();
         if (!haystack.includes(lowerSearch)) return false;
@@ -124,157 +161,23 @@ export function CardGallery({
   const hiddenCount = useMemo(() => Math.max(0, campaigns.length - accessibleCount), [accessibleCount, campaigns.length]);
   const showHiddenNotice = useMemo(() => accessMode === 'hide' && filter === 'all' && hiddenCount > 0, [accessMode, filter, hiddenCount]);
 
-  // Pagination math
-  const rowsPerPage = s.cardRowsPerPage ?? 3;
-  const cardsPerPage = rowsPerPage * effectiveColumns;
-  const totalPages = displayMode === 'paginated' && cardsPerPage > 0
-    ? Math.ceil(filteredCampaigns.length / cardsPerPage)
-    : 1;
-
-  // Reset state when filters/mode change
-  useEffect(() => {
-    setVisibleCount(LOAD_MORE_SIZE);
-    setCurrentPage(0);
-    setSlideDirection(null);
-    setIsAnimating(false);
-  }, [filter, searchQuery, accessMode, displayMode]);
-
-  // Reset page when breakpoint changes (layout shifts column count)
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [breakpoint]);
-
-  // Clamp currentPage if totalPages shrinks (e.g. resize or filter change)
-  useEffect(() => {
-    if (currentPage >= totalPages && totalPages > 0) {
-      setCurrentPage(totalPages - 1);
-    }
-  }, [currentPage, totalPages]);
-
-  // Compute visible campaigns based on display mode
-  const visibleCampaigns = useMemo(() => {
-    if (displayMode === 'show-all') return filteredCampaigns;
-    if (displayMode === 'paginated') {
-      const start = currentPage * cardsPerPage;
-      return filteredCampaigns.slice(start, start + cardsPerPage);
-    }
-    // load-more
-    return filteredCampaigns.slice(0, visibleCount);
-  }, [filteredCampaigns, displayMode, currentPage, cardsPerPage, visibleCount]);
-
-  const hasMore = displayMode === 'load-more' && visibleCount < filteredCampaigns.length;
-
-  // Page navigation handlers
-  const slideRef = useRef<HTMLDivElement>(null);
-
-  const goToPage = useCallback((page: number) => {
-    if (isAnimating || page < 0 || page >= totalPages || page === currentPage) return;
-    const dir = page > currentPage ? 'left' : 'right';
-    setSlideDirection(dir);
-    setIsAnimating(true);
-    const el = slideRef.current;
-    if (!el) {
-      // No element to observe — advance immediately.
-      setCurrentPage(page);
-      setSlideDirection(null);
-      setIsAnimating(false);
-      return;
-    }
-    const onEnd = (e: TransitionEvent) => {
-      // Filter to the transform transition on this element only.
-      if (e.target !== el || e.propertyName !== 'transform') return;
-      el.removeEventListener('transitionend', onEnd);
-      setCurrentPage(page);
-      setSlideDirection(null);
-      setIsAnimating(false);
-    };
-    el.addEventListener('transitionend', onEnd);
-    // In environments without CSS transitions (e.g. jsdom), transitionend never
-    // fires. Advance immediately if no transition duration is detected.
-    const dur = window.getComputedStyle(el).transitionDuration;
-    if (!dur || dur === '0s' || dur === '') {
-      el.removeEventListener('transitionend', onEnd);
-      setCurrentPage(page);
-      setSlideDirection(null);
-      setIsAnimating(false);
-    }
-  }, [currentPage, isAnimating, totalPages]);
-
-  const goPrev = useCallback(() => goToPage(currentPage - 1), [currentPage, goToPage]);
-  const goNext = useCallback(() => goToPage(currentPage + 1), [currentPage, goToPage]);
-
-  // Keyboard navigation for paginated mode
-  useEffect(() => {
-    if (displayMode !== 'paginated' || totalPages <= 1) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
-    };
-    const container = gridContainerRef.current;
-    container?.addEventListener('keydown', handleKey);
-    return () => container?.removeEventListener('keydown', handleKey);
-  }, [displayMode, totalPages, goPrev, goNext]);
-
-  // Slide animation styles
-  const transitionMs = s.cardPageTransitionMs ?? 300;
-  const slideStyle: React.CSSProperties = displayMode === 'paginated' ? {
-    transform: slideDirection === 'left'
-      ? 'translateX(-100%)'
-      : slideDirection === 'right'
-        ? 'translateX(100%)'
-        : 'translateX(0)',
-    transition: slideDirection ? `transform ${transitionMs}ms ease` : 'none',
-    opacity: slideDirection ? (s.cardPageTransitionOpacity ?? 0.3) : 1,
-  } : {};
-
+  // ── Container sizing ───────────────────────────────────────────────────────
   const containerSize = galleryBehaviorSettings.appMaxWidth > 0
     ? toCssOrNumber(galleryBehaviorSettings.appMaxWidth, galleryBehaviorSettings.appMaxWidthUnit)
     : undefined;
   const containerFluid = galleryBehaviorSettings.appMaxWidth === 0;
   const containerPaddingStyle = { paddingInline: toCssOrNumber(galleryBehaviorSettings.appPadding, galleryBehaviorSettings.appPaddingUnit) };
-  /** Below this resolved pixel width, fixed-width cards fall back to the responsive branch. */
-  const MIN_FIXED_CARD_WIDTH_PX = 120;
-  const hasFixedCardWidth = s.cardMaxWidth > 0;
-  const cardGridJustification = s.cardJustifyContent || 'center';
-  const cardGridVerticalAlign = s.cardGalleryVerticalAlign || 'start';
-  const cardGridMinHeight = s.cardGalleryMinHeight || 0;
-  const cardGridMaxHeight = s.cardGalleryMaxHeight || 0;
-  const cardGridOffsetX = s.cardGalleryOffsetX || 0;
-  const cardGridOffsetY = s.cardGalleryOffsetY || 0;
-  const cardGapHUnit = s.cardGapHUnit ?? 'px';
-  const cardGapVUnit = s.cardGapVUnit ?? 'px';
-  const effectiveGapH = formatGapCss(s.cardGapH, cardGapHUnit, containerWidth, 4);
-  const responsiveCardWidth = useMemo(() => {
-    if (effectiveColumns <= 1) {
-      return '100%';
-    }
 
-    const totalGap = toCss((effectiveColumns - 1) * s.cardGapH, cardGapHUnit);
-    return `calc((100% - ${totalGap}) / ${effectiveColumns})`;
-  }, [effectiveColumns, s.cardGapH, cardGapHUnit]);
-
-  const fixedCardWidth = useMemo<{ value: number; unit: CssWidthUnit } | null>(() => {
-    if (!hasFixedCardWidth) return null;
-    return resolveFixedCardWidth(
-      s.cardMaxWidth,
-      s.cardMaxWidthUnit,
-      s.cardScale ?? 1,
-      containerWidth,
-      MIN_FIXED_CARD_WIDTH_PX,
-    );
-  }, [hasFixedCardWidth, s.cardMaxWidth, s.cardMaxWidthUnit, s.cardScale, containerWidth]);
-
-  // P21-D: Dynamic viewer background
+  // ── Viewer background / header border ─────────────────────────────────────
   const galleryStyle = useMemo<React.CSSProperties | undefined>(() => {
     switch (galleryBehaviorSettings.viewerBgType) {
       case 'transparent': return { background: 'transparent' };
       case 'solid': return { background: galleryBehaviorSettings.viewerBgColor || 'transparent' };
       case 'gradient': return { background: buildGradientCss(galleryBehaviorSettings.viewerBgGradient) || undefined };
-      default: return undefined; // 'theme' — use SCSS default
+      default: return undefined;
     }
   }, [galleryBehaviorSettings.viewerBgType, galleryBehaviorSettings.viewerBgColor, galleryBehaviorSettings.viewerBgGradient]);
 
-  // P21-D: Header border/shadow control
   const headerStyle = useMemo<React.CSSProperties | undefined>(() => {
     if (galleryBehaviorSettings.showViewerBorder === false) {
       return { borderBottom: 'none', boxShadow: 'none', backdropFilter: 'none', background: 'transparent' };
@@ -282,6 +185,73 @@ export function CardGallery({
     return undefined;
   }, [galleryBehaviorSettings.showViewerBorder]);
 
+  // ── renderItem: host-supplied card renderer ────────────────────────────────
+  // Passed to the adapter so it knows how to render each Campaign item.
+  const renderItem = useCallback((item: ListingItem, _idx: number): React.ReactNode => {
+    const campaign = item as Campaign;
+    const access = hasAccess(campaign.id, campaign.visibility);
+    const sharedProps = {
+      campaign,
+      hasAccess: access,
+      onClick: () => setSelectedCampaign(campaign),
+      settings: s,
+      apiClient: !access && !isAdmin ? apiClient : undefined,
+    };
+    if (fixedCardWidth) {
+      return (
+        <CampaignCard
+          {...sharedProps}
+          maxWidth={fixedCardWidth.value}
+          maxWidthUnit={fixedCardWidth.unit}
+        />
+      );
+    }
+    return <CampaignCard {...sharedProps} />;
+  }, [hasAccess, isAdmin, apiClient, s, fixedCardWidth]);
+
+  // ── Adapter slot factory ───────────────────────────────────────────────────
+  // Builds the <Adapter> node for a given campaign slice. Called by both the
+  // host-paginated and adapter-paginated branches.
+  // compact-grid is a direct import (not lazy) so it renders synchronously;
+  // other adapters go through the lazy registry and need a Suspense boundary.
+  const buildAdapter = useCallback((items: Campaign[]) => {
+    const adapterNode = (
+      <AdapterComponent
+        items={items}
+        renderItem={renderItem}
+        media={[]}
+        settings={s}
+        listingMode={{ surface: 'campaign-listing' }}
+        containerDimensions={{ width: containerWidth, height: 0 }}
+      />
+    );
+    if (listingAdapterId === 'compact-grid') return adapterNode;
+    return <Suspense fallback={<Center><Loader /></Center>}>{adapterNode}</Suspense>;
+  }, [AdapterComponent, listingAdapterId, renderItem, s, containerWidth]);
+
+  // ── Empty-state node ───────────────────────────────────────────────────────
+  const emptyNode = filteredCampaigns.length === 0 ? (
+    <Center py={{ base: 60, md: 80 }} role="status" aria-live="polite">
+      <Stack align="center" gap="md">
+        <Text size="lg" c="dimmed" ta="center">
+          {searchQuery.trim()
+            ? 'No campaigns match your search.'
+            : !isAuthenticated && campaigns.length === 0
+              ? 'Sign in to view campaigns.'
+              : filter === 'accessible'
+                ? 'No accessible campaigns yet.'
+                : accessMode === 'hide'
+                  ? 'No accessible campaigns found. Switch to Lock mode to view locked cards.'
+                  : 'No campaigns found matching your filter.'}
+        </Text>
+      </Stack>
+    </Center>
+  ) : null;
+
+  // ── resetKey for CardGalleryHostPagination ────────────────────────────────
+  const resetKey = `${filter}__${searchQuery}__${accessMode}__${s.cardDisplayMode ?? 'load-more'}`;
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <Box {...(styles.gallery ? { className: styles.gallery } : {})} style={galleryStyle}>
       {/* Header */}
@@ -359,8 +329,6 @@ export function CardGallery({
                     {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
                   </Stack>
                 )}
-
-                {/* Admin controls */}
                 {isAdmin && galleryBehaviorSettings.showAccessMode && (
                   <Group gap="sm" align="center">
                     <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
@@ -419,133 +387,35 @@ export function CardGallery({
         </Container>
       </Box>
 
-      {/* Gallery Grid */}
+      {/* Gallery main area */}
       <Container {...getWpsgDebugProps('CardGallery')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
-        {/* Pagination wrapper — relative for overlay arrows */}
-        <Box
-          {...getWpsgDebugProps('CardGallery', 'pagination-shell')}
-          ref={gridContainerRef}
-          style={{ position: 'relative', overflow: 'hidden' }}
-          tabIndex={displayMode === 'paginated' ? 0 : undefined}
-          aria-label={displayMode === 'paginated' ? `Card gallery page ${currentPage + 1} of ${totalPages}` : undefined}
-        >
-          <div ref={slideRef} style={slideStyle}>
+        {adapterPaginated ? (
+          // Adapter-owned pagination (e.g. classic carousel): host hides all
+          // display-mode controls; the adapter manages its own slide state.
+          <>
             <Box
-              {...getWpsgDebugProps('CardGallery', 'grid')}
-              data-testid="card-gallery-grid"
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: `${toCss(s.cardGapV, cardGapVUnit)} ${effectiveGapH}`,
-                justifyContent: cardGridJustification,
-                alignContent: cardGridVerticalAlign,
-                ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, s.cardGalleryMinHeightUnit) } : {}),
-                ...(cardGridMaxHeight > 0 ? { maxHeight: toCssOrNumber(cardGridMaxHeight, s.cardGalleryMaxHeightUnit), overflow: 'auto' as const } : {}),
-                ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0 ? { transform: `translate(${toCss(cardGridOffsetX, s.cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, s.cardGalleryOffsetYUnit)})` } : {}),
-                width: '100%',
-                ...(fixedCardWidth ? {
-                  maxWidth: gridRowMaxWidthCss(fixedCardWidth.value, fixedCardWidth.unit, effectiveColumns, effectiveGapH),
-                  marginInline: 'auto',
-                } : {}),
-              }}
+              {...getWpsgDebugProps('CardGallery', 'adapter-shell')}
+              ref={gridContainerRef}
+              style={{ position: 'relative', overflow: 'hidden' }}
             >
-              {visibleCampaigns.map((campaign) => {
-                const sharedProps = {
-                  campaign,
-                  hasAccess: hasAccess(campaign.id, campaign.visibility),
-                  onClick: () => setSelectedCampaign(campaign),
-                  settings: s,
-                  apiClient: !hasAccess(campaign.id, campaign.visibility) && !isAdmin ? apiClient : undefined,
-                };
-
-                if (fixedCardWidth) {
-                  return (
-                    <CampaignCard
-                      key={campaign.id}
-                      {...sharedProps}
-                      maxWidth={fixedCardWidth.value}
-                      maxWidthUnit={fixedCardWidth.unit}
-                    />
-                  );
-                }
-
-                return (
-                  <Box
-                    key={campaign.id}
-                    data-testid="card-responsive-wrapper"
-                    style={{
-                      flex: `0 0 ${responsiveCardWidth}`,
-                      maxWidth: responsiveCardWidth,
-                      minWidth: 0,
-                    }}
-                  >
-                    <CampaignCard {...sharedProps} />
-                  </Box>
-                );
-              })}
+              {buildAdapter(filteredCampaigns)}
             </Box>
-          </div>
-
-          {/* Overlay arrows for paginated mode */}
-          {displayMode === 'paginated' && totalPages > 1 && (
-            <OverlayArrows
-              onPrev={goPrev}
-              onNext={goNext}
-              total={totalPages}
-              settings={s}
-              previousLabel="Previous page"
-              nextLabel="Next page"
-            />
-          )}
-        </Box>
-
-        {/* Dot navigator + page indicator for paginated mode */}
-        {displayMode === 'paginated' && totalPages > 1 && (
-          <Stack align="center" gap={4} mt="sm">
-            {s.cardPageDotNav && (
-              <DotNavigator
-                total={totalPages}
-                currentIndex={currentPage}
-                onSelect={(page) => goToPage(page)}
-                settings={s}
-              />
-            )}
-            <Text size="xs" c="dimmed">
-              Page {currentPage + 1} of {totalPages}
-            </Text>
-          </Stack>
-        )}
-
-        {/* Load more button */}
-        {hasMore && (
-          <Center mt="xl">
-            <Button
-              variant="light"
-              size="md"
-              onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_SIZE)}
-              aria-label={`Load ${filteredCampaigns.length - visibleCount} more campaigns`}
-            >
-              Load more ({filteredCampaigns.length - visibleCount} remaining)
-            </Button>
-          </Center>
-        )}
-
-        {filteredCampaigns.length === 0 && (
-          <Center py={{ base: 60, md: 80 }} role="status" aria-live="polite">
-            <Stack align="center" gap="md">
-              <Text size="lg" c="dimmed" ta="center">
-                {searchQuery.trim()
-                  ? 'No campaigns match your search.'
-                  : !isAuthenticated && campaigns.length === 0
-                    ? 'Sign in to view campaigns.'
-                    : filter === 'accessible'
-                      ? 'No accessible campaigns yet.'
-                      : accessMode === 'hide'
-                        ? 'No accessible campaigns found. Switch to Lock mode to view locked cards.'
-                        : 'No campaigns found matching your filter.'}
-              </Text>
-            </Stack>
-          </Center>
+            {emptyNode}
+          </>
+        ) : (
+          // Host-owned pagination: CardGalleryHostPagination manages slicing,
+          // animation, dot nav, overlay arrows, load-more, and keyboard nav.
+          <CardGalleryHostPagination
+            filteredCampaigns={filteredCampaigns}
+            settings={s}
+            effectiveColumns={effectiveColumns}
+            containerWidth={containerWidth}
+            breakpoint={breakpoint}
+            gridContainerRef={gridContainerRef}
+            resetKey={resetKey}
+            renderAdapter={buildAdapter}
+            emptyNode={emptyNode}
+          />
         )}
       </Container>
 

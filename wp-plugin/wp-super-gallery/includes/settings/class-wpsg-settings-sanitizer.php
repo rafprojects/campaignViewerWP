@@ -1269,6 +1269,10 @@ class WPSG_Settings_Sanitizer {
         'cardCompanyBadgeMaxWidth' => 'card_company_badge_max_width',
         'cardThumbnailHoverTransitionMs' => 'card_thumbnail_hover_transition_ms',
         'cardAutoColumnsBreakpoints' => 'card_auto_columns_breakpoints',
+        // P35-B: Campaign listing adapter selection (gallery-level, not adapter-specific)
+        'campaignListingAdapterId'       => 'campaign_listing_adapter_id',
+        'campaignListingAdapterIdMobile' => 'campaign_listing_adapter_id_mobile',
+        'campaignListingAdapterIdTablet' => 'campaign_listing_adapter_id_tablet',
     ];
 
     /**

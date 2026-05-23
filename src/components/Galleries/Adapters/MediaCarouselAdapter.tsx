@@ -6,11 +6,12 @@
  * autoplay, drag, loop, and more.
  */
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { IconPhoto, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
-import type { GalleryAdapterProps } from './GalleryAdapter';
+import type { GalleryAdapterProps, ListingItem } from './GalleryAdapter';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
 import { toCss } from '@/utils/cssUnits';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
@@ -127,7 +128,22 @@ export function MediaCarouselAdapter({
   settings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   runtime,
   containerDimensions,
+  items,
+  renderItem,
+  listingMode,
 }: GalleryAdapterProps) {
+  // P35-G: Listing-mode branch — renders campaign cards as carousel slides.
+  // No hooks; branching before MediaCarouselInner is safe.
+  if (listingMode?.surface === 'campaign-listing' && items && renderItem && items.length > 0) {
+    return (
+      <CampaignListingCarousel
+        items={items}
+        renderItem={renderItem}
+        settings={settings}
+      />
+    );
+  }
+
   if (media.length === 0) return null;
 
   const commonSettings = resolveGalleryComponentCommonSettings(settings, runtime);
@@ -721,3 +737,134 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
 }
 
 setWpsgDebugDisplayName(MediaCarouselInner, 'MediaCarouselInner');
+
+// ── P35-G: Campaign listing carousel ────────────────────────────────────────
+// Lightweight Embla wrapper that renders arbitrary items (campaign cards) as
+// carousel slides. Shares autoplay / navigation settings with MediaCarouselInner
+// but skips media-specific logic (lightbox, video playback, aspect ratios).
+
+interface CampaignListingCarouselProps {
+  items: ListingItem[];
+  renderItem: (item: ListingItem, index: number) => ReactNode;
+  settings: GalleryBehaviorSettings;
+}
+
+function CampaignListingCarousel({ items, renderItem, settings }: CampaignListingCarouselProps) {
+  const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
+  const gap = settings.carouselGap;
+  const gapUnit = settings.carouselGapUnit ?? 'px';
+  const loopEnabled = shouldLoopCarousel(settings.carouselLoop, items.length, visibleCards);
+  const autoplayEnabled = settings.carouselAutoplay && items.length > 1;
+
+  const autoplayPlugin = useMemo(() => {
+    if (!autoplayEnabled) return [];
+    return [
+      Autoplay({
+        delay: settings.carouselAutoplaySpeed,
+        stopOnInteraction: true,
+        stopOnMouseEnter: settings.carouselAutoplayPauseOnHover,
+      }),
+    ];
+  }, [autoplayEnabled, settings.carouselAutoplaySpeed, settings.carouselAutoplayPauseOnHover]);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      loop: loopEnabled,
+      slidesToScroll: 1,
+      align: getCarouselAlign(visibleCards),
+      containScroll: getCarouselContainScroll(loopEnabled, visibleCards),
+      watchDrag: settings.carouselDragEnabled,
+    },
+    autoplayPlugin,
+  );
+
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on('select', onSelect);
+    onSelect();
+    return () => { emblaApi.off('select', onSelect); };
+  }, [emblaApi]);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  const slideBasis = visibleCards <= 1 ? '100%' : `calc(100% / ${visibleCards})`;
+  const slideSpacing = toCss(gap, gapUnit);
+
+  return (
+    <Box
+      {...getWpsgDebugProps('MediaCarouselAdapter', 'listing-carousel')}
+      data-testid="campaign-listing-carousel"
+      style={{ position: 'relative', width: '100%' }}
+    >
+      {/* Embla viewport */}
+      <div
+        ref={emblaRef}
+        style={{
+          overflow: 'hidden',
+          width: '100%',
+          WebkitMaskImage: settings.carouselEdgeFade
+            ? 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)'
+            : undefined,
+          maskImage: settings.carouselEdgeFade
+            ? 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)'
+            : undefined,
+        }}
+      >
+        {/* Embla track */}
+        <div
+          style={{
+            display: 'flex',
+            marginInlineStart: gap > 0 ? `-${slideSpacing}` : undefined,
+          }}
+        >
+          {items.map((item, idx) => (
+            <div
+              key={item.id}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`Slide ${idx + 1} of ${items.length}`}
+              style={{
+                flex: `0 0 ${slideBasis}`,
+                minWidth: 0,
+                paddingInlineStart: slideSpacing,
+                boxSizing: 'border-box',
+              }}
+            >
+              {renderItem(item, idx)}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Overlay navigation arrows */}
+      {items.length > 1 && (
+        <OverlayArrows
+          onPrev={scrollPrev}
+          onNext={scrollNext}
+          total={items.length}
+          settings={settings}
+          previousLabel="Previous campaigns"
+          nextLabel="Next campaigns"
+        />
+      )}
+
+      {/* Dot navigator below the carousel */}
+      {items.length > 1 && settings.cardPageDotNav && (
+        <Stack align="center" gap={4} mt="sm">
+          <DotNavigator
+            total={items.length}
+            currentIndex={selectedIndex}
+            onSelect={(idx) => emblaApi?.scrollTo(idx)}
+            settings={settings}
+          />
+        </Stack>
+      )}
+    </Box>
+  );
+}
+
+setWpsgDebugDisplayName(CampaignListingCarousel, 'CampaignListingCarousel');

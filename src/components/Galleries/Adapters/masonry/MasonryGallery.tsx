@@ -11,8 +11,14 @@
  *
  * Column count is responsive by default but the user can pin it via
  * the `masonryColumns` setting (0 = auto/responsive).
+ *
+ * P35-E: Listing-mode branch.
+ * When `items` and `renderItem` are present the adapter renders arbitrary
+ * items (e.g. campaign cards) using CSS multi-column layout driven by the
+ * card-grid settings. Lightbox and photo-album are not mounted.
  */
 import { useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { MasonryPhotoAlbum } from 'react-photo-album';
 import { Box, Stack, Title, Group } from '@mantine/core';
@@ -23,13 +29,14 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
+import type { ListingItem } from '../GalleryAdapter';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
-import { toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
@@ -50,9 +57,19 @@ interface MasonryGalleryProps {
   settings: GalleryBehaviorSettings;
   runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
+  // P35-E: listing-mode fields (from GalleryAdapterProps)
+  items?: ListingItem[];
+  renderItem?: (item: ListingItem, index: number) => ReactNode;
+  listingMode?: { surface: 'campaign-listing' };
 }
 
-export function MasonryGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: MasonryGalleryProps) {
+export function MasonryGallery({ media, settings, runtime, containerDimensions, items, renderItem }: MasonryGalleryProps) {
+  // P35-E: listing-mode detection
+  const isListingMode = !!(items && renderItem);
+
+  // ── All hooks must be called unconditionally (Rules of Hooks) ─────────────
+
+  // P12 / masonry media-mode hooks
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const enriched = useMediaDimensions(media);
@@ -60,11 +77,64 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions: 
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
   const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
+  // useCallback hooks — must precede any early return.
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
     [setCurrentIndex],
   );
   const close = useCallback(() => setLightboxOpen(false), []);
+
+  // ── P35-E: Listing-mode render (hooks already called above) ───────────────
+  if (isListingMode) {
+    const containerWidth = containerDimensions?.width ?? 0;
+
+    // Column count — mirrors CardGallery.effectiveColumns / compact-grid listing logic.
+    const gridMax = settings.gridCardMaxColumns ?? 0;
+    const cardCols = settings.cardGridColumns ?? 0;
+    const explicitCols = gridMax > 0 ? gridMax : cardCols;
+    let effectiveColumns: number;
+    if (explicitCols > 0) {
+      effectiveColumns = explicitCols;
+    } else {
+      const maxCols = settings.cardMaxColumns ?? 0;
+      const auto = containerWidth > 0
+        ? resolveColumnsFromWidth(containerWidth, 0, settings.cardAutoColumnsBreakpoints)
+        : 1;
+      effectiveColumns = maxCols > 0 ? Math.min(auto, maxCols) : auto;
+    }
+
+    const columnGap = settings.cardGapH ?? 16;
+    const columnGapUnit = settings.cardGapHUnit ?? 'px';
+    const rowGap = settings.cardGapV ?? 16;
+    const rowGapUnit = settings.cardGapVUnit ?? 'px';
+
+    return (
+      <Box
+        {...getWpsgDebugProps('MasonryGallery', 'listing-grid')}
+        data-testid="masonry-listing-grid"
+        style={{
+          columns: effectiveColumns,
+          columnGap: toCss(columnGap, columnGapUnit),
+          width: '100%',
+        }}
+      >
+        {items!.map((item, idx) => (
+          <Box
+            key={item.id}
+            data-testid="masonry-listing-item"
+            style={{
+              breakInside: 'avoid',
+              marginBottom: toCss(rowGap, rowGapUnit),
+            }}
+          >
+            {renderItem!(item, idx)}
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  // ── Masonry media-mode render (original path) ─────────────────────────────
 
   const gap = settings.thumbnailGap ?? 6;
   const pinned = settings.masonryColumns ?? 0;
