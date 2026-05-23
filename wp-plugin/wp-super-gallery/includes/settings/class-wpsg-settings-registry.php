@@ -351,6 +351,10 @@ class WPSG_Settings_Registry {
         'grid_card_height_unit'          => 'px',
         'mosaic_target_row_height_unit'  => 'px',
         'photo_normalize_height_unit'    => 'px',
+        // P35-B: Campaign listing adapter selection (gallery-level, not adapter-specific)
+        'campaign_listing_adapter_id'        => 'compact-grid',
+        'campaign_listing_adapter_id_mobile' => '',
+        'campaign_listing_adapter_id_tablet' => '',
     ];
 
     /**
@@ -506,6 +510,10 @@ class WPSG_Settings_Registry {
         'grid_card_height_unit'          => ['px', '%', 'vh', 'dvh', 'svh', 'lvh', 'em', 'rem'],
         'mosaic_target_row_height_unit'  => ['px', '%', 'vh', 'dvh', 'svh', 'lvh', 'em', 'rem'],
         'photo_normalize_height_unit'    => ['px', '%', 'vh', 'dvh', 'svh', 'lvh', 'em', 'rem'],
+        // P35-B: Campaign listing adapter ID values ('' = inherit desktop value on mobile/tablet)
+        'campaign_listing_adapter_id'        => ['compact-grid', 'masonry', 'justified', 'carousel'],
+        'campaign_listing_adapter_id_mobile' => ['', 'compact-grid', 'masonry', 'justified', 'carousel'],
+        'campaign_listing_adapter_id_tablet' => ['', 'compact-grid', 'masonry', 'justified', 'carousel'],
     ];
 
     /**
