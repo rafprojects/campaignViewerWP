@@ -948,6 +948,39 @@ Layout-builder for listings, shape adapters for listings (hex/circle/diamond), A
 
 ---
 
+## PR Review
+
+**Review commit:** `dd63987` · **Fix commit:** `00dc746`
+**Test baseline:** 139 test files / 1900 tests — all green before and after fixes.
+
+### Issues found
+
+| # | Severity | Location | Description |
+|---|----------|----------|-------------|
+| 1 | 🟡 Improvement | `CompactGrid`, `Masonry`, `Justified` listing branches | Each adapter contained an identical 13-line column-resolution block (`gridCardMaxColumns` → `cardGridColumns` → auto/`cardMaxColumns`). Three copies meant any future fix or extension had to be made in three places. |
+| 2 | 🟡 Bug | `JustifiedGallery.tsx` listing mode | Item style had `flex: '1 0 ${flexBasis}'` together with `maxWidth: flexBasis`, making the `flex-grow: 1` effectively a no-op: items could never exceed `flexBasis` even though the explicit intent (documented in the JSDoc) was to "stretch items to fill each row". |
+| 3 | 🟡 Cleanup | `CardGalleryHostPagination.tsx` | `containerWidth: number` was declared in the interface, destructured as `_containerWidth` (unused marker), and passed from `CardGallery.tsx` at every call site — but the value was never read. The component derives everything it needs from `effectiveColumns` (a pre-computed scalar already in the props). |
+
+### Investigated — not raised
+
+| Area | Finding |
+|------|---------|
+| Rules of Hooks compliance | All adapters (CompactGrid P35-D, Masonry P35-E, Justified P35-F, MediaCarousel P35-G) call every hook unconditionally before the `isListingMode` early-return. ✅ |
+| `resolveListingColumns` helper contract | The extracted helper correctly preserves the original priority chain (`gridCardMaxColumns` → `cardGridColumns` → auto) and the `cardMaxColumns` cap; unit tests in `gridLayout.test.ts` already cover it. ✅ |
+| `CardGalleryHostPagination` pagination logic | `cardsPerPage = rowsPerPage * effectiveColumns` correctly responds to breakpoint-driven column changes; the breakpoint-reset `useEffect` fires independently. No issue with removing `containerWidth`. ✅ |
+| Test coverage — listing mode | `listingMode.test.tsx` covers all four adapters (19 tests). Snapshot guard in `adapterSettingsParity.test.ts` catches unintended CompactGrid layout regressions. ✅ |
+| `paginationOwnership` routing in `CardGallery` | `adapterPaginated` branch correctly bypasses `CardGalleryHostPagination`; classic carousel adapter registration sets `paginationOwnership: 'adapter'`. ✅ |
+
+### Resolutions
+
+**Issue 1 — column deduplication:** Extracted `resolveListingColumns(settings, containerWidth)` into `src/utils/gridLayout.ts` (the natural home for pure grid math, already housing `resolveFixedCardWidth`, `gridRowMaxWidthCss`, and `formatGapCss`). Replaced the identical blocks in `CompactGridGallery.tsx`, `MasonryGallery.tsx`, and `JustifiedGallery.tsx`. Note: `MasonryGallery` still imports `resolveColumnsFromWidth` directly for the media-mode `columns` function — kept that import.
+
+**Issue 2 — JustifiedGallery stretch:** Removed `maxWidth: flexBasis` from the listing-mode item `style`. Items now carry only `flex: '1 0 ${flexBasis}'` and `minWidth: 0`, allowing `flex-grow: 1` to distribute leftover row space and produce the true "justified" appearance described in the JSDoc.
+
+**Issue 3 — unused prop:** Removed `containerWidth` from `CardGalleryHostPaginationProps` interface and from the destructure parameter list. Removed the single `containerWidth={containerWidth}` prop from the call site in `CardGallery.tsx`.
+
+---
+
 ## Carry-Forward
 
 Phase 35 is marked Complete. The three items below were explicitly deferred and
