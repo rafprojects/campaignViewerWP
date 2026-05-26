@@ -34,6 +34,10 @@ export function resolveListingAdapterId(
     breakpoint === 'tablet' ? s.campaignListingAdapterIdTablet :
     undefined;
 
-  const resolved = perBreakpoint ?? s.campaignListingAdapterId ?? 'compact-grid';
+  // Use || (not ??) so that the PHP-sourced empty-string default ('') for an
+  // unset breakpoint override is treated as "no override" and we fall through to
+  // the base campaignListingAdapterId.  ?? would propagate '' to normalizeAdapterId
+  // which turns any falsy value into 'classic' (the carousel adapter).
+  const resolved = perBreakpoint || s.campaignListingAdapterId || 'compact-grid';
   return normalizeAdapterId(resolved);
 }

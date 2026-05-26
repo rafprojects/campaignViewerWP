@@ -71,6 +71,21 @@ describe('resolveListingAdapterId', () => {
     expect(resolveListingAdapterId(s, 'desktop')).toBe('non-existent-adapter');
   });
 
+  it('treats PHP-sourced empty-string override as "no override" (regression: ?? vs ||)', () => {
+    // PHP always sends campaignListingAdapterIdMobile/Tablet as '' when the user
+    // has not set a per-breakpoint override.  The resolver must treat '' as absent
+    // and fall through to campaignListingAdapterId, not pass '' to normalizeAdapterId
+    // which would return 'classic' (carousel).
+    const s = makeSettings({
+      campaignListingAdapterId: 'masonry',
+      campaignListingAdapterIdMobile: '',
+      campaignListingAdapterIdTablet: '',
+    });
+    expect(resolveListingAdapterId(s, 'mobile')).toBe('masonry');
+    expect(resolveListingAdapterId(s, 'tablet')).toBe('masonry');
+    expect(resolveListingAdapterId(s, 'desktop')).toBe('masonry');
+  });
+
   it('desktop breakpoint is never affected by mobile or tablet overrides', () => {
     const s = makeSettings({
       campaignListingAdapterId: 'compact-grid',
