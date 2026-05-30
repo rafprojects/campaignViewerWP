@@ -640,10 +640,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               ]}
               value={settings.campaignListingAdapterIdTablet ?? ''}
               onChange={(value) =>
-                updateSetting(
-                  'campaignListingAdapterIdTablet',
-                  value === '' ? undefined : value ?? undefined,
-                )
+                updateSetting('campaignListingAdapterIdTablet', value ?? '')
               }
             />
             <ModalSelect
@@ -655,10 +652,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               ]}
               value={settings.campaignListingAdapterIdMobile ?? ''}
               onChange={(value) =>
-                updateSetting(
-                  'campaignListingAdapterIdMobile',
-                  value === '' ? undefined : value ?? undefined,
-                )
+                updateSetting('campaignListingAdapterIdMobile', value ?? '')
               }
             />
           </Stack>

@@ -29,9 +29,8 @@ import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/Typogra
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
 import { toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
-import { resolveFixedCardWidth } from '@/utils/gridLayout';
+import { resolveFixedCardWidth, resolveListingColumns } from '@/utils/gridLayout';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
-import { resolveColumnsFromWidth } from '@/utils/resolveColumnsFromWidth';
 import { resolveListingAdapterId } from '@/utils/resolveListingAdapterId';
 import { adapterOwnsPagination, resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -94,15 +93,10 @@ export function CardGallery({
   );
 
   // ── Effective column count ────────────────────────────────────────────────
-  const effectiveColumns = useMemo((): number => {
-    const cols = s.cardGridColumns;
-    if (cols > 0) return cols;
-    const max = s.cardMaxColumns || 0;
-    const auto = containerWidth > 0
-      ? resolveColumnsFromWidth(containerWidth, 0, s.cardAutoColumnsBreakpoints)
-      : 1;
-    return max > 0 ? Math.min(auto, max) : auto;
-  }, [s.cardGridColumns, s.cardMaxColumns, containerWidth, s.cardAutoColumnsBreakpoints]);
+  const effectiveColumns = useMemo(
+    () => resolveListingColumns(s, containerWidth),
+    [s, containerWidth],
+  );
 
   // ── Fixed / responsive card width ─────────────────────────────────────────
   /** Below this resolved pixel width, fixed-width cards fall back to the responsive branch. */
