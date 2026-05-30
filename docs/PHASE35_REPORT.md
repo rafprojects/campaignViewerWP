@@ -994,6 +994,18 @@ Layout-builder for listings, shape adapters for listings (hex/circle/diamond), A
 
 ---
 
+## PR Review Round 3 — Copilot findings (2026-05-30)
+
+### Findings and rationale
+
+| # | File | Finding | Decision | Rationale |
+|---|------|---------|----------|-----------|
+| 1 | `class-wpsg-settings-sanitizer.php:1272-1275` | `campaignListingAdapterId*` keys were in `$nested_card_field_map`, so they could be accepted inside `card_config.breakpoints.*` or inadvertently folded onto flat settings via `normalize_card_config_settings()` | **Accept** | Removed the 3 entries. These are gallery-level flat settings; they're already registered in `$field_defaults` / `$valid_options` and sanitized through the main flat-settings path. |
+| 2 | `src/utils/gridLayout.ts:69-80` | `resolveListingColumns` returned `gridCardMaxColumns` directly as a fixed column count. The setting is labelled "Max Columns (0 = auto)" and intended as an upper cap; returning it directly could force too many columns on narrow containers | **Accept** | Reworked priority chain: `cardGridColumns > 0` → return directly; otherwise auto-resolve via `resolveColumnsFromWidth`, then cap with `gridCardMaxColumns` and `cardMaxColumns` (both optional, lowest wins). |
+| 3 | `CardGalleryHostPagination.tsx:103-118` | `goToPage` read `getComputedStyle(el).transitionDuration` synchronously after setting `slideDirection` state; React hadn't committed the state yet so the style always read `'0s'`, causing the fallback path to fire and skipping the slide animation | **Accept** | Wrapped the duration check in `requestAnimationFrame` so it runs after React commits the `slideDirection` state to the DOM. |
+
+---
+
 ## Carry-Forward
 
 Phase 35 is marked Complete. The three items below were explicitly deferred and
