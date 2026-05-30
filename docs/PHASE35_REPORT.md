@@ -981,6 +981,19 @@ Layout-builder for listings, shape adapters for listings (hex/circle/diamond), A
 
 ---
 
+## PR Review Round 2 — Copilot findings (2026-05-30)
+
+### Findings and rationale
+
+| # | File | Finding | Decision | Rationale |
+|---|------|---------|----------|-----------|
+| 1 | `CardGallery.tsx:97-105` | `effectiveColumns` inline logic ignored `gridCardMaxColumns`, causing host pagination (`cardsPerPage`) to diverge from the column count that listing-mode adapters derive via `resolveListingColumns()` | **Accept** | Replaced the inline block with a call to `resolveListingColumns(s, containerWidth)` — the same helper already used by CompactGrid, Masonry, and Justified. Also removed the now-unused `resolveColumnsFromWidth` import. |
+| 2 | `class-wpsg-settings-registry.php:513-516` | PHP `valid_options` whitelist for `campaign_listing_adapter_id*` omitted `'classic'`, so saving the Classic Carousel selection from the UI would be silently rejected by sanitisation | **Accept** | Added `'classic'` as the first entry in all three whitelist arrays. `'carousel'` kept as a back-compat alias per the normalisation layer in `adapterRegistry.ts`. |
+| 3 | `CampaignCardSettingsSection.tsx:641-647` | Tablet "Inherit from desktop" handler passed `undefined` to `updateSetting`; `undefined` is dropped by `JSON.stringify`, so an already-saved override could never be cleared on the backend | **Accept** | Simplified to `value ?? ''` — `''` is the PHP sentinel for "inherit desktop", and it serialises correctly. |
+| 4 | `CampaignCardSettingsSection.tsx:656-662` | Same `undefined`-vs-`''` serialisation bug for the mobile override | **Accept** | Same fix: `value ?? ''`. |
+
+---
+
 ## Carry-Forward
 
 Phase 35 is marked Complete. The three items below were explicitly deferred and
